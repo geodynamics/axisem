@@ -1,0 +1,15 @@
+1.E20  0.E20 0.E20 0.E20 0.E20 0.E20  moment tensor (Mzz Mxx Myy Mxz Myz Mxy) [Nm]
+'monopole'       excitation type: 'monopole', 'dipole', 'quadpole'
+'mzz'            'explosion','mxx_p_myy','mzz','vertforce' (MONOPOLE) 
+                 'mxz', 'myz', 'xforce', 'yforce'          (DIPOLE)
+                 'mxy', 'mxx_m_myy'                        (QUADRUPOLE) 
+30.              source depth [km]
+0.0              source colatitude [degrees]  
+0.0              source longitude [ldegrees]
+'gauss_0'        source time function: 
+
+################## SOURCE TIME FUNCTION CHOICES ###############################
+Smooth Heaviside/erf function: 'quheavi'
+Dirac Delta distribution: 'dirac_0'
+Gaussian and derivatives: 'gauss_0', 'gauss_1' (1st deriv), 'gauss_2' (2nd)
+Wiggly wavelet with boxcar frequency spectrum: 'heavis'

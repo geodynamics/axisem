@@ -1,0 +1,27 @@
+####### INPUT FILE FOR AXISEM MESHER ##########################################
+'prem_light'  	    Background model: 'prem','prem_solid' etc (SEE BELOW)
+40.        	    DOMINANT period [s]
+2              	    Number of processors to be used
+######## Don't change anything below unless you know what you're doing ########
+.true.              Resolve inner-core shear wave (ignored if not prem)?
+4		    Polynomial order of basis for GLL points inside elements
+1.5d0               Number of elements per DOMINANT wavelength
+0.6d0               Courant number
+6.371e+6            Surface radius [m]
+.false.             Save mesh files (WARNING: large)
+.false.             Write excessive info output (WARNING: for the inclined)
+Diags               Where to dump mesh output files
+3                   Number of expected coarsening levels. Guideline formula:
+                             log( vs(cmb)/vs(surf)*r(surf)/r(cmb) ) / log(2)
+###############################################################################
+#### END OF INPUT #############################################################
+#### BACKGROUND MODELS:
+prem :              Isotropic continental PREM model
+prem_solid:         like 'prem', replace fluid outer core with vs=vp/sqrt(3)
+prem_onecrust:      like 'prem' but extend lower crust to surface
+prem_light:         PREM without crust
+prem_solid_light:   like 'prem_light', but in fluid outer core vs=vp/sqrt(3)
+iasp91:             Isotropic IASP91 model with PREM density
+twolayer_solid:     discontinuity at r0/2: vel./dens. increase by 20%
+homomodel:          homogeneous solid
+###############################################################################

@@ -1,0 +1,34 @@
+######## INPUT FILE FOR AXISEM (SOLVER): GLOBAL WAVE PROPAGATION IN SNREIs #############
+1               number of simulations. 1: single Mij/f_i; 2: forces; 4: moment tensor 
+
+######## TIME LENGTH/SCHEME CHOICES ####################################################
+700.            seismogram length [s]
+0.40             time step [s]. Put to 0.0 to use mesher's suggestion (mesh_params.h)
+newmark2        time scheme: newmark2,symplec4,ML_SO4m5,ML_SO6m7,KL_O8m17,SS_35o10
+
+######## SOURCE AND RECEIVER SPECIFICATION #############################################
+0.              source period [s]. Put to 0.0 to use mesh resolution (mesh_params.h)
+separate        source file type: 'separate','cmtsolut','deliverg','finfaul'
+colatlon        receiver file type: 'colatlon','stations','deliverg'
+0.4             seismogram sampling rate [s] (0.0 for equal to time step (see above)
+  
+######## OUTPUT: PATHS AND SNAPSHOT WAVEFIELDS #########################################
+./Data          data output path: meshes, wavefields, seismograms, related info
+./Info          info output path: summary, test and information files
+.false.         save global snapshots for wavefield movies (WARNING: Large!)
+20.0            approximate time intervall between snapshots [s]
+
+######## OUTPUT: SENSITIVITY KERNELS ###################################################
+.true.         save wavefields for sensitivity kernels? (WARNING: Large!)
+8.              samples per period between wavefield snapshots for kernels
+'mask'          source vicinity in wavefields? 'igno','mask','anal'
+1,1             starting (ibeg) and ending (npol-iend) GLL-point index 
+
+######## MISCELLANEOUS PARAMETERS ######################################################
+.false.         save global kinetic/potential energy? Generally not needed
+.false.         overwrite background model with homogeneous parameters? 
+10.,5.77,3.    	homogeneous P-vel [km/s]; S-vel [km/s]; rho [g/cm^3]
+.false.         calculate analytical solution around source (for homogeneous model)?
+.false.         add heterogeneity? if true, specify in inparam_hetero (-> get_model)
+.false.         do mesh tests? Suggested to do once per mesh and unedited source code
+.false.         save large test files (valence etc.)? Generally not needed

@@ -1,0 +1,79 @@
+\contentsline {section}{\numberline {1}Authors, contributors \& copyright}{1}
+\contentsline {section}{\numberline {2}Preliminaries}{4}
+\contentsline {subsection}{\numberline {2.1}Software and hardware environment}{4}
+\contentsline {subsection}{\numberline {2.2}References}{4}
+\contentsline {section}{\numberline {3}Overview}{5}
+\contentsline {subsection}{\numberline {3.1}Minimalist approach}{5}
+\contentsline {subsection}{\numberline {3.2}General remarks on the codes}{6}
+\contentsline {subsection}{\numberline {3.3}General workflow}{7}
+\contentsline {subsection}{\numberline {3.4}Technical ingredients}{8}
+\contentsline {section}{\numberline {4}Mesher}{9}
+\contentsline {subsection}{\numberline {4.1}Mesher installation and compilation}{9}
+\contentsline {subsection}{\numberline {4.2}Mesher input}{9}
+\contentsline {subsection}{\numberline {4.3}Running the mesher}{11}
+\contentsline {subsection}{\numberline {4.4}Changing the background model}{11}
+\contentsline {subsection}{\numberline {4.5}Mesher computational aspects}{12}
+\contentsline {subsection}{\numberline {4.6}Mesher code structure and components}{12}
+\contentsline {subsection}{\numberline {4.7}Mesher output}{12}
+\contentsline {subsection}{\numberline {4.8}Mesher Post-processing/quality control }{13}
+\contentsline {subsection}{\numberline {4.9}Cautions}{13}
+\contentsline {subsection}{\numberline {4.10}Issues}{13}
+\contentsline {subsection}{\numberline {4.11}Mesher To Do}{13}
+\contentsline {section}{\numberline {5}Solver}{14}
+\contentsline {subsection}{\numberline {5.1}Solver installation and compilation}{15}
+\contentsline {subsection}{\numberline {5.2}Solver input}{15}
+\contentsline {subsection}{\numberline {5.3}Adding lateral heterogeneities}{22}
+\contentsline {subsection}{\numberline {5.4}Running the solver}{22}
+\contentsline {subsection}{\numberline {5.5}Solver computational aspects}{23}
+\contentsline {subsection}{\numberline {5.6}Solver code structure}{23}
+\contentsline {subsection}{\numberline {5.7}Choice of appropriate time schemes}{24}
+\contentsline {subsection}{\numberline {5.8}At run-time}{24}
+\contentsline {subsection}{\numberline {5.9}Solver output}{24}
+\contentsline {subsection}{\numberline {5.10}Cautions}{25}
+\contentsline {subsection}{\numberline {5.11}Issues}{25}
+\contentsline {subsection}{\numberline {5.12}Solver To Do}{26}
+\contentsline {section}{\numberline {6}Post processing}{27}
+\contentsline {subsection}{\numberline {6.1}Post processing output}{29}
+\contentsline {section}{\numberline {7}Example workflows}{30}
+\contentsline {section}{\numberline {8}Kernel calculations}{30}
+\contentsline {subsection}{\numberline {8.1}Kerner installation and compilation}{30}
+\contentsline {subsection}{\numberline {8.2}Running the Kerner}{30}
+\contentsline {subsection}{\numberline {8.3}Kerner input}{30}
+\contentsline {subsection}{\numberline {8.4}Kerner computational aspects}{30}
+\contentsline {subsection}{\numberline {8.5}Kerner code structure}{30}
+\contentsline {subsection}{\numberline {8.6}Kerner output}{30}
+\contentsline {subsection}{\numberline {8.7}Kerner post-processing}{30}
+\contentsline {subsection}{\numberline {8.8}Kerner To Do}{30}
+\contentsline {section}{\numberline {9}Theoretical foundations}{31}
+\contentsline {subsection}{\numberline {9.1}Elastodynamic equations of motion: weak form}{31}
+\contentsline {subsection}{\numberline {9.2}Meshing}{32}
+\contentsline {subsubsection}{\numberline {9.2.1}The background-model based spherical mesh}{34}
+\contentsline {subsubsection}{\numberline {9.2.2}The central region}{37}
+\contentsline {subsubsection}{\numberline {9.2.3}Mesh scaling and computational cost}{38}
+\contentsline {subsubsection}{\numberline {9.2.4}Parallelization and domain decomposition}{40}
+\contentsline {subsection}{\numberline {9.3}Spectral-element discretization}{43}
+\contentsline {subsubsection}{\numberline {9.3.1}Geometrical mapping and discretization}{43}
+\contentsline {subsubsection}{\numberline {9.3.2}General non-axial functional discretization}{45}
+\contentsline {subsubsection}{\numberline {9.3.3}Gauss-Lobatto-Jacobi (0,1) quadrature in axial elements}{46}
+\contentsline {subsubsection}{\numberline {9.3.4}Geometrical mapping}{47}
+\contentsline {subsubsection}{\numberline {9.3.5}Gauss-Lobatto-Legendre quadrature}{48}
+\contentsline {subsubsection}{\numberline {9.3.6}Gauss-Lobatto-Jacobi (0,1) quadrature}{49}
+\contentsline {subsubsection}{\numberline {9.3.7}Discretized equations of motion}{50}
+\contentsline {subsubsection}{\numberline {9.3.8}Source terms}{51}
+\contentsline {subsubsection}{\numberline {9.3.9}Mass terms}{52}
+\contentsline {subsubsection}{\numberline {9.3.10}Stiffness terms}{53}
+\contentsline {subsubsection}{\numberline {9.3.11}Matrix notation, tensor products and recast stiffness system}{56}
+\contentsline {subsubsection}{\numberline {9.3.12}Leading order terms}{57}
+\contentsline {subsubsection}{\numberline {9.3.13}Lower order terms: monopole}{58}
+\contentsline {subsubsection}{\numberline {9.3.14}Lower order terms: dipole}{58}
+\contentsline {subsubsection}{\numberline {9.3.15}Lower order terms: quadrupole}{60}
+\contentsline {subsubsection}{\numberline {9.3.16}Fluid mass and stiffness terms}{61}
+\contentsline {subsubsection}{\numberline {9.3.17}Solid-fluid coupling terms}{63}
+\contentsline {subsection}{\numberline {9.4}Time marching}{63}
+\contentsline {subsubsection}{\numberline {9.4.1}Second-order Newmark scheme}{64}
+\contentsline {subsubsection}{\numberline {9.4.2}Fourth-order symplectic scheme}{64}
+\contentsline {subsection}{\numberline {9.5}On-the-fly accuracy tests}{65}
+\contentsline {subsubsection}{\numberline {9.5.1}Surfaces, volumes, and masses}{65}
+\contentsline {subsubsection}{\numberline {9.5.2}Discrete material property variations}{66}
+\contentsline {subsubsection}{\numberline {9.5.3}Resolution trigonometry}{67}
+\contentsline {subsubsection}{\numberline {9.5.4}Run-time breakdown}{67}
