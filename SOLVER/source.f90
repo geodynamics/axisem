@@ -105,20 +105,21 @@ subroutine read_sourceparams
      elseif (num_simul==1 ) then ! moment tensor /single force component
 !    -----------------------------------------------------------------
         if (lpr) then 
-           write(6,*); write(6,*)'  One simulation for one source!'
+           write(6,*)
+           write(6,*)'  One simulation for one source!'
         endif
 
         if (src_type(2)=='mzz') then           
-           magnitude=Mij(1)
-           Mij=0.
-           Mij(1)=magnitude  
-           elseif (src_type(2)=='mxx_p_myy') then
-           magnitude=(Mij(2)+Mij(3))/2.
-           Mij=0.
-           Mij(2:3)=magnitude/2.
+            magnitude=Mij(1)
+            Mij=0.
+            Mij(1)=magnitude  
+        elseif (src_type(2)=='mxx_p_myy') then
+            magnitude=(Mij(2)+Mij(3))/2.
+            Mij=0.
+            Mij(2:3)=magnitude/2.
         elseif (src_type(2)=='mxz') then
-           magnitude=Mij(4)
-           Mij=0.
+            magnitude=Mij(4)
+            Mij=0.
            Mij(4)=magnitude
         elseif (src_type(2)=='myz') then
            magnitude=Mij(5)
@@ -207,40 +208,47 @@ subroutine read_sourceparams
      endif
 
      if ( Mij(1)/=zero .and. sum(abs(Mij(2:6)))<smallval*abs(Mij(1)) ) then 
-        src_type(1)='monopole'; src_type(2)='mzz'
+        src_type(1)='monopole'
+        src_type(2)='mzz'
         magnitude=Mij(1)
         if (lpr) write(6,*)'    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
 
      elseif ( abs(Mij(2)-Mij(3))<smallval*abs(Mij(2)) .and. abs(Mij(1))<smallval*abs(Mij(2)) .and. &
           sum(abs(Mij(4:6)))<smallval*abs(Mij(2)) ) then 
-        src_type(1)='monopole'; src_type(2)='mxx_p_myy'
+        src_type(1)='monopole'
+        src_type(2)='mxx_p_myy'
         magnitude=(Mij(2)+Mij(3))/2.
         if (lpr) write(6,*)'    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
 
      elseif ( abs(Mij(2)-Mij(3))<smallval*abs(Mij(2)) .and. abs(Mij(2)-Mij(1))<smallval*abs(Mij(2)) .and. &
           sum(abs(Mij(4:6)))<smallval*abs(Mij(2)) ) then 
-        src_type(1)='monopole'; src_type(2)='explosion'
+        src_type(1)='monopole'
+        src_type(2)='explosion'
         magnitude=sum(Mij(1:3))/3.
         if (lpr) write(6,*)'    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
 
      elseif ( Mij(4)/=zero .and. sum(abs(Mij(1:3))) + sum(abs(Mij(5:6)))<smallval*abs(Mij(4)) ) then 
-        src_type(1)='dipole'; src_type(2)='mxz'
+        src_type(1)='dipole'
+        src_type(2)='mxz'
         magnitude=Mij(4)
         if (lpr) write(6,*)'    simulating a '//src_type(2)//' source instead of CMTSOLUTION!' 
 
      elseif ( Mij(5)/=zero .and. (sum(abs(Mij(1:4))) + abs(Mij(6)))<smallval*abs(Mij(5)) ) then 
-        src_type(1)='dipole'; src_type(2)='myz'
+        src_type(1)='dipole'
+        src_type(2)='myz'
         magnitude=Mij(5)
         if (lpr) write(6,*)'    simulating a '//src_type(2)//' source instead of CMTSOLUTION!' 
 
      elseif ( Mij(6)/=zero .and. sum(abs(Mij(1:5)))<smallval*abs(Mij(6)) ) then 
-        src_type(1)='quadpole'; src_type(2)='mxy'
+        src_type(1)='quadpole'
+        src_type(2)='mxy'
         magnitude=Mij(6)
         if (lpr) write(6,*)'    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
 
      elseif ( abs(Mij(2)+Mij(3))<smallval*abs(Mij(2)) .and. abs(Mij(1))<smallval*abs(Mij(2)) .and. &
           sum(abs(Mij(4:6)))<smallval*abs(Mij(2)) ) then 
-        src_type(1)='quadpole'; src_type(2)='mxx_m_myy'
+        src_type(1)='quadpole'
+        src_type(2)='mxx_m_myy'
         magnitude=(Mij(2)-Mij(3))/2.
         if (lpr) write(6,*)'    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
 
@@ -562,7 +570,8 @@ double precision                 :: s,z,r,theta
 
   case default
      write(6,*)'WE ONLY SUPPORT MONOPOLES, DIPOLES, &
-          &QUADRUPOLES, AND NOT ',src_type(1);call flush(6)
+          &QUADRUPOLES, AND NOT ',src_type(1)
+     call flush(6)
      stop
 
   end select poletype
@@ -601,9 +610,12 @@ double precision                 :: s,z,r,theta
      enddo
 12 format(i9,2(i2),3(1pe12.4))
 13 format(3(1pe12.4))
- endif !have_src
+  endif !have_src
 
-  close(619); close(621); close(622); close(623)
+  close(619)
+  close(621)
+  close(622)
+  close(623)
 
   call flush(6198)
   call flush(6199)
@@ -668,12 +680,19 @@ integer              :: ielem,ipol,jpol,count_src_procs
         do jpol = 0, npol
            call compute_coordinates(s,z,r,theta,ielsolid(ielem),ipol,jpol)
            if ( s== zero .and. abs(z-zsrc) < dzsrc .and. z>=zero) then 
-              zsrcout=z; dzsrc=abs(z-zsrc)
-              iel_src=ielem; ipol_src=ipol; jpol_src=jpol
-              iel_src2=ielem; ipol_src2=ipol; jpol_src2=jpol
+              zsrcout=z
+              dzsrc=abs(z-zsrc)
+              iel_src=ielem
+              ipol_src=ipol
+              jpol_src=jpol
+              iel_src2=ielem
+              ipol_src2=ipol
+              jpol_src2=jpol
            elseif (s== zero .and. abs(z-zsrc) == dzsrc .and. z>=zero) then 
               write(69,15) ielem,ipol,jpol,z/1000.
-              iel_src2=ielem; ipol_src2=ipol; jpol_src2=jpol
+              iel_src2=ielem
+              ipol_src2=ipol
+              jpol_src2=jpol
            endif
         enddo
      enddo
@@ -745,10 +764,12 @@ integer              :: ielem,ipol,jpol,count_src_procs
      write(69,*)'    source element and jpol index:', iel_src,jpol_src
 
      if (iel_src2 /=iel_src) then
-        write(6,*)'    SECOND source element and jpol index:',  &
-                            iel_src2,jpol_src2;call flush(6)     
+         write(6,*)'    SECOND source element and jpol index:',  &
+                            iel_src2,jpol_src2
+         call flush(6)     
          write(69,*)'    SECOND source element and jpol index:',  &
-                            iel_src2,jpol_src2;call flush(6)     
+                            iel_src2,jpol_src2
+         call flush(6)     
      endif
 
      if (.not. have_axis) then 
@@ -857,8 +878,11 @@ subroutine heavis
 double precision, dimension(:), allocatable :: myt
 integer :: it
 double precision, dimension(:), allocatable :: mystf
-allocate(myt(niter)); myt(:)=0.
-allocate(mystf(niter));mystf(:)=0.
+
+allocate(myt(niter))
+myt(:)=0.
+allocate(mystf(niter))
+mystf(:)=0.
 do it=1, niter
  myt(it)=real(it)*deltat
 enddo
@@ -876,7 +900,7 @@ subroutine delta_src_old
               seis_it*deltat
      write(6,*)'  WARNING: Remember to subtract this at postprocessing stage!'
   endif
-  stf(seis_it) = magnitude
+  stf(seis_it) = magnitude / deltat
 !  if (lpr) call write_convolve_routine
 
 end subroutine delta_src_old
@@ -1110,7 +1134,8 @@ timezero=300.
 stf_t(:) = 0.
 nstep2=int(2.d0**(int(log(dble(nstf_t))/log(2.d0))+1))
 write(6,*) 'nstep2=',nstep2
-allocate(spectre(nstep2));spectre(:)=cmplx(0.,0.) 
+allocate(spectre(nstep2))
+spectre(:)=cmplx(0.,0.) 
 do j=1, nstep2
  if (j<=nstep2/2) then
   freq=(j-1)/(deltat*nstep2)
@@ -1330,7 +1355,9 @@ character(len=16)                :: fmt1
 
   oldway=.TRUE.
   
-  dzwz(:,:,:) = zero; dsws(:,:,:) = zero; ws_over_s(:,:,:) = zero
+  dzwz(:,:,:) = zero
+  dsws(:,:,:) = zero
+  ws_over_s(:,:,:) = zero
   source_term(:,:,:,:) = zero
 
   liel_src=iel_src
