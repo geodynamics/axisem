@@ -1252,7 +1252,7 @@ if (lpr) then
    close(9)
 221 format(l25,a50)
 222 format(a25,a50)
-223 format(1pe25.3,a50)
+223 format(1pe25.6,a50)
 224 format(a25,a50)
    write(6,*)'    ... wrote file param_post_processing'
 endif
