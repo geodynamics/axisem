@@ -52,16 +52,8 @@ character(len=3)               :: param !rho, vs,vp
      velocity=iasp91_sub(r0,param,idom)
   case('solar')
      velocity=arbitr_sub_solar(r0,param,idom,bkgrdmodel2)
-  case('abritr_sub')
-     velocity=arbitr_sub(param,idom,bkgrdmodel2)
-!af
-  case('homomodel')
-     velocity=arbitr_sub(param,idom,bkgrdmodel2)
-!end af
   case default
-     write(6,*)'Background model',bkgrdmodel2,' does not exist...'
-     write(6,*)'No default background mode defined yet!'
-     stop
+     velocity=arbitr_sub(param,idom,bkgrdmodel2)
   end select
 
 end function velocity
@@ -643,40 +635,37 @@ integer :: ndisctmp,i,ndisctmp2
 logical :: bkgrdmodelfile_exists
 
 ! Does the file bkgrdmodel".bm" exist?
-  inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
-          exist=bkgrdmodelfile_exists)
-  if (bkgrdmodelfile_exists) then
-     open(unit=77,file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm')
-     read(77,*)ndisctmp
-
-!af stealth layer needed if homogeneous case
-     if (bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)=='homomodel') then 
+    inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
+                exist=bkgrdmodelfile_exists)
+  
+    if (bkgrdmodelfile_exists) then
+        open(unit=77,file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm')
+        read(77,*)ndisctmp
+  
         ndisctmp2=ndisctmp
-        if (ndisctmp==1) ndisctmp2=2
+        if (ndisctmp==1) ndisctmp2 = 2
         allocate(disconttmp(1:ndisctmp2))
         allocate(vptmp(1:ndisctmp2),vstmp(1:ndisctmp2),rhotmp(1:ndisctmp2))
         do i=1, ndisctmp
-           read(77,*)disconttmp(i),rhotmp(i),vptmp(i),vstmp(i)
+            read(77,*)disconttmp(i),rhotmp(i),vptmp(i),vstmp(i)
         enddo
         close(77)
         if (ndisctmp==1) then
-           disconttmp(2)=disconttmp(1)/4.
-           vptmp(2) = vptmp(1)
-           vstmp(2) = vstmp(1)
-           rhotmp(2)=rhotmp(1)
+            disconttmp(2)=disconttmp(1)/4.
+            vptmp(2) = vptmp(1)
+            vstmp(2) = vstmp(1)
+            rhotmp(2)=rhotmp(1)
         end if
-     endif
-!end af
-
-     if (param=='rho') arbitr_sub=rhotmp(idom)
-     if (param=='v_p') arbitr_sub=vptmp(idom)
-     if (param=='v_s') arbitr_sub=vstmp(idom)
-     deallocate(disconttmp,vstmp,vptmp,rhotmp)
-  else 
-     write(6,*)'Background model file', &
-          bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm','does not exist!!!'
-     stop
-  endif
+  
+        if (param=='rho') arbitr_sub = rhotmp(idom)
+        if (param=='v_p') arbitr_sub = vptmp(idom)
+        if (param=='v_s') arbitr_sub = vstmp(idom)
+        deallocate(disconttmp,vstmp,vptmp,rhotmp)
+    else 
+        write(6,*)'Background model file', &
+            bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm','does not exist!!!'
+        stop
+    endif
 
 end function arbitr_sub
 !=============================================================================
