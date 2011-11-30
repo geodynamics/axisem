@@ -136,6 +136,10 @@ if ( $multisrc == 'true' ) then
        set mom_tens1 = ( "Mrr:" "Mtt:" "Mpp:" "Mrt:" "Mrp:" "Mtp:" ) 
        set map_mij = ( 1 2 4 6 )
        set map_mij_name = ( "Mrr:" "Mtt:" "Mrt:" "Mtp:" ) 
+       head -n 7 $homedir/CMTSOLUTION > 'CMTSOLUTION.MIJ' 
+       foreach el (${mom_tens1}) 
+           echo $el "     0.000e+27" >> 'CMTSOLUTION.MIJ'
+       end
    endif
 else if ( $multisrc == 'false' ) then
 # one simulation
