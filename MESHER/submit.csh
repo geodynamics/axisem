@@ -28,7 +28,7 @@ else
 
 ######## SUBMIT LOCALLY #######
   else
-    ./xmesh > OUTPUT &
+    nohup ./xmesh > OUTPUT &
    endif
 
    echo 'xmesh submitted, output in "OUTPUT"'
