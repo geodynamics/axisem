@@ -85,8 +85,12 @@ else {
 
 $F90_full="F90 = $F90_strg \n";
 $FC_full="FC = $FC_strg \n";
+if ( $netcdf_exists) {
 $INCLUDE_full="INCLUDE = -I $ENV{'NETCDFHOME'}/include \n";
-
+}
+else {
+$INCLUDE_full="INCLUDE = -I \n";
+}
 print MAKEFILE $F90_full;
 print MAKEFILE $FC_full;
 print MAKEFILE $INCLUDE_full; 
