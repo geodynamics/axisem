@@ -636,8 +636,15 @@ Here, we give a simple overview over the main parts.
 \subsection{Solver installation and compilation}
 \begin{enumerate}
 \item If first used or new modules are added to the Solver code,
-use {\tt ./makemake.pl } to create a new Makefile, see {\tt ./makemake.pl -h} for 
-flag options on different compilers.
+use {\tt ./makemake.csh } to create a new Makefile, see {\tt ./perlmakemake.pl -h} for 
+flag options on different compilers. makemake.csh checks for the
+executable ncdump to determine whether your system supports netcdf. If
+so, it includes netcdf library and include paths in the Makefile
+(please check if they make sense!), and links the module that works
+via netcdf in the solver. Still one can dump the output in other
+formats, but the module including netcdf is simply used. In case
+netcdf is not found, a "ghost" module is created instead to ensure
+compilation. This will disallow usage of netcdf, quite obviously.
 \item Copy {\tt mesh\_params.h} from the desired mesh into the source code directory: 
 It contains a last line that links to the location of the database such that 
 these possibly very large files do not need to be copied.
