@@ -32,4 +32,4 @@ else if (${#argv} < 3) then
 ./perlmakemake.pl $1 $2 
 else if (${#argv} < 4) then 
 ./perlmakemake.pl $1 $2 $3
-end if
+endif
