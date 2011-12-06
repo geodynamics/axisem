@@ -16,13 +16,24 @@ $INCLUDE_strg = "INCLUDE =";
 
 ########## CHECK FOR NETCDF #############################################
 if ( @ARGV > 0 ) {
-
-if ( $1 == '-netcdf' || $2 == '-netcdf' || $3 == '-netcdf' ) {
-  $netcdf_exists = 1;
+  if ($ARGV[0] eq '-netcdf'){
+    $netcdf_exists = 1;
+  }
+  if ( @ARGV > 1 ) {
+    if ($ARGV[1] eq '-netcdf'){
+      $netcdf_exists = 1;
+     }
+    if ( @ARGV > 2 ) {
+      if ($ARGV[2] eq '-netcdf'){
+        $netcdf_exists = 1;
+      }
+    }
+  }
 }
 else {
-$netcdf_exists = 1;
+  $netcdf_exists = 0;
 }
+
 if ( $netcdf_exists>0){
   print "netcdf exists, hence we will create Makefile for allowing its usage.\n";
   $libs  = "LIBS = -lm -lnetcdf \n";
@@ -32,7 +43,6 @@ else{
   $libs = "LIBS = -lm \n" ;
 }
 ########## END CHECK FOR NETCDF #############################################
-}
 
 open(MAKEFILE, "> Makefile");
 print MAKEFILE "PROG =xsem\n\n";
@@ -60,7 +70,7 @@ print MAKEFILE "CFLAGS = -O3 -DF_UNDERSCORE\n";
 
 ############ CHOOSE BETWEEN DIFFERENT FORTRAN COMPILERS ###########################
 if ($ARGV[0] eq 'ifort'){
-    if ($ARGV[1] eq 'debug'){
+    if ($ARGV[1] eq '-debug'){
 	$F90_strg = 'mpif90  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -ftz -check all -debug  -check -traceback';
 	$FC_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -ftz -check all -debug  -check -traceback';
     } else {
@@ -69,7 +79,7 @@ if ($ARGV[0] eq 'ifort'){
     }
 }
 elsif ($ARGV[0] eq 'gfortran'){
-    if ($ARGV[1] eq 'debug'){
+    if ($ARGV[1] eq '-debug'){
 	$F90_strg = 'mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic';
 	$FC_strg =  'gfortran -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic';
     } else {
