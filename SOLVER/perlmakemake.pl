@@ -107,7 +107,7 @@ else {
 
 $F90_full="F90 = $F90_strg \n";
 $FC_full="FC = $FC_strg \n";
-if ( $netcdf_exists) {
+if ( $netcdf_exists && defined($ENV{NETCDFHOME})) {
 $INCLUDE_full="INCLUDE = -I /usr/local/include /usr/include $ENV{'NETCDFHOME'}/include \n";
 }
 else {
