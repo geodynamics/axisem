@@ -88,11 +88,14 @@ elsif ($ARGV[0] eq 'gfortran'){
     }
 } 
 elsif ($ARGV[0] eq '-h'){
-	        print "-----------Flags to be used---------- \n";
-		        print "Argument 1: Compiler options: gfortran (default), ifort\n";
-			        print "Argument 2: debug\n";
-				        print "Not specifying debug will create Makefile for optimized compilation \n";
-					        exit;
+      print "-----------Flags to be used---------- \n";
+      print "Argument 1: Compiler options: gfortran (default), ifort\n";
+      print "Argument 2: -debug\n";
+      print "Not specifying debug will create Makefile for optimized compilation \n";
+      print "Argument 3: -netcdf:\n";
+      print "     netcdf enforces compilation with netcdf libraries.\n";
+      print "     if debug (arg[2]) or compiler (arg[1]) are not used, you can use it as arg[1] or arg[2] as well.\n";
+exit;
 					}
 else {
 	print "Default compiler is gfortran\n";
