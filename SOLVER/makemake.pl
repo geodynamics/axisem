@@ -12,15 +12,20 @@
 # Written by Michael Wester <wester@math.unm.edu> February 16, 1995
 # Cotopaxi (Consulting), Albuquerque, New Mexico
 #
+$INCLUDE_strg = "INCLUDE =";
 ########## CHECK FOR NETCDF #############################################
-$netcdf_exists = print `which ncdump |wc -l `;
+$netcdf_exists = `which ncdump |wc -l `;
 if ( $netcdf_exists>0){
+  if ( -e nc_routines_true.f90 ) {
   system("mv nc_routines_true.f90 nc_routines.f90");
+  }
   print "netcdf exists, hence we will create Makefile for allowing its usage.\n";
   $libs  = "LIBS = -lm -lnetcdf \n";
 }
 else{
+  if ( -e nc_routines_ghost.f90 ) {
   system("mv nc_routines_ghost.f90 nc_routines.f90");
+  }
   print "netcdf doesnt exist, hence we will create Makefile disallowing its usage.\n";
   $libs = "LIBS = -lm \n" ;
 }
@@ -86,10 +91,11 @@ else {
 
 $F90_full="F90 = $F90_strg \n";
 $FC_full="FC = $FC_strg \n";
+$INCLUDE_full="INCLUDE = -I $ENV{'NETCDFHOME'}/include \n";
 
 print MAKEFILE $F90_full;
 print MAKEFILE $FC_full;
-
+print MAKEFILE $INCLUDE_full; 
 print "\n:::::: F90 compiler & flags ::::::\n $F90_strg \n";
 print "\n:::::: FC compiler & flags  ::::::\n $FC_strg \n";
 
@@ -118,7 +124,7 @@ print MAKEFILE ".SUFFIXES: \$(SUFFIXES) .f90\n\n";
 # .f90 -> .o
 #
 print MAKEFILE ".f90.o:\n";
-print MAKEFILE "\t\$(F90) \$(F90FLAGS) -c \$<\n\n";
+print MAKEFILE "\t\$(F90) \$(F90FLAGS) -c \$(INCLUDE) \$<\n\n";
 #
 # Dependency listings
 #
@@ -311,7 +317,9 @@ sub MakeDependsf90 {
 
 if ($netcdf_exists>0) {
 print "........you may want to double-check the netcdf library path in the makefile...\n";
-print "........you may need to include further netcdf libraries (libnetcdf_c++,libnetcdff,lcurl)\n\n";
+print "........you may need to include further netcdf libraries (libnetcdf_c++,libnetcdff,lcurl)\n";
+print "........you may wish to find the appropriate INCLUDE (locate NETCDF.mod)\n\n";
+
 }
 print "DONE."
 
