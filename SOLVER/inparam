@@ -3,14 +3,14 @@
 
 ######## TIME LENGTH/SCHEME CHOICES ####################################################
 700.            seismogram length [s]
-0.40             time step [s]. Put to 0.0 to use mesher's suggestion (mesh_params.h)
+0.00             time step [s]. Put to 0.0 to use mesher's suggestion (mesh_params.h)
 newmark2        time scheme: newmark2,symplec4,ML_SO4m5,ML_SO6m7,KL_O8m17,SS_35o10
 
 ######## SOURCE AND RECEIVER SPECIFICATION #############################################
 0.              source period [s]. Put to 0.0 to use mesh resolution (mesh_params.h)
-separate        source file type: 'separate','cmtsolut','deliverg','finfaul'
-colatlon        receiver file type: 'colatlon','stations','deliverg'
-0.4             seismogram sampling rate [s] (0.0 for equal to time step (see above)
+sourceparams    source file type: 'sourceparams','cmtsolut'
+colatlon        receiver file type: 'colatlon','stations'
+1.0             desired seismogram sampling rate [s] (0.0 for equal to time step (see above)
   
 ######## OUTPUT: PATHS AND SNAPSHOT WAVEFIELDS #########################################
 ./Data          data output path: meshes, wavefields, seismograms, related info
@@ -19,7 +19,7 @@ colatlon        receiver file type: 'colatlon','stations','deliverg'
 20.0            approximate time intervall between snapshots [s]
 
 ######## OUTPUT: SENSITIVITY KERNELS ###################################################
-.true.         save wavefields for sensitivity kernels? (WARNING: Large!)
+.false.         save wavefields for sensitivity kernels? (WARNING: Large!)
 8.              samples per period between wavefield snapshots for kernels
 'mask'          source vicinity in wavefields? 'igno','mask','anal'
 1,1             starting (ibeg) and ending (npol-iend) GLL-point index 

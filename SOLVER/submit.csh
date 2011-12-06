@@ -76,6 +76,8 @@ if ( $src_file_type == 'cmtsolut' ) then
     set srcfile = 'CMTSOLUTION'
 else if ( $src_file_type == 'separate' ) then
     set srcfile = 'sourceparams.dat'
+else if ( $src_file_type == 'sourceparams' ) then
+    set srcfile = 'sourceparams.dat'
 else if ( $src_file_type == 'finfault' ) then
     set srcfile = 'finite_fault.dat'
 endif 

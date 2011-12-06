@@ -437,7 +437,7 @@ endif
      write(6,20)
      write(6,21)datapath,infopath,num_simul, seislength_t,enforced_dt, &
                 enforced_period, &
-                src_file_type,rec_file_type,correct_azi,sum_seis,sum_fields, &
+                trim(src_file_type),rec_file_type,correct_azi,sum_seis,sum_fields, &
                 rot_rec,time_scheme,seis_dt,save_large_tests, &
                 dump_energy,dump_snaps_glob,dump_snaps_solflu,dump_wavefields,&
                 dump_type,ibeg,iend,strain_samp,src_dump_type,make_homo,srcvic, &
@@ -499,7 +499,7 @@ endif
    12x,'Simulation length [s]:          ',f9.3,/                          &
    12x,'Enforced time step [s]:         ',f7.3,/                        &
    12x,'Enforced source period [s]:     ',f7.3,/                        &
-   12x,'Source file type:               ',a7,/                        &
+   12x,'Source file type:               ',a,/                        &
    12x,'Receiver file type:             ',a8,/                        &
    12x,'Correct azimuth?                ',l2,/                          &
    12x,'Sum seismograms?                ',l2,/                          &
@@ -700,6 +700,8 @@ integer          :: ielem,ipol,jpol
         if (lpr) then 
            write(6,*)
            write(6,*)'    WARNING: Period smaller than necessary by mesh!'
+           write(6,*)'    A pulse of this (short) chosen half width will produce numerical '
+           write(6,*)'    noise on this (coarse) mesh'
            write(6,21)'   Chosen value (in inparam file):',enforced_period
            write(6,21)'   Minimal period for this mesh  :',period
            write(6,*)'    Change period in input file to larger than this min.'
@@ -1070,8 +1072,8 @@ character(len=4) :: Mij_char(6)
      write(6,11)'     seismo length [s] :',niter*deltat
      write(6,12)'     time extrapolation:',time_scheme
      write(6,*)'  Input/Output information_____________________________'
-     write(6,12)'     Output data path  :',datapath
-     write(6,12)'     Output info path  :',infopath
+     write(6,12)'     Output data path  :',trim(datapath)
+     write(6,12)'     Output info path  :',trim(infopath)
      write(6,19)'     Save big testfiles:',save_large_tests
      write(6,19)'     Sum wavefields:', sum_fields
      write(6,19)'     Dump energy       :',dump_energy
@@ -1226,7 +1228,7 @@ if (lpr) then
       write(9,222)'.true.','rotate receivers?'
       write(9,222)"'sph'",'receiver components: enz,sph,cyl,xyz,src'
    endif
-   if (src_file_type=='cmtsolut' .and. nsim1>1) then
+   if (trim(src_file_type)=='cmtsolut' .and. nsim1>1) then
       write(9,222)'.true.','sum to full Mij'
    elseif (nsim1>1) then 
       write(9,222)'.true.','sum to full Mij'

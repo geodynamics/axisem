@@ -13,7 +13,7 @@ include "mesh_params.h"
 ! Variables describing anything related to the source
  character(len=10)   :: src_type(2)
  double precision    :: t_0,magnitude
- character(len=8)    :: src_file_type
+ character(len=12)   :: src_file_type
  character(len=7)    :: stf_type
  double precision    :: src_depth,zsrc,srccolat,srclon
  integer             :: iel_src,ipol_src,jpol_src

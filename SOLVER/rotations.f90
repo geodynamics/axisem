@@ -48,23 +48,25 @@ integer :: i,j
 
     trans_rot_mat=transpose(rot_mat)
 
-    if (lpr) then
-        write(6,*)'  WARNING: This means that your source radiation patterns are different!'
-        write(6,*)'                         .... to make sure the pattern is as desired, you will need to rotate'
-        write(6,*)'                        the source term a posteriori using the following formula:'
+    if ((trim(src_file_type)=='separate').or.(trim(src_file_type)=='sourceparams')) then 
+      if (lpr) then
+          write(6,*)'  WARNING: This means that your source radiation patterns are different!'
+          write(6,*)'                         .... to make sure the pattern is as desired, you will need to rotate'
+          write(6,*)'                        the source term a posteriori using the following formula:'
 
-        if (src_type(2)=='mxy' .or. src_type(2)=='mxz' .or. src_type(2)=='myz' .or. src_type(2)=='mxx_m_myy' ) then
-            write(6,*)'                        M_rot = matmul(transpose(R),matmul(M_0,R)), with:'
-        else 
-            write(6,*)'                        p_rot = matmul(transpose(R),p_0), with:'
-        endif
+          if (src_type(2)=='mxy' .or. src_type(2)=='mxz' .or. src_type(2)=='myz' .or. src_type(2)=='mxx_m_myy' ) then
+              write(6,*)'                        M_rot = matmul(transpose(R),matmul(M_0,R)), with:'
+          else 
+              write(6,*)'                        p_rot = matmul(transpose(R),p_0), with:'
+          endif
 
-        write(6,*)
-        write(6,*)'                        rotation matrix R='
-        write(6,12)'                        ',rot_mat(1,1),rot_mat(1,2),rot_mat(1,3)
-        write(6,12)'                        ',rot_mat(2,1),rot_mat(2,2),rot_mat(2,3)
-        write(6,12)'                        ',rot_mat(3,1),rot_mat(3,2),rot_mat(3,3)
-    endif !lpr
+          write(6,*)
+          write(6,*)'                        rotation matrix R='
+          write(6,12)'                        ',rot_mat(1,1),rot_mat(1,2),rot_mat(1,3)
+          write(6,12)'                        ',rot_mat(2,1),rot_mat(2,2),rot_mat(2,3)
+          write(6,12)'                        ',rot_mat(3,1),rot_mat(3,2),rot_mat(3,3)
+      endif !lpr
+    endif 
 
     mom_tensor(:,:) = 0.d0
     if (src_type(2)=='mxy') then 
@@ -90,20 +92,22 @@ integer :: i,j
         rot_mom_tensor = matmul(matmul(trans_rot_mat,mom_tensor),rot_mat)
 
         if (lpr) then
-            write(6,*)
-            write(6,*)'                        initial moment tensor M_0='
-            write(6,12)'                        ',mom_tensor(1,1),mom_tensor(1,2),mom_tensor(1,3)
-            write(6,12)'                        ',mom_tensor(2,1),mom_tensor(2,2),mom_tensor(2,3)
-            write(6,12)'                        ',mom_tensor(3,1),mom_tensor(3,2),mom_tensor(3,3)
-            write(6,*)
-            write(6,*)'                        rotated moment tensor M_rot='
-            write(6,12)'                        ',rot_mom_tensor(1,1),rot_mom_tensor(1,2),rot_mom_tensor(1,3)
-            write(6,12)'                        ',rot_mom_tensor(2,1),rot_mom_tensor(2,2),rot_mom_tensor(2,3)
-            write(6,12)'                        ',rot_mom_tensor(3,1),rot_mom_tensor(3,2),rot_mom_tensor(3,3)
-            write(6,*)
-        endif !lpr
-    
-    ! Changing the source radiation pattern!
+          write(6,*)
+          write(6,*)'                        initial moment tensor M_0='
+          write(6,12)'                        ',mom_tensor(1,1),mom_tensor(1,2),mom_tensor(1,3)
+          write(6,12)'                        ',mom_tensor(2,1),mom_tensor(2,2),mom_tensor(2,3)
+          write(6,12)'                        ',mom_tensor(3,1),mom_tensor(3,2),mom_tensor(3,3)
+          write(6,*)
+        end if
+
+        ! Changing the source radiation pattern! Only if source is separate. CMT is not rotated.
+        if ((trim(src_file_type)=='separate').or.(trim(src_file_type)=='sourceparams')) then 
+          if (lpr) write(6,*)'                        rotated moment tensor M_rot='
+          if (lpr) write(6,12)'                        ',rot_mom_tensor(1,1),rot_mom_tensor(1,2),rot_mom_tensor(1,3)
+          if (lpr) write(6,12)'                        ',rot_mom_tensor(2,1),rot_mom_tensor(2,2),rot_mom_tensor(2,3)
+          if (lpr) write(6,12)'                        ',rot_mom_tensor(3,1),rot_mom_tensor(3,2),rot_mom_tensor(3,3)
+          if (lpr) write(6,*)
+
         if (abs(abs(rot_mom_tensor(2,1))-magnitude)<smallval .and. rot_mom_tensor(3,1)==0.d0 .and. &
                     rot_mom_tensor(3,2)==0.d0 .and. rot_mom_tensor(1,1)==0.d0 .and. & 
                     rot_mom_tensor(2,2)==0.d0 .and. rot_mom_tensor(3,3)==0.d0 ) then 
@@ -196,16 +200,15 @@ integer :: i,j
             if (lpr) write(6,*)
         endif
     
-        if (src_file_type=='separate') then 
-            if (lpr) write(6,*)'  Rotating moment tensor since given in cartesian components (sourceparams.dat)...'
-            Mij(1)  = rot_mom_tensor(3,3) 
-            Mij(2)  = rot_mom_tensor(1,1)
-            Mij(3)  = rot_mom_tensor(2,2)
-            Mij(4)  = rot_mom_tensor(1,3)
-            Mij(5)  = rot_mom_tensor(2,3)
-            Mij(6)  = rot_mom_tensor(1,2)
-        endif
+        if (lpr) write(6,*)'  Rotating moment tensor since given in cartesian components (sourceparams.dat)...'
+        Mij(1)  = rot_mom_tensor(3,3) 
+        Mij(2)  = rot_mom_tensor(1,1)
+        Mij(3)  = rot_mom_tensor(2,2)
+        Mij(4)  = rot_mom_tensor(1,3)
+        Mij(5)  = rot_mom_tensor(2,3)
+        Mij(6)  = rot_mom_tensor(1,2)
 
+        endif !src_file_type==separate 
     elseif ( maxval(abs(single_force))>0.1*magnitude) then 
         rot_single_force = matmul(trans_rot_mat,single_force)
         if (lpr) then
