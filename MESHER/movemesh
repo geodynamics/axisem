@@ -2,6 +2,9 @@
 
 set homepath = `echo $PWD`
 set meshpath = "../SOLVER/MESHES/$1"
+if ( ! -d ../SOLVER/MESHES ) then
+  mkdir ../SOLVER/MESHES
+endif
 mkdir $meshpath
 cd $meshpath
 set meshpath = `echo $PWD`
@@ -30,16 +33,16 @@ mv Diags/* $meshpath
 
 set dump_files = `head -n 9 inparam_mesh |tail -n 1 |awk '{print $1}'`
 if ( $dump_files == '.true.') then
-cd UTILS 
-./plot_meshes.csh
-cd ..
+  cd UTILS 
+  ./plot_meshes.csh
+  cd ..
 
-mv Diags/grid.ps $meshpath
-mv Diags/grid_solid.ps $meshpath
-mv Diags/grid_fluid.ps $meshpath
-mv Diags/grid_central.ps $meshpath
-mv Diags/uppermantle_grid.ps $meshpath
-rm -f Diags/*.dat
+  mv Diags/grid.ps $meshpath
+  mv Diags/grid_solid.ps $meshpath
+  mv Diags/grid_fluid.ps $meshpath
+  mv Diags/grid_central.ps $meshpath
+  mv Diags/uppermantle_grid.ps $meshpath
+  rm -f Diags/*.dat
 endif 
 
 echo "Contents in" $meshpath ":"
