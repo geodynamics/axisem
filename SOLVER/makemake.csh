@@ -14,4 +14,4 @@ endif
 # check for mpif.h
 /bin/cp -f $MPIHOME/include/mpif.h .
 
-./makemake.pl $1 $2 $3 $netcdf_exists
+./perlmakemake.pl $1 $2 $3 $netcdf_exists
