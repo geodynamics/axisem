@@ -14,7 +14,9 @@
 #
 $INCLUDE_strg = "INCLUDE =";
 ########## CHECK FOR NETCDF #############################################
-$netcdf_exists = `which ncdump |wc -l `;
+if ( $1 == '-netcdf' || $2 == '-netcdf' || $3 == 'netcdf' ) {
+  $netcdf_exists = 1;
+}
 if ( $netcdf_exists>0){
   print "netcdf exists, hence we will create Makefile for allowing its usage.\n";
   $libs  = "LIBS = -lm -lnetcdf \n";
