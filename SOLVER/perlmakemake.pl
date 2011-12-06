@@ -13,9 +13,15 @@
 # Cotopaxi (Consulting), Albuquerque, New Mexico
 #
 $INCLUDE_strg = "INCLUDE =";
+
 ########## CHECK FOR NETCDF #############################################
-if ( $1 == '-netcdf' || $2 == '-netcdf' || $3 == 'netcdf' ) {
+if ( @ARGV > 0 ) {
+
+if ( $1 == '-netcdf' || $2 == '-netcdf' || $3 == '-netcdf' ) {
   $netcdf_exists = 1;
+}
+else {
+$netcdf_exists = 1;
 }
 if ( $netcdf_exists>0){
   print "netcdf exists, hence we will create Makefile for allowing its usage.\n";
@@ -25,7 +31,8 @@ else{
   print "netcdf doesnt exist, hence we will create Makefile disallowing its usage.\n";
   $libs = "LIBS = -lm \n" ;
 }
-########## CHECK FOR NETCDF #############################################
+########## END CHECK FOR NETCDF #############################################
+}
 
 open(MAKEFILE, "> Makefile");
 print MAKEFILE "PROG =xsem\n\n";
