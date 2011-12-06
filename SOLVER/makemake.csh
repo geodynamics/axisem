@@ -12,6 +12,11 @@ if ( $netcdf_exists>0 ) then
 endif
 
 # check for mpif.h
+set mpi_exist = `echo $MPIHOME | wc -l`
+if ( $mpi_exist > 0 ) then
 /bin/cp -f $MPIHOME/include/mpif.h .
+else
+echo "Please locate your mpi directory and copy the mpif.h to this solver directory."
+endif
 
 ./perlmakemake.pl $1 $2 $3 $netcdf_exists
