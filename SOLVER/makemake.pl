@@ -12,9 +12,21 @@
 # Written by Michael Wester <wester@math.unm.edu> February 16, 1995
 # Cotopaxi (Consulting), Albuquerque, New Mexico
 #
-open(MAKEFILE, "> Makefile");
+########## CHECK FOR NETCDF #############################################
+$netcdf_exists = print `which ncdump |wc -l `;
+if ( $netcdf_exists>0){
+  system("mv nc_routines_true.f90 nc_routines.f90");
+  print "netcdf exists, hence we will create Makefile for allowing its usage.\n";
+  $libs  = "LIBS = -lm -lnetcdf \n";
+}
+else{
+  system("mv nc_routines_ghost.f90 nc_routines.f90");
+  print "netcdf doesnt exist, hence we will create Makefile disallowing its usage.\n";
+  $libs = "LIBS = -lm \n" ;
+}
+########## CHECK FOR NETCDF #############################################
 
-#print MAKEFILE "PROG =\t$ARGV[0]\n\n";
+open(MAKEFILE, "> Makefile");
 print MAKEFILE "PROG =xsem\n\n";
 #
 # Source listing
@@ -34,7 +46,7 @@ print MAKEFILE "\n\n";
 #
 # Define common macros
 #
-print MAKEFILE "LIBS = -lm \n";
+print MAKEFILE $libs;
 print MAKEFILE "CC = gcc\n";
 print MAKEFILE "CFLAGS = -O3 -DF_UNDERSCORE\n";
 
@@ -295,5 +307,11 @@ sub MakeDependsf90 {
       }
    }
 
-   print "\nCheck Makefile to make sure you're happy with it.\n\n";
+   print "\nCheck Makefile to make sure you're happy with it.\n";
+
+if ($netcdf_exists>0) {
+print "........you may want to double-check the netcdf library path in the makefile...\n";
+print "........you may need to include further netcdf libraries (libnetcdf_c++,libnetcdff,lcurl)\n\n";
+}
+print "DONE."
 
