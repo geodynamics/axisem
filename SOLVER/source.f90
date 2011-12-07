@@ -137,7 +137,7 @@ subroutine read_sourceparams
         elseif (src_type(2)=='explosion') then 
            magnitude=(Mij(1)+Mij(2)+Mij(3))/3.
            Mij=0.
-           Mij(1:3)=magnitude/3.
+           Mij(1:3)=magnitude
         elseif (src_type(2)=='vertforce' .or. src_type(2)=='xforce' .or. src_type(2)=='yforce') then
            magnitude=1.
         endif

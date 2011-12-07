@@ -668,7 +668,7 @@ real :: transrottmp(1:3,1:3),Mij_matr(3,3)
                                                         mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
 
               elseif(src_type(isim,2)=='explosion') then 
-                  mij_prefact(i,isim,:) = Mij_scale(1)+Mij_scale(2)+Mij_scale(3)
+                  mij_prefact(i,isim,:) = (Mij_scale(1)+Mij_scale(2)+Mij_scale(3)) / 3.
                  if (i==1) write(6,*)isim,'Simulation is explosion, prefact:',&
                                                 mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
               endif
