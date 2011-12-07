@@ -934,8 +934,8 @@ subroutine delta_src
 !  endif
 !  stf(seis_it) = magnitude
 
-!  a=period/10.
-  a=deltat*10.
+  a=period/15.
+!  a=deltat*10.
 
   dirac_approx = ['cauchy','caulor','sincfc','gaussi','triang','1dirac']
   if (lpr) write(6,*)'  Approximate Diracs:',dirac_approx
@@ -972,7 +972,7 @@ subroutine delta_src
 
         elseif (dirac_approx(j)=='1dirac') then 
            ! old Dirac, 1 non-zero point
-           if (i==seis_it) stftmp(i) = 1.
+           if (i==seis_it) stftmp(i) = 1./deltat
         else
            write(6,*)mynum,'does not know discrete Dirac ',trim(dirac_approx(j))
            stop
