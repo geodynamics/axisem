@@ -30,8 +30,9 @@ OBJS =	analyt_homog_radiation.o analytic_mapping.o analytic_semi_mapping.o \
 LIBS = -lm 
 CC = gcc
 CFLAGS = -O3 -DF_UNDERSCORE
-F90 = mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic 
-FC = gfortran -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic 
+F90 = mpif90 
+FC = gfortran 
+INCLUDE = 
 
 
 # cancel m2c implicit rule 
@@ -49,7 +50,7 @@ clean:
 .SUFFIXES: $(SUFFIXES) .f90
 
 .f90.o:
-	$(F90) $(F90FLAGS) -c $<
+	$(F90) $(F90FLAGS) -c $(INCLUDE) $<
 
 analyt_homog_radiation.o: data_io.o data_mesh.o data_mesh_preloop.o \
 	data_proc.o data_source.o data_time.o global_parameters.o utlity.o \
@@ -94,8 +95,9 @@ get_mesh.o: commun.o data_comm.o data_mesh.o data_mesh_preloop.o \
 get_model.o: background_models.o commun.o data_io.o data_mesh.o \
 	data_mesh_preloop.o data_proc.o data_time.o def_grid.o \
 	global_parameters.o lateral_heterogeneities.o utlity.o mesh_params.h
-lateral_heterogeneities.o: data_heterogeneous.o data_io.o data_proc.o \
-	data_source.o global_parameters.o utlity.o mesh_params.h
+lateral_heterogeneities.o: background_models.o commun.o data_heterogeneous.o \
+	data_io.o data_mesh.o data_proc.o data_source.o global_parameters.o \
+	utlity.o mesh_params.h
 main.o: clocks.o commun.o data_io.o data_mesh.o data_proc.o data_source.o \
 	data_time.o def_grid.o get_mesh.o global_parameters.o parameters.o \
 	time_evol_wave.o
