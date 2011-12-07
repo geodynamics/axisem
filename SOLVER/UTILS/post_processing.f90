@@ -653,17 +653,17 @@ real :: transrottmp(1:3,1:3),Mij_matr(3,3)
                                                          mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
 
               elseif (src_type(isim,2)=='mxz' .or. src_type(isim,2)=='myz') then
-                 mij_prefact(i,isim,:) = -Mij_scale(4)*cos(longit(i))+Mij_scale(5)*sin(longit(i))
-                 mij_prefact(i,isim,2) = Mij_scale(4)*sin(longit(i))+Mij_scale(5)*cos(longit(i))
+                 mij_prefact(i,isim,:) = Mij_scale(4)*cos(longit(i))+Mij_scale(5)*sin(longit(i))
+                 mij_prefact(i,isim,2) = -Mij_scale(4)*sin(longit(i))+Mij_scale(5)*cos(longit(i))
 
                  if (i==1) write(6,*)isim,'Simulation is mxz, prefact:',&
                                                         mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
 
               elseif (src_type(isim,2)=='mxy' .or. src_type(isim,2)=='mxx_m_myy') then
                  mij_prefact(i,isim,:) = (Mij_scale(2)-Mij_scale(3))*cos(2.*longit(i))  &
-                                                       -2.*Mij_scale(6)*sin(2.*longit(i)) 
+                                                       +2.*Mij_scale(6)*sin(2.*longit(i)) 
                  mij_prefact(i,isim,2) = (Mij_scale(3)-Mij_scale(2))*sin(2.*longit(i)) &
-                                                        -2.*Mij_scale(6)*cos(2.*longit(i))
+                                                        +2.*Mij_scale(6)*cos(2.*longit(i))
                  if (i==1) write(6,*)isim,'Simulation is mxy, prefact:',&
                                                         mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
 
