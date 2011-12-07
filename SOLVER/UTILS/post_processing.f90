@@ -583,7 +583,7 @@ real :: transrottmp(1:3,1:3),Mij_matr(3,3)
 
         Mij=Mij/1.E7 ! CMTSOLUTION given in dyn-cm
 
-     elseif (src_file_type=='separate') then 
+     elseif (src_file_type=='separate' .or. src_file_type='sourceparams') then 
         open(unit=20000,file='sourceparams.dat',POSITION='REWIND',status='old')
         read(20000,*)(Mij(i),i=1,6)
      close(20000)        
@@ -613,7 +613,7 @@ real :: transrottmp(1:3,1:3),Mij_matr(3,3)
 
         write(6,*)'Mij scaled:',Mij_scale
 
-        if (src_file_type=='separate' .and. .not. file_exist) then 
+        if ( ( src_file_type=='separate'  .or. src_file_type='sourceparams' ) .and. .not. file_exist) then 
            write(6,*)isim, 'rotating moment tensor from sourceparams..'
            transrottmp(1:3,1:3) = trans_rot_mat(:,:,isim)
            Mij_matr(1,1) = Mij_scale(1)
