@@ -25,6 +25,11 @@ double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
 double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
 
 write(6,*)mynum,'read parameter file for heterogeneities: inparam_hetero'
+write(6,*)
+write(6,*)' !!!!!!!!! W A R N I N G !!!!!!!! '
+write(6,*)'These lateral additions have not been thoroughly tested yet!'
+write(6,*)
+
 call read_param_hetero
 
 if (add_hetero) then  ! in case the input files don't exist
