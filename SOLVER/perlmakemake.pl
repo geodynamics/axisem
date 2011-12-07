@@ -111,7 +111,7 @@ if ( $netcdf_exists && defined($ENV{NETCDFHOME})) {
 $INCLUDE_full="INCLUDE = -I /usr/local/include /usr/include $ENV{'NETCDFHOME'}/include \n";
 }
 else {
-$INCLUDE_full="INCLUDE = -I /usr/local/include /usr/include\n";
+$INCLUDE_full="INCLUDE = \n";
 }
 print MAKEFILE $F90_full;
 print MAKEFILE $FC_full;
