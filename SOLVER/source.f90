@@ -44,7 +44,7 @@ subroutine read_sourceparams
   rot_src = .false.
 
 !=========================
-  if (src_file_type=='separate') then 
+  if (src_file_type=='separate' .or. src_file_type=='sourceparams') then 
 !=========================
 
      open(unit=20000,file='sourceparams.dat',POSITION='REWIND',status='old')
