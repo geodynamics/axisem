@@ -32,3 +32,5 @@ colatlon        receiver file type: 'colatlon','stations'
 .false.         add heterogeneity? if true, specify in inparam_hetero (-> get_model)
 .false.         do mesh tests? Suggested to do once per mesh and unedited source code
 .false.         save large test files (valence etc.)? Generally not needed
+binary          Output format for seismograms and wavefields: binary, netcdf
+
