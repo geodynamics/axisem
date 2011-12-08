@@ -19,12 +19,13 @@ public
   logical           :: dump_wavefields
   logical           :: need_fluid_displ
   double precision  :: strain_samp
+  integer           :: iseismo !! to keep track of the seismo snaps
   integer           :: istrain,isnap
   character(len=12) :: dump_type
   character(len=8)  :: rec_file_type
   logical           :: correct_azi,sum_seis,sum_fields
   character(len=3)  :: rot_rec
-  logical           :: srcvic,add_hetero,file_exists 
+  logical           :: srcvic,add_hetero,file_exists,use_netcdf 
 
 ! indices to limit dumping to select contiguous range of GLL points:
 ! 0<=ibeg<=iend<=npol
