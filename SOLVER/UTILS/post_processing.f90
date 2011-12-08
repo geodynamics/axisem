@@ -88,12 +88,25 @@ program post_processing_seis
   endif
   write(6,*)'receiver components: ',(reccomp(i),i=1,3)
   write(6,*)
+  
+  ! input seismogram names
+  allocate(recname(nrec(1)),thr_orig(nrec(1)),phr_orig(nrec(1)))
+! these are the original receiver coordinates, having the source at the actual location
+  open(unit=61,file=trim(simdir(1))//'/Data/receiver_names.dat')
+  do i=1,nrec(1)
+     read(61,*)recname(i),thr_orig(i),phr_orig(i)
+     if (phr_orig(i)==360.) phr_orig(i)=0.
+  enddo
+  close(61)
+  thr_orig=thr_orig/180.*pi 
+  phr_orig=phr_orig/180.*pi
 
 ! these are the rotated receiver coordinates, having the source at the north pole
   allocate(colat(nrec(1),nsim),lon(nrec(1),nsim))
   do isim=1,nsim
      open(unit=20,file=trim(simdir(isim))//'/Data/receiver_pts.dat')
      open(unit=21,file=trim(outdir(1))//'/receiver_gll_locs.dat')
+     write(21,'(4a15)') ' ', 'colat', 'lat', 'lon'
      do i=1,nrec(isim)
         read(20,*) colat(i,isim), lon(i,isim), junk
         if (abs(lon(i,isim)-360.)<0.01) lon(i,isim)=0.
@@ -128,8 +141,11 @@ program post_processing_seis
            rloc_rtp(3) = 2*pi - acos(rloc_xyz(1) / (sin(rloc_rtp(2)) + 1e-10))
         end if
         
+        thr_orig(i) = rloc_rtp(2)
+        phr_orig(i) = rloc_rtp(3)
+        
         ! write exact receiver locations (gll points) in the earth fixed coordinate system to file
-        write(21,'(2f15.8)') rloc_rtp(2) / pi * 180., rloc_rtp(3) / pi * 180.
+        write(21,'(a15,3f15.8)') recname(i), rloc_rtp(2) / pi * 180., rloc_rtp(2) / pi * 180. - 90., rloc_rtp(3) / pi * 180.
      enddo
      close(20)
      close(21)
@@ -177,17 +193,6 @@ program post_processing_seis
      time(iseis)=real(iseis)*dt_seis(1)
   enddo
   allocate(seis_sglcomp(nt_seis(1),3))
-
-  ! input seismogram names
-  allocate(recname(nrec(1)),thr_orig(nrec(1)),phr_orig(nrec(1)))
-! these are the original receiver coordinates, having the source at the actual location
-  open(unit=61,file=trim(simdir(1))//'/Data/receiver_names.dat')
-  do i=1,nrec(1)
-     read(61,*)recname(i),thr_orig(i),phr_orig(i)
-     if (phr_orig(i)==360.) phr_orig(i)=0.
-  enddo
-  close(61)
-  thr_orig=thr_orig/180.*pi;  phr_orig=phr_orig/180.*pi
 
   ! output seismogram names
   allocate(outname(nrec(1),nsim),outname2(nrec(1),nsim),rec_full_name(nrec(1),nsim))
