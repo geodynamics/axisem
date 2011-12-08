@@ -866,11 +866,19 @@ real(kind=realkind) :: time
 
   if ( mod(iter,seis_it)==0) then
 ! receiver locations read in from file (only 3-comp. displacements)
-    call compute_recfile_seis_bare(disp,velo)
+
+	iseismo=iseismo+1
+!!!andrea 
+    if(use_netcdf)   then
+     call compute_recfile_seis_bare_nc(disp,velo)
+		else
+    		call compute_recfile_seis_bare(disp,velo)
+    endif
+    
      time = real(iter)*deltat
 !     call compute_recfile_seis_binary(time,disp,velo)
-
-    if (dump_wavefields) call compute_surfelem_strain(disp)
+!!andrea
+!    if (dump_wavefields) call compute_surfelem_strain(disp)
 
 ! cmbrec locations read in from file (only velocity & tr(E))
 !    call dump_velo_straintrace_cmb(disp,velo)
@@ -944,10 +952,19 @@ real(kind=realkind) :: time
    if (mod(iter,strain_it)==0) then
 
 ! dump displacement and velocity in each surface element
-       call compute_surfelem(disp,velo)
+!! for netcdf people set .true. in inparam to use it instead of the standard
 
-        istrain=istrain+1
+!!the update of the strain has to preceed the call to the function. 
+!!It starts from 
+	 istrain=istrain+1
 
+    if(use_netcdf)   then
+     call compute_surfelem_nc(disp,velo)
+		else
+		 call compute_surfelem(disp,velo)
+		endif
+		
+       
         select case (dump_type)
 
         case ('displ_only')
@@ -964,8 +981,8 @@ real(kind=realkind) :: time
 !       Maximal permanent storage, maximal run-time memory, maximal CPU time, 
 !       but no post-processeing necessary as these are the fields that 
 !       constitute density and elastic kernels.
-          call compute_strain(disp,chi)    ! strain globally
-          call dump_velo_global(velo,dchi) ! velocity globally
+         ! call compute_strain(disp,chi)    ! strain globally
+          !call dump_velo_global(velo,dchi) ! velocity globally
 
        end select
 
