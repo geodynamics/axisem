@@ -233,13 +233,15 @@ double precision :: s,z,r,theta
 11 format(6(1pe11.4))
 
   if (dump_wavefields) then
+  !! andrea
+  !! if netcdf output is used no needs for the initialize ascii
+  if(.not.use_netcdf)   then
      do iel=1,maxind
         call define_io_appendix(appielem,iel+mynum*maxind)
         open(unit=40000000+iel,file=datapath(1:lfdata)// &
                   '/surfelem_disp.dat'//appielem)
         open(unit=50000000+iel,file=datapath(1:lfdata)// &
                                     '/surfelem_velo.dat'//appielem)
-
      enddo
 
   do iel=1,maxind
@@ -249,6 +251,7 @@ double precision :: s,z,r,theta
      open(unit=70000000+iel,file=datapath(1:lfdata)// &
           '/surfelem_disp_src.dat'//appielem)
   enddo
+		endif
   endif
 
 end subroutine prepare_seismograms
@@ -561,8 +564,11 @@ integer ierror
 
      write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
 
+  if(.not.use_netcdf)   then
      open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
      open(300000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_velo.dat')
+	endif
+		
 !     fname_rec_seis(i) = datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat'
 !     fname_rec_velo(i) = datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_velo.dat'
  
@@ -1184,6 +1190,80 @@ end subroutine compute_recfile_seis_bare
 !=============================================================================
 
 
+subroutine compute_recfile_seis_bare_nc(disp,velo)
+
+use data_source, ONLY : src_type
+use nc_routines, ONLY : dump_matrix_ncdf
+include "mesh_params.h"
+!!!!andrea 
+!!this function saves surface seismogram to one netcdf file pro-processor
+!!the global mapping is still given by the surfelem_coords file.
+real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
+real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
+real(kind=realkind),dimension(:,:),allocatable :: velo_surf,disp_surf
+character(len=50) :: filename
+integer :: i
+allocate(velo_surf(3,num_rec),disp_surf(3,num_rec))
+
+if (src_type(1)=='monopole') then
+! order: u_s, u_z
+do i=1,num_rec
+     disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+     disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+enddo
+
+filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
+	call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
+filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
+	call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+
+elseif (src_type(1)=='dipole') then
+do i=1,num_rec
+
+     disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
+                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
+                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+       
+     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
+                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
+                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+enddo
+
+filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
+	call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
+filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
+	call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+
+elseif (src_type(1)=='quadpole') then
+
+do i=1,num_rec
+     disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+     disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+enddo
+
+filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
+	call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
+filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
+	call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+
+endif !src_type(1)
+
+deallocate(velo_surf)
+deallocate(disp_surf)
+
+end subroutine compute_recfile_seis_bare_nc
 
 !-----------------------------------------------------------------------------
 !af
@@ -1289,6 +1369,43 @@ integer :: i
 end subroutine compute_surfelem
 !=============================================================================
 
+!-----------------------------------------------------------------------------
+subroutine compute_surfelem_nc(disp,velo)
+!
+! Save one displacement and velocity trace for each element on the surface 
+! which are both needed for kernels (du and v0 inside the cross-correlation)
+!
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+use data_source, ONLY : src_type
+use nc_routines, ONLY : dump_matrix_ncdf
+include "mesh_params.h"
+!!!!andrea 
+!!this function saves surface seismogram to one netcdf file pro-processor
+!!the global mapping is still given by the surfelem_coords file.
+real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
+real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
+real(kind=realkind),dimension(:,:),allocatable :: velo_surf,disp_surf
+character(len=50) :: filename
+integer :: i
+allocate(velo_surf(3,maxind),disp_surf(3,maxind))
+do i=1,maxind
+     disp_surf(1,i)=real(disp(npol/2,jsurfel(i),surfelem(i),1))
+     disp_surf(2,i)=real(disp(npol/2,jsurfel(i),surfelem(i),2))
+     disp_surf(3,i)=real(disp(npol/2,jsurfel(i),surfelem(i),3))  
+     velo_surf(1,i)=real(velo(npol/2,jsurfel(i),surfelem(i),1))
+     velo_surf(2,i)=real(velo(npol/2,jsurfel(i),surfelem(i),2))
+     velo_surf(3,i)=real(velo(npol/2,jsurfel(i),surfelem(i),3))
+enddo
+
+filename=datapath(1:lfdata)//'/surfelem_disp'//appmynum//'.nc'
+	call dump_matrix_ncdf(disp_surf,istrain,3,maxind,filename)
+filename=datapath(1:lfdata)//'/surfelem_velo'//appmynum//'.nc'
+	call dump_matrix_ncdf(velo_surf,istrain,3,maxind,filename)
+
+deallocate(velo_surf)
+deallocate(disp_surf)
+end subroutine compute_surfelem_nc
 
 !-----------------------------------------------------------------------------
 subroutine compute_surfelem_strain(u)
