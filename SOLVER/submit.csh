@@ -24,6 +24,7 @@ set infopath = `grep "info output path" inparam |awk '{print $1}'`
 
 set output_format = `grep "Output format" inparam |awk '{print $1}'`
 set netcdf_make = `grep LIBS Makefile | head -n 1 |awk '{print $4}'`
+echo "OUTPUT FORMAT:" $output_format $netcdf_make
 if ( $output_format == "netcdf" && $netcdf_make != "-lnetcdf" ) then 
   echo "WARNING: Cannot save output into netcdf, missing the library link..."
   echo "Now changing output to binary..."
@@ -34,6 +35,7 @@ if ( $output_format == "netcdf" && $netcdf_make != "-lnetcdf" ) then
   mv inparam inparam.NETCDF
   cp inparam.binary inparam
 endif
+echo "done with netcdf test"
 
 if ( ! -f inparam_hetero) then 
   cp inparam_hetero.TEMPLATE inparam_hetero
