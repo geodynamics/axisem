@@ -228,7 +228,25 @@ program post_processing_seis
      !::::::::::::::::::::::::::::::::
      do isim=1,nsim
      !::::::::::::::::::::::::::::::::
-  
+ 
+
+
+! For Kasra:
+     ! construct array that maps i into processor number: proc(i)=[0,1], 
+          ! extract that from receiver_pts.dat, third column
+               ! call define_io_appendix(appmynum,proc(i)) ! this maps an
+               ! integer into a 4-char string
+                    ! then have
+                    ! recname(i)='recname_'//seistype(isim)//appmynum//'.nc'
+                         ! then call the netcdf routine as below....
+                              ! WARNING: NETCDF LIBRARIES SHOULD NOT BE REQUIRED
+                              ! TO BE INSTALLED.... HENCE MODULES NEED TO BE
+                              ! GHOSTED....
+
+! netcdf
+!        call
+!        read_ncdf_matrix(trim(simdir(isim))//'/Data/recfile_'//seistype(isim)//'.nc',seis_sglcomp,3,i,nt_seis(1)  )
+
      ! load seismograms from all directories
         open(unit=60,file=trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'//seistype(isim)//'.dat')
         write(6,*)'opened ',trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'//seistype(isim)//'.dat'
