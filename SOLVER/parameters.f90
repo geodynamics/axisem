@@ -47,310 +47,6 @@ subroutine open_local_param_file
 end subroutine open_local_param_file
 !=============================================================================
 
-!-----------------------------------------------------------------------------
-subroutine readin_parameters_old
-!
-! Routine that reads in simulation parameters that are relevant at the 
-! stage of the solver, i.e. number of time steps, integration scheme, 
-! data paths, specification of wavefield dumping etc.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-include 'mesh_params.h'
-character(len=30) :: junk
-integer :: i,ij
-
-  open(5,file='inparam',POSITION='REWIND')
-    read(5,10)datapath
-    read(5,10)infopath
-    read(5,*)num_simul
-    read(5,*)seislength_t
-    read(5,*)enforced_dt
-    read(5,*)enforced_period
-    read(5,*)src_file_type
-    read(5,*)rec_file_type
-    read(5,*)correct_azi
-    read(5,*)sum_seis
-    read(5,*)sum_fields
-    read(5,*)rot_rec
-    read(5,*)time_scheme
-    read(5,*)seis_dt
-    read(5,*)save_large_tests
-    read(5,*)dump_energy
-    read(5,*)dump_snaps_glob
-    read(5,*)dump_snaps_solflu
-    read(5,*)snap_dt
-    read(5,*)dump_wavefields
-    read(5,*)dump_type
-    read(5,*)ibeg
-    read(5,*)iend
-    read(5,*)strain_samp
-    read(5,*)src_dump_type
-    read(5,*)make_homo
-    read(5,*)vphomo,vshomo,rhohomo
-    read(5,*)srcvic
-    read(5,*)add_hetero
-    read(5,*)do_mesh_tests
-    read(5,*)output_format
-  close(5)
-!af test
- vphomo = vphomo*1.e3
- vshomo = vshomo*1.e3
- rhohomo = rhohomo*1.e3
-!
- iend = npol-iend
-
-if (src_dump_type=='anal') then
-   write(6,*)''
-   write(6,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-   write(6,*)''
-   write(6,*)'Analytical source wavefield dump not implemented YET!'
-   write(6,*)'          DOING NOTHING INSTEAD......................'
-   write(6,*)''
-   write(6,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-   write(6,*)''
-endif
-
-10 format(a80)
-
-  lfdata = index(datapath,' ')-1
-  lfinfo = index(infopath,' ')-1
-
-  call barrier
-  if (lpr) then
-     write(6,*)
-     write(6,20)
-     write(6,21)trim(datapath),trim(infopath),num_simul, seislength_t,enforced_dt, &
-                enforced_period, &
-                src_file_type,rec_file_type,correct_azi,sum_seis,sum_fields, &
-                rot_rec,time_scheme,seis_dt,save_large_tests, &
-                dump_energy,dump_snaps_glob,dump_snaps_solflu,dump_wavefields,&
-                dump_type,ibeg,iend,strain_samp,src_dump_type,make_homo,srcvic, &
-                add_hetero,do_mesh_tests,output_format
-
-20 format(08x,&
-       '///////////////////////////////////////////////////////////////',/&
-   08x,'//                                                           //',/  &
-   08x,'//                                                           //',/  &
-   08x,'//                  A   X   I   S   E   M                    //',/  &
-   08x,'//                                                           //',/  &
-   08x,'//                                                           //',/  &
-   08x,'//                                                  +-+      //',/  &
-   08x,'//   Parallel spectral-element computation of    +-+---+-+   //',/  &
-   08x,'//                                               | |   | |   //',/  &
-   08x,'//     3-D seismic wave propagation for          | +---+ |   //',/  &
-   08x,'//                                               |   _   |   //',/  &
-   08x,'//    spherically symmetric background models    |_/_\\__|   //',/  &
-   08x,'//                                               | \\_/  |   //',/  &
-   08x,'//           in a global, 2-D domain             |       |   //',/  &
-   08x,'//                                               | +---+ |   //',/  &
-   08x,'//                                               | |   | |   //',/  &
-   08x,'//                                               +-+---+-+   //',/  &
-   08x,'//                                                  +-+      //',/  &
-   08x,'//                                                           //',/  &
-   08x,'//  Authors : Tarje Nissen-Meyer (tarje@princeton.edu)       //',/  &
-   08x,'//            Alexandre Fournier (Grenoble)                  //',/  &
-   08x,'//            Tony Dahlen (Princeton)                        //',/  &
-   08x,'//                                                           //',/  &
-   08x,'//       Comprehensive description of the underlying         //',/  &
-   08x,'//           numerical analysis can be found in:             //',/  &
-   08x,'//                                                           //')
-
-21 format(08x,&
-       '// (1) Tarje Nissen-Meyer, F. A. Dahlen, A Fournier (2007)   //',/&
-   08x,'//     "Spherical-earth Frechet sensitivity kernels"         //',/  & 
-   08x,'//     Geophysical Journal International 168(3),1051-1066.   //',/  & 
-   08x,'//     doi:10.1111/j.1365-246X.2006.03123.x                  //',/  &
-   08x,'//                                                           //',/  &
-   08x,'// (2) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  & 
-   08x,'//     "A two-dimensional spectral-element method for        //',/  &  
-   08x,'//     spherical-earth seismograms-I. Moment-tensor source"  //',/  & 
-   08x,'//     Geophysical Journal International 168(3), 1067-1092.  //',/  & 
-   08x,'//     doi:10.1111/j.1365-246X.2006.03121.x                  //',/  &
-   08x,'//                                                           //',/  &
-   08x,'// (3) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  &
-   08x,'//     "A two-dimensional spectral-element method for        //',/  &
-   08x,'//     spherical-earth seismograms - II. Background models"  //',/  &
-   08x,'//     submitted to Geophysical Journal International.       //',/  &
-   08x,'//                                                           //',/  &
-   08x,'//                                                           //',/  &
-   08x,'//  May 2007 : Version 1.1, includes a                       //',/  &
-   08x,'//                                                           //',/  &
-   08x,'///////////////////////////////////////////////////////////////',// &
-   08x,'=============  I N P U T    P A R A M E T E R S ==============',/ &
-   12x,'Data I/O path:                  ',a20,/                         &
-   12x,'Info I/O path:                  ',a20,/                         &
-   12x,'Number of source simulations:   ',i2,/                          &
-   12x,'Simulation length [s]:          ',f9.3,/                          &
-   12x,'Enforced time step [s]:         ',f7.3,/                        &
-   12x,'Enforced source period [s]:     ',f7.3,/                        &
-   12x,'Source file type:               ',a8,/                        &
-   12x,'Receiver file type:             ',a8,/                        &
-   12x,'Correct azimuth?                ',l2,/                          &
-   12x,'Sum seismograms?                ',l2,/                          &
-   12x,'Sum wavefields?                 ',l2,/                          &
-   12x,'Receivers coordinates                 ',a3,/                          &
-   12x,'Time extrapolation scheme:      ',a8,/                          &
-   12x,'Seismogram sampling rate [s]:   ',f7.3,/                        &
-   12x,'Save large tests?               ',l2,/                          &
-   12x,'Dump kin./pot. energy?          ',l2,/                          &
-   12x,'Dump global snaps?              ',l2,/                          &
-   12x,'Dump solid/fluid snaps?         ',l2,/                          &
-   12x,'Dump strain?                    ',l2,/                          &
-   12x,'Wavefield dumping type:         ',a12,/                         &
-   12x,'First GLL to save in strains:   ',i2,/                          &
-   12x,'Last GLL to save in strains:    ',i2,/                          &
-   12x,'Samples per period for strains: ',f7.3,/                        &
-   12x,'Source dumping type:            ',a4,/                          &
-   12x,'Homogenize background model?    ',l2,/                          &
-   12x,'Analyt. homogen. radiation?     ',l2,/                          &
-   12x,'Add heterogeneous region?       ',l2,/                          &
-   12x,'Perform extensive mesh tests?       ',l2,/                          &
-   12x,'Output format (seism., wavefields): ',a6,/                         &
-   08x,'==============================================================')
-  write(6,*)
-  write(6,*)'Processor-specific output is written to: output_proc<PROC ID>.dat'
-  write(6,*)'All potential error messages will appear here...'
-  endif !lpr
-
-! Checking the consistency of some of the input parameters
-  if ( mod(realkind,4)/=0 .or. realkind>8) then
-     if (lpr) then
-        write(6,*)
-        write(6,*)'PROBLEM with REAL data kind!'
-        write(6,*)'... can only handle real kinds 4 or 8.'
-        write(6,*)'real kind here:', realkind
-        write(6,*)'change parameter realkind in global_parameters.f90'
-     endif
-     stop
-  endif
-
-  if (strain_samp> 10) then
-     if (lpr) then     
-        write(6,*)
-        write(6,*)"!!!!!! NOT GOING ANY FURTHER !!!!!!"
-        write(6,*)"  It's just too much to save 10 frames of strain & velocity"
-        write(6,*)"  per source period! Choose something reasonable."
-     endif
-     stop
-  endif
-
-  if (enforced_dt > zero) then
-     if (lpr) then     
-        write(6,*)
-        write(6,14)'maximal time step',enforced_dt
-     endif
-  endif
-
-  if (enforced_period > zero) then
-     if (lpr) then     
-        write(6,*)
-        write(6,14)'min. source period',enforced_period
-     endif
-  endif
-
-14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
-
-  if (lpr) then
-  if (dump_snaps_glob .and. dump_snaps_solflu) then 
-     write(6,*)''
-     write(6,*)" NOT dumping the same snapshots twice (global AND solid/fluid)"
-     write(6,*)'...hence reverting to dumping global snaps only. Sorry.'
-     dump_snaps_solflu=.false.
-  endif
-
-  if (srcvic) then 
-     if (.not. make_homo ) then 
-     if (lpr) then
-     write(6,*)
-     write(6,7)'0000000000000000 WARNING ABOUT PERFORMANCE 0000000000000000000'
-     write(6,7)'00                                                          00'
-     write(6,7)'00    Computing analyt. radiation for heterogeneous model?  00'
-     write(6,7)'00         ...kinda silly, therefore turning it off...      00'
-     write(6,7)'00                                                          00'
-     write(6,7)'00000000000000000000000000000000000000000000000000000000000000'
-     endif
-     srcvic=.false.
-     endif
-  endif
-
-7 format(04x,a62)
-
-  if (realkind==4) then       
-     if (lpr) then
-     write(6,7)
-     write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
-     write(6,7)'444   Running the solver time loop with SINGLE PRECISION   444'
-     write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
-     endif
-  elseif (realkind==8) then       
-     if (lpr) then
-     write(6,7)
-     write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
-     write(6,7)'888   Running the solver time loop with DOUBLE PRECISION   888'
-     write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
-     endif
-  endif
-  write(6,*)
-
-  endif !mynum
-
-! Need to decide here since this boolean is needed in def_precomp_terms
-  need_fluid_displ = .false.
-  if (dump_snaps_glob .or. dump_snaps_solflu .or. dump_energy .or. & 
-       dump_wavefields .and. dump_type=='fullfields') then
-! Need to add this for each new type of wavefield dumping method that 
-! requires the fluid displacement/velocities
-     need_fluid_displ = .true.
-  endif
- 
-
-! define general small value
-
-if (realkind==4) then
-    smallval=smallval_sngl
-elseif (realkind==8) then
-   smallval=smallval_dble
-endif
-if (lpr) write(6,*)'  small value is:',smallval
-
-!!$! derive number of simulations based on moment tensor entries
-!!$if (src_file_type=='cmtsolut') then
-!!$      open(unit=20000,file='CMTSOLUTION',POSITION='REWIND',status='old')
-!!$     read(20000,*)junk
-!!$     read(20000,*)junk
-!!$     read(20000,*)junk
-!!$     read(20000,*)junk
-!!$     read(20000,*)junk
-!!$     read(20000,*)junk
-!!$     read(20000,*)junk
-!!$     read(20000,*)junk,Mij(1) !Mrr
-!!$     read(20000,*)junk,Mij(2) !Mtt
-!!$     read(20000,*)junk,Mij(3) !Mpp
-!!$     read(20000,*)junk,Mij(4) !Mrt
-!!$     read(20000,*)junk,Mij(5) !Mrp
-!!$     read(20000,*)junk,Mij(6) !Mtp
-!!$     close(20000)  
-!!$
-!!$! convert to [Nm]
-!!$     Mij = Mij/1.E7
-!!$     num_simul = 0
-!!$     do i=1,6
-!!$        if (Mij(i)>smallval*maxval(abs(Mij))) num_simul = num_simul + 1        
-!!$     enddo
-!!$     if (num_simul==6) then 
-!!$        num_simul = 4
-!!$     elseif (num_simul==1) then
-!!$        ! nothing to do, will be dealt with in source.f90
-!!$     else
-!!$        write(6,*)'  havent done this case of less non-zero moment tensor elements than 6...'
-!!$        write(6,*)'  ... just computing the full set of 4 simulations instead...'
-!!$        num_simul = 4
-!!$     endif
-!!$endif
-
-end subroutine readin_parameters_old
-!=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine readin_parameters
@@ -400,6 +96,7 @@ integer :: i
     read(5,*)add_hetero
     read(5,*)do_mesh_tests
     read(5,*)save_large_tests
+    read(5,*)output_format
   close(5)
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.
@@ -443,7 +140,7 @@ endif
                 rot_rec,time_scheme,seis_dt,save_large_tests, &
                 dump_energy,dump_snaps_glob,dump_snaps_solflu,dump_wavefields,&
                 dump_type,ibeg,iend,strain_samp,src_dump_type,make_homo,srcvic, &
-                add_hetero,do_mesh_tests
+                add_hetero,do_mesh_tests,output_format
 
 20 format(08x,&
        '///////////////////////////////////////////////////////////////',/&
@@ -523,6 +220,7 @@ endif
    12x,'Analyt. homogen. radiation?     ',l2,/                          &
    12x,'Add heterogeneous region?       ',l2,/                          &
    12x,'Perform extensive mesh tests?       ',l2,/                          &
+   12x,'Output format (seism., wavefields): ',a6,/                         &
    08x,'==============================================================')
   write(6,*)
   write(6,*)'Processor-specific output is written to: output_proc<PROC ID>.dat'
@@ -771,6 +469,7 @@ integer          :: ielem,ipol,jpol
  !andrea
   iseismo=0
   use_netcdf=.false.
+  write(6,*)'output format:',output_format
   if (output_format=='netcdf')	use_netcdf=.true.
 
 ! snapshot output, convert from interval given in seconds to 
