@@ -763,8 +763,12 @@ integer          :: ielem,ipol,jpol
 22 format(a33,f9.2,a10)
 
 ! Initialize counters for I/O
+
   istrain = 0
   isnap = 0
+ !andrea
+  iseismo=0
+	use_netcdf=.true.
 
 ! snapshot output, convert from interval given in seconds to 
 ! incremental time steps
