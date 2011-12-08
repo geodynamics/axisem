@@ -3,8 +3,10 @@
 set homedir = $PWD
 
 if ( ${#argv} < 1 || "$1" == "-h" ) then
-    echo "";echo "=================================================="
-    echo " Argument 1:  directory name for the simulation"; echo ""
+    echo ""
+    echo "=================================================="
+    echo " Argument 1:  directory name for the simulation"
+    echo ""
     echo " Optional arguments after directory name: "
     echo " -s <sourcetype>, where <sourcetype> can be:"
     echo "      'moment': submits 4 simulations for full moment tensor"
@@ -13,14 +15,17 @@ if ( ${#argv} < 1 || "$1" == "-h" ) then
     echo " -q <queue>, where <queue> can be:"
     echo "      'lsf': submit to lsf queue using bsub"
     echo "       Default: submit locally"
-    echo "==================================================";echo"";    exit
+    echo "=================================================="
+    echo""
+    exit
 else if ( -d $1) then
-    echo " Run or directory" $1 "exists....... its content:"; ls $1; exit
+    echo " Run or directory" $1 "exists....... its content:"
+    ls $1
+    exit
 endif
 
 set datapath = `grep "data output path" inparam  |awk '{print $1}'`
 set infopath = `grep "info output path" inparam |awk '{print $1}'`
-
 
 set output_format = `grep "Output format" inparam |awk '{print $1}'`
 set netcdf_make = `grep LIBS Makefile | grep netcdf |wc -l` 
@@ -46,23 +51,29 @@ set multisrc = 'false'
 set newqueue = 'false'
 
 if ( "$2" == "-s" ) then
-    set srctype = `echo $3`
+    set srctype = $3
     set multisrc = 'true'
     if ( "$4" == '-q' ) then 
-        set queue = `echo $5`
+        set queue = $5
         set newqueue = 'true'
     endif
 else if ( "$2" == '-q') then
-    set queue = `echo $3`
+    set queue = $3
     set newqueue = 'true'
     if ( "$4" == '-s' ) then 
-        set srctype = `echo $5`
+        set srctype = $5
         set multisrc = 'true'
     endif
 endif
 
-if ( $multisrc == 'true' ) then 
-    echo "Submitting multiple jobs for full" $srctype
+# identify source input file 
+set src_file_type = `grep "source file type" inparam |awk '{print $1}'`
+echo "Source file type:" $src_file_type
+
+# if cmtsolution, do full moment tensor simulation (4 parallel jobs)!
+if ( $src_file_type == 'cmtsolut' ) then
+    set multisrc = 'true'
+    set srctype = 'moment'
 endif
 
 if ( $newqueue == 'true' ) then 
@@ -87,10 +98,6 @@ else
         endif
     endif
 endif
-
-# identify source input file 
-set src_file_type = `grep "source file type" inparam |awk '{print $1}'`
-echo "Source file type:" $src_file_type
 
 if ( $src_file_type == 'cmtsolut' ) then
     set srcfile = 'CMTSOLUTION'
@@ -127,7 +134,7 @@ echo "Source file:" $srcfile, "Receiver file:" $recfile
 set num_src = 1
 set num_src_arr = ( 1 )
 if ( $multisrc == 'true' ) then
-    echo " setting up multiple simulations for full" $srctype "source type"
+    echo "setting up multiple simulations for full" $srctype "source type"
     if ( $srctype == 'moment' ) then 
         set mij_sourceparams = ( 0. 0. 0. 0. 0. 0. )
         set map_mij = ( 1 2 4 6 )
@@ -151,7 +158,8 @@ if ( $multisrc == 'true' ) then
         set srctype2 = ( "'mzz'" "'mxx_p_myy'" "'mxz'" "'mxy'" )
     else
         echo " Unrecognized source type" $srctype
-        echo " Choose either 'moment', 'force', 'finfault' or leave blank for one simulation as in sourceparams.dat"; exit
+        echo " Choose either 'moment', 'force', 'finfault' or leave blank for one simulation as in sourceparams.dat"
+        exit
     endif
 
    if ( $src_file_type == 'cmtsolut' ) then 
@@ -196,7 +204,7 @@ foreach isrc (${num_src_arr})
 
         set num = 6
         echo ""
-        echo "Setting up simulation" $isrc,$isim
+        echo "Setting up simulation" $isim
         # construct different source file for each simulation
         if  ( $multisrc == 'true' ) then
             echo "constructing separate source files for" $isim 
@@ -248,13 +256,15 @@ foreach isrc (${num_src_arr})
         if ( -d $datapath) then
             echo " Saving data into $datapath"
         else
-            mkdir $datapath; echo "creating $datapath" 
+            mkdir $datapath
+            echo "creating $datapath" 
         endif
         
         if ( -d $infopath) then 
             echo " saving info into $infopath"
         else
-            mkdir $infopath; echo "creating $infopath"
+            mkdir $infopath
+            echo "creating $infopath"
         endif
         
         mkdir Code
