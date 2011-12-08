@@ -21,6 +21,25 @@ endif
 set datapath = `grep "data output path" inparam  |awk '{print $1}'`
 set infopath = `grep "info output path" inparam |awk '{print $1}'`
 
+
+set output_format = `grep "Output format" inparam |awk '{print $1}'`
+set netcdf_make = `grep LIBS Makefile | head -n 1 |awk '{print $4}'`
+if ( $output_format == "netcdf" && $netcdf_make != "-lnetcdf" ) then 
+  echo "WARNING: Cannot save output into netcdf, missing the library link..."
+  echo "Now changing output to binary..."
+  set length_inparam = `wc -l inparam |awk '{print $1}'`
+  @ length_inparam --
+  head -n $length_inparam inparam > 'inparam.binary'
+  echo "binary          Output format for seismograms and wavefields: binary, netcdf" >> 'inparam.binary'
+  mv inparam inparam.NETCDF
+  cp inparam.binary inparam
+endif
+
+if ( ! -f inparam_hetero) then 
+  cp inparam_hetero.TEMPLATE inparam_hetero
+endif
+
+
 # Check arguments: source types and submission queues
 set multisrc = 'false'
 set newqueue = 'false'
