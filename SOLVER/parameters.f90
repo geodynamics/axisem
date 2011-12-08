@@ -91,6 +91,7 @@ integer :: i,ij
     read(5,*)srcvic
     read(5,*)add_hetero
     read(5,*)do_mesh_tests
+    read(5,*)output_format
   close(5)
 !af test
  vphomo = vphomo*1.e3
@@ -125,7 +126,7 @@ endif
                 rot_rec,time_scheme,seis_dt,save_large_tests, &
                 dump_energy,dump_snaps_glob,dump_snaps_solflu,dump_wavefields,&
                 dump_type,ibeg,iend,strain_samp,src_dump_type,make_homo,srcvic, &
-                add_hetero,do_mesh_tests
+                add_hetero,do_mesh_tests,output_format
 
 20 format(08x,&
        '///////////////////////////////////////////////////////////////',/&
@@ -205,6 +206,7 @@ endif
    12x,'Analyt. homogen. radiation?     ',l2,/                          &
    12x,'Add heterogeneous region?       ',l2,/                          &
    12x,'Perform extensive mesh tests?       ',l2,/                          &
+   12x,'Output format (seism., wavefields): ',a6,/                         &
    08x,'==============================================================')
   write(6,*)
   write(6,*)'Processor-specific output is written to: output_proc<PROC ID>.dat'
@@ -768,7 +770,8 @@ integer          :: ielem,ipol,jpol
   isnap = 0
  !andrea
   iseismo=0
-	use_netcdf=.true.
+  use_netcdf=.false.
+  if (output_format=='netcdf')	use_netcdf=.true.
 
 ! snapshot output, convert from interval given in seconds to 
 ! incremental time steps
