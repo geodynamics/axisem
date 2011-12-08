@@ -26,6 +26,7 @@ public
   logical           :: correct_azi,sum_seis,sum_fields
   character(len=3)  :: rot_rec
   logical           :: srcvic,add_hetero,file_exists,use_netcdf 
+  character(len=6)  :: output_format 
 
 ! indices to limit dumping to select contiguous range of GLL points:
 ! 0<=ibeg<=iend<=npol
