@@ -459,13 +459,13 @@ subroutine write_VTK_bin_scal_old(u2,mesh,rows,filename)
  real, dimension(1:rows), intent(in) :: u2
  real, dimension(1:rows) :: u1
 real, dimension(1:rows,2), intent(in) :: mesh
- integer*4, dimension(1:rows*2) :: cell
- integer*4, dimension(1:rows) :: cell_type
-  character (len=55) :: filename;
+ integer, dimension(:),allocatable :: cell
+ integer, dimension(:),allocatable :: cell_type
+ character (len=55) :: filename;
  character (len=50) :: ss; !stream
  
 !points structure
-
+allocate(cell(rows*2),cell_type(rows))
 do i=2,rows*2,2
  cell(i-1)=1;
  cell(i)=(i/2)-1;
@@ -520,12 +520,12 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
  implicit none
  integer*4 :: i,t,elems
  real*4, dimension(1:elems*4), intent(in) :: x,y,z,u1
- integer*4, dimension(1:elems*5) :: cell
- integer*4, dimension(1:elems) :: cell_type
+ integer, dimension(:),allocatable :: cell
+ integer, dimension(:),allocatable :: cell_type
  character (len=55) :: filename
  character (len=50) :: ss; !stream
 !points structure
-
+allocate(cell(elems*5),cell_type(elems))
 do i=5,elems*5,5
  cell(i-4)=4;
  enddo
