@@ -2,28 +2,17 @@
 
 # check for netcdf library
 if ( "$1" == "-netcdf" || "$2" == "-netcdf" || $3 == "-netcdf" ) then
-set netcdf_exists = `which ncdump |wc -l `;
+  set netcdf_exists = `which ncdump |wc -l `;
   if ( $netcdf_exists>0 ) then
     echo "netcdf exists, moving routines"
-    if ( -f nc_routines_true.f90 ) then
-      mv -f nc_routines_true.f90 nc_routines.f90
-    else if ( -f nc_routines.f90.TRUE ) then
-      mv -f nc_routines.f90.TRUE nc_routines.f90
-    endif
-    if ( -f nc_routines_ghost.f90 ) then
-      mv -f nc_routines_ghost.f90 nc_routines.f90.GHOST
-    endif
+    /bin/cp -f nc_routines.f90.TRUE nc_routines.f90
+  else 
+    set netcdf_exists = 0
+    /bin/cp -f nc_routines.f90.GHOST nc_routines.f90
   endif
-  else
+else 
   set netcdf_exists = 0
-  if ( -f nc_routines_true.f90 ) then
-    mv -f nc_routines_true.f90 nc_routines.f90.TRUE
-  endif
-  if ( -f nc_routines_ghost.f90 ) then
-    mv -f nc_routines_ghost.f90 nc_routines.f90
-  else if ( -f nc_routines.f90.GHOST ) then
-    mv -f nc_routines.f90.GHOST nc_routines.f90
-  endif
+  /bin/cp -f nc_routines.f90.GHOST nc_routines.f90
 endif
 
 # check for mpif.h
