@@ -23,7 +23,7 @@ set infopath = `grep "info output path" inparam |awk '{print $1}'`
 
 
 set output_format = `grep "Output format" inparam |awk '{print $1}'`
-set netcdf_make = `grep LIBS Makefile | grep netcdf` 
+set netcdf_make = `grep LIBS Makefile | grep netcdf |wc -l` 
 echo "OUTPUT FORMAT:" $output_format $netcdf_make
 if ( $output_format == "netcdf" && $netcdf_make < 1 ) then 
   echo "WARNING: Cannot save output into netcdf, missing the library link..."
