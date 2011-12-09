@@ -822,7 +822,7 @@ real(kind=realkind) :: t,decay,shift_fact
      stf(i) = dexp(-( (decay/t_0*(t-shift_fact*t_0))**2) )
   enddo
 
-  stf=stf*magnitude
+  stf=stf * magnitude * decay / t_0 / dsqrt(pi)
 
 end subroutine gauss
 !=============================================================================
@@ -1058,7 +1058,7 @@ double precision              :: decay,shift_fact
      stf_t(i) = dexp(-( (decay/t_0*(t(i)-shift_fact*t_0))**2) )
   enddo
 
-  stf_t=stf_t*magnitude
+  stf_t = stf_t * magnitude * decay / ( t_0 * sqrt(pi) )
 
 end subroutine gauss_t
 !=============================================================================

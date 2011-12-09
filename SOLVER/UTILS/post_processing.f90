@@ -825,74 +825,75 @@ use data_all, only : stf_type
 use global_par, only: pi
 implicit none
 
-real, parameter   :: decay=3.5d0
+real, parameter                :: decay=3.5d0
 !real, parameter   :: decay=1.628d0
-real, parameter   :: shift_fact=1.5d0
-integer, intent(in) :: nt
-real, intent(in) :: t_0,dt
-real, intent(out) :: tshift
+real, parameter                :: shift_fact=1.5d0
+integer, intent(in)            :: nt
+real, intent(in)               :: t_0,dt
+real, intent(out)              :: tshift
 character(len=100), intent(in) :: outdir
-real :: time(nt)
-real              :: tau_j,source,sqrt_pi
-integer                       :: i,j,N_j,irec,lffile,ishift
-real, intent(in) :: seis(nt,3)
-real, intent(out) :: seis_fil(nt,3)
-real :: src_array(nt),exponent,alpha
-character(len=7), intent(in) :: src_type
-character(len=7), intent(in) :: stf
-character(len=4)   :: appidur,appirec
-logical                       :: monopole
+real                           :: time(nt)
+real                           :: tau_j,source,sqrt_pi_inv
+integer                        :: i,j,N_j,irec,lffile,ishift
+real, intent(in)               :: seis(nt,3)
+real, intent(out)              :: seis_fil(nt,3)
+real                           :: src_array(nt),temp_expo,alpha
+character(len=7), intent(in)   :: src_type
+character(len=7), intent(in)   :: stf
+character(len=4)               :: appidur,appirec
+logical                        :: monopole
 
   write(6,*)
   write(6,*)'Convolving with period=',t_0
   write(6,*)'convolve:',stf,stf_type(1),maxval(seis)
 
-  monopole = .false.; if (src_type == 'monopole') monopole=.true.
+  monopole = .false. 
+  if (src_type == 'monopole') monopole=.true.
   N_j=int(2.*shift_fact*t_0/dt)
   call define_io_appendix(appidur,int(t_0))
   alpha=decay/t_0
-  sqrt_pi=1./dsqrt(pi)
-     do i=1,nt
-        time(i)=dt*real(i)
-        seis_fil(i,:)=0.
-        do j=1,N_j
-           tau_j=dble(j+1)*dt ! +1 accomodates the fact that dirac delta is centered at t=dt
+  sqrt_pi_inv=1./dsqrt(pi)
+  do i=1,nt
+    time(i)=dt*real(i)
+    seis_fil(i,:)=0.
+    do j=1,N_j
+       tau_j=dble(j+1)*dt ! +1 accomodates the fact that dirac delta is centered at t=dt
 
-! convolve with a Gaussian
-           if (stf=='gauss_0' ) then 
-              exponent=alpha*(tau_j-shift_fact*t_0)
-              if (exponent<50.) then
-                 source = alpha*exp(-exponent**2 )*sqrt_pi
-!                 source = exp(-exponent**2 ) !TNM: Playing with the amplitudes... this is how AXISEM does it
-              else
-                 source=0.
-              endif
-           elseif (stf=='quheavi') then 
-              source = 0.5*(1.0+erf((tau_j-shift_fact*t_0)/t_0))
-           elseif (stf=='gauss_1' ) then 
-              source = -2.*(decay/t_0)**2*(tau_j-shift_fact*t_0) * &
-                               exp(-( (decay/t_0*(tau_j-shift_fact*t_0))**2) )
-              source=source/( decay/t_0*sqrt(2.)*exp(-2.) )
-           else
-              write(6,*)' other source time function not implemented yet!',stf
-                stop
-             endif
-           if(i > j .and. i-j <= nt) seis_fil(i,:) = seis_fil(i,:)+seis(i-j,:)*source*dt
-           if (i==1 ) src_array(j)= source
-        enddo
-     enddo
+       ! convolve with a Gaussian
+       if (stf=='gauss_0' ) then 
+          temp_expo=alpha*(tau_j-shift_fact*t_0)
+          if (temp_expo<50.) then
+             source = alpha*exp(-temp_expo**2 )*sqrt_pi_inv
+!            source = exp(-temp_expo**2 ) !TNM: Playing with the amplitudes... this is how AXISEM does it! Yeah, Baby!
+          else
+             source=0.
+          endif
+       elseif (stf=='quheavi') then 
+          source = 0.5*(1.0+erf((tau_j-shift_fact*t_0)/t_0))
+       elseif (stf=='gauss_1' ) then 
+          source = -2.*(decay/t_0)**2*(tau_j-shift_fact*t_0) * &
+                           exp(-( (decay/t_0*(tau_j-shift_fact*t_0))**2) )
+          source=source/( decay/t_0*sqrt(2.)*exp(-2.) )
+       else
+          write(6,*)' other source time function not implemented yet!',stf
+            stop
+         endif
+       if(i > j .and. i-j <= nt) seis_fil(i,:) = seis_fil(i,:)+seis(i-j,:)*source*dt
+       if (i==1 ) src_array(j)= source
+    enddo
+  enddo
 
-     tshift=shift_fact*t_0
-     tshift=0.
-     seis_fil=seis_fil*pi
-     write(6,*)'convolve:',stf,stf_type(1),maxval(seis_fil)
+  tshift=shift_fact*t_0
+  tshift=0.
+  seis_fil=seis_fil*pi
+  write(6,*)'convolve:',stf,stf_type(1),maxval(seis_fil)
 
 ! Output source time function as used here
   open(unit=55,file=trim(outdir)//'/stf_'//trim(stf)//'_'//appidur//'sec.dat')
   do i=1,N_j
     write(55,*)time(i),src_array(i)
   enddo
-   close(55)
+  close(55)
 
 end subroutine convolve_with_stf
 !=============================================================================
