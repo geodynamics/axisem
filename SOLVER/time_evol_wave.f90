@@ -956,14 +956,13 @@ real(kind=realkind) :: time
 
 !!the update of the strain has to preceed the call to the function. 
 !!It starts from 
-	 istrain=istrain+1
+ istrain=istrain+1
 
     if(use_netcdf)   then
-     call compute_surfelem_nc(disp,velo)
-		else
-		 call compute_surfelem(disp,velo)
-		endif
-		
+      call compute_surfelem_nc(disp,velo)
+    else
+      call compute_surfelem(disp,velo)
+    endif
        
         select case (dump_type)
 
@@ -981,8 +980,8 @@ real(kind=realkind) :: time
 !       Maximal permanent storage, maximal run-time memory, maximal CPU time, 
 !       but no post-processeing necessary as these are the fields that 
 !       constitute density and elastic kernels.
-         ! call compute_strain(disp,chi)    ! strain globally
-          !call dump_velo_global(velo,dchi) ! velocity globally
+          call compute_strain(disp,chi)    ! strain globally
+          call dump_velo_global(velo,dchi) ! velocity globally
 
        end select
 
