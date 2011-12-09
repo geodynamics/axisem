@@ -863,7 +863,7 @@ logical                        :: monopole
        if (stf=='gauss_0' ) then 
           temp_expo=alpha*(tau_j-shift_fact*t_0)
           if (temp_expo<50.) then
-             source = alpha*exp(-temp_expo**2 )*sqrt_pi_inv
+             source = alpha*exp(-temp_expo**2 )*sqrt_pi_inv / pi
 !            source = exp(-temp_expo**2 ) !TNM: Playing with the amplitudes... this is how AXISEM does it! Yeah, Baby!
           else
              source=0.
