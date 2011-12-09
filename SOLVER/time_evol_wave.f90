@@ -870,9 +870,9 @@ real(kind=realkind) :: time
 	iseismo=iseismo+1
 !!!andrea 
     if(use_netcdf)   then
-     call compute_recfile_seis_bare_nc(disp,velo)
-		else
-    		call compute_recfile_seis_bare(disp,velo)
+      call compute_recfile_seis_bare_nc(disp,velo)
+    else
+      call compute_recfile_seis_bare(disp,velo)
     endif
     
      time = real(iter)*deltat
