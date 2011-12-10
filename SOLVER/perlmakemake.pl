@@ -145,7 +145,7 @@ print MAKEFILE ".SUFFIXES: \$(SUFFIXES) .f90\n\n";
 #
 print MAKEFILE ".f90.o:\n";
 print MAKEFILE "\t\$(F90) \$(F90FLAGS) -c \$(INCLUDE) \$<\n\n";
-#
+
 # Dependency listings
 #
 &MakeDependsf90($ARGV[1]);
