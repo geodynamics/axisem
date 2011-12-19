@@ -14,6 +14,7 @@
 \usepackage[dvips]{color}
 \usepackage{eucal}
 \usepackage{fancyhdr}
+\usepackage{url}
 \usepackage{watermark}
 %
 \lhead[\fancyplain{}{\emph{A X I S E M}}] {\fancyplain{}{\emph{A X I S E M}}}
@@ -148,7 +149,7 @@ ETH Zurich   \hspace*{0.3cm}
 \vspace*{0.2cm}\\ 
 \textit{tarje@alumni.princeton.edu} \hspace*{0.75cm}
 \vspace*{0.5cm}\\ 
-July 4th, 2011}
+\today}
 \end{center}
 \thiswatermark{\begin{picture}(0,0) \put(-20,-190){\hspace{1.5cm}\includegraphics[width=0.9\linewidth]
 {snap_cover_red.eps}}\end{picture}}
@@ -168,29 +169,32 @@ The essential raison-d'\^{e}tre of this method is the \textbf{efficient calculat
 of seismograms, wavefield movies, and those wavefields that constitute the crux for 
 sensitivity kernels} to allow for tomographic inversions of any portion of a seismogram at any relevant 
 frequency. Due to the dimensional reduction, global 
-wave propagation at typical seismic of \textbf{periods down to 5 seconds can be tackled serially on workstations} and laptops.
+wave propagation at typical seismic of \textbf{periods down to 5
+  seconds can be tackled serially on workstations} and laptops, and
+at 1Hz on 8-16 cores or a moderately obese node. 
 We have added methodological foundations directly extracted from the references.
-Eventually, we will add the sensitivity kernel software as well. 
+Eventually, we will add the sensitivity kernel software as well. \\
+
+\noindent Provisional portal for this code at ETH Zurich:
+\url{https://svn.seismo.ethz.ch/trac/axisem/}\\
+Please contact Tarje (\url{tarjen@ethz.ch})
+for login information.
 
 \section{Authors, contributors \& copyright}
-
-\underline{Principal authors:}
-\vspace*{0.2cm}\\
-Tarje Nissen-Meyer (\textit{tarje@alumni.princeton.edu})\\
-Alexandre Fournier (\textit{fournier@ipgp.fr})\\
-
-\noindent \underline{Contributions \& acknowledgments:}
-\vspace*{0.2cm}\\
-F. A. Dahlen, J.-P. Ampuero, D. Komatitsch, J. Tromp, G. Nolet, E. Chaljub, S. St\"{a}hler.\\
-
-\noindent \underline{Research funding:} Princeton University, NSF (USA), SNF (Switzerland), and 
+%
+\noindent \textbf{Principal authors:} Tarje Nissen-Meyer \& Alexandre Fournier\\
+\noindent \textbf{Contact:} Tarje Nissen-Meyer (\url{tarje@alumni.princeton.edu})\\
+\noindent \textbf{Contributions \& acknowledgments:}
+ J.-P. Ampuero, E. Chaljub, F. A. Dahlen, M. v. Driel, S. Hempel, D. Komatitsch,
+ G. Nolet, S. St\"{a}hler, J. Tromp.\\
+\noindent \textbf{Research funding:} Princeton University, NSF (USA), SNF (Switzerland), and 
 ETH Zurich.\\
-
-\noindent No guarantee whatsoever is given for this software under any circumstances. It may be used freely for 
-academic purposes under the GNU license. Commercial use must be reported to the authors.\\
+\noindent \textbf{Guarantees:} No guarantee whatsoever is given for this software under any circumstances. It may be used freely for 
+academic purposes under the GNU license. Commercial use must be
+discussed with the authors prior to usage.\\
 
 \noindent \copyright  \hspace*{0.1cm} 
-2011 Tarje Nissen-Meyer (\textit{tarje@alumni.princeton.edu}), ETH Zurich
+2005-2011 Tarje Nissen-Meyer (\url{tarje@alumni.princeton.edu}), ETH Zurich
 
 \newpage
 \tableofcontents
@@ -269,14 +273,14 @@ seismograms and wavefield movies upon pre-set parameters.\\
 \noindent Start from within the {\tt AXISEM} directory:
 \begin{enumerate}
 \item {\tt cd MESHER}
-\item {\tt ./makemake.pl} $\Rightarrow$ creates Solver Makefile.
+\item {\tt ./makemake.pl} $\Rightarrow$ creates Mesher Makefile.
 \item {\tt make clean; make} $\Rightarrow$ make sure {\tt xmesh} exists.
 \item {\tt ./submit.csh} $\Rightarrow$ Check {\tt OUTPUT}.
 \item Wait for ``{\tt ....DONE WITH MESHER}'' to appear in {\tt OUTPUT}.
-\item {\tt ./copymesh.csh TEST\_MESH} $\Rightarrow$ moves mesh files to {\tt ../SOLVER/MESHES/TEST\_MESH}.
+\item {\tt ./movemesh.csh TEST\_MESH} $\Rightarrow$ moves mesh files to {\tt ../SOLVER/MESHES/TEST\_MESH}.
 \item {\tt cd ../SOLVER}
 \item {\tt cp MESHES/TEST\_MESH/mesh\_params.h .} $\Rightarrow$ defines the mesh as a header.
-\item {\tt ./makemake.pl} $\Rightarrow$ creates Mesher Makefile.
+\item {\tt ./makemake.csh} $\Rightarrow$ creates Solver Makefile.
 \item {\tt make clean; make} $\Rightarrow$ make sure {\tt xsem} exists.
 \item {\tt ./submit.csh TEST\_SOLVER} 
 \item {\tt cd TEST\_SOLVER} $\Rightarrow$ Check {\tt OUTPUT\_TEST\_SOLVER}.
@@ -483,7 +487,7 @@ be kept .false. unless significant changes or issues within the mesher are emerg
 process, but equally to the large files unnecessary for any normal meshing procedure.
 
 \item \textbf{dump directory:} The directory where most of the output is written. The posteriori 
-{\tt copymesh} script moves all those files to the permanent mesh location.
+{\tt movemesh} script moves all those files to the permanent mesh location.
 
 \item \textbf{coarsening levels}: Keep this at 3 if applied to any typical earth models, as
 this number reflects the overall change in velocity between the surface and the deep interior.
@@ -512,7 +516,7 @@ model affects the overall change in velocity between surface and maximal value a
 will have to change the number of expected coarsening levels in {\tt inparam\_mesh} as indicated there.\\
 
 \noindent Two modules will need to be amended: {\tt model\_discontinuities.f90} and {\tt background\_models.f90}.
-Note that {\tt background\_models.f90} is copied to the Solver by {\tt copymesh} 
+Note that {\tt background\_models.f90} is copied to the Solver by {\tt movemesh} 
 such that additions will be automatically accounted for in the Solver. 
 
 \subsection{Mesher computational aspects}
@@ -568,7 +572,7 @@ parameters commented at the top, and some output information such as
 time step at the bottom.  The inclusion of this header into the solver 
 requires recompilation for each new mesh. This header includes 
 mesh sizes and is identical for each processor due to the exact load balancing.
-The last line is added by {\tt copymesh} and indicates the location of the mesh 
+The last line is added by {\tt movemesh} and indicates the location of the mesh 
 database. If you move the mesh, make sure to change this line accordingly!!
 \\
 
@@ -584,7 +588,7 @@ simple test on some of their dependencies. More comprehensive tests are
 performed in the solver. \\
 
 \noindent\textbf{\underline{Prepare files to be used in solver}}\\
-Use the script {\tt copymesh} to transfer all relevant files to the directory ../SOLVER/MESHES. 
+Use the script {\tt movemesh} to transfer all relevant files to the directory ../SOLVER/MESHES. 
 Using this script is crucial since it adds 
 a line to the {\tt mesh\_params.h} header file to indicate the location of the large mesh 
 databases.
@@ -602,12 +606,13 @@ central region and crust/upper mantle are added to highlight the topological fea
 \noindent Generic output includes various {\tt *.vtk} files on the elemental mesh with media properties 
 (see Fig.~\ref{fig:mesh_vp}) as well as a host of other plots with respect to Courant number, 
 points per wavelength, period, time step etc, and domain decomposition.
-All of these files are moved to the permanent mesh location via {\tt copymesh} and can be easily viewed with {\tt paraview}. 
+All of these files are moved to the permanent mesh location via {\tt movemesh} and can be easily viewed with {\tt paraview}. 
 Turn on the \textit{surface with edges} and \textit{data} features to visualize the element mesh and medium 
 properties, respectively.
 
 \subsection{Cautions}
-Fully operational in single or double precision, so please avoid using the -r8 (enforced double precision) flag, 
+Fully operational in single or double precision, so please 
+\textbf{avoid using the -r8 (enforced double precision) flag}, 
 since the output expects single precision for certain arrays (especially in vtk).
 
 \subsection{Issues}
@@ -637,7 +642,7 @@ Here, we give a simple overview over the main parts.
 \begin{enumerate}
 \item If first used or new modules are added to the Solver code,
 use {\tt ./makemake.csh } to create a new Makefile, see {\tt ./perlmakemake.pl -h} for 
-flag options on different compilers. makemake.csh checks for the
+flag options on different compilers. {\tt ./makemake.csh} checks for the
 executable ncdump to determine whether your system supports netcdf. If
 so, it includes netcdf library and include paths in the Makefile
 (please check if they make sense!), and links the module that works
@@ -647,7 +652,7 @@ netcdf is not found, a ghost module is created instead to ensure
 compilation. This will disallow usage of netcdf, quite obviously.
 \item Copy {\tt mesh\_params.h} from the desired mesh into the source code directory: 
 It contains a last line that links to the location of the database such that 
-these possibly very large files do not need to be copied.
+these possibly very large files do not need to be copied. 
 \item Compile: {\tt make clean; make}
 \item Make sure that executable {\tt xsem} exists.
 \end{enumerate}
@@ -772,15 +777,29 @@ homogeneous media characterization if exclusively solid.
 \item \textbf{analytical solution around source}: An analytical reference solution to test the 
 accuracy of near-source radiation in a homogeneous model. Should only be on if this is relevant.
 
-\item \textbf{add heterogeneity}: Turning this to true invokes an additional input file called {\tt inparam\_hetero}. 
+\item \textbf{add heterogeneity}: Turning this {\tt .true.} invokes an additional input file called {\tt inparam\_hetero}. 
 This perturbs the background model in a specified region (defined by elements within a range of specified coordinates) 
-by percentile changes to velocities $v_p$, $v_s$, and density $\rho$. See more details in the separate section below. 
+by percentile changes to velocities $v_p$, $v_s$, and density
+$\rho$. This part of the code is still under development but contains
+a number of different types of heterogeneties, all of which are
+defined in {\tt lateral\_heterogeneties.f90}. See more details in the separate section below. 
 This should generally be set to false unless you specifically wish to analyse waveform effects due to such 
 2.5-dimensional heterogeneties. 
 
-\item Setting the last two lines to false (do mesh tests, save large test files) 
+\item Setting the next two lines to false (do mesh tests, save large test files) 
 avoids extensive checks on the mesh, model, discontinuities etc. Upon a new mesh, this may be turned 
-to true at least once (same after any source code changes), otherwise it's fine to avoid these tests and large files.
+to true at least once (same after any source code changes), otherwise
+it's fine to avoid these tests and large files.
+
+\item A new (Nov. 2011) feature is the I/O using the netcdf
+  standard. This is extremely beneficial for platform-independent
+  binaries, direct access, reducing the number of written files, and
+  is installed on every well-managed computer cluster. However,
+  installing these libraries can be tedious. For this case, we have
+  left the option to go with fortran binary. The decision is two-fold;
+  the first one already taken in {\tt makemake.csh} since the makefile needs to
+  know whether the libraries are installed. Even if installed, one can
+  still turn the netcdf option off by putting binary here. 
 \end{itemize}
 
 \noindent \textbf{Source specification.}\\
@@ -844,8 +863,10 @@ moment tensor elements in [dyn cm], i.e. $10^7$ larger than the corresponding en
 \noindent \textbf{Source-time function.}\\
 %
 \noindent 
-Choices are Dirac Delta distribution, Heaviside, Gaussian, Ricker, derivative of Ricker, and a wiggly wavelet with boxcar frequency 
-spectrum (called {\tt heavis}), see the Figure for their shapes. 
+Choices are between impulsive sources (Dirac Delta distribution,
+Heaviside, see below) and smooth sources with a limited frequency band (Gaussian, Ricker,
+derivative of Ricker and a wiggly wavelet with boxcar frequency 
+spectrum (called {\tt heavis})), see the Figure for their shapes. 
 The distributions start rupture at $t=t({\rm seis\_it})$ (the first time step counted in the seismogram 
 sampling); the Gauss, Ricker and derivatives have the wavelets
 centered at $t=1.5 \,T_0$, and the {\tt heavis} function is shifted by $300 s$ due to its very long wavelength components. These time 
@@ -865,6 +886,38 @@ data or other methods. \\
 \caption{\textit{Power spectra of the source time functions from the previous Figure.}}
 \end{center}
 \end{figure*}
+
+\noindent \textbf{Discrete Dirac distributions.}\\
+Hidden in the code are several crucial decisions upon how to
+approximate Dirac and Heaviside distributions with discrete and
+possibly heavily downsampled time series. These aspects are dealt with
+in subroutine {\tt compute\_numerical\_parameters} in module {\tt
+  parameters.f90}, and subroutine {\tt delta\_src} in {\tt module
+  sources.f90}.
+In summary, a triangular Dirac is taken if there is no downsampling,
+leading to perfect reconstruction of the Dirac properties. If
+seismograms or wavefields are downsampled (as specified in {\tt
+  inparam}), then one needs to revert to "smooth" functions that
+replicate Dirac properties. Amongst a choice of functions, 
+we set the default to a tight Gaussian scaled to honor the Dirac
+integral unity,
+whose half width depends on the time step of the SEM, the
+seismogram/wavefield sampling rate, and mesh-based period. In
+principle, we observe acceptable reconstruction of Green's functions 
+if more than 10 points per (mesh) period are used. The discrete Dirac
+functions are shifted such that they (1) start at zero smoothly, (2)
+are exactly sampled by all the sampling rates (SEM time step,
+seismogram, wavefield sampling rates). The crucial parameters for
+these shifts are saved for the post processing step and dealt with
+there. In principle, users should not need to worry about these
+issues, but be aware of the sensitivity of results upon these
+specifications. Heaviside approximations are simply numerically
+integrated from the Dirac distributions.\\
+
+\textbf{WARNING:} The implementation of approximate/smooth Dirac
+distributions has not yet been implemented for the symplectic schemes,
+as these require different temporal sampling and hence more layers of
+if's, dont's, and special cases in the definition of these approximate Diracs.
 
 \noindent \textbf{Receiver specification.}\\
 At this point two receiver file formats are accepted, both of which specify the (co-)latitude and longitude of the
@@ -910,6 +963,11 @@ output seismograms in {\tt Data}, see section on output for more details.
 \end{center}
 \end{figure*}
 \noindent 
+\textbf{NOTE:} This section has been heavily expanded and used most
+recently (fall 2011), but not yet tested in full extent. Everything
+concerning lateral heterogenities is confined to module {\tt
+  lateral\_heterogeneities}.\\
+
 If the boolean {\tt add\_heterogeneities} in {\tt inparam} is set to true, then a file named {\tt inparam\_hetero.dat} is required 
 which specifies (1) a region within which heterogeneities are added and (2) the perturbations of the model parameters in 
 percent with respect to the background model. The example in the Figure describes a boxcar atop the core-mantle boundary
@@ -1022,7 +1080,13 @@ in CPU times about 2.5 times longer than Newmark, but considerably more
 accurate. Consult Ampuero \& Nissen-Meyer (2011) for examples of when 
 this choice should be more appropriate. Generally, for long propagation 
 distances (say, $>$ 100 wavelengths), it is worthwhile considering this scheme. 
-Note also that symplectic schemes actually occupy \textit{less memory} at run time.
+Note also that symplectic schemes actually occupy \textit{less memory}
+at run time.\\
+
+\textbf{WARNING:} The implementation of approximate/smooth Dirac
+distributions has not yet been implemented for the symplectic schemes,
+as these require different temporal sampling and hence more layers of
+if's, dont's, and special cases in the definition of these approximate Diracs.
 
 \subsection{At run-time} 
 Everything related to a run is located in the run directory: {\tt cd <run\_directory>; ls}\\
@@ -1130,9 +1194,11 @@ compared to separate runs. Vision: One job submission (hundreds of processors) f
 
 - local timestepping
 
+
 \newpage
 \section{Post processing}
-Once the simulation is done, you'll have to run post processing in the run directory. This step performs the following 
+Once the simulation is done, you'll have to run post processing in the
+run directory. This code performs the following 
 crucial tasks:
 \begin{itemize}
 \item Load seismograms
@@ -1140,7 +1206,10 @@ crucial tasks:
 \item Compute seismogram at correct azimuth
 \item Sum individual seismograms to full moment tensor (if applicable)
 \item Rotate seismogram components to new coordinate system
-\item If available, plots seismograms using {\tt gnuplot} in pdf and gif formats
+\item If available, plots seismograms using {\tt gnuplot} in pdf and
+  gif formats
+\item shifts seimograms such that the source-time function coincides
+  with time zero (either starting at negative time or at zero)
 \item Constructs a google-earth kml file that plots source-receiver geometry on 3D surface, source information, 
 and seismograms as images
 \item If applicable, loads wavefield snapshots and computes 3D wave propagation for wavefields upon full
@@ -1227,9 +1296,17 @@ with paraview. Each processor dumps its own file.\\
 \noindent \textbf{To Do}:\\
 - turn strain wavefields into frequency domain for kerner\\
 - rewrite scripts in Python\\
-- parallelize snapshot creation
+- parallelize snapshot creation\\
+- netcdf seismogram databases
 
 \section{Example workflows}
+- this is under construction, but in directory EXAMPLES, you'll find
+the input files for normal-mode summation code Mineos
+(geodynamics.org), against which we have performed some
+benchmarks. Caution: We have not managed to create a mode catalog that
+is complete, in other words the reference solution is not to be seen
+as precise in a quantitative way. Some pdfs in the directory show our
+fit. It is useful to re-run such tests when first using AXISEM.
 
 %\newpage
 \section{Kernel calculations}
@@ -1258,6 +1335,83 @@ models. This is not done yet either.
 \subsection{Kerner output}
 \subsection{Kerner post-processing}
 \subsection{Kerner To Do}
+\newpage
+\section{To Do General}
+\subsection{Mesher}
+\textbf{Top priority:} Parallelization, 32 processor domain decomposition, netcdf databases\\
+
+\noindent\textbf{Medium priority:} Bending elements for sharp lateral
+discontinuities\\
+
+\noindent\textbf{Low priority:} Commenting, cleaning , ellipticity, strongly deformed sphere
+(exostars)
+
+\subsection{Solver}
+\noindent\textbf{Top priority:} 
+\begin{itemize}
+\item Attenuation, transverse anisotropy
+\item benchmark heterogeneities
+\item finite faults, multiple source simulations (4 Mij,
+multiple depths, sequential and parallel)
+\item dump fields in theta slices, dump fields in frequency domain,
+  netcdf, compression
+\item Link input to NDLB
+\end{itemize}
+
+\noindent\textbf{Medium priority:}
+\begin{itemize}
+\item Oceans, fluid sphere (surface boundary condition),
+  inner-core anisotropy
+\item GPU version, local high-order timestepping
+\item Incorporate boundary-kernel dumps
+\item non-blocking MPI, parallelization benchmark
+
+\end{itemize}
+
+\noindent\textbf{Low priority:}
+Gravity, python rewrite of submit.csh
+
+\subsection{Post-processing}
+\noindent\textbf{Top priority:} 
+\begin{itemize}
+\item Benchmark snapshot movies
+\item Resampling of timeseries
+\item rewrite wavefields in frequency domain
+\item finite fault summation
+\item extraction from synthetics database (VERCE, IRIS)
+\item netcdf, streamline input
+\end{itemize}
+
+\noindent\textbf{Medium priority:}
+Parallelize snapshot dumps (and other operations)\\
+
+\noindent\textbf{Low priority:} python version
+
+\subsection{Kerner}
+\noindent\textbf{Top priority:} 
+\begin{itemize}
+\item Quadrature
+\item rotation of kernels from/to actual coordinates
+\item Code efficiency
+\item Benchmarks
+\item misfits
+\item summation for Mij
+\item event-based code (shortcuts for multiple receivers), $G_{ij}$-based code
+\item anisotropy kernels
+\item Link input/output to NDLB
+\item incorporate boundary kernel code
+\end{itemize}
+
+\noindent\textbf{Medium priority:}
+Born modeling, GPU, On-the-fly kernel generation (fwd wavefield \&
+kernel)\\
+
+\noindent\textbf{Low priority:}
+Attenuation kernels
+
+\subsection{Miscellaneous}
+Manual, generation of synthetics database, code release (CIG, VERCE, QUEST)
+
 
 \newpage
 \section{Theoretical foundations}
