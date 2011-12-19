@@ -32,3 +32,7 @@ else if (${#argv} < 3) then
 else if (${#argv} < 4) then 
 ./perlmakemake.pl $1 $2 $3
 endif
+
+if ( ! -d MESHES ) then
+  mkdir MESHES
+endif
