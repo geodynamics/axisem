@@ -41,7 +41,7 @@ subroutine read_sourceparams
   real(kind=realkind) :: time_shift
   integer :: i,j
 
-  rot_src = .false.
+              rot_src = .false.
 
 !=========================
   if (src_file_type=='separate' .or. src_file_type=='sourceparams') then 
@@ -419,7 +419,7 @@ integer :: i
   case('dirac_0')
     call delta_src ! there are hidden treasures in this routine...discrete Dirac's.
   case('dirac_1')
-    call delta_src_old 
+    call delta_src 
   case('gauss_0')
     call gauss
   case('gauss_1')
