@@ -14,7 +14,7 @@ public
   character(len=1),dimension(3) :: reccomp
   character(len=100), allocatable :: simdir(:)
   character(len=4) :: appmynum,appidur
-  integer :: i,it,nsim,isim,iseis,ii,iii
+  integer :: i,it,nsim,isim,iseis,ii,iii,ishift
   integer,allocatable, dimension(:) :: nt,nrec,nt_seis,nt_strain,nt_snap,ibeg,iend
   real :: junk,rec_loc_tol,Mij(6),tshift
   real, dimension(3) :: rloc_xyz, rloc_xyz_tmp, rloc_rtp
@@ -26,10 +26,14 @@ public
   real, dimension(3,3) :: rot_mat
   character(len=3) :: rec_comp_sys
   logical :: rot_rec_post,any_sum_seis_true,load_snaps
-  character(len=8) :: src_file_type
+  character(len=12) :: src_file_type
+
+! discrete dirac sources
+  real, allocatable, dimension(:) :: shift_fact
+  integer, allocatable, dimension(:) :: ishift_deltat,ishift_seisdt,ishift_straindt
 
 ! parameters from param_post_processing
-  logical, dimension(:), allocatable :: rot_rec_posttmp,sum_seis_true,load_snapstmp
+  logical, dimension(:), allocatable :: rot_rec_posttmp,sum_seis_true,load_snapstmp,negative_time
   character(len=3), allocatable :: rec_comp_systmp(:)
   real, dimension(:,:), allocatable :: mij_loc
   real, dimension(:), allocatable :: conv_period,srccolat,srclon
@@ -54,6 +58,9 @@ module global_par !-------------------------------------------------------------
   double precision, parameter :: fifth = 2.d-1
   double precision, parameter :: epsi = 1d-30
   real, parameter :: epsi_real=1.e-10
+  real, parameter                :: decay=3.5d0
+  !real, parameter   :: decay=1.628d0
+  real, parameter                :: shift_fact1=1.5d0
 end module global_par
 !-------------------------------------------------------------------------------------------------------------------------
 !-------------------------------------------------------------------------------------------------------------------------
@@ -63,11 +70,11 @@ program post_processing_seis
   use data_all
   use global_par
   implicit none 
+  double precision :: arg1
 
   call read_input
 
   if (rot_rec_post ) then
-
      rot_rec_post_array=.true.
      if (rec_comp_sys=='sph') then
         reccomp(1)='th'; reccomp(2)='ph'; reccomp(3)='r'
@@ -111,15 +118,15 @@ program post_processing_seis
         read(20,*) colat(i,isim), lon(i,isim), junk
         if (abs(lon(i,isim)-360.)<0.01) lon(i,isim)=0.
        
-        write(6,*) '------------------------------------'
-        write(6,*) colat(i,isim), lon(i,isim)        
+!        write(6,*) '------------------------------------'
+!        write(6,*) colat(i,isim), lon(i,isim)        
 
         ! transform to xyz
         rloc_xyz(1) = sin(colat(i,isim) * pi / 180.) * cos(lon(i,isim) * pi / 180.) 
         rloc_xyz(2) = sin(colat(i,isim) * pi / 180.) * sin(lon(i,isim) * pi / 180.) 
         rloc_xyz(3) = cos(colat(i,isim) * pi / 180.) 
         
-        write(6,*) rloc_xyz 
+!        write(6,*) rloc_xyz 
 
         ! Rotate to the original (i.e. real src-rec coordinate-based) u_xyz
         rloc_xyz_tmp = rloc_xyz
@@ -133,14 +140,15 @@ program post_processing_seis
                     & + cos(srccolat(1)) * rloc_xyz_tmp(3)
 
         ! compute colat and lon
+        if (rloc_xyz(3)>1.) rloc_xyz(3)=1.
         rloc_rtp(2) = acos(rloc_xyz(3))
-        
+        arg1 = rloc_xyz(1) / (sin(rloc_rtp(2)) + 1.e-10)
+        if (arg1>1.) arg1=1.
         if (rloc_xyz(2) >= 0.) then
-           rloc_rtp(3) = acos(rloc_xyz(1) / (sin(rloc_rtp(2)) + 1e-10))
+           rloc_rtp(3) = acos(arg1)
         else
-           rloc_rtp(3) = 2*pi - acos(rloc_xyz(1) / (sin(rloc_rtp(2)) + 1e-10))
+           rloc_rtp(3) = 2.*pi - acos(arg1)
         end if
-        
         thr_orig(i) = rloc_rtp(2)
         phr_orig(i) = rloc_rtp(3)
         
@@ -168,7 +176,7 @@ program post_processing_seis
   allocate(period_final(nsim))
   do isim=1,nsim
      if (conv_period(isim)>0. ) then 
-        if (stf_type(isim)/='dirac_0') then 
+        if (stf_type(isim)/='dirac_0' .and. stf_type(isim)/='quheavi') then 
            write(6,*) ' ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !'
            write(6,*)'    WARNING! You want to convolve although seismograms are upon a ',trim(stf_type(isim))
            write(6,*) ' ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !'
@@ -210,11 +218,20 @@ program post_processing_seis
                                        trim(recname(i))//'_'//seistype(isim)//'_post_'//trim(src_type(isim,2))
 !        if (conv_period(isim)>0.)  outname2(i,isim)=trim(outname2(i,isim))//'_conv'//appidur
 
-        if ( .not. sum_seis_true(isim)) outname(i,isim)=trim(outname2(i,isim))
-                write(6,*)'outname: ',trim(outname(i,isim))
-                write(6,*)'outname2: ',i,isim,trim(outname2(i,isim))
+!        if ( .not. sum_seis_true(isim)) outname(i,isim)=trim(outname2(i,isim))
+                write(6,*)'outname: ',i,trim(outname(i,isim))
+                write(6,*)'outname2: ',isim,trim(outname2(i,isim))
      enddo
   enddo
+
+  if (conv_period(1)>0.)  then 
+    tshift=shift_fact1*conv_period(1)
+  else
+     tshift=0.
+  endif
+  ishift = int((shift_fact(1)+tshift)/(time(2)-time(1)))
+  write(6,*)'ishift1:',shift_fact(1),tshift,time(2)-time(1)
+  write(6,*)'ishift:',(shift_fact(1)+tshift)/(time(2)-time(1)),int((shift_fact(1)+tshift)/(time(2)-time(1)))
 
   ! ----------------------------------------- Start actual post processing -----------------------------------
   !=================
@@ -228,8 +245,6 @@ program post_processing_seis
      !::::::::::::::::::::::::::::::::
      do isim=1,nsim
      !::::::::::::::::::::::::::::::::
- 
-
 
 ! For Kasra:
      ! construct array that maps i into processor number: proc(i)=[0,1], 
@@ -267,18 +282,26 @@ program post_processing_seis
         open(unit=150,file=trim(outname2(i,isim))//'_s0.dat',status='new')
         open(unit=151,file=trim(outname2(i,isim))//'_ph0.dat',status='new')
         open(unit=152,file=trim(outname2(i,isim))//'_z0.dat',status='new')
-        do it=1,nt_seis(1)
-           write(150,*)time(it)-tshift,seis_sglcomp(it,1)
-           write(151,*)time(it)-tshift,seis_sglcomp(it,2)
-           write(152,*)time(it)-tshift,seis_sglcomp(it,3)
-        enddo
-        close(150);close(151);close(152)
+        if (negative_time(isim)) then
+           do it=1,nt_seis(1)
+              write(150,*)time(it)-shift_fact(1)-tshift,seis_sglcomp(it,1)
+              write(151,*)time(it)-shift_fact(1)-tshift,seis_sglcomp(it,2)
+              write(152,*)time(it)-shift_fact(1)-tshift,seis_sglcomp(it,3)
+           enddo
+        else
+           do it=ishift+1,nt_seis(1)
+              write(150,*)time(it-ishift-1),seis_sglcomp(it,1)
+              write(151,*)time(it-ishift-1),seis_sglcomp(it,2)
+              write(152,*)time(it-ishift-1),seis_sglcomp(it,3)
+           enddo
+        endif
+           close(150);close(151);close(152)
         endif 
 
         ! sum seismograms upon separate moment tensors and include azimuthal radiation factor 
         ! This needs to be done prior to component rotation such that the system is still cylindrical.
         if (sum_seis_true(isim)) then
-           call sum_individual_wavefields(seis,seis_sglcomp,nt_seis(1),mij_phi(i,isim,:))
+           call sum_individual_wavefields(seis,seis_sglcomp,nt_seis(1),mij_phi )
         else
            seis=seis_sglcomp
         endif
@@ -301,18 +324,28 @@ program post_processing_seis
         ! this is fine within a Mij set, but NOT for a finite fault: In that case, we will have to 
         ! amend this by another loop over fault points. 
         if (rot_rec_post_array(1)) call rotate_receiver_comp(1,rec_comp_sys,srccolat(1),srclon(1),&
-                                                            colat(i,1),lon(i,1),thr_orig(i),phr_orig(i),nt_seis(1),seis_fil)
+                                          colat(i,1),lon(i,1),thr_orig(i),phr_orig(i),nt_seis(1),seis_fil)
 
      ! write processed seismograms into joint outdir
 !     if (any_sum_seis_true) then
         open(unit=50,file=trim(outname(i,1))//'_'//reccomp(1)//'.dat',status='new')
         open(unit=51,file=trim(outname(i,1))//'_'//reccomp(2)//'.dat',status='new')
         open(unit=52,file=trim(outname(i,1))//'_'//reccomp(3)//'.dat',status='new')
-        do it=1,nt_seis(1)
-           write(50,*)time(it)-tshift,seis_fil(it,1)
-           write(51,*)time(it)-tshift,seis_fil(it,2)
-           write(52,*)time(it)-tshift,seis_fil(it,3)
-        enddo
+        if (negative_time(1)) then
+           write(6,*)' writing seismograms into joint directory: negative time'
+           do it=1,nt_seis(1)
+              write(50,*)time(it)-shift_fact(1)-tshift,seis_fil(it,1)
+              write(51,*)time(it)-shift_fact(1)-tshift,seis_fil(it,2)
+              write(52,*)time(it)-shift_fact(1)-tshift,seis_fil(it,3)
+           enddo
+        else
+           write(6,*)' writing seismograms into joint directory: zero time'
+           do it=ishift+1,nt_seis(1)
+              write(50,*)time(it-ishift-1),seis_fil(it,1)
+              write(51,*)time(it-ishift-1),seis_fil(it,2)
+              write(52,*)time(it-ishift-1),seis_fil(it,3)
+           enddo
+        endif
         close(50);close(51);close(52);
 !     endif
 
@@ -327,7 +360,12 @@ program post_processing_seis
 write(6,*)'writing matlab input files for record sections...'
 open(unit=99,file=trim(outdir(1))//'/info_matlab.dat')
   write(99,*)nrec(1)
-  write(99,*)nt_seis(1)
+  if (negative_time(1)) then 
+     write(99,*)nt_seis(1)
+  else
+     write(99,*)nt_seis(1)-ishift
+  endif
+
   write(99,*)time(2)-time(1)
   write(99,*)conv_period(1)
   do i=1,nrec(1)
@@ -382,7 +420,7 @@ subroutine read_input
 
   ! read in post processing input file
   allocate(rot_rec_posttmp(nsim),rec_comp_systmp(nsim),sum_seis_true(nsim),mij_loc(6,nsim),conv_period(nsim))
-  allocate(conv_stf(nsim),srccolat(nsim),srclon(nsim),load_snapstmp(nsim),outdir(nsim),seistype(nsim))
+  allocate(conv_stf(nsim),srccolat(nsim),srclon(nsim),load_snapstmp(nsim),outdir(nsim),seistype(nsim),negative_time(nsim))
   any_sum_seis_true=.false.
   do isim=1,nsim
      open(unit=99,file=trim(simdir(isim))//'/param_post_processing')
@@ -399,10 +437,12 @@ subroutine read_input
      read(99,*)load_snapstmp(isim)
      read(99,*)seistype(isim)
      read(99,*)outdir(isim)
+     read(99,*)negative_time(isim)
   close(99)
 
-  write(6,*)'Output directory:',outdir(isim)
   write(6,*)'seismogram type:',seistype(isim)
+  write(6,*)'Output directory:',trim(outdir(isim))
+  write(6,*)'shift time series to negative time (event at zero)?',negative_time(isim)
 
 ! read standard in, if any
   inquire(file=trim(outdir(1))//"/param_post_processing_overwrite",exist=file_exist)
@@ -492,6 +532,8 @@ enddo
   allocate(correct_azi(nsim),rot_rec(nsim),rot_rec_post_array(nsim))
   allocate(nt(nsim),nrec(nsim),nt_seis(nsim),nt_strain(nsim),nt_snap(nsim))
   allocate(ibeg(nsim),iend(nsim),src_depth(nsim))
+  allocate(shift_fact(nsim))
+  allocate(ishift_deltat(nsim),ishift_seisdt(nsim),ishift_straindt(nsim))
 
   do isim = 1,nsim
      open(unit=99,file=trim(simdir(isim))//'/simulation.info')
@@ -516,7 +558,14 @@ enddo
      read(99,*)rot_rec(isim)
      read(99,*)ibeg(isim)
      read(99,*)iend(isim)
+     read(99,*)shift_fact(isim)
+     read(99,*)ishift_deltat(isim)
+     read(99,*)ishift_seisdt(isim)
+     read(99,*)ishift_straindt(isim)
      close(99)
+
+     if (src_type(isim,2)=='vertforce' .or. src_type(isim,2)=='xforce' .or. &
+         src_type(isim,2)=='yforce') sum_seis_true(isim)=.false.
 
      write(6,*)'Simulations: ',isim,trim(simdir(isim))
      write(6,*)'  source type:',src_type(isim,1),' ',src_type(isim,2)
@@ -528,6 +577,9 @@ enddo
      write(6,*)'  source period:',period(isim)
      write(6,*)'  time steps:',nt(isim)
      write(6,*)'  rotate recs?',trim(rot_rec(isim))
+     write(6,*)'  shift factor of stf:',shift_fact(isim)
+     write(6,*)'  shift factor in samples (dt,dtseis,dtstrain):',&
+                   ishift_deltat(isim),ishift_seisdt(isim),ishift_straindt(isim)
      write(6,*)''  
 
   enddo
@@ -821,13 +873,10 @@ subroutine convolve_with_stf(t_0,dt,nt,src_type,stf,outdir,seis,seis_fil,tshift)
 !
 ! convolve seismograms computed for dirac delta with a Gaussian
 !
-use data_all, only : stf_type
-use global_par, only: pi
+use data_all, only : stf_type,shift_fact
+use global_par, only: pi,decay,shift_fact1
 implicit none
 
-real, parameter                :: decay=3.5d0
-!real, parameter   :: decay=1.628d0
-real, parameter                :: shift_fact=1.5d0
 integer, intent(in)            :: nt
 real, intent(in)               :: t_0,dt
 real, intent(out)              :: tshift
@@ -849,7 +898,7 @@ logical                        :: monopole
 
   monopole = .false. 
   if (src_type == 'monopole') monopole=.true.
-  N_j=int(2.*shift_fact*t_0/dt)
+  N_j=int(2.*shift_fact1*t_0/dt)
   call define_io_appendix(appidur,int(t_0))
   alpha=decay/t_0
   sqrt_pi_inv=1./dsqrt(pi)
@@ -857,22 +906,21 @@ logical                        :: monopole
     time(i)=dt*real(i)
     seis_fil(i,:)=0.
     do j=1,N_j
-       tau_j=dble(j+1)*dt ! +1 accomodates the fact that dirac delta is centered at t=dt
-
+!       tau_j=dble(j+1)*dt ! +1 accomodates the fact that dirac delta is centered at t=dt
+       tau_j=dble(j)*dt
        ! convolve with a Gaussian
        if (stf=='gauss_0' ) then 
-          temp_expo=alpha*(tau_j-shift_fact*t_0)
+          temp_expo=alpha*(tau_j-shift_fact1*t_0)
           if (temp_expo<50.) then
              source = alpha*exp(-temp_expo**2 )*sqrt_pi_inv / pi
-!            source = exp(-temp_expo**2 ) !TNM: Playing with the amplitudes... this is how AXISEM does it! Yeah, Baby!
           else
              source=0.
           endif
        elseif (stf=='quheavi') then 
-          source = 0.5*(1.0+erf((tau_j-shift_fact*t_0)/t_0))
+          source = 0.5*(1.0+erf((tau_j-shift_fact1*t_0)/t_0))
        elseif (stf=='gauss_1' ) then 
-          source = -2.*(decay/t_0)**2*(tau_j-shift_fact*t_0) * &
-                           exp(-( (decay/t_0*(tau_j-shift_fact*t_0))**2) )
+          source = -2.*(decay/t_0)**2*(tau_j-shift_fact1*t_0) * &
+                           exp(-( (decay/t_0*(tau_j-shift_fact1*t_0))**2) )
           source=source/( decay/t_0*sqrt(2.)*exp(-2.) )
        else
           write(6,*)' other source time function not implemented yet!',stf
@@ -883,8 +931,6 @@ logical                        :: monopole
     enddo
   enddo
 
-  tshift=shift_fact*t_0
-  tshift=0.
   seis_fil=seis_fil*pi
   write(6,*)'convolve:',stf,stf_type(1),maxval(seis_fil)
 
