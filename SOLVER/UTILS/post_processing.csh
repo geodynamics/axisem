@@ -44,9 +44,11 @@ set homedir = $PWD
 set simdir1 = `/usr/bin/tail -n 1 param_sum_seis |awk '{print $1}' |sed 's/"//g' `
 
 if ( ! -f param_post_processing ) then
-    set outdir = `/usr/bin/tail  -n 1 $simdir1/param_post_processing |awk '{print $1}' |sed "s/'/ /g" `
+#    set outdir = `/usr/bin/tail  -n 1 $simdir1/param_post_processing |awk '{print $1}' |sed "s/'/ /g" `
+    set outdir = `grep "Directory for" $simdir1/param_post_processing |awk '{print $1}' |sed "s/'/ /g" `
 else
-    set outdir = `/usr/bin/tail  -n 1 param_post_processing |awk '{print $1}' |sed "s/'/ /g" `
+#    set outdir = `/usr/bin/tail  -n 1 param_post_processing |awk '{print $1}' |sed "s/'/ /g" `
+    set outdir = `grep "Directory for" param_post_processing |awk '{print $1}' |sed "s/'/ /g" `
 endif
 echo "All post-processed data in: "$outdir
 
