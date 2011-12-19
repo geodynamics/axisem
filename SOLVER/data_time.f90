@@ -14,7 +14,8 @@ public
   double precision    :: period      ! Dominant source period, given by mesher
   double precision    :: courant     ! Courant number, given by mesher
   double precision    :: t           ! current time
-  double precision    :: deltat      ! Time step size
+  double precision    :: deltat,deltat_coarse      ! Time step size
+  double precision    :: deltat_strain
   double precision    :: seislength_t! seismogram length in seconds
   integer             :: niter       ! Number of iterations
   integer             :: iclockold,idold ! tick labels for timer
@@ -29,6 +30,7 @@ public
   integer             :: strain_it   ! strain dump interval in time steps
   double precision    :: half_dt,half_dt_sq
   integer             :: nstages     ! number of substages in symplectic schemes
+  real(kind=realkind) :: decay,shift_fact
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !======================
