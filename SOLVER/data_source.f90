@@ -22,6 +22,14 @@ include "mesh_params.h"
  real(kind=realkind), allocatable :: stf(:)
  logical             :: rot_src
  real(kind=realkind) :: Mij(6),rot_mom_tensor(3,3)
+
+! discrete diracs
+ real(kind=realkind) :: sampling_per_a,discrete_dirac_halfwidth
+ integer             :: period_vs_discrete_halfwidth,it_src_shift 
+ real(kind=realkind) :: dt_src_shift,shift_fact_discrete_dirac
+ character(len=6)    :: discrete_choice
+ logical             :: discrete_dirac
+
 ! elemental source term, maximally across 6 elements and 3 components
  real(kind=realkind) :: source_term_el(0:npol,0:npol,6,3)
  integer             :: nelsrc, ielsrc(6)
