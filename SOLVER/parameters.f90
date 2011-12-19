@@ -239,7 +239,7 @@ endif
      stop
   endif
 
-  if (strain_samp> 10) then
+  if (strain_samp> 15) then
      if (lpr) then     
         write(6,*)
         write(6,*)"!!!!!! NOT GOING ANY FURTHER !!!!!!"
@@ -333,36 +333,37 @@ end subroutine readin_parameters
 !-----------------------------------------------------------------------------
 subroutine compute_numerical_parameters
 
-include "mesh_params.h"
+  include "mesh_params.h"
 
-double precision :: s,z,r,theta,s_max
-double precision :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
-double precision :: minds(nelem),maxds(nelem),mindz(nelem),maxdz(nelem)
-integer          :: ielem,ipol,jpol
+  double precision :: s,z,r,theta,s_max,dshift
+  double precision :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
+  double precision :: minds(nelem),maxds(nelem),mindz(nelem),maxdz(nelem)
+  integer          :: ielem,ipol,jpol,i
+  logical          :: found_shift
 
   if (lpr) then
-    write(6,*)
-    write(6,*)'  Computing numerical parameters...'
+     write(6,*)
+     write(6,*)'  Computing numerical parameters...'
   endif
 
-! If source is not at the axis, then we just rotate receivers to spherical:
-! This is done since then the rotation of the source-receiver system 
-! is preserved in terms of components for the spherical-coordinate 
-! based entries into the moment tensor, and the same for the receivers. 
-! Were we to stay cylindrical, then a component rotation on the receiver 
-! would be necessary upon rotating the source-receiver system to the north pole. 
-! Is this clear? At least to TNM on Jan 30, 2011 ...
-!  if (srccolat/=0.d0 .or. srclon/=0.d0 ) then 
-!     if (lpr) then 
-!        write(6,*)'  WARNING: Since source is not at the pole, we make sure that seismograms'
-!        write(6,*)'                       are given in spherical coordinate components. Otherwise, this '
-!        write(6,*)'                      may have necessitated additional rotations. See source code.'     
-!     endif
-!     rot_rec = 'sph'
-!     if (lpr) write(6,*)'  .... changed receiver system to ',trim(rot_rec)
-!  endif
+  ! If source is not at the axis, then we just rotate receivers to spherical:
+  ! This is done since then the rotation of the source-receiver system 
+  ! is preserved in terms of components for the spherical-coordinate 
+  ! based entries into the moment tensor, and the same for the receivers. 
+  ! Were we to stay cylindrical, then a component rotation on the receiver 
+  ! would be necessary upon rotating the source-receiver system to the north pole. 
+  ! Is this clear? At least to TNM on Jan 30, 2011 ...
+  !  if (srccolat/=0.d0 .or. srclon/=0.d0 ) then 
+  !     if (lpr) then 
+  !        write(6,*)'  WARNING: Since source is not at the pole, we make sure that seismograms'
+  !        write(6,*)'                       are given in spherical coordinate components. Otherwise, this '
+  !        write(6,*)'                      may have necessitated additional rotations. See source code.'     
+  !     endif
+  !     rot_rec = 'sph'
+  !     if (lpr) write(6,*)'  .... changed receiver system to ',trim(rot_rec)
+  !  endif
 
-! Override time step or source period if demanded by input
+  ! Overwrite time step or source period if demanded by input
   if (enforced_dt>zero) then
      if (time_scheme=='newmark2' .and. enforced_dt>deltat .or. & 
           time_scheme=='symplec4' .and. enforced_dt>1.5*deltat .or. &
@@ -394,8 +395,8 @@ integer          :: ielem,ipol,jpol
 20 format('     Chosen/maximal time step [s]:',2(f7.3))
 19 format('     ...lengthens this simulation by',f6.2,' percent!')
 
-! source period
-  if (enforced_period>zero .and. stf_type/='dirac_0') then 
+  ! source period
+  if (enforced_period>zero .and. (trim(stf_type)/='dirac_0' .or. trim(stf_type)/='quheavi') ) then 
      if (enforced_period<period) then 
         if (lpr) then 
            write(6,*)
@@ -417,21 +418,22 @@ integer          :: ielem,ipol,jpol
         t_0=enforced_period
      endif
   else 
-     if (stf_type/='dirac_0') then
+     if (trim(stf_type)/='dirac_0' .or. trim(stf_type)/='quheavi') then
         if (lpr) then
            write(6,*)
            write(6,*)'    Using period of the mesh:',period
         endif
         t_0=period
      else
-        t_0=period ! Just for consistency -- is in fact never used for dirac.
+        t_0=period ! Just for consistency
      endif
   endif
 
 21 format(a36,f8.3,' s')
 23 format('     Chosen/minimal period   [s]:',2(f7.3))
 
-! Compute number of iterations in time loop
+
+  ! Compute number of iterations in time loop
   niter=floor((seislength_t+smallval_dble)/deltat)
   if (lpr) then 
      write(6,*)
@@ -440,9 +442,20 @@ integer          :: ielem,ipol,jpol
      write(6,11)'    number time loop iterations:',niter
   endif
 
-! Compute seismogram sampling rate in time steps
-  if (seis_dt > zero  .and. seis_dt >= deltat) then
+  ! Compute seismogram sampling rate in time steps
+  if (lpr) then
+     write(6,*)
+     write(6,22)'    desired seismogram sampling:',seis_dt,' seconds'
+  endif
+  if (seis_dt > zero  .and. seis_dt >= deltat ) then
+     if (period/seis_dt<10.) then
+        if (lpr) write(6,*) ' ! ! !   W A R N I N G   ! ! !'
+        if (lpr) write(6,*) 'seismogram sampling too coarse w.r.t. mesh resolution:',period,seis_dt
+        if (lpr) write(6,*) '... changing seismogram sampling rate to ',period/10.
+        seis_dt=period/10.
+     endif
      seis_it=floor((seis_dt+smallval_dble)/deltat)
+     seis_dt=deltat*seis_it
   elseif (seis_dt < deltat) then
      if (lpr) write(6,*) 'seismogram sampling cannot be smaller than time step...'
      if (lpr) write(6,*) '...changing it to the time step'
@@ -450,31 +463,21 @@ integer          :: ielem,ipol,jpol
      seis_it = 1
   else
      seis_it = 1
+     seis_dt = deltat
   endif
+  deltat_coarse=seis_dt
 
   if (lpr) then
-     write(6,*)
-     write(6,22)'    desired seismogram sampling:',seis_dt,' seconds'
      write(6,22)'    offered seismogram sampling:',deltat*seis_it,' seconds'
      write(6,13)'    ...that is, every          :',seis_it,' timesteps'
      write(6,11)'    number of samples          :', &
-                floor(real(niter)/real(seis_it))
+          floor(real(niter)/real(seis_it))
   endif
 22 format(a33,f9.2,a10)
 
-! Initialize counters for I/O
-
-  istrain = 0
-  isnap = 0
- !andrea
-  iseismo=0
-  use_netcdf=.false.
-  write(6,*)'output format:',output_format
-  if (output_format=='netcdf')	use_netcdf=.true.
-
-! snapshot output, convert from interval given in seconds to 
-! incremental time steps
-   if (dump_snaps_glob .or. dump_snaps_solflu) then
+  ! snapshot output, convert from interval given in seconds to 
+  ! incremental time steps
+  if (dump_snaps_glob .or. dump_snaps_solflu) then
      snap_it=floor(snap_dt/deltat)
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
      write(2900,*)floor(real(niter)/real(snap_it))
@@ -485,21 +488,124 @@ integer          :: ielem,ipol,jpol
      if (lpr) then
         write(6,*)
         write(6,11)'    Number of snapshots        :',&
-                    floor(real(niter)/real(snap_it))
+             floor(real(niter)/real(snap_it))
         write(6,12)'    ...approximately every     :',snap_dt,'seconds'
         write(6,13)'    ...that is, every          :',snap_it,'timesteps'
      endif
-11 format(a33,i8)
-12 format(a33,f8.2,a10)
-13 format(a33,i8,a10)
+11   format(a33,i8)
+12   format(a33,f8.2,a10)
+13   format(a33,i8,a10)
 
+  endif
+
+  ! Source time function
+  if (lpr) then
+     write(6,*)''
+     write(6,*)'  *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-'
+     write(6,*)'  SOURCE TIME FUNCTION: ',trim(stf_type)
+     if (discrete_dirac) write(6,*)'    discrete Dirac type: ',discrete_choice
+  endif
+
+  period_vs_discrete_halfwidth = 20.
+  sampling_per_a=1.
+  decay=3.5d0
+
+  if (.not. dump_wavefields .and. ( trim(stf_type)=='dirac_0' .or. trim(stf_type)=='queavi') &
+      .and. deltat_coarse>1.9*deltat ) then 
+     period_vs_discrete_halfwidth = period/(4.*deltat_coarse)
+     if (period_vs_discrete_halfwidth<30.) period_vs_discrete_halfwidth=30.
+     if (lpr) then 
+        write(6,*)'    No wavefield dump, but discrete Dirac due to seismogram downsampling'
+        write(6,*)'    Set discrete Dirac half width to [s]:',period/period_vs_discrete_halfwidth
+        write(6,*)'    ... i.e. this part in the mesh period:',period_vs_discrete_halfwidth
+     endif
+  endif
+
+  if (trim(stf_type)=='dirac_0' .or. trim(stf_type)=='quheavi')  then 
+     discrete_dirac=.true.
+     if (dump_wavefields .or. deltat_coarse> 1.9*deltat) then
+        discrete_choice='gaussi'
+     else
+        discrete_choice = '1dirac'
+     endif
+     if (20.*seis_dt > period ) then 
+        if (lpr) then 
+           write(6,*)'   +++++++++++++++++++ W A R N I N G +++++++++++++++++++++ '
+           write(6,*)'   The sampling rate of seismograms is quite coarse given the'
+           write(6,*)'   Dirac delta source time function. We suggest to use at least'
+           write(6,*)'   20 points per period to ensure accurate results, i.e. seis_dt<=',period/20.
+           write(6,*)'   +++++++++++++++ E N D  o f  W A R N I N G +++++++++++++ '
+        endif
+     endif
+  else
+     discrete_dirac=.false.
+  endif
+
+  if (dump_wavefields) then 
+     ! define coarse time step for strain wavefield dumps
+     strain_samp = ceiling(period_vs_discrete_halfwidth*sampling_per_a)
+     deltat_coarse = max(deltat_coarse,deltat*ceiling(period/strain_samp) )
+     strain_samp = period/deltat_coarse
+     write(6,*)'   dumping wavefields at sampling rate and deltat:',strain_samp,deltat_coarse
+     strain_it=floor(t_0/real(strain_samp)/deltat)
+     deltat_coarse=deltat*strain_it
+  else
+     strain_it=seis_it
+  endif
+  write(6,*)'   coarsest dump every [$1]th time step, dt:',strain_it,deltat_coarse
+
+  if (discrete_dirac) then
+     discrete_dirac_halfwidth=period/period_vs_discrete_halfwidth
+     t_0=discrete_dirac_halfwidth
+     if (lpr) then 
+        write(6,*)
+        write(6,*)'   DISCRETE DIRAC DEFINITIONS:'
+        write(6,*)'    Period discrete Dirac, mesh, simul. [s]:',&
+                       real(discrete_dirac_halfwidth),real(period),real(t_0)
+        write(6,*)'    period mesh/period discrete Dirac:',real(period_vs_discrete_halfwidth)
+        write(6,*)"    deltat SEM, seis, coarse [s]:",real(deltat),real(seis_dt),real(deltat_coarse)
+        write(6,*)'    # seismogram points per mesh,Dirac period:',&
+                       real(period/seis_dt),real(discrete_dirac_halfwidth/seis_dt)
+        if (dump_wavefields) then 
+           write(6,*)'    # coarse points per mesh, Dirac period (int) :',strain_samp,sampling_per_a
+           write(6,*)'    # coarse points per mesh, Dirac period (calc):',& 
+                real(period/deltat_coarse),real(discrete_dirac_halfwidth/deltat_coarse)
+        endif
+        write(6,*)'    # SEM points per mesh, Dirac period:',&
+                       real(period/deltat),real(discrete_dirac_halfwidth/deltat)
+     endif
+
+     ! parameters for source-time function time shift
+     found_shift=.false.
+     do i=1,ceiling(2.*discrete_dirac_halfwidth/deltat)
+        dshift = deltat*ceiling(2.*discrete_dirac_halfwidth/deltat) + real(i)*deltat
+        if ( .not. found_shift .and. abs(nint(dshift/deltat_coarse)-dshift/deltat_coarse)<0.01*deltat &
+             .and. abs(nint(dshift/deltat)-dshift/deltat)<0.01*deltat &
+             .and. abs(nint(dshift/seis_dt)-dshift/seis_dt)<0.01*deltat) then 
+           shift_fact_discrete_dirac = deltat_coarse*ceiling(dshift/deltat_coarse)
+           found_shift=.true.
+        endif
+     enddo
+     shift_fact=shift_fact_discrete_dirac
+
+  else ! smooth source time function, e.g. Gauss
+     shift_fact=deltat_coarse*ceiling(1.5*t_0/deltat_coarse)
+  endif
+
+  if (lpr) then 
+     write(6,*)''
+     write(6,*)'  SHIFT FACTOR of source time function [s]:',shift_fact
+     write(6,*)'   # SEM, seis, coarse points per shift factor:',&
+          real(shift_fact/deltat),real(shift_fact/seis_dt),real(shift_fact/deltat_coarse)
+     write(6,*)'   # simul. half widths per shift factor:',real(shift_fact/t_0)
+     if (discrete_dirac) write(6,*)'   # mesh halfwidths per shift fact',real(shift_fact/period)
+     write(6,*)'  *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-'
+     write(6,*)''
   endif
 
 ! strain tensor output, convert from num of dumps per period into 
 ! incremental time steps
   if (dump_wavefields) then
-
-     strain_it=floor(t_0/real(strain_samp)/deltat)
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
      write(2900,*)floor(real(niter)/real(strain_it))
      do ielem=1,floor(real(niter)/real(strain_it))
@@ -523,15 +629,24 @@ integer          :: ielem,ipol,jpol
         write(6,*)'      ibeg=',ibeg,'iend=',iend
         write(6,*)'      # points saved within an element:',ndumppts_el
      endif
-
   endif
 
-! mesh info: coordinates of elements and collocation points               
+  ! Initialize counters for I/O
+  istrain = 0
+  isnap = 0
+  iseismo=0
+
+  ! netcdf format
+  use_netcdf=.false.
+  write(6,*)'output format:',output_format
+  if (output_format=='netcdf')	use_netcdf=.true.
+
+  ! mesh info: coordinates of elements and collocation points               
   open(2222+mynum,file=infopath(1:lfinfo)//'/axial_points.dat'//appmynum)
   open(3333+mynum,file=infopath(1:lfinfo)//'/axial_ds_dz.dat'//appmynum)
   s_max=zero
 
-! Set some parameters for faster access in time loop
+  ! Set some parameters for faster access in time loop
   half_dt=half*deltat
   half_dt_sq=half*deltat**2
 
@@ -539,35 +654,31 @@ integer          :: ielem,ipol,jpol
 
   do ielem = 1, nelem
 
-!     write(6,*)'PARAMETERS EL LOOP before axial points:',ielem;call flush(6)
-
-! write out axial points
+     ! write out axial points
      if (axis(ielem)) then
-         call compute_coordinates(s,z,r,theta,ielem,0,npol)
+        call compute_coordinates(s,z,r,theta,ielem,0,npol)
         do jpol=0,npol
            call compute_coordinates(s,z,r,theta,ielem,0,jpol)
            write(2222+mynum,122)ielem,jpol,s,z,r,theta/pi*180.
         enddo
 
-!     write(6,*)'PARAMETERS EL LOOP before grid spacing:',ielem;call flush(6)
-
-! write out profile of grid spacing along Northern axis
+        ! write out profile of grid spacing along Northern axis
         if (north(ielem)) then
 
-         do jpol=0,npol
-            do ipol=0,npol-1
-               dsaxis(ipol,jpol) = dsqrt((scoord(ipol,jpol,ielem)-&
-                    scoord(ipol+1,jpol,ielem))**2+&
-                    (zcoord(ipol,jpol,ielem)-&
-                    zcoord(ipol+1,jpol,ielem))**2 )
+           do jpol=0,npol
+              do ipol=0,npol-1
+                 dsaxis(ipol,jpol) = dsqrt((scoord(ipol,jpol,ielem)-&
+                      scoord(ipol+1,jpol,ielem))**2+&
+                      (zcoord(ipol,jpol,ielem)-&
+                      zcoord(ipol+1,jpol,ielem))**2 )
+              enddo
            enddo
-         enddo
-  
+
            do jpol=0,npol-1
-           dzaxis(jpol) = dsqrt( (scoord(0,jpol,ielem) - &
-                scoord(0,jpol+1,ielem) )**2 + &
-                (zcoord(0,jpol,ielem) - &
-                zcoord(0,jpol+1,ielem))**2 )
+              dzaxis(jpol) = dsqrt( (scoord(0,jpol,ielem) - &
+                   scoord(0,jpol+1,ielem) )**2 + &
+                   (zcoord(0,jpol,ielem) - &
+                   zcoord(0,jpol+1,ielem))**2 )
            enddo
            minds(naxel) = minval(dsaxis)
            maxds(naxel) = maxval(dsaxis)
@@ -577,18 +688,13 @@ integer          :: ielem,ipol,jpol
            write(3333+mynum,123)ielem,r,minds(naxel),maxds(naxel), &
                 mindz(naxel),maxdz(naxel),maxds(naxel)/minds(naxel)
         endif
-
      endif
-
-123 format(i7,1pe14.3,5(1pe14.3))
-
   enddo
-
+123 format(i7,1pe14.3,5(1pe14.3))
   close(2222+mynum)
   close(3333+mynum)
 
   if (lpr) write(6,*)
-
 
 end subroutine compute_numerical_parameters
 !=============================================================================
@@ -763,7 +869,7 @@ character(len=4) :: Mij_char(6)
      write(6,11)'     Source colat [deg]:',srccolat*180./pi
      write(6,11)'     Source long  [deg]:',srclon*180./pi
      write(6,11)'     Magnitude    [N/m]:',magnitude
-     write(6,12)'     Source time fct   :',stf_type
+     write(6,12)'     Source time fct   :',trim(stf_type)
      write(6,11)'     Dom. period    [s]:',t_0
      write(6,*)'  Receiver information___________________________________'
      write(6,12)'     Receiver file type',rec_file_type
@@ -804,13 +910,13 @@ character(len=4) :: Mij_char(6)
 
 ! write generic simulation info file
      open(unit=55,file='simulation.info')
-     write(55,23)bkgrdmodel,'background model'
+     write(55,23)trim(bkgrdmodel),'background model'
      write(55,21)deltat,'time step [s]'
      write(55,22)niter,'number of time steps'
-     write(55,23)src_type(1),'source type'
-     write(55,23)src_type(2),'source type'
-     write(55,23)stf_type,'source time function'
-     write(55,23)src_file_type,'source file type'
+     write(55,23)trim(src_type(1)),'source type'
+     write(55,23)trim(src_type(2)),'source type'
+     write(55,23)trim(stf_type),'source time function'
+     write(55,23)trim(src_file_type),'source file type'
      write(55,21)period,'dominant source period'
      write(55,21)src_depth/1000.,'source depth [km]'
      write(55,25)magnitude,'scalar source magnitude'
@@ -835,7 +941,11 @@ character(len=4) :: Mij_char(6)
    write(55,23)rot_rec,'receiver components '
    write(55,22)ibeg,'  ibeg: beginning gll index for wavefield dumps'
    write(55,22)iend,'iend: end gll index for wavefield dumps'
-     close(55)
+   write(55,21)shift_fact,'source shift factor [s]'
+   write(55,22)int(shift_fact/deltat),'source shift factor for deltat'
+   write(55,22)int(shift_fact/seis_dt),'source shift factor for seis_dt'
+   write(55,22)int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
+   close(55)
 
      write(6,*)
      write(6,*)'  wrote general simulation info into "simulation.info"'
@@ -946,7 +1056,7 @@ if (lpr) then
       write(9,223)Mij(i),Mij_char(i)
    enddo
    
-   if (stf_type=='dirac_0' ) then!.or. stf_type=='quheavi' .or. stf_type=='heavis') then
+   if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
       write(9,223)period,'convolve period ( 0. if not to be convolved)'
    else
       write(9,223)0.0,'convolve period (0. if not convolved)'
@@ -957,6 +1067,7 @@ if (lpr) then
    write(9,221)dump_snaps_glob,'plot global snaps?'
    write(9,224)'disp','disp or velo seismograms'
    write(9,224)"'Data_Postprocessing'",'Directory for post processed data'
+   write(9,221).true.,'seismograms at negative time (0 at max. of stf)'
    close(9)
 221 format(l25,a50)
 222 format(a25,a50)
