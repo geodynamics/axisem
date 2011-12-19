@@ -204,7 +204,7 @@ subroutine read_sourceparams
         stf_type='dirac_0'
 
      else 
-        if (lpr)write(6,*)'  source time function:',stf_type
+        if (lpr)write(6,*)'  source time function:',trim(stf_type)
      endif
 
      if ( Mij(1)/=zero .and. sum(abs(Mij(2:6)))<smallval*abs(Mij(1)) ) then 
@@ -413,6 +413,7 @@ subroutine compute_stf
 integer :: i
 
   allocate(stf(1:niter))
+  dt_src_shift=10000000.
 
   select case(stf_type)
   case('dirac_0')
@@ -426,7 +427,8 @@ integer :: i
   case('gauss_2')
     call gauss_dd
   case('quheavi')
-    call quasiheavi
+!    call quasiheavi
+     call delta_src ! done inside the delta routine now
   case('heavis') ! a wiggly wavelet with a sharp boxcar power spectrum
     call heavis
   case default
@@ -434,12 +436,31 @@ integer :: i
     stop
    end select
 
+   if (dt_src_shift<1000000.) then 
+      if ( abs(nint(dt_src_shift/deltat)-dt_src_shift/deltat)<0.01*deltat ) then
+         it_src_shift = dt_src_shift/deltat
+         ! time shift in the Fourier domain (used in post processing/kerner... eventually)
+         ! timeshift_fourier(0:nomega) = exp(cmplx(0.,1.) *omega(0:nomega)*dt_src_shift)
+      else
+         if (lpr) write(6,*) 'Problem with discrete source shift: not a multiplicative of deltat...'
+         if (lpr) write(6,*) 'source shift,deltat',dt_src_shift,deltat,dt_src_shift/deltat
+         stop
+      endif
+   else
+      if (lpr) write(6,*)' ERROR: source time shift not defined!',dt_src_shift
+      stop
+   endif
+
   if (lpr) then
      open(299,file=datapath(1:lfdata)//'/stf.dat',status='replace',action='write')
+     open(298,file=datapath(1:lfdata)//'/stf_seis.dat',status='replace',action='write')
+     open(297,file=datapath(1:lfdata)//'/stf_strain.dat',status='replace',action='write')
      do i=1,niter
         write(299,*)real(i)*real(deltat),real(stf(i))
+        if ( mod(i,seis_it)==0) write(298,*)real(i)*real(deltat),real(stf(i))
+        if ( mod(i,strain_it)==0) write(297,*)real(i)*real(deltat),real(stf(i))
      enddo
-     close(299)
+     close(299); close(298);close(297)
   endif
 
 end subroutine compute_stf
@@ -474,6 +495,8 @@ double precision, intent(out) :: stf_t(1:nstf_t)
     write(6,*)' source time function non existant:',stf_type
     stop
    end select
+
+   
 
 end subroutine compute_stf_t
 !=============================================================================
@@ -791,37 +814,16 @@ end subroutine find_srcloc
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine quasiheavi
-!Allocated variable stf was used without being set to some sensible value before
-integer :: i
-
-stf = 0.
-  do i=seis_it,niter
-!     t=dble(i)*deltat-shift_fact*t_0
-!    stf(i) = 0.5d0*(1.0d0+erf(t/t_0))
-!af for pgf erf is not known
-     stf(i) = 1.
-  enddo
-
-  stf=stf*magnitude
-
-end subroutine quasiheavi
-!=============================================================================
-
-!-----------------------------------------------------------------------------
 subroutine gauss
 
 integer :: i
-real(kind=realkind) :: t,decay,shift_fact
-
-  decay=3.5d0
-  shift_fact=1.5d0
+real(kind=realkind) :: t
 
   do i=1,niter
      t=dble(i)*deltat
-     stf(i) = dexp(-( (decay/t_0*(t-shift_fact*t_0))**2) )
+     stf(i) = dexp(-( (decay/t_0*(t-shift_fact))**2) )
   enddo
-
+  dt_src_shift = shift_fact
   stf=stf * magnitude * decay / t_0 / dsqrt(pi)
 
 end subroutine gauss
@@ -832,17 +834,14 @@ end subroutine gauss
 subroutine gauss_d
 
 integer :: i
-real(kind=realkind) :: t,decay,shift_fact
+real(kind=realkind) :: t
 
-  decay=3.5d0
-  shift_fact=1.5d0
-  
   do i=1,niter
      t=dble(i)*deltat
-     stf(i) = -two*(decay/t_0)**2*(t-shift_fact*t_0) * &
-          dexp(-( (decay/t_0*(t-shift_fact*t_0))**2) )
+     stf(i) = -two*(decay/t_0)**2*(t-shift_fact) * &
+          dexp(-( (decay/t_0*(t-shift_fact))**2) )
   enddo
-
+  dt_src_shift = shift_fact
 ! max/min at t=t_0*(shift_fact +- sqrt(0.5)/decay)
 ! and corresponding max(stf)= +- decay/t_0*sqrt(two)*exp(-half)
 
@@ -855,16 +854,14 @@ end subroutine gauss_d
 subroutine gauss_dd
 
 integer :: i
-real(kind=realkind) :: t,decay,shift_fact
-
-  decay=3.5d0
-  shift_fact=1.5d0
+real(kind=realkind) :: t
 
   do i=1,niter
      t=dble(i)*deltat
-     stf(i) = (decay/t_0)**2 *( two* (decay/t_0)**2 *(t-shift_fact*t_0)**2-1)*&
-               dexp(-( (decay/t_0*(t-shift_fact*t_0))**2) )
+     stf(i) = (decay/t_0)**2 *( two* (decay/t_0)**2 *(t-shift_fact)**2-1)*&
+               dexp(-( (decay/t_0*(t-shift_fact))**2) )
   enddo
+  dt_src_shift = shift_fact
 
 ! max/min at t=t_0*(shift_fact +- sqrt(1.5)/decay)
 ! and corresponding max(stf)= +- two*((decay/t_0)**2*exp(-three/two)
@@ -890,110 +887,110 @@ do it=1, niter
 enddo
 call heavis_t(niter,mystf)
 stf=real(mystf)
+
 end subroutine heavis
-
 !-----------------------------------------------------------------------------
-subroutine delta_src_old
-
-  stf(1:niter) = zero
-  if (lpr) then 
-     write(6,*)
-     write(6,*)'  Source delta-dirac ignites at first seismogram sample [s]:',&
-              seis_it*deltat
-     write(6,*)'  WARNING: Remember to subtract this at postprocessing stage!'
-  endif
-  stf(seis_it) = magnitude / deltat
-!  if (lpr) call write_convolve_routine
-
-end subroutine delta_src_old
-!=============================================================================
-
 
 
 !-----------------------------------------------------------------------------
 subroutine delta_src
 ! approximate discrete dirac
  integer :: i,j
- double precision :: a
- character(len=6) :: dirac_approx(6),discrete_choice
- double precision,allocatable :: stftmp(:),timetmp(:)
+ double precision :: a,integral
+ character(len=6) :: dirac_approx(6)
+ double precision,allocatable :: signal(:),timetmp(:),int_stf(:)
 
-! this is the choice of discrete dirac
- discrete_choice = '1dirac'
-
-  if (lpr) write(6,*)'Approximate Dirac',niter
-  allocate(stftmp(1:niter),timetmp(1:niter))
-
-  stf(1:niter) = zero
-
-!  if (lpr) then
-!    write(6,*)
-!     write(6,*)'  Source delta-dirac ignites at first seismogram sample [s]:',&
-!              seis_it*deltat
-!     write(6,*)'  WARNING: Remember to subtract this at postprocessing stage!'
-!  endif
-!  stf(seis_it) = magnitude
-
-  a=period/15.
-!  a=deltat*10.
+  if (lpr) write(6,*)'Discrete Dirac choice: ',discrete_choice
+  allocate(signal(1:niter),timetmp(1:niter),int_stf(1:niter))
+  stf(1:niter) = zero; 
+  a=discrete_dirac_halfwidth
+  if (lpr) write(6,*)'Half-width of discrete Dirac [s]: ',a
 
   dirac_approx = ['cauchy','caulor','sincfc','gaussi','triang','1dirac']
-  if (lpr) write(6,*)'  Approximate Diracs:',dirac_approx
   do j=1,6
-     stftmp = 0.
-     if (lpr) write(6,*)'Approximation type:',trim(dirac_approx(j))
-     if (lpr) open(unit=60,file='Info/approx_dirac_'//trim(dirac_approx(j))//'.dat')
+     signal = 0.
+     if (lpr .and. trim(discrete_choice)==trim(dirac_approx(j))) &
+              write(6,*)' Approximation type:',trim(dirac_approx(j))
+     if (lpr) open(unit=60,file='Info/discrete_dirac_'//trim(dirac_approx(j))//'.dat')
+
      do i=1,niter
         t=dble(i)*deltat
         timetmp(i) = t
-        if (dirac_approx(j)=='cauchy') then 
-           ! Cauchy phi function
-           stftmp(i) = 1./a * exp(-abs((t-deltat)/a))
+      if (dirac_approx(j)=='cauchy') then ! Cauchy phi function
+         signal(i) = 1./a * exp(-abs((t-shift_fact_discrete_dirac)/a))
+         dt_src_shift = shift_fact_discrete_dirac
 
-        elseif (dirac_approx(j)=='caulor') then
-           ! Cauchy Lorentz distribution
-           stftmp(i) = 1./pi *a/ (a**2 + t**2)
+      elseif (dirac_approx(j)=='caulor') then ! Cauchy Lorentz distribution
+         signal(i) = 1./pi *a/ (a**2 + (t-shift_fact_discrete_dirac)**2)
+         dt_src_shift = shift_fact_discrete_dirac
 
-        elseif (dirac_approx(j)=='sincfc') then
-           ! sinc function
-           stftmp(i) = 1./(a*pi) * ( sin(t/a)/(t/a)  )
+      elseif (dirac_approx(j)=='sincfc') then ! sinc function
+         if (t==shift_fact_discrete_dirac) t=0.00001+shift_fact_discrete_dirac
+         signal(i) = 1./(a*pi) * ( sin((-shift_fact_discrete_dirac+t)/a)/((-shift_fact_discrete_dirac+t)/a)  )
+         dt_src_shift = shift_fact_discrete_dirac
 
-        elseif (dirac_approx(j)=='gaussi') then
-           ! Gaussian
-           stftmp(i) = 1./(a*sqrt(pi)) * exp(-(t/a)**2)   
+      elseif (dirac_approx(j)=='gaussi') then ! Gaussian
+         signal(i) = 1./(a*sqrt(pi)) * exp(-((t-shift_fact_discrete_dirac)/a)**2)
+         dt_src_shift = shift_fact_discrete_dirac
 
-        elseif (dirac_approx(j)=='triang') then
-           ! triangular
-           if (abs(t)<=a/2. ) then 
-              stftmp(i) = 2./a - 4./a**2 *abs(t)
-           else
-              stftmp(i) = 0.
-           endif
+      elseif (dirac_approx(j)=='triang') then ! triangular
+         if (abs(t-shift_fact_discrete_dirac)<=a/2.) then 
+            signal(i) = 2./a - 4./a**2 *abs(t-shift_fact_discrete_dirac)
+         else
+            signal(i) = 0.
+         endif
+         dt_src_shift = shift_fact_discrete_dirac
 
-        elseif (dirac_approx(j)=='1dirac') then 
-           ! old Dirac, 1 non-zero point
-           if (i==seis_it) stftmp(i) = 1./deltat
-        else
-           write(6,*)mynum,'does not know discrete Dirac ',trim(dirac_approx(j))
-           stop
-        endif
-        if (lpr)   write(60,*)t,magnitude*stftmp(i)   
+      elseif (dirac_approx(j)=='1dirac') then ! old Dirac, 1 non-zero point
+         if (i==int(shift_fact_discrete_dirac/deltat)) then 
+            signal(i) = 1.
+            dt_src_shift = real(i)*deltat
+         endif
+      else
+         write(6,*)'do not know discrete Dirac ',trim(dirac_approx(j))
+         stop
+      endif
+
+        if (lpr)   write(60,*)t,magnitude*signal(i)   
      enddo
-     if (lpr) write(6,*)'integral over stf:',trim(dirac_approx(j)),sum(stftmp)*deltat
+
      if (lpr)  close(60)
-     if (trim(dirac_approx(j))==trim(discrete_choice)) stf(1:niter) = stftmp(1:niter) 
+     if (trim(discrete_choice)==trim(dirac_approx(j)) ) then
+        if (lpr) write(6,*)'  dirac type and max amp before:',trim(dirac_approx(j)),maxval(signal)
+        integral = sum(signal)*deltat
+        if (lpr) write(6,*)'  OLD Integral of discrete dirac:',integral
+        signal = signal/integral
+        
+        if (lpr) write(6,*)'  dirac type and max amp after:',trim(dirac_approx(j)),maxval(signal)
+        integral = sum(signal)*deltat
+        if (lpr) write(6,*)'  NEW Integral of discrete dirac:',integral      
+        if (lpr) write(6,*)"  Shift factor [s],#dt's:",dt_src_shift,dt_src_shift/deltat
+        if (lpr) write(6,*)
+
+        stf(1:niter) = signal(1:niter) 
+     endif
   enddo
 
-stf=stf*magnitude
-
+  stf=stf*magnitude
+  
 if (lpr)  then 
-   open(unit=61,file='Info/chosen_approx_dirac_'//trim(discrete_choice)//'.dat')
+   open(unit=61,file='Info/discrete_chosen_dirac_'//trim(discrete_choice)//'.dat')
+   open(unit=62,file='Info/discrete_chosen_heavi_'//trim(discrete_choice)//'.dat')
+   int_stf(1:niter)=0.
+   signal(:)=0.
    do i=1,niter
      write(61,*)timetmp(i),stf(i)
+     if (i>1) signal(i)=int_stf(i-1)
+     int_stf(i) = signal(i) + stf(i)*deltat
+     write(62,*)timetmp(i),int_stf(i)
   enddo
-  close(61)
+  close(61); close(62)
 endif
-deallocate(timetmp,stftmp)
+
+! Quasi-Heaviside
+if ( trim(stf_type)=='quheavi') stf=int_stf
+
+deallocate(timetmp,signal,int_stf)
 
 !  if (lpr) call write_convolve_routine
 
@@ -1049,15 +1046,11 @@ integer, intent(in)           :: nstf_t
 double precision, intent(in)  :: t(nstf_t)
 double precision, intent(out) :: stf_t(nstf_t)
 integer                       :: i
-double precision              :: decay,shift_fact
-
-  decay=3.5d0
-  shift_fact=1.5d0
 
   do i=1,nstf_t
-     stf_t(i) = dexp(-( (decay/t_0*(t(i)-shift_fact*t_0))**2) )
+     stf_t(i) = dexp(-( (decay/t_0*(t(i)-shift_fact))**2) )
   enddo
-
+  dt_src_shift=shift_fact
   stf_t = stf_t * magnitude * decay / ( t_0 * sqrt(pi) )
 
 end subroutine gauss_t
@@ -1071,16 +1064,12 @@ integer, intent(in)              :: nstf_t
 double precision, intent(in)  :: t(nstf_t)
 double precision, intent(out) :: stf_t(nstf_t)
 integer                          :: i
-double precision              :: decay,shift_fact
 
-  decay=3.5d0
-  shift_fact=1.5d0
-  
   do i=1,nstf_t
-     stf_t(i) = -two*(decay/t_0)**2*(t(i)-shift_fact*t_0) * &
-          dexp(-( (decay/t_0*(t(i)-shift_fact*t_0))**2) )
+     stf_t(i) = -two*(decay/t_0)**2*(t(i)-shift_fact) * &
+          dexp(-( (decay/t_0*(t(i)-shift_fact))**2) )
   enddo
-
+  dt_src_shift=shift_fact
   stf_t=stf_t/( decay/t_0*dsqrt(two)*dexp(-half) )*magnitude
 
 end subroutine gauss_d_t
@@ -1093,17 +1082,13 @@ integer, intent(in)              :: nstf_t
 double precision, intent(in)  :: t(nstf_t)
 double precision, intent(out) :: stf_t(nstf_t)
 integer                          :: i
-double precision              :: decay,shift_fact
-
-  decay=3.5d0
-  shift_fact=1.5d0
 
   do i=1,nstf_t
      stf_t(i) = (decay/t_0)**2 *(two*(decay/t_0)**2 *(t(i)- &
-                 shift_fact*t_0)**2-1)*&
-                 dexp(-( (decay/t_0*(t(i)-shift_fact*t_0))**2) )
+                 shift_fact)**2-1)*&
+                 dexp(-( (decay/t_0*(t(i)-shift_fact))**2) )
   enddo
-
+  dt_src_shift=shift_fact
   stf_t=stf_t/( two*((decay/t_0)**2)*exp(-three/two) )*magnitude
 
 end subroutine gauss_dd_t
@@ -1169,6 +1154,7 @@ stf_t(:)=magnitude*stf_t/maxval(abs(stf_t))
       enddo
  deallocate(spectre,stat=istat)
  if (istat/=0) stop 'time_function deallocate error'
+  dt_src_shift=timezero
 
 end subroutine heavis_t
 !----------------------------------------------------------------------
@@ -1242,6 +1228,7 @@ double precision, intent(out) :: stf_t(nstf_t)
 !  stf_t=stf_t/( decay/t_0*dsqrt(two)*dexp(-half) )*magnitude
 stf_t=0.
   stf_t(seis_it:nstf_t) = magnitude
+dt_src_shift=seis_it
 
 end subroutine quasiheavi_t
 !=============================================================================
