@@ -314,7 +314,7 @@ program post_processing_seis
         if (conv_period(1)>0.)  then 
            write(6,*)'conv period:',conv_stf(1)
            call convolve_with_stf(conv_period(1),dt_seis(1),nt_seis(1),src_type(1,1),conv_stf(1),&
-                                                  outdir(1),seis,seis_fil,tshift)
+                                                  outdir(1),seis,seis_fil)
         else
            seis_fil=seis
         endif
@@ -869,7 +869,7 @@ end subroutine rotate_receiver_comp
 
 
 !-----------------------------------------------------------------------------
-subroutine convolve_with_stf(t_0,dt,nt,src_type,stf,outdir,seis,seis_fil,tshift)          
+subroutine convolve_with_stf(t_0,dt,nt,src_type,stf,outdir,seis,seis_fil)          
 !
 ! convolve seismograms computed for dirac delta with a Gaussian
 !
@@ -879,7 +879,6 @@ implicit none
 
 integer, intent(in)            :: nt
 real, intent(in)               :: t_0,dt
-real, intent(out)              :: tshift
 character(len=100), intent(in) :: outdir
 real                           :: time(nt)
 real                           :: tau_j,source,sqrt_pi_inv
