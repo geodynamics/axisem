@@ -209,7 +209,7 @@ foreach isrc (${num_src_arr})
         if  ( $multisrc == 'true' ) then
             echo "constructing separate source files for" $isim 
 
-            if ( $src_file_type == 'separate' ) then
+            if ( $src_file_type == 'separate' || $src_file_type == 'sourceparams' ) then
         #	    head -n 1 $homedir/$srcfile  > $srcfile.$isrc.$isim
                 set mijtmp = `echo $mij_sourceparams`
                 set mijtmp[$map_mij[$i]] = '1.E20'
