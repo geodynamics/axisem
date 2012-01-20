@@ -25,6 +25,9 @@ case('ak135')
 case('prem')
   write(6,*)'Reading PREM discontinuities...';call flush(6)  
   call prem_discont
+case('prem_ani')
+  write(6,*)'Reading PREM_ANI discontinuities...';call flush(6)  
+  call prem_ani_discont
 case('prem_solid')
   write(6,*)'Reading PREM_SOLID discontinuities...';call flush(6)  
    call prem_solid_discont
@@ -218,6 +221,100 @@ vs=vs*1000.
 discont=discont*1000.
 
 end subroutine prem_discont
+!--------------------------------------------------------------------------
+
+subroutine prem_ani_discont
+
+! PREM discontinuities to be honored by the mesh
+! each index represents the layer *below* its corresponding discontinuity
+
+! for the anisotropic case: vp = max(vpv, vph), vs=min(vsv, vsh)
+
+ndisc=11
+
+allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2))
+
+! UPPER CRUST
+discont(1)=6371.
+vp(1,:)=5.8
+vs(1,:)=3.2
+
+! LOWER CRUST
+discont(2)=6356.
+vp(2,:)=6.8
+vs(2,:)=3.9
+
+! MOHO --> 220
+discont(3)=6346.6
+vp(3,1)=8.19032
+vs(3,1)=4.39602
+vp(3,2)=8.04856
+vs(3,2)=4.43626
+
+! TRANSITION ZONE: 220 --> 400
+discont(4)=6151.
+vp(4,1)=8.55895
+vs(4,1)=4.64390
+vp(4,2)=8.90524
+vs(4,2)=4.76990
+
+! 400 --> 600
+discont(5)=5971.
+vp(5,1)=9.133917
+vs(5,1)=4.932487
+vp(5,2)=10.15783
+vs(5,2)=5.515931
+
+! 600 --> 670
+discont(6)=5771.
+vp(6,1)=10.15776
+vs(6,1)=5.516017
+vp(6,2)=10.26617
+vs(6,2)=5.570211
+
+! 670 --> 770
+discont(7)=5701.
+vp(7,1)=10.7513
+vs(7,1)=5.9451
+vp(7,2)=11.0656
+vs(7,2)=6.2405
+
+!LOWER MANTLE: 770 --> TOP D"
+discont(8)=5600.
+vp(8,1)=11.0656
+vs(8,1)=6.2404
+vp(8,2)=13.6804
+vs(8,2)=7.2659
+
+! D" LAYER
+discont(9)=3630.
+vp(9,1)=13.6805
+vs(9,1)=7.2660
+vp(9,2)=13.7166
+vs(9,2)=7.2647
+
+! FLUID OUTER CORE: CMB --> ICB
+discont(10)=3480.
+vp(10,1)=8.0650
+vs(10,1)=0.0
+vp(10,2)=10.3557
+vs(10,2)=0.0
+
+! SOLID INNER CORE: ICB --> CENTER
+discont(11)=1221.5
+vp(11,1)=11.0283
+vs(11,1)=3.5043
+vp(11,2)=11.2622
+vs(11,2)=3.6678
+
+! numbering relates to regions within, i.e. counting numbers as in discont
+! for regions above the respective discontinuities
+
+vp=vp*1000.
+vs=vs*1000.
+discont=discont*1000.
+
+end subroutine prem_ani_discont
 !--------------------------------------------------------------------------
 
 !--------------------------------------------------------------------------
