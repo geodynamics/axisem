@@ -188,21 +188,21 @@ endif
 
            if (bkgrdmodel/='solar') then
 
-           call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
-           vptmp=velocity(r,'v_p',iidom,modelstring,lfbkgrdmodel)
-           vstmp=velocity(r,'v_s',iidom,modelstring,lfbkgrdmodel)
-           rho(ipol,jpol,iel)= &
-                velocity(r,'rho',iidom,modelstring,lfbkgrdmodel)
-           
-           if (make_homo) then
-              if (vstmp>0.1) then 
-                 vptmp = vphomo; vstmp = vshomo
-                 rho(ipol,jpol,iel) = rhohomo
-              else ! in fluid, impose same vp but vs as zero
-                 vptmp = vphomo; vstmp = 0.0
-                 rho(ipol,jpol,iel) = rhohomo              
-              endif
-           endif
+               call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
+               vptmp=velocity(r,'v_p',iidom,modelstring,lfbkgrdmodel)
+               vstmp=velocity(r,'v_s',iidom,modelstring,lfbkgrdmodel)
+               rho(ipol,jpol,iel)= &
+                    velocity(r,'rho',iidom,modelstring,lfbkgrdmodel)
+               
+               if (make_homo) then
+                  if (vstmp>0.1) then 
+                     vptmp = vphomo; vstmp = vshomo
+                     rho(ipol,jpol,iel) = rhohomo
+                  else ! in fluid, impose same vp but vs as zero
+                     vptmp = vphomo; vstmp = 0.0
+                     rho(ipol,jpol,iel) = rhohomo              
+                  endif
+               endif
            
 ! HOMOGENEOUS SPHERE, & FLUID CORE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !         if (iidom == ndisc-1) vstmp = 0.d0
@@ -285,7 +285,7 @@ if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
 ! Some tests....
 !@@@@@@@@@@@@@@@@@
 if (do_mesh_tests) then
-call barrier
+  call barrier
 
   if (.not. add_hetero) then
      if (lpr) write(6,*)'    checking elastic properties on discontinuities...' 

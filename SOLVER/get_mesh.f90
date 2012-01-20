@@ -40,6 +40,7 @@ use data_proc
 use data_time
 use data_numbering, ONLY : nglob,nglob_solid,igloc_solid,igloc_fluid
 use commun, ONLY : barrier,psum,pmax,pmin
+use background_models, ONLY: model_is_ani
 
 integer           :: iptp,ipsrc,ipdes,imsg,ipt,inode,iptcp,iel,idom,i
 character(len=120) :: dbname
@@ -167,6 +168,8 @@ integer           :: globnaxel,globnaxel_solid,globnaxel_fluid
       read(1000+mynum) discont(idom),solid_domain(idom),idom_fluid(idom) 
    enddo
   
+   ani_true = model_is_ani(bkgrdmodel)
+  
    read(1000+mynum)rmin,minh_ic,maxh_ic,maxh_icb
    write(69,*)
    write(69,*)'Background model============================================'
@@ -174,6 +177,7 @@ integer           :: globnaxel,globnaxel_solid,globnaxel_fluid
    write(69,*)'  router [m]=',router
    write(69,*)'  resolve_inner_shear=',resolve_inner_shear
    write(69,*)'  have_fluid=',have_fluid
+   write(69,*)'  ani_true=',ani_true
 
    if (lpr) then 
       write(6,*)  
