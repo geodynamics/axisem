@@ -153,7 +153,7 @@ logical           :: tensorwrong
   G2 = shp_deri_k(0:npol,0:npol,1,2)
   G2T = transpose(G2)
 
-! Derivative in s-direction: \partial_\xi (l_i(\xi_p))
+! Derivative in s-direction: \partial_\xi (\bar{l}_i(\xi_p))
   G1 = shp_deri_k(0:npol,0:npol,2,1)
   G1T = transpose(G1)
 
