@@ -563,7 +563,7 @@ double precision function Ms_z_eta_s_eta(xil,etal,nodes_crd,ielem0)
 
 !% This routines returns the value of 
 !%
-!%    Ms_z_eta_s_eta = s(xi,eta) / J(xi,eta) * ( ds/deta ) * ( dz/deta)
+!%    Ms_z_eta_s_eta = - s(xi,eta) / J(xi,eta) * ( ds/deta ) * ( dz/deta)
 !%
 !% a quantity that is needed in the calculation of the laplacian
 !% operator in the SECOND TERM OF dsdz_0
@@ -613,7 +613,7 @@ double precision function Ms_z_xi_s_xi(xil,etal,nodes_crd,ielem0)
 
 !% This routines returns the value of 
 !%
-!%    Ms_z_xi_s_xi = s(xi,eta) / J(xi,eta) * ( ds/dxi ) * ( dz/xi)
+!%    Ms_z_xi_s_xi = - s(xi,eta) / J(xi,eta) * ( ds/dxi ) * ( dz/xi)
 !%
 !% a quantity that is needed in the calculation of the laplacian
 !% operator in the FOURTH TERM OF dsdz_0
@@ -668,7 +668,7 @@ double precision function M_z_xi(xil,etal,nodes_crd,ielem0)
 
 !% This routines returns the value of 
 !%
-!%    M_z_xi = 1 / J(xi,eta) * ( dz/dxi ) 
+!%    M_z_xi = - 1 / J(xi,eta) * ( dz/dxi ) 
 !%
 !% a quantity that is needed in the calculation of the laplacian
 !% operator in the SECOND TERM OF us_over_s_0
@@ -713,7 +713,7 @@ double precision function M_s_eta(xil,etal,nodes_crd,ielem0)
 
 ! This routines returns the value of 
 !
-!    M_s_eta = 1 / J(xi,eta) * ( ds/deta ) 
+!    M_s_eta = - 1 / J(xi,eta) * ( ds/deta ) 
 !
 ! a quantity that is needed in the calculation of the laplacian
 ! operator in the THIRD TERM OF us_over_s_0
@@ -774,7 +774,7 @@ double precision function Ms_z_xi(xil,etal,nodes_crd,ielem0)
 
 !% This routines returns the value of 
 !%
-!%    Ms_z_xi = s / J(xi,eta) * ( dz/dxi ) 
+!%    Ms_z_xi = s / J(xi,eta) * (- dz/dxi ) 
 !%
 !% a quantity that is needed in the calculation of the laplacian
 !% operator in the SECOND TERM OF us_over_s_0
@@ -797,7 +797,7 @@ double precision function Ms_z_eta(xil,etal,nodes_crd,ielem0)
 
 !% This routines returns the value of 
 !%
-!%    Ms_z_xi = s / J(xi,eta) * ( dz/deta ) 
+!%    Ms_z_eta = s / J(xi,eta) * ( dz/deta ) 
 !%
 !% a quantity that is needed in the calculation of the laplacian
 !% operator in the THIRD TERM OF us_over_s_0
@@ -819,7 +819,7 @@ double precision function Ms_s_eta(xil,etal,nodes_crd,ielem0)
 
 ! This routines returns the value of 
 !
-!    Ms_s_eta = s / J(xi,eta) * ( ds/deta ) 
+!    Ms_s_eta = - s / J(xi,eta) * ( ds/deta ) 
 !
 ! a quantity that is needed in the calculation of the laplacian
 ! operator in the THIRD TERM OF us_over_s_0
@@ -875,7 +875,7 @@ double precision function Ms_z_eta_s_eta_k(xil,etal,nodes_crd,ielem0)
 
 !% This routines returns the value of 
 !%
-!%    Ms_z_eta_s_eta_k = 1 / J(xi,eta) * ( ds/deta ) * ( dz/deta)
+!%    Ms_z_eta_s_eta_k = - 1 / J(xi,eta) * ( ds/deta ) * ( dz/deta)
 !%
 !% a quantity that is needed in the calculation of the laplacian
 !% operator in the SECOND TERM OF dsdz_0
@@ -924,7 +924,7 @@ double precision function Ms_z_xi_s_xi_k(xil,etal,nodes_crd,ielem0)
 
 !% This routines returns the value of 
 !%
-!%    Ms_z_xi_s_xi = 1 / J(xi,eta) * ( ds/dxi ) * ( dz/xi)
+!%    Ms_z_xi_s_xi = - 1 / J(xi,eta) * ( ds/dxi ) * ( dz/xi)
 !%
 !% a quantity that is needed in the calculation of the laplacian
 !% operator in the FOURTH TERM OF dsdz_0
