@@ -46,8 +46,12 @@ character(len=3)               :: param !rho, vs,vp
      velocity=prem_solid_sub(r0,param,idom)
   case('prem_light')
      velocity=prem_light_sub(r0,param,idom)
+  case('prem_light_ani')
+     velocity=prem_light_ani_sub(r0,param,idom)
   case('prem_onecrust')
      velocity=prem_onecrust_sub(r0,param,idom)
+  case('prem_onecrust_ani')
+     velocity=prem_onecrust_ani_sub(r0,param,idom)
   case('prem_solid_light')
      velocity=prem_solid_light_sub(r0,param,idom)
   case('iasp91')
@@ -72,6 +76,10 @@ character(len=100), intent(in) :: bkgrdmodel2
 
   select case(trim(bkgrdmodel2))
   case('prem_ani')
+    model_is_ani = .true.
+  case('prem_onecrust_ani')
+    model_is_ani = .true.
+  case('prem_light_ani')
     model_is_ani = .true.
   case default
     model_is_ani = .false.
@@ -526,6 +534,138 @@ end function prem_onecrust_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+double precision function prem_onecrust_ani_sub(r0,param,idom)
+!
+! prem model in terms of domains separated by discontinuities
+!
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+double precision, intent(in) :: r0
+integer, intent(in)          :: idom
+double precision             :: r,x_prem
+double precision             :: ro_prem, vpv_prem, vsv_prem, vph_prem 
+double precision             :: vsh_prem, eta_aniso, Qmu, Qkappa
+character(len=3), intent(in) :: param !rho, vs,vp
+
+  r=r0/1000.
+  
+  x_prem=r/6371.     ! Radius (normalized to x(surface)=1 )
+
+  eta_aniso=1.
+
+  IF(idom==1)THEN       ! upper crustal layer
+     ro_prem=2.6
+     vpv_prem=5.8
+     vsv_prem=3.2
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=600.0
+     Qkappa=57827.0
+  ELSEIF(idom==2)THEN   ! upper mantle
+     ro_prem=2.6910+0.6924*x_prem
+     vpv_prem=0.8317+7.2180*x_prem
+     vph_prem=3.5908+4.6172*x_prem
+     vsv_prem=5.8582-1.4678*x_prem
+     vsh_prem=-1.0839+5.7176*x_prem
+     eta_aniso=3.3687-2.4778*x_prem
+     Qmu=600.0
+     Qkappa=57827.0
+  ELSEIF(idom==3)THEN
+     ro_prem=7.1089-3.8045*x_prem
+     vpv_prem=20.3926-12.2569*x_prem
+     vsv_prem=8.9496-4.4597*x_prem
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=143.0
+     Qkappa=57827.0
+  ELSEIF(idom==4)THEN
+     ro_prem=11.2494-8.0298*x_prem
+     vpv_prem=39.7027-32.6166*x_prem
+     vsv_prem=22.3512-18.5856*x_prem
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=143.0
+     Qkappa=57827.0
+  ELSEIF(idom==5)THEN
+     ro_prem=5.3197-1.4836*x_prem
+     vpv_prem=19.0957-9.8672*x_prem
+     vsv_prem=9.9839-4.9324*x_prem
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=143.0
+     Qkappa=57827.0
+  ELSEIF(idom==6)THEN   !lower mantle
+     ro_prem=7.9565-6.4761*x_prem+5.5283*x_prem**2-3.0807*x_prem**3
+     vpv_prem=29.2766-23.6027*x_prem+5.5242*x_prem**2-2.5514*x_prem**3
+     vsv_prem=22.3459-17.2473*x_prem-2.0834*x_prem**2+0.9783*x_prem**3
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=312.0
+     Qkappa=57827.0
+  ELSEIF(idom==7)THEN
+     ro_prem=7.9565-6.4761*x_prem+5.5283*x_prem**2-3.0807*x_prem**3
+     vpv_prem=24.9520-40.4673*x_prem+51.4832*x_prem**2-26.6419*x_prem**3
+     vsv_prem=11.1671-13.7818*x_prem+17.4575*x_prem**2-9.2777*x_prem**3
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=312.0
+     Qkappa=57827.0
+  ELSEIF(idom==8)THEN
+     ro_prem=7.9565-6.4761*x_prem+5.5283*x_prem**2-3.0807*x_prem**3
+     vpv_prem=15.3891-5.3181*x_prem+5.5242*x_prem**2-2.5514*x_prem**3
+     vsv_prem=6.9254+1.4672*x_prem-2.0834*x_prem**2+0.9783*x_prem**3
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=312.0
+     Qkappa=57827.0
+  ELSEIF(idom==9)THEN  ! outer core
+     ro_prem=12.5815-1.2638*x_prem-3.6426*x_prem**2-5.5281*x_prem**3
+     vpv_prem=11.0487-4.0362*x_prem+4.8023*x_prem**2-13.5732*x_prem**3
+     vsv_prem=0.0
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=0.0
+     Qkappa=57827.0
+  ELSEIF(idom==10)THEN                        ! inner core
+     ro_prem=13.0885-8.8381*x_prem**2
+     vpv_prem=11.2622-6.3640*x_prem**2
+     vsv_prem=3.6678-4.4475*x_prem**2
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=84.6
+     Qkappa=1327.7
+  ENDIF
+
+  if (param=='rho') then
+     prem_onecrust_ani_sub=ro_prem*1000.
+  elseif (param=='vpv') then
+     prem_onecrust_ani_sub=vpv_prem*1000.
+  elseif (param=='vsv') then
+     prem_onecrust_ani_sub=vsv_prem*1000.
+  elseif (param=='vph') then
+     prem_onecrust_ani_sub=vph_prem*1000.
+  elseif (param=='vsh') then
+     prem_onecrust_ani_sub=vsh_prem*1000.
+  elseif (param=='eta') then
+     prem_onecrust_ani_sub=eta_aniso
+  elseif (param=='Qmu') then
+     prem_onecrust_ani_sub=Qmu
+  elseif (param=='Qka') then
+     prem_onecrust_ani_sub=Qkappa
+  !min/max velocities needed for the mesher:
+  elseif (param=='v_p') then
+     prem_onecrust_ani_sub=max(vpv_prem, vph_prem)*1000.
+  elseif (param=='v_s') then
+     prem_onecrust_ani_sub=min(vsv_prem, vsh_prem)*1000.
+  else
+     write(6,*)'ERROR IN PREM_ANI_SUB FUNCTION:',param,' NOT AN OPTION'
+     stop
+  endif
+
+end function prem_onecrust_ani_sub
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 double precision function prem_light_sub(r0,param,idom)
 !
 ! prem_light model (crust removed) in terms of domains separated by disconts.
@@ -592,6 +732,130 @@ character(len=3), intent(in) :: param !rho, vs,vp
   endif
 
 end function prem_light_sub
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+double precision function prem_light_ani_sub(r0,param,idom)
+!
+! prem model in terms of domains separated by discontinuities
+!
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+double precision, intent(in) :: r0
+integer, intent(in)          :: idom
+double precision             :: r,x_prem
+double precision             :: ro_prem, vpv_prem, vsv_prem, vph_prem 
+double precision             :: vsh_prem, eta_aniso, Qmu, Qkappa
+character(len=3), intent(in) :: param !rho, vs,vp
+
+  r=r0/1000.
+  
+  x_prem=r/6371.     ! Radius (normalized to x(surface)=1 )
+
+  eta_aniso=1.
+
+  IF(idom==1)THEN
+     ro_prem=2.6910+0.6924*x_prem
+     vpv_prem=0.8317+7.2180*x_prem
+     vph_prem=3.5908+4.6172*x_prem
+     vsv_prem=5.8582-1.4678*x_prem
+     vsh_prem=-1.0839+5.7176*x_prem
+     eta_aniso=3.3687-2.4778*x_prem
+     Qmu=600.0
+     Qkappa=57827.0
+  ELSEIF(idom==2)THEN
+     ro_prem=7.1089-3.8045*x_prem
+     vpv_prem=20.3926-12.2569*x_prem
+     vsv_prem=8.9496-4.4597*x_prem
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=143.0
+     Qkappa=57827.0
+  ELSEIF(idom==3)THEN
+     ro_prem=11.2494-8.0298*x_prem
+     vpv_prem=39.7027-32.6166*x_prem
+     vsv_prem=22.3512-18.5856*x_prem
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=143.0
+     Qkappa=57827.0
+  ELSEIF(idom==4)THEN
+     ro_prem=5.3197-1.4836*x_prem
+     vpv_prem=19.0957-9.8672*x_prem
+     vsv_prem=9.9839-4.9324*x_prem
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=143.0
+     Qkappa=57827.0
+  ELSEIF(idom==5)THEN   !lower mantle
+     ro_prem=7.9565-6.4761*x_prem+5.5283*x_prem**2-3.0807*x_prem**3
+     vpv_prem=29.2766-23.6027*x_prem+5.5242*x_prem**2-2.5514*x_prem**3
+     vsv_prem=22.3459-17.2473*x_prem-2.0834*x_prem**2+0.9783*x_prem**3
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=312.0
+     Qkappa=57827.0
+  ELSEIF(idom==6)THEN
+     ro_prem=7.9565-6.4761*x_prem+5.5283*x_prem**2-3.0807*x_prem**3
+     vpv_prem=24.9520-40.4673*x_prem+51.4832*x_prem**2-26.6419*x_prem**3
+     vsv_prem=11.1671-13.7818*x_prem+17.4575*x_prem**2-9.2777*x_prem**3
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=312.0
+     Qkappa=57827.0
+  ELSEIF(idom==7)THEN
+     ro_prem=7.9565-6.4761*x_prem+5.5283*x_prem**2-3.0807*x_prem**3
+     vpv_prem=15.3891-5.3181*x_prem+5.5242*x_prem**2-2.5514*x_prem**3
+     vsv_prem=6.9254+1.4672*x_prem-2.0834*x_prem**2+0.9783*x_prem**3
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=312.0
+     Qkappa=57827.0
+  ELSEIF(idom==8)THEN  ! outer core
+     ro_prem=12.5815-1.2638*x_prem-3.6426*x_prem**2-5.5281*x_prem**3
+     vpv_prem=11.0487-4.0362*x_prem+4.8023*x_prem**2-13.5732*x_prem**3
+     vsv_prem=0.0
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=0.0
+     Qkappa=57827.0
+  ELSEIF(idom==9)THEN                        ! inner core
+     ro_prem=13.0885-8.8381*x_prem**2
+     vpv_prem=11.2622-6.3640*x_prem**2
+     vsv_prem=3.6678-4.4475*x_prem**2
+     vph_prem=vpv_prem
+     vsh_prem=vsv_prem
+     Qmu=84.6
+     Qkappa=1327.7
+  ENDIF
+
+  if (param=='rho') then
+     prem_light_ani_sub=ro_prem*1000.
+  elseif (param=='vpv') then
+     prem_light_ani_sub=vpv_prem*1000.
+  elseif (param=='vsv') then
+     prem_light_ani_sub=vsv_prem*1000.
+  elseif (param=='vph') then
+     prem_light_ani_sub=vph_prem*1000.
+  elseif (param=='vsh') then
+     prem_light_ani_sub=vsh_prem*1000.
+  elseif (param=='eta') then
+     prem_light_ani_sub=eta_aniso
+  elseif (param=='Qmu') then
+     prem_light_ani_sub=Qmu
+  elseif (param=='Qka') then
+     prem_light_ani_sub=Qkappa
+  !min/max velocities needed for the mesher:
+  elseif (param=='v_p') then
+     prem_light_ani_sub=max(vpv_prem, vph_prem)*1000.
+  elseif (param=='v_s') then
+     prem_light_ani_sub=min(vsv_prem, vsh_prem)*1000.
+  else
+     write(6,*)'ERROR IN PREM_ANI_SUB FUNCTION:',param,' NOT AN OPTION'
+     stop
+  endif
+
+end function prem_light_ani_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
