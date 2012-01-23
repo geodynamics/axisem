@@ -13,7 +13,7 @@ use utlity
 
 implicit none
 
-public :: read_model,model_output
+public :: read_model, read_model_ani, model_output
 private
 contains
  
@@ -335,6 +335,247 @@ endif
                            vsmaxloc(1),vsmaxloc(2))
 
 end subroutine read_model
+!=============================================================================
+
+
+!-----------------------------------------------------------------------------
+subroutine read_model_ani(rho, lambda, mu, epsilon_ani, gamma_ani, delta_ani)
+!
+! same as above, but for anisotropic models
+!    
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+use commun, ONLY : barrier
+use lateral_heterogeneities
+
+include 'mesh_params.h'
+
+double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rho
+double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
+double precision, dimension(0:npol,0:npol,nelem), intent(out) :: epsilon_ani, gamma_ani, delta_ani
+double precision :: s,z,r,theta,r1,r2,r3,r4,th1,th2,th3,th4
+double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp, etatmp
+integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count,ij,jj
+logical :: foundit
+character(len=100) :: modelstring
+
+  if (make_homo ) then 
+     if (lpr) then
+         write(6,*)'  '
+         write(6,*)'ERROR: homogeneous AND anisotropic model does not make '
+         write(6,*)'       sense, check input file'
+         write(6,*)'  '
+     endif
+     stop
+  endif
+
+! Set elastic parameters to crazy values to later check if all have been filled
+  rho(0:npol,0:npol,1:nelem) = -1.E30
+  lambda(0:npol,0:npol,1:nelem) = -1.E30
+  mu(0:npol,0:npol,1:nelem) = -1.E30
+  epsilon_ani(0:npol,0:npol,1:nelem) = -1.E30
+  gamma_ani(0:npol,0:npol,1:nelem) = -1.E30
+  delta_ani(0:npol,0:npol,1:nelem) = -1.E30
+
+! check for each element which domain it belongs to
+  open(unit=65,file=infopath(1:lfinfo)//'/elems_bkgrdmodel_domain.dat'&
+                                       //appmynum)
+
+  if (do_mesh_tests) open(60000+mynum,file='Data/model_r_th_rho_vp_vs_'&
+                                          //appmynum//'.dat')
+
+  do iel=1,nelem
+     foundit=.false.
+     r1 = rcoord(int(npol/2),int(npol/2),iel) 
+     do iidom=1,ndisc-1
+        if (r1<discont(iidom) .and. r1> discont(iidom+1)) then
+           ieldom(iel) = iidom
+           foundit = .true.
+           write(65,10)iel,r1,iidom,discont(iidom),discont(iidom+1)
+        endif
+     enddo
+     if (r1 < discont(ndisc)) then
+        ieldom(iel) = ndisc
+        foundit = .true.
+        write(65,10)iel,r1,ndisc,discont(ndisc)
+     endif
+     if (.not. foundit) then 
+        write(6,*)'havent found domain for element',iel
+        write(6,*)'...of radius',r1
+        stop
+     endif
+  enddo
+  close(65)
+
+10 format(i9,1pe11.3,i3,2(1pe11.3))
+
+  if (do_mesh_tests) then
+    if (lpr) write(6,*)'    checking discontinuity discretization...' 
+    call check_mesh_discontinuities(ieldom,domcount)
+  endif
+
+! read in respective velocities and density on domain basis
+  open(unit=5454,file=infopath(1:lfinfo)//'/background_rad_dom_vel.dat'&
+                                          //appmynum)
+
+  if (lpr) write(6,*)'    filling mesh with elastic properties...'   
+  call flush(6)
+
+  modelstring = bkgrdmodel
+  iel_count=0
+!========================
+  do iel=1,nelem
+!========================
+
+     iidom=ieldom(iel)
+     do ipol=0,npol
+        do jpol=0,npol
+           call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
+
+           vphtmp=velocity(r,'vph',iidom,modelstring,lfbkgrdmodel)
+           vpvtmp=velocity(r,'vpv',iidom,modelstring,lfbkgrdmodel)
+           vshtmp=velocity(r,'vsh',iidom,modelstring,lfbkgrdmodel)
+           vsvtmp=velocity(r,'vsv',iidom,modelstring,lfbkgrdmodel)
+           etatmp=velocity(r,'eta',iidom,modelstring,lfbkgrdmodel)
+           rho(ipol,jpol,iel)= velocity(r,'rho',iidom,modelstring,lfbkgrdmodel)
+           
+           lambda(ipol,jpol,iel) = rho(ipol,jpol,iel) * &
+                    (vphtmp**2 - two*vshtmp**2)
+           mu(ipol,jpol,iel) = rho(ipol,jpol,iel) * vshtmp**2
+           epsilon_ani(ipol,jpol,iel) = one - vpvtmp**2 / vphtmp**2
+           if (vshtmp > smallval_sngl) then
+              gamma_ani(ipol,jpol,iel) = vsvtmp**2 / vshtmp**2 - one
+           else
+              gamma_ani(ipol,jpol,iel) = zero
+           endif
+           delta_ani(ipol,jpol,iel) = (etatmp * vphtmp**2 - vpvtmp**2 + &
+                    two * (one - etatmp) * vsvtmp**2) / (2 * vphtmp**2)
+
+           if (save_large_tests) &
+                write(5454,12) r, iidom, vphtmp, vpvtmp, vshtmp, vsvtmp, &
+                        etatmp, rho(ipol,jpol,iel)
+
+        ! XXX generalize tests for anisotropic parameters:
+
+        !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+        ! test round-off errors for elastic parameters & velocities
+        !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+           if ( .not. dblreldiff_small(vphtmp,dsqrt( (lambda(ipol,jpol,iel) + &
+                two*mu(ipol,jpol,iel) )/rho(ipol,jpol,iel) ) ) ) then 
+              write(6,*)
+              write(6,*)procstrg,&
+                   'PROBLEM: Elastic params and p-vel conversion erroneous!'
+              write(6,*)procstrg,'r,theta,vphtmp:',&
+                   r/1000.,theta*180./pi,vphtmp/1000.
+              write(6,*)procstrg,'rho,lambda,mu:',rho(ipol,jpol,iel)/1000., & 
+                   lambda(ipol,jpol,iel)/1000.,mu(ipol,jpol,iel)/1000.
+              stop
+           endif
+           
+           if ( .not. dblreldiff_small(vshtmp,dsqrt( mu(ipol,jpol,iel)/ &
+                rho(ipol,jpol,iel) ))) then 
+              write(6,*)
+              write(6,*)procstrg,&
+                   'PROBLEM: Elastic params and s-vel conversion erroneous!'
+              write(6,*)procstrg,'r,theta,vstmp:',&
+                   r/1000.,theta*180./pi,vshtmp/1000.
+              write(6,*)procstrg,'rho,lambda,mu:',rho(ipol,jpol,iel)/1000., & 
+                   lambda(ipol,jpol,iel)/1000.,mu(ipol,jpol,iel)/1000.
+              stop
+           endif
+           
+        enddo
+     enddo
+
+     ! XXX generalize tests for anisotropic parameters:
+     ! write out for later snaps
+     if (do_mesh_tests) then
+       do ipol=ibeg,iend
+          do jpol=ibeg,iend
+             call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
+             write(60000+mynum,14)r,theta,rho(ipol,jpol,iel),&
+                  sqrt( (lambda(ipol,jpol,iel)+2.*mu(ipol,jpol,iel))/rho(ipol,jpol,iel)), &
+                  sqrt( mu(ipol,jpol,iel)/rho(ipol,jpol,iel))
+          enddo
+       enddo
+     endif
+
+!========================
+  enddo ! nelem
+!========================
+  close(5454)
+  write(6,*)mynum,'done with big mesh loop to define model'
+  if (do_mesh_tests) close(60000+mynum)
+
+12 format(1pe15.7,i4,6(1pe15.7))
+14 format(5(1pe13.4))
+
+! XXX check if this works (it might!)
+! TNM Oct 29: addition of heterogeneities in separate routine
+! if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
+
+! XXX generalize for anisotropy:
+! plot final velocity model in vtk
+ write(6,*)mynum,'plotting vtks for the model properties....'
+ call plot_model_vtk(rho, lambda, mu, epsilon_ani, gamma_ani, delta_ani)
+
+!@@@@@@@@@@@@@@@@@
+! Some tests....
+!@@@@@@@@@@@@@@@@@
+if (do_mesh_tests) then
+  call barrier
+
+  if (.not. add_hetero) then
+     if (lpr) write(6,*)'    checking elastic properties on discontinuities...' 
+     call check_elastic_discontinuities(ieldom,domcount,lambda,mu,rho)
+  else
+        if (lpr) write(6,*)'    NOT checking elastic properties on discontinuities since we added hetero...'   
+  endif
+
+  if (lpr) write(6,*)'    checking the background model discretization...' 
+  call check_background_model(lambda,mu,rho)
+
+  if (lpr) write(6,*)'    testing the mesh/background model resolution...' 
+  call test_mesh_model_resolution(lambda,mu,rho)
+endif 
+
+! Compute time step, period, courant, points per wavelength throughout the mesh
+!af
+! if (lpr) write(6,*)'    computing grid spacing vs. velocities, time step...' 
+! call compute_numerical_resolution(lambda,mu,rho)
+
+
+!MvD: Do we need the following for each anisotropic velocity can we leave it as is?
+
+!<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+! compute min/max velocities in whole domain
+!<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+  vpmin=minval(dsqrt((lambda+two*mu)/rho))
+  vpminloc=minloc(dsqrt((lambda+two*mu)/rho))
+  vpmax=maxval(dsqrt((lambda+two*mu)/rho))
+  vpmaxloc=maxloc(dsqrt((lambda+two*mu)/rho))
+  
+  vsmin=minval(dsqrt(mu/rho))
+  vsminloc=minloc(dsqrt(mu/rho))
+  vsmax=maxval(dsqrt(mu/rho))
+  vsmaxloc=maxloc(dsqrt(mu/rho))
+  
+! since minloc/maxloc start counting at 1...
+  vpminloc(1)=vpminloc(1)-1; vpminloc(2)=vpminloc(2)-1;
+  vsminloc(1)=vsminloc(1)-1; vsminloc(2)=vsminloc(2)-1;
+  vpmaxloc(1)=vpmaxloc(1)-1; vpmaxloc(2)=vpmaxloc(2)-1;
+  vsmaxloc(1)=vsmaxloc(1)-1; vsmaxloc(2)=vsmaxloc(2)-1;
+  
+  call compute_coordinates(s,z,vpminr,theta,vpminloc(3),&
+                           vpminloc(1),vpminloc(2))
+  call compute_coordinates(s,z,vsminr,theta,vsminloc(3),&
+                           vsminloc(1),vsminloc(2))
+  call compute_coordinates(s,z,vpmaxr,theta,vpmaxloc(3),&
+                           vpmaxloc(1),vpmaxloc(2))
+  call compute_coordinates(s,z,vsmaxr,theta,vsmaxloc(3),&
+                           vsmaxloc(1),vsmaxloc(2))
+
+end subroutine read_model_ani
 !=============================================================================
 
 
@@ -834,71 +1075,71 @@ double precision, allocatable :: maxdifflam(:),maxdiffmu(:)
 
   do iel = 1, nelem
      if (.not. add_hetero) then 
-     if ( eltype(iel)=='curved' .and. .not. coarsing(iel) ) then
-        do jpol = 0, npol
-           do ipol = 1, npol-1
-
-!<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-! Test lateral homogeneity: Does each point have same elastic properties 
-! as its neighbor in the xi-direction?
-!<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-
-              if (.not. dblreldiff_small(rho(ipol,jpol,iel), &
-                   rho(ipol-1,jpol,iel)) .or. &
-                   .not. dblreldiff_small(rho(ipol,jpol,iel), &
-                   rho(ipol+1,jpol,iel))) then
-                 write(6,*)
-                 write(6,*)procstrg,'PROBLEM: lateral density inhomogeneity!'
-                 write(6,*)procstrg,' at r[km], theta[deg]:',&
-                      rcoord(ipol,jpol,iel)/1000., &
-                       thetacoord(ipol,jpol,iel)*180/pi
-                 write(6,*)procstrg,'Lateral ipol,theta,density:'
-                 do i=0,npol
-                    write(6,*)procstrg,i,thetacoord(i,jpol,iel)*180./pi,&
-                         rho(i,jpol,iel)
-                 enddo
-                 stop
-              endif
-              
-              if (.not. dblreldiff_small(lambda(ipol,jpol,iel), &
-                   lambda(ipol-1,jpol,iel)) .or. &
-                   .not. dblreldiff_small(lambda(ipol,jpol,iel), &
-                   lambda(ipol+1,jpol,iel)) ) then 
-                 write(6,*)
-                 write(6,*)procstrg,'PROBLEM: lateral elastic inhomogeneity!'
-                 write(6,*)procstrg,'at r[km], theta[deg]:',&
-                      rcoord(ipol,jpol,iel)/1000., &
-                      thetacoord(ipol,jpol,iel)*180/pi
-                 write(6,*)procstrg,'Lateral ipol,theta,lambda:'
-                 do i=0,npol
-                    write(6,*)procstrg,i,thetacoord(i,jpol,iel)*180./pi,&
-                         lambda(i,jpol,iel)
-                 enddo
-                 stop
-              endif
-              
-              if (.not. dblreldiff_small(mu(ipol,jpol,iel), &
-                   mu(ipol-1,jpol,iel)) .or. &
-                   .not. dblreldiff_small(mu(ipol,jpol,iel), &
-                   mu(ipol+1,jpol,iel)) ) then 
-                 write(6,*)
-                 write(6,*)procstrg,'PROBLEM: lateral elastic inhomogeneity!'
-                 write(6,*)procstrg,'at r[km], theta[deg]:',&
-                      rcoord(ipol,jpol,iel)/1000., &
-                      thetacoord(ipol,jpol,iel)*180/pi
-                 write(6,*)'Lateral ipol,theta,mu:'
-                 do i=0,npol
-                    write(6,*)procstrg,i,thetacoord(i,jpol,iel)*180./pi,&
-                         mu(i,jpol,iel)
-                 enddo
-                 stop
-              endif
-     
-
+        if ( eltype(iel)=='curved' .and. .not. coarsing(iel) ) then
+           do jpol = 0, npol
+              do ipol = 1, npol-1
+   
+   !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+   ! Test lateral homogeneity: Does each point have same elastic properties 
+   ! as its neighbor in the xi-direction?
+   !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+   
+                 if (.not. dblreldiff_small(rho(ipol,jpol,iel), &
+                      rho(ipol-1,jpol,iel)) .or. &
+                      .not. dblreldiff_small(rho(ipol,jpol,iel), &
+                      rho(ipol+1,jpol,iel))) then
+                    write(6,*)
+                    write(6,*)procstrg,'PROBLEM: lateral density inhomogeneity!'
+                    write(6,*)procstrg,' at r[km], theta[deg]:',&
+                         rcoord(ipol,jpol,iel)/1000., &
+                          thetacoord(ipol,jpol,iel)*180/pi
+                    write(6,*)procstrg,'Lateral ipol,theta,density:'
+                    do i=0,npol
+                       write(6,*)procstrg,i,thetacoord(i,jpol,iel)*180./pi,&
+                            rho(i,jpol,iel)
+                    enddo
+                    stop
+                 endif
+                 
+                 if (.not. dblreldiff_small(lambda(ipol,jpol,iel), &
+                      lambda(ipol-1,jpol,iel)) .or. &
+                      .not. dblreldiff_small(lambda(ipol,jpol,iel), &
+                      lambda(ipol+1,jpol,iel)) ) then 
+                    write(6,*)
+                    write(6,*)procstrg,'PROBLEM: lateral elastic inhomogeneity!'
+                    write(6,*)procstrg,'at r[km], theta[deg]:',&
+                         rcoord(ipol,jpol,iel)/1000., &
+                         thetacoord(ipol,jpol,iel)*180/pi
+                    write(6,*)procstrg,'Lateral ipol,theta,lambda:'
+                    do i=0,npol
+                       write(6,*)procstrg,i,thetacoord(i,jpol,iel)*180./pi,&
+                            lambda(i,jpol,iel)
+                    enddo
+                    stop
+                 endif
+                 
+                 if (.not. dblreldiff_small(mu(ipol,jpol,iel), &
+                      mu(ipol-1,jpol,iel)) .or. &
+                      .not. dblreldiff_small(mu(ipol,jpol,iel), &
+                      mu(ipol+1,jpol,iel)) ) then 
+                    write(6,*)
+                    write(6,*)procstrg,'PROBLEM: lateral elastic inhomogeneity!'
+                    write(6,*)procstrg,'at r[km], theta[deg]:',&
+                         rcoord(ipol,jpol,iel)/1000., &
+                         thetacoord(ipol,jpol,iel)*180/pi
+                    write(6,*)'Lateral ipol,theta,mu:'
+                    do i=0,npol
+                       write(6,*)procstrg,i,thetacoord(i,jpol,iel)*180./pi,&
+                            mu(i,jpol,iel)
+                    enddo
+                    stop
+                 endif
+        
+   
+              enddo
            enddo
-        enddo
-     endif ! only curved elements
-  endif ! add_hetero
+        endif ! only curved elements
+     endif ! add_hetero
            
 
 
@@ -1238,8 +1479,11 @@ double precision, allocatable :: radii(:,:),vel(:,:)
 end subroutine test_mesh_model_resolution
 !=============================================================================
 
+
 !-----------------------------------------------------------------------------
 subroutine compute_numerical_resolution(lambda,mu,rho)
+!
+! MvD: This function is never called inside the solver!!
 !
 ! Compute critical numerical parameters such as time step, source period, 
 ! courant number, spacing variations, characteristic spacing lead time, 
@@ -1873,13 +2117,13 @@ end subroutine model_output
 
 !-----------------------------------------------------------------------------
 subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
- implicit none
- integer*4 :: i,t,elems
- real*4, dimension(1:elems*4), intent(in) :: x,y,z,u1
- integer*4, dimension(1:elems*5) :: cell
- integer*4, dimension(1:elems) :: cell_type
- character (len=55) :: filename
- character (len=50) :: ss; !stream
+implicit none
+integer*4 :: i,t,elems
+real*4, dimension(1:elems*4), intent(in) :: x,y,z,u1
+integer*4, dimension(1:elems*5) :: cell
+integer*4, dimension(1:elems) :: cell_type
+character (len=55) :: filename
+character (len=50) :: ss; !stream
 !points structure
 
 do i=5,elems*5,5
@@ -1925,24 +2169,36 @@ write(100) char(10)//ss//char(10)
 write(100) 'SCALARS data float 1'//char(10)
 write(100) 'LOOKUP_TABLE default'//char(10) !color table?
 write(100) u1
- close(100)
+close(100)
 write(6,*)'...saved ',trim(filename)//'.vtk'
 end subroutine write_vtk_bin_scal
 !-----------------------------------------------------------------------------
 
 !=============================================================================
-subroutine plot_model_vtk(rho,lambda,mu)
+subroutine plot_model_vtk(rho,lambda,mu, epsilon_ani, gamma_ani, delta_ani)
 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
+double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+                                        epsilon_ani, gamma_ani, delta_ani
 
 real, dimension(:), allocatable :: vp1,vs1,rho1
+real, dimension(:), allocatable :: vpv1,vsv1,eta1
+real, dimension(:), allocatable :: epsilon1,gamma1,delta1
 character(len=80) :: fname
 integer :: npts_vtk,ct,iel,i
 real, allocatable ::  x(:),y(:),z0(:)
+logical :: plot_ani
 
 npts_vtk=nelem *4
 allocate(vp1(npts_vtk),vs1(npts_vtk),rho1(npts_vtk))
+if (present(epsilon_ani) .and. present(gamma_ani) .and.  present(delta_ani)) then
+    allocate(vpv1(npts_vtk),vsv1(npts_vtk),eta1(npts_vtk))
+    allocate(epsilon1(npts_vtk),gamma1(npts_vtk),delta1(npts_vtk))
+    plot_ani = .true.
+else
+    plot_ani = .false.
+endif
 allocate(x(npts_vtk),y(npts_vtk),z0(npts_vtk))
 
 z0=0.d0
@@ -1964,31 +2220,103 @@ do iel=1,nelem
       vp1(ct+1) = sqrt( (lambda(0,0,iel)+2.*mu(0,0,iel) ) / rho1(ct+1)  )
       vs1(ct+1) = sqrt( mu(0,0,iel)  / rho1(ct+1)  )
 
+      if (plot_ani) then
+        vpv1(ct+1) = sqrt(one - epsilon_ani(0,0,iel)) * vp1(ct+1)
+        vsv1(ct+1) = sqrt(one + gamma_ani(0,0,iel)) * vs1(ct+1)
+        eta1(ct+1) = (delta_ani(0,0,iel) * 2 * vp1(ct+1) + vpv1(ct+1)**2 - 2 * vsv1(ct+1)**2) & 
+                   / (vp1(ct+1)**2 - 2 * vsv1(ct+1)**2)
+        epsilon1(ct+1) = epsilon_ani(0,0,iel)
+        gamma1(ct+1) = gamma_ani(0,0,iel)
+        delta1(ct+1) = delta_ani(0,0,iel)
+      endif
+
       rho1(ct+2)  =  rho(npol,0,iel)
       vp1(ct+2) = sqrt( (lambda(npol,0,iel)+2.*mu(npol,0,iel) ) / rho1(ct+2)  )
       vs1(ct+2) = sqrt( mu(npol,0,iel)  / rho1(ct+2)  )
+
+      if (plot_ani) then
+        vpv1(ct+2) = sqrt(one - epsilon_ani(npol,0,iel)) * vp1(ct+2)
+        vsv1(ct+2) = sqrt(one + gamma_ani(npol,0,iel)) * vs1(ct+2)
+        eta1(ct+2) = (delta_ani(npol,0,iel) * 2 * vp1(ct+2) + vpv1(ct+2)**2 - 2 * vsv1(ct+2)**2) & 
+                   / (vp1(ct+2)**2 - 2 * vsv1(ct+2)**2)
+        epsilon1(ct+2) = epsilon_ani(npol,0,iel)
+        gamma1(ct+2) = gamma_ani(npol,0,iel)
+        delta1(ct+2) = delta_ani(npol,0,iel)
+      endif
 
       rho1(ct+3)  =  rho(npol,npol,iel)
       vp1(ct+3) = sqrt( (lambda(npol,npol,iel)+2.*mu(npol,npol,iel) ) / rho1(ct+2)  )
       vs1(ct+3) = sqrt( mu(npol,npol,iel)  / rho1(ct+2)  )
 
+      if (plot_ani) then
+        vpv1(ct+3) = sqrt(one - epsilon_ani(npol,npol,iel)) * vp1(ct+3)
+        vsv1(ct+3) = sqrt(one + gamma_ani(npol,npol,iel)) * vs1(ct+3)
+        eta1(ct+3) = (delta_ani(npol,npol,iel) * 2 * vp1(ct+3) + vpv1(ct+3)**2 - 2 * vsv1(ct+3)**2) & 
+                   / (vp1(ct+3)**2 - 2 * vsv1(ct+3)**2)
+        epsilon1(ct+3) = epsilon_ani(npol,npol,iel)
+        gamma1(ct+3) = gamma_ani(npol,npol,iel)
+        delta1(ct+3) = delta_ani(npol,npol,iel)
+      endif
+
       rho1(ct+4)  =  rho(0,npol,iel)
       vp1(ct+4) = sqrt( (lambda(0,npol,iel)+2.*mu(0,npol,iel) ) / rho1(ct+2)  )
       vs1(ct+4) = sqrt( mu(0,npol,iel)  / rho1(ct+2)  )
+
+      if (plot_ani) then
+        vpv1(ct+4) = sqrt(one - epsilon_ani(0,npol,iel)) * vp1(ct+4)
+        vsv1(ct+4) = sqrt(one + gamma_ani(0,npol,iel)) * vs1(ct+4)
+        eta1(ct+4) = (delta_ani(0,npol,iel) * 2 * vp1(ct+4) + vpv1(ct+4)**2 - 2 * vsv1(ct+4)**2) & 
+                   / (vp1(ct+4)**2 - 2 * vsv1(ct+4)**2)
+        epsilon1(ct+4) = epsilon_ani(0,npol,iel)
+        gamma1(ct+4) = gamma_ani(0,npol,iel)
+        delta1(ct+4) = delta_ani(0,npol,iel)
+      endif
+
 
    enddo
    ct = ct+4
 enddo
 
-fname=trim('Info/model_vp_'//appmynum)
-call write_VTK_bin_scal(x,y,z0,vp1,npts_vtk/4,fname)
+if (plot_ani) then
+   fname=trim('Info/model_vph_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,vp1,npts_vtk/4,fname)
 
-fname=trim('Info/model_vs_'//appmynum)
-call write_VTK_bin_scal(x,y,z0,vs1,npts_vtk/4,fname)
+   fname=trim('Info/model_vsh_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,vs1,npts_vtk/4,fname)
 
-fname=trim('Info/model_rho_'//appmynum)
-call write_VTK_bin_scal(x,y,z0,rho1,npts_vtk/4,fname)
-deallocate(vp1,vs1,rho1)
+   fname=trim('Info/model_rho_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,rho1,npts_vtk/4,fname)
+
+   fname=trim('Info/model_vpv_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,vpv1,npts_vtk/4,fname)
+   
+   fname=trim('Info/model_vsv_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,vsv1,npts_vtk/4,fname)
+   
+   fname=trim('Info/model_eta_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,eta1,npts_vtk/4,fname)
+   
+   fname=trim('Info/model_epsilon_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,epsilon1,npts_vtk/4,fname)
+   
+   fname=trim('Info/model_gamma_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,gamma1,npts_vtk/4,fname)
+   
+   fname=trim('Info/model_delta_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,delta1,npts_vtk/4,fname)
+
+   deallocate(vp1,vs1,rho1, vsv1, vpv1, eta1, epsilon1, gamma1, delta1)
+else
+   fname=trim('Info/model_vp_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,vp1,npts_vtk/4,fname)
+
+   fname=trim('Info/model_vs_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,vs1,npts_vtk/4,fname)
+
+   fname=trim('Info/model_rho_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,rho1,npts_vtk/4,fname)
+   deallocate(vp1,vs1,rho1)
+endif
 
 end subroutine plot_model_vtk
 !=============================================================================

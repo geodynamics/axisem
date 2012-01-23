@@ -39,16 +39,27 @@ use get_model
 
 include 'mesh_params.h'
 
-double precision,dimension(:,:,:),allocatable :: rho,lambda,mu,massmat_kwts2
+double precision, dimension(:,:,:),allocatable :: rho,lambda,mu,massmat_kwts2
+double precision, dimension(:,:,:),allocatable :: epsilon_ani, gamma_ani, delta_ani
 
   if(lpr)write(6,*)'  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::'
   if(lpr)write(6,*)'  allocate elastic fields....';call flush(6)
   allocate(rho(0:npol,0:npol,1:nelem),massmat_kwts2(0:npol,0:npol,1:nelem))
   allocate(lambda(0:npol,0:npol,1:nelem),mu(0:npol,0:npol,1:nelem))
+  if (ani_true) then
+    allocate(epsilon_ani(0:npol,0:npol,1:nelem))
+    allocate(gamma_ani(0:npol,0:npol,1:nelem))
+    allocate(delta_ani(0:npol,0:npol,1:nelem))
+  endif
 
 ! load velocity/density model  (velocities in m/s, density in kg/m^3 )
   if(lpr)write(6,*)'  define background model....';call flush(6)
-  call read_model(rho,lambda,mu)
+  if (ani_true) then
+    if(lpr)write(6,*)'  background model is anisotropic....';call flush(6)
+    call read_model_ani(rho, lambda, mu, epsilon_ani, gamma_ani, delta_ani)
+  else 
+    call read_model(rho,lambda,mu)
+  endif
   call model_output(rho,lambda,mu)
 
   if(lpr)write(6,*)'  compute Lagrange interpolant derivatives...'
