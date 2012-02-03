@@ -506,14 +506,14 @@ subroutine compute_numerical_parameters
      if (discrete_dirac) write(6,*)'    discrete Dirac type: ',discrete_choice
   endif
 
-  period_vs_discrete_halfwidth = 20.
-  sampling_per_a=1.
+  period_vs_discrete_halfwidth = 8.
+  sampling_per_a = 1
   decay=3.5d0
 
   if (.not. dump_wavefields .and. ( trim(stf_type)=='dirac_0' .or. trim(stf_type)=='queavi') &
       .and. deltat_coarse>1.9*deltat ) then 
-     period_vs_discrete_halfwidth = period/(4.*deltat_coarse)
-     if (period_vs_discrete_halfwidth<30.) period_vs_discrete_halfwidth=30.
+     period_vs_discrete_halfwidth = period/(2.*deltat_coarse)
+     if (period_vs_discrete_halfwidth<15.) period_vs_discrete_halfwidth=15.
      if (lpr) then 
         write(6,*)'    No wavefield dump, but discrete Dirac due to seismogram downsampling'
         write(6,*)'    Set discrete Dirac half width to [s]:',period/period_vs_discrete_halfwidth
@@ -543,8 +543,9 @@ subroutine compute_numerical_parameters
 
   if (dump_wavefields) then 
      ! define coarse time step for strain wavefield dumps
-     strain_samp = ceiling(period_vs_discrete_halfwidth*sampling_per_a)
-     deltat_coarse = max(deltat_coarse,deltat*ceiling(period/strain_samp) )
+     if (discrete_dirac) strain_samp = ceiling(period_vs_discrete_halfwidth*sampling_per_a)
+     strain_it = floor(period/strain_samp / deltat)
+     deltat_coarse=max(deltat_coarse,deltat*strain_it)
      strain_samp = period/deltat_coarse
      write(6,*)'   dumping wavefields at sampling rate and deltat:',strain_samp,deltat_coarse
      strain_it=floor(t_0/real(strain_samp)/deltat)
