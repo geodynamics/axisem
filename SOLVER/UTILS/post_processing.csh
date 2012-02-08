@@ -128,7 +128,7 @@ if ( $gnu_query == 1 ) then
     echo
     echo "%%%%%%%%% PLOTTING seismograms (gnuplot) %%%%%%%%%%"
     cd $outdir
-    set seistype = `tail -n 2 $homedir/$isimdir/param_post_processing |head -n 1 | sed "s/'/ /g" | awk '{print $1}'`
+    set seistype = `tail -n 3 $homedir/$isimdir/param_post_processing |head -n 1 | sed "s/'/ /g" | awk '{print $1}'`
     echo "seismogram type:" $seistype
     set reclist = `cat $homedir/$isimdir/Data/receiver_names.dat |awk '{print $1}'`
     echo "1st receiver:" $reclist[1]
