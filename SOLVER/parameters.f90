@@ -951,7 +951,7 @@ character(len=4) :: Mij_char(6)
      write(6,*)
      write(6,*)'  wrote general simulation info into "simulation.info"'
 
-21 format(f20.3,a45)
+21 format(f22.5,a45)
 22 format(i20,a45)
 23 format(a20,a45)
 24 format(l20,a45)
