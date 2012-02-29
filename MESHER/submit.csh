@@ -10,6 +10,10 @@ if ( ! -f xmesh ) then
   make clean; make
 endif
 
+if ( ! -d Diags ) then
+  mkdir Diags
+endif
+
 if ( ! -f xmesh ) then
   echo "Compilation failed, please check the errors."; exit
 else
