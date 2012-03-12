@@ -839,26 +839,19 @@ else ! domain decomposition needed
         ! Check if proc has right amount of elements
         call check_my_els(iproc,proc_central)
 
-        !<<<<<<<<<<<<<<<<<<<<<<
-        if (nproc==16) then
-        !<<<<<<<<<<<<<<<<<<<<<<
 
-            ! Filling the rest with values to the last proc 
-               iproc=2
-               do is=1,ndivs
-                  do iz=1,ndivs
-                     if (proc_central(is,iz)==-1) then
-                        proc_central(is,iz)=iproc
-                     endif
-                  enddo
-               enddo
+        ! Filling the rest with values to the last proc 
+        iproc=2
+        do is=1,ndivs
+           do iz=1,ndivs
+              if (proc_central(is,iz)==-1) then
+                 proc_central(is,iz)=iproc
+              endif
+           enddo
+        enddo
 
-            ! Check if proc has right amount of elements
-            call check_my_els(iproc,proc_central)
-
-        !<<<<<<<<<<<<<<<<<<<<<<
-        endif ! nproc=16
-        !<<<<<<<<<<<<<<<<<<<<<<
+        ! Check if proc has right amount of elements
+        call check_my_els(iproc,proc_central)
 
     else
 
