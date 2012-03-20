@@ -230,6 +230,9 @@ end subroutine plot_dd_vtk
 ! Works for nproc=2,4,8,16 at this point
    call decompose_inner_cube_quadratic_fcts(central_count)
 
+! newest version of inner decomposition (nproc needs to be multiple of 4)
+!   call decompose_inner_cube_opt(central_count)
+
 ! **************** END OF INNER CUBE****************
 
   iel0_solid = 1; iel0_fluid = 1
@@ -840,28 +843,27 @@ else ! domain decomposition needed
         call check_my_els(iproc,proc_central)
 
 
-        ! Filling the rest with values to the last proc 
-        iproc=2
-        do is=1,ndivs
-           do iz=1,ndivs
-              if (proc_central(is,iz)==-1) then
-                 proc_central(is,iz)=iproc
-              endif
-           enddo
-        enddo
+        if (nproc==16) then
+            ! Filling the rest with values to the last proc 
+            iproc=2
+            do is=1,ndivs
+               do iz=1,ndivs
+                  if (proc_central(is,iz)==-1) then
+                     proc_central(is,iz)=iproc
+                  endif
+               enddo
+            enddo
 
-        ! Check if proc has right amount of elements
-        call check_my_els(iproc,proc_central)
+            ! Check if proc has right amount of elements
+            call check_my_els(iproc,proc_central)
+        endif
 
-    else
+    elseif (nproc>16) then
 
-       write(6,*)
-       write(6,*)'PROBLEM: central cube decomposition not yet done for nproc',nproc
-       stop
-
-    !<<<<<<<<<<<<<<<<<<<<<<
-    endif ! nproc >= 16
-    !<<<<<<<<<<<<<<<<<<<<<<
+        write(6,*)
+        write(6,*)'PROBLEM: central cube decomposition not yet done for nproc',nproc
+        stop
+    endif
 
 !========================
 endif
@@ -1148,6 +1150,552 @@ end subroutine check_my_els
 !21 format(1pe12.5,2x,1pe12.5,' > ')
 22 format('>')
   end subroutine out_dd
+!--------------------------------------------------------------------------
+
+
+!--------------------------------------------------------------------------
+subroutine decompose_inner_cube_opt(central_count)
+    implicit none
+    integer, intent(out)    :: central_count(0:nproc-1)
+    integer                 :: nproc2, nlinsteps, ndivsppx0, ip, &
+                               ncorrections = 0, npart, is, iz, sign_buff, n
+    real                    :: r1, r2, stepsize, dphi
+    real, allocatable       :: x0(:), x1(:), x2(:), x3(:), z0(:), z1(:), z2(:), &
+                               z3(:), phi(:)
+    integer, allocatable    :: proc(:,:), nelem(:)
+    logical, allocatable    :: proc_iq_min(:,:), proc_iq_max(:,:), elems(:,:)
+    logical                 :: exit_buff
+    
+    if (dump_mesh_info_screen) then 
+        write(6,*)
+        write(6,*)'<><><><><><><><><><><><><><><><><><><><><><><><><><>'
+        write(6,*)'CENTRAL LINEAR DOMAIN: decomposing using an '
+        write(6,*)'      optimisation scheme!'
+        write(6,*)'ndivs,nproc:',ndivs,nproc
+        write(6,*)'==> each processor should have el=',ndivs**2/nproc*2
+        write(6,*)'<><><><><><><><><><><><><><><><><><><><><><><><><><>'
+        write(6,*)
+    end if
+
+
+    if (mod(2*ndivs**2,nproc)/=0) then 
+       write(6,*)'Central cube area not divisible into equal areas!'
+       stop
+    endif
+
+    if (mod(4*ndivs,nproc)/=0) then 
+       write(6,*)'PROBLEM with number of central-region elements and nproc:'
+       write(6,*)'ndivs,nproc:',ndivs,nproc
+       write(6,*)'ndivs (number of northern elements in one direction)'
+       write(6,*)'needs to be multiple of nproc/4...'
+       stop
+    endif
+
+    ! area well defined?
+    if (mod(2*ndivs**2,nproc)/=0) then 
+       write(6,*)'PROBLEM with number of central-region elements and nproc:'
+       write(6,*)'els,nproc:',ndivs**2,nproc
+       write(6,*)'number of elements needs to be multiple of nproc/2...'
+       stop
+    endif
+
+    nproc2 = nproc / 2
+
+    nlinsteps = 50 
+
+    ndivsppx0 = ndivs / 2 / nproc2
+    if (ndivsppx0 < 2) then 
+        ndivsppx0 = 2
+    endif
+    
+    if (dump_mesh_info_screen) then 
+        write(6,*) 'number of axis elements per processor = ', ndivsppx0
+    endif
+
+    r1 = ndivsppx0 * (nproc2 - .9)
+    r2 = 0.85 * ndivs
+
+    allocate(x0(0:nproc2-2))
+    allocate(x1(0:nproc2-2))
+    allocate(x2(0:nproc2-2))
+    allocate(x3(0:nproc2-2))
+    allocate(z0(0:nproc2-2))
+    allocate(z1(0:nproc2-2))
+    allocate(z2(0:nproc2-2))
+    allocate(z3(0:nproc2-2))
+    allocate(phi(0:nproc2-2))
+
+    x0 = 0.
+    x3 = real(ndivs)
+    do ip = nproc2 / 2, nproc2 - 2, 1
+        x3(ip) = real(ndivs - (ip + 1 - (nproc2) / 2) * ndivs / (nproc2 / 2)) + .5
+    enddo
+
+    do ip = 0, nproc2 - 2, 1
+        z0(ip) = real(ndivsppx0 * (ip + 1)) + 0.1
+        x1(ip) = ndivsppx0 * (nproc2 / 2 + 1) + (nproc2 / 2 - ip) * ndivsppx0 * 1.1
+        z3(ip) = x3(nproc2 - 2 - ip)
+        phi(ip) = pi / 2. / real(nproc2) * real(ip + 1)
+        x2(ip) = (r2 + ndivs * 0.3 * sin(2. * phi(ip))**4) * cos(phi(ip))
+        z2(ip) = (r2 + ndivs * 0.3 * sin(2. * phi(ip))**4) * sin(phi(ip))
+    enddo
+    
+    z1 = z0
+
+    if (dump_mesh_info_screen) then 
+        write(6,*) 'x0 = ', x0
+        write(6,*) 'x1 = ', x1
+        write(6,*) 'x2 = ', x2
+        write(6,*) 'x3 = ', x3
+        write(6,*) 'z0 = ', z0
+        write(6,*) 'z1 = ', z1
+        write(6,*) 'z2 = ', z2
+        write(6,*) 'z3 = ', z3
+    endif
+
+    allocate(proc(0:ndivs-1,0:ndivs-1))
+    allocate(proc_iq_min(0:ndivs-1,0:ndivs-1))
+    allocate(proc_iq_max(0:ndivs-1,0:ndivs-1))
+    allocate(elems(0:ndivs-1,0:ndivs-1))
+    allocate(nelem(0:nproc2-1))
+
+    proc = -1
+    nelem = 0
+    elems = .false.
+
+    npart = ndivs**2 / nproc2
+    
+    if (dump_mesh_info_screen) then 
+        write(*,*) 'ntot  = ', ndivs**2
+        write(*,*) 'npart = ', npart
+    endif
+
+
+    do ip = 0, nproc2 - 1, 1
+        proc_iq_min = .false.
+        proc_iq_max = (proc == - 1)
+        
+        stepsize = pi / 2. / 18. 
+        sign_buff = 0
+
+        ! optimize number of elements per processor
+    
+        if (ip < nproc2 - 1) then
+            do n = 1, nlinsteps, 1
+                call nelem_under(ndivs, x0(ip), x1(ip), x2(ip), x3(ip), z0(ip), &
+                    z1(ip), z2(ip), z3(ip), proc_iq_max, proc_iq_min, nelem(ip), &
+                    elems)
+                if (nelem(ip) == npart) then
+                    exit
+                else
+                    if (npart > nelem(ip)) then
+                        if (sign_buff == -1) then
+                            stepsize = stepsize / 2.
+                        endif
+                        dphi = stepsize
+                        sign_buff = 1
+                    else
+                        if (sign_buff == 1) then
+                            stepsize = stepsize / 2.
+                        endif
+                        dphi = -1. * stepsize
+                        sign_buff = -1
+                    endif
+                    write(6,*) 'dphi  = ', dphi
+                    phi(ip) = phi(ip) + dphi
+                    x2(ip) = (r2 + ndivs * 0.3 * sin(2. * phi(ip))**4) * cos(phi(ip))
+                    z2(ip) = (r2 + ndivs * 0.3 * sin(2. * phi(ip))**4) * sin(phi(ip))
+                    if (dphi < 0) then
+                        proc_iq_max = elems
+                    else
+                        proc_iq_min = elems
+                    endif
+                endif
+            enddo
+            
+            ! if the optimization did not converge, take or remove as many from
+            ! the elements in question as needed
+
+            do while (nelem(ip) < npart) 
+                ncorrections = ncorrections + 1
+                exit_buff = .false.
+                do is = ndivs - 1, 0, -1
+                    do iz = ndivs - 1, 0, -1
+                        if (XOR(proc_iq_max(is,iz), proc_iq_min(is,iz))) then
+                            proc_iq_min(is,iz) = .true.
+                            proc_iq_max(is,iz) = .true.
+                            elems(is,iz) = .true.
+                            nelem(ip) = nelem(ip) + 1
+                            exit_buff = .true.
+                            exit
+                        endif
+                    enddo
+                    if (exit_buff) then
+                        exit
+                    endif
+                enddo
+            end do
+
+            do while (nelem(ip) > npart)
+                ncorrections = ncorrections + 1
+                exit_buff = .false.
+                do is = ndivs - 1, 0, -1
+                    do iz = ndivs - 1, 0, -1
+                        if (XOR(proc_iq_max(is,iz), proc_iq_min(is,iz))) then
+                            proc_iq_min(is,iz) = .true.
+                            proc_iq_max(is,iz) = .true.
+                            elems(is,iz) = .false.
+                            nelem(ip) = nelem(ip) - 1
+                            exit_buff = .true.
+                            exit
+                        endif
+                    enddo
+                    if (exit_buff) then
+                        exit
+                    endif
+                enddo
+            end do
+
+            ! fill up the array
+
+            do is = 0, ndivs - 1, 1
+                do iz = 0, ndivs - 1, 1
+                    if (proc(is,iz) == -1 .and. elems(is,iz)) then
+                            proc(is,iz) = nproc2 - ip - 1
+                    endif
+                enddo
+            enddo
+
+        ! for the last processor just take the remaining elements
+        else
+            do is = 0, ndivs - 1, 1
+                do iz = 0, ndivs - 1, 1
+                    if (proc(is,iz) == -1) then
+                        nelem(ip) = nelem(ip) + 1
+                        proc(is,iz) = nproc2 - ip - 1
+                    endif
+                enddo
+            enddo
+        endif
+    enddo
+
+    if (dump_mesh_info_screen) then 
+        write(6,*) 'ncorrections = ', ncorrections
+        write(6,*) 'sum   = ', sum(nelem)
+        write(6,*) 'proc  = '
+        write(6,*) 'x0 = ', x0
+        write(6,*) 'x1 = ', x1
+        write(6,*) 'x2 = ', x2
+        write(6,*) 'x3 = ', x3
+        write(6,*) 'z0 = ', z0
+        write(6,*) 'z1 = ', z1
+        write(6,*) 'z2 = ', z2
+        write(6,*) 'z3 = ', z3
+        
+        do ip = 0 , nproc2 - 1, 1
+                write(6,12)ip,nelem(ip)
+        enddo
+        call ascii_print(ndivs, proc, 3)
+    endif
+12 format('Central cube: proc',i3' has',i6' elements')
+
+    exit_buff = test_decomp(ndivs, proc, npart, nproc2)
+
+
+! connect these processor dependencies to the global element numbering scheme
+    central_count(0:nproc-1) = 0
+    do iz = 1, ndivs
+        do is = 1, ndivs
+            central_count(proc(is-1,iz-1)) = &
+                central_count(proc(is-1,iz-1)) + 1
+            attributed(central_is_iz_to_globiel(is,iz)) = .true.
+            attributed(central_is_iz_to_globiel(is,iz) + neltot / 2) = .true.
+
+            if (neltot_solid > 0 ) then 
+                procel_solid(central_count(proc(is-1,iz-1)), &
+                        proc(is-1,iz-1)) = central_is_iz_to_globiel(is,iz)
+            else
+                procel_fluid(central_count(proc(is-1,iz-1)), & 
+                        proc(is-1,iz-1)) = central_is_iz_to_globiel(is,iz)
+            endif
+
+        ! South: inverted copy
+            if (nproc > 1) then 
+                if (neltot_solid>0 ) then 
+                    procel_solid(central_count(proc(is-1,iz-1)), &
+                        nproc - 1 - proc(is-1,iz-1)) = &
+                        central_is_iz_to_globiel(is,iz) + neltot / 2
+                else
+                    procel_fluid(central_count(proc(is-1,iz-1)), &
+                        nproc - 1 - proc(is-1,iz-1)) = &
+                        central_is_iz_to_globiel(is,iz) + neltot / 2
+                endif
+            endif
+        enddo
+    enddo
+
+    ! South: 
+    if (nproc > 1) then
+        do ip = 0, nproc / 2 - 1
+            central_count(nproc - ip - 1) = central_count(ip)
+        enddo
+    endif
+     
+    ! check if all central-cube elements are assigned
+    do is = 1, neltot
+        if (eltypeg(is)=='linear' ) then 
+            if (.not. attributed(is)) then 
+                write(6,*)
+                write(6,*)'Problem: Central cube element not assigned!',is
+                stop
+            endif
+        endif
+    enddo
+
+! _/_/_/_/_write out the central cube decomposition_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+
+    if(dump_mesh_info_files) then 
+        open(unit=10008,file=diagpath(1:lfdiag)//'/central_locind_locsz_iproc.dat')
+        do iz = 1, ndivs
+            do is = 1, ndivs
+                write(10008,13) is, iz, s_arr(is,iz), z_arr(is,iz), &
+                    proc(is-1,iz-1)
+            enddo
+        enddo
+        do iz = 1, ndivs
+            do is = 1, ndivs
+                write(10008,13) is, iz, s_arr(is,iz), -z_arr(is,iz), &
+                    nproc - 1 - proc(is-1,iz-1)
+            enddo
+        enddo
+        close(10008)
+    end if
+13 format(2(i4),2(f9.3),i4)
+
+! _/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+
+    if (dump_mesh_info_screen) then
+        write(6,*)
+        write(6,*)'<><><><> Finished the central domain decomposition!<><><><>'
+        write(6,*)
+        call flush(6)
+    end if
+
+end subroutine decompose_inner_cube_opt
 !------------------------------------------------------------------------
 !
-  end module parallelization 
+logical function test_decomp(ndivs, proc, npart, nproc2)
+    implicit none
+    integer, intent(in)     :: ndivs, proc(0:ndivs-1,0:ndivs-1), &
+                               nproc2, npart
+    integer                 :: is, iz, idx, idz, ip, nelem(0:nproc2), &
+                               neighbour_buff
+    logical                 :: exit_buff
+
+    !test processor bounds
+    do is = 0, ndivs - 1, 1
+        do iz = 0, ndivs - 1, 1
+            if (proc(is,iz) < 0 .or. proc(is,iz) > nproc2 - 1) then
+                write(6,*) 'Problem: element (', is, ',', iz, ') has no processor'
+                stop
+            endif
+        enddo
+    enddo
+
+    !test number of elements per processor 
+    nelem = 0
+    do ip = 0, nproc2-1, 1
+        do is = 0, ndivs - 1, 1
+            do iz = 0, ndivs - 1, 1
+                if (proc(is,iz) == ip) then
+                    nelem(ip) = nelem(ip) + 1
+                endif
+            enddo
+        enddo
+        if (nelem(ip) /= npart) then
+            write(6,*) 'Problem: number of elements of proc ', ip, ' is ', &
+                nelem(ip), ' should be ', npart
+            stop
+        endif
+    enddo
+
+    !test number of neighbours from different domains
+    do is = 0, ndivs - 1, 1
+        do iz = 0, ndivs - 1, 1
+            neighbour_buff = - 1
+            do idx = -1, 1, 1
+                do idz = -1, 1, 1
+                    if ((is + idx < 0) .or. (iz + idz < 0) .or. &
+                            (is + idx > ndivs - 1) .or. (iz + idz > ndivs - 1)) then
+                        continue
+                    elseif (proc(is + idx,iz + idz) /= proc(is,iz)) then
+                        if (neighbour_buff == -1) then
+                            neighbour_buff = proc(is + idx,iz + idz)
+                        elseif (neighbour_buff /= proc(is + idx,iz + idz)) then
+                            call ascii_print_markregion(ndivs, proc, is, iz)
+                            write(6,*) 'Problem: element (', is, ',', iz, ') has &
+                                neighbours from two other regions!'
+                            stop
+                        endif
+                    endif
+                enddo
+            enddo
+        enddo
+    enddo
+
+    test_decomp = .true.
+
+end function test_decomp
+
+logical function below(x0, y0, x1, y1, xp, yp)
+    implicit none
+    real, intent(in) :: x0, y0, x1, y1, xp, yp
+    real :: m, b
+    
+    m = (y1 - y0) / (x1 - x0)
+    b = (x1*y0 - x0*y1) / (x1 - x0)
+
+    if (yp < (m*xp + b)) then
+        below = .true.
+    else
+        below = .false.
+    endif
+end function below
+
+logical function rightof(x0, y0, x1, y1, xp, yp)
+    implicit none
+    real, intent(in) :: x0, y0, x1, y1, xp, yp
+    real :: m, b
+    
+    m = (y1 - y0) / (x1 - x0)
+    b = (x1*y0 - x0*y1) / (x1 - x0)
+
+    if (xp > ((yp - b) / m)) then
+        rightof = .true.
+    else
+        rightof = .false.
+    endif
+end function rightof
+
+subroutine nelem_under(ndivs, x0, x1, x2, x3, z0, z1, z2, z3, proc_max, &
+        proc_min, nelem, proc)
+    implicit none
+    real, intent(in)        :: x0, x1, x2, x3, z0, z1, z2, z3
+    logical, intent(in)     :: proc_max(0:ndivs-1,0:ndivs-1), &
+                               proc_min(0:ndivs-1,0:ndivs-1)
+    integer, intent(in)     :: ndivs
+    integer, intent(out)    :: nelem
+    logical, intent(out)    :: proc(0:ndivs-1,0:ndivs-1)
+    integer                 :: is, iz
+
+    nelem = 0
+
+    do is = 0, ndivs - 1, 1
+        do iz = 0, ndivs - 1, 1
+            if (proc_min(is,iz)) then
+                nelem = nelem + 1
+            endif
+        enddo
+    enddo
+
+    proc = proc_min
+
+    do is = 1, ndivs, 1
+        do iz = 1, ndivs, 1
+            if (XOR(proc_max(is-1,iz-1), proc_min(is-1,iz-1))) then
+                ! first segment
+                !if (is < x1 .and. below(x0, z0, x1, z1, is, iz)):
+                if (below(x0, z0, x1, z1, real(is), real(iz))) then
+                    nelem = nelem + 1
+                    proc(is-1,iz-1) = .true.
+                ! second segment
+                elseif (x2 > x1 .and. is < x2 .and. is > x1 .and. & 
+                        below(x1, z1, x2, z2, real(is), real(iz))) then
+                    nelem = nelem + 1
+                    proc(is-1,iz-1) = .true.
+                elseif (x2 < x1 .and. iz < z2 .and. iz > z1 .and. &
+                        rightof(x1, z1, x2, z2, real(is), real(iz))) then
+                    nelem = nelem + 1
+                    proc(is-1,iz-1) = .true.
+                ! third segment
+                elseif (x3 > x2 .and. is > x2 .and. x2 > x1 .and. &
+                        below(x2, z2, x3, z3, real(is), real(iz))) then
+                    nelem = nelem + 1
+                    proc(is-1,iz-1) = .true.
+                elseif (x3 > x2 .and. is > x2 .and. x2 < x1 .and. iz > z2 .and. &
+                        below(x2, z2, x3, z3, real(is), real(iz))) then
+                    nelem = nelem + 1
+                    proc(is-1,iz-1) = .true.
+                elseif (x3 < x2 .and. iz > z2 .and. &
+                        rightof(x2, z2, x3, z3, real(is), real(iz))) then
+                    nelem = nelem + 1
+                    proc(is-1,iz-1) = .true.
+                ! lower right corner
+                elseif (z3 > z2 .and. iz < z2 .and. is > x2 .and. is > x1) then
+                    nelem = nelem + 1
+                    proc(is-1,iz-1) = .true.
+                endif
+            endif
+        enddo
+    enddo
+end subroutine nelem_under
+
+subroutine ascii_print(ndivs, proc, mode)
+    integer :: is, iz
+    integer, intent(in) :: proc(0:ndivs-1,0:ndivs-1), mode, ndivs
+
+    if (mode == 1) then
+        do iz = ndivs - 1, 0, - 1
+            do is = 0, ndivs - 1, 1
+                write(6,'(i3,$)') proc(is,iz)
+            enddo
+            write(6,*) ''
+        enddo
+    elseif (mode == 2) then
+        do iz = ndivs - 1, 0, - 1
+            do is = 0, ndivs - 1, 1
+                if (proc(is,iz) == ((proc(is,iz) / 2) * 2)) then
+                    write(6,'(A)', advance='no') '0 '
+                else
+                    write(6,'(A)', advance='no') 'X '
+                endif
+            enddo
+            write(6,*) ''
+        enddo
+    elseif (mode == 3) then
+        do iz = ndivs - 1, 0, - 1
+            do is = 0, ndivs - 1, 1
+                if (proc(is,iz) == ((proc(is,iz) / 2) * 2)) then
+                    write(6,'(A)', advance='no') '0'
+                else
+                    write(6,'(A)', advance='no') '-'
+                endif
+            enddo
+            write(6,*) ''
+        enddo
+    endif
+
+end subroutine ascii_print
+
+subroutine ascii_print_markregion(ndivs, proc, px, pz)
+    integer :: is, iz
+    integer, intent(in) :: proc(0:ndivs-1,0:ndivs-1), ndivs, px, pz
+
+    do iz = ndivs - 1, 0, - 1
+        do is = 0, ndivs - 1, 1
+            if ((is == px - 2 .or. is == px + 2) .or. (iz == pz - 2 .or. iz == pz + 2)) then
+                write(6,'(A)', advance='no') '#'
+            elseif (proc(is,iz) == ((proc(is,iz) / 2) * 2)) then
+                write(6,'(A)', advance='no') 'x'
+            else
+                write(6,'(A)', advance='no') '-'
+            endif
+        enddo
+        write(6,*) ''
+    enddo
+
+end subroutine ascii_print_markregion
+  
+
+
+end module parallelization 
