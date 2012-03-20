@@ -1301,7 +1301,6 @@ subroutine decompose_inner_cube_opt(central_count)
                         dphi = -1. * stepsize
                         sign_buff = -1
                     endif
-                    write(6,*) 'dphi  = ', dphi
                     phi(ip) = phi(ip) + dphi
                     x2(ip) = (r2 + ndivs * 0.3 * sin(2. * phi(ip))**4) * cos(phi(ip))
                     z2(ip) = (r2 + ndivs * 0.3 * sin(2. * phi(ip))**4) * sin(phi(ip))
