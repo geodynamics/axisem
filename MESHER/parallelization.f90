@@ -226,12 +226,21 @@ end subroutine plot_dd_vtk
 ! **************** INNER CUBE **********************
 !   call decompose_inner_cube(iproc,theta_min,theta_max)
 
-! define quadratic functions to delineate processor boundaries. 
-! Works for nproc=2,4,8,16 at this point
-   call decompose_inner_cube_quadratic_fcts(central_count)
-
-! newest version of inner decomposition (nproc needs to be multiple of 4)
-!   call decompose_inner_cube_opt(central_count)
+    if (nproc == 1 .or. nproc == 2 .or. nproc == 4 .or. nproc == 6 .or. &
+            nproc == 8) then
+        ! define quadratic functions to delineate processor boundaries. 
+        ! Works for nproc=2,4,8,16 at this point
+        call decompose_inner_cube_quadratic_fcts(central_count)
+    elseif (nproc > 8 .and. (nproc / 4) * 4 == nproc) then
+        ! newest version of inner core decomposition (nproc needs to be multiple
+        ! of 4)
+        call decompose_inner_cube_opt(central_count)
+    else
+        write(6,*)
+        write(6,*)'PROBLEM: central cube decomposition not implemented for &
+            nproc = ',nproc
+        stop
+    endif
 
 ! **************** END OF INNER CUBE****************
 
@@ -858,11 +867,6 @@ else ! domain decomposition needed
             call check_my_els(iproc,proc_central)
         endif
 
-    elseif (nproc>16) then
-
-        write(6,*)
-        write(6,*)'PROBLEM: central cube decomposition not yet done for nproc',nproc
-        stop
     endif
 
 !========================
