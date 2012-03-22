@@ -12,7 +12,7 @@
 
   implicit none
 
-  public :: bkgrdmodel_testing,write_VTK_bin_scal_old
+  public :: bkgrdmodel_testing, write_VTK_bin_scal_old, write_VTK_bin_scal
   private 
 
   contains
