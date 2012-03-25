@@ -339,33 +339,45 @@ deallocate(x,y,z)
 
   h_real=real(hmax/(period/(pts_wavelngth*real(npol))))
   write(6,*)'minmax hmax:',minval(h_real),maxval(h_real)
-  fname=trim(diagpath)//'/mesh_hmax'
-  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  if (period > 2.5) then
+    fname=trim(diagpath)//'/mesh_hmax'
+    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  endif
 
   h_real=real(hmin/(dt/courant))
   write(6,*)'minmax hmin:',minval(h_real),maxval(h_real)
-  fname=trim(diagpath)//'/mesh_hmin'
-  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  if (period > 2.5) then
+    fname=trim(diagpath)//'/mesh_hmin'
+    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  endif
 
   h_real=real(period/hmax)
   write(6,*)'minmax pts wavelngth:',minval(h_real),maxval(h_real)
-  fname=trim(diagpath)//'/mesh_pts_wavelength'
-  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  if (period > 2.5) then
+    fname=trim(diagpath)//'/mesh_pts_wavelength'
+    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  endif
 
   h_real=real(dt/hmin)
   write(6,*)'minmax courant:',minval(h_real),maxval(h_real)
-  fname=trim(diagpath)//'/mesh_courant'
-  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  if (period > 2.5) then
+    fname=trim(diagpath)//'/mesh_courant'
+    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  endif
 
   h_real=real(courant*hmin)
   write(6,*)'minmax dt:',minval(h_real),maxval(h_real)
-  fname=trim(diagpath)//'/mesh_dt'
-  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  if (period > 2.5) then
+    fname=trim(diagpath)//'/mesh_dt'
+    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  endif
 
   h_real=real(pts_wavelngth*real(npol)*hmax)
   write(6,*)'minmax period:',minval(h_real),maxval(h_real)
-  fname=trim(diagpath)//'/mesh_period'
-  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  if (period > 2.5) then
+    fname=trim(diagpath)//'/mesh_period'
+    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  endif
   deallocate(mesh2,h_real)
 
 char_time_max=maxval(hmax)
@@ -512,7 +524,7 @@ write(100) 'LOOKUP_TABLE default'//char(10) !color table?
 write(100) real(u1)
  close(100)
 write(6,*)'...saved ',trim(filename)//'.vtk'
-end subroutine write_vtk_bin_scal_old
+end subroutine write_VTK_bin_scal_old
 !-----------------------------------------------------------------------------
 
 
@@ -571,7 +583,7 @@ write(100) 'LOOKUP_TABLE default'//char(10) !color table?
 write(100) u1
  close(100)
 write(6,*)'...saved ',trim(filename)//'.vtk'
-end subroutine write_vtk_bin_scal
+end subroutine write_VTK_bin_scal
 
 
 !-----------------------------------------------------------------------------

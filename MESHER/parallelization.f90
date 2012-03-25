@@ -191,7 +191,9 @@ subroutine plot_dd_vtk
     fname=trim(diagpath)//'/mesh_domaindecomposition'
     allocate(wel2proc(1:neltot))
     wel2proc=real(el2proc)
-    call write_VTK_bin_scal_old(wel2proc,mesh1,neltot,fname)
+    if (period > 2.5) then
+        call write_VTK_bin_scal_old(wel2proc,mesh1,neltot,fname)
+    endif
     deallocate(wel2proc)
 
     ! write VTK with cell data
