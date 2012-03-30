@@ -339,7 +339,7 @@ end subroutine read_model
 
 
 !-----------------------------------------------------------------------------
-subroutine read_model_ani(rho, lambda, mu, epsilon_ani, gamma_ani, delta_ani)
+subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani)
 !
 ! same as above, but for anisotropic models
 !    
@@ -352,9 +352,9 @@ include 'mesh_params.h'
 
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rho
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
-double precision, dimension(0:npol,0:npol,nelem), intent(out) :: epsilon_ani, gamma_ani, delta_ani
+double precision, dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
 double precision :: s,z,r,theta,r1,r2,r3,r4,th1,th2,th3,th4
-double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp, etatmp
+double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp
 integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count,ij,jj
 logical :: foundit
 character(len=100) :: modelstring
@@ -373,9 +373,9 @@ character(len=100) :: modelstring
   rho(0:npol,0:npol,1:nelem) = -1.E30
   lambda(0:npol,0:npol,1:nelem) = -1.E30
   mu(0:npol,0:npol,1:nelem) = -1.E30
-  epsilon_ani(0:npol,0:npol,1:nelem) = -1.E30
-  gamma_ani(0:npol,0:npol,1:nelem) = -1.E30
-  delta_ani(0:npol,0:npol,1:nelem) = -1.E30
+  xi_ani(0:npol,0:npol,1:nelem) = -1.E30
+  phi_ani(0:npol,0:npol,1:nelem) = -1.E30
+  eta_ani(0:npol,0:npol,1:nelem) = -1.E30
 
 ! check for each element which domain it belongs to
   open(unit=65,file=infopath(1:lfinfo)//'/elems_bkgrdmodel_domain.dat'&
@@ -432,28 +432,25 @@ character(len=100) :: modelstring
         do jpol=0,npol
            call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
 
-           vphtmp=velocity(r,'vph',iidom,modelstring,lfbkgrdmodel)
-           vpvtmp=velocity(r,'vpv',iidom,modelstring,lfbkgrdmodel)
-           vshtmp=velocity(r,'vsh',iidom,modelstring,lfbkgrdmodel)
-           vsvtmp=velocity(r,'vsv',iidom,modelstring,lfbkgrdmodel)
-           etatmp=velocity(r,'eta',iidom,modelstring,lfbkgrdmodel)
-           rho(ipol,jpol,iel)= velocity(r,'rho',iidom,modelstring,lfbkgrdmodel)
+           vphtmp = velocity(r,'vph',iidom,modelstring,lfbkgrdmodel)
+           vpvtmp = velocity(r,'vpv',iidom,modelstring,lfbkgrdmodel)
+           vshtmp = velocity(r,'vsh',iidom,modelstring,lfbkgrdmodel)
+           vsvtmp = velocity(r,'vsv',iidom,modelstring,lfbkgrdmodel)
+           eta_ani(ipol,jpol,iel) = velocity(r,'eta',iidom,modelstring,lfbkgrdmodel)
+           rho(ipol,jpol,iel) = velocity(r,'rho',iidom,modelstring,lfbkgrdmodel)
            
-           lambda(ipol,jpol,iel) = rho(ipol,jpol,iel) * &
-                    (vphtmp**2 - two*vshtmp**2)
+           lambda(ipol,jpol,iel) = rho(ipol,jpol,iel) * (vphtmp**2 - two*vshtmp**2)
            mu(ipol,jpol,iel) = rho(ipol,jpol,iel) * vshtmp**2
-           epsilon_ani(ipol,jpol,iel) = one - vpvtmp**2 / vphtmp**2
-           if (vshtmp > smallval_sngl) then
-              gamma_ani(ipol,jpol,iel) = vsvtmp**2 / vshtmp**2 - one
+           if (vsvtmp > (smallval_sngl * vphtmp)) then
+              xi_ani(ipol,jpol,iel) = vshtmp**2 / vsvtmp**2
            else
-              gamma_ani(ipol,jpol,iel) = zero
+              xi_ani(ipol,jpol,iel) = one
            endif
-           delta_ani(ipol,jpol,iel) = (etatmp * vphtmp**2 - vpvtmp**2 + &
-                    two * (one - etatmp) * vsvtmp**2) / (2 * vphtmp**2)
+           phi_ani(ipol,jpol,iel) = vpvtmp**2 / vphtmp**2
 
            if (save_large_tests) &
                 write(5454,12) r, iidom, vphtmp, vpvtmp, vshtmp, vsvtmp, &
-                        etatmp, rho(ipol,jpol,iel)
+                        eta_ani(ipol,jpol,iel), rho(ipol,jpol,iel)
 
         ! XXX generalize tests for anisotropic parameters:
 
@@ -477,7 +474,7 @@ character(len=100) :: modelstring
               write(6,*)
               write(6,*)procstrg,&
                    'PROBLEM: Elastic params and s-vel conversion erroneous!'
-              write(6,*)procstrg,'r,theta,vstmp:',&
+              write(6,*)procstrg,'r,theta,vshtmp:',&
                    r/1000.,theta*180./pi,vshtmp/1000.
               write(6,*)procstrg,'rho,lambda,mu:',rho(ipol,jpol,iel)/1000., & 
                    lambda(ipol,jpol,iel)/1000.,mu(ipol,jpol,iel)/1000.
@@ -514,10 +511,9 @@ character(len=100) :: modelstring
 ! TNM Oct 29: addition of heterogeneities in separate routine
 ! if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
 
-! XXX generalize for anisotropy:
 ! plot final velocity model in vtk
  write(6,*)mynum,'plotting vtks for the model properties....'
- call plot_model_vtk(rho, lambda, mu, epsilon_ani, gamma_ani, delta_ani)
+ call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani)
 
 !@@@@@@@@@@@@@@@@@
 ! Some tests....
@@ -545,7 +541,8 @@ endif
 ! call compute_numerical_resolution(lambda,mu,rho)
 
 
-!MvD: Do we need the following for each anisotropic velocity can we leave it as is?
+!MvD: Do we need the following for each anisotropic velocity can we leave it as is? Do we need it at all? 
+! - 2.2.12: just outputted to standard out in parameters.f90
 
 !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 ! compute min/max velocities in whole domain
@@ -2060,55 +2057,53 @@ character(len=100) :: modelstring
 
 12 format(4(1pe12.4))
 
-
-
 ! output radial model with km-scale resolution and points on discontinuities
   if (do_mesh_tests) then
-  pts_per_km = 2.
-
-  modelstring=bkgrdmodel!(1:(index(bkgrdmodel,' ')-1))
-  if (lpr) write(6,13)pts_per_km
+     pts_per_km = 2.
+   
+     modelstring=bkgrdmodel!(1:(index(bkgrdmodel,' ')-1))
+     if (lpr) write(6,13)pts_per_km
 13 format('     fine-scale radial model output; points per km:',f7.2)
 
-  open(unit=5454,file=infopath(1:lfinfo)//&
-       '/backgroundmodel_kmscale.dat'//appmynum)
-  do iel=1,ceiling(router/1000.*pts_per_km)+1
-     r = router-(real(iel)-1)*1000./pts_per_km
-     idom = 1000
-     do iidom=1,ndisc-1
-        if (r<=discont(iidom) .and. r> discont(iidom+1) ) then 
+     open(unit=5454,file=infopath(1:lfinfo)//&
+          '/backgroundmodel_kmscale.dat'//appmynum)
+     do iel=1,ceiling(router/1000.*pts_per_km)+1
+        r = router-(real(iel)-1)*1000./pts_per_km
+        idom = 1000
+        do iidom=1,ndisc-1
+           if (r<=discont(iidom) .and. r> discont(iidom+1) ) then 
+              if (idom == 1000) then 
+                 idom=iidom
+              else
+                 write(6,*)procstrg,'PROBLEM in fine-scale model output!'
+                 write(6,*)procstrg,'Found multiple domains for radius=',r
+                 write(6,*)procstrg,'Domain 1:',idom
+                 write(6,*)procstrg,'Domain 2:',iidom
+                 stop
+              endif
+           endif
+        enddo
+        if (r <= discont(ndisc)) then 
            if (idom == 1000) then 
-              idom=iidom
+              idom=ndisc
            else
               write(6,*)procstrg,'PROBLEM in fine-scale model output!'
               write(6,*)procstrg,'Found multiple domains for radius=',r
               write(6,*)procstrg,'Domain 1:',idom
-              write(6,*)procstrg,'Domain 2:',iidom
+              write(6,*)procstrg,'Domain 2:',ndisc
               stop
            endif
         endif
-     enddo
-     if (r <= discont(ndisc)) then 
-        if (idom == 1000) then 
-           idom=ndisc
-        else
+        if (idom==1000) then 
            write(6,*)procstrg,'PROBLEM in fine-scale model output!'
-           write(6,*)procstrg,'Found multiple domains for radius=',r
-           write(6,*)procstrg,'Domain 1:',idom
-           write(6,*)procstrg,'Domain 2:',ndisc
+           write(6,*)procstrg,'Couldn"t find domain for radius=',r
            stop
         endif
-     endif
-     if (idom==1000) then 
-        write(6,*)procstrg,'PROBLEM in fine-scale model output!'
-        write(6,*)procstrg,'Couldn"t find domain for radius=',r
-        stop
-     endif
-     vp=velocity(r,'v_p',idom,modelstring,lfbkgrdmodel)
-     vs=velocity(r,'v_s',idom,modelstring,lfbkgrdmodel)
-     ro=velocity(r,'rho',idom,modelstring,lfbkgrdmodel)
-     write(5454,12)r,vp,vs,ro
-  enddo
+        vp=velocity(r,'v_p',idom,modelstring,lfbkgrdmodel)
+        vs=velocity(r,'v_s',idom,modelstring,lfbkgrdmodel)
+        ro=velocity(r,'rho',idom,modelstring,lfbkgrdmodel)
+        write(5454,12)r,vp,vs,ro
+     enddo
   endif
 end subroutine model_output
 !=============================================================================
@@ -2175,16 +2170,16 @@ end subroutine write_vtk_bin_scal
 !-----------------------------------------------------------------------------
 
 !=============================================================================
-subroutine plot_model_vtk(rho,lambda,mu, epsilon_ani, gamma_ani, delta_ani)
+subroutine plot_model_vtk(rho,lambda,mu, xi_ani, phi_ani, eta_ani)
 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
 double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
-                                        epsilon_ani, gamma_ani, delta_ani
+                                        xi_ani, phi_ani, eta_ani
 
 real, dimension(:), allocatable :: vp1,vs1,rho1
 real, dimension(:), allocatable :: vpv1,vsv1,eta1
-real, dimension(:), allocatable :: epsilon1,gamma1,delta1
+real, dimension(:), allocatable :: xi1,phi1
 character(len=80) :: fname
 integer :: npts_vtk,ct,iel,i
 real, allocatable ::  x(:),y(:),z0(:)
@@ -2192,9 +2187,9 @@ logical :: plot_ani
 
 npts_vtk=nelem *4
 allocate(vp1(npts_vtk),vs1(npts_vtk),rho1(npts_vtk))
-if (present(epsilon_ani) .and. present(gamma_ani) .and.  present(delta_ani)) then
+if (present(xi_ani) .and. present(phi_ani) .and.  present(eta_ani)) then
     allocate(vpv1(npts_vtk),vsv1(npts_vtk),eta1(npts_vtk))
-    allocate(epsilon1(npts_vtk),gamma1(npts_vtk),delta1(npts_vtk))
+    allocate(xi1(npts_vtk),phi1(npts_vtk))
     plot_ani = .true.
 else
     plot_ani = .false.
@@ -2221,13 +2216,11 @@ do iel=1,nelem
       vs1(ct+1) = sqrt( mu(0,0,iel)  / rho1(ct+1)  )
 
       if (plot_ani) then
-        vpv1(ct+1) = sqrt(one - epsilon_ani(0,0,iel)) * vp1(ct+1)
-        vsv1(ct+1) = sqrt(one + gamma_ani(0,0,iel)) * vs1(ct+1)
-        eta1(ct+1) = (delta_ani(0,0,iel) * 2 * vp1(ct+1) + vpv1(ct+1)**2 - 2 * vsv1(ct+1)**2) & 
-                   / (vp1(ct+1)**2 - 2 * vsv1(ct+1)**2)
-        epsilon1(ct+1) = epsilon_ani(0,0,iel)
-        gamma1(ct+1) = gamma_ani(0,0,iel)
-        delta1(ct+1) = delta_ani(0,0,iel)
+        vpv1(ct+1) = sqrt(phi_ani(0,0,iel)) * vp1(ct+1)
+        vsv1(ct+1) = vs1(ct+1) / sqrt(xi_ani(0,0,iel))
+        xi1(ct+1) = xi_ani(0,0,iel)
+        phi1(ct+1) = phi_ani(0,0,iel)
+        eta1(ct+1) = eta_ani(0,0,iel)
       endif
 
       rho1(ct+2)  =  rho(npol,0,iel)
@@ -2235,13 +2228,11 @@ do iel=1,nelem
       vs1(ct+2) = sqrt( mu(npol,0,iel)  / rho1(ct+2)  )
 
       if (plot_ani) then
-        vpv1(ct+2) = sqrt(one - epsilon_ani(npol,0,iel)) * vp1(ct+2)
-        vsv1(ct+2) = sqrt(one + gamma_ani(npol,0,iel)) * vs1(ct+2)
-        eta1(ct+2) = (delta_ani(npol,0,iel) * 2 * vp1(ct+2) + vpv1(ct+2)**2 - 2 * vsv1(ct+2)**2) & 
-                   / (vp1(ct+2)**2 - 2 * vsv1(ct+2)**2)
-        epsilon1(ct+2) = epsilon_ani(npol,0,iel)
-        gamma1(ct+2) = gamma_ani(npol,0,iel)
-        delta1(ct+2) = delta_ani(npol,0,iel)
+        vpv1(ct+2) = sqrt(phi_ani(npol,0,iel)) * vp1(ct+2)
+        vsv1(ct+2) = vs1(ct+2) / sqrt(xi_ani(npol,0,iel))
+        xi1(ct+2) = xi_ani(npol,0,iel)
+        phi1(ct+2) = phi_ani(npol,0,iel)
+        eta1(ct+2) = eta_ani(npol,0,iel)
       endif
 
       rho1(ct+3)  =  rho(npol,npol,iel)
@@ -2249,13 +2240,11 @@ do iel=1,nelem
       vs1(ct+3) = sqrt( mu(npol,npol,iel)  / rho1(ct+2)  )
 
       if (plot_ani) then
-        vpv1(ct+3) = sqrt(one - epsilon_ani(npol,npol,iel)) * vp1(ct+3)
-        vsv1(ct+3) = sqrt(one + gamma_ani(npol,npol,iel)) * vs1(ct+3)
-        eta1(ct+3) = (delta_ani(npol,npol,iel) * 2 * vp1(ct+3) + vpv1(ct+3)**2 - 2 * vsv1(ct+3)**2) & 
-                   / (vp1(ct+3)**2 - 2 * vsv1(ct+3)**2)
-        epsilon1(ct+3) = epsilon_ani(npol,npol,iel)
-        gamma1(ct+3) = gamma_ani(npol,npol,iel)
-        delta1(ct+3) = delta_ani(npol,npol,iel)
+        vpv1(ct+3) = sqrt(phi_ani(npol,npol,iel)) * vp1(ct+3)
+        vsv1(ct+3) = vs1(ct+3) / sqrt(xi_ani(npol,npol,iel))
+        xi1(ct+3) = xi_ani(npol,npol,iel)
+        phi1(ct+3) = phi_ani(npol,npol,iel)
+        eta1(ct+3) = eta_ani(npol,npol,iel)
       endif
 
       rho1(ct+4)  =  rho(0,npol,iel)
@@ -2263,13 +2252,11 @@ do iel=1,nelem
       vs1(ct+4) = sqrt( mu(0,npol,iel)  / rho1(ct+2)  )
 
       if (plot_ani) then
-        vpv1(ct+4) = sqrt(one - epsilon_ani(0,npol,iel)) * vp1(ct+4)
-        vsv1(ct+4) = sqrt(one + gamma_ani(0,npol,iel)) * vs1(ct+4)
-        eta1(ct+4) = (delta_ani(0,npol,iel) * 2 * vp1(ct+4) + vpv1(ct+4)**2 - 2 * vsv1(ct+4)**2) & 
-                   / (vp1(ct+4)**2 - 2 * vsv1(ct+4)**2)
-        epsilon1(ct+4) = epsilon_ani(0,npol,iel)
-        gamma1(ct+4) = gamma_ani(0,npol,iel)
-        delta1(ct+4) = delta_ani(0,npol,iel)
+        vpv1(ct+4) = sqrt(phi_ani(0,npol,iel)) * vp1(ct+3)
+        vsv1(ct+4) = vs1(ct+4) / sqrt(xi_ani(0,npol,iel))
+        xi1(ct+4) = xi_ani(0,npol,iel)
+        phi1(ct+4) = phi_ani(0,npol,iel)
+        eta1(ct+4) = eta_ani(0,npol,iel)
       endif
 
 
@@ -2296,16 +2283,13 @@ if (plot_ani) then
    fname=trim('Info/model_eta_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,eta1,npts_vtk/4,fname)
    
-   fname=trim('Info/model_epsilon_'//appmynum)
-   call write_VTK_bin_scal(x,y,z0,epsilon1,npts_vtk/4,fname)
+   fname=trim('Info/model_xi_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,xi1,npts_vtk/4,fname)
    
-   fname=trim('Info/model_gamma_'//appmynum)
-   call write_VTK_bin_scal(x,y,z0,gamma1,npts_vtk/4,fname)
-   
-   fname=trim('Info/model_delta_'//appmynum)
-   call write_VTK_bin_scal(x,y,z0,delta1,npts_vtk/4,fname)
+   fname=trim('Info/model_phi_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,phi1,npts_vtk/4,fname)
 
-   deallocate(vp1,vs1,rho1, vsv1, vpv1, eta1, epsilon1, gamma1, delta1)
+   deallocate(vp1,vs1,rho1, vsv1, vpv1, eta1, xi1, phi1)
 else
    fname=trim('Info/model_vp_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,vp1,npts_vtk/4,fname)
