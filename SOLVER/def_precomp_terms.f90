@@ -40,23 +40,23 @@ use get_model
 include 'mesh_params.h'
 
 double precision, dimension(:,:,:),allocatable :: rho,lambda,mu,massmat_kwts2
-double precision, dimension(:,:,:),allocatable :: epsilon_ani, gamma_ani, delta_ani
+double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
 
   if(lpr)write(6,*)'  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::'
   if(lpr)write(6,*)'  allocate elastic fields....';call flush(6)
   allocate(rho(0:npol,0:npol,1:nelem),massmat_kwts2(0:npol,0:npol,1:nelem))
   allocate(lambda(0:npol,0:npol,1:nelem),mu(0:npol,0:npol,1:nelem))
   if (ani_true) then
-    allocate(epsilon_ani(0:npol,0:npol,1:nelem))
-    allocate(gamma_ani(0:npol,0:npol,1:nelem))
-    allocate(delta_ani(0:npol,0:npol,1:nelem))
+    allocate(xi_ani(0:npol,0:npol,1:nelem))
+    allocate(phi_ani(0:npol,0:npol,1:nelem))
+    allocate(eta_ani(0:npol,0:npol,1:nelem))
   endif
 
 ! load velocity/density model  (velocities in m/s, density in kg/m^3 )
   if(lpr)write(6,*)'  define background model....';call flush(6)
   if (ani_true) then
     if(lpr)write(6,*)'  background model is anisotropic....';call flush(6)
-    call read_model_ani(rho, lambda, mu, epsilon_ani, gamma_ani, delta_ani)
+    call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani)
   else 
     call read_model(rho,lambda,mu)
   endif
@@ -85,9 +85,14 @@ double precision, dimension(:,:,:),allocatable :: epsilon_ani, gamma_ani, delta_
 
 
   if(lpr)write(6,*)'  define solid stiffness terms....';call flush(6)
-  call def_solid_stiffness_terms(lambda,mu,massmat_kwts2)
+  if (ani_true) then
+    call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani)
+    deallocate(lambda,mu,xi_ani,phi_ani,eta_ani)
+  else
+    call def_solid_stiffness_terms(lambda,mu,massmat_kwts2)
+    deallocate(lambda,mu)
+  endif
 
-  deallocate(lambda,mu)
 
   if (have_fluid) then
      if(lpr)write(6,*)'  define fluid stiffness terms....';call flush(6)
@@ -1236,7 +1241,7 @@ end subroutine compute_mass_earth
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine def_solid_stiffness_terms(lambda,mu,massmat_kwts2)
+subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani)
 !
 ! This routine is a merged version to minimize global work 
 ! array definitions. The terms alpha_wt_k etc. are now 
@@ -1245,12 +1250,15 @@ subroutine def_solid_stiffness_terms(lambda,mu,massmat_kwts2)
 ! for the solid stiffness term. The loop is over solid elements only.
 ! Tarje, Sept 2006.
 !
+! Adding optional arguments for anisotropy, MvD
+!
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 include "mesh_params.h"
 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: massmat_kwts2
+double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: xi_ani, phi_ani, eta_ani
 
 double precision :: local_crd_nodes(8,2)
 integer          :: ielem,ipol,jpol,inode
@@ -1432,10 +1440,19 @@ double precision, allocatable :: non_diag_fact(:,:)
      do jpol=0,npol
 !    +++++++++++++++++++++
        select case (src_type(1))
-
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
        case ('monopole')
-        call compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
+         if (ani_true) then
+            call compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                       massmat_kwts2, &
+                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
+                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
+                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
+                                       M_z_eta_wt_k,M_s_eta_wt_k, &
+                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
+                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
+         else
+            call compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                        lambda,mu,massmat_kwts2, &
                                        non_diag_fact,alpha_wt_k,beta_wt_k,&
                                        gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -1443,10 +1460,14 @@ double precision, allocatable :: non_diag_fact(:,:)
                                        M_z_eta_wt_k,M_s_eta_wt_k, &
                                        Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
+         endif
 
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      case('dipole')
-       call compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
+       case('dipole')
+         if (ani_true) then
+            write(6,*) 'ERROR: Anisotropy not yet implemented for Dipole sources!'
+            stop
+         else
+            call compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                        lambda,mu,massmat_kwts2, &
                                        non_diag_fact,alpha_wt_k,beta_wt_k,&
                                        gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -1454,10 +1475,14 @@ double precision, allocatable :: non_diag_fact(:,:)
                                        M_z_eta_wt_k,M_s_eta_wt_k, &
                                        Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
+         endif
 
-!~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      case('quadpole') 
-       call compute_quadrupole_stiff_terms(ielem,jpol,local_crd_nodes,&
+       case('quadpole') 
+         if (ani_true) then
+           write(6,*) 'ERROR: Anisotropy not yet implemented for Qudrupole sources!'
+           stop
+         else
+            call compute_quadrupole_stiff_terms(ielem,jpol,local_crd_nodes,&
                                        lambda,mu,massmat_kwts2,&
                                        non_diag_fact,alpha_wt_k,beta_wt_k,&
                                        gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -1465,6 +1490,7 @@ double precision, allocatable :: non_diag_fact(:,:)
                                        M_z_eta_wt_k,M_s_eta_wt_k, &
                                        Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
+         endif
 
       end select
 
@@ -1529,8 +1555,9 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
 
 ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
-     M0_s_xi(0:npol,1:nel_solid)=zero
-     M0_w(0:npol,1:nel_solid)=zero
+     M0_4(0:npol,1:nel_solid)=zero
+     M0_w1(0:npol,1:nel_solid)=zero
+     M0_w2(0:npol,1:nel_solid)=zero
   endif
   
 ! ----------------
@@ -1565,13 +1592,13 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
           epsil_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
           two*mu(ipol,jpol,ielsolid(ielem)))*beta_wt_k(ipol,jpol)
 
-     Mz_xi(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
+     M_2(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
           M_z_xi_wt_k(ipol,jpol)
-     Mz_eta(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
+     M_1(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
           M_z_eta_wt_k(ipol,jpol)
-     Ms_xi(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
+     M_4(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
           M_s_xi_wt_k(ipol,jpol)
-     Ms_eta(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
+     M_3(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
           M_s_eta_wt_k(ipol,jpol)
 
      M_w(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
@@ -1587,14 +1614,251 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
 ! AXIS-------------------
      ipol=0
 
-     M0_s_xi(jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
+     M0_4(jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
           dsdxi*wt_axial_k(0)*wt(jpol)
-     M0_w(jpol,ielem)=(three*lambda(ipol,jpol,ielsolid(ielem))+ &
+     M0_w1(jpol,ielem)=(three*lambda(ipol,jpol,ielsolid(ielem))+ &
           two*mu(ipol,jpol,ielsolid(ielem)))* &
           non_diag_fact(jpol,ielem)
   endif
 
 end subroutine compute_monopole_stiff_terms
+!=============================================================================
+
+
+!-----------------------------------------------------------------------------
+subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                       massmat_kwts2, &
+                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
+                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
+                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
+                                       M_z_eta_wt_k,M_s_eta_wt_k, &
+                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
+                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
+
+use data_monopole
+
+implicit none
+integer, intent(in) :: ielem,jpol
+
+double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
+double precision, intent(in) :: mu(0:npol,0:npol,nelem)
+double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
+double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
+double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
+double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+
+double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
+double precision, intent(in) :: local_crd_nodes(8,2)
+
+double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
+double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
+double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
+double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
+double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
+double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+
+double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+
+double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+
+integer          :: ipol
+double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+double precision :: theta
+double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
+double precision :: lambdal, mul, xil, phil, etal
+
+! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
+  if ( ielem==1 .and. jpol==0 ) then
+     M0_4(0:npol,1:nel_solid)=zero
+     M0_w1(0:npol,1:nel_solid)=zero
+     M0_w2(0:npol,1:nel_solid)=zero
+  endif
+  
+! ----------------
+  do ipol=0,npol
+! ----------------
+     theta = thetacoord(ipol, jpol, ielsolid(ielem))
+   
+     lambdal = lambda(ipol,jpol,ielsolid(ielem))
+     mul = mu(ipol,jpol,ielsolid(ielem))
+     xil = xi_ani(ipol,jpol,ielsolid(ielem))
+     phil = phi_ani(ipol,jpol,ielsolid(ielem))
+     etal = eta_ani(ipol,jpol,ielsolid(ielem))
+     
+     C11 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 1, 1)
+     C12 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 2, 2)
+     C13 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 3, 3)
+     C15 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 3, 1)
+     C22 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 2, 2)
+     C23 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 3, 3)
+     C25 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 3, 1)
+     C33 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 3, 3)
+     C35 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 3, 1)
+     C44 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 2, 3)
+     C46 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 1, 2)
+     C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 1, 3, 1)
+     C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 2, 1, 2)
+
+    ! Test for the components that should be zero:
+     if (do_mesh_tests) then
+        if ( ielem==1 .and. jpol==0 .and. ipol==0 ) then
+           if (lpr) write(6,*) ' Test for the components of c_ijkl that should be zero in anisotropic case'
+        endif
+        Ctmp = zero
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 3, 1))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 1, 1, 2))
+        
+        if (Ctmp > smallval_sngl) then
+           write(6,*)procstrg,' ERROR: some stiffness term that should be zero '
+           write(6,*)procstrg,'        is not: in compute_monopole_stiff_terms_ani()'
+           stop
+        endif
+     endif
+
+     !Uncomment to test for comparison to isotropic values
+     !
+     !if (dabs(C11 - lambdal - 2 * mul) / C11 > smallval_sngl) then
+     !   write(6,*) 'C11 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C22 - lambdal - 2 * mul) / C22 > smallval_sngl) then
+     !   write(6,*) 'C22 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C33 - lambdal - 2 * mul) / C33  > smallval_sngl) then
+     !   write(6,*) 'C33 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C44 - mul) / C44 > smallval_sngl) then
+     !   write(6,*) 'C44 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C55 - mul) / C55 > smallval_sngl) then
+     !   write(6,*) 'C55 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C66 - mul) / C66 > smallval_sngl) then
+     !   write(6,*) 'C66 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C12 - lambdal) / C12 > smallval_sngl) then
+     !   write(6,*) 'C12 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C13 - lambdal) / C13 > smallval_sngl) then
+     !   write(6,*) 'C13 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C23 - lambdal) / C23 > smallval_sngl) then
+     !   write(6,*) 'C23 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C15) > smallval_sngl) then
+     !   write(6,*) 'C15 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C25) > smallval_sngl) then
+     !   write(6,*) 'C25 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C35) > smallval_sngl) then
+     !   write(6,*) 'C35 is wrong'
+     !   stop
+     !endif
+     !if (dabs(C46) > smallval_sngl) then
+     !   write(6,*) 'C46 is wrong'
+     !   stop
+     !endif
+
+     !hard coded C for pure vp anisotropy, can be removed after some more
+     !testing (MvD)
+     !C11 = C11 + (phil - one) * (lambdal + two * mul) * (dsin(theta)**4)
+     !C33 = C33 + (phil - one) * (lambdal + two * mul) * (dcos(theta)**4)
+     !C13 = C13 + (phil - one) * (lambdal + two * mul) * (dsin(theta)**2) * (dcos(theta)**2)
+     !C15 = C15 + (phil - one) * (lambdal + two * mul) * (dsin(theta)**3) * (dcos(theta)**1)
+     !C35 = C35 + (phil - one) * (lambdal + two * mul) * (dsin(theta)**1) * (dcos(theta)**3)
+     !C55 = C55 + (phil - one) * (lambdal + two * mul) * (dsin(theta)**2) * (dcos(theta)**2)
+    
+     M11s(ipol,jpol,ielem) = C11 * delta_wt_k(ipol,jpol) &
+                           + C15 * Ms_z_eta_s_xi_wt_k(ipol,jpol)&
+                           + C15 * Ms_z_xi_s_eta_wt_k(ipol,jpol)&
+                           + C55 * alpha_wt_k(ipol,jpol)
+
+     M21s(ipol,jpol,ielem) = C11 * zeta_wt_k(ipol,jpol) &
+                           + C15 * two * Ms_z_eta_s_eta_wt_k(ipol,jpol)&
+                           + C55 * gamma_wt_k(ipol,jpol)
+
+     M41s(ipol,jpol,ielem) = C11 * epsil_wt_k(ipol,jpol) &
+                           + C15 * two * Ms_z_xi_s_xi_wt_k(ipol,jpol)&
+                           + C55 * beta_wt_k(ipol,jpol)
+
+     M12s(ipol,jpol,ielem) = C15 * delta_wt_k(ipol,jpol) &
+                           + C13 * Ms_z_eta_s_xi_wt_k(ipol,jpol)&
+                           + C55 * Ms_z_xi_s_eta_wt_k(ipol,jpol)&
+                           + C35 * alpha_wt_k(ipol,jpol)
+
+     M22s(ipol,jpol,ielem) = C15 * zeta_wt_k(ipol,jpol) &
+                           + (C13 + C55) * Ms_z_eta_s_eta_wt_k(ipol,jpol)&
+                           + C35 * gamma_wt_k(ipol,jpol)
+
+     M32s(ipol,jpol,ielem) = C15 * delta_wt_k(ipol,jpol) &
+                           + C13 * Ms_z_xi_s_eta_wt_k(ipol,jpol)&
+                           + C55 * Ms_z_eta_s_xi_wt_k(ipol,jpol)&
+                           + C35 * alpha_wt_k(ipol,jpol)
+
+     M42s(ipol,jpol,ielem) = C15 * epsil_wt_k(ipol,jpol) &
+                           + (C13 + C55) * Ms_z_xi_s_xi_wt_k(ipol,jpol)&
+                           + C35 * beta_wt_k(ipol,jpol)
+
+     M11z(ipol,jpol,ielem) = C55 * delta_wt_k(ipol,jpol) &
+                           + C35 * Ms_z_eta_s_xi_wt_k(ipol,jpol)&
+                           + C35 * Ms_z_xi_s_eta_wt_k(ipol,jpol)&
+                           + C33 * alpha_wt_k(ipol,jpol)
+
+     M21z(ipol,jpol,ielem) = C55 * zeta_wt_k(ipol,jpol) &
+                           + C35 * two * Ms_z_eta_s_eta_wt_k(ipol,jpol)&
+                           + C33 * gamma_wt_k(ipol,jpol)
+
+     M41z(ipol,jpol,ielem) = C55 * epsil_wt_k(ipol,jpol) &
+                           + C35 * two * Ms_z_xi_s_xi_wt_k(ipol,jpol)&
+                           + C33 * beta_wt_k(ipol,jpol)
+
+
+     M_1(ipol,jpol,ielem) = C12 * M_z_eta_wt_k(ipol,jpol) + C25  * M_s_eta_wt_k(ipol,jpol)
+     M_2(ipol,jpol,ielem) = C12 * M_z_xi_wt_k(ipol,jpol)  + C25  * M_s_xi_wt_k(ipol,jpol)
+     M_3(ipol,jpol,ielem) = C23 * M_s_eta_wt_k(ipol,jpol) + C25  * M_z_eta_wt_k(ipol,jpol)
+     M_4(ipol,jpol,ielem) = C23 * M_s_xi_wt_k(ipol,jpol)  + C25  * M_z_xi_wt_k(ipol,jpol)
+
+     M_w(ipol,jpol,ielem) = C22 * massmat_kwts2(ipol,jpol,ielsolid(ielem))
+
+     if (axis_solid(ielem)) M_w(0,jpol,ielem)=zero
+     
+     if (axis_solid(ielem) .and. ipol==0) then
+        call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta, &
+             xi_k(0),eta(jpol),local_crd_nodes,ielsolid(ielem))
+   
+        M0_4(jpol,ielem) = C23 * dsdxi * wt_axial_k(0) * wt(jpol) &
+                         + C25 * dzdxi * wt_axial_k(0) * wt(jpol)
+        M0_w1(jpol,ielem) = (2 * C12 + C22) * non_diag_fact(jpol,ielem)
+        M0_w2(jpol,ielem) = C25 * non_diag_fact(jpol,ielem)
+     endif
+  enddo
+! ----------------
+
+end subroutine compute_monopole_stiff_terms_ani
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -1916,6 +2180,60 @@ use data_quadrupole
            endif ! axial element
 
 end subroutine compute_quadrupole_stiff_terms
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!double precision function c_ijkl_ani(lambda, mu, epsilon_ani, gamma_ani, delta_ani, theta, i, j, k, l)
+double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, theta, i, j, k, l)
+!
+! returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
+! i, j, k and l should be in [1,3]
+! MvD
+!
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+implicit none
+
+double precision, intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
+double precision, intent(in) :: theta 
+integer, intent(in) :: i, j, k, l
+double precision, dimension(1:3, 1:3) :: deltaf
+double precision, dimension(1:3) :: s
+
+deltaf = zero
+deltaf(1,1) = one
+deltaf(2,2) = one
+deltaf(3,3) = one
+
+s(1) = dsin(theta)
+s(2) = zero
+s(3) = dcos(theta)
+
+c_ijkl_ani = zero
+
+! isotropic part:
+c_ijkl_ani = c_ijkl_ani + lambda * deltaf(i,j) * deltaf(k,l)
+
+c_ijkl_ani = c_ijkl_ani + mu * (deltaf(i,k) * deltaf(j,l) + deltaf(i,l) * deltaf(j,k))
+
+
+! anisotropic part:
+! in xi, phi, eta
+
+c_ijkl_ani = c_ijkl_ani &
+    + ((eta_ani - one) * lambda + two * eta_ani * mu * (one - one / xi_ani)) &
+        * (deltaf(i,j) * s(k) * s(l) + deltaf(k,l) * s(i) * s(j))
+    
+c_ijkl_ani = c_ijkl_ani &
+    + mu * (one / xi_ani - one) &
+        * (deltaf(i,k) * s(j) * s(l) + deltaf(i,l) * s(j) * s(k) + &
+           deltaf(j,k) * s(i) * s(l) + deltaf(j,l) * s(i) * s(k))
+
+c_ijkl_ani = c_ijkl_ani &
+    + ((one - two * eta_ani + phi_ani) * (lambda + two * mu) + (4. * eta_ani - 4.) * mu / xi_ani) &
+        * (s(i) * s(j) * s(k) * s(l))
+
+end function c_ijkl_ani
 !=============================================================================
 
 !-----------------------------------------------------------------------------
