@@ -11,10 +11,11 @@ include "mesh_params.h"
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 ! Precomputed stiffness terms solid - monopole
-  real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M_1, M_2, M_3, M_4
-  real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M_w
-  real(kind=realkind), dimension(0:npol,nel_solid)        :: M0_w1, M0_w2
-  real(kind=realkind), dimension(0:npol,nel_solid)        :: M0_4
+  !real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M_1, M_2, M_3, M_4
+  !real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M_w1
+  !real(kind=realkind), dimension(0:npol,nel_solid)        :: M0_w1, M0_w2
+  ! -> moved to data_matr (as it is also needed for quadrupole now)
+  !real(kind=realkind), dimension(0:npol,nel_solid)        :: M0_4 ! is now M0_w3
 
 ! In the isotropic case (non-axial):
 ! M_1 =  lambda_ij * sigma_i * sigma_j * z_eta_ij
@@ -34,9 +35,9 @@ include "mesh_params.h"
 ! M_3 = 0
 ! M_4 = 0
 !
-! M0_4 = lambda_ij * bar{sigma}_i * sigma_j * s_xi _ij
 ! M0_w1 = (3 * lambda_ij + 2 * mu) * bar{sigma}_i * sigma_j * J_ij / s_xi_ij
 ! M0_w2 = 0
+! M0_w3 = lambda_ij * bar{sigma}_i * sigma_j * s_xi _ij
 
 
 ! In the anisotropic case (non-axial):
@@ -57,9 +58,9 @@ include "mesh_params.h"
 ! M_3 = 0
 ! M_4 = 0
 !
-! M0_4  = bar{sigma}_i * sigma_j * (C23 s_xi _ij - C25 z_xi_ij)
 ! M0_w1 = bar{sigma}_i * sigma_j * J_ij / s_xi_ij * (2 * C12 + C22)
-! M0_w1 = bar{sigma}_i * sigma_j * J_ij / s_xi_ij * C25
+! M0_w2 = bar{sigma}_i * sigma_j * J_ij / s_xi_ij * C25
+! M0_w3 = bar{sigma}_i * sigma_j * (C23 s_xi _ij - C25 z_xi_ij)
 
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

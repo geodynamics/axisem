@@ -280,12 +280,7 @@ integer             :: iter
      case ('dipole') 
         if (have_axis) call apply_axis_mask_twocomp(disp,nel_solid, &
                                                     ax_el_solid, naxel_solid)
-        if (ani_true) then
-           if (lpr) write(6,*)' Anisotropy not yet implemented for Dipole Sources!'
-           stop
-        else
-           call glob_stiffness_di(acc1,disp) 
-        endif
+        call glob_stiffness_di(acc1,disp) 
         call bdry_copy2solid(acc1,ddchi1)
 !        call bdry_copy2solid_sol(acc1,ddchi1)
 
@@ -294,12 +289,7 @@ integer             :: iter
      case ('quadpole') 
         if (have_axis) call apply_axis_mask_threecomp(disp,nel_solid, &
                                                       ax_el_solid,naxel_solid)
-        if (ani_true) then
-           if (lpr) write(6,*)' Anisotropy not yet implemented for Quadpole Sources!'
-           stop
-        else
-           call glob_stiffness_quad(acc1,disp) 
-        endif
+        call glob_stiffness_quad(acc1,disp) 
         call bdry_copy2solid(acc1,ddchi1)
 !        call bdry_copy2solid_sol(acc1,ddchi1)
         if (have_axis) call apply_axis_mask_threecomp(acc1,nel_solid, &
@@ -464,24 +454,14 @@ double precision, allocatable, dimension(:) :: stf_symp
         case ('dipole') 
            if (have_axis)call apply_axis_mask_twocomp(disp,nel_solid, &
                                                        ax_el_solid,naxel_solid)
-           if (ani_true) then
-              if (lpr) write(6,*)' Anisotropy not yet implemented for Dipole Sources!'
-              stop
-           else
-              call glob_stiffness_di(acc,disp) 
-            endif
+           call glob_stiffness_di(acc,disp) 
            call bdry_copy2solid(acc,ddchi)
            if (have_axis) call apply_axis_mask_twocomp(acc,nel_solid, &
                                                        ax_el_solid,naxel_solid)
         case ('quadpole') 
            if (have_axis)call apply_axis_mask_threecomp(disp,nel_solid, &
                                                        ax_el_solid,naxel_solid)
-           if (ani_true) then
-              if (lpr) write(6,*)' Anisotropy not yet implemented for Quadpole Sources!'
-              stop
-           else
-              call glob_stiffness_quad(acc,disp) 
-           endif
+           call glob_stiffness_quad(acc,disp) 
            call bdry_copy2solid(acc,ddchi)
            if (have_axis)call apply_axis_mask_threecomp(acc,nel_solid, &
                                                        ax_el_solid,naxel_solid)
@@ -1341,23 +1321,13 @@ real(kind=realkind) :: ekin_sol,epot_sol, ekin_flu,epot_flu
   case ('dipole')
         if (have_axis) call apply_axis_mask_twocomp(disp,nel_solid, &
                                                     ax_el_solid,naxel_solid)
-        if (ani_true) then
-           if (lpr) write(6,*)' Anisotropy not yet implemented for Dipole Sources!'
-           stop
-        else
-           call glob_stiffness_di(stiff,disp) 
-        endif
+        call glob_stiffness_di(stiff,disp) 
         if (have_axis) call apply_axis_mask_twocomp(stiff,nel_solid, &
                                                     ax_el_solid,naxel_solid)
   case ('quadpole')
         if (have_axis) call apply_axis_mask_threecomp(disp,nel_solid, &
                                                       ax_el_solid,naxel_solid)
-        if (ani_true) then
-           if (lpr) write(6,*)' Anisotropy not yet implemented for Quadpole Sources!'
-           stop
-        else
-           call glob_stiffness_quad(stiff,disp) 
-        endif
+        call glob_stiffness_quad(stiff,disp) 
         if (have_axis) call apply_axis_mask_threecomp(stiff,nel_solid, &
                                                       ax_el_solid,naxel_solid)
   end select
