@@ -24,7 +24,9 @@ contains
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_mono(glob_stiffness,u)
 
-use data_monopole
+use global_parameters
+include "mesh_params.h"
+!use data_monopole
 
 ! I/O global arrays
 real(kind=realkind), intent(in)  :: u(0:npol,0:npol,nel_solid,1:3)
@@ -105,7 +107,9 @@ end subroutine glob_stiffness_mono
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_di(glob_stiffness,u)
 
-use data_dipole
+use global_parameters
+include "mesh_params.h"
+!use data_dipole
 
 ! I/O for global arrays
 real(kind=realkind),intent(in)  :: u(0:npol,0:npol,nel_solid,3)
@@ -212,7 +216,9 @@ end subroutine glob_stiffness_di
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_quad(glob_stiffness,u)
 
-use data_quadrupole
+use global_parameters
+include "mesh_params.h"
+!use data_quadrupole
 
 ! I/O for global arrays
 real(kind=realkind), intent(in)  :: u(0:npol,0:npol,nel_solid,1:3)

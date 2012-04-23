@@ -37,6 +37,7 @@ subroutine read_model_compute_terms
 
 use get_model
 
+implicit none
 include 'mesh_params.h'
 
 double precision, dimension(:,:,:),allocatable :: rho,lambda,mu,massmat_kwts2
@@ -131,6 +132,7 @@ subroutine lagrange_derivs
 
 use splib, only : hn_jprime,lag_interp_deriv_wgl
 
+implicit none
 include 'mesh_params.h'
 
 double precision  :: df(0:npol),dg(0:npol)
@@ -389,6 +391,7 @@ subroutine test_pntwsdrvtvs_solid
 use data_io
 use pointwise_derivatives
 
+implicit none
 include 'mesh_params.h'
 
 real(kind=realkind),allocatable :: tmpsolfield(:,:,:)
@@ -535,6 +538,7 @@ subroutine test_pntwsdrvtvs_fluid
 use data_io
 use pointwise_derivatives
 
+implicit none
 include 'mesh_params.h'
 
 real(kind=realkind),allocatable :: tmpflufield(:,:,:)
@@ -691,6 +695,7 @@ use data_io, ONLY : need_fluid_displ,dump_energy
 use commun, only : comm2d
 use data_pointwise, ONLY: inv_rho_fluid
 
+implicit none
 include "mesh_params.h"
 
 double precision, dimension(0:npol,0:npol,nelem),intent(in)  :: rho,lambda,mu
@@ -1089,6 +1094,7 @@ use background_models, ONLY: velocity
 use commun, ONLY : psum
 use data_io, ONLY : infopath,lfinfo
 
+implicit none
 include 'mesh_params.h'
 
 double precision, intent(in)     :: rho(0:npol,0:npol,nelem)
@@ -1254,6 +1260,7 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+implicit none
 include "mesh_params.h"
 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
@@ -1282,6 +1289,54 @@ double precision :: M_s_eta_wt_k(0:npol,0:npol)
 
 ! non-diagfact
 double precision, allocatable :: non_diag_fact(:,:)
+
+! Allocate Global Stiffness Arrays depending on source type:
+  select case (src_type(1))
+    
+    case ('dipole')
+    
+        allocate(M13s(0:npol,0:npol,nel_solid))
+        allocate(M33s(0:npol,0:npol,nel_solid))
+        allocate(M43s(0:npol,0:npol,nel_solid))
+       
+        allocate(M_5(0:npol,0:npol,nel_solid))
+        allocate(M_6(0:npol,0:npol,nel_solid))
+        allocate(M_7(0:npol,0:npol,nel_solid))
+        allocate(M_8(0:npol,0:npol,nel_solid))
+        
+        allocate(M_w2(0:npol,0:npol,nel_solid))
+        allocate(M_w3(0:npol,0:npol,nel_solid))
+        
+        allocate(M0_w4(0:npol,nel_solid))
+        allocate(M0_w5(0:npol,nel_solid))
+        allocate(M0_w6(0:npol,nel_solid))
+        allocate(M0_w7(0:npol,nel_solid))
+        allocate(M0_w8(0:npol,nel_solid))
+        allocate(M0_w9(0:npol,nel_solid))
+        allocate(M0_w10(0:npol,nel_solid))
+    
+    case ('quadpole')
+
+        allocate(M1phi(0:npol,0:npol,nel_solid))
+        allocate(M2phi(0:npol,0:npol,nel_solid))
+        allocate(M4phi(0:npol,0:npol,nel_solid))
+        
+        allocate(M_5(0:npol,0:npol,nel_solid))
+        allocate(M_6(0:npol,0:npol,nel_solid))
+        allocate(M_7(0:npol,0:npol,nel_solid))
+        allocate(M_8(0:npol,0:npol,nel_solid))
+        
+        allocate(M_w2(0:npol,0:npol,nel_solid))
+        allocate(M_w3(0:npol,0:npol,nel_solid))
+        allocate(M_w4(0:npol,0:npol,nel_solid))
+        allocate(M_w5(0:npol,0:npol,nel_solid))
+        
+        allocate(M0_w4(0:npol,nel_solid))
+        allocate(M0_w5(0:npol,nel_solid))
+        allocate(M0_w6(0:npol,nel_solid))
+
+  end select
+
 
 !-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
 ! NON DIAG FAC------------- --<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
@@ -1536,7 +1591,10 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                        Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use data_monopole
+use global_parameters
+implicit none
+include "mesh_params.h"
+!use data_monopole
 
 integer, intent(in) :: ielem,jpol
 
@@ -1651,9 +1709,11 @@ subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                        Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use data_monopole
-
+use global_parameters
 implicit none
+include "mesh_params.h"
+!use data_monopole
+
 integer, intent(in) :: ielem,jpol
 
 double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
@@ -1822,7 +1882,10 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use data_dipole
+use global_parameters
+implicit none
+include "mesh_params.h"
+!use data_dipole
 
 integer, intent(in) :: ielem,jpol
 
@@ -2002,7 +2065,10 @@ subroutine compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use data_dipole
+use global_parameters
+implicit none
+include "mesh_params.h"
+!use data_dipole
 
 integer, intent(in) :: ielem,jpol
 
@@ -2245,7 +2311,10 @@ subroutine compute_quadrupole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use data_quadrupole
+use global_parameters
+implicit none
+include "mesh_params.h"
+!use data_quadrupole
 
   integer, intent(in) :: ielem,jpol
 
@@ -2425,7 +2494,10 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use data_quadrupole
+use global_parameters
+implicit none
+include "mesh_params.h"
+!use data_quadrupole
 
 integer, intent(in) :: ielem,jpol
 
@@ -2676,6 +2748,7 @@ subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
+implicit none
 include "mesh_params.h"
 double precision, intent(in)  :: rho(0:npol,0:npol,nelem)
 double precision, intent(in)  :: massmat_kwts2(0:npol,0:npol,nelem)
@@ -2813,6 +2886,7 @@ subroutine def_solid_fluid_boundary_terms
 use commun, only : psum
 use data_io
 
+implicit none
 include 'mesh_params.h'
 
 !double precision, intent(in) :: rho(0:npol,0:npol,nelem)

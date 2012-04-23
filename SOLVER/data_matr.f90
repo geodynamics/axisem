@@ -35,23 +35,27 @@ include "mesh_params.h"
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M11z,M21z,M41z
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M32s
   
+  !for dipole: 
+  real(kind=realkind), allocatable :: M13s(:,:,:), M33s(:,:,:), M43s(:,:,:)
+
+  !for quadrupole: 
+  real(kind=realkind), allocatable :: M1phi(:,:,:), M2phi(:,:,:), M4phi(:,:,:)
+  
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M_1, M_2, M_3, M_4
-  real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M_5, M_6, M_7, M_8 ! for dipole and quadpole only, could be allocatable!
+  !for dipole and quadpole:
+  real(kind=realkind), allocatable :: M_5(:,:,:), M_6(:,:,:), M_7(:,:,:), M_8(:,:,:) 
   
-  real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M_w1, M_w2, M_w3, M_w4, M_w5
-  ! usage:
-  ! monopole:   M_w1
-  ! dipole iso: M_w1, M_w3
-  ! dipole ani: M_w1, M_w2, M_w3
-  ! quadpole iso: M_w1, M_w2, M_w4, M_w5
-  ! quadpole ani: M_w1, M_w2, M_w3, M_w4, M_w5
+  real(kind=realkind), dimension(0:npol,0:npol,nel_solid) :: M_w1
+  !for dipole and quadpole:
+  real(kind=realkind), allocatable :: M_w2(:,:,:), M_w3(:,:,:)
+  !for quadrupole: 
+  real(kind=realkind), allocatable :: M_w4(:,:,:), M_w5(:,:,:)
   
-  ! for all
-  real(kind=realkind), dimension(0:npol,nel_solid)        :: M0_w1, M0_w2, M0_w3
-  ! for dipole, quadpole
-  real(kind=realkind), dimension(0:npol,nel_solid)        :: M0_w4, M0_w5, M0_w6
+  real(kind=realkind), dimension(0:npol,nel_solid) :: M0_w1, M0_w2, M0_w3
+  ! for dipole and quadpole:
+  real(kind=realkind), allocatable :: M0_w4(:,:), M0_w5(:,:), M0_w6(:,:)
   ! for dipole
-  real(kind=realkind), dimension(0:npol,nel_solid)        :: M0_w7, M0_w8, M0_w9, M0_w10
+  real(kind=realkind), allocatable :: M0_w7(:,:), M0_w8(:,:), M0_w9(:,:), M0_w10(:,:)
 
 ! Fluid matrices
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid) :: M1chi_fl,M2chi_fl
