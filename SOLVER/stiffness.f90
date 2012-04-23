@@ -717,16 +717,11 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! 
 ! Collocations and sums of W_x and W_x^d terms
 
 ! - component
-  !call collocate7_sum_1d(m_8l, X6, m_7l, X3, m_1l, X1, &
-  !                       m_5l, X2, m_2l, X4, m_6l, X5, &
-  !                       m_w1l, u2, loc_stiffness_s2, nsize)
   call collocate8_sum_1d(m_8l, X6, m_7l, X3, m_1l, X1, &
                          m_5l, X2, m_2l, X4, m_6l, X5, &
                          m_w1l, u2, m_w2l, u3, loc_stiffness_s2, nsize)
 
 ! z component
-  !call collocate5s_sum_1d(m_4l, X4, m_4l, X5, m_3l, X1, &
-  !                        m_3l, X2, m_w3l, u3, loc_stiffness_s3, nsize)
   call collocate6z_sum_1d(m_4l, X4, m_4l, X5, m_3l, X1, &
                           m_3l, X2, m_w2l, u2, m_w3l, u3, loc_stiffness_s3, nsize)
 
@@ -844,15 +839,10 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! 
 
 ! Collocations and sums of W_x and W_x^d terms
 ! - component
-  !call collocate7_sum_1d(m_8l, X6, m_7l, X3, m_1l, X1, &
-  !                       m_5l, X2,m_2l, X4, m_6l, X5, &
-  !                       m_w1l, u2, loc_stiffness_s2, nsize)
   call collocate8_sum_1d(m_8l, X6, m_7l, X3, m_1l, X1, &
                          m_5l, X2, m_2l, X4, m_6l, X5, &
                          m_w1l, u2, m_w2l, u3, loc_stiffness_s2, nsize)
 ! z component
-  !call collocate5s_sum_1d(m_4l, X4, m_4l, X5, m_3l, X1, &
-  !                      m_3l, X2, m_w3l, u3, loc_stiffness_s3, nsize)
   call collocate6z_sum_1d(m_4l, X4, m_4l, X5, m_3l, X1, &
                           m_3l, X2, m_w2l, u2, m_w3l, u3, loc_stiffness_s3, nsize)
 
@@ -951,16 +941,12 @@ real(kind=realkind), dimension(0:npol) :: u10, u20
   call collocate_tensor_1d(m0_w1l, V2, G0, S1p, npol)
 
 ! - comp
-  !call collocate2_sum_tensor_1d(m0_w9l, V2, m0_w1l, V1, G0, S1m, npol)
-  ! include dzdxi terms (which are nonzero in the inner core)
   call collocate3_sum_tensor_1d(m0_w1l, V1, m0_w2l, V5, m0_w9l, V2, G0, S1m, npol)
 
 ! z comp
   call collocate2_sum_tensor_1d(m0_w7l, V3, m0_w8l, V4, G0, S1z, npol)
 
 ! Final VxM D_z^z in + component
-  !call collocate0_1d(m0_w8l, V3, V4, npol) 
-  ! include dzdxi terms (which are nonzero in the inner core)
   call collocate02_sum_1d(m0_w2l, V2, m0_w8l, V3, V4, npol) 
   call vxm(V4, G2T, V1)
   call add_to_axis_2d(V1, S1p, npol)
@@ -1103,22 +1089,12 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! S
   call mxm(uz, G2, X6)
 
 ! Collocations and sums of W terms: s and phi components
-  !call collocate10s_sum_1d(m_2l, X4, m_1l, X1, m_6l, X5, &
-  !                         m_5l, X2, m_4l, X6, m_3l, X3, &
-  !                         m_w1l, m_w2l, m_w4l, us, uphi, &
-  !                         loc_stiffness_s, loc_stiffness_phi, nsize)
-  !
-  ! includes matrices that are zero in isotropic case:
   call collocate12s_sum_1d(m_2l, X4, m_1l, X1, m_6l, X5, &
                            m_5l, X2, m_4l, X6, m_3l, X3, &
                            m_w1l, m_w2l, m_w3l, m_w4l, us, uphi, uz, &
                            loc_stiffness_s, loc_stiffness_phi, nsize)
 
 ! Collocations and sums of W terms: z component
-  !call collocate3_sum_1d(m_8l, X5, m_7l, X2, m_w5l, uz, &
-  !                       loc_stiffness_z, nsize)
-  !
-  ! includes matrices that are zero in isotropic case:
   call collocate5z_sum_1d(m_8l, X5, m_7l, X2, m_w3l, m_w5l, us, uphi, uz, &
                          loc_stiffness_z, nsize)
 
@@ -1229,22 +1205,12 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! S
   call mxm(uz, G2, X6)
 
 ! Collocations and sums of W terms: s and phi components
-  !call collocate10s_sum_1d(m_2l, X4, m_1l, X1, m_6l, X5, &
-  !                         m_5l, X2, m_4l, X6, m_3l, X3, &
-  !                         m_w1l, m_w2l, m_w4l, us, uphi, &
-  !                         loc_stiffness_s, loc_stiffness_phi, nsize)
-  !
-  ! includes matrices that are zero in isotropic case:
   call collocate12s_sum_1d(m_2l, X4, m_1l, X1, m_6l, X5, &
                            m_5l, X2, m_4l, X6, m_3l, X3, &
                            m_w1l, m_w2l, m_w3l, m_w4l, us, uphi, uz, &
                            loc_stiffness_s, loc_stiffness_phi, nsize)
 
 ! Collocations and sums of W terms: z component
-  !call collocate3_sum_1d(m_8l, X5, m_7l, X2, m_w5l, uz, &
-  !                       loc_stiffness_z, nsize)
-  !
-  ! includes matrices that are zero in isotropic case:
   call collocate5z_sum_1d(m_8l, X5, m_7l, X2, m_w3l, m_w5l, us, uphi, uz, &
                          loc_stiffness_z, nsize)
 
@@ -1347,10 +1313,6 @@ subroutine additional_quad_ax_ani(m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l, m0_w6l
 include "mesh_params.h"
 
 !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-!real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_2l_w_l_6ml
-!real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_3m_w_4l_9ml
-!real(kind=realkind), dimension(0:npol), intent(in) :: m0_w_4mul
-!real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_2lm_min_w_2l_6ml
 real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l, m0_w3l
 real(kind=realkind), dimension(0:npol), intent(in) :: m0_w4l, m0_w5l, m0_w6l
 real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us, uphi, uz
@@ -1375,21 +1337,13 @@ real(kind=realkind), dimension(0:npol) :: V1,V2,V3
 ! Collocations, Sums, Tensorization
 
 ! s comp
-  !call collocate2_sum_tensor_1d(m0_w1l, V1, m0_w2l, V2, G0, S1s, npol)
   call collocate3_sum_tensor_1d(m0_w1l, V1, m0_w2l, V2, m0_w3l, V3, G0, S1s, npol)
                                 
 ! phi comp
-  !call collocate2_sum_tensor_1d(m0_w2l, V1, m0_wl, V2, G0, S1phi, npol)
   call collocate3_sum_tensor_1d(m0_w2l, V1, m0_w4l, V2, m0_w5l, V3, G0, S1phi, npol)
                                 
 ! z comp
-  !call collocate_tensor_1d(m0_w6l, V3, G0, S1z, npol)
   call collocate3_sum_tensor_1d(m0_w3l, V1, m0_w5l, V2, m0_w6l, V3, G0, S1z, npol)
-
-!M0_z_eta_2l_w_l_6m         - M0_w1
-!M0_z_eta_2lm_min_w_2l_6m   - M0_w2
-!M0_z_eta_3m_w_4l_9m        - M0_w4
-!M0_w_4mu                   - M0_w6
 
 end subroutine additional_quad_ax_ani
 !=============================================================================

@@ -1594,7 +1594,6 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
 use global_parameters
 implicit none
 include "mesh_params.h"
-!use data_monopole
 
 integer, intent(in) :: ielem,jpol
 
@@ -1627,7 +1626,6 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
 
 ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
-     !M0_4(0:npol,1:nel_solid)=zero
      M0_w3(0:npol,1:nel_solid)=zero
      M0_w1(0:npol,1:nel_solid)=zero
      M0_w2(0:npol,1:nel_solid)=zero
@@ -1712,7 +1710,6 @@ subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
 use global_parameters
 implicit none
 include "mesh_params.h"
-!use data_monopole
 
 integer, intent(in) :: ielem,jpol
 
@@ -1885,7 +1882,6 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
 use global_parameters
 implicit none
 include "mesh_params.h"
-!use data_dipole
 
 integer, intent(in) :: ielem,jpol
 
@@ -2068,7 +2064,6 @@ subroutine compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
 use global_parameters
 implicit none
 include "mesh_params.h"
-!use data_dipole
 
 integer, intent(in) :: ielem,jpol
 
@@ -2497,7 +2492,6 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
 use global_parameters
 implicit none
 include "mesh_params.h"
-!use data_quadrupole
 
 integer, intent(in) :: ielem,jpol
 
