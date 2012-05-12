@@ -12,7 +12,7 @@ echo "Moving mesh to" $meshpath
 
 echo "character(len=100) :: meshpath='$meshpath'" >> mesh_params.h
 
-mv meshdb.dat00* $meshpath
+mv meshdb.dat0* $meshpath
 mv mesh_params.h* $meshpath
 mv OUTPUT $meshpath
 cp -p inparam_mesh $meshpath
