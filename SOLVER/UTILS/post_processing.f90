@@ -140,10 +140,15 @@ program post_processing_seis
                     & + cos(srccolat(1)) * rloc_xyz_tmp(3)
 
         ! compute colat and lon
-        if (rloc_xyz(3)>1.) rloc_xyz(3)=1.
+        if (rloc_xyz(3) > 1.) rloc_xyz(3) = 1.
+        if (rloc_xyz(3) < -1.) rloc_xyz(3) = -1.
+        
         rloc_rtp(2) = acos(rloc_xyz(3))
         arg1 = rloc_xyz(1) / (sin(rloc_rtp(2)) + 1.e-10)
-        if (arg1>1.) arg1=1.
+
+        if (arg1 > 1.) arg1 = 1.
+        if (arg1 < -1.) arg1 = -1.
+
         if (rloc_xyz(2) >= 0.) then
            rloc_rtp(3) = acos(arg1)
         else
