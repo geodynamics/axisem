@@ -306,7 +306,7 @@ program post_processing_seis
         ! sum seismograms upon separate moment tensors and include azimuthal radiation factor 
         ! This needs to be done prior to component rotation such that the system is still cylindrical.
         if (sum_seis_true(isim)) then
-           call sum_individual_wavefields(seis,seis_sglcomp,nt_seis(1),mij_phi )
+           call sum_individual_wavefields(seis,seis_sglcomp,nt_seis(1),mij_phi(i,isim,:))
         else
            seis=seis_sglcomp
         endif
@@ -702,7 +702,9 @@ real :: transrottmp(1:3,1:3),Mij_matr(3,3)
            Mij_matr(1,2) = Mij_scale(4)
            Mij_matr(1,3) = Mij_scale(5)
            Mij_matr(2,3) = Mij_scale(6)
-           Mij_matr(2,1) = Mij_matr(1,2); Mij_matr(3,1) = Mij_matr(1,3); Mij_matr(2,3) = Mij_matr(3,2); 
+           Mij_matr(2,1) = Mij_matr(1,2)
+           Mij_matr(3,1) = Mij_matr(1,3)
+           Mij_matr(3,2) = Mij_matr(2,3) 
 
            ! rotate Mij to source at NP system
            Mij_matr = matmul(transrottmp,Mij_matr)
