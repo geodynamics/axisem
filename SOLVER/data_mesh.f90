@@ -98,7 +98,7 @@ public
   integer                      :: ielepi,ielantipode,ielequ
   integer, allocatable         :: recfile_el(:,:),loc2globrec(:)
   logical                      :: have_epi,have_equ,have_antipode
-
+  real                         :: dtheta_rec
   
 ! CMB receivers (same as receivers, just above CMB instead)
   integer                      :: num_cmb

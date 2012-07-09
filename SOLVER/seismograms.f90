@@ -221,8 +221,8 @@ double precision :: s,z,r,theta
               write(33333,*) 180./pi* &
                    thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
 
-                 write(33334,11) 180./pi* &
-                      thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),(rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
+              write(33334,11) 180./pi* &
+                   thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),(rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
            enddo
            close(33333); close(33334)
            call barrier
@@ -293,6 +293,7 @@ integer ierror
 
   irec=0
   count_diff_loc=0
+  dtheta_rec=0. ! default for all cases but database (which has regular spacing)
 
 ! Read receiver location file:
 ! line1: number of receivers
@@ -320,9 +321,38 @@ integer ierror
        enddo
        close(34); close(30)
 
+    elseif (rec_file_type=='database') then 
+       if (lpr) write(6,*)'  generating receiver colatitudes at every element edge and midpoint...'
+       if (lpr) write(6,*)'  ... which is useful for databases and sinc interpolation'
+       dtheta_rec = abs(180./pi*(thetacoord(npol,npol,ielsolid(surfelem(1)))-thetacoord(0,npol,ielsolid(surfelem(1))))/2.)
+       write(6,*)'delta theta (mid-to-edge), (edge-to-edge) [deg]:',dtheta_rec, &
+            abs((thetacoord(npol,npol,ielsolid(surfelem(1)))-thetacoord(0,npol,ielsolid(surfelem(1))))*180./pi)
+       write(6,*)mynum,'number of surface elements:',maxind
+       num_rec_glob = ceiling(180./dtheta_rec)+1
+       write(6,*)mynum,'number of global recs (ideal,real):',(180./dtheta_rec)+1,num_rec_glob
+       allocate(recfile_readth(num_rec_glob),recfile_readph(num_rec_glob))
+       do i=1,num_rec_glob
+          recfile_readth(i) = dtheta_rec*real(i-1)
+       enddo
+       write(6,*)mynum,'min,max receiver theta [deg]:',minval(recfile_readth),maxval(recfile_readth)
+       call flush(6)
+       recfile_readph = 0.
+       allocate(recfile_th_loc(1:num_rec_glob),recfile_el_loc(1:num_rec_glob,3))
+       allocate(loc2globrec_loc(1:num_rec_glob),rec2proc(1:num_rec_glob))
+       allocate(recfile_ph_loc2(1:num_rec_glob),recfile_th_glob(1:num_rec_glob))   
+       allocate(receiver_name(1:num_rec_glob))
+       if (mynum==0) open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
+       do i=1,num_rec_glob
+          call define_io_appendix(appielem,i)
+          receiver_name(i) = 'recfile_'//appielem
+          if (mynum==0) write(30,*)trim(receiver_name(i)),recfile_readth(i),recfile_readph(i)
+       enddo
+       if (mynum==0) close(30)
+       write(6,*)mynum,'done with database receiver writing.';call flush(6)
+
      elseif (rec_file_type=='stations') then 
        if (lpr) write(6,*)'  reading receiver colatitudes and longitudes from STATIONS...'
-! count number of receivers first
+       ! count number of receivers first
        open(unit=34,file='STATIONS',iostat=ierror,status='old',action='read',position='rewind')
        num_rec_glob = 0
        do while(ierror == 0)
@@ -383,7 +413,7 @@ integer ierror
        stop
     endif
 
-    if (maxval(recfile_readph) > 360.d0) then 
+    if (maxval(recfile_readph) > 360.001) then 
        if (lpr) write(6,*)' ERROR: We do not allow receiver longitudes larger than 360 degrees....'
        stop
     endif
@@ -393,7 +423,7 @@ integer ierror
        stop
     endif
 
-    if (maxval(recfile_readth) > 180.d0) then 
+    if (maxval(recfile_readth) > 180.001) then 
        if (lpr) write(6,*)' ERROR: We do not allow receiver colatitudes larger than 180 degrees....'
        stop
     endif
@@ -414,7 +444,7 @@ integer ierror
 !=====================
   do i=1,num_rec_glob
 !=====================
-     write(69,*)'  working on receiver #',i; call flush(69)
+     write(69,*)'  working on receiver #',i,recfile_readth(i)*180./pi; call flush(69)
      recdist=10.d0*router
      do iel=1,maxind
         do ipol=0,npol
@@ -565,8 +595,10 @@ integer ierror
      write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
 
   if(.not.use_netcdf)   then
+!          write(6,*)mynum,'REC NAME 1:',i,loc2globrec(i),size(receiver_name)
+!          write(6,*)mynum,'REC NAME 2:',trim(receiver_name(loc2globrec(i)))
      open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
-     open(300000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_velo.dat')
+!     open(300000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_velo.dat')
 	endif
 		
 !     fname_rec_seis(i) = datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat'
@@ -1051,91 +1083,16 @@ real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
 end subroutine compute_hyp_epi_equ_anti
 !=============================================================================
 
+
 !-----------------------------------------------------------------------------
-subroutine compute_recfile_seis(disp,velo)
+subroutine compute_recfile_seis_bare(disp)
 
 use data_source, ONLY : src_type
 
 include "mesh_params.h"
 
 real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
-
-integer :: i
-
-     if (src_type(1)=='monopole') then
-        do i=1,num_rec
-! order: u_r,u_theta, OR u_s,u_z
-           write(100000+i,*) &
-                recfac(i,1)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                recfac(i,2)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3), &
-                recfac(i,4)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                recfac(i,5)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-                                              
-           write(300000+i,*) &
-                recfac(i,1)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                recfac(i,2)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3), &
-                recfac(i,4)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                recfac(i,5)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-        enddo
-
-     elseif (src_type(1)=='dipole') then
-        do i=1,num_rec
-! order: u_r,u_phi,u_theta OR u_s,u_phi,u_z
-! 
-           write(100000+i,*) &
-                recfac(i,1)*(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                                       disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2)) + & 
-                recfac(i,2)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3), &
-                recfac(i,3)*(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-                                       disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2)), &
-                recfac(i,4)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-                recfac(i,5)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-                                              
-           write(300000+i,*) &
-                recfac(i,1)*(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                                       velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2)) + & 
-                recfac(i,2)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3), &
-                recfac(i,3)*(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-                                       velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2)), &
-                recfac(i,4)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                recfac(i,5)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-        enddo
-
-     elseif (src_type(1)=='quadpole') then
-        do i=1,num_rec
-! order: u_r,u_phi,u_theta OR u_s,u_phi,u_z
-           write(100000+i,*) &
-                recfac(i,1)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + & 
-                recfac(i,2)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3), &
-                recfac(i,3)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
-                recfac(i,4)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) +&
-                recfac(i,5)*disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-                                              
-           write(300000+i,*) &
-                recfac(i,1)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + & 
-                recfac(i,2)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3), &
-                recfac(i,3)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
-                recfac(i,4)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) +&
-                recfac(i,5)*velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-        enddo
-
-endif !src_type(1)
-
-
-end subroutine compute_recfile_seis
-!=============================================================================
-
-
-!-----------------------------------------------------------------------------
-subroutine compute_recfile_seis_bare(disp,velo)
-
-use data_source, ONLY : src_type
-
-include "mesh_params.h"
-
-real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
+!real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
 
 integer :: i
 
@@ -1146,9 +1103,9 @@ integer :: i
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1), &
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
                                               
-           write(300000+i,*) &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1), &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
+!           write(300000+i,*) &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1), &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
         enddo
 
      elseif (src_type(1)=='dipole') then
@@ -1162,12 +1119,12 @@ integer :: i
                 disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
                 disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
                                               
-           write(300000+i,*) &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
+!           write(300000+i,*) &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
         enddo
 
      elseif (src_type(1)=='quadpole') then
@@ -1178,10 +1135,10 @@ integer :: i
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
                                               
-           write(300000+i,*) &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) , &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
+!           write(300000+i,*) &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) , &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
         enddo
 
 endif !src_type(1)

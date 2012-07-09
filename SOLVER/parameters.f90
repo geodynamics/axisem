@@ -946,6 +946,8 @@ character(len=4) :: Mij_char(6)
    write(55,22)int(shift_fact/deltat),'source shift factor for deltat'
    write(55,22)int(shift_fact/seis_dt),'source shift factor for seis_dt'
    write(55,22)int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
+   write(55,23)trim(rec_file_type),'receiver file type'
+   write(55,21)dtheta_rec,'receiver spacing (0 if not even)'
    close(55)
 
      write(6,*)

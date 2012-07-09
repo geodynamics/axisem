@@ -97,9 +97,9 @@ use meshes_io
 ! allow for different types of receiver files
      call prepare_from_recfile_seis
 
-  if (rec_file_type=='colatlon' .and.  &
-      (bkgrdmodel(1:4)=='prem' .or. bkgrdmodel(1:4)=='iasp')) &
-     call prepare_from_recfile_cmb
+!  if (rec_file_type=='colatlon' .and.  &
+!      (trim(bkgrdmodel(1:4))=='prem' .or. trim(bkgrdmodel(1:4))=='iasp')) &
+!     call prepare_from_recfile_cmb
 
 
 ! Need to reload old seismograms and add results
@@ -867,12 +867,11 @@ real(kind=realkind) :: time
   if ( mod(iter,seis_it)==0) then
 ! receiver locations read in from file (only 3-comp. displacements)
 
-	iseismo=iseismo+1
-!!!andrea 
+iseismo=iseismo+1
     if(use_netcdf)   then
       call compute_recfile_seis_bare_nc(disp,velo)
     else
-      call compute_recfile_seis_bare(disp,velo)
+      call compute_recfile_seis_bare(disp)
     endif
     
      time = real(iter)*deltat
@@ -1315,7 +1314,6 @@ real(kind=realkind) :: ekin_sol,epot_sol, ekin_flu,epot_flu
         if (have_axis) call apply_axis_mask_onecomp(disp,nel_solid, &
                                                     ax_el_solid,naxel_solid)
         call glob_stiffness_mono(stiff,disp)
-
         if (have_axis) call apply_axis_mask_onecomp(stiff,nel_solid, &
                                                     ax_el_solid,naxel_solid)
   case ('dipole')
