@@ -1045,7 +1045,7 @@ if (lpr) then
       write(9,222)"'"//trim(rot_rec)//"'",'receiver components: enz,sph,cyl,xyz,src'
    else
       write(9,222)'.true.','rotate receivers?'
-      write(9,222)"'sph'",'receiver components: enz,sph,cyl,xyz,src'
+      write(9,222)"'enz'",'receiver components: enz,sph,cyl,xyz,src'
    endif
    if (trim(src_file_type)=='cmtsolut' .and. nsim1>1) then
       write(9,222)'.true.','sum to full Mij'
