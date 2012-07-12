@@ -4,7 +4,8 @@ program axisem
 
 use data_proc 
 use data_io
-use data_time      
+use data_time   
+use nc_routines,    ONLY : define_netcdf_output, end_netcdf_output   
 use data_source,    ONLY : isim,num_simul
 use data_mesh,      ONLY : do_mesh_tests
 use parameters,     ONLY : open_local_param_file,readin_parameters
@@ -39,6 +40,9 @@ implicit none
     call mesh_tests ! def_grid
   endif 
 
+  if(lpr)write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
+  call define_netcdf_output
+
   do isim=1,num_simul
 
      if(lpr)write(6,*) &
@@ -57,6 +61,8 @@ implicit none
      call time_loop ! time_evol_wave
   enddo
   
+  call end_netcdf_output !Flush and close all netcdf files 
+
   call end_clock ! clocks
 
   call pend ! commun
@@ -148,14 +154,15 @@ end subroutine end_clock
 
 integer :: iproc
 character(len=4) :: app
-character(len=1) :: milp,cenp,dizp,unip
-
-  milp = char(48+    iproc/1000)
-  cenp = char(48+mod(iproc/100,10))
-  dizp = char(48+mod(iproc/10,10))
-  unip = char(48+mod(iproc,10))
+!character(len=1) :: milp,cenp,dizp,unip
+!
+!  milp = char(48+    iproc/1000)
+!  cenp = char(48+mod(iproc/100,10))
+!  dizp = char(48+mod(iproc/10,10))
+!  unip = char(48+mod(iproc,10))
   
-  app = milp//cenp//dizp//unip
+!  app = milp//cenp//dizp//unip
+  write(app,"(I4.4)") iproc
 
 end subroutine define_io_appendix
 !=============================================================================

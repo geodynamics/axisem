@@ -1,136 +1,91 @@
 module nc_routines
+  use global_parameters
 contains
-!!!!!!!!!!AUXUILIAR----------------------------------------NETCDF----------!!!!!!!
-!subroutine dump_smtg_ncdf(valore,ishot,n,filename)
-!implicit none
-!character(len=55), intent(in)              :: filename
-!integer,intent(in) :: n,ishot
-!real(kind=realkind),dimension(n),intent(in) :: valore
 
-!!write(6,*)'computing nc file ',trim(filename),' ...'
+!##################################################################################
+! Netcdf routines by S. Stähler
+!##################################################################################
 
-!if(ishot==1) then
-! 		call init_ncdf(ishot,trim(filename),real(valore,4),n)
-!else
-! 		call write_ncdf(ishot,trim(filename),real(valore,4),n)
-!endif
-!end subroutine dump_smtg_ncdf
+  subroutine check(status)
+  ! Translates netcdf error codes into error messages
+    use netcdf
+    implicit none
+    integer, intent ( in) :: status
+    if(status /= nf90_noerr) then 
+      print *, trim(nf90_strerror(status))
+      stop "Stopped"
+    end if
+  end subroutine check  
 
-!!!!!!!!!!AUXUILIAR----------------------------------------NETCDF----------!!!!!!!
-!subroutine init_ncdf(ishot,filename,u,n)
-!use netcdf
-!implicit none
 
-!integer*4 :: ishot,i
-!character (len = *) :: filename
-!integer, parameter :: NDIMS = 2;
-!integer :: n;
-!character (len = *), parameter :: U_NAME = "data"
-!character (len = *), parameter :: REC_NAME = "time"
-!character (len = *), parameter :: UNITS = "index"
-!integer :: ncid, varid, dimids(NDIMS)
-!integer :: u_dimid,t_dimid
-!integer :: start(NDIMS), count(NDIMS)
-!real*4, dimension(n):: u
+subroutine nc_dump_field_1d(f,flen,varname,appisnap)
+  use netcdf
+  use data_proc, ONLY : mynum
+  use data_io, ONLY   : nc_1d_dimid, nc_proc_dimid, ncid_out 
+  implicit none
+  integer, intent(in)                :: flen
+  real(kind=realkind), intent(in) :: f(flen)
+  character(len=*), intent(in)      :: varname
+  character(len=4), intent(in)      :: appisnap
+  integer                           :: nc_varid
+  integer                           :: nc_f_dimid
+  integer                           :: status, isnap_loc
+  ! Check whether this Variable already exists in file ncid_out
+  status =  nf90_inq_varid(ncid_out, trim(varname), nc_varid)
+  print*, flen, appisnap, trim(varname)
+  read(appisnap,*) isnap_loc
 
-! call check(nf90_create(filename,NF90_CLOBBER, ncid))
-! call check(nf90_def_dim(ncid,UNITS,n,u_dimid))
-! call check(nf90_def_dim(ncid,REC_NAME,NF90_UNLIMITED,t_dimid))
-! dimids=(/u_dimid, t_dimid/)
-! call check( nf90_def_var(ncid,U_NAME,NF90_REAL,dimids,varid))
-! call check( nf90_enddef(ncid))
-! count = (/n,1/)
-! start = (/1,1/)
-! start(2)=ishot;
-! call check(nf90_put_var(ncid,varid,real(u,4),start=start,count=count));
-! call check(nf90_close(ncid)) 
+  if (status /= nf90_NoErr) then
+    call check( nf90_redef(ncid_out))
+    call check( nf90_def_dim(ncid_out, trim(varname), len=flen, dimid=nc_f_dimid) )
+    call check( nf90_def_var(ncid_out, trim(varname), NF90_FLOAT, (/nc_f_dimid, nc_proc_dimid, nc_1d_dimid/), nc_varid) )
+    call check( nf90_enddef(ncid_out))
+  end if
 
-!contains
-!  subroutine check(status)
-!    integer, intent ( in) :: status
-!    
-!    if(status /= nf90_noerr) then 
-!      print *, trim(nf90_strerror(status))
-!      stop 2
-!    end if
-!  end subroutine check  
-!end subroutine init_ncdf
+  call check( nf90_put_var(ncid_out, nc_varid, start=(/1, mynum+1, isnap_loc+1/), count=(/flen, 1, 1/), values=f) )
+  
+end subroutine nc_dump_field_1d
 
-!!!!---------------------------------------------------------------------!!!!!
-!subroutine write_ncdf(ishot,filename,u,n)
-!use NETCDF
-!implicit none
+!----------------------------------------------------------------------------
+subroutine define_netcdf_output
+!
+! Creates the netcdf output file for wavefields and defines the dimension 
+! nc_1d_dimid, as unlimited.
+!
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    use data_io
+    use netcdf
+    use data_proc 
+    
+    
+!    character(len=16) nc_filename
 
-!integer*4 :: ishot,i
-!character (len = *):: filename
-!character (len = *), parameter :: U_NAME = "data"
-!integer, parameter :: NDIMS = 2;
-!integer :: n,ncid,varid;
-!integer :: start(NDIMS), count(NDIMS)
-!real*4, dimension(n)::u
+!    nc_filename = datapath(1:lfdata)
+    print *, 'Preparing netcdf file for ', nproc, ' processors'
+    call check( nf90_create ( path=datapath(1:lfdata)//"/wavefield_out.nc4", &
+      & cmode=nf90_CLOBBER+nf90_hdf5, &
+      & ncid=ncid_out, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
+    call check( nf90_def_dim( ncid_out, "snapshots", NF90_UNLIMITED, nc_1d_dimid) )
+    call check( nf90_def_dim( ncid_out, "processors", nproc, nc_proc_dimid) )
+    call check( nf90_enddef ( ncid_out))
 
-! call check(nf90_open(filename,NF90_WRITE, ncid))
-!	call check(nf90_inq_varid(ncid,U_NAME,varid))
-! count = (/n,1/)
-! start = (/1,ishot/)
-! call check(nf90_put_var(ncid,varid,real(u,4),start=start,count=count));
-! call check(nf90_close(ncid))
+end subroutine
 
-!!	write(6,*) 'shot:',ishot,'ncid:',ncid,'varid',varid
+!============================================================================
+subroutine end_netcdf_output
+! 
+!  Closes the netcdf output files
+!
+!============================================================================
+  use data_io
+  use netcdf
 
-!contains
-!  subroutine check(status)
-!    integer, intent ( in) :: status
-!    
-!    if(status /= nf90_noerr) then 
-!      print *, trim(nf90_strerror(status))
-!      stop 2
-!    end if
-!  end subroutine check  
-!end subroutine write_ncdf
-!!!!!!!!!!!!!!-----------------------------------------___!!!!!!!!!!
-!subroutine read_ncdf(filename,u,n,ishot)
-!use netcdf
-!implicit none
-!integer :: ncid,ishot,i
-!character (len=*) :: filename
-!character(4) :: appdump
-!character (len = *), parameter :: U_NAME = "data"
-!integer,parameter :: NDIMS=2
-!integer :: n,varid;
-!integer :: start(NDIMS),count(NDIMS);
-!real*4 :: dump(n),u(n);dump=0.0;
-!call check(nf90_open(filename,nf90_nowrite,ncid))
-!call check(nf90_inq_varid(ncid,U_NAME,varid))
-!count = (/n,1/)
-!	start = (/1,ishot/)
-!	call check(nf90_get_var(ncid,varid,dump,start=start,count=count))
+  call check( nf90_close(ncid_out))
 
-!!	write(6,*) u(2)-dump(2),dump(2)
-!	do i=1,n
-!		if(dump(i)/=u(i))stop 2
-!	enddo
-!	call check(nf90_close(ncid))
-!	write(6,*) 'checked'
-!contains
-!  subroutine check(status)
-!    integer, intent ( in) :: status
-!    if(status /= nf90_noerr) then 
-!      print *, trim(nf90_strerror(status))
-!      stop 2
-!    end if
-!  end subroutine check 
-!end subroutine read_ncdf
-
-!!subroutine load_snap_bdr2(u,rows,cols,ishot,folder)
-!!implicit none
-!!integer :: rows,cols,ishot
-!!real*4,dimension(rows,cols),intent(out) :: u
-!!	character(50) :: folder
-!!write(6,*)'reading nc file ',trim(folder),' ...'
-!!		call read_ncdf_matrix(trim(folder)//'.nc',u,rows,cols,ishot)
-
-!!end subroutine load_snap_bdr2
+end subroutine
+!#####################################################################################
+!End of S. Stähler's netcdf routines
+!#####################################################################################
 
 !!!!!!!!!AUXUILIAR----------------------------------------NETCDF----------!!!!!!!
 subroutine dump_matrix_ncdf(valore,ishot,rows,cols,filename)
@@ -141,9 +96,9 @@ real*4,dimension(rows,cols),intent(in) :: valore
 
 write(6,*)'computing nc file ',trim(filename),' ...'
 if(ishot==1) then
- 		call init_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
+  call init_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
 else
- 		call write_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
+  call write_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
 endif
 end subroutine dump_matrix_ncdf
 

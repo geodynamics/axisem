@@ -233,25 +233,25 @@ double precision :: s,z,r,theta
 11 format(6(1pe11.4))
 
   if (dump_wavefields) then
-  !! andrea
-  !! if netcdf output is used no needs for the initialize ascii
-  if(.not.use_netcdf)   then
-     do iel=1,maxind
-        call define_io_appendix(appielem,iel+mynum*maxind)
-        open(unit=40000000+iel,file=datapath(1:lfdata)// &
-                  '/surfelem_disp.dat'//appielem)
-        open(unit=50000000+iel,file=datapath(1:lfdata)// &
-                                    '/surfelem_velo.dat'//appielem)
-     enddo
+    !! andrea
+    !! if netcdf output is used no needs for the initialize ascii
+    if(.not.use_netcdf)   then
+       do iel=1,maxind
+          call define_io_appendix(appielem,iel+mynum*maxind)
+          open(unit=40000000+iel,file=datapath(1:lfdata)// &
+                    '/surfelem_disp.dat'//appielem)
+          open(unit=50000000+iel,file=datapath(1:lfdata)// &
+                                      '/surfelem_velo.dat'//appielem)
+       enddo
 
-  do iel=1,maxind
-     call define_io_appendix(appielem,iel+mynum*maxind)
-     open(unit=60000000+iel,file=datapath(1:lfdata)// &
-          '/surfelem_strain.dat'//appielem)
-     open(unit=70000000+iel,file=datapath(1:lfdata)// &
-          '/surfelem_disp_src.dat'//appielem)
-  enddo
-		endif
+        do iel=1,maxind
+           call define_io_appendix(appielem,iel+mynum*maxind)
+           open(unit=60000000+iel,file=datapath(1:lfdata)// &
+                '/surfelem_strain.dat'//appielem)
+           open(unit=70000000+iel,file=datapath(1:lfdata)// &
+                '/surfelem_disp_src.dat'//appielem)
+        enddo
+    endif
   endif
 
 end subroutine prepare_seismograms
@@ -1174,9 +1174,9 @@ do i=1,num_rec
 enddo
 
 filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
-	call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
+call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
 filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
-	call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
 
 elseif (src_type(1)=='dipole') then
 do i=1,num_rec

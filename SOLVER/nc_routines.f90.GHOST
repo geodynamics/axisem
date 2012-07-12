@@ -1,7 +1,38 @@
 module nc_routines
+use global_parameters
 !!!!this module is just an empty box to allow compiling the code without netcdf library 
 !!!installed
 contains
+
+subroutine nc_dump_field_1d(f,flen,varname,appisnap)
+  implicit none
+  integer, intent(in)                :: flen
+  real(kind=realkind), intent(in) :: f(flen)
+  character(len=*), intent(in)      :: varname
+  character(len=4), intent(in)      :: appisnap
+
+end subroutine nc_dump_field_1d
+
+!----------------------------------------------------------------------------
+subroutine define_netcdf_output
+!
+! Creates the netcdf output file for wavefields and defines the dimension 
+! nc_1d_dimid, as unlimited.
+!
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+end subroutine
+
+!============================================================================
+subroutine end_netcdf_output
+! 
+!  Closes the netcdf output files
+!
+!============================================================================
+
+end subroutine
+
+
 subroutine dump_matrix_ncdf(valore,ishot,rows,cols,filename)
 implicit none
 character(len=50), intent(in)              :: filename

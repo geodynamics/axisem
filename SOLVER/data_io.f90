@@ -28,6 +28,10 @@ public
   logical           :: srcvic,add_hetero,file_exists,use_netcdf 
   character(len=6)  :: output_format 
 
+! NetCDF variables
+  integer           :: ncid_out
+  integer           :: nc_1d_dimid, nc_proc_dimid
+
 ! indices to limit dumping to select contiguous range of GLL points:
 ! 0<=ibeg<=iend<=npol
 ! For the time being: dump the same in xeta and eta directions
@@ -46,6 +50,7 @@ public
   
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 
 !=====================
 end module data_io
