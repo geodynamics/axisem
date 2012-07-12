@@ -40,8 +40,10 @@ implicit none
     call mesh_tests ! def_grid
   endif 
 
-  if(lpr)write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
-  call define_netcdf_output
+  if (use_netcdf) then
+    if(lpr)write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
+    call define_netcdf_output
+  end if
 
   do isim=1,num_simul
 
