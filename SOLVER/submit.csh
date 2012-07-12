@@ -122,6 +122,9 @@ if ( $rec_file_type == 'colatlon' ) then
     set recfile = 'receivers.dat'
 else if ( $rec_file_type == 'stations' ) then
     set recfile = 'STATIONS'
+else if ( $rec_file_type == 'database' ) then
+    set recfile = 'database'
+    echo "this is a dummy database receiver file" >! $homedir/$recfile
 endif
 
 if ( ! -f $homedir/$recfile ) then 
@@ -358,13 +361,15 @@ set F90 = `grep "FC = " $homedir/Makefile |awk '{print $3}'`
 cd $homedir/UTILS
 cp $homedir/mesh_params.h .
 $F90 post_processing.f90 -o xpost_processing
-cp -p xpost_processing $homedir/$1
-cp -p post_processing.f90 $homedir/$1
-cp -p post_processing.csh $homedir/$1
-cp -p plot_recfile_seis.csh $homedir/$1
-cp -p plot_recs.plot $homedir/$1
-cp -p taup_allrec.csh $homedir/$1
-cp -p plot_record_section.m $homedir/$1
+cd $homedir
+cd $1
+cp -p $homedir/UTILS/xpost_processing .
+cp -p $homedir/UTILS/post_processing.f90 .
+cp -p $homedir/UTILS/post_processing.csh .
+cp -p $homedir/UTILS/plot_recfile_seis.csh .
+cp -p $homedir/UTILS/plot_recs.plot .
+cp -p $homedir/UTILS/taup_allrec.csh .
+cp -p $homedir/UTILS/plot_record_section.m .
 #echo ""; cd $homedir; make sum_seis; cp sum_seis.x sum_seis.f90 $mainrundir
 echo "To convolve and sum seismograms, run ./post_processing.csh after the simulations in:" 
 echo $mainrundir
