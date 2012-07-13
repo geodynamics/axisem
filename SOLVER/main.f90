@@ -40,10 +40,6 @@ implicit none
     call mesh_tests ! def_grid
   endif 
 
-  if (use_netcdf) then
-    if(lpr)write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
-    call define_netcdf_output
-  end if
 
   do isim=1,num_simul
 
@@ -51,6 +47,11 @@ implicit none
           'MAIN: Starting wave preparation...........................'
      call prepare_waves ! time_evol_wave
 
+     if (use_netcdf) then
+       if(lpr)write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
+       call define_netcdf_output
+       if(lpr)write(6,*)'MAIN: netcdf file for wavefield output produced ..........'
+     end if
 ! Deallocate all the large arrays that are not needed in the time loop,
 ! specifically those from data_mesh_preloop and data_pointwise
      if(lpr)write(6,*) &
@@ -63,8 +64,10 @@ implicit none
      call time_loop ! time_evol_wave
   enddo
   
-  call end_netcdf_output !Flush and close all netcdf files 
-
+  if (use_netcdf) then
+    if(lpr)write(6,*)'MAIN: Flush and close all netcdf files ...................'
+    call end_netcdf_output !Flush and close all netcdf files 
+  end if
   call end_clock ! clocks
 
   call pend ! commun
