@@ -118,16 +118,11 @@ program post_processing_seis
         read(20,*) colat(i,isim), lon(i,isim), junk
         if (abs(lon(i,isim)-360.)<0.01) lon(i,isim)=0.
        
-!        write(6,*) '------------------------------------'
-!        write(6,*) colat(i,isim), lon(i,isim)        
-
         ! transform to xyz
         rloc_xyz(1) = sin(colat(i,isim) * pi / 180.) * cos(lon(i,isim) * pi / 180.) 
         rloc_xyz(2) = sin(colat(i,isim) * pi / 180.) * sin(lon(i,isim) * pi / 180.) 
         rloc_xyz(3) = cos(colat(i,isim) * pi / 180.) 
         
-!        write(6,*) rloc_xyz 
-
         ! Rotate to the original (i.e. real src-rec coordinate-based) u_xyz
         rloc_xyz_tmp = rloc_xyz
         rloc_xyz(1) =   cos(srccolat(1)) * cos(srclon(1)) * rloc_xyz_tmp(1) &
@@ -139,13 +134,22 @@ program post_processing_seis
         rloc_xyz(3) = - sin(srccolat(1)) * rloc_xyz_tmp(1) &
                     & + cos(srccolat(1)) * rloc_xyz_tmp(3)
 
-        ! compute colat and lon
+        if (rloc_xyz(1) > 1.) rloc_xyz(1) = 1.
+        if (rloc_xyz(1) < -1.) rloc_xyz(1) = -1.
+        if (rloc_xyz(2) > 1.) rloc_xyz(2) = 1.
+        if (rloc_xyz(2) < -1.) rloc_xyz(2) = -1.
         if (rloc_xyz(3) > 1.) rloc_xyz(3) = 1.
         if (rloc_xyz(3) < -1.) rloc_xyz(3) = -1.
         
-        rloc_rtp(2) = acos(rloc_xyz(3))
-        arg1 = rloc_xyz(1) / (sin(rloc_rtp(2)) + 1.e-10)
+        rloc_xyz(1) = rloc_xyz(1) / (rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)**.5
+        rloc_xyz(2) = rloc_xyz(2) / (rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)**.5
+        rloc_xyz(3) = rloc_xyz(3) / (rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)**.5
 
+        ! compute colat and lon
+        rloc_rtp(2) = acos(rloc_xyz(3))
+
+        arg1 = rloc_xyz(1) / (rloc_xyz(1)**2 + rloc_xyz(2)**2)**.5
+        
         if (arg1 > 1.) arg1 = 1.
         if (arg1 < -1.) arg1 = -1.
 
