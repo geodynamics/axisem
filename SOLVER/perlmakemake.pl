@@ -12,7 +12,6 @@
 # Written by Michael Wester <wester@math.unm.edu> February 16, 1995
 # Cotopaxi (Consulting), Albuquerque, New Mexico
 #
-$INCLUDE_strg = "INCLUDE =";
 
 ########## CHECK FOR NETCDF #############################################
 if ( @ARGV > 0 ) {
@@ -36,11 +35,13 @@ else {
 
 if ( $netcdf_exists>0){
   print "netcdf exists, hence we will create Makefile for allowing its usage.\n";
-  $libs  = "LIBS = -lm -lnetcdf \n";
+  $libs  = "LIBS = -lm -lnetcdf -lnetcdff -L /usr/lib \n";
+  $INCLUDE_full = "INCLUDE = -I /usr/include";
 }
 else{
   print "netcdf doesnt exist, hence we will create Makefile disallowing its usage.\n";
   $libs = "LIBS = -lm \n" ;
+  $INCLUDE_full = "INCLUDE =";
 }
 ########## END CHECK FOR NETCDF #############################################
 
@@ -107,12 +108,12 @@ else {
 
 $F90_full="F90 = $F90_strg \n";
 $FC_full="FC = $FC_strg \n";
-if ( $netcdf_exists && defined($ENV{NETCDFHOME})) {
-$INCLUDE_full="INCLUDE = -I /usr/local/include /usr/include $ENV{'NETCDFHOME'}/include \n";
-}
-else {
-$INCLUDE_full="INCLUDE = \n";
-}
+#if ( $netcdf_exists && defined($ENV{NETCDFHOME})) {
+#$INCLUDE_full="INCLUDE = -I /usr/local/include /usr/include $ENV{'NETCDFHOME'}/include \n";
+#}
+#else {
+#$INCLUDE_full="INCLUDE = \n";
+#}
 print MAKEFILE $F90_full;
 print MAKEFILE $FC_full;
 print MAKEFILE $INCLUDE_full; 

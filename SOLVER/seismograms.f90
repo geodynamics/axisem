@@ -235,7 +235,12 @@ double precision :: s,z,r,theta
   if (dump_wavefields) then
     !! andrea
     !! if netcdf output is used no needs for the initialize ascii
-    if(.not.use_netcdf)   then
+    if(use_netcdf)   then
+       
+       
+
+    else 
+
        do iel=1,maxind
           call define_io_appendix(appielem,iel+mynum*maxind)
           open(unit=40000000+iel,file=datapath(1:lfdata)// &
@@ -268,9 +273,11 @@ subroutine prepare_from_recfile_seis
 
 use utlity
 use data_mesh_preloop
+use data_mesh, ONLY: loc2globrec
 use data_source, ONLY : src_type,rot_src,srccolat,srclon
 use commun
 use rotations, ONLY : rotate_receivers_recfile,save_google_earth_kml
+use nc_routines, ONLY: nc_define_receiverfile
 
 integer                      :: i,iel,ipol,irec,num_rec_glob
 integer                      :: count_diff_loc,count_procs
@@ -280,7 +287,7 @@ double precision,allocatable :: recfile_readth(:),recfile_readph(:)
 double precision,allocatable :: recfile_th_glob(:)
 double precision,allocatable :: recfile_th_loc(:),recfile_el_loc(:,:)
 double precision,allocatable :: recfile_th(:),recfile_ph_loc(:),recfile_ph_loc2(:)
-integer,allocatable          :: rec2proc(:),loc2globrec_loc(:),loc2globrec(:)
+integer,allocatable          :: rec2proc(:),loc2globrec_loc(:)!, loc2globrec(:)
 character(len=4)             :: appielem
 character(len=100)         :: junk
 character(len=40), allocatable :: receiver_name(:)
@@ -511,7 +518,7 @@ integer ierror
 !=====================
   enddo ! num_rec_glob
 !=====================
-  
+
 ! Form local arrays depending on how many receivers each processor has
   num_rec=irec
   allocate(recfile_el(1:num_rec,1:3),loc2globrec(1:num_rec))
@@ -594,18 +601,19 @@ integer ierror
 
      write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
 
-  if(.not.use_netcdf)   then
+  if(.not.(use_netcdf))   then
 !          write(6,*)mynum,'REC NAME 1:',i,loc2globrec(i),size(receiver_name)
 !          write(6,*)mynum,'REC NAME 2:',trim(receiver_name(loc2globrec(i)))
      open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
 !     open(300000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_velo.dat')
-	endif
-		
-!     fname_rec_seis(i) = datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat'
-!     fname_rec_velo(i) = datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_velo.dat'
+  endif
  
   enddo
   close(9998+mynum)
+
+  if (use_netcdf) then
+    call nc_define_receiverfile(num_rec_glob, receiver_name, recfile_th_glob, recfile_readth, recfile_readph, rec2proc)
+  end if
 
   write(69,15)count_diff_loc,num_rec
   write(69,*)'  Maximal receiver location error [m]:',maxreclocerr
@@ -716,7 +724,7 @@ close(300+mynum)
   deallocate(recfile_ph_loc,recfile_readph)
   deallocate(recfile_readth)
   deallocate(recfile_th_glob,recfile_th,recfile_th_loc)
-  deallocate(recfile_el_loc,loc2globrec_loc,loc2globrec,rec2proc)
+  deallocate(recfile_el_loc,loc2globrec_loc,rec2proc)
 
 if (rec_file_type=='stations') then 
   deallocate(rec_name,rec_network)
@@ -1147,14 +1155,13 @@ end subroutine compute_recfile_seis_bare
 !=============================================================================
 
 
-subroutine compute_recfile_seis_bare_nc(disp,velo)
+subroutine nc_compute_recfile_seis_bare(disp,velo)
 
+use data_io,     ONLY : nc_disp_varid 
 use data_source, ONLY : src_type
-use nc_routines, ONLY : dump_matrix_ncdf
+use nc_routines, ONLY : nc_dump_rec
+
 include "mesh_params.h"
-!!!!andrea 
-!!this function saves surface seismogram to one netcdf file pro-processor
-!!the global mapping is still given by the surfelem_coords file.
 real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
 real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
 real(kind=realkind),dimension(:,:),allocatable :: velo_surf,disp_surf
@@ -1168,15 +1175,15 @@ do i=1,num_rec
      disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
      disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
      disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
-     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+!     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+!     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+!     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
 enddo
 
-filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
-call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
-filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
-call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+!filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
+!call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
+!filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
+!call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
 
 elseif (src_type(1)=='dipole') then
 do i=1,num_rec
@@ -1187,17 +1194,17 @@ do i=1,num_rec
                 disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
      disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
        
-     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+!     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+!     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
+!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+!     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
 enddo
 
-filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
-	call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
-filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
-	call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+!filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
+!call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
+!filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
+!call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
 
 elseif (src_type(1)=='quadpole') then
 
@@ -1205,22 +1212,24 @@ do i=1,num_rec
      disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
      disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
      disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
-     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+!     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+!     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+!     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
 enddo
 
-filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
-	call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
-filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
-	call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+!filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
+!	call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
+!filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
+!call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
 
 endif !src_type(1)
+
+call nc_dump_rec(disp_surf,nc_disp_varid,num_rec,3,iseismo)
 
 deallocate(velo_surf)
 deallocate(disp_surf)
 
-end subroutine compute_recfile_seis_bare_nc
+end subroutine nc_compute_recfile_seis_bare
 
 !-----------------------------------------------------------------------------
 !af
@@ -1335,7 +1344,8 @@ subroutine compute_surfelem_nc(disp,velo)
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 use data_source, ONLY : src_type
-use nc_routines, ONLY : dump_matrix_ncdf
+use nc_routines, ONLY : nc_dump_rec_perproc
+
 include "mesh_params.h"
 !!!!andrea 
 !!this function saves surface seismogram to one netcdf file pro-processor
@@ -1355,10 +1365,13 @@ do i=1,maxind
      velo_surf(3,i)=real(velo(npol/2,jsurfel(i),surfelem(i),3))
 enddo
 
-filename=datapath(1:lfdata)//'/surfelem_disp'//appmynum//'.nc'
-	call dump_matrix_ncdf(disp_surf,istrain,3,maxind,filename)
-filename=datapath(1:lfdata)//'/surfelem_velo'//appmynum//'.nc'
-	call dump_matrix_ncdf(velo_surf,istrain,3,maxind,filename)
+!filename=datapath(1:lfdata)//'/surfelem_disp'//appmynum//'.nc'
+!  call dump_matrix_ncdf(disp_surf,istrain,3,maxind,filename)
+!filename=datapath(1:lfdata)//'/surfelem_velo'//appmynum//'.nc'
+!  call dump_matrix_ncdf(velo_surf,istrain,3,maxind,filename)
+
+call nc_dump_rec_perproc(disp_surf,nc_surfelem_disp_varid,maxind,3,istrain)
+call nc_dump_rec_perproc(velo_surf,nc_surfelem_velo_varid,maxind,3,istrain)
 
 deallocate(velo_surf)
 deallocate(disp_surf)

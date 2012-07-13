@@ -867,9 +867,9 @@ real(kind=realkind) :: time
   if ( mod(iter,seis_it)==0) then
 ! receiver locations read in from file (only 3-comp. displacements)
 
-iseismo=iseismo+1
+    iseismo=iseismo+1
     if(use_netcdf)   then
-      call compute_recfile_seis_bare_nc(disp,velo)
+      call nc_compute_recfile_seis_bare(disp,velo)
     else
       call compute_recfile_seis_bare(disp)
     endif
