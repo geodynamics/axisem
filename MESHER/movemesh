@@ -2,10 +2,18 @@
 
 set homepath = `echo $PWD`
 set meshpath = "../SOLVER/MESHES/$1"
+
 if ( ! -d ../SOLVER/MESHES ) then
   mkdir ../SOLVER/MESHES
 endif
-mkdir $meshpath
+
+if ( ! -d $meshpath ) then
+  mkdir $meshpath
+else
+  echo "ERROR: the mesh folder " $meshpath " already exists!"
+  exit
+endif
+
 cd $meshpath
 set meshpath = `echo $PWD`
 cd $homepath
@@ -14,7 +22,7 @@ echo "Moving mesh to" $meshpath
 
 echo "character(len=100) :: meshpath='$meshpath'" >> mesh_params.h
 
-mv meshdb.dat00* $meshpath
+mv meshdb.dat0* $meshpath
 mv mesh_params.h* $meshpath
 mv OUTPUT $meshpath
 cp -p inparam_mesh $meshpath
