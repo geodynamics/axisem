@@ -14,9 +14,6 @@ contains
 !******************************************************************************************************
 
 subroutine nc_dump_field_1d(f,flen,varname,appisnap)
-  use netcdf
-  use data_proc, ONLY : mynum
-  use data_io, ONLY   : nc_1d_dimid, nc_proc_dimid, ncid_out 
   implicit none
   integer, intent(in)                :: flen
   real(kind=realkind), intent(in) :: f(flen)
@@ -68,4 +65,4 @@ subroutine end_netcdf_output
 !
 !============================================================================
 end subroutine
-
+end module
