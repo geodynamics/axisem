@@ -599,11 +599,11 @@ integer ierror
         stop
      endif
 
-     write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
 
   if(.not.(use_netcdf))   then
 !          write(6,*)mynum,'REC NAME 1:',i,loc2globrec(i),size(receiver_name)
 !          write(6,*)mynum,'REC NAME 2:',trim(receiver_name(loc2globrec(i)))
+     write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
      open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
 !     open(300000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_velo.dat')
   endif

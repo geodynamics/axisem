@@ -78,8 +78,10 @@ subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
   integer                                      :: irec
   
 !  write(6,*) flen, appisnap, trim(varname), ncid_out
+
   do irec = 1, nrec
-    call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, irec, mynum/), &
+    !write(6,*) nc_varid, idump, irec, mynum
+    call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, irec, mynum+1/), &
               & count = (/1, dim2, 1, 1/), values=recfield(irec,:)) )
   end do
 
@@ -104,6 +106,7 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
     integer  :: nc_thr_varid, nc_th_varid, nc_proc_varid, nc_recnam_dimid
     integer  :: nc_recnam_varid, nc_surf_dimid
     
+!    call check( nf90_def_grp( ncid_out, "Seismograms", ncid_recout) )
     call check( nf90_create ( path=datapath(1:lfdata)//"/seismograms_out.nc4", &
       & cmode=ior(nf90_CLOBBER,nf90_hdf5), &
       & ncid=ncid_recout, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
@@ -116,11 +119,20 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
     if (lpr) write(6,*) 'NetCDF dimensions defined'
     
     call check( nf90_def_var( ncid_recout, "displacement", NF90_FLOAT, &
-                & (/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), nc_disp_varid) )
+                & (/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), nc_disp_varid, &
+                &  deflate_level=2, cache_size=4) )
+    call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )
+    
     call check( nf90_def_var( ncid_recout, "surface_displacement", NF90_FLOAT, &
-                & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), nc_surfelem_disp_varid) )
+                & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), &
+                & nc_surfelem_disp_varid, deflate_level=2, cache_size=4 ) )
+    call check( nf90_put_att(ncid_recout, nc_surfelem_disp_varid, 'units', 'meters'))
+    
     call check( nf90_def_var( ncid_recout, "surface_velocity", NF90_FLOAT, &
-                & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), nc_surfelem_velo_varid) )
+                & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), &
+                & nc_surfelem_velo_varid, deflate_level=2, cache_size=4) )
+    call check( nf90_put_att(ncid_recout, nc_surfelem_velo_varid, 'units', 'meters per second') )
+    
     call check( nf90_def_var( ncid_recout, "latitudes_requested", NF90_FLOAT, &
                 & (/nc_rec_dimid/), nc_latr_varid) )
     call check( nf90_def_var( ncid_recout, "longitudes", NF90_FLOAT, &
@@ -204,7 +216,7 @@ subroutine end_netcdf_output
   use netcdf
   integer  status 
   status = nf90_close(ncid_out)
-  status = nf90_close(ncid_recout)
+!  status = nf90_close(ncid_recout)
 end subroutine
 
 !#####################################################################################
