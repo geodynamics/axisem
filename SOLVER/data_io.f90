@@ -29,7 +29,7 @@ public
   character(len=6)  :: output_format 
 
 ! NetCDF variables
-  integer           :: ncid_out, ncid_recout
+  integer           :: ncid_out, ncid_recout, ncid_snapout
   integer           :: nc_1d_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
   integer           :: nc_times_dimid, nc_comp_dimid, nc_disp_varid
   integer           :: nc_surfelem_disp_varid, nc_surfelem_velo_varid

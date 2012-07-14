@@ -5,7 +5,7 @@ program axisem
 use data_proc 
 use data_io
 use data_time   
-use nc_routines,    ONLY : define_netcdf_output, end_netcdf_output   
+use nc_routines,    ONLY : define_netcdf_output, end_netcdf_output, nc_open_parallel 
 use data_source,    ONLY : isim,num_simul
 use data_mesh,      ONLY : do_mesh_tests
 use parameters,     ONLY : open_local_param_file,readin_parameters
@@ -29,6 +29,14 @@ implicit none
   if(lpr)write(6,*)'MAIN: Reading parameters..................................'
   call readin_parameters ! parameters
 
+  if (use_netcdf) then
+    if (mynum==0) then
+      if(lpr)write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
+      call define_netcdf_output
+      if(lpr)write(6,*)'MAIN: netcdf file prepared ...............................'
+    end if
+  end if
+
   if(lpr)write(6,*)'MAIN: Reading mesh database...............................'
   call read_db  ! get_mesh
 
@@ -40,24 +48,25 @@ implicit none
     call mesh_tests ! def_grid
   endif 
 
-
   do isim=1,num_simul
 
      if(lpr)write(6,*) &
           'MAIN: Starting wave preparation...........................'
      call prepare_waves ! time_evol_wave
 
-     if (use_netcdf) then
-       if(lpr)write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
-       call define_netcdf_output
-       if(lpr)write(6,*)'MAIN: netcdf file for wavefield output produced ..........'
-     end if
+
 ! Deallocate all the large arrays that are not needed in the time loop,
 ! specifically those from data_mesh_preloop and data_pointwise
      if(lpr)write(6,*) &
           'MAIN: Deallocating arrays not needed in the time loop.....';call flush(6)
      call deallocate_preloop_arrays
-     
+ 
+     if (use_netcdf) then
+       if(lpr)write(6,*) &
+          'MAIN: Opening Netcdf file for parallel output.............';call flush(6)
+       call nc_open_parallel()
+     end if
+    
      call barrier ! Just making sure we're all ready to rupture...
      
      if(lpr)write(6,*)'MAIN: Starting wave propagation...........................'; call flush(6)

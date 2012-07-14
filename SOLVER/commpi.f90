@@ -17,9 +17,9 @@ use global_parameters
 use data_mesh, ONLY: gvec_solid,gvec_fluid
 use data_proc
 use data_comm
-!use mpi
+use mpi
 implicit none
-include 'mpif.h'
+!include 'mpif.h'
 
 public 
 

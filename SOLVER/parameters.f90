@@ -106,6 +106,11 @@ integer :: i
    rot_rec='cyl'
    dump_snaps_solflu=.false.
    dump_type='fullfields'
+   
+use_netcdf = .false.
+if (output_format=='netcdf') then
+  use_netcdf = .true.
+end if
 
 !af test
  vphomo = vphomo*1.e3
@@ -704,6 +709,7 @@ end subroutine compute_numerical_parameters
 subroutine write_parameters
 
 use data_comm
+use nc_routines
 use data_numbering, ONLY : nglob,nglob_solid
 
 include 'mesh_params.h'
@@ -711,7 +717,7 @@ include 'mesh_params.h'
 integer          :: iel,curvel,linel,seminoel,semisoel,num_rec_glob
 integer          :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
 integer          :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid
-integer          :: ipol,jpol,hmaxloc1(3),hminloc1(3),i,j
+integer          :: ipol,jpol,hmaxloc1(3),hminloc1(3),i,j, ilogic
 integer          :: maxprocssend_solid,maxprocsrecv_solid 
 integer          :: maxprocssend_fluid,maxprocsrecv_fluid,nsim1
 double precision :: dis1(0:npol-1,0:npol-1,nelem),dis2(0:npol-1,0:npol-1,nelem)
@@ -909,6 +915,52 @@ character(len=4) :: Mij_char(6)
 ! additionally write a header for the kernel software
      if (dump_wavefields) call create_kernel_header
 
+     if (use_netcdf) then
+! write generic simulation info file
+     open(unit=55,file='simulation.info')
+     call nc_write_att_char(trim(bkgrdmodel),'background_model')
+     call nc_write_att_real(real(deltat),'time step in s')
+     call nc_write_att_int(niter,'number of time steps')
+     call nc_write_att_char(trim(src_type(1)),'source type')
+     call nc_write_att_char(trim(src_type(2)),'source type')
+     call nc_write_att_char(trim(stf_type),'source time function')
+     call nc_write_att_char(trim(src_file_type),'source file type')
+     call nc_write_att_real(real(period),'dominant source period')
+     call nc_write_att_real(real(src_depth/1000.),'source depth [km]')
+     call nc_write_att_real(real(magnitude),'scalar source magnitude')
+     call nc_write_att_int(num_rec_tot,'number of receivers')
+     call nc_write_att_int(floor(real(niter)/real(seis_it)),'length of seismogram [time samples]')
+     call nc_write_att_real(real(deltat)*real(seis_it),'seismogram sampling [s]')
+     ilogic = correct_azi
+     call nc_write_att_int(ilogic,'compute seismograms at correct azimuth?')
+     if (dump_wavefields) then
+        call nc_write_att_int(floor(real(niter)/real(strain_it)),'number of strain dumps')
+        call nc_write_att_real(real(period)/real(strain_samp),'strain dump sampling rate [s]')
+     else
+        call nc_write_att_int(0,'number of strain dumps')       
+        call nc_write_att_real(0.,'strain dump sampling rate [s]' )
+     endif
+   if (dump_snaps_glob .or. dump_snaps_solflu) then
+      call nc_write_att_int(floor(real(niter)/real(snap_it)),'number of snapshot dumps')
+      call nc_write_att_real(real(deltat)*real(snap_it),'snapshot dump sampling rate [s]')      
+   else
+      call nc_write_att_int(0,'number of snapshot dumps')
+      call nc_write_att_real(0.,'snapshot dump sampling rate [s]')
+   endif
+   call nc_write_att_char(rot_rec,'receiver components ')
+   call nc_write_att_int(ibeg,'ibeg: beginning gll index for wavefield dumps')
+   call nc_write_att_int(iend,'iend: end gll index for wavefield dumps')
+   call nc_write_att_real(shift_fact,'source shift factor [s]')
+   call nc_write_att_int(int(shift_fact/deltat),'source shift factor for deltat')
+   call nc_write_att_int(int(shift_fact/seis_dt),'source shift factor for seis_dt')
+   call nc_write_att_int(int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse')
+   call nc_write_att_char(trim(rec_file_type),'receiver file type')
+   call nc_write_att_real(dtheta_rec,'receiver spacing (0 if not even)')
+   ilogic = use_netcdf
+   call nc_write_att_int(ilogic,'use netcdf for wavefield output?')
+   end if
+
+
 ! write generic simulation info file
      open(unit=55,file='simulation.info')
      write(55,23)trim(bkgrdmodel),'background model'
@@ -923,11 +975,11 @@ character(len=4) :: Mij_char(6)
      write(55,25)magnitude,'scalar source magnitude'
      write(55,22)num_rec_tot,'number of receivers'
      write(55,22)floor(real(niter)/real(seis_it)),'length of seismogram [time samples]'
-     write(55,21)deltat*seis_it,'seismogram sampling [s]'
+     write(55,21)real(deltat)*real(seis_it),'seismogram sampling [s]'
      write(55,24)correct_azi,'compute seismograms at correct azimuth?'
      if (dump_wavefields) then
         write(55,22)floor(real(niter)/real(strain_it)),'number of strain dumps'
-        write(55,21)period/real(strain_samp),'strain dump sampling rate [s]'
+        write(55,21)real(period)/real(strain_samp),'strain dump sampling rate [s]'
      else
         write(55,22)0,'number of strain dumps'       
         write(55,21)0.,'strain dump sampling rate [s]' 

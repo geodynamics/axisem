@@ -610,11 +610,10 @@ integer ierror
  
   enddo
   close(9998+mynum)
-
   if (use_netcdf) then
     call nc_define_receiverfile(num_rec_glob, receiver_name, recfile_th_glob, recfile_readth, recfile_readph, rec2proc)
   end if
-
+  
   write(69,15)count_diff_loc,num_rec
   write(69,*)'  Maximal receiver location error [m]:',maxreclocerr
   write(69,*)
