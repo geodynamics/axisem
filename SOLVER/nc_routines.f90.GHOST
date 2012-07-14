@@ -1,18 +1,55 @@
 module nc_routines
-use global_parameters
-!!!!this module is just an empty box to allow compiling the code without netcdf library 
-!!!installed
+  use global_parameters
 contains
 
+!##################################################################################
+! Dummy of Netcdf routines by S. Stähler
+!##################################################################################
+
+  subroutine check(status)
+  ! Translates netcdf error codes into error messages
+    integer, intent ( in) :: status
+  end subroutine check  
+
+!******************************************************************************************************
+
 subroutine nc_dump_field_1d(f,flen,varname,appisnap)
+  use netcdf
+  use data_proc, ONLY : mynum
+  use data_io, ONLY   : nc_1d_dimid, nc_proc_dimid, ncid_out 
   implicit none
   integer, intent(in)                :: flen
   real(kind=realkind), intent(in) :: f(flen)
   character(len=*), intent(in)      :: varname
   character(len=4), intent(in)      :: appisnap
-
+  
 end subroutine nc_dump_field_1d
+!******************************************************************************************************
+subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
+  implicit none
+  integer, intent(in)                          :: nrec, dim2, idump, nc_varid
+  real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
+  
 
+end subroutine
+
+!******************************************************************************************************
+subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
+  integer, intent(in)                          :: nrec, dim2, idump, nc_varid
+  real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
+
+end subroutine
+!******************************************************************************************************
+subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
+ &  rec_ph, rec_proc)
+
+    implicit none
+
+    integer, intent(in)                         :: nrec 
+    character(len=40),intent(in)                :: rec_names(nrec)
+    real(8), dimension(nrec),intent(in) :: rec_th, rec_th_req, rec_ph
+    integer, dimension(nrec),intent(in) :: rec_proc
+end subroutine
 !----------------------------------------------------------------------------
 subroutine define_netcdf_output
 !
@@ -20,14 +57,7 @@ subroutine define_netcdf_output
 ! nc_1d_dimid, as unlimited.
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-use data_proc, only : lpr
-if (lpr) then
-  write(6,*) '******************************************************************'
-  write(6,*) 'This version of axisem has not been installed with netcdf support.'
-  write(6,*) 'Run ''makemake.csh -netcdf'' to produce a make file with netcdf!  '
-  write(6,*) '******************************************************************'
-end if
-stop
+
 
 end subroutine
 
@@ -37,16 +67,5 @@ subroutine end_netcdf_output
 !  Closes the netcdf output files
 !
 !============================================================================
-
 end subroutine
 
-
-subroutine dump_matrix_ncdf(valore,ishot,rows,cols,filename)
-implicit none
-character(len=50), intent(in)              :: filename
-integer,intent(in) :: rows,cols,ishot
-real*4,dimension(rows,cols),intent(in) :: valore
-
-end subroutine dump_matrix_ncdf
-
-end module nc_routines

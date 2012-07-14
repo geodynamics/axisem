@@ -13,10 +13,11 @@ contains
     integer, intent ( in) :: status
     if(status /= nf90_noerr) then 
       print *, trim(nf90_strerror(status))
-      stop "Stopped"
+      stop 1
     end if
   end subroutine check  
 
+!******************************************************************************************************
 
 subroutine nc_dump_field_1d(f,flen,varname,appisnap)
   use netcdf
@@ -28,24 +29,131 @@ subroutine nc_dump_field_1d(f,flen,varname,appisnap)
   character(len=*), intent(in)      :: varname
   character(len=4), intent(in)      :: appisnap
   integer                           :: nc_varid
-  integer                           :: nc_f_dimid
+  !integer                           :: nc_f_dimid
   integer                           :: status, isnap_loc
   ! Check whether this Variable already exists in file ncid_out
-  status =  nf90_inq_varid(ncid_out, trim(varname), nc_varid)
-  print*, flen, appisnap, trim(varname)
+!  status =  nf90_inq_varid(ncid_out, trim(varname), nc_varid)
+  write(6,*) flen, appisnap, trim(varname), ncid_out
+
+  call check( nf90_inq_varid(ncid_out, trim(varname), nc_varid) )
+
   read(appisnap,*) isnap_loc
 
-  if (status /= nf90_NoErr) then
-    call check( nf90_redef(ncid_out))
-    call check( nf90_def_dim(ncid_out, trim(varname), len=flen, dimid=nc_f_dimid) )
-    call check( nf90_def_var(ncid_out, trim(varname), NF90_FLOAT, (/nc_f_dimid, nc_proc_dimid, nc_1d_dimid/), nc_varid) )
-    call check( nf90_enddef(ncid_out))
-  end if
+!  if (status /= nf90_NoErr) then
+!    call check( nf90_redef(ncid_out))
+!    call check( nf90_def_dim(ncid_out, trim(varname), len=flen, dimid=nc_f_dimid) )
+!    call check( nf90_def_var(ncid_out, trim(varname), NF90_FLOAT, (/nc_f_dimid, nc_proc_dimid, nc_1d_dimid/), nc_varid) )
+!    call check( nf90_enddef(ncid_out))
+!  end if
 
   call check( nf90_put_var(ncid_out, nc_varid, start=(/1, mynum+1, isnap_loc+1/), count=(/flen, 1, 1/), values=f) )
   
 end subroutine nc_dump_field_1d
+!******************************************************************************************************
+subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
+  use netcdf
+  use data_io 
+  use data_mesh, ONLY: loc2globrec
+  implicit none
+  integer, intent(in)                          :: nrec, dim2, idump, nc_varid
+  real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
+  integer                                      :: irec
+  
+  do irec = 1, nrec
+    call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, loc2globrec(irec)/), &
+              & count = (/1, dim2, 1/), values=recfield(irec,:)) )
+  end do
 
+end subroutine
+
+!******************************************************************************************************
+subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
+  use netcdf
+  use data_io 
+  use data_proc, ONLY: mynum
+!  use data_mesh, ONLY: loc2globrec
+  implicit none
+  integer, intent(in)                          :: nrec, dim2, idump, nc_varid
+  real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
+  integer                                      :: irec
+  
+!  write(6,*) flen, appisnap, trim(varname), ncid_out
+  do irec = 1, nrec
+    call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, irec, mynum/), &
+              & count = (/1, dim2, 1, 1/), values=recfield(irec,:)) )
+  end do
+
+end subroutine
+!******************************************************************************************************
+subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
+ &  rec_ph, rec_proc)
+
+    use data_io
+    use data_proc, ONLY: nproc, mynum 
+    use netcdf
+    use data_mesh, ONLY: maxind
+    use commpi
+    implicit none
+
+    integer, intent(in)                         :: nrec 
+    character(len=40),intent(in)                :: rec_names(nrec)
+    real(8), dimension(nrec),intent(in) :: rec_th, rec_th_req, rec_ph
+    integer, dimension(nrec),intent(in) :: rec_proc
+    integer  :: irec
+    integer  :: nc_latr_varid, nc_lon_varid, nc_lat_varid,  nc_ph_varid
+    integer  :: nc_thr_varid, nc_th_varid, nc_proc_varid, nc_recnam_dimid
+    integer  :: nc_recnam_varid, nc_surf_dimid
+    
+    call check( nf90_create ( path=datapath(1:lfdata)//"/seismograms_out.nc4", &
+      & cmode=ior(nf90_CLOBBER,nf90_hdf5), &
+      & ncid=ncid_recout, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
+    call check( nf90_def_dim( ncid_recout, "snapshots", NF90_UNLIMITED, nc_times_dimid) )
+    call check( nf90_def_dim( ncid_recout, "receivers", nrec, nc_rec_dimid) )
+    call check( nf90_def_dim( ncid_recout, "processors", nproc, nc_recproc_dimid) )
+    call check( nf90_def_dim( ncid_recout, "surf_elems", maxind, nc_surf_dimid) ) 
+    call check( nf90_def_dim( ncid_recout, "components", 3, nc_comp_dimid) )
+    call check( nf90_def_dim( ncid_recout, "recnamlength", 40, nc_recnam_dimid) )
+    if (lpr) write(6,*) 'NetCDF dimensions defined'
+    
+    call check( nf90_def_var( ncid_recout, "displacement", NF90_FLOAT, &
+                & (/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), nc_disp_varid) )
+    call check( nf90_def_var( ncid_recout, "surface_displacement", NF90_FLOAT, &
+                & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), nc_surfelem_disp_varid) )
+    call check( nf90_def_var( ncid_recout, "surface_velocity", NF90_FLOAT, &
+                & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), nc_surfelem_velo_varid) )
+    call check( nf90_def_var( ncid_recout, "latitudes_requested", NF90_FLOAT, &
+                & (/nc_rec_dimid/), nc_latr_varid) )
+    call check( nf90_def_var( ncid_recout, "longitudes", NF90_FLOAT, &
+                & (/nc_rec_dimid/), nc_lon_varid) )
+    call check( nf90_def_var( ncid_recout, "latitudes", NF90_FLOAT, &
+                & (/nc_rec_dimid/), nc_lat_varid) )
+    call check( nf90_def_var( ncid_recout, "azimuths", NF90_FLOAT, &
+                & (/nc_rec_dimid/), nc_ph_varid) )
+    call check( nf90_def_var( ncid_recout, "distances_requested", NF90_FLOAT, &
+                & (/nc_rec_dimid/), nc_thr_varid) )
+    call check( nf90_def_var( ncid_recout, "distances", NF90_FLOAT, &
+                & (/nc_rec_dimid/), nc_th_varid) )
+    call check( nf90_def_var( ncid_recout, "processor_of_receiver", NF90_INT, &
+                & (/nc_rec_dimid/), nc_proc_varid) )
+    call check( nf90_def_var( ncid_recout, "receiver_name", NF90_CHAR, &
+                  & (/nc_rec_dimid, nc_recnam_dimid/), nc_recnam_varid) )
+    if (lpr) write(6,*) 'NetCDF variables defined'
+    call check( nf90_enddef ( ncid_recout))
+    if (lpr) write(6,*) 'Ending NetCDF define mode'
+    
+    if (mynum.eq.0) then
+      if (lpr) write(6,*) 'Writing station info into NetCDF file'
+      call check( nf90_put_var( ncid_recout, nc_th_varid, values = rec_th) )
+      call check( nf90_put_var( ncid_recout, nc_ph_varid, values = rec_ph) )
+      call check( nf90_put_var( ncid_recout, nc_thr_varid, values = rec_th_req) )
+!      do irec=1,nrec
+!        call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = (/irec+1, 1/),&
+!        &         count = (/1, 40/), &
+!        &         values = (rec_names(irec))) )
+!      end do
+      if (lpr) write(6,*) 'done'
+    end if       
+end subroutine
 !----------------------------------------------------------------------------
 subroutine define_netcdf_output
 !
@@ -56,18 +164,33 @@ subroutine define_netcdf_output
     use data_io
     use netcdf
     use data_proc 
-    
-    
+    use commpi
+    implicit none    
+    integer,parameter                  :: nvar=10
+    character(len=16), dimension(nvar) :: varname 
+    integer                            :: ivar, nc_varid, nc_f_dimid
+    varname = (/'strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
+      &         'straintrace_sol', 'strain_dsus_flu', 'strain_dsuz_flu', &
+      &         'strain_dpup_flu', 'straintrace_flu', 'velo_sol       ', &
+      &         'velo_flu       '/)
 !    character(len=16) nc_filename
 
 !    nc_filename = datapath(1:lfdata)
-    print *, 'Preparing netcdf file for ', nproc, ' processors'
+    if (lpr) write (6,*) 'Preparing netcdf file for ', nproc, ' processors'
     call check( nf90_create ( path=datapath(1:lfdata)//"/wavefield_out.nc4", &
-      & cmode=nf90_CLOBBER+nf90_hdf5, &
+      & cmode=ior(nf90_CLOBBER,nf90_hdf5), &
       & ncid=ncid_out, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
     call check( nf90_def_dim( ncid_out, "snapshots", NF90_UNLIMITED, nc_1d_dimid) )
     call check( nf90_def_dim( ncid_out, "processors", nproc, nc_proc_dimid) )
+    do ivar=1,nvar
+      call check( nf90_def_dim(ncid_out, trim(varname(ivar)), len=NF90_UNLIMITED, dimid=nc_f_dimid) )
+      call check( nf90_def_var(ncid_out, trim(varname(ivar)), NF90_FLOAT, (/nc_f_dimid, nc_proc_dimid, nc_1d_dimid/), nc_varid) )
+      if (lpr) write(6,100) trim(varname(ivar)), nc_varid
+100   format('  Netcdf variable ',A16,' with ID ', I3, ' produced.')       
+    end do
     call check( nf90_enddef ( ncid_out))
+    if (lpr) write(6,*) 'Netcdf file with ID ',ncid_out,' produced.'
+
 
 end subroutine
 
@@ -77,12 +200,13 @@ subroutine end_netcdf_output
 !  Closes the netcdf output files
 !
 !============================================================================
-  use data_io
+  use data_io, only: ncid_out, ncid_recout
   use netcdf
-
-  call check( nf90_close(ncid_out))
-
+  integer  status 
+  status = nf90_close(ncid_out)
+  status = nf90_close(ncid_recout)
 end subroutine
+
 !#####################################################################################
 !End of S. Stähler's netcdf routines
 !#####################################################################################
@@ -94,12 +218,12 @@ character(len=50), intent(in)              :: filename
 integer,intent(in) :: rows,cols,ishot
 real*4,dimension(rows,cols),intent(in) :: valore
 
-write(6,*)'computing nc file ',trim(filename),' ...'
-if(ishot==1) then
-  call init_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
-else
-  call write_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
-endif
+!write(6,*)'computing nc file ',trim(filename),' ...'
+!if(ishot==1) then
+!  call init_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
+!else
+!  call write_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
+!endif
 end subroutine dump_matrix_ncdf
 
 !!!!!!!!!AUXUILIAR----------------------------------------NETCDF----------!!!!!!!
@@ -132,15 +256,6 @@ real*4, dimension(rows,cols):: u
  call check(nf90_put_var(ncid,varid,u,start=start,count=count));
  call check(nf90_close(ncid)) 
 
-contains
-  subroutine check(status)
-    integer, intent ( in) :: status
-    
-    if(status /= nf90_noerr) then 
-      print *, trim(nf90_strerror(status))
-      stop 2
-    end if
-  end subroutine check  
 end subroutine init_ncdf_matrix
 
 !!!---------------------------------------------------------------------!!!!!
@@ -164,15 +279,6 @@ real*4, dimension(rows,cols)::u
 
 !	write(6,*) 'shot:',ishot,'ncid:',ncid,'varid',varid
 
-contains
-  subroutine check(status)
-    integer, intent ( in) :: status
-    
-    if(status /= nf90_noerr) then 
-      print *, trim(nf90_strerror(status))
-      stop 2
-    end if
-  end subroutine check  
 end subroutine write_ncdf_matrix
 
 
