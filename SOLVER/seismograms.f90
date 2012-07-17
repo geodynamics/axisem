@@ -1154,15 +1154,15 @@ end subroutine compute_recfile_seis_bare
 !=============================================================================
 
 
-subroutine nc_compute_recfile_seis_bare(disp,velo)
+subroutine nc_compute_recfile_seis_bare(disp)
 
-use data_io,     ONLY : nc_disp_varid 
+use data_io,     ONLY : nc_disp_varid, iseismo 
 use data_source, ONLY : src_type
 use nc_routines, ONLY : nc_dump_rec
-
+implicit none
 include "mesh_params.h"
 real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
+!real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
 real(kind=realkind),dimension(:,:),allocatable :: velo_surf,disp_surf
 character(len=50) :: filename
 integer :: i
@@ -1172,7 +1172,7 @@ if (src_type(1)=='monopole') then
 ! order: u_s, u_z
 do i=1,num_rec
      disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-     disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+     disp_surf(2,i)= 0.0 !real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
      disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
 !     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
 !     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
@@ -1224,6 +1224,7 @@ enddo
 endif !src_type(1)
 
 call nc_dump_rec(disp_surf,nc_disp_varid,num_rec,3,iseismo)
+if(lpr) print *, 'iseismo: ', iseismo, disp_surf(1,1:5)
 
 deallocate(velo_surf)
 deallocate(disp_surf)

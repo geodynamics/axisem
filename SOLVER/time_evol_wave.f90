@@ -773,9 +773,10 @@ character(len=4)                :: appistamp
   time_stamp=floor(real(niter)/100.) ! a file every time_stamp-th timestep.
   
 ! Stdout time step/percentage announcements
-  if (lpr .and. mod(iter,check_iter)==0 ) &
+  if (lpr .and. mod(iter,check_iter)==0 ) then
      write(6,13)iter,t,real(iter)/real(niter)*100.
 13   format('  time step:',i6,'; t=',f8.2,' s (',f5.1,'%)')
+  endif
 
 ! Time stamp to file
   if (lpr .and. mod(iter,time_stamp)==0 ) then 
@@ -787,11 +788,12 @@ character(len=4)                :: appistamp
 
 ! Check on min/max. displacement/potential values globally
   if ( mod(iter,check_disp)==0 ) then
-     if (iter==check_disp) &
-     write(69,14)'time','absmax(us)','absmax(up)','absmax(uz)','absmax(chi)'
+     if (iter==check_disp) then
+       write(69,14)'time','absmax(us)','absmax(up)','absmax(uz)','absmax(chi)'
+     endif
      write(69,15)t,maxval(abs(disp(:,:,:,1))),maxval(abs(disp(:,:,:,2))),&
                   maxval(abs(disp(:,:,:,3))),maxval(abs(chi))
-   endif
+  endif
 14 format(a7,4(a13))
 15 format(f7.1,4(1pe12.3))
 
@@ -869,7 +871,8 @@ real(kind=realkind) :: time
 
     iseismo=iseismo+1
     if(use_netcdf)   then
-      call nc_compute_recfile_seis_bare(disp,velo)
+      call nc_compute_recfile_seis_bare(disp)
+!      call compute_recfile_seis_bare(disp)
     else
       call compute_recfile_seis_bare(disp)
     endif

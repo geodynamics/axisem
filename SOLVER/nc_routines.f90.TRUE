@@ -106,6 +106,8 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
     integer  :: nc_thr_varid, nc_th_varid, nc_proc_varid, nc_recnam_dimid
     integer  :: nc_recnam_varid, nc_surf_dimid
     if (mynum.eq.0) then    
+    if (lpr) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
+    if (lpr) write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
 !    call check( nf90_open ( path=datapath(1:lfdata)//"/axisem_output.nc4"))   
 !    call check( nf_redef(ncid=ncid_out ) )
 !    call check( nf90_create ( path=datapath(1:lfdata)//"/seismograms_out.nc4", &
@@ -119,6 +121,7 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
     call check( nf90_def_dim( ncid_recout, "recnamlength", 40, nc_recnam_dimid) )
     if (lpr) write(6,*) 'NetCDF dimensions defined'
     
+    if (lpr) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
     call check( nf90_def_var( ncid_recout, "displacement", NF90_FLOAT, &
                 & (/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), nc_disp_varid, &
                 &  deflate_level=2) )
@@ -153,7 +156,6 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
                   & (/nc_rec_dimid, nc_recnam_dimid/), nc_recnam_varid) )
     if (lpr) write(6,*) 'NetCDF variables defined'
 !    call check( nf90_enddef ( ncid_out))
-    if (lpr) write(6,*) 'Ending NetCDF define mode'
     
 
       if (lpr) write(6,*) 'Writing station info into NetCDF file'
@@ -200,14 +202,18 @@ subroutine define_netcdf_output
 !    character(len=16) nc_filename
 
 !    nc_filename = datapath(1:lfdata)
-    if (lpr) write (6,*) 'Preparing netcdf file for ', nproc, ' processors'
-    call check( nf90_create ( path=datapath(1:lfdata)//"/axisem_output.nc4", &
-      & cmode=ior(nf90_CLOBBER,nf90_hdf5), &
-      & ncid=ncid_out)) !, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
+    !if (use_netcdf) then
+      write (6,*) 'Preparing netcdf file for ', nproc, ' processors'
+      call check( nf90_create ( path=datapath(1:lfdata)//"/axisem_output.nc4", &
+        & cmode=ior(nf90_CLOBBER,nf90_hdf5), &
+        & ncid=ncid_out)) !, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
 
-
+      write(6,*) 'Netcdf file with ID ',ncid_out,' produced.'
+    !end if
+    write(6,*) '  Producing groups for Seismograms and Snapshots'
     call check( nf90_def_grp( ncid_out, "Seismograms", ncid_recout) )
     call check( nf90_def_grp( ncid_out, "Snapshots", ncid_snapout) )
+    write(6,*) '  Seismograms group has ID', ncid_recout, ', Snapshots group has ID', ncid_snapout
 
     call check( nf90_def_dim( ncid_snapout, "snapshots", NF90_UNLIMITED, nc_1d_dimid) )
     call check( nf90_def_dim( ncid_snapout, "processors", nproc, nc_proc_dimid) )
@@ -219,7 +225,6 @@ subroutine define_netcdf_output
 100   format('  Netcdf variable ',A16,' with ID ', I3, ' produced.')       
     end do
 !    call check( nf90_close ( ncid_out))
-    if (lpr) write(6,*) 'Netcdf file with ID ',ncid_out,' produced.'
 end subroutine
 !----------------------------------------------------------------------------
 
@@ -227,7 +232,7 @@ subroutine nc_write_att_char(attribute_value, attribute_name)
   use netcdf
   use data_io
   character(len=*), intent(in)  :: attribute_name, attribute_value
-
+  !write(6,*) 'Writing ', attribute_value, ' to attr. ', attribute_name, ' in netcdf ID', ncid_out
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 
 end subroutine nc_write_att_char
@@ -278,6 +283,7 @@ subroutine nc_open_parallel
               & mode=NF90_WRITE, ncid=ncid_out, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL))
 
   call check( nf90_inq_grp_ncid(ncid_out, "Seismograms", ncid_recout) )
+  call check( nf90_inq_grp_ncid(ncid_out, "Snapshots", ncid_snapout) )
   call check( nf90_inq_varid( ncid_recout, "displacement", nc_disp_varid) )
   call check( nf90_inq_varid( ncid_recout, "surface_displacement", nc_surfelem_disp_varid ) )
   call check( nf90_inq_varid( ncid_recout, "surface_velocity", nc_surfelem_velo_varid ) )
@@ -301,76 +307,5 @@ end subroutine
 !#####################################################################################
 !End of S. Stähler's netcdf routines
 !#####################################################################################
-
-!!!!!!!!!AUXUILIAR----------------------------------------NETCDF----------!!!!!!!
-subroutine dump_matrix_ncdf(valore,ishot,rows,cols,filename)
-implicit none
-character(len=50), intent(in)              :: filename
-integer,intent(in) :: rows,cols,ishot
-real*4,dimension(rows,cols),intent(in) :: valore
-
-!write(6,*)'computing nc file ',trim(filename),' ...'
-!if(ishot==1) then
-!  call init_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
-!else
-!  call write_ncdf_matrix(ishot,trim(filename),valore,rows,cols)
-!endif
-end subroutine dump_matrix_ncdf
-
-!!!!!!!!!AUXUILIAR----------------------------------------NETCDF----------!!!!!!!
-subroutine init_ncdf_matrix(ishot,filename,u,rows,cols)
-use netcdf
-implicit none
-
-integer :: ishot,i
-character (len = *) :: filename
-integer, parameter :: NDIMS = 3;
-integer :: rows,cols
-character (len = *), parameter :: U_NAME = "data"
-character (len = *), parameter :: REC_NAME = "time"
-character (len = *), parameter :: UNITS1 = "values"
-character (len = *), parameter :: UNITS2 = "component"
-integer :: ncid, varid, dimids(NDIMS)
-integer :: u1_dimid,u2_dimid,t_dimid
-integer :: start(NDIMS), count(NDIMS)
-real*4, dimension(rows,cols):: u
-
- call check(nf90_create(filename,NF90_SHARE, ncid))
- call check(nf90_def_dim(ncid,UNITS1,rows,u1_dimid))
- call check(nf90_def_dim(ncid,UNITS2,cols,u2_dimid))
- call check(nf90_def_dim(ncid,REC_NAME,NF90_UNLIMITED,t_dimid))
- dimids=(/u1_dimid, u2_dimid, t_dimid/)
- call check(nf90_def_var(ncid,U_NAME,NF90_REAL,dimids,varid))
- call check(nf90_enddef(ncid))
- count = (/rows,cols,1/)
- start = (/1,1,1/)
- call check(nf90_put_var(ncid,varid,u,start=start,count=count));
- call check(nf90_close(ncid)) 
-
-end subroutine init_ncdf_matrix
-
-!!!---------------------------------------------------------------------!!!!!
-subroutine write_ncdf_matrix(ishot,filename,u,rows,cols)
-use netcdf
-implicit none
-integer :: ishot,i
-character (len = *):: filename
-character (len = *), parameter :: U_NAME = "data"
-integer, parameter :: NDIMS = 3;
-integer :: rows,cols,ncid,varid
-integer :: start(NDIMS), count(NDIMS)
-real*4, dimension(rows,cols)::u
-
- call check(nf90_open(filename,NF90_WRITE, ncid))
-	call check(nf90_inq_varid(ncid,U_NAME,varid))
- count = (/rows,cols,1/)
- start = (/1,1,ishot/)
- call check(nf90_put_var(ncid,varid,u,start=start,count=count));
- call check(nf90_close(ncid))
-
-!	write(6,*) 'shot:',ishot,'ncid:',ncid,'varid',varid
-
-end subroutine write_ncdf_matrix
-
 
 end module nc_routines

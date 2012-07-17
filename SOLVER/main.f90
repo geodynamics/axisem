@@ -28,15 +28,15 @@ implicit none
 
   if(lpr)write(6,*)'MAIN: Reading parameters..................................'
   call readin_parameters ! parameters
-
-  if (use_netcdf) then
+  
+  if(use_netcdf) then
     if (mynum==0) then
-      if(lpr)write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
+      write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
       call define_netcdf_output
-      if(lpr)write(6,*)'MAIN: netcdf file prepared ...............................'
+      write(6,*)'MAIN: netcdf file prepared ...............................'
     end if
   end if
-
+  
   if(lpr)write(6,*)'MAIN: Reading mesh database...............................'
   call read_db  ! get_mesh
 

@@ -3,15 +3,9 @@ module nc_routines
 contains
 
 !##################################################################################
-! Dummy of Netcdf routines by S. Stähler
+! Netcdf routines by S. Stähler
 !##################################################################################
 
-  subroutine check(status)
-  ! Translates netcdf error codes into error messages
-    integer, intent ( in) :: status
-  end subroutine check  
-
-!******************************************************************************************************
 
 subroutine nc_dump_field_1d(f,flen,varname,appisnap)
   implicit none
@@ -19,43 +13,59 @@ subroutine nc_dump_field_1d(f,flen,varname,appisnap)
   real(kind=realkind), intent(in) :: f(flen)
   character(len=*), intent(in)      :: varname
   character(len=4), intent(in)      :: appisnap
-  
 end subroutine nc_dump_field_1d
 !******************************************************************************************************
 subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
   implicit none
   integer, intent(in)                          :: nrec, dim2, idump, nc_varid
   real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
-  
-
 end subroutine
 
 !******************************************************************************************************
 subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
+  implicit none
   integer, intent(in)                          :: nrec, dim2, idump, nc_varid
   real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
-
 end subroutine
 !******************************************************************************************************
 subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
  &  rec_ph, rec_proc)
-
     implicit none
-
     integer, intent(in)                         :: nrec 
     character(len=40),intent(in)                :: rec_names(nrec)
     real(8), dimension(nrec),intent(in) :: rec_th, rec_th_req, rec_ph
     integer, dimension(nrec),intent(in) :: rec_proc
 end subroutine
+
+
 !----------------------------------------------------------------------------
 subroutine define_netcdf_output
-!
-! Creates the netcdf output file for wavefields and defines the dimension 
-! nc_1d_dimid, as unlimited.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+    implicit none    
+end subroutine
+!----------------------------------------------------------------------------
+
+subroutine nc_write_att_char(attribute_value, attribute_name)
+  character(len=*), intent(in)  :: attribute_name, attribute_value
+end subroutine nc_write_att_char
+
+!----------------------------------------------------------------------------
+subroutine nc_write_att_real(attribute_value, attribute_name)
+  character(len=*),  intent(in)  :: attribute_name
+  real, intent(in)                :: attribute_value
 
 
+end subroutine nc_write_att_real
+
+!----------------------------------------------------------------------------
+subroutine nc_write_att_int(attribute_value, attribute_name)
+  character(len=*),  intent(in)  :: attribute_name
+  integer, intent(in)                :: attribute_value
+
+
+end subroutine nc_write_att_int
+
+subroutine nc_open_parallel
+  implicit none
 end subroutine
 
 !============================================================================
@@ -65,4 +75,8 @@ subroutine end_netcdf_output
 !
 !============================================================================
 end subroutine
-end module
+
+!#####################################################################################
+!End of S. Stähler's netcdf routines
+!#####################################################################################
+end module nc_routines

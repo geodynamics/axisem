@@ -805,6 +805,7 @@ character(len=4) :: Mij_char(6)
   maxprocssend_fluid = pmax_int(sizesend_fluid)
   maxprocsrecv_fluid = pmax_int(sizerecv_fluid)
 
+
 ! output to stdout, only by proc nproc-1
   if (lpr) then
 
@@ -915,50 +916,6 @@ character(len=4) :: Mij_char(6)
 ! additionally write a header for the kernel software
      if (dump_wavefields) call create_kernel_header
 
-     if (use_netcdf) then
-! write generic simulation info file
-     open(unit=55,file='simulation.info')
-     call nc_write_att_char(trim(bkgrdmodel),'background_model')
-     call nc_write_att_real(real(deltat),'time step in s')
-     call nc_write_att_int(niter,'number of time steps')
-     call nc_write_att_char(trim(src_type(1)),'source type')
-     call nc_write_att_char(trim(src_type(2)),'source type')
-     call nc_write_att_char(trim(stf_type),'source time function')
-     call nc_write_att_char(trim(src_file_type),'source file type')
-     call nc_write_att_real(real(period),'dominant source period')
-     call nc_write_att_real(real(src_depth/1000.),'source depth [km]')
-     call nc_write_att_real(real(magnitude),'scalar source magnitude')
-     call nc_write_att_int(num_rec_tot,'number of receivers')
-     call nc_write_att_int(floor(real(niter)/real(seis_it)),'length of seismogram [time samples]')
-     call nc_write_att_real(real(deltat)*real(seis_it),'seismogram sampling [s]')
-     ilogic = correct_azi
-     call nc_write_att_int(ilogic,'compute seismograms at correct azimuth?')
-     if (dump_wavefields) then
-        call nc_write_att_int(floor(real(niter)/real(strain_it)),'number of strain dumps')
-        call nc_write_att_real(real(period)/real(strain_samp),'strain dump sampling rate [s]')
-     else
-        call nc_write_att_int(0,'number of strain dumps')       
-        call nc_write_att_real(0.,'strain dump sampling rate [s]' )
-     endif
-   if (dump_snaps_glob .or. dump_snaps_solflu) then
-      call nc_write_att_int(floor(real(niter)/real(snap_it)),'number of snapshot dumps')
-      call nc_write_att_real(real(deltat)*real(snap_it),'snapshot dump sampling rate [s]')      
-   else
-      call nc_write_att_int(0,'number of snapshot dumps')
-      call nc_write_att_real(0.,'snapshot dump sampling rate [s]')
-   endif
-   call nc_write_att_char(rot_rec,'receiver components ')
-   call nc_write_att_int(ibeg,'ibeg: beginning gll index for wavefield dumps')
-   call nc_write_att_int(iend,'iend: end gll index for wavefield dumps')
-   call nc_write_att_real(shift_fact,'source shift factor [s]')
-   call nc_write_att_int(int(shift_fact/deltat),'source shift factor for deltat')
-   call nc_write_att_int(int(shift_fact/seis_dt),'source shift factor for seis_dt')
-   call nc_write_att_int(int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse')
-   call nc_write_att_char(trim(rec_file_type),'receiver file type')
-   call nc_write_att_real(dtheta_rec,'receiver spacing (0 if not even)')
-   ilogic = use_netcdf
-   call nc_write_att_int(ilogic,'use netcdf for wavefield output?')
-   end if
 
 
 ! write generic simulation info file
@@ -1013,6 +970,52 @@ character(len=4) :: Mij_char(6)
 25 format(1pe15.5,a45)
 
   endif ! lpr
+
+  if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
+! write generic simulation info file
+    write(6,*) ' Writing simulation info to netcdf file attributes' 
+    call nc_write_att_char(trim(bkgrdmodel),'background_model')
+    call nc_write_att_real(real(deltat),'time step in s')
+    call nc_write_att_int(niter,'number of time steps')
+    call nc_write_att_char(trim(src_type(1)),'source type')
+    call nc_write_att_char(trim(src_type(2)),'source type')
+    call nc_write_att_char(trim(stf_type),'source time function')
+    call nc_write_att_char(trim(src_file_type),'source file type')
+    call nc_write_att_real(real(period),'dominant source period')
+    call nc_write_att_real(real(src_depth/1000.),'source depth [km]')
+    call nc_write_att_real(real(magnitude),'scalar source magnitude')
+    call nc_write_att_int(num_rec_tot,'number of receivers')
+    call nc_write_att_int(floor(real(niter)/real(seis_it)),'length of seismogram [time samples]')
+    call nc_write_att_real(real(deltat)*real(seis_it),'seismogram sampling [s]')
+    ilogic = correct_azi
+    call nc_write_att_int(ilogic,'compute seismograms at correct azimuth?')
+    if (dump_wavefields) then
+       call nc_write_att_int(floor(real(niter)/real(strain_it)),'number of strain dumps')
+       call nc_write_att_real(real(period)/real(strain_samp),'strain dump sampling rate [s]')
+    else
+       call nc_write_att_int(0,'number of strain dumps')       
+       call nc_write_att_real(0.,'strain dump sampling rate [s]' )
+    endif
+    if (dump_snaps_glob .or. dump_snaps_solflu) then
+       call nc_write_att_int(floor(real(niter)/real(snap_it)),'number of snapshot dumps')
+       call nc_write_att_real(real(deltat)*real(snap_it),'snapshot dump sampling rate [s]')      
+    else
+       call nc_write_att_int(0,'number of snapshot dumps')
+       call nc_write_att_real(0.,'snapshot dump sampling rate [s]')
+    endif
+    call nc_write_att_char(rot_rec,'receiver components ')
+    call nc_write_att_int(ibeg,'ibeg: beginning gll index for wavefield dumps')
+    call nc_write_att_int(iend,'iend: end gll index for wavefield dumps')
+    call nc_write_att_real(shift_fact,'source shift factor [s]')
+    call nc_write_att_int(int(shift_fact/deltat),'source shift factor for deltat')
+    call nc_write_att_int(int(shift_fact/seis_dt),'source shift factor for seis_dt')
+    call nc_write_att_int(int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse')
+    call nc_write_att_char(trim(rec_file_type),'receiver file type')
+    call nc_write_att_real(dtheta_rec,'receiver spacing (0 if not even)')
+    ilogic = use_netcdf
+    call nc_write_att_int(ilogic,'use netcdf for wavefield output?')
+  end if
+
 
 ! output for each processor==============================================
 
