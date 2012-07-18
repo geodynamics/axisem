@@ -22,7 +22,7 @@ contains
 subroutine nc_dump_field_1d(f,flen,varname,appisnap)
   use netcdf
   use data_proc, ONLY : mynum
-  use data_io, ONLY   : nc_1d_dimid, nc_proc_dimid, ncid_out, ncid_snapout
+  use data_io, ONLY   : ncid_out, ncid_snapout
   implicit none
   integer, intent(in)                :: flen
   real(kind=realkind), intent(in) :: f(flen)
@@ -54,12 +54,15 @@ subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
   use netcdf
   use data_io 
   use data_mesh, ONLY: loc2globrec
+  use data_proc, ONLY : mynum
   implicit none
   integer, intent(in)                          :: nrec, dim2, idump, nc_varid
   real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
   integer                                      :: irec
   
   do irec = 1, nrec
+    !write(6,*) idump, irec, loc2globrec(irec), mynum
+    !flush(6)
     call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, loc2globrec(irec)/), &
               & count = (/1, dim2, 1/), values=recfield(irec,:)) )
   end do
@@ -90,38 +93,67 @@ end subroutine
 subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
  &  rec_ph, rec_proc)
 
-    use data_io
-    use data_proc, ONLY: nproc, mynum 
-    use netcdf
-    use data_mesh, ONLY: maxind
-    use commpi
-    implicit none
+  use data_io
+  use data_proc, ONLY: nproc, mynum 
+  use data_time, ONLY: niter, strain_it
+  use netcdf
+  use data_mesh, ONLY: maxind
+!    use commpi
+  implicit none
 
-    integer, intent(in)                         :: nrec 
-    character(len=40),intent(in)                :: rec_names(nrec)
-    real(8), dimension(nrec),intent(in) :: rec_th, rec_th_req, rec_ph
-    integer, dimension(nrec),intent(in) :: rec_proc
-    integer  :: irec
-    integer  :: nc_latr_varid, nc_lon_varid, nc_lat_varid,  nc_ph_varid
-    integer  :: nc_thr_varid, nc_th_varid, nc_proc_varid, nc_recnam_dimid
-    integer  :: nc_recnam_varid, nc_surf_dimid
-    if (mynum.eq.0) then    
-    if (lpr) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
-    if (lpr) write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
+  integer, intent(in)                         :: nrec 
+  character(len=40),intent(in)                :: rec_names(nrec)
+  real(8), dimension(nrec),intent(in) :: rec_th, rec_th_req, rec_ph
+  integer, dimension(nrec),intent(in) :: rec_proc
+  integer  :: irec
+  integer  :: nc_latr_varid, nc_lon_varid, nc_lat_varid,  nc_ph_varid
+  integer  :: nc_thr_varid, nc_th_varid, nc_proc_varid, nc_recnam_dimid
+  integer  :: nc_recnam_varid, nc_surf_dimid
+  integer,parameter                  :: nvar=10
+  character(len=16), dimension(nvar) :: varname 
+  integer                            :: ivar, nc_varid, nc_f_dimid
+  
+  
+  varname = (/'strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
+    &         'straintrace_sol', 'strain_dsus_flu', 'strain_dsuz_flu', &
+    &         'strain_dpup_flu', 'straintrace_flu', 'velo_sol       ', &
+    &         'velo_flu       '/)
+    
+  if (mynum.eq.0) then    
+    write(6,*) '  Producing groups for Seismograms and Snapshots'
+    call check( nf90_def_grp( ncid_out, "Seismograms", ncid_recout) )
+    call check( nf90_def_grp( ncid_out, "Snapshots", ncid_snapout) )
+    write(6,*) '  Seismograms group has ID', ncid_recout, ', Snapshots group has ID', ncid_snapout
+    
+    write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file'
+    write(6,*) '  awaiting', floor(real(niter)/real(strain_it)), ' snapshots'
+    call check( nf90_def_dim( ncid_snapout, "snapshots", floor(real(niter)/real(strain_it)), nc_snap_dimid) )
+    call check( nf90_def_dim( ncid_snapout, "processors", nproc, nc_proc_dimid) )
+    do ivar=1,nvar
+      call check( nf90_def_dim(ncid_snapout, trim(varname(ivar)), len=NF90_UNLIMITED, dimid=nc_f_dimid) )
+      call check( nf90_def_var(ncid_snapout, trim(varname(ivar)), NF90_FLOAT,  &
+                & (/nc_f_dimid, nc_proc_dimid, nc_snap_dimid/), nc_varid) )
+      write(6,100) trim(varname(ivar)), nc_varid
+100   format('  Netcdf variable ',A16,' with ID ', I3, ' produced.')       
+    end do
+    
+    
+    write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
+    write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
 !    call check( nf90_open ( path=datapath(1:lfdata)//"/axisem_output.nc4"))   
 !    call check( nf_redef(ncid=ncid_out ) )
 !    call check( nf90_create ( path=datapath(1:lfdata)//"/seismograms_out.nc4", &
 !      & cmode=ior(nf90_CLOBBER,nf90_hdf5), &
 !      & ncid=ncid_recout, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
-    call check( nf90_def_dim( ncid_recout, "snapshots", NF90_UNLIMITED, nc_times_dimid) )
+    call check( nf90_def_dim( ncid_recout, "timesteps", niter, nc_times_dimid) )
     call check( nf90_def_dim( ncid_recout, "receivers", nrec, nc_rec_dimid) )
     call check( nf90_def_dim( ncid_recout, "processors", nproc, nc_recproc_dimid) )
     call check( nf90_def_dim( ncid_recout, "surf_elems", maxind, nc_surf_dimid) ) 
     call check( nf90_def_dim( ncid_recout, "components", 3, nc_comp_dimid) )
     call check( nf90_def_dim( ncid_recout, "recnamlength", 40, nc_recnam_dimid) )
-    if (lpr) write(6,*) 'NetCDF dimensions defined'
+    write(6,*) 'NetCDF dimensions defined'
     
-    if (lpr) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
+    write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
     call check( nf90_def_var( ncid_recout, "displacement", NF90_FLOAT, &
                 & (/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), nc_disp_varid, &
                 &  deflate_level=2) )
@@ -154,23 +186,24 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
                 & (/nc_rec_dimid/), nc_proc_varid) )
     call check( nf90_def_var( ncid_recout, "receiver_name", NF90_CHAR, &
                   & (/nc_rec_dimid, nc_recnam_dimid/), nc_recnam_varid) )
-    if (lpr) write(6,*) 'NetCDF variables defined'
-!    call check( nf90_enddef ( ncid_out))
-    
+    write(6,*) 'NetCDF variables defined'
+    call check( nf90_enddef ( ncid_out))
+    write(6,*) 'Writing station info into NetCDF file'
+    call check( nf90_put_var( ncid_recout, nc_th_varid, values = rec_th) )
+    call check( nf90_put_var( ncid_recout, nc_ph_varid, values = rec_ph) )
+    call check( nf90_put_var( ncid_recout, nc_thr_varid, values = rec_th_req) )
+    call check( nf90_put_var( ncid_recout, nc_proc_varid, values = rec_proc) ) 
 
-      if (lpr) write(6,*) 'Writing station info into NetCDF file'
-      call check( nf90_put_var( ncid_recout, nc_th_varid, values = rec_th) )
-      call check( nf90_put_var( ncid_recout, nc_ph_varid, values = rec_ph) )
-      call check( nf90_put_var( ncid_recout, nc_thr_varid, values = rec_th_req) )
-      call check( nf90_put_var( ncid_recout, nc_proc_varid, values = rec_proc) ) 
-
-!      do irec=1,nrec
-!        call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = (/irec+1, 1/),&
-!        &         count = (/1, 40/), &
-!        &         values = (rec_names(irec))) )
-!      end do
-      if (lpr) write(6,*) 'done'
-    end if       
+    !call check( nf90_put_att(ncid_out, NF90_GLOBAL, 'station names', rec_names) )
+      do irec=1,nrec
+        write(6,*) 'Write name ', rec_names(irec), ' of receiver',irec
+        call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = (/irec, 1/),&
+        &         count = (/1, 40/), &
+        &         values = (rec_names(irec))) )
+      end do
+    write(6,*) 'done'
+    call check( nf90_redef ( ncid_out))
+  end if       
 end subroutine
 
 subroutine nc_simulation_info
@@ -189,16 +222,9 @@ subroutine define_netcdf_output
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
     use data_io
     use netcdf
-    use data_proc 
-    use commpi
+    use data_proc, ONLY: nproc
+!    use commpi
     implicit none    
-    integer,parameter                  :: nvar=10
-    character(len=16), dimension(nvar) :: varname 
-    integer                            :: ivar, nc_varid, nc_f_dimid
-    varname = (/'strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
-      &         'straintrace_sol', 'strain_dsus_flu', 'strain_dsuz_flu', &
-      &         'strain_dpup_flu', 'straintrace_flu', 'velo_sol       ', &
-      &         'velo_flu       '/)
 !    character(len=16) nc_filename
 
 !    nc_filename = datapath(1:lfdata)
@@ -210,20 +236,6 @@ subroutine define_netcdf_output
 
       write(6,*) 'Netcdf file with ID ',ncid_out,' produced.'
     !end if
-    write(6,*) '  Producing groups for Seismograms and Snapshots'
-    call check( nf90_def_grp( ncid_out, "Seismograms", ncid_recout) )
-    call check( nf90_def_grp( ncid_out, "Snapshots", ncid_snapout) )
-    write(6,*) '  Seismograms group has ID', ncid_recout, ', Snapshots group has ID', ncid_snapout
-
-    call check( nf90_def_dim( ncid_snapout, "snapshots", NF90_UNLIMITED, nc_1d_dimid) )
-    call check( nf90_def_dim( ncid_snapout, "processors", nproc, nc_proc_dimid) )
-    do ivar=1,nvar
-      call check( nf90_def_dim(ncid_snapout, trim(varname(ivar)), len=NF90_UNLIMITED, dimid=nc_f_dimid) )
-      call check( nf90_def_var(ncid_snapout, trim(varname(ivar)), NF90_FLOAT,  &
-                & (/nc_f_dimid, nc_proc_dimid, nc_1d_dimid/), nc_varid) )
-      if (lpr) write(6,100) trim(varname(ivar)), nc_varid
-100   format('  Netcdf variable ',A16,' with ID ', I3, ' produced.')       
-    end do
 !    call check( nf90_close ( ncid_out))
 end subroutine
 !----------------------------------------------------------------------------
@@ -277,11 +289,14 @@ subroutine nc_open_parallel
   use commun,      ONLY : barrier
   implicit none
   integer  status 
-  if (mynum==0) call check(nf90_close(ncid_out))
+  if (mynum==0) then
+    call check(nf90_close(ncid_out))
+    write(6,*) '  Root process closed netCDF file, waiting for all procs to arrive here and then open it for parallel IO'
+  end if
   call barrier
   call check( nf90_open ( path=datapath(1:lfdata)//"/axisem_output.nc4", & 
               & mode=NF90_WRITE, ncid=ncid_out, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL))
-
+  write(6,*) '  Proc ', mynum, ' opened file and is ready to rupture'
   call check( nf90_inq_grp_ncid(ncid_out, "Seismograms", ncid_recout) )
   call check( nf90_inq_grp_ncid(ncid_out, "Snapshots", ncid_snapout) )
   call check( nf90_inq_varid( ncid_recout, "displacement", nc_disp_varid) )

@@ -1224,7 +1224,7 @@ enddo
 endif !src_type(1)
 
 call nc_dump_rec(disp_surf,nc_disp_varid,num_rec,3,iseismo)
-if(lpr) print *, 'iseismo: ', iseismo, disp_surf(1,1:5)
+!if(lpr) print *, 'iseismo: ', iseismo, disp_surf(1,1:5)
 
 deallocate(velo_surf)
 deallocate(disp_surf)

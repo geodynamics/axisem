@@ -215,7 +215,7 @@ integer             :: iter
   if (lpr) &
      write(6,*)'************ S T A R T I N G   T I M E   L O O P *************'
   write(69,*)'************ S T A R T I N G   T I M E   L O O P *************'
-
+  call flush(6)
 !=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
   do iter = 1, niter  !=-=-=-=-=-=-=-=-=-=-=-=-=-=
 !=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -775,6 +775,7 @@ character(len=4)                :: appistamp
 ! Stdout time step/percentage announcements
   if (lpr .and. mod(iter,check_iter)==0 ) then
      write(6,13)iter,t,real(iter)/real(niter)*100.
+     call flush(6) ! speed loss should be minimal, but output is delayed enormously otherwise.
 13   format('  time step:',i6,'; t=',f8.2,' s (',f5.1,'%)')
   endif
 
@@ -958,7 +959,7 @@ real(kind=realkind) :: time
 
 !!the update of the strain has to preceed the call to the function. 
 !!It starts from 
- istrain=istrain+1
+    istrain=istrain+1
 
     if(use_netcdf)   then
       call compute_surfelem_nc(disp,velo)
@@ -986,7 +987,7 @@ real(kind=realkind) :: time
           call dump_velo_global(velo,dchi) ! velocity globally
 
        end select
-
+     
     endif ! dumping interval strain_it
   endif   ! dump?
 
