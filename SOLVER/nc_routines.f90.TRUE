@@ -1,5 +1,6 @@
 module nc_routines
   use global_parameters
+  real, allocatable :: recdumpvar(:,:,:) 
 contains
 
 !##################################################################################
@@ -54,19 +55,31 @@ subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
   use netcdf
   use data_io 
   use data_mesh, ONLY: loc2globrec
+  use data_time, ONLY: niter
   use data_proc, ONLY : mynum
   implicit none
   integer, intent(in)                          :: nrec, dim2, idump, nc_varid
   real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
   integer                                      :: irec
   
-  do irec = 1, nrec
-    !write(6,*) idump, irec, loc2globrec(irec), mynum
-    !flush(6)
-    call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, loc2globrec(irec)/), &
-              & count = (/1, dim2, 1/), values=recfield(irec,:)) )
-  end do
+  recdumpvar(mod(idump-1,100)+1,:,:) = transpose(recfield(:,:))
+  if ((idump*0.01).eq.(niter*0.01)) then
+    do irec = 1, nrec
+      call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, loc2globrec(irec)/), &
+                & count = (/1, dim2, 1/), values=recfield(irec,:)) )
+    end do
+  end if
+  if (mod(idump,100).eq.0) then 
+    do irec = 1, nrec
+      call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump-99, 1, loc2globrec(irec)/), &
+                & count = (/100, dim2, 1/), values=recdumpvar(:,:,irec) ) )
+    end do
+  end if
 
+!    do irec = 1, nrec
+!      call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, loc2globrec(irec)/), &
+!                & count = (/1, dim2, 1/), values=recfield(irec,:)) )
+!    end do
 end subroutine
 
 !******************************************************************************************************
@@ -140,11 +153,6 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
     
     write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
     write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
-!    call check( nf90_open ( path=datapath(1:lfdata)//"/axisem_output.nc4"))   
-!    call check( nf_redef(ncid=ncid_out ) )
-!    call check( nf90_create ( path=datapath(1:lfdata)//"/seismograms_out.nc4", &
-!      & cmode=ior(nf90_CLOBBER,nf90_hdf5), &
-!      & ncid=ncid_recout, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
     call check( nf90_def_dim( ncid_recout, "timesteps", niter, nc_times_dimid) )
     call check( nf90_def_dim( ncid_recout, "receivers", nrec, nc_rec_dimid) )
     call check( nf90_def_dim( ncid_recout, "processors", nproc, nc_recproc_dimid) )
@@ -158,6 +166,7 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
                 & (/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), nc_disp_varid, &
                 &  deflate_level=2) )
     call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )
+    call check( nf90_put_att(ncid_recout, nc_disp_varid, '_FillValue', 0.0) )
     
     call check( nf90_def_var( ncid_recout, "surface_displacement", NF90_FLOAT, &
                 & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), &
@@ -204,13 +213,10 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
     write(6,*) 'done'
     call check( nf90_redef ( ncid_out))
   end if       
-end subroutine
 
-subroutine nc_simulation_info
+  allocate(recdumpvar(niter,3,nrec))
 
-
-
-end subroutine
+end subroutine nc_define_receiverfile
 
 
 !----------------------------------------------------------------------------
@@ -302,7 +308,7 @@ subroutine nc_open_parallel
   call check( nf90_inq_varid( ncid_recout, "displacement", nc_disp_varid) )
   call check( nf90_inq_varid( ncid_recout, "surface_displacement", nc_surfelem_disp_varid ) )
   call check( nf90_inq_varid( ncid_recout, "surface_velocity", nc_surfelem_velo_varid ) )
- 
+   
 
 end subroutine
 

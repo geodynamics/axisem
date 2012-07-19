@@ -187,6 +187,7 @@ do irec=1,nrec
 !   write(6,*)'theta/dtheta:',theta_over_dtheta
 
 ! >>>>> calculate moment tensor and azimuth prefactors/radiation patterns <<<<<<<
+   print *, ' Phi:', ph_rec_rot
    call compute_radiation_prefactor(Mij,ph_rec_rot(irec),mij_phi)
 
 ! >>>>> load seismograms <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -207,8 +208,19 @@ do irec=1,nrec
            enddo
            close(20); close(21); close(22); close(23)
 
+           print *, 'mij_phi: ', mij_phi
       call sum_individual_wavefields(seis,seis_snglcomp,nt,mij_phi)
 
+           open(unit=20,file=trim(recname(1))//'_'//trim(interp_method)//'_rot'//appidur//'_E.ascii')
+           open(unit=21,file=trim(recname(1))//'_'//trim(interp_method)//'_rot'//appidur//'_N.ascii')
+           open(unit=22,file=trim(recname(1))//'_'//trim(interp_method)//'_rot'//appidur//'_Z.ascii')
+
+           do it=1,nt
+              write(20,*) it, seis(it,1)
+              write(21,*) it, seis(it,2)
+              write(22,*) it, seis(it,3)
+           enddo
+           close(20); close(21); close(22)
    else ! interpolation using num_interp locations
       count_neg = max(1,ind_rec-num_interp/2)
 !      if (theta_discrete_smaller) count_neg = count_neg -1
@@ -363,9 +375,6 @@ end subroutine def_rec_comp
       call check( nf90_get_var( ncid_in(isim), nc_disp_varid(isim), start=(/1, 1, ind_rec/), &
                  & count = (/nt, 3, 1/), values = seis_snglcomp(:,:,isim)) )
     end do
-    if (seis_snglcomp(1,1,1).eq.NF90_FILL_REAL) stop 1
-    print *, NF90_FILL_REAL
-!    print *, seis_snglcomp(:,:,1)
   end subroutine nc_read_seis
 !--------------------------------------------------------------------
 
@@ -414,6 +423,7 @@ real, intent(in)    :: th_src,ph_src,th_rec(nrec),ph_rec(nrec)
 real, intent(out)   :: th_rec_rot(nrec),ph_rec_rot(nrec),rot_mat(3,3)
 real                :: x_vec(3),x_vec_rot(3),r,trans_rot_mat(3,3)
 integer             :: ircv
+real                :: cosph_rec_rot, costh_rec_rot
 real, parameter     :: smallval = 1.e-10
 real, parameter     :: pi = 3.14159265
 
@@ -435,12 +445,19 @@ do ircv=1,nrec
    x_vec(3)=cos(th_rec(ircv))
    x_vec_rot=matmul(trans_rot_mat,x_vec)
    r = sqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2)
-   th_rec_rot(ircv) = acos(x_vec_rot(3) / (r +smallval))
+   costh_rec_rot = x_vec_rot(3) / (r +smallval)
+   if (costh_rec_rot.lt.-1.) costh_rec_rot = -1.
+   if (costh_rec_rot.gt.1.)  costh_rec_rot = 1.
+   th_rec_rot(ircv) = acos(costh_rec_rot)
+
+   cosph_rec_rot = x_vec_rot(1) / (r * sin(th_rec_rot(ircv)) + smallval)
+   if (cosph_rec_rot.lt.-1.) cosph_rec_rot = -1.
+   if (cosph_rec_rot.gt.1.)  cosph_rec_rot = 1.
 
    if (x_vec_rot(2) >= 0.) then
-      ph_rec_rot(ircv) = acos(min(1.,x_vec_rot(1) / (r * sin(th_rec_rot(ircv)) + smallval)))
+      ph_rec_rot(ircv) = acos(cosph_rec_rot)
    else
-      ph_rec_rot(ircv) = 2.*pi - acos(min(1.,x_vec_rot(1) / (r * sin(th_rec_rot(ircv)) + smallval)))
+      ph_rec_rot(ircv) = 2.*pi - acos(cosph_rec_rot)
    end if   
 enddo
 
