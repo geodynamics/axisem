@@ -138,22 +138,23 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
     call check( nf90_def_grp( ncid_out, "Snapshots", ncid_snapout) )
     write(6,*) '  Seismograms group has ID', ncid_recout, ', Snapshots group has ID', ncid_snapout
     
-    write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file'
-    write(6,*) '  awaiting', floor(real(niter)/real(strain_it)), ' snapshots'
-    call check( nf90_def_dim( ncid_snapout, "snapshots", floor(real(niter)/real(strain_it)), nc_snap_dimid) )
-    call check( nf90_def_dim( ncid_snapout, "processors", nproc, nc_proc_dimid) )
-    do ivar=1,nvar
-      call check( nf90_def_dim(ncid_snapout, trim(varname(ivar)), len=NF90_UNLIMITED, dimid=nc_f_dimid) )
-      call check( nf90_def_var(ncid_snapout, trim(varname(ivar)), NF90_FLOAT,  &
-                & (/nc_f_dimid, nc_proc_dimid, nc_snap_dimid/), nc_varid) )
-      write(6,100) trim(varname(ivar)), nc_varid
-100   format('  Netcdf variable ',A16,' with ID ', I3, ' produced.')       
-    end do
-    
+    if (dump_wavefields) then
+      write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file'
+      write(6,*) '  awaiting', nstrain, ' snapshots'
+      call check( nf90_def_dim( ncid_snapout, "snapshots", nstrain, nc_snap_dimid) )
+      call check( nf90_def_dim( ncid_snapout, "processors", nproc, nc_proc_dimid) )
+      do ivar=1,nvar
+        call check( nf90_def_dim(ncid_snapout, trim(varname(ivar)), len=NF90_UNLIMITED, dimid=nc_f_dimid) )
+        call check( nf90_def_var(ncid_snapout, trim(varname(ivar)), NF90_FLOAT,  &
+                  & (/nc_f_dimid, nc_proc_dimid, nc_snap_dimid/), nc_varid) )
+        write(6,100) trim(varname(ivar)), nc_varid
+100     format('  Netcdf variable ',A16,' with ID ', I3, ' produced.')       
+      end do
+    end if
     
     write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
     write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
-    call check( nf90_def_dim( ncid_recout, "timesteps", niter, nc_times_dimid) )
+    call check( nf90_def_dim( ncid_recout, "timesteps", nsamples, nc_times_dimid) )
     call check( nf90_def_dim( ncid_recout, "receivers", nrec, nc_rec_dimid) )
     call check( nf90_def_dim( ncid_recout, "processors", nproc, nc_recproc_dimid) )
     call check( nf90_def_dim( ncid_recout, "surf_elems", maxind, nc_surf_dimid) ) 
@@ -162,20 +163,21 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
     write(6,*) 'NetCDF dimensions defined'
     
     write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
+    call flush(6)
     call check( nf90_def_var( ncid_recout, "displacement", NF90_FLOAT, &
                 & (/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), nc_disp_varid, &
-                &  deflate_level=2) )
+                &  deflate_level=4) )
     call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )
     call check( nf90_put_att(ncid_recout, nc_disp_varid, '_FillValue', 0.0) )
     
     call check( nf90_def_var( ncid_recout, "surface_displacement", NF90_FLOAT, &
                 & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), &
-                & nc_surfelem_disp_varid, deflate_level=2 ) )
+                & nc_surfelem_disp_varid, deflate_level=4 ) )
     call check( nf90_put_att(ncid_recout, nc_surfelem_disp_varid, 'units', 'meters'))
     
     call check( nf90_def_var( ncid_recout, "surface_velocity", NF90_FLOAT, &
                 & (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), &
-                & nc_surfelem_velo_varid, deflate_level=2 ) )
+                & nc_surfelem_velo_varid, deflate_level=4 ) )
     call check( nf90_put_att(ncid_recout, nc_surfelem_velo_varid, 'units', 'meters per second') )
     
     call check( nf90_def_var( ncid_recout, "Lat_req", NF90_FLOAT, &
@@ -205,7 +207,7 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, &
 
     !call check( nf90_put_att(ncid_out, NF90_GLOBAL, 'station names', rec_names) )
       do irec=1,nrec
-        write(6,*) 'Write name ', rec_names(irec), ' of receiver',irec
+        !write(6,*) 'Write name ', rec_names(irec), ' of receiver',irec
         call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = (/irec, 1/),&
         &         count = (/1, 40/), &
         &         values = (rec_names(irec))) )
@@ -304,7 +306,9 @@ subroutine nc_open_parallel
               & mode=NF90_WRITE, ncid=ncid_out, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL))
   write(6,*) '  Proc ', mynum, ' opened file and is ready to rupture'
   call check( nf90_inq_grp_ncid(ncid_out, "Seismograms", ncid_recout) )
-  call check( nf90_inq_grp_ncid(ncid_out, "Snapshots", ncid_snapout) )
+  if (dump_wavefields) then
+    call check( nf90_inq_grp_ncid(ncid_out, "Snapshots", ncid_snapout) )
+  end if
   call check( nf90_inq_varid( ncid_recout, "displacement", nc_disp_varid) )
   call check( nf90_inq_varid( ncid_recout, "surface_displacement", nc_surfelem_disp_varid ) )
   call check( nf90_inq_varid( ncid_recout, "surface_velocity", nc_surfelem_velo_varid ) )

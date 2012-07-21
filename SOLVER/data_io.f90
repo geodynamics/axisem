@@ -21,6 +21,7 @@ public
   double precision  :: strain_samp
   integer           :: iseismo !! to keep track of the seismo snaps
   integer           :: istrain,isnap
+  integer           :: nsamples, nstrain, nsnap !Number of seismogram samples, kernel dumps, wavefield snapshots
   character(len=12) :: dump_type
   character(len=8)  :: rec_file_type
   logical           :: correct_azi,sum_seis,sum_fields

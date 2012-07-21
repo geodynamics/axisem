@@ -197,9 +197,6 @@ double precision :: s,z,r,theta
 
 ! open files for displacement and velocity traces in each surface element
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!! PUT IF STATEMENT BACK IN!!!!!!!!!!!!!!!!!
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   allocate(jsurfel(maxind)) ! for surface strain
 
      do iproc=0,nproc-1
@@ -222,7 +219,8 @@ double precision :: s,z,r,theta
                    thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
 
               write(33334,11) 180./pi* &
-                   thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),(rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
+                   thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),&
+                   (rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
            enddo
            close(33333); close(33334)
            call barrier
@@ -233,10 +231,8 @@ double precision :: s,z,r,theta
 11 format(6(1pe11.4))
 
   if (dump_wavefields) then
-    !! andrea
-    !! if netcdf output is used no needs for the initialize ascii
     if(use_netcdf)   then
-       
+           
        
 
     else 
@@ -249,13 +245,13 @@ double precision :: s,z,r,theta
                                       '/surfelem_velo.dat'//appielem)
        enddo
 
-        do iel=1,maxind
-           call define_io_appendix(appielem,iel+mynum*maxind)
-           open(unit=60000000+iel,file=datapath(1:lfdata)// &
-                '/surfelem_strain.dat'//appielem)
-           open(unit=70000000+iel,file=datapath(1:lfdata)// &
-                '/surfelem_disp_src.dat'//appielem)
-        enddo
+       do iel=1,maxind
+          call define_io_appendix(appielem,iel+mynum*maxind)
+          open(unit=60000000+iel,file=datapath(1:lfdata)// &
+               '/surfelem_strain.dat'//appielem)
+          open(unit=70000000+iel,file=datapath(1:lfdata)// &
+               '/surfelem_disp_src.dat'//appielem)
+       enddo
     endif
   endif
 
@@ -332,16 +328,18 @@ integer ierror
        if (lpr) write(6,*)'  generating receiver colatitudes at every element edge and midpoint...'
        if (lpr) write(6,*)'  ... which is useful for databases and sinc interpolation'
        dtheta_rec = abs(180./pi*(thetacoord(npol,npol,ielsolid(surfelem(1)))-thetacoord(0,npol,ielsolid(surfelem(1))))/2.)
-       write(6,*)'delta theta (mid-to-edge), (edge-to-edge) [deg]:',dtheta_rec, &
+       if (lpr) then
+         write(6,*)'delta theta (mid-to-edge), (edge-to-edge) [deg]:',dtheta_rec, &
             abs((thetacoord(npol,npol,ielsolid(surfelem(1)))-thetacoord(0,npol,ielsolid(surfelem(1))))*180./pi)
-       write(6,*)mynum,'number of surface elements:',maxind
+         write(6,*)mynum,'number of surface elements:',maxind
+         write(6,*)mynum,'number of global recs (ideal,real):',(180./dtheta_rec)+1,num_rec_glob
+       end if
        num_rec_glob = ceiling(180./dtheta_rec)+1
-       write(6,*)mynum,'number of global recs (ideal,real):',(180./dtheta_rec)+1,num_rec_glob
        allocate(recfile_readth(num_rec_glob),recfile_readph(num_rec_glob))
        do i=1,num_rec_glob
           recfile_readth(i) = dtheta_rec*real(i-1)
        enddo
-       write(6,*)mynum,'min,max receiver theta [deg]:',minval(recfile_readth),maxval(recfile_readth)
+       if(lpr) write(6,*)mynum,'min,max receiver theta [deg]:',minval(recfile_readth),maxval(recfile_readth)
        call flush(6)
        recfile_readph = 0.
        allocate(recfile_th_loc(1:num_rec_glob),recfile_el_loc(1:num_rec_glob,3))
@@ -350,12 +348,14 @@ integer ierror
        allocate(receiver_name(1:num_rec_glob))
        if (mynum==0) open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
        do i=1,num_rec_glob
-          call define_io_appendix(appielem,i)
-          receiver_name(i) = 'recfile_'//appielem
+          !call define_io_appendix(appielem,i) Does only work for nrec<9999
+          !receiver_name(i) = 'recfile_'//appielem
+          write(receiver_name(i),112) i
+112       format('recfile_',I6.6)          
           if (mynum==0) write(30,*)trim(receiver_name(i)),recfile_readth(i),recfile_readph(i)
        enddo
        if (mynum==0) close(30)
-       write(6,*)mynum,'done with database receiver writing.';call flush(6)
+       if (lpr) write(6,*)mynum,'done with database receiver writing.';call flush(6)
 
      elseif (rec_file_type=='stations') then 
        if (lpr) write(6,*)'  reading receiver colatitudes and longitudes from STATIONS...'
@@ -393,14 +393,14 @@ integer ierror
        enddo
        close(34); close(30)
 
-   elseif (rec_file_type=='deliverg') then 
+    elseif (rec_file_type=='deliverg') then 
        if (lpr) write(6,*)'  reading receiver colatitudes/longitudes from deliverg...'
        if (lpr) write(6,*)'  .....not yet implemented!'
        stop
     else 
        write(6,*)procstrg, 'Undefined receiver file format!!'
        stop
-    endif
+    endif !Receiver type rec_file_type
 
     num_rec_tot = num_rec_glob ! to be known later/globally
 
@@ -438,9 +438,11 @@ integer ierror
 ! rotate receiver locations if source is not located at north pole
     if (rot_src ) then 
        call rotate_receivers_recfile(num_rec_glob,recfile_readth,recfile_readph,receiver_name)
-   else
-      if (lpr) call save_google_earth_kml(real(srccolat*180.0/pi),real(srclon*180.d0/pi), &
+    else
+      if ((lpr).and.(.not.(rec_file_type=='database'))) then
+        call save_google_earth_kml(real(srccolat*180.0/pi),real(srclon*180.d0/pi), &
                         real(recfile_readth),real(recfile_readph),num_rec_glob,'original',receiver_name)
+      end if
     endif
 
   recfile_th_glob(:) = zero

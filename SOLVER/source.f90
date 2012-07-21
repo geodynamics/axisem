@@ -364,6 +364,11 @@ stop
      write(6,*)procstrg, '  Source not along the axis!'
      write(6,*)procstrg,'  ...therefore applying rotations to source and receivers.'
      rot_src=.true.
+     if (rec_file_type.eq.'database') then
+       write(6,*) 'For the database function, the source should be at the northpole.'
+       write(6,*) 'All rotation is done in postprocessing.'
+       stop
+     end if
   endif
 
   if (lpr) then

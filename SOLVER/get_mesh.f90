@@ -64,6 +64,7 @@ integer           :: globnaxel,globnaxel_solid,globnaxel_fluid
         open(1000+mynum,file=dbname(1:lfdbname), FORM="UNFORMATTED",&
                              STATUS="OLD",POSITION="REWIND")
      endif
+     call flush(6)
      call barrier
   enddo
   if (lpr) write(6,*)'  Reading databases: see processor output for details.'
@@ -156,12 +157,8 @@ integer           :: globnaxel,globnaxel_solid,globnaxel_fluid
 
 ! Background model
    write(69,*)'reading background model info...'
-!af
-!   read(1000+mynum) lfbkgrdmodel
    read(1000+mynum) bkgrdmodel(1:lfbkgrdmodel)
    bkgrdmodel=bkgrdmodel(1:lfbkgrdmodel)
-   write(6,*)'bkgrdmodel,bkgrdmodel',bkgrdmodel,lfbkgrdmodel
-   write(6,*)bkgrdmodel(1:lfbkgrdmodel)
 
    read(1000+mynum) router,resolve_inner_shear,have_fluid
    do idom=1,ndisc
@@ -402,6 +399,7 @@ integer           :: globnaxel,globnaxel_solid,globnaxel_fluid
      call barrier
      if (mynum==i) then
         write(6,*)'  ',procstrg,'closing database ',dbname(1:lfdbname)
+        call flush(6)
         write(69,*)'Closed the database'
         close(1000+mynum)
      endif
