@@ -2,6 +2,7 @@
 program find_receiver
 !===========================
 
+use nc_routines
 implicit none
 real :: Mij(6),period,srcdepth,srclat,srclon,time_shift,reclon,reclat,deg2rad,rad2deg,rjunk
 real :: period_sim,shift_fact,magnitude_sim,src_depth_sim,dt,mij_phi(3,4),ph_src,th_src,rot_mat(3,3)
@@ -14,11 +15,13 @@ character(len=200) :: dirname,interp_method
 character(len=30),  allocatable :: recname(:)
 integer :: nrec,irec,nt,i,dirind,nr_per_deg,ind1,ind2,ind_rec,ind_rec2,it,ijunk
 integer :: nrec_sim,ishift_deltat,ishift_seisdt,num_interp,count_neg,p
+integer, dimension(4) :: ncid_in, nc_disp_varid
 character(len=4) :: ind_recchar,appidur
 character(len=34) :: stf_type,colat,model
 character(len=1),dimension(3) :: reccomp
 logical, allocatable :: mask_min(:)
 logical :: ljunk,interpolate_seis,even_spaced_theta,theta_discrete_smaller
+logical :: usenetcdf
 real, parameter :: pi = 3.14159265
 
 ! >>>>> Static parameters <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -96,6 +99,7 @@ open(unit=99,file=trim(dirname)//'MZZ/simulation.info')
   read(99,*)ijunk
   read(99,*)junk
   read(99,*)dtheta_rec
+  read(99,*)usenetcdf
 close(99)
 allocate(t(nt),seis(nt,3),seis_snglcomp(nt,3,4))
 do it=1,nt
@@ -154,6 +158,12 @@ write(6,*)'period,P-wavelength: [deg]',lam_deg
 
 if (interpolate_seis) allocate(seistmp(nt,3))
 allocate(w(num_interp))
+
+!**************** Open Netcdf output files ******************
+if (usenetcdf) call nc_open(dirname,ncid_in,nc_disp_varid)
+!************************************************************
+
+
 !--------------
 do irec=1,nrec
 !--------------
@@ -184,7 +194,11 @@ do irec=1,nrec
 
 ! >>>>> load seismograms <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
    if (.not. interpolate_seis) then ! choosing closest location
-      call read_seis(dirname,ind_rec,nt,seis_snglcomp)
+      if (usenetcdf) then
+	      call nc_read_seis(ncid_in, nc_disp_varid, ind_rec, nt, seis_snglcomp)
+	  else
+          call read_seis(dirname,ind_rec,nt,seis_snglcomp)
+      end if
       call sum_individual_wavefields(seis,seis_snglcomp,nt,mij_phi)
 
    else ! interpolation using num_interp locations
@@ -200,7 +214,11 @@ do irec=1,nrec
       endif
       do i=1,num_interp
          write(6,*)'loading seismogram for interpolation at theta=',real(count_neg+i-1)*dtheta_rec
-         call read_seis(dirname,count_neg+i,nt,seis_snglcomp)
+         if (usenetcdf) then
+           call nc_read_seis(ncid_in, nc_disp_varid, count_neg+i, nt, seis_snglcomp)
+         else
+           call read_seis(dirname,count_neg+i,nt,seis_snglcomp)
+         end if  
          call sum_individual_wavefields(seistmp,seis_snglcomp,nt,mij_phi)
 
          if (trim(interp_method)=='sinc') then 
@@ -240,6 +258,7 @@ do irec=1,nrec
 !--------------
 enddo ! nrec
 !--------------
+if (usenetcdf) call nc_close(ncid_in)
 
 write(6,*)' .... DONE.'
 
@@ -306,6 +325,7 @@ real, intent(in)    :: th_src,ph_src,th_rec(nrec),ph_rec(nrec)
 real, intent(out)   :: th_rec_rot(nrec),ph_rec_rot(nrec),rot_mat(3,3)
 real                :: x_vec(3),x_vec_rot(3),r,trans_rot_mat(3,3)
 integer             :: ircv
+real                :: cosph_rec_rot, costh_rec_rot
 real, parameter     :: smallval = 1.e-10
 real, parameter     :: pi = 3.14159265
 
@@ -327,12 +347,19 @@ do ircv=1,nrec
    x_vec(3)=cos(th_rec(ircv))
    x_vec_rot=matmul(trans_rot_mat,x_vec)
    r = sqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2)
-   th_rec_rot(ircv) = acos(x_vec_rot(3) / (r +smallval))
+   costh_rec_rot = x_vec_rot(3) / (r +smallval)
+   if (costh_rec_rot.lt.-1.) costh_rec_rot = -1.
+   if (costh_rec_rot.gt.1.)  costh_rec_rot = 1.
+   th_rec_rot(ircv) = acos(costh_rec_rot)
+
+   cosph_rec_rot = x_vec_rot(1) / (r * sin(th_rec_rot(ircv)) + smallval)
+   if (cosph_rec_rot.lt.-1.) cosph_rec_rot = -1.
+   if (cosph_rec_rot.gt.1.)  cosph_rec_rot = 1.
 
    if (x_vec_rot(2) >= 0.) then
-      ph_rec_rot(ircv) = acos(min(1.,x_vec_rot(1) / (r * sin(th_rec_rot(ircv)) + smallval)))
+      ph_rec_rot(ircv) = acos(cosph_rec_rot)
    else
-      ph_rec_rot(ircv) = 2.*pi - acos(min(1.,x_vec_rot(1) / (r * sin(th_rec_rot(ircv)) + smallval)))
+      ph_rec_rot(ircv) = 2.*pi - acos(cosph_rec_rot)
    end if   
 enddo
 
@@ -685,7 +712,7 @@ integer, parameter              :: ndepths_prem = 1
 integer, parameter              :: ndepths_iasp91 = 1
 integer, parameter              :: ndepths_ak135 = 1
 integer, parameter              :: ndepths = max(ndepths_prem,ndepths_ak135,ndepths_ak135)
-character(len=200)              :: rundir(ndepths)
+character(len=200)              :: rundir(ndepths), rundirtemp
 real, dimension(ndepths)        :: depth
 integer                         :: dirind,ndepths_chosen
 
@@ -710,8 +737,10 @@ integer                         :: dirind,ndepths_chosen
      write(6,*)'no simulation for model ',trim(model),' available'; stop
   end select
 
+  write(6,*) 'Rundir?'
+  read(*,*) rundirtemp
   dirind = minloc(abs(srcdepth-depth(1:ndepths_chosen)),1)
-  chosen_dir = trim(rundir(dirind))
+  chosen_dir = '../'//trim(rundirtemp)//'/'
   write(6,*)'Background model: ',trim(model)
   write(6,*)'Desired, offered depth [km]:',srcdepth,depth(dirind)
   write(6,*)'Directory name: ',trim(chosen_dir)
