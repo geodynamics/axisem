@@ -12,6 +12,9 @@
 # Written by Michael Wester <wester@math.unm.edu> February 16, 1995
 # Cotopaxi (Consulting), Albuquerque, New Mexico
 #
+unlink('mesh_params.h');
+unlink('unrolled_loops.f90');
+
 open(MAKEFILE, "> Makefile");
 
 #print MAKEFILE "PROG =\t$ARGV[0]\n\n";

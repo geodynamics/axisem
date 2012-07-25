@@ -6,17 +6,15 @@ if ( $1 == '-h' ) then
   echo "torque: submit to a Torque/Mauo queue using qsub";  exit
 endif
 
-if ( ! -f xmesh ) then 
-  make clean; make
+if ( { make all } == 0 ) then
+  echo "Compilation failed, please check the errors."
+  exit
 endif
 
 if ( ! -d Diags ) then
   mkdir Diags
 endif
 
-if ( ! -f xmesh ) then
-  echo "Compilation failed, please check the errors."; exit
-else
 ########## LSF SCHEDULER ######################
   if ( $1 == 'lsf' ) then 
     bsub -R "rusage[mem=2048]" -I -n 1 ./xmesh > OUTPUT &
@@ -33,11 +31,11 @@ else
 ######## SUBMIT LOCALLY #######
   else
     nohup ./xmesh > OUTPUT &
-   endif
+  endif
 
-   echo 'xmesh submitted, output in "OUTPUT"'
-   echo "After the run, move the mesh to a new directory <meshdir> via:"
-   echo "./copymesh <meshdir>"
-   echo "This will be located in ../SOLVER/MESHES/<meshdir>"
+  echo 'xmesh submitted, output in "OUTPUT"'
+  echo "After the run, move the mesh to a new directory <meshdir> via:"
+  echo "./copymesh <meshdir>"
+  echo "This will be located in ../SOLVER/MESHES/<meshdir>"
 
 endif

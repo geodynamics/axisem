@@ -80,23 +80,11 @@ if ( $newqueue == 'true' ) then
 	echo "Submitting to queue type" $queue
 endif
 
-# recompile if mesh_params.h is younger than xsem
-if ( ! -f xsem) then 
-    echo "==============================================="
-    echo "Need to compile since executable xsem not existant"
-    echo "==============================================="
-    make clean; make
-    if ( ! -f xsem ) then 
-        echo "Compilation error, please check the code."; exit
-    endif
-else
-    set younger = `ls -lt mesh_params.h xsem |awk '{print $8}'`
-    if ( $younger[1] == 'mesh_params.h'  ) then 
-        echo "Need to recompile since mesh is younger than executable!"; make clean; make
-        if ( ! -f xsem ) then 
-          echo "Compilation error, please check the code."; exit
-        endif
-    endif
+# Run make to see whether the code has to be rebuilt and if so, do it.
+# If 'make' returns an Error (something >0), then exit.
+if ( { make all } == 0 ) then
+  echo "Compilation failed, please check the errors."
+  exit
 endif
 
 if ( $src_file_type == 'cmtsolut' ) then
@@ -345,7 +333,7 @@ foreach isrc (${num_src_arr})
 
     ######## SUBMIT LOCALLY #######
         else 
-            mpirun -n $nodnum ./xsem > $outputname &
+            mpirun.openmpi -n $nodnum ./xsem > $outputname &
         endif
 
         echo "Job running in directory $isim"
