@@ -3,6 +3,11 @@
 set homepath = `echo $PWD`
 set meshpath = "../SOLVER/MESHES/$1"
 
+if ( ! -f mesh_params.h) then
+  echo "ERROR: mesh_params.h does not exist. Did the MESHER run smoothly?"
+  exit
+endif
+
 if ( ! -d ../SOLVER/MESHES ) then
   mkdir ../SOLVER/MESHES
 endif
