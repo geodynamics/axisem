@@ -1,0 +1,108 @@
+[general]
+axi_address = ..                    ; address where AXISEM is located
+mesh_name = TEST01_MESH             ; Name for the mesh folder
+solver_name = TEST01_SOLVER         ; Name for the solver folder
+
+# IMPORTANT:
+# 'new_mesh' flag controls all the required steps that you want for your simulation: (except for post_processing and test)
+# Y: means that you want to run the AXISEM for a new mesh! (so MESHER and SOLVER)
+# N: to re-run the solver with different parameters but the same mesh (so SOLVER) ---> obviously you need an old mesh!
+# M: if you change the flag to M, you have a full control on all steps (please refer to the bottom of this section!)
+
+# ATTENTION: post_processing and test have their own flags!
+
+new_mesh = Y                        ; perform all required steps for a new mesh (Y), to re-run the solver with different parameters but the same mesh (N) and manually (M)
+post_processing = Y                ; perform the post processing step
+test = Y                            ; if you want to test AXISEM?
+
+test_folder = ./automated/test_01                     ; address of the test folder
+
+plot = Y                            ; to just plot the test waveforms
+
+# if you change the 'new_mesh' flag to 'M' you could change these flags in a way that you want
+mesher = N                          ; to run the mesher
+solver = N                          ; to run the solver
+mesher_makefile = Y                 ; Create Mesher Makefile? (just once!)
+mesher_make = Y                     ; Run make clean; make for mesher
+mesher_move = Y                     ; Run movemesh.csh
+solver_makefile = Y                 ; Create Solver Makefile?
+solver_cp = Y                       ; defines the mesh as a header
+solver_make = Y                     ; Run make clean; make for mesher
+
+[mpi_netCDF]
+mpi_compiler = mpif90.openmpi -g -O3    ; mpi compiler of your local machine
+
+netCDF = N                          ; Output format for seismograms and wavefields in netCDF or binary
+netCDF_include = /usr/include       ; include folder of where the libnetcdff.a is located (type locate libnetcdff.a)
+
+[mesher]
+model = 'prem_ani'                ; Background model: prem,prem_solid etc
+period = 50.                        ; DOMINANT period [s]
+no_proc = 4                         ; Number of processors to be used
+
+[solver]
+no_simu = 1                         ; number of simulations. 1: single Mij/f_i; 2: forces; 4: moment tensor
+seis_length = 1800.                 ; seismogram length [s]
+time_step = 0.1                     ; time step [s]. Put to 0.0 to use mesher's suggestion (mesh_params.h)
+source_type = sourceparams          ; source file type: 'sourceparams','cmtsolut'
+receiver_type = stations            ; receiver file type: 'colatlon','stations'
+
+
+sourceparams_type = 'monopole'      ; excitation type: 'monopole', 'dipole', 'quadpole'
+sourceparams_MDQ = 'explosion'
+# 'explosion','mxx_p_myy','mzz','vertforce' (MONOPOLE)
+# 'mxz', 'myz', 'xforce', 'yforce'          (DIPOLE)
+# 'mxy', 'mxx_m_myy'                        (QUADRUPOLE)
+
+src_Mzz = 1.E20
+src_Mxx = 1.E20
+src_Myy = 1.E20
+src_Mxz = 0.E20
+src_Myz = 0.E20
+src_Mxy = 0.E20
+
+source_dp = 100.                    ; source depth [km]
+source_colat = 0.0                  ; source colatitude [degrees]
+source_lon = 0.0                    ; source longitude [ldegrees]
+source_stf = 'dirac_0'              ; source time function
+
+cmt_lat = 90.0                      ; source latitude [degrees]
+cmt_lon = 0.                        ; source longitude [degrees]
+cmt_dp = 100.0                      ; source depth [km]
+
+cmt_Mrr = 1.0000e+27                ; Mrr component
+cmt_Mtt = 0.0000e+27                ; Mtt component
+cmt_Mpp = 0.000000e+27              ; Mpp component
+cmt_Mrt = 0.00000e+27               ; Mrt component
+cmt_Mrp = 0.000e+27                 ; Mrp component
+cmt_Mtp = 0.00000e+27               ; Mtp component
+
+[post_processing]
+post_components = 'enz'             ; receiver components: enz,sph,cyl,xyz,src
+post_conv_period = 0.000000E+00     ; convolve period (0. if not convolved)
+
+post_rotate = N                     ; rotate receivers?
+post_full_Mij = N                   ; sum to full Mij
+post_Mrr = N                        ; Mrr
+post_Mtt = N                        ; Mtt
+post_Mpp = N                        ; Mpp
+post_Mrt = N                        ; Mrt
+post_Mrp = N                        ; Mrp
+post_Mtp = N                        ; Mtp
+post_STF = N                        ; source time function type for convolution
+post_Scolat = N                     ; Source colatitude
+post_Slon = N                       ; Source longitude
+post_snap = N                       ; plot global snaps?
+post_dv = N                         ; disp or velo seismograms
+post_path = N                       ; Directory for post processed data
+post_negative = N                   ; seismograms at negative time (0 at max. of stf)
+
+[MISC]
+mseed = Y                           ; convert the seismograms into MSEED format
+
+[test]
+chans = ['Z', 'N']
+fmin = 0.0005
+fmax = 0.02
+halfduration = 20.
+nstat = 20
