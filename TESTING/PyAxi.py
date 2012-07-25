@@ -192,6 +192,7 @@ def PyAxi(**kwargs):
         
         # move the mesh to the SOLVER folder
         if input['mesher_move'] != 'N':
+            time.sleep(2) # Giving xmesh chance to complete its output.
             print "==================="
             print "Move mesh files to:"
             print os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])
