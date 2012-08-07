@@ -63,9 +63,6 @@ def PyAxi(**kwargs):
     
     if input['test'] != 'N':
         subprocess.check_call(['cp', \
-            os.path.join(input['test_folder'], 'inpython.cfg'), \
-            input['inpython_address']])
-        subprocess.check_call(['cp', \
             os.path.join(input['test_folder'], 'STATIONS'), \
             os.path.join(input['axi_address'], 'SOLVER', 'STATIONS')])
         read_input_file()
@@ -192,14 +189,13 @@ def PyAxi(**kwargs):
         
         # move the mesh to the SOLVER folder
         if input['mesher_move'] != 'N':
-            time.sleep(2) # Giving xmesh chance to complete its output.
             print "==================="
             print "Move mesh files to:"
             print os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])
             print "==================="
-            if os.path.isfile(os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])):
+            if os.path.isdir(os.path.join('..', 'SOLVER', 'MESHES')):
                 subprocess.check_call(['rm', '-rf', \
-                    os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])])
+                    os.path.join('..', 'SOLVER', 'MESHES')])
             
             output = subprocess.check_call(['./movemesh', input['mesh_name']])
             if output != 0: print output_print
@@ -748,10 +744,18 @@ def read_input_file():
     global input, obspy_error
     
     config = ConfigParser.RawConfigParser()
-    config.read(os.path.join(os.getcwd(), 'inpython.cfg'))
-    
     input = {}
-    input['inpython_address'] = os.path.join(os.getcwd(), 'inpython.cfg')
+    
+    try:
+        config.read(os.path.join(sys.argv[1], 'inpython.cfg'))
+        input['inpython_address'] = os.path.join(sys.argv[1], 'inpython.cfg')
+    except Exception, error:
+        config.read(os.path.join(os.getcwd(), 'inpython.cfg'))
+        input['inpython_address'] = os.path.join(os.getcwd(), 'inpython.cfg')
+    
+    if not os.path.isabs(input['inpython_address']):
+        input['inpython_address'] = os.path.join(os.getcwd(), \
+                                            input['inpython_address'])
     
     input['axi_address'] = config.get('general', 'axi_address')
     if not os.path.isabs(input['axi_address']):
@@ -762,9 +766,6 @@ def read_input_file():
     #input['all_steps'] = config.get('general', 'all_steps')
     input['new_mesh'] = config.get('general', 'new_mesh')
     input['post_processing'] = config.get('general', 'post_processing')
-    input['test'] = config.get('general', 'test')
-    
-    input['test_folder'] = config.get('general', 'test_folder')
     
     input['plot'] = config.get('general', 'plot')
     
@@ -845,11 +846,13 @@ def read_input_file():
     
     input['mseed'] = config.get('MISC', 'mseed')
     
-    input['test_chans'] = config.get('test', 'chans')
-    input['test_fmin'] = config.get('test', 'fmin')
-    input['test_fmax'] = config.get('test', 'fmax')
-    input['test_half'] = config.get('test', 'halfduration')
-    input['test_nstat'] = config.get('test', 'nstat')
+    input['test'] = config.get('test_section', 'test')
+    input['test_folder'] = config.get('test_section', 'test_folder')
+    input['test_chans'] = config.get('test_section', 'chans')
+    input['test_fmin'] = config.get('test_section', 'fmin')
+    input['test_fmax'] = config.get('test_section', 'fmax')
+    input['test_half'] = config.get('test_section', 'halfduration')
+    input['test_nstat'] = config.get('test_section', 'nstat')
     
     """
     if input['all_steps'] != 'N':
