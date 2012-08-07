@@ -200,7 +200,7 @@ def PyAxi(**kwargs):
                     os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])])
             #os.path.join('..', 'SOLVER', 'MESHES')])
             
-            output = subprocess.check_call(['./movemesh', input['mesh_name']])
+            output = subprocess.check_call(['./movemesh.csh', input['mesh_name']])
             if output != 0: print output_print
             
     t2_mesher = time.time()
