@@ -94,9 +94,7 @@ def PyAxi(**kwargs):
             subprocess.check_call(['rm', '-rf', \
                 os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])])
         elif user_raw_input == 'S':
-            print '------------'
             print 'EXIT AXISEM!'
-            print '------------'
             sys.exit()
         
     ##############################################################
@@ -199,7 +197,7 @@ def PyAxi(**kwargs):
             #if os.path.isdir(os.path.join('..', 'SOLVER', 'MESHES')):
             if os.path.isfile(os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])):
                 subprocess.check_call(['rm', '-rf', \
-                    os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])
+                    os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])])
             #os.path.join('..', 'SOLVER', 'MESHES')])
             
             output = subprocess.check_call(['./movemesh', input['mesh_name']])
