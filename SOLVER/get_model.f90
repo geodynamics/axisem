@@ -339,7 +339,8 @@ end subroutine read_model
 
 
 !-----------------------------------------------------------------------------
-subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani)
+subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                          fa_ani_theta, fa_ani_phi)
 !
 ! same as above, but for anisotropic models
 !    
@@ -347,17 +348,22 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani)
 
 use commun, ONLY : barrier
 use lateral_heterogeneities
+use data_mesh_preloop, ONLY : ielsolid
+use data_io, ONLY : rot_mat
+use data_source, ONLY : rot_src
 
 include 'mesh_params.h'
 
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rho
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
+double precision, dimension(0:npol,0:npol,nelem), intent(out) :: fa_ani_theta, fa_ani_phi
 double precision :: s,z,r,theta,r1,r2,r3,r4,th1,th2,th3,th4
-double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp
+double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp, arg1
 integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count,ij,jj
 logical :: foundit
 character(len=100) :: modelstring
+double precision, dimension(1:3) :: fast_axis_np, fast_axis_src
 
   if (make_homo ) then 
      if (lpr) then
@@ -422,6 +428,31 @@ character(len=100) :: modelstring
   call flush(6)
 
   modelstring = bkgrdmodel
+
+
+!**********************************************************************
+! <Inner Core Anisotropy>
+!
+! Hard Coded Parameters for Now
+!**********************************************************************
+  
+  !define fast axis in the cartesian system with norpole at (0,0,1)
+  fast_axis_np(1) = zero
+  fast_axis_np(2) = zero
+  fast_axis_np(3) = one
+
+  if (rot_src) then 
+    fast_axis_src = matmul(transpose(rot_mat), fast_axis_np)
+  else
+    fast_axis_src = fast_axis_np
+  endif
+        
+  if (lpr) then
+      write(6,*) 'Inner Core With Anisotropy !!!'
+      write(6,*) '  Fast Axis        :', fast_axis_np
+      write(6,*) '  Fast Axis rotated:', fast_axis_src 
+  endif
+
   iel_count=0
 !========================
   do iel=1,nelem
@@ -447,6 +478,30 @@ character(len=100) :: modelstring
               xi_ani(ipol,jpol,iel) = one
            endif
            phi_ani(ipol,jpol,iel) = vpvtmp**2 / vphtmp**2
+            
+           ! If in inner core: 
+           if (iidom == ndisc) then
+              ! compute theta and phi of the fast axis (phi is not well defined
+              ! at the northpole)
+              
+              fa_ani_theta(ipol,jpol,iel) = acos(fast_axis_src(3))
+
+              if ((fast_axis_src(1)**2 + fast_axis_src(2)**2) == 0) then
+                arg1 = one
+              else
+                arg1 = fast_axis_src(1) / (fast_axis_src(1)**2 + fast_axis_src(2)**2)**.5
+              endif
+              
+              if (fast_axis_src(2) >= 0.) then
+                 fa_ani_phi(ipol,jpol,iel) = acos(arg1)
+              else
+                 fa_ani_phi(ipol,jpol,iel) = 2.*pi - acos(arg1)
+              end if
+           else
+              ! if not in inner core, put radial anisotropy 
+              fa_ani_theta(ipol,jpol,iel) = thetacoord(ipol, jpol, iel)
+              fa_ani_phi(ipol,jpol,iel) = 0.
+           endif
 
            if (save_large_tests) &
                 write(5454,12) r, iidom, vphtmp, vpvtmp, vshtmp, vsvtmp, &
@@ -513,7 +568,13 @@ character(len=100) :: modelstring
 
 ! plot final velocity model in vtk
  write(6,*)mynum,'plotting vtks for the model properties....'
- call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani)
+
+ call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+
+
+!**********************************************************************
+! <\Inner Core Anisotropy>
+!**********************************************************************
 
 !@@@@@@@@@@@@@@@@@
 ! Some tests....
@@ -2170,16 +2231,19 @@ end subroutine write_vtk_bin_scal
 !-----------------------------------------------------------------------------
 
 !=============================================================================
-subroutine plot_model_vtk(rho,lambda,mu, xi_ani, phi_ani, eta_ani)
+subroutine plot_model_vtk(rho,lambda,mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
 double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
                                         xi_ani, phi_ani, eta_ani
+double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+                                        fa_ani_theta, fa_ani_phi
 
 real, dimension(:), allocatable :: vp1,vs1,rho1
 real, dimension(:), allocatable :: vpv1,vsv1,eta1
 real, dimension(:), allocatable :: xi1,phi1
+real, dimension(:), allocatable :: fa_ani_theta1, fa_ani_phi1
 character(len=80) :: fname
 integer :: npts_vtk,ct,iel,i
 real, allocatable ::  x(:),y(:),z0(:)
@@ -2187,9 +2251,11 @@ logical :: plot_ani
 
 npts_vtk=nelem *4
 allocate(vp1(npts_vtk),vs1(npts_vtk),rho1(npts_vtk))
-if (present(xi_ani) .and. present(phi_ani) .and.  present(eta_ani)) then
+if (present(xi_ani) .and. present(phi_ani) .and.  present(eta_ani) &
+    .and. present(fa_ani_theta) .and. present(fa_ani_phi))then
     allocate(vpv1(npts_vtk),vsv1(npts_vtk),eta1(npts_vtk))
     allocate(xi1(npts_vtk),phi1(npts_vtk))
+    allocate(fa_ani_theta1(npts_vtk), fa_ani_phi1(npts_vtk))
     plot_ani = .true.
 else
     plot_ani = .false.
@@ -2221,6 +2287,8 @@ do iel=1,nelem
         xi1(ct+1) = xi_ani(0,0,iel)
         phi1(ct+1) = phi_ani(0,0,iel)
         eta1(ct+1) = eta_ani(0,0,iel)
+        fa_ani_theta1(ct+1) = fa_ani_theta(0,0,iel)
+        fa_ani_phi1(ct+1) = fa_ani_phi(0,0,iel)
       endif
 
       rho1(ct+2)  =  rho(npol,0,iel)
@@ -2233,6 +2301,8 @@ do iel=1,nelem
         xi1(ct+2) = xi_ani(npol,0,iel)
         phi1(ct+2) = phi_ani(npol,0,iel)
         eta1(ct+2) = eta_ani(npol,0,iel)
+        fa_ani_theta1(ct+2) = fa_ani_theta(npol,0,iel)
+        fa_ani_phi1(ct+2) = fa_ani_phi(npol,0,iel)
       endif
 
       rho1(ct+3)  =  rho(npol,npol,iel)
@@ -2245,6 +2315,8 @@ do iel=1,nelem
         xi1(ct+3) = xi_ani(npol,npol,iel)
         phi1(ct+3) = phi_ani(npol,npol,iel)
         eta1(ct+3) = eta_ani(npol,npol,iel)
+        fa_ani_theta1(ct+3) = fa_ani_theta(npol,npol,iel)
+        fa_ani_phi1(ct+3) = fa_ani_phi(npol,npol,iel)
       endif
 
       rho1(ct+4)  =  rho(0,npol,iel)
@@ -2257,8 +2329,9 @@ do iel=1,nelem
         xi1(ct+4) = xi_ani(0,npol,iel)
         phi1(ct+4) = phi_ani(0,npol,iel)
         eta1(ct+4) = eta_ani(0,npol,iel)
+        fa_ani_theta1(ct+4) = fa_ani_theta(0,npol,iel)
+        fa_ani_phi1(ct+4) = fa_ani_phi(0,npol,iel)
       endif
-
 
    enddo
    ct = ct+4
@@ -2289,7 +2362,13 @@ if (plot_ani) then
    fname=trim('Info/model_phi_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,phi1,npts_vtk/4,fname)
 
-   deallocate(vp1,vs1,rho1, vsv1, vpv1, eta1, xi1, phi1)
+   fname=trim('Info/model_fa_theta_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,fa_ani_theta1,npts_vtk/4,fname)
+
+   fname=trim('Info/model_fa_phi_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,fa_ani_phi1,npts_vtk/4,fname)
+
+   deallocate(vp1,vs1,rho1, vsv1, vpv1, eta1, xi1, phi1, fa_ani_theta1, fa_ani_phi1)
 else
    fname=trim('Info/model_vp_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,vp1,npts_vtk/4,fname)

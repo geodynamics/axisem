@@ -42,6 +42,7 @@ include 'mesh_params.h'
 
 double precision, dimension(:,:,:),allocatable :: rho,lambda,mu,massmat_kwts2
 double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
+double precision, dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
 
   if(lpr)write(6,*)'  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::'
   if(lpr)write(6,*)'  allocate elastic fields....';call flush(6)
@@ -51,13 +52,15 @@ double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
     allocate(xi_ani(0:npol,0:npol,1:nelem))
     allocate(phi_ani(0:npol,0:npol,1:nelem))
     allocate(eta_ani(0:npol,0:npol,1:nelem))
+    allocate(fa_ani_theta(0:npol,0:npol,1:nelem))
+    allocate(fa_ani_phi(0:npol,0:npol,1:nelem))
   endif
 
 ! load velocity/density model  (velocities in m/s, density in kg/m^3 )
   if(lpr)write(6,*)'  define background model....';call flush(6)
   if (ani_true) then
     if(lpr)write(6,*)'  background model is anisotropic....';call flush(6)
-    call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani)
+    call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
   else 
     call read_model(rho,lambda,mu)
   endif
@@ -87,8 +90,8 @@ double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
 
   if(lpr)write(6,*)'  define solid stiffness terms....';call flush(6)
   if (ani_true) then
-    call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani)
-    deallocate(lambda,mu,xi_ani,phi_ani,eta_ani)
+    call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+    deallocate(lambda,mu,xi_ani,phi_ani,eta_ani, fa_ani_theta, fa_ani_phi)
   else
     call def_solid_stiffness_terms(lambda,mu,massmat_kwts2)
     deallocate(lambda,mu)
@@ -1247,7 +1250,7 @@ end subroutine compute_mass_earth
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani)
+subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
 !
 ! This routine is a merged version to minimize global work 
 ! array definitions. The terms alpha_wt_k etc. are now 
@@ -1265,7 +1268,7 @@ include "mesh_params.h"
 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: massmat_kwts2
-double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: xi_ani, phi_ani, eta_ani
+double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
 
 double precision :: local_crd_nodes(8,2)
 integer          :: ielem,ipol,jpol,inode
@@ -1499,6 +1502,7 @@ double precision, allocatable :: non_diag_fact(:,:)
          if (ani_true) then
             call compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                        lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                       fa_ani_theta, fa_ani_phi, &
                                        massmat_kwts2, &
                                        non_diag_fact,alpha_wt_k,beta_wt_k,&
                                        gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -1521,6 +1525,7 @@ double precision, allocatable :: non_diag_fact(:,:)
          if (ani_true) then
             call compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                        lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                       fa_ani_theta, fa_ani_phi, &
                                        massmat_kwts2, &
                                        non_diag_fact,alpha_wt_k,beta_wt_k,&
                                        gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -1543,6 +1548,7 @@ double precision, allocatable :: non_diag_fact(:,:)
          if (ani_true) then
             call compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes,&
                                        lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                       fa_ani_theta, fa_ani_phi, &
                                        massmat_kwts2,&
                                        non_diag_fact,alpha_wt_k,beta_wt_k,&
                                        gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -1699,6 +1705,7 @@ end subroutine compute_monopole_stiff_terms
 !-----------------------------------------------------------------------------
 subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                        lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                       fa_ani_theta, fa_ani_phi, &
                                        massmat_kwts2, &
                                        non_diag_fact,alpha_wt_k,beta_wt_k,&
                                        gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -1718,6 +1725,8 @@ double precision, intent(in) :: mu(0:npol,0:npol,nelem)
 double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
 double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
 double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
+double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
 double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
 
 double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
@@ -1742,7 +1751,7 @@ double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
 
 integer          :: ipol
 double precision :: dsdxi,dzdeta,dzdxi,dsdeta
-double precision :: theta
+double precision :: fa_ani_thetal, fa_ani_phil
 double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
 double precision :: lambdal, mul, xil, phil, etal
 
@@ -1756,7 +1765,8 @@ double precision :: lambdal, mul, xil, phil, etal
 ! ----------------
   do ipol=0,npol
 ! ----------------
-     theta = thetacoord(ipol, jpol, ielsolid(ielem))
+     fa_ani_thetal = fa_ani_theta(ipol,jpol,ielsolid(ielem))
+     fa_ani_phil = fa_ani_phi(ipol,jpol,ielsolid(ielem))
    
      lambdal = lambda(ipol,jpol,ielsolid(ielem))
      mul = mu(ipol,jpol,ielsolid(ielem))
@@ -1764,19 +1774,19 @@ double precision :: lambdal, mul, xil, phil, etal
      phil = phi_ani(ipol,jpol,ielsolid(ielem))
      etal = eta_ani(ipol,jpol,ielsolid(ielem))
      
-     C11 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 1, 1)
-     C12 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 2, 2)
-     C13 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 3, 3)
-     C15 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 3, 1)
-     C22 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 2, 2)
-     C23 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 3, 3)
-     C25 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 3, 1)
-     C33 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 3, 3)
-     C35 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 3, 1)
-     C44 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 2, 3)
-     C46 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 1, 2)
-     C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 1, 3, 1)
-     C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 2, 1, 2)
+     C11 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 1)
+     C12 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 2)
+     C13 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 3, 3)
+     C15 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 3, 1)
+     C22 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 2)
+     C23 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 3, 3)
+     C25 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 3, 1)
+     C33 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 3, 3)
+     C35 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 3, 1)
+     C44 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 2, 3)
+     C46 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 1, 2)
+     C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 3, 1)
+     C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 2, 1, 2)
 
     ! Test for the components that should be zero:
      if (do_mesh_tests) then
@@ -1784,14 +1794,14 @@ double precision :: lambdal, mul, xil, phil, etal
            if (lpr) write(6,*) ' Test for the components of c_ijkl that should be zero in anisotropic case'
         endif
         Ctmp = zero
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 3, 1))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 3, 1))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 1, 2))
         
         if (Ctmp > smallval_sngl) then
            write(6,*)procstrg,' ERROR: some stiffness term that should be zero '
@@ -2053,6 +2063,7 @@ end subroutine compute_dipole_stiff_terms
 !-----------------------------------------------------------------------------
 subroutine compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                      fa_ani_theta, fa_ani_phi, &
                                       massmat_kwts2, &
                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -2072,6 +2083,8 @@ double precision, intent(in) :: mu(0:npol,0:npol,nelem)
 double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
 double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
 double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
+double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
 double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
 
 double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
@@ -2096,7 +2109,7 @@ double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
 
 integer          :: ipol
 double precision :: dsdxi, dzdeta, dzdxi, dsdeta
-double precision :: theta
+double precision :: fa_ani_thetal, fa_ani_phil
 double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
 double precision :: lambdal, mul, xil, phil, etal
 
@@ -2114,7 +2127,8 @@ double precision :: lambdal, mul, xil, phil, etal
   endif
   
   do ipol=0,npol
-     theta = thetacoord(ipol, jpol, ielsolid(ielem))
+     fa_ani_thetal = fa_ani_theta(ipol,jpol,ielsolid(ielem))
+     fa_ani_phil = fa_ani_phi(ipol,jpol,ielsolid(ielem))
    
      lambdal = lambda(ipol,jpol,ielsolid(ielem))
      mul = mu(ipol,jpol,ielsolid(ielem))
@@ -2122,19 +2136,19 @@ double precision :: lambdal, mul, xil, phil, etal
      phil = phi_ani(ipol,jpol,ielsolid(ielem))
      etal = eta_ani(ipol,jpol,ielsolid(ielem))
      
-     C11 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 1, 1)
-     C12 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 2, 2)
-     C13 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 3, 3)
-     C15 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 3, 1)
-     C22 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 2, 2)
-     C23 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 3, 3)
-     C25 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 3, 1)
-     C33 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 3, 3)
-     C35 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 3, 1)
-     C44 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 2, 3)
-     C46 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 1, 2)
-     C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 1, 3, 1)
-     C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 2, 1, 2)
+     C11 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 1)
+     C12 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 2)
+     C13 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 3, 3)
+     C15 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 3, 1)
+     C22 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 2)
+     C23 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 3, 3)
+     C25 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 3, 1)
+     C33 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 3, 3)
+     C35 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 3, 1)
+     C44 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 2, 3)
+     C46 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 1, 2)
+     C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 3, 1)
+     C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 2, 1, 2)
 
     ! Test for the components that should be zero:
      if (do_mesh_tests) then
@@ -2142,14 +2156,14 @@ double precision :: lambdal, mul, xil, phil, etal
            if (lpr) write(6,*) ' Test for the components of c_ijkl that should be zero in anisotropic case'
         endif
         Ctmp = zero
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 3, 1))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 3, 1))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 1, 2))
         
         if (Ctmp > smallval_sngl) then
            write(6,*)procstrg,' ERROR: some stiffness term that should be zero '
@@ -2481,6 +2495,7 @@ end subroutine compute_quadrupole_stiff_terms
 !-----------------------------------------------------------------------------
 subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                      fa_ani_theta, fa_ani_phi, &
                                       massmat_kwts2, &
                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
@@ -2500,6 +2515,8 @@ double precision, intent(in) :: mu(0:npol,0:npol,nelem)
 double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
 double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
 double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
+double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
 double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
 
 double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
@@ -2524,12 +2541,13 @@ double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
 
 integer          :: ipol
 double precision :: dsdxi, dzdeta, dzdxi, dsdeta
-double precision :: theta
+double precision :: fa_ani_thetal, fa_ani_phil
 double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
 double precision :: lambdal, mul, xil, phil, etal
 
   do ipol = 0, npol
-     theta = thetacoord(ipol, jpol, ielsolid(ielem))
+     fa_ani_thetal = fa_ani_theta(ipol,jpol,ielsolid(ielem))
+     fa_ani_phil = fa_ani_phi(ipol,jpol,ielsolid(ielem))
    
      lambdal = lambda(ipol,jpol,ielsolid(ielem))
      mul = mu(ipol,jpol,ielsolid(ielem))
@@ -2537,19 +2555,19 @@ double precision :: lambdal, mul, xil, phil, etal
      phil = phi_ani(ipol,jpol,ielsolid(ielem))
      etal = eta_ani(ipol,jpol,ielsolid(ielem))
      
-     C11 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 1, 1)
-     C12 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 2, 2)
-     C13 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 3, 3)
-     C15 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 3, 1)
-     C22 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 2, 2)
-     C23 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 3, 3)
-     C25 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 3, 1)
-     C33 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 3, 3)
-     C35 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 3, 1)
-     C44 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 2, 3)
-     C46 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 1, 2)
-     C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 1, 3, 1)
-     C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 2, 1, 2)
+     C11 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 1)
+     C12 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 2)
+     C13 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 3, 3)
+     C15 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 3, 1)
+     C22 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 2)
+     C23 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 3, 3)
+     C25 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 3, 1)
+     C33 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 3, 3)
+     C35 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 3, 1)
+     C44 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 2, 3)
+     C46 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 1, 2)
+     C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 3, 1)
+     C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 2, 1, 2)
 
     ! Test for the components that should be zero:
      if (do_mesh_tests) then
@@ -2557,14 +2575,14 @@ double precision :: lambdal, mul, xil, phil, etal
            if (lpr) write(6,*) ' Test for the components of c_ijkl that should be zero in anisotropic case'
         endif
         Ctmp = zero
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 1, 1, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 2, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 3, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 2, 3, 3, 1))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, theta, 3, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 3, 1))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 1, 2))
         
         if (Ctmp > smallval_sngl) then
            write(6,*)procstrg,' ERROR: some stiffness term that should be zero '
@@ -2681,7 +2699,8 @@ end subroutine compute_quadrupole_stiff_terms_ani
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, theta, i, j, k, l)
+double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
+                                     theta_fa, phi_fa, i, j, k, l)
 !
 ! returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
 ! i, j, k and l should be in [1,3]
@@ -2692,7 +2711,7 @@ double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, theta
 implicit none
 
 double precision, intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
-double precision, intent(in) :: theta 
+double precision, intent(in) :: theta_fa, phi_fa
 integer, intent(in) :: i, j, k, l
 double precision, dimension(1:3, 1:3) :: deltaf
 double precision, dimension(1:3) :: s
@@ -2702,9 +2721,9 @@ deltaf(1,1) = one
 deltaf(2,2) = one
 deltaf(3,3) = one
 
-s(1) = dsin(theta)
-s(2) = zero
-s(3) = dcos(theta)
+s(1) = dcos(phi_fa) * dsin(theta_fa)
+s(2) = dsin(phi_fa) * dsin(theta_fa)
+s(3) = dcos(theta_fa)
 
 c_ijkl_ani = zero
 
