@@ -471,8 +471,6 @@ def PyAxi(**kwargs):
             
             time.sleep(20)
             print_output = "Just after 20 seconds!"
-            print print_output
-            print '--------------------------------'
             
             if input['source_type'] == 'sourceparams':
                 while (test == -1):
