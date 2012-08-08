@@ -195,9 +195,15 @@ def PyAxi(**kwargs):
             print "==================="
             
             #if os.path.isdir(os.path.join('..', 'SOLVER', 'MESHES')):
-            if os.path.isfile(os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])):
+            if os.path.isdir(os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])):
                 subprocess.check_call(['rm', '-rf', \
                     os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])])
+                print '#######################################################################'
+                print "Remove the mesh files from MESHES dir (before running the movemesh.csh)"
+                print os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])
+                print "is removed"
+                print '#######################################################################'
+                
             #os.path.join('..', 'SOLVER', 'MESHES')])
             
             output = subprocess.check_call(['./movemesh.csh', input['mesh_name']])
