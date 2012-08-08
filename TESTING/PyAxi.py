@@ -770,8 +770,6 @@ def read_input_file():
     input['new_mesh'] = config.get('general', 'new_mesh')
     input['post_processing'] = config.get('general', 'post_processing')
     
-    input['plot'] = config.get('general', 'plot')
-    
     input['mesher'] = config.get('general', 'mesher')
     input['solver'] = config.get('general', 'solver')
     
@@ -851,6 +849,7 @@ def read_input_file():
     
     input['test'] = config.get('test_section', 'test')
     input['test_folder'] = config.get('test_section', 'test_folder')
+    input['plot'] = config.get('test_section', 'plot')
     input['test_chans'] = config.get('test_section', 'chans')
     input['test_fmin'] = config.get('test_section', 'fmin')
     input['test_fmax'] = config.get('test_section', 'fmax')
@@ -894,7 +893,13 @@ def read_input_file():
         input['post_processing'] = 'N'
         input['test'] = 'N'
         input['mseed'] = 'N'
-    
+        
+        print '##################################'
+        print "PyAxi tries to copy the data from:"
+        print "(solver_name flag in inpython.cfg)"
+        print input['solver_name']
+        print '##################################'
+        
     if obspy_error != 'N':
         input['test'] = 'N'
         input['mseed'] = 'N'
