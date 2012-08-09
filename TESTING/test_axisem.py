@@ -24,17 +24,29 @@ test_no = \
         '3. test03: quadpole (mxz)\n' + \
         '4. test04: CMT (source: north pole)\n' + \
         '5. test05: CMT (source: 70-50)\n' + \
-        '\n(format = 01,02)' + \
+        '\n(format = 01,02 OR 1,2,3)' + \
         '\n')
 print '====================================================='
 
-m = -1
+print 'Requested Test numbers:'
 
 for i in range(0, len(test_no.split(','))):
     num = test_no.split(',')[i]
+    if len(num) == 1:
+        num = '0' + num
+    print 'test' + num
+print '====================================================='
+    
+for i in range(0, len(test_no.split(','))):
+    num = test_no.split(',')[i]
+    if len(num) == 1:
+        num = '0' + num
+    
+    print '======================='
+    print 'test' + num + ' starts!'
+    print '======================='
     
     address = os.path.join('.', 'automated', 'test_' + num)
-    
     output = subprocess.check_call(['python', 'PyAxi.py', address])
     if output != 0: print output_print
     print "=============================================="
