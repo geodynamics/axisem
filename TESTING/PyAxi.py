@@ -145,7 +145,10 @@ def PyAxi(**kwargs):
             print "Change inparam_mesh"
             print "==================="
 
+            if not os.path.isfile('./inparam_mesh'):
+                subprocess.check_call(['cp', './inparam_mesh.TEMPLATE', './inparam_mesh'])
             inparam_mesh_open = open('./inparam_mesh', 'r')
+            
             inparam_mesh_read = inparam_mesh_open.readlines()
 
             inparam_mesh_read[1] = input['model'] + \

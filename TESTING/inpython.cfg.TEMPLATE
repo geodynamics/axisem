@@ -1,5 +1,5 @@
 [general]
-axi_address = ..                    ; address where AXISEM is located
+axi_address = ..                     ; address where AXISEM is located
 mesh_name = DEFAULT_MESH             ; Name for the mesh folder
 solver_name = DEFAULT_SOLVER         ; Name for the solver folder
 
@@ -12,9 +12,7 @@ solver_name = DEFAULT_SOLVER         ; Name for the solver folder
 # ATTENTION: post_processing and test have their own flags!
 
 new_mesh = Y                        ; perform all required steps for a new mesh (Y), to re-run the solver with different parameters but the same mesh (N) and manually (M)
-post_processing = Y                ; perform the post processing step
-
-plot = Y                            ; to just plot the test waveforms
+post_processing = Y                 ; perform the post processing step
 
 # if you change the 'new_mesh' flag to 'M' you could change these flags in a way that you want
 mesher = N                          ; to run the mesher
@@ -100,6 +98,7 @@ mseed = Y                           ; convert the seismograms into MSEED format
 [test_section]
 test = N                            ; if you want to test AXISEM?
 test_folder = ./automated/test_99   ; address of the test folder
+plot = N                            ; to just plot the test waveforms
 chans = ['Z', 'N']
 fmin = 0.0005
 fmax = 0.02
