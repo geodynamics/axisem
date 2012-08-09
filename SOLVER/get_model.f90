@@ -364,6 +364,8 @@ integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count,ij,jj
 logical :: foundit
 character(len=100) :: modelstring
 double precision, dimension(1:3) :: fast_axis_np, fast_axis_src
+double precision :: a_ICA1, b_ICA1, c_ICA1, theta_split_ICA
+double precision :: a_ICA2, b_ICA2, c_ICA2
 
   if (make_homo ) then 
      if (lpr) then
@@ -441,6 +443,16 @@ double precision, dimension(1:3) :: fast_axis_np, fast_axis_src
   fast_axis_np(2) = zero
   fast_axis_np(3) = one
 
+  a_ICA1 = 0.0 !-0.0028
+  b_ICA1 = 0.0 !-0.0185
+  c_ICA1 = 0.0 !0.0537
+  
+  a_ICA2 = 0.0
+  b_ICA2 = 0.0
+  c_ICA2 = 0.0
+  
+  theta_split_ICA = 60. / 180. * pi
+  
   if (rot_src) then 
     fast_axis_src = matmul(transpose(rot_mat), fast_axis_np)
   else
@@ -497,6 +509,28 @@ double precision, dimension(1:3) :: fast_axis_np, fast_axis_src
               else
                  fa_ani_phi(ipol,jpol,iel) = 2.*pi - acos(arg1)
               end if
+
+              if (.not. (vphtmp == vpvtmp .and. vshtmp == vsvtmp)) then 
+                 write(6,*)
+                 write(6,*) 'ERROR: Inner Core should be isotropic in the spherical' 
+                 write(6,*) '       symmetric background model'
+                 stop
+              endif
+              
+              xi_ani(ipol,jpol,iel) = one
+            
+              if (thetacoord(ipol, jpol, iel) < theta_split_ICA) then
+                  phi_ani(ipol,jpol,iel) = 1. + 2. * (b_ICA1 + c_ICA1) / (1. + a_ICA1)
+                  eta_ani(ipol,jpol,iel) = &
+                    (vphtmp**2 * (1 + a_ICA1) * (1 + a_ICA1 + b_ICA1) - 2. * vshtmp**2) &
+                    / (vphtmp**2 * (1 + a_ICA1)**2 - 2. * vshtmp**2)
+              else
+                  phi_ani(ipol,jpol,iel) = 1. + 2. * (b_ICA2 + c_ICA2) / (1. + a_ICA2)
+                  eta_ani(ipol,jpol,iel) = &
+                    (vphtmp**2 * (1 + a_ICA2) * (1 + a_ICA2 + b_ICA2) - 2. * vshtmp**2) &
+                    / (vphtmp**2 * (1 + a_ICA2)**2 - 2. * vshtmp**2)
+              endif
+
            else
               ! if not in inner core, put radial anisotropy 
               fa_ani_theta(ipol,jpol,iel) = thetacoord(ipol, jpol, iel)
@@ -2231,7 +2265,8 @@ end subroutine write_vtk_bin_scal
 !-----------------------------------------------------------------------------
 
 !=============================================================================
-subroutine plot_model_vtk(rho,lambda,mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+subroutine plot_model_vtk(rho,lambda,mu, xi_ani, phi_ani, eta_ani, &
+                          fa_ani_theta, fa_ani_phi)
 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
