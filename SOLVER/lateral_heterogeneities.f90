@@ -40,6 +40,11 @@ subroutine compute_heterogeneities(rho,lambda,mu)
 
     call read_param_hetero
 
+!#########################################################################################
+! MvD: seems to be a wrong comment: add_hetero is false if the input file does
+! not exist, see below
+!#########################################################################################
+
     if (add_hetero) then  ! in case the input files don't exist
        ! load and add heterogeneities
        open(unit=20000+mynum,file='Info/hetero_elements_'//appmynum//'.dat')
@@ -47,17 +52,21 @@ subroutine compute_heterogeneities(rho,lambda,mu)
        do ij = 1, num_het
           if (het_format(ij)=='const') then
              ! following old line
-             ! call load_het_const(rho,lambda,mu,ij) ! distinct boxes with constant perturbations
+             ! distinct boxes with constant perturbations
+             ! call load_het_const(rho,lambda,mu,ij) 
              ! since it is easier to treat a box as just another function:
              het_format(ij)='funct'
              het_funct_type(ij)='const'
              call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij)
           elseif (het_format(ij)=='discr') then
-             call load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,ij) ! interpolate discrete model of arbitrary locations/perturbations
+             ! interpolate discrete model of arbitrary locations/perturbations
+             call load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
           elseif (het_format(ij)=='funct') then
-             call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij) ! functional perturbations (sine, gauss, error function)
+             ! functional perturbations (sine, gauss, error function)
+             call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
           elseif (het_format(ij)=='rndm') then 
-             call load_random(rho,lambda,mu,ij) ! add random fluctuations to radial model
+             ! add random fluctuations to radial model
+             call load_random(rho,lambda,mu,ij) 
           else
              write(6,*)'Unknown heterogeneity input file type!!'; stop
           endif
@@ -82,6 +91,12 @@ subroutine read_param_hetero
     implicit none
     integer :: ij, i
     character(len=100) :: junk
+
+
+!#########################################################################################
+! MvD: uggly misusage of the parameter add_hetero as a global variable + set by
+! lpr only
+!#########################################################################################
 
     inquire(file="inparam_hetero", EXIST=file_exists)
     if (.not. file_exists) then 
@@ -258,8 +273,10 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     if (lpr) write(6,*) 'max number of points in one region:', maxpts
     if (lpr) write(6,*) 'total number of points:', nhet_pts
     
-    allocate(rhet2(1:maxpts,1:num_het), thhet2(1:maxpts,1:num_het), phhet2(1:maxpts,1:num_het))
-    allocate(delta_vs2(1:maxpts,1:num_het), delta_vp2(1:maxpts,1:num_het), delta_rho2(1:maxpts,1:num_het))
+    allocate(rhet2(1:maxpts,1:num_het), thhet2(1:maxpts,1:num_het), &
+             phhet2(1:maxpts,1:num_het))
+    allocate(delta_vs2(1:maxpts,1:num_het), delta_vp2(1:maxpts,1:num_het), &
+             delta_rho2(1:maxpts,1:num_het))
     allocate(het_ind(1:maxpts,1:num_het))
 
     rhet2 = -5000.
@@ -304,7 +321,8 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
        if (rot_src) then 
           write(6,*) mynum, 'rotate since source is not beneath north pole'
           call rotate_hetero(num_het_pts_region(i),1,rhet2(1:num_het_pts_region(i),i), &
-                             thhet2(1:num_het_pts_region(i),i),phhet2(1:num_het_pts_region(i),i))
+                             thhet2(1:num_het_pts_region(i),i), &
+                             phhet2(1:num_het_pts_region(i),i))
 
           rmin(i) = minval(rhet2(1:num_het_pts_region(i),i),1)
           rmax(i) = maxval(rhet2(1:num_het_pts_region(i),i),1)
@@ -359,14 +377,18 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                                                   zhet(1:num_het_pts_region(i),i), &
                                                   ind, w, wsum)
                       ! bilinear interpolationx
-                      ! f(x,y) = [x2-x x-x1] [f(11) f(12); f(21) f(22)] [y2-y; y-y1] * 1/(x2-x1)(y2-y1)
-                      vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / rho(ipol,jpol,iel))
+                      ! f(x,y) = [x2-x x-x1] [f(11) f(12); f(21) f(22)] [y2-y; y-y1] * &
+                      !          1/(x2-x1)(y2-y1)
+                      vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
+                                   rho(ipol,jpol,iel))
                       vstmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel))
-                      rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + sum(w * delta_rho2(ind,i)) * wsum)
+                      rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * &
+                                               (1. + sum(w * delta_rho2(ind,i)) * wsum)
                       vptmp = vptmp * (1. + sum(w * delta_vp2(ind,i)) * wsum)
                       vstmp = vstmp * (1. + sum(w * delta_vs2(ind,i)) * wsum)
                       mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
-                      lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp**2 - 2. * vstmp**2)
+                      lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
+                                                  (vptmp**2 - 2. * vstmp**2)
                    enddo
                 enddo
              endif
@@ -603,7 +625,8 @@ subroutine load_random(rho,lambda,mu,hetind)
     ! MvD: Do we still need this?
     !###################################################################### 
 
-    !!$! add randomly to each 2D point : laterally heterogeneous and same random number to vp,vs,rho
+    !!$! add randomly to each 2D point : laterally heterogeneous and same random
+    !!                                   number to vp,vs,rho
     !!$do iel=1,nelem
     !!$   do jpol=0,npol
     !!$      do ipol=0,npol
@@ -700,7 +723,8 @@ subroutine load_random(rho,lambda,mu,hetind)
        do jpol=0, npol
           do ipol=0, npol   
              vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-             vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / rho(ipol,jpol,iel) )
+             vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
+                            rho(ipol,jpol,iel) )
              rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(1) * rand)
              vptmp = vptmp * (1. + delta_vp(1) * rand)
              vstmp = vstmp * (1. + delta_vs(1) * rand)
@@ -769,15 +793,18 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                 gauss_val = dexp(-( decay* ( ((r-r_center_gauss)/halfwidth_r)**2 + &
                      ((th*r_center_gauss-th_center_gauss)/halfwidth_th)**2 )))
                 vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-                vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / rho(ipol,jpol,iel) )
+                vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / &
+                              rho(ipol,jpol,iel) )
                 vstmp = vstmp  * (1. + delta_vs(hetind)*gauss_val)
                 vptmp = vptmp  * (1. + delta_vp(hetind)*gauss_val)
                 if (gauss_val> 0.01) then 
                    icount = icount + 1
                    rhet(icount) = r
                    thhet(icount) = th
-                   rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(hetind)*gauss_val)
-                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp**2 - 2.*vstmp**2)
+                   rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * &
+                                            (1. + delta_rho(hetind)*gauss_val)
+                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
+                                               (vptmp**2 - 2.*vstmp**2)
                    mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vstmp**2)
                 endif
              enddo
@@ -819,11 +846,13 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                      ((th*r_center_gauss-th_center_gauss)/halfwidth_th)**2 )))
                 if (gauss_val>0.9) then
                    vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-                   vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / rho(ipol,jpol,iel) )
+                   vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / &
+                                 rho(ipol,jpol,iel) )
                    vstmp = vstmp  * (1. + delta_vs(hetind))
                    vptmp = vptmp  * (1. + delta_vp(hetind))
                    rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(hetind))
-                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp**2 - 2.*vstmp**2)
+                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
+                                               (vptmp**2 - 2.*vstmp**2)
                    mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vstmp**2)
                    if (gauss_val> 0.9) then 
                       icount = icount + 1
@@ -871,7 +900,8 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
              !rhost = rhost* (1.+delta_rho(hetind))
              if (lpr) then 
                 write(6,*) 'depth-independent variation!'
-                write(6,*) hetind, 'elastic properties set to (vp,vs,rho):', r_het2, vpst, vsst, rhost
+                write(6,*) hetind, 'elastic properties set to (vp,vs,rho):', &
+                           r_het2, vpst, vsst, rhost
              endif
           else
              idom = minloc(abs(discont-r_het1(hetind)),1)
@@ -888,7 +918,8 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
              !rhost = rhost* (1.+delta_rho(hetind))
              if (lpr) then
                 write(6,*) 'depth-independent variation!'
-                write(6,*) hetind, 'elastic properties set to (vp,vs,rho):', r_het1, vpst, vsst, rhost
+                write(6,*) hetind, 'elastic properties set to (vp,vs,rho):', &
+                           r_het1, vpst, vsst, rhost
              endif
           endif
        endif
@@ -898,13 +929,18 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
        if ( grad(hetind) ) then
           ! r_het1: lower boundary of complete thingy, r_het2: upper boundary
           ! r_het2 > grad_r_het: upper boundary of gradient
-          ! r_het2 = r_het2 - grad_width: upper boundary of constant part of heterogeneity, lower boundary of gradient
+          ! r_het2 = r_het2 - grad_width: upper boundary of constant part of
+          !                               heterogeneity, lower boundary of gradient
           grad_r_het = r_het2(hetind)
           r_het2(hetind) = r_het2(hetind) - gradrdep1(hetind) * 1000.
           ! th_het1 > grad_th_het1: left bound of whole heterogeneity
           ! th_het2 > grad_th_het2: right bound of whole heterogeneity
-          ! th_het1 = th_het1 + gradrdep2/pi/r_het1 : left boundary of constant part of het, right boundary of left gradient
-          ! th_het2 = th_het2 - gradrdep2/pi/r_het1 : right boundary of constant part, left boundary of right gradient
+          ! th_het1 = th_het1 + gradrdep2/pi/r_het1 : 
+          !                     left boundary of constant part of het,
+          !                     right boundary of left gradient
+          ! th_het2 = th_het2 - gradrdep2/pi/r_het1 : 
+          !                     right boundary of constant part, 
+          !                     left boundary of right gradient
           grad_th_het1 = th_het1(hetind)
           grad_th_het2 = th_het2(hetind)
           th_het1(hetind) = th_het1(hetind) + gradrdep2(hetind) * 1000. / r_het1(hetind)
@@ -977,7 +1013,8 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
           open(267, file='hetero_function_adaptions.dat')
 
-          if (het_funct_type(hetind)=='gss1d' .or. het_funct_type(hetind)=='spher') open(268,file='hetero_function_sphere.dat')
+          if (het_funct_type(hetind)=='gss1d' .or. het_funct_type(hetind)=='spher') &
+             open(268,file='hetero_function_sphere.dat')
           if (foundit) then
              do jpol=0, npol
                 do ipol=0, npol
@@ -990,10 +1027,13 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                    dth_inner = 0.
                    ! horizontal width of gradient at depth r
                    gradwidth = 0.
+
                    if ( grad(hetind) ) then
                        gradwidth = (gradrdep1(hetind)-gradrdep2(hetind))*1000./r_het1(hetind) / &
-                                   grad_halfwidth_r * ( r - r_het1(hetind) ) + gradrdep2(hetind)*1000./r_het1(hetind)
+                                   grad_halfwidth_r * ( r - r_het1(hetind) ) + &
+                                   gradrdep2(hetind)*1000./r_het1(hetind)
                    endif
+
                    if (het_funct_type(hetind)=='const') then
                       dr_inner = r_het2(hetind) - r
                       if ( th < th_center_gauss ) dth_inner = th - (th_het1(hetind) + gradwidth)
@@ -1004,20 +1044,26 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                          if (th >= th_center_gauss) dth_outer = grad_th_het2 - th
                       endif
                    endif
+
                    if (het_funct_type(hetind)=='sinus') then 
-                      dr_inner = r_het1(hetind) + halfwidth_r * sin( (th-th_het1(hetind))*pi/halfwidth_th ) - r
+                      dr_inner = r_het1(hetind) + &
+                                 halfwidth_r * sin( (th-th_het1(hetind))*pi/halfwidth_th ) - r
                       if ( th < th_center_gauss ) dth_inner = th - th_het1(hetind) - gradwidth + &
                           halfwidth_th * cos( (th-th_het1(hetind))*pi/halfwidth_r )
                       if ( th >= th_center_gauss ) dth_inner = th_het2(hetind) - gradwidth + &
                           halfwidth_th * cos( (th_het2(hetind)-th)*pi/halfwidth_r ) - th 
                       if ( grad(hetind) ) then
-                          dr_outer = r_het1(hetind) + grad_halfwidth_r * sin( (th-grad_th_het1)*pi/grad_halfwidth_th ) - r
-                          if ( th < th_center_gauss ) dth_outer = th - grad_th_het1 + grad_halfwidth_th * &
+                          dr_outer = r_het1(hetind) + grad_halfwidth_r * &
+                                     sin( (th-grad_th_het1)*pi/grad_halfwidth_th ) - r
+                          if ( th < th_center_gauss ) dth_outer = th - grad_th_het1 + &
+                                          grad_halfwidth_th * &
                                           cos( (th-grad_th_het1)*pi/grad_halfwidth_r )
-                          if ( th >= th_center_gauss ) dth_outer = grad_th_het2 + grad_halfwidth_th * &
+                          if ( th >= th_center_gauss ) dth_outer = grad_th_het2 + &
+                                          grad_halfwidth_th * &
                                           cos( (grad_th_het2-th)*pi/grad_halfwidth_r ) - th
                       endif
                    endif
+
                    if (het_funct_type(hetind)=='trian') then
                       dr_inner = r_het1(hetind) + 2*halfwidth_r/halfwidth_th * &
                                  ((th_center_gauss-abs(th-th_center_gauss)) - th_het1(hetind) ) - r
@@ -1030,6 +1076,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                                      ( (th_center_gauss-abs(th-th_center_gauss)) - grad_th_het1)
                       endif
                    endif
+                   
                    if (het_funct_type(hetind)=='inclr') then 
                       dr_inner = r_het1(hetind)+(( halfwidth_r/halfwidth_th ) * &
                                  abs(th-th_het1(hetind))) - r
@@ -1040,6 +1087,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                          dth_outer = th - gradwidth + abs( th - grad_th_het1)
                       endif
                    endif
+                   
                    if (het_funct_type(hetind)=='inclp') then
                       dr_inner = r_het1(hetind)+(( halfwidth_r/halfwidth_th ) * &
                                  abs(th-th_het2(hetind))) - r
@@ -1052,6 +1100,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                                      abs( th - grad_th_het2)
                       endif
                    endif
+                   
                    if (het_funct_type(hetind)=='gss1d') then
                       dr_inner = r_het1(hetind)+halfwidth_r * &
                                  dexp(-( 20.*(th-th_center_gauss)**2/halfwidth_th**2/2)) - r
@@ -1065,6 +1114,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                       endif
                       write(268,*)r,th,dr_inner,dr_outer
                    endif
+                   
                    ! sphere edges with 0.9 of gauss function
                    if (het_funct_type(hetind)=='spher') then
                       dr_inner = dexp(-( ( 0.5*((r-r_center_gauss)**2/halfwidth_r**2/2) + &
@@ -1074,10 +1124,10 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                                     ((th-th_center_gauss)**2/grad_halfwidth_th**2/2) )))
                          if ( dr_outer>=0.9 .and. dr_inner<0.9 ) then
                              dr_outer = dr_outer - dr_inner - 0.9
-                                     !( (dr_inner/ sqrt(halfwidth_r**2 + halfwidth_th**2 )) + &
-                                     !(dr_outer/ sqrt(grad_halfwidth_r**2 + grad_halfwidth_th**2 )) ) * &
-                                     !( sqrt(halfwidth_r**2 + halfwidth_th**2 )/2 + &
-                                     !	sqrt(grad_halfwidth_r**2 + grad_halfwidth_th**2 )/2 )
+                             !( (dr_inner/ sqrt(halfwidth_r**2 + halfwidth_th**2 )) + &
+                             !(dr_outer/ sqrt(grad_halfwidth_r**2 + grad_halfwidth_th**2 )) ) * &
+                             !( sqrt(halfwidth_r**2 + halfwidth_th**2 )/2 + &
+                             !	sqrt(grad_halfwidth_r**2 + grad_halfwidth_th**2 )/2 )
                              dth_outer = dr_outer
                          elseif ( dr_outer>=0.9 .and. dr_inner>=0.9 ) then
                              dr_outer = 0.
@@ -1095,10 +1145,12 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
                    ! quantify gradual change, if r,th within gradient area
                    if ( grad(hetind) ) then !.and. r>=gauss_val .and. r<=grad_val ) then
-                      if ( ( dr_outer>0 .and. dr_inner<0. ) .or. ( dth_outer>=0. .and. dth_inner<0. ) ) then
+                      if ( ( dr_outer>0 .and. dr_inner<0. ) .or. &
+                         ( dth_outer>=0. .and. dth_inner<0. ) ) then
                           ! 2d-distance to gradient/constant boundary
                           val = sqrt( dr_outer**2 + dth_outer**2 ) / &
-                                ( sqrt( dr_outer**2 + dth_outer**2 ) + sqrt( dr_inner**2 + dth_inner**2 ) )
+                                ( sqrt( dr_outer**2 + dth_outer**2 ) + &
+                                sqrt( dr_inner**2 + dth_inner**2 ) )
                           if (het_funct_type(hetind)=='spher') val = dr_outer
                       else
                           val = 1
@@ -1119,24 +1171,26 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                    !rho(ipol,jpol,iel),lambda(ipol,jpol,iel),mu(ipol,jpol,iel)
         
                    if ( dr_outer>=0. .and. dth_outer>=0.) then
-                   ! gradual elastic property changes with depth
                       if ( rdep(hetind) ) then
+                         ! gradual elastic property changes with depth
                          !write(267,*)'depth-dependent variation!'
                          vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-                         vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / rho(ipol,jpol,iel) )
+                         vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / &
+                                       rho(ipol,jpol,iel) )
                          vstmp = vstmp * (1. + val*delta_vs(hetind))
                          vptmp = vptmp * (1. + val*delta_vp(hetind))
                          rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + val*delta_rho(hetind))
                          lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp**2 - 2.*vstmp**2)
                          mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vstmp**2)
-                         ! constant elastic property changes
                       else
+                         ! constant elastic property changes
                          !write(267,*)'depth-independent variation!'
                          rhopost(ipol,jpol,iel) = rhost* (1.+val*delta_rho(hetind))
                          lambdapost(ipol,jpol,iel) = rhost* (1.+val*delta_rho(hetind)) * &
-                         ((vpst* (1.+val*delta_vp(hetind)))**2 &
-                         - 2.*(vsst* (1.+val*delta_vs(hetind)))**2)
-                         mupost(ipol,jpol,iel) = rhost* (1.+val*delta_rho(hetind)) * ((vsst* (1.+val*delta_vs(hetind)))**2)
+                            ((vpst* (1.+val*delta_vp(hetind)))**2 &
+                            - 2.*(vsst* (1.+val*delta_vs(hetind)))**2)
+                         mupost(ipol,jpol,iel) = rhost* (1.+val*delta_rho(hetind)) * &
+                                                 ((vsst* (1.+val*delta_vs(hetind)))**2)
                       endif !rdep
                    ! for both...
                    endif !inside heterogeneity
@@ -1153,10 +1207,10 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
        enddo
        
        !min/max of heterogeneous region
-       rhetmin=minval(rhet(1:icount))
-       rhetmax=maxval(rhet(1:icount))
-       thhetmin=minval(thhet(1:icount))
-       thhetmax=maxval(thhet(1:icount))
+       rhetmin = minval(rhet(1:icount))
+       rhetmax = maxval(rhet(1:icount))
+       thhetmin = minval(thhet(1:icount))
+       thhetmax = maxval(thhet(1:icount))
        
        write(6,*) mynum, 'r het min/max:', rhetmin/1000., rhetmax/1000.
        write(6,*) mynum, 'th het min/max:', thhetmin*180./pi, thhetmax*180./pi
@@ -1217,8 +1271,10 @@ subroutine load_het_const(rho,lambda,mu,hetind)
         foundit = .false.
          ! Edited by E. Vanacore to allow for multiple heterogeneities on 28/10/2011
          ! do loop/arrays added
-         call compute_coordinates(s,z,r1,th1,iel,0,0);   call compute_coordinates(s,z,r2,th2,iel,0,npol)
-         call compute_coordinates(s,z,r3,th3,iel,npol,0);  call compute_coordinates(s,z,r4,th4,iel,npol,npol)
+         call compute_coordinates(s,z,r1,th1,iel,0,0)
+         call compute_coordinates(s,z,r2,th2,iel,0,npol)
+         call compute_coordinates(s,z,r3,th3,iel,npol,0)
+         call compute_coordinates(s,z,r4,th4,iel,npol,npol)
          rmin=1.001*min(r1,r2,r3,r4); thetamin=1.001*min(th1,th2,th3,th4)
          rmax=0.999*max(r1,r2,r3,r4);  thetamax=0.999*max(th1,th2,th3,th4)
          if (rmin>=r_het1(hetind) .and. thetamin>=th_het1(hetind)) then
@@ -1275,11 +1331,14 @@ subroutine plot_hetero_region_vtk(rho,lambda,mu)
 
     write(6,*)'plotting heterogeneous region in pointwise vtk'
 
-    allocate(mesh2(nelem*npol**2,2), vp_all(nelem*npol**2), vs_all(nelem*npol**2), rho_all(nelem*npol**2))
+    allocate(mesh2(nelem*npol**2,2), vp_all(nelem*npol**2), vs_all(nelem*npol**2), &
+             rho_all(nelem*npol**2))
 
     if (lpr) then
-       write(6,*) 'Heterogeneous region rmin,rmax [km]:', rhetmin/1000., rhetmax/1000.
-       write(6,*) 'Heterogeneous region thmin,thmax [deg]:', thhetmin*180./pi, thhetmax*180./pi
+       write(6,*) 'Heterogeneous region rmin,rmax [km]:', &
+                  rhetmin/1000., rhetmax/1000.
+       write(6,*) 'Heterogeneous region thmin,thmax [deg]:', &
+                  thhetmin*180./pi, thhetmax*180./pi
     endif
     icount=0
 
@@ -1291,7 +1350,8 @@ subroutine plot_hetero_region_vtk(rho,lambda,mu)
                 icount = icount + 1
                 mesh2(icount,1) = real(s)
                 mesh2(icount,2) = real(z)
-                vp_all(icount) = sqrt( (lambda(ipol,jpol,iel)+2.*mu(ipol,jpol,iel) ) / rho(ipol,jpol,iel)  )
+                vp_all(icount) = sqrt( (lambda(ipol,jpol,iel)+2.*mu(ipol,jpol,iel) ) / &
+                                       rho(ipol,jpol,iel)  )
                 vs_all(icount) = sqrt( (mu(ipol,jpol,iel) ) / rho(ipol,jpol,iel)  )
                 rho_all(icount) = rho(ipol,jpol,iel) 
                 write(666+mynum,20) r/1000., th*180./pi, 0.0, -vp_all(icount)*0.2, &
