@@ -498,11 +498,8 @@ double precision :: a_ICA2, b_ICA2, c_ICA2
               
               fa_ani_theta(ipol,jpol,iel) = acos(fast_axis_src(3))
 
-              if ((fast_axis_src(1)**2 + fast_axis_src(2)**2) == 0) then
-                arg1 = one
-              else
-                arg1 = fast_axis_src(1) / (fast_axis_src(1)**2 + fast_axis_src(2)**2)**.5
-              endif
+              arg1 = (fast_axis_src(1) + smallval_dble) / &
+                     ((fast_axis_src(1)**2 + fast_axis_src(2)**2)**.5 + smallval_dble)
               
               if (fast_axis_src(2) >= 0.) then
                  fa_ani_phi(ipol,jpol,iel) = acos(arg1)

@@ -58,6 +58,7 @@ module global_par !-------------------------------------------------------------
   double precision, parameter :: fifth = 2.d-1
   double precision, parameter :: epsi = 1d-30
   real, parameter :: epsi_real=1.e-10
+  real(kind=8), parameter     :: smallval_dble = 1e-11
   real, parameter                :: decay=3.5d0
   !real, parameter   :: decay=1.628d0
   real, parameter                :: shift_fact1=1.5d0
@@ -141,18 +142,13 @@ program post_processing_seis
         if (rloc_xyz(3) > 1.) rloc_xyz(3) = 1.
         if (rloc_xyz(3) < -1.) rloc_xyz(3) = -1.
         
-        rloc_xyz(1) = rloc_xyz(1) / (rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)**.5
-        rloc_xyz(2) = rloc_xyz(2) / (rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)**.5
-        rloc_xyz(3) = rloc_xyz(3) / (rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)**.5
+        rloc_xyz = rloc_xyz / (rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)**.5
 
         ! compute colat and lon
         rloc_rtp(2) = acos(rloc_xyz(3))
 
-        if ((rloc_xyz(1)**2 + rloc_xyz(2)**2) == 0) then
-            arg1 = one
-        else
-            arg1 = rloc_xyz(1) / (rloc_xyz(1)**2 + rloc_xyz(2)**2)**.5
-        endif
+        arg1 = (rloc_xyz(1)  + smallval_dble) / &
+               ((rloc_xyz(1)**2 + rloc_xyz(2)**2)**.5 + smallval_dble)
         
         if (arg1 > 1.) arg1 = 1.
         if (arg1 < -1.) arg1 = -1.
@@ -162,6 +158,7 @@ program post_processing_seis
         else
            rloc_rtp(3) = 2.*pi - acos(arg1)
         end if
+
         thr_orig(i) = rloc_rtp(2)
         phr_orig(i) = rloc_rtp(3)
         
