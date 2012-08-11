@@ -1,10 +1,8 @@
 !========================
 module lateral_heterogeneities
 !========================
-!!% rename hetind into something appropriate
 
 use global_parameters
-!use data_mesh
 use data_heterogeneous
 use data_io
 use data_proc
@@ -41,13 +39,15 @@ subroutine compute_heterogeneities(rho,lambda,mu)
     call read_param_hetero
 
 !#########################################################################################
-! MvD: seems to be a wrong comment: add_hetero is false if the input file does
-! not exist, see below
+! MvD: - seems to be a wrong comment: add_hetero is false if the input file does
+!        not exist, see below
+!      - file 20000 is opened but never read/written
+!      - inparam_hetero is not up to date in svn
 !#########################################################################################
 
     if (add_hetero) then  ! in case the input files don't exist
        ! load and add heterogeneities
-       open(unit=20000+mynum,file='Info/hetero_elements_'//appmynum//'.dat')
+       !open(unit=20000+mynum,file='Info/hetero_elements_'//appmynum//'.dat')
        ! loop over heterogeneities and call functions for each separately!
        do ij = 1, num_het
           if (het_format(ij)=='const') then
@@ -55,6 +55,7 @@ subroutine compute_heterogeneities(rho,lambda,mu)
              ! distinct boxes with constant perturbations
              ! call load_het_const(rho,lambda,mu,ij) 
              ! since it is easier to treat a box as just another function:
+             ! MvD: - so we can delete it?
              het_format(ij)='funct'
              het_funct_type(ij)='const'
              call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij)
@@ -71,7 +72,7 @@ subroutine compute_heterogeneities(rho,lambda,mu)
              write(6,*)'Unknown heterogeneity input file type!!'; stop
           endif
        enddo
-       close(20000+mynum)
+       !close(20000+mynum)
 
        !!% write final changes to model!
        mu = mupost
@@ -92,25 +93,29 @@ subroutine read_param_hetero
     integer :: ij, i
     character(len=100) :: junk
 
-
 !#########################################################################################
-! MvD: uggly misusage of the parameter add_hetero as a global variable + set by
-! lpr only
+! MvD: - ugly misuse of the parameter add_hetero as a global variable + set by
+!        lpr only
+!      - better through an error instead and stop the code
 !#########################################################################################
 
     inquire(file="inparam_hetero", EXIST=file_exists)
     if (.not. file_exists) then 
        if (lpr) then 
-          write(6,*)'WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-          write(6,*)'want to add heterogeneity but cannot locate inparam_hetero..... IGNORED.'
-          add_hetero=.false.
+          write(6,*) 'WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+          write(6,*) 'want to add heterogeneity but cannot locate inparam_hetero..... IGNORED.'
+          add_hetero = .false.
        endif
     else 
-       write(6,*)'starting read_param_hetero'
-       open(unit=91,file='inparam_hetero')
+       write(6,*) 'starting read_param_hetero'
+       open(unit=91, file='inparam_hetero')
 
        read(91,*)num_het
-       if (lpr) write(6,*)'adding ',num_het,' regions...'
+       if (lpr) write(6,*) 'adding ', num_het, ' regions...'
+
+!#########################################################################################
+! MvD: - where is the deallocate?
+!#########################################################################################
 
        allocate(het_format(num_het), het_file_discr(num_het), &
                 het_funct_type(num_het), rdep(num_het), grad(num_het), &
@@ -131,15 +136,19 @@ subroutine read_param_hetero
           read(91,*) gradrdep1(ij),gradrdep2(ij)
           read(91,*) r_het1(ij),r_het2(ij)
           read(91,*) th_het1(ij),th_het2(ij)
+!#########################################################################################
+! MvD: - seems like phi is never ever used, so why have it as parameter?
+!#########################################################################################
           read(91,*) ph_het1(ij),ph_het2(ij)
           read(91,*) delta_rho(ij)
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
-
+        
+          ! MvD: remove whitespace? what does inverseshape stand for?
           inverseshape(ij) = index(het_funct_type(ij),'_i')-1
           
           if ( inverseshape(ij) > 0 ) then
-              het_funct_type(ij)=het_funct_type(ij)(1:inverseshape(ij))
+              het_funct_type(ij) = het_funct_type(ij)(1:inverseshape(ij))
           endif
        ! End of edits by E.Vanacore and S. Hempel
        enddo
@@ -156,6 +165,7 @@ subroutine read_param_hetero
        delta_rho = delta_rho / 100.
        delta_vp = delta_vp / 100.
        delta_vs = delta_vs / 100.
+
        if (lpr) then 
           do ij=1,num_het
              if (het_format(ij)=='funct' .or. het_format(ij)=='const') then
@@ -175,19 +185,19 @@ subroutine read_param_hetero
        if (rot_src ) then 
           do i=1,num_het
              write(6,*)'Before rotation r th ph 1:', &
-                r_het1(i),th_het1(i)*180./pi,ph_het1(i)*180./pi
+                r_het1(i), th_het1(i) * 180. / pi, ph_het1(i) * 180. / pi
              write(6,*)'Before rotation r th ph 2:', &
-                r_het2(i),th_het2(i)*180./pi,ph_het2(i)*180./pi
+                r_het2(i), th_het2(i) * 180. / pi, ph_het2(i) * 180. / pi
           enddo
 
-          call rotate_hetero(num_het,1,r_het1,th_het1,ph_het1)
-          call rotate_hetero(num_het,1,r_het2,th_het2,ph_het2)
+          call rotate_hetero(num_het, 1, r_het1, th_het1, ph_het1)
+          call rotate_hetero(num_het, 1, r_het2, th_het2, ph_het2)
 
-          do i=1,num_het
+          do i=1, num_het
              write(6,*)'After rotation r th ph 1:', &
-                r_het1(i),th_het1(i)*180./pi,ph_het1(i)*180./pi
+                r_het1(i), th_het1(i) * 180. / pi, ph_het1(i) * 180. / pi
              write(6,*)'After rotation r th ph 2:', &
-                r_het2(i),th_het2(i)*180./pi,ph_het2(i)*180./pi
+                r_het2(i), th_het2(i) * 180. / pi, ph_het2(i) * 180. / pi
           enddo
        endif
 
@@ -209,7 +219,13 @@ subroutine rotate_hetero(n,m,r,th,ph)
 
     write(6,*) 'need to rotate the heterogeneous domain with the source....'
 
-    open(unit=23,file='Info/hetero_rotations_'//appmynum//'.dat')
+    open(unit=23, file='Info/hetero_rotations_'//appmynum//'.dat')
+
+!#########################################################################################
+! MvD: - double check the computation of phi, does it cover the whole
+!        domain of definition [0, 2pi]?
+!      - rotation only in theta?
+!#########################################################################################
 
     do i=1,m
        do j=1,n
@@ -261,18 +277,28 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
     allocate(num_het_pts_region(1:num_het))
 
-    do i=1,num_het
+    do i=1, num_het
        read(91,*) num_het_pts_region(i)
        if (lpr) write(6,*) 'Region', i, 'has', num_het_pts_region(i), 'points.'
     enddo
 
+!#########################################################################################
+! MvD: - where is the deallocate? > are local varibles deallocated automatically
+!        at the end of the subroutine?
+!#########################################################################################
+
     allocate(rmin(num_het), rmax(num_het), thetamin(num_het), thetamax(num_het))
+
     nhet_pts = sum(num_het_pts_region)
     maxpts = maxval(num_het_pts_region)
 
     if (lpr) write(6,*) 'max number of points in one region:', maxpts
     if (lpr) write(6,*) 'total number of points:', nhet_pts
     
+!#########################################################################################
+! MvD: - where is the deallocate?
+!#########################################################################################
+
     allocate(rhet2(1:maxpts,1:num_het), thhet2(1:maxpts,1:num_het), &
              phhet2(1:maxpts,1:num_het))
     allocate(delta_vs2(1:maxpts,1:num_het), delta_vp2(1:maxpts,1:num_het), &
@@ -343,11 +369,14 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     rhetmin = minval(rmin,1)
     rhetmax = maxval(rmax,1)
     thhetmin = minval(thetamin,1)
-    thhetmax=maxval(thetamax,1)
+    thhetmax = maxval(thetamax,1)
 
     write(6,*) 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
     write(6,*) 'th het min/max:', thhetmin / pi * 180., thhetmax / pi * 180.
 
+!#########################################################################################
+! MvD: - where is the deallocate?
+!#########################################################################################
     ! revert to cylindrical 
     allocate (shet(1:maxpts,1:num_het), zhet(1:maxpts,1:num_het))
     shet = rhet2 * sin(thhet2) 
@@ -404,7 +433,9 @@ end subroutine load_het_discr
 
 !---------------------------------------------------------------------------------------------
 !
+!#########################################################################################
 ! MvD: The following routine is never called, so may we trash it? (08/10/2012)
+!#########################################################################################
 !
 !subroutine find_closest4_points(s0,z0,n,s,z,ind,w,wsum,dr)
 !    implicit none
@@ -568,6 +599,11 @@ subroutine plot_discrete_input(num_het_pts_region)
           icount = icount + 1
           idom = minloc(abs(discont-rhet2(j,i)),1)
 
+!#########################################################################################
+! MvD: - calling velocityi() here causes problems with anisotropy, anway it is
+!        called already in get_model, so why not use the lame parameters here?
+!#########################################################################################
+
           vptmp(icount) = velocity(rhet2(j,i), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
           vptmp(icount) = vptmp(icount) * (1. + delta_vp2(j,i))
 
@@ -727,8 +763,8 @@ subroutine load_random(rho,lambda,mu,hetind)
                             rho(ipol,jpol,iel) )
              rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(1) * rand)
              vptmp = vptmp * (1. + delta_vp(1) * rand)
-             vstmp = vstmp * (1. + delta_vs(1) * rand)
-             lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * ( vptmp**2 - two*vstmp**2 )
+             vstmp = vstmp * (1. + delta_vs(1) * rand)  
+             lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * ( vptmp**2 - two*vstmp**2)
              mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
           enddo
        enddo
@@ -754,22 +790,22 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision :: vptmp, vstmp, rhotmp, s, z, r, th, gauss_val
     double precision :: r_center_gauss, th_center_gauss
     double precision :: s_center_gauss, z_center_gauss, halfwidth_r, halfwidth_th
+
     ! start elastic property values
     double precision :: vpst, vsst, rhost
     integer :: iel, ipol, jpol, icount, hetind, jj, ij, iel_count, idom
     logical :: foundit
     double precision :: r1, r2, r3, r4, th1, th2, th3, th4
     double precision :: rmin, rmax, thetamin, thetamax
+
     ! for gradient
     double precision :: grad_halfwidth_r, grad_halfwidth_th
     double precision :: grad_r_het, grad_th_het2, grad_th_het1
     double precision :: dr_outer, dr_inner, dth_outer, dth_inner
     double precision :: val, dro, dru, grad_th_val, gradwidth, grad_val
 
-
-    if (het_funct_type(hetind)=='gauss') then 
-    ! Gaussian, by Tarje
-       decay=3.5d0
+    if (het_funct_type(hetind) == 'gauss') then 
+       decay = 3.5d0
        r_center_gauss = (r_het1(hetind) + r_het2(hetind)) / 2.
        th_center_gauss = (th_het1(hetind) + th_het2(hetind)) / 2. * r_center_gauss
        halfwidth_r = abs(r_het1(hetind) - r_het2(hetind))
@@ -779,7 +815,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           write(6,*) hetind, 'center r,th gauss [km]:', r_center_gauss / 1000., &
                      th_center_gauss / 1000.
           write(6,*) hetind, 'halfwidth r,th gauss [km]:', halfwidth_r / 1000., &
-                     halfwidth_th/1000.
+                     halfwidth_th / 1000.
        endif
 
        allocate(rhet(nelem*(npol+1)**2), thhet(nelem*(npol+1)**2))
@@ -791,12 +827,13 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
              do ipol=0, npol
                 call compute_coordinates(s,z,r,th,iel,ipol,jpol)
                 gauss_val = dexp(-( decay* ( ((r-r_center_gauss)/halfwidth_r)**2 + &
-                     ((th*r_center_gauss-th_center_gauss)/halfwidth_th)**2 )))
+                                  ((th*r_center_gauss-th_center_gauss)/halfwidth_th)**2 )))
                 vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
                 vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / &
                               rho(ipol,jpol,iel) )
                 vstmp = vstmp  * (1. + delta_vs(hetind)*gauss_val)
                 vptmp = vptmp  * (1. + delta_vp(hetind)*gauss_val)
+
                 if (gauss_val> 0.01) then 
                    icount = icount + 1
                    rhet(icount) = r
@@ -816,12 +853,14 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
        rhetmax = maxval(rhet(1:icount))
        thhetmin = minval(thhet(1:icount))
        thhetmax = maxval(thhet(1:icount))
+
        write(6,*) mynum, 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
        write(6,*) mynum, 'th het min/max:', thhetmin * 180. / pi, thhetmax * 180. / pi
+
        deallocate(rhet,thhet)
 
     elseif (het_funct_type(hetind)=='spher') then 
-    ! Spher
+       ! gaussian with cutoff at 0.9
        decay = 0.5d0
        r_center_gauss = (r_het1(hetind) + r_het2(hetind)) / 2.
        th_center_gauss = (th_het1(hetind) + th_het2(hetind)) / 2. * r_center_gauss
@@ -843,7 +882,8 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
              do ipol=0, npol
                 call compute_coordinates(s,z,r,th,iel,ipol,jpol)
                 gauss_val = dexp(-( decay* ( ((r-r_center_gauss)/halfwidth_r)**2 + &
-                     ((th*r_center_gauss-th_center_gauss)/halfwidth_th)**2 )))
+                                 ((th*r_center_gauss-th_center_gauss)/halfwidth_th)**2 )))
+
                 if (gauss_val>0.9) then
                    vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
                    vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / &
@@ -854,7 +894,8 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                    lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
                                                (vptmp**2 - 2.*vstmp**2)
                    mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vstmp**2)
-                   if (gauss_val> 0.9) then 
+
+                   if (gauss_val > 0.9) then 
                       icount = icount + 1
                       rhet(icount) = r
                       thhet(icount) = th
@@ -869,6 +910,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
        rhetmax = maxval(rhet(1:icount))
        thhetmin = minval(thhet(1:icount))
        thhetmax = maxval(thhet(1:icount))
+
        write(6,*) mynum, 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
        write(6,*) mynum, 'th het min/max:', thhetmin * 180. / pi, thhetmax * 180. / pi
 
@@ -884,7 +926,11 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
        ! if rdep==.false. v_het(z)=const and rho_het(z)=const
        ! determine velocity ontop of heterogeneity and calculate future elastic
        ! properties of the heterogeneity
+
        if (.not. rdep(hetind) ) then
+!#########################################################################################
+! MvD : what does the invershape test here?
+!#########################################################################################
           if ( inverseshape(hetind)>0 ) then
              idom = minloc(abs(discont-r_het2(hetind)),1)
              !do ij = 1, ndisc
@@ -892,6 +938,14 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
              !enddo
              !write(6,*)hetind,'DEBUGGING:',idom,r_het1(hetind),r_het2(hetind)
              !write(6,*)hetind,'discs:',idom,discont(idom),bkgrdmodel,lfbkgrdmodel
+
+!#########################################################################################
+! MvD: - calling velocityi() here causes problems with anisotropy, anway it is
+!        called already in get_model, so why not use the lame parameters here?
+!      - vsst / vpst only used if not gradient, so should be easy to copy from
+!        the gradient version
+!#########################################################################################
+
              vpst = velocity(r_het2(hetind),'v_p',idom,bkgrdmodel,lfbkgrdmodel)
              !vpst = vpst* (1.+ delta_vp(hetind))
              vsst = velocity(r_het2(hetind),'v_s',idom,bkgrdmodel,lfbkgrdmodel)
@@ -1009,6 +1063,8 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           !XXX###################################################################
           ! MvD: - is it smart to open the file inside the loop over all elements?
           !      - the file is never closed!
+          !      - het_funct_type(hetind) can never be 'spher' in this part of
+          !        the code...
           !######################################################################
 
           open(267, file='hetero_function_adaptions.dat')
@@ -1115,13 +1171,18 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                       write(268,*)r,th,dr_inner,dr_outer
                    endif
                    
+          !######################################################################
+          !      - het_funct_type(hetind) can never be 'spher' in this part of
+          !        the code...
+          !      - isnt that implemented above already?
+          !######################################################################
                    ! sphere edges with 0.9 of gauss function
                    if (het_funct_type(hetind)=='spher') then
                       dr_inner = dexp(-( ( 0.5*((r-r_center_gauss)**2/halfwidth_r**2/2) + &
-                                 ((th-th_center_gauss)**2/halfwidth_th**2/2) )))
+                                      ((th-th_center_gauss)**2/halfwidth_th**2/2) )))
                       if ( grad(hetind) ) then
                          dr_outer = dexp(-( ( 0.5*((r-r_center_gauss)**2/grad_halfwidth_r**2/2) + &
-                                    ((th-th_center_gauss)**2/grad_halfwidth_th**2/2) )))
+                                         ((th-th_center_gauss)**2/grad_halfwidth_th**2/2) )))
                          if ( dr_outer>=0.9 .and. dr_inner<0.9 ) then
                              dr_outer = dr_outer - dr_inner - 0.9
                              !( (dr_inner/ sqrt(halfwidth_r**2 + halfwidth_th**2 )) + &
@@ -1161,9 +1222,9 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                       dr_outer = dr_inner
                    endif
 
-                   write(267,*)hetind,icount,&
+                   write(267,*) hetind, icount,&
                    !r,th,gauss_val,dr_outer,dr_inner,dth_outer,dth_inner,val
-                   dth_outer,th,dth_inner,val
+                   dth_outer, th, dth_inner, val
                    !write(267,*)hetind,icount,&
                    !(r-r_het1(hetind))/(r_het2(hetind)-r_het1(hetind)),&
                    !(th-th_het1(hetind))/(th_het2(hetind)-th_het1(hetind)),&
@@ -1175,22 +1236,22 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                          ! gradual elastic property changes with depth
                          !write(267,*)'depth-dependent variation!'
                          vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-                         vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / &
+                         vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
                                        rho(ipol,jpol,iel) )
-                         vstmp = vstmp * (1. + val*delta_vs(hetind))
-                         vptmp = vptmp * (1. + val*delta_vp(hetind))
-                         rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + val*delta_rho(hetind))
-                         lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp**2 - 2.*vstmp**2)
-                         mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vstmp**2)
+                         vstmp = vstmp * (1. + val * delta_vs(hetind))
+                         vptmp = vptmp * (1. + val * delta_vp(hetind))
+                         rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + val * delta_rho(hetind))
+                         lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp**2 - 2. * vstmp**2)
+                         mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
                       else
                          ! constant elastic property changes
                          !write(267,*)'depth-independent variation!'
-                         rhopost(ipol,jpol,iel) = rhost* (1.+val*delta_rho(hetind))
-                         lambdapost(ipol,jpol,iel) = rhost* (1.+val*delta_rho(hetind)) * &
-                            ((vpst* (1.+val*delta_vp(hetind)))**2 &
-                            - 2.*(vsst* (1.+val*delta_vs(hetind)))**2)
-                         mupost(ipol,jpol,iel) = rhost* (1.+val*delta_rho(hetind)) * &
-                                                 ((vsst* (1.+val*delta_vs(hetind)))**2)
+                         rhopost(ipol,jpol,iel) = rhost * (1. + val * delta_rho(hetind))
+                         lambdapost(ipol,jpol,iel) = rhost * (1. + val * delta_rho(hetind)) * &
+                                                     ((vpst * (1. + val * delta_vp(hetind)))**2 &
+                                                      - 2. * (vsst * (1. + val * delta_vs(hetind)))**2)
+                         mupost(ipol,jpol,iel) = rhost * (1. + val * delta_rho(hetind)) * &
+                                                 ((vsst * (1. + val * delta_vs(hetind)))**2)
                       endif !rdep
                    ! for both...
                    endif !inside heterogeneity
@@ -1232,6 +1293,10 @@ subroutine load_het_const(rho,lambda,mu,hetind)
 ! Apart from the gradient and the depth independence, this function would work though
 ! Just change function call in subroutine compute_heterogeneities
 
+!#########################################################################################
+! MvD : do we still need this?
+!#########################################################################################
+
     implicit none 
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
@@ -1264,53 +1329,54 @@ subroutine load_het_const(rho,lambda,mu,hetind)
     !   deallocate(rhet,thhet,phhet)
     !endif
 
-    jj=0
-    !========================
+    jj = 0
+
     do iel=1, nelem
-    !========================
-        foundit = .false.
-         ! Edited by E. Vanacore to allow for multiple heterogeneities on 28/10/2011
-         ! do loop/arrays added
-         call compute_coordinates(s,z,r1,th1,iel,0,0)
-         call compute_coordinates(s,z,r2,th2,iel,0,npol)
-         call compute_coordinates(s,z,r3,th3,iel,npol,0)
-         call compute_coordinates(s,z,r4,th4,iel,npol,npol)
-         rmin=1.001*min(r1,r2,r3,r4); thetamin=1.001*min(th1,th2,th3,th4)
-         rmax=0.999*max(r1,r2,r3,r4);  thetamax=0.999*max(th1,th2,th3,th4)
-         if (rmin>=r_het1(hetind) .and. thetamin>=th_het1(hetind)) then
-            if (rmax<=r_het2(hetind) .and. thetamax<=th_het2(hetind)) then 
-               jj=hetind;   foundit = .true.;   iel_count=iel_count + 1
-               write(6,*)mynum,'found element inside hetero region:',iel,jj
-               write(6,*)mynum,'r,th min',rmin/1000.,thetamin*180./pi
-               write(6,*)mynum,'r,th max',rmax/1000.,thetamax*180./pi
-            endif
-         endif
+       foundit = .false.
+       ! Edited by E. Vanacore to allow for multiple heterogeneities on 28/10/2011
+       ! do loop/arrays added
+       call compute_coordinates(s,z,r1,th1,iel,0,0)
+       call compute_coordinates(s,z,r2,th2,iel,0,npol)
+       call compute_coordinates(s,z,r3,th3,iel,npol,0)
+       call compute_coordinates(s,z,r4,th4,iel,npol,npol)
+       rmin = 1.001 * min(r1,r2,r3,r4)
+       thetamin = 1.001 * min(th1,th2,th3,th4)
+       rmax = 0.999 * max(r1,r2,r3,r4)
+       thetamax = 0.999 * max(th1,th2,th3,th4)
+       if (rmin>=r_het1(hetind) .and. thetamin>=th_het1(hetind)) then
+          if (rmax<=r_het2(hetind) .and. thetamax<=th_het2(hetind)) then 
+             jj = hetind
+             foundit = .true.
+             iel_count = iel_count + 1
+             write(6,*) mynum, 'found element inside hetero region:', iel, jj
+             write(6,*) mynum, 'r,th min', rmin / 1000., thetamin * 180. / pi
+             write(6,*) mynum, 'r,th max', rmax / 1000., thetamax * 180. / pi
+          endif
+       endif
 
-         ! change some elements in a given region (see inparam_hetero
-         ! Edited by E. Vanacore on 28/10/2011 to allow for multiple heterogeneities
-         if (foundit) then
-            do ipol=0,npol
-               do jpol=0,npol
-                  vptmp = dsqrt( ( lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel) ) / rho(ipol,jpol,iel) )
-                  vstmp = dsqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-    !              write(20000+mynum,13)iel_count,iel,rmin/1000.,thetamin*180./pi,rho(ipol,jpol,iel),vptmp,vstmp
-                  rho(ipol,jpol,iel)=rho(ipol,jpol,iel)+delta_rho(jj)*rho(ipol,jpol,iel)
-                  vptmp = vptmp + delta_vp(jj)*vptmp
-                  vstmp = vstmp + delta_vs(jj)*vstmp
-     !             write(20000+mynum,13)ipol,jpol,rmin/1000.,thetamin*180./pi,rho(ipol,jpol,iel),vptmp,vstmp
-                  lambda(ipol,jpol,iel) = rho(ipol,jpol,iel) * &
-                       ( vptmp*vptmp - two*vstmp*vstmp )
-                  mu(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp*vstmp
-               enddo
-            enddo
-         endif
+       ! change some elements in a given region (see inparam_hetero
+       ! Edited by E. Vanacore on 28/10/2011 to allow for multiple heterogeneities
+       if (foundit) then
+          do ipol=0, npol
+             do jpol=0,npol
+                vptmp = dsqrt( ( lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel) ) / rho(ipol,jpol,iel) )
+                vstmp = dsqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
+                !write(20000+mynum,13)iel_count,iel,rmin/1000.,thetamin*180./pi,rho(ipol,jpol,iel),vptmp,vstmp
+                rho(ipol,jpol,iel) = rho(ipol,jpol,iel) + delta_rho(jj) * rho(ipol,jpol,iel)
+                vptmp = vptmp + delta_vp(jj) * vptmp
+                vstmp = vstmp + delta_vs(jj) * vstmp
+                !write(20000+mynum,13)ipol,jpol,rmin/1000.,thetamin*180./pi,rho(ipol,jpol,iel),vptmp,vstmp
+                lambda(ipol,jpol,iel) = rho(ipol,jpol,iel) *  (vptmp**2 - two * vstmp**2)
+                mu(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp**2
+             enddo
+          enddo
+       endif
+    enddo
 
-     !========================
-     enddo
-    !========================
-
-    rhetmin = 0.9*minval(r_het1,1); rhetmax = 1.1*maxval(r_het2,1)
-    thhetmin = 0.9*minval(th_het1,1); thhetmax = 1.1*maxval(th_het2,1)
+    rhetmin = 0.9 * minval(r_het1,1)
+    rhetmax = 1.1 * maxval(r_het2,1)
+    thhetmin = 0.9 * minval(th_het1,1)
+    thhetmax = 1.1 * maxval(th_het2,1)
 
     13 format(i4,i8,5(1pe13.4))
 
@@ -1326,13 +1392,13 @@ subroutine plot_hetero_region_vtk(rho,lambda,mu)
     real, dimension(:), allocatable :: vp_all,vs_all,rho_all
     real, dimension(:,:), allocatable :: mesh2
     character(len=80) :: fname
-    double precision :: s,z,r,th
-    integer :: iel,ipol,jpol,icount
+    double precision :: s, z, r, th
+    integer :: iel, ipol, jpol, icount
 
-    write(6,*)'plotting heterogeneous region in pointwise vtk'
+    write(6,*) 'plotting heterogeneous region in pointwise vtk'
 
-    allocate(mesh2(nelem*npol**2,2), vp_all(nelem*npol**2), vs_all(nelem*npol**2), &
-             rho_all(nelem*npol**2))
+    allocate(mesh2(nelem * npol**2,2), vp_all(nelem * npol**2), vs_all(nelem * npol**2), &
+             rho_all(nelem * npol**2))
 
     if (lpr) then
        write(6,*) 'Heterogeneous region rmin,rmax [km]:', &
@@ -1350,12 +1416,16 @@ subroutine plot_hetero_region_vtk(rho,lambda,mu)
                 icount = icount + 1
                 mesh2(icount,1) = real(s)
                 mesh2(icount,2) = real(z)
-                vp_all(icount) = sqrt( (lambda(ipol,jpol,iel)+2.*mu(ipol,jpol,iel) ) / &
+                vp_all(icount) = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel) ) / &
                                        rho(ipol,jpol,iel)  )
                 vs_all(icount) = sqrt( (mu(ipol,jpol,iel) ) / rho(ipol,jpol,iel)  )
                 rho_all(icount) = rho(ipol,jpol,iel) 
-                write(666+mynum,20) r/1000., th*180./pi, 0.0, -vp_all(icount)*0.2, &
-                                    -vs_all(icount)*0.4, rho(ipol,jpol,iel)*0.3
+!#########################################################################################
+! MvD: - file 666 + mynum is never opened, so how does this work?
+!      - why the multiplication whith 0.2 and 0.3 ??
+!#########################################################################################
+                write(666+mynum,20) r / 1000., th * 180. / pi, 0.0, -vp_all(icount) * 0.2, &
+                                    -vs_all(icount) * 0.4, rho(ipol,jpol,iel) * 0.3
              endif
           enddo
        enddo
@@ -1393,22 +1463,24 @@ subroutine write_VTK_bin_scal_pts(u2,mesh1,rows,filename)
    character (len=50) :: ss; !stream
     
    !points structure
-   do i=2,rows*2,2
-      cell(i-1)=1;
-      cell(i)=(i/2)-1;
+   do i=2, rows*2, 2
+      cell(i-1) = 1
+      cell(i) = (i / 2) - 1
    enddo
-   do i=1,rows
-      cell_type(i)=1
+
+   do i=1, rows
+      cell_type(i) = 1
    enddo
   
-   u1=real(u2)
-   do i=1,rows
-      if (abs(u1(i))<1.e-25) u1(i)=0.0
+   u1 = real(u2)
+   do i=1, rows
+      if (abs(u1(i)) < 1.e-25) u1(i) = 0.0
    enddo
    !write(6789,*)size(u1),maxval(u1),minval(u1)
   
    !write(6,*)'computing vtk file ',trim(filename),' ...'
-   open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+   open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
+        convert='big_endian')
   
    write(100) '# vtk DataFile Version 4.0'//char(10)
    write(100) 'mittico'//char(10)
@@ -1416,21 +1488,25 @@ subroutine write_VTK_bin_scal_pts(u2,mesh1,rows,filename)
    write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
    write(ss,fmt='(A6,I10,A5)') 'POINTS',rows,'float'
    write(100) ss//char(10)
+
    !points
    do i=1,rows
       write(100) mesh1(i,1),mesh1(i,2),0.0
    enddo
    write(100) char(10)
+
    !cell topology
    write(ss,fmt='(A5,2I10)') 'CELLS',rows,rows*2
    write(100) char(10)//ss//char(10)
    write(100) cell
    write(100) char(10)
+
    !cell type
    write(ss,fmt='(A10,2I10)') 'CELL_TYPES',rows
    write(100) char(10)//ss//char(10)
    write(100) cell_type
    write(100) char(10)
+   
    !data
    write(ss,fmt='(A10,I10)') 'CELL_DATA',rows
    write(100) char(10)//ss//char(10)
