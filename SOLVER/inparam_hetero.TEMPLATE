@@ -1,17 +1,27 @@
-funct                 format of heterogeneity reading: const, discr, funct
-'/Users/tnm/CODE/AXISEM/SOLVER/discr_testconst.sph '     fname for discrete het., not used if not discr above
-gauss                  function type: sinus, gauss, error
-###################################################################################################
-2
-3480000., 3650000.    minimum/maximum radius of heterogeneous region [m]
-40., 50.               minimum/maximum colatitude of heterogeneous region [deg] 
-80., 80.               minimum/maximum longitude of heterogeneous region [deg] 
-10.                   delta rho (density perturbation) in % with respect to reference model
--45.                  delta vp (P vel. perturbation) in % with respect to reference model
--45.                  delta vs (S vel. perturbation) in % with respect to reference model
-3480000., 3700000.    minimum/maximum radius of heterogeneous region [m]
-70., 90.               minimum/maximum colatitude of heterogeneous region [deg] 
-80., 80.               minimum/maximum longitude of heterogeneous region [deg] 
-20.                   delta rho (density perturbation) in % with respect to reference model
--15.                  delta vp (P vel. perturbation) in % with respect to reference model
--35.                  delta vs (S vel. perturbation) in % with respect to reference model
+1			number of heterogeneities
+######1###################
+funct			    format of heterogeneity reading: const, discr, funct
+''                  fname for discrete het., not used if not discr above
+sinus			    function type: sinus, gauss, error
+.true.			    variation in elastic properties increasing with depth?
+.false.			    gradient
+300., 0.	       	gradient width on top and at bottom of heterogeneity
+3480000., 5480000.	minimum/maximum radius of heterogeneous region [m]
+10., 170.		    minimum/maximum colatitude of heterogeneous region [deg] 
+80., 80.		    minimum/maximum longitude of heterogeneous region [deg] 
+40.   			    delta rho (density perturbation) in % with respect to reference model
+-45.			    delta vp (P vel. perturbation) in % with respect to reference model
+-45.			    delta vs (S vel. perturbation) in % with respect to reference model
+######2###################
+discr			    format of heterogeneity reading: const, discr, funct
+'/data/wwu.remainder/axisemtest/axisem/SOLVER/discr_testconst.sph '     fname for discrete het., not used if not discr above
+sinus			    function type: sinus, gauss, error
+.true.			    variation in elastic properties increasing with depth?
+.true.			    gradient
+200., 500.	       	gradient width on top and at bottom of heterogeneity
+3480000., 5480000.	minimum/maximum radius of heterogeneous region [m]
+20., 60.		    minimum/maximum colatitude of heterogeneous region [deg] 
+80., 80.		    minimum/maximum longitude of heterogeneous region [deg] 
+-40.			    delta rho (density perturbation) in % with respect to reference model
+-45.			    delta vp (P vel. perturbation) in % with respect to reference model
+-45.			    delta vs (S vel. perturbation) in % with respect to reference model
