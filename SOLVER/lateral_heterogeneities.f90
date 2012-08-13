@@ -54,7 +54,7 @@ subroutine compute_heterogeneities(rho,lambda,mu)
           het_funct_type(ij) = 'const'
           call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij)
        elseif (het_format(ij)=='funct') then
-          ! functional perturbations (sine, gauss, error function)
+          ! functional perturbations (sinus, gauss, trian, gss1d, inclp, inclr, const)
           call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
        elseif (het_format(ij) == 'discr') then
           ! interpolate discrete model of arbitrary locations/perturbations
@@ -174,7 +174,9 @@ subroutine read_param_hetero
 
     ! need to rotate coordinates if source is not along axis (beneath the north pole)
     if (rot_src ) then 
-       do i=1,num_het
+       write(6,*) 'need to rotate the heterogeneous domain with the source....'
+
+       do i=1, num_het
           write(6,*)'Before rotation r th ph 1:', &
              r_het1(i), th_het1(i) * 180. / pi, ph_het1(i) * 180. / pi
           write(6,*)'Before rotation r th ph 2:', &
@@ -204,22 +206,15 @@ subroutine rotate_hetero(n,m,r,th,ph)
 
     integer, intent(in) :: n,m
     double precision,intent(inout), dimension(1:n,1:m) :: r,th,ph
-    double precision :: x_vec(3),x_vec_rot(3),r_r
+    double precision :: x_vec(3),x_vec_rot(3),r_r, arg1
     integer :: i,j
 
-    write(6,*) 'need to rotate the heterogeneous domain with the source....'
-
-    open(unit=23, file='Info/hetero_rotations_'//appmynum//'.dat')
-
 !#########################################################################################
-! MvD: - double check the computation of phi, does it cover the whole
-!        domain of definition [0, 2pi]?
-!      - rotation only in theta?
+! MvD: - why the double index while in the other functions there is only one dimension?
 !#########################################################################################
 
-    do i=1,m
-       do j=1,n
-           write(23,*)'before rot r th ph:',r(j,i)/1000.,th(j,i)*180./pi
+    do i=1, m
+       do j=1, n
            
            x_vec(1) = r(j,i) * dsin(th(j,i)) * dcos(ph(j,i))
            x_vec(2) = r(j,i) * dsin(th(j,i)) * dsin(ph(j,i))
@@ -227,15 +222,22 @@ subroutine rotate_hetero(n,m,r,th,ph)
            
            x_vec_rot = matmul(trans_rot_mat,x_vec)
            
+           write(23,*) x_vec
+           write(23,*) x_vec_rot
+
            r_r = dsqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2 )
-           th(j,i) = dacos(x_vec_rot(3) / ( r_r + smallval_dble) )
-           ph(j,i) = dasin( x_vec_rot(2) / ( r_r * dsin(th(j,i)) + smallval_dble) )
-           
-           write(23,*) 'after rot r th ph:', r_r / 1000., th(j,i) * 180. / pi
+           th(j,i) = dacos((x_vec_rot(3)  + smallval_dble )/ ( r_r + smallval_dble) )
+        
+           arg1 = (x_vec_rot(1)  + smallval_dble) / &
+                  ((x_vec_rot(1)**2 + x_vec_rot(2)**2)**.5 + smallval_dble)
+
+           if (x_vec_rot(2) >= 0.) then
+              ph(j,i) = acos(arg1)
+           else
+              ph(j,i) = 2. * pi - acos(arg1)
+           end if
        enddo
     enddo 
-
-    close(23)
 
 end subroutine rotate_hetero
 !-----------------------------------------------------------------------------------------
