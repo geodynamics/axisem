@@ -82,32 +82,32 @@ double precision, dimension(0:npol,0:npol,nelem) :: stmp,ztmp,v_p,v_s
   if (make_homo ) then 
      if (.not. have_fluid) then
         if (lpr) then
-     write(6,*)'  '
-     write(6,*)'  '
-     write(6,*)'******************** SERIOUS MESSAGE ************************'
-     write(6,*)'**                                                         **'
-     write(6,*)'**   Overriding background model with HOMOGENEOUS SOLID!   **'
-     write(6,*)'**                                                         **'
-     write(6,*)'*************************************************************'
-     write(6,*)'  '
-     write(6,*)'Vp=',vphomo
-     write(6,*)'Vs=',vshomo
-     write(6,*)'rho=',rhohomo
-     write(6,*)'  '
-     endif
+           write(6,*)'  '
+           write(6,*)'  '
+           write(6,*)'******************** SERIOUS MESSAGE ************************'
+           write(6,*)'**                                                         **'
+           write(6,*)'**   Overriding background model with HOMOGENEOUS SOLID!   **'
+           write(6,*)'**                                                         **'
+           write(6,*)'*************************************************************'
+           write(6,*)'  '
+           write(6,*)'Vp  = ', vphomo
+           write(6,*)'Vs  = ', vshomo
+           write(6,*)'rho = ', rhohomo
+           write(6,*)'  '
+        endif
      else
         if (lpr) then
-        write(6,*)
-        write(6,*)'PROBLEM: Want to override with entirely homogeneous model.'
-        write(6,*)'      ...but that is only possible if there is no fluid.'
-        write(6,*)'===> Re-run the mesher for a model without a fluid layer'
-        write(6,*)'     or change make_homo to false in input parameter file.'
-        write(6,*)'NEW ADDITION (NOV 2010):'
-        write(6,*)'Keeping the fluid, putting vphomo but vs=0'
-        write(6,*)'NOTE: This is obviously NOT homogeneous, as core reflections will occur.'
-        write(6,*)
+           write(6,*)
+           write(6,*)'PROBLEM: Want to override with entirely homogeneous model.'
+           write(6,*)'      ...but that is only possible if there is no fluid.'
+           write(6,*)'===> Re-run the mesher for a model without a fluid layer'
+           write(6,*)'     or change make_homo to false in input parameter file.'
+           write(6,*)'NEW ADDITION (NOV 2010):'
+           write(6,*)'Keeping the fluid, putting vphomo but vs=0'
+           write(6,*)'NOTE: This is obviously NOT homogeneous, as core reflections will occur.'
+           write(6,*)
         endif
-!        stop
+        !stop
      endif
   endif
 
@@ -368,12 +368,10 @@ double precision :: a_ICA1, b_ICA1, c_ICA1, theta_split_ICA
 double precision :: a_ICA2, b_ICA2, c_ICA2
 
   if (make_homo ) then 
-     if (lpr) then
-         write(6,*)'  '
-         write(6,*)'ERROR: homogeneous AND anisotropic model does not make '
-         write(6,*)'       sense, check input file'
-         write(6,*)'  '
-     endif
+     write(6,*)'  '
+     write(6,*)'ERROR: homogeneous AND anisotropic model does not make '
+     write(6,*)'       sense, check input file'
+     write(6,*)'  '
      stop
   endif
 
