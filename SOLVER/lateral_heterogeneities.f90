@@ -49,11 +49,7 @@ subroutine compute_heterogeneities(rho,lambda,mu)
     ! loop over heterogeneities and call functions for each separately!
  
     do ij = 1, num_het
-       if (het_format(ij) == 'const') then
-          het_format(ij) = 'funct'
-          het_funct_type(ij) = 'const'
-          call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij)
-       elseif (het_format(ij)=='funct') then
+       if (het_format(ij)=='funct') then
           ! functional perturbations (sinus, gauss, trian, gss1d, inclp, inclr, const)
           call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
        elseif (het_format(ij) == 'discr') then
@@ -72,6 +68,10 @@ subroutine compute_heterogeneities(rho,lambda,mu)
     lambda = lambdapost
     rho = rhopost
  
+!#########################################################################################
+! MvD: - only last heterogeneity is plotted at the moment
+!#########################################################################################
+
     write(6,*)'final model done, now vtk files...'
     call plot_hetero_region_vtk(rho,lambda,mu)
 
@@ -121,20 +121,24 @@ subroutine read_param_hetero
     do ij = 1, num_het
        read(91,*) junk
        read(91,*) het_format(ij)
-       read(91,*) het_file_discr(ij)
-       read(91,*) het_funct_type(ij)
-       read(91,*) rdep(ij)
-       read(91,*) grad(ij)
-       read(91,*) gradrdep1(ij),gradrdep2(ij)
-       read(91,*) r_het1(ij),r_het2(ij)
-       read(91,*) th_het1(ij),th_het2(ij)
+
+       if (het_format(ij) == 'discr') then
+          read(91,*) het_file_discr(ij)
+       else
+          read(91,*) het_funct_type(ij)
+          read(91,*) rdep(ij)
+          read(91,*) grad(ij)
+          read(91,*) gradrdep1(ij),gradrdep2(ij)
+          read(91,*) r_het1(ij),r_het2(ij)
+          read(91,*) th_het1(ij),th_het2(ij)
 !#########################################################################################
 ! MvD: - seems like phi is never ever used, so why have it as parameter?
 !#########################################################################################
-       read(91,*) ph_het1(ij),ph_het2(ij)
-       read(91,*) delta_rho(ij)
-       read(91,*) delta_vp(ij)
-       read(91,*) delta_vs(ij)
+          read(91,*) ph_het1(ij),ph_het2(ij)
+          read(91,*) delta_rho(ij)
+          read(91,*) delta_vp(ij)
+          read(91,*) delta_vs(ij)
+       endif
      
 !#########################################################################################
 ! MvD: - what does inverseshape stand for?
@@ -258,10 +262,6 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision :: s, z, r, th, r1, vptmp, vstmp, r2, r3, r4, th1, th2, th3, th4
     double precision, allocatable, dimension(:) :: rmin, rmax, thetamin, thetamax
     double precision, allocatable, dimension(:,:) :: shet, zhet
-!#########################################################################################
-! MvD: - rhet2 and r_het2 are quite confusing names..
-!#########################################################################################
-
     double precision, allocatable :: rhet2(:,:), thhet2(:,:), phhet2(:,:) 
 
 !#########################################################################################
@@ -286,7 +286,8 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
        if (lpr) write(6,*) 'Region', i, 'has', num_het_pts_region(i), 'points.'
     enddo
 
-    allocate(rmin(num_discr_het), rmax(num_discr_het), thetamin(num_discr_het), thetamax(num_discr_het))
+    allocate(rmin(num_discr_het), rmax(num_discr_het), thetamin(num_discr_het), &
+             thetamax(num_discr_het))
 
     nhet_pts = sum(num_het_pts_region)
     maxpts = maxval(num_het_pts_region)
@@ -359,6 +360,10 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
     ! plot discrete input file in vtk
     call plot_discrete_input(num_discr_het, num_het_pts_region, rhet2, thhet2, phhet2)
+
+!#########################################################################################
+! MvD: - overwrites the region if multiple heterogeneities are used
+!#########################################################################################
 
     ! for plotting discrete points within heterogeneous region
     rhetmin = minval(rmin,1)
@@ -775,6 +780,10 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           enddo
        enddo
        
+!#########################################################################################
+! MvD: - overwrites the region if multiple heterogeneities are used
+!#########################################################################################
+
        !min/max of heterogeneous region
        rhetmin = minval(rhet(1:icount))
        rhetmax = maxval(rhet(1:icount))
@@ -832,6 +841,10 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           enddo
        enddo
        
+!#########################################################################################
+! MvD: - overwrites the region if multiple heterogeneities are used
+!#########################################################################################
+
        !min/max of heterogeneous region
        rhetmin = minval(rhet(1:icount))
        rhetmax = maxval(rhet(1:icount))
@@ -1212,6 +1225,10 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           endif !foundit
        enddo
        
+!#########################################################################################
+! MvD: - overwrites the region if multiple heterogeneities are used
+!#########################################################################################
+
        !min/max of heterogeneous region
        rhetmin = minval(rhet(1:icount))
        rhetmax = maxval(rhet(1:icount))
