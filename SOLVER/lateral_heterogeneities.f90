@@ -269,22 +269,14 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 !#########################################################################################
     write(6,*) 'ERROR:'
     write(6,*) '   discrete input: interpolation wrong so far - work in progress...'
-    !stop
+    stop
 
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 
     open(unit=91, file=trim(het_file_discr(hetind)))
 
-!#########################################################################################
-! MvD: - colides with reading num_het from inparam_hetero
-!#########################################################################################
-    
-    write(6,*) 'bla'
-
     read(91,*) num_discr_het
     
-    write(6,*) 'blubb'
-
     if (lpr) write(6,*) 'Number of distinct-discrete regions:', num_discr_het
 
     allocate(num_het_pts_region(1:num_discr_het))
