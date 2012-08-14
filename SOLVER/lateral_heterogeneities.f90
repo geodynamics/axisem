@@ -257,11 +257,26 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision :: s, z, r, th, r1, vptmp, vstmp, r2, r3, r4, th1, th2, th3, th4
     double precision, allocatable, dimension(:) :: rmin, rmax, thetamin, thetamax
     double precision, allocatable, dimension(:,:) :: shet, zhet
+!#########################################################################################
+! MvD: - rhet2 and r_het2 are quite confusing names..
+!#########################################################################################
 
-    write(6,*) 'discrete input: interpolation wrong so far - work in progress...'
+    double precision, allocatable :: rhet2(:,:), thhet2(:,:), phhet2(:,:) 
+
+!#########################################################################################
+! MvD: - stopping the code here until this is fixed
+!#########################################################################################
+    write(6,*) 'ERROR:'
+    write(6,*) '   discrete input: interpolation wrong so far - work in progress...'
+    stop
+
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 
     open(unit=91, file=trim(het_file_discr(hetind)))
+
+!#########################################################################################
+! MvD: - colides with reading num_het from inparam_hetero
+!#########################################################################################
 
     read(91,*) num_het
 
@@ -295,7 +310,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     delta_vs2 = -5000.
     delta_rho2 = -5000.
     
-    write(6,*)mynum,'read coordinates & medium properties...'
+    write(6,*) mynum, 'read coordinates & medium properties...'
     do i=1, num_het
        do j=1, num_het_pts_region(i)
           read(91,*) rhet2(j,i), thhet2(j,i), phhet2(j,i), delta_vp2(j,i), &
@@ -346,7 +361,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     enddo
 
     ! plot discrete input file in vtk
-    call plot_discrete_input(num_het_pts_region)
+    call plot_discrete_input(num_het_pts_region, rhet2, thhet2, phhet2)
 
     ! for plotting discrete points within heterogeneous region
     rhetmin = minval(rmin,1)
@@ -492,7 +507,7 @@ end subroutine bilinear_interpolation
 
 
 !----------------------------------------------------------------------------------------
-subroutine plot_discrete_input(num_het_pts_region)
+subroutine plot_discrete_input(num_het_pts_region, rhet2, thhet2, phhet2)
 
     use background_models, only : velocity
     use data_mesh, only : discont,bkgrdmodel
@@ -504,6 +519,7 @@ subroutine plot_discrete_input(num_het_pts_region)
     real, allocatable, dimension(:,:) :: meshtmp
     real, allocatable, dimension(:) :: vptmp,vstmp,rhotmp
     character(len=80) :: fname
+    double precision, intent(in) :: rhet2(:,:), thhet2(:,:), phhet2(:,:)
 
     allocate(vptmp(nhet_pts), vstmp(nhet_pts), rhotmp(nhet_pts), meshtmp(nhet_pts,2))
     icount = 0
@@ -703,6 +719,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision :: vptmp, vstmp, rhotmp, s, z, r, th, gauss_val
     double precision :: r_center_gauss, th_center_gauss
     double precision :: s_center_gauss, z_center_gauss, halfwidth_r, halfwidth_th
+    double precision, allocatable :: rhet(:), thhet(:), phhet(:) 
 
     ! start elastic property values
     double precision :: vpst, vsst, rhost
@@ -844,7 +861,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 ! MvD : what does the invershape test here?
 !#########################################################################################
           if ( inverseshape(hetind)>0 ) then
-             idom = minloc(abs(discont-r_het2(hetind)),1)
+             idom = minloc(abs(discont - r_het2(hetind)),1)
              !do ij = 1, ndisc
              !   write(6,*)'discmin?',ij,abs(discont(ij)-r_het2(hetind))
              !enddo
@@ -852,7 +869,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
              !write(6,*)hetind,'discs:',idom,discont(idom),bkgrdmodel,lfbkgrdmodel
 
 !#########################################################################################
-! MvD: - calling velocityi() here causes problems with anisotropy, anway it is
+! MvD: - calling velocity() here causes problems with anisotropy, anway it is
 !        called already in get_model, so why not use the lame parameters here?
 !      - vsst / vpst only used if not gradient, so should be easy to copy from
 !        the gradient version
@@ -870,7 +887,7 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                            r_het2, vpst, vsst, rhost
              endif
           else
-             idom = minloc(abs(discont-r_het1(hetind)),1)
+             idom = minloc(abs(discont - r_het1(hetind)),1)
              !do ij = 1, ndisc
              !   write(6,*)'discmin?',ij,abs(discont(ij)-r_het1(hetind))
              !enddo

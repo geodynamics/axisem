@@ -18,10 +18,6 @@ public
    double precision, allocatable :: delta_rho(:),delta_vp(:),delta_vs(:)
    double precision, allocatable :: delta_rho2(:,:),delta_vp2(:,:),delta_vs2(:,:)
    integer, allocatable :: inverseshape(:)
-!!fanie: only needed in load_het_funct - clean up?
-   double precision, allocatable :: rhet(:),thhet(:),phhet(:) 
-!!fanie: only needed in load_het_discr and plot_discrete_input - clean up?
-   double precision, allocatable :: rhet2(:,:),thhet2(:,:),phhet2(:,:) 
    double precision :: rhetmin,rhetmax,thhetmin,thhetmax
 
 
