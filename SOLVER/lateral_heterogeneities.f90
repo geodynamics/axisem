@@ -254,6 +254,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision :: w(4), wsum, dr(4)
     integer :: ndisctmp, ind(4), maxpts, iel, ipol, jpol, i, j
     integer, allocatable :: num_het_pts_region(:), het_ind(:, :)
+    integer :: num_discr_het
     double precision :: s, z, r, th, r1, vptmp, vstmp, r2, r3, r4, th1, th2, th3, th4
     double precision, allocatable, dimension(:) :: rmin, rmax, thetamin, thetamax
     double precision, allocatable, dimension(:,:) :: shet, zhet
@@ -268,7 +269,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 !#########################################################################################
     write(6,*) 'ERROR:'
     write(6,*) '   discrete input: interpolation wrong so far - work in progress...'
-    stop
+    !stop
 
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 
@@ -277,19 +278,23 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 !#########################################################################################
 ! MvD: - colides with reading num_het from inparam_hetero
 !#########################################################################################
+    
+    write(6,*) 'bla'
 
-    read(91,*) num_het
+    read(91,*) num_discr_het
+    
+    write(6,*) 'blubb'
 
-    if (lpr) write(6,*)'Number of distinct-discrete regions:', num_het
+    if (lpr) write(6,*) 'Number of distinct-discrete regions:', num_discr_het
 
-    allocate(num_het_pts_region(1:num_het))
+    allocate(num_het_pts_region(1:num_discr_het))
 
-    do i=1, num_het
+    do i=1,num_discr_het 
        read(91,*) num_het_pts_region(i)
        if (lpr) write(6,*) 'Region', i, 'has', num_het_pts_region(i), 'points.'
     enddo
 
-    allocate(rmin(num_het), rmax(num_het), thetamin(num_het), thetamax(num_het))
+    allocate(rmin(num_discr_het), rmax(num_discr_het), thetamin(num_discr_het), thetamax(num_discr_het))
 
     nhet_pts = sum(num_het_pts_region)
     maxpts = maxval(num_het_pts_region)
@@ -297,11 +302,11 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     if (lpr) write(6,*) 'max number of points in one region:', maxpts
     if (lpr) write(6,*) 'total number of points:', nhet_pts
     
-    allocate(rhet2(1:maxpts,1:num_het), thhet2(1:maxpts,1:num_het), &
-             phhet2(1:maxpts,1:num_het))
-    allocate(delta_vs2(1:maxpts,1:num_het), delta_vp2(1:maxpts,1:num_het), &
-             delta_rho2(1:maxpts,1:num_het))
-    allocate(het_ind(1:maxpts,1:num_het))
+    allocate(rhet2(1:maxpts,1:num_discr_het), thhet2(1:maxpts,1:num_discr_het), &
+             phhet2(1:maxpts,1:num_discr_het))
+    allocate(delta_vs2(1:maxpts,1:num_discr_het), delta_vp2(1:maxpts,1:num_discr_het), &
+             delta_rho2(1:maxpts,1:num_discr_het))
+    allocate(het_ind(1:maxpts,1:num_discr_het))
 
     rhet2 = -5000.
     thhet2 = -5000.
@@ -311,7 +316,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     delta_rho2 = -5000.
     
     write(6,*) mynum, 'read coordinates & medium properties...'
-    do i=1, num_het
+    do i=1, num_discr_het
        do j=1, num_het_pts_region(i)
           read(91,*) rhet2(j,i), thhet2(j,i), phhet2(j,i), delta_vp2(j,i), &
                      delta_vs2(j,i), delta_rho2(j,i)
@@ -333,7 +338,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     rhet2 = rhet2 * 1000.
 
     ! Rotate coordinates if source is not on axis
-    do i=1, num_het
+    do i=1, num_discr_het
        rmin(i) = minval(rhet2(1:num_het_pts_region(i),i),1)
        rmax(i) = maxval(rhet2(1:num_het_pts_region(i),i),1)
        thetamin(i) = minval(thhet2(1:num_het_pts_region(i),i),1)
@@ -361,7 +366,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     enddo
 
     ! plot discrete input file in vtk
-    call plot_discrete_input(num_het_pts_region, rhet2, thhet2, phhet2)
+    call plot_discrete_input(num_discr_het, num_het_pts_region, rhet2, thhet2, phhet2)
 
     ! for plotting discrete points within heterogeneous region
     rhetmin = minval(rmin,1)
@@ -373,7 +378,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     write(6,*) 'th het min/max:', thhetmin / pi * 180., thhetmax / pi * 180.
 
     ! revert to cylindrical 
-    allocate (shet(1:maxpts,1:num_het), zhet(1:maxpts,1:num_het))
+    allocate (shet(1:maxpts,1:num_discr_het), zhet(1:maxpts,1:num_discr_het))
     shet = rhet2 * sin(thhet2) 
     zhet = rhet2 * cos(thhet2)
 
@@ -387,7 +392,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     do iel=1, nelem
        call compute_coordinates(s, z, r1, th1, iel, npol, npol)
        call compute_coordinates(s, z, r2, th2, iel, 0, 0)
-       do i=1, num_het
+       do i=1, num_discr_het
           r = max(r1,r2)
           th = max(th1,th2)
           if ( r>=rmin(i) .and. th>=thetamin(i) ) then
@@ -507,14 +512,14 @@ end subroutine bilinear_interpolation
 
 
 !----------------------------------------------------------------------------------------
-subroutine plot_discrete_input(num_het_pts_region, rhet2, thhet2, phhet2)
+subroutine plot_discrete_input(num_discr_het, num_het_pts_region, rhet2, thhet2, phhet2)
 
     use background_models, only : velocity
     use data_mesh, only : discont,bkgrdmodel
 
     implicit none
 
-    integer, intent(in) :: num_het_pts_region(num_het)
+    integer, intent(in) :: num_het_pts_region(:), num_discr_het
     integer :: i,j,idom,icount
     real, allocatable, dimension(:,:) :: meshtmp
     real, allocatable, dimension(:) :: vptmp,vstmp,rhotmp
@@ -523,7 +528,7 @@ subroutine plot_discrete_input(num_het_pts_region, rhet2, thhet2, phhet2)
 
     allocate(vptmp(nhet_pts), vstmp(nhet_pts), rhotmp(nhet_pts), meshtmp(nhet_pts,2))
     icount = 0
-    do i=1, num_het
+    do i=1, num_discr_het
        do j=1, num_het_pts_region(i)
           icount = icount + 1
           idom = minloc(abs(discont-rhet2(j,i)),1)
