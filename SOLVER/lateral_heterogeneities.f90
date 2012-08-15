@@ -59,7 +59,8 @@ subroutine compute_heterogeneities(rho,lambda,mu)
           ! add random fluctuations to radial model
           call load_random(rho,lambda,mu,ij) 
        else
-          write(6,*)'Unknown heterogeneity input file type!!'; stop
+          write(6,*)'Unknown heterogeneity input file type!!'
+          stop
        endif
     enddo
  
@@ -197,6 +198,11 @@ subroutine read_param_hetero
              r_het2(i), th_het2(i) * 180. / pi, ph_het2(i) * 180. / pi
        enddo
     endif
+
+    rhetmin = 1.d10
+    rhetmax = 0.d0
+    thhetmin = pi
+    thhetmax = 0.d0
 
     write(6,*)'done with read_param_hetero'
 
@@ -361,15 +367,11 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     ! plot discrete input file in vtk
     call plot_discrete_input(num_discr_het, num_het_pts_region, rhet2, thhet2, phhet2)
 
-!#########################################################################################
-! MvD: - overwrites the region if multiple heterogeneities are used
-!#########################################################################################
-
     ! for plotting discrete points within heterogeneous region
-    rhetmin = minval(rmin,1)
-    rhetmax = maxval(rmax,1)
-    thhetmin = minval(thetamin,1)
-    thhetmax = maxval(thetamax,1)
+    rhetmin = min(minval(rmin,1), rhetmin)
+    rhetmax = max(maxval(rmax,1), rhetmax)
+    thhetmin = min(minval(thetamin,1), thhetmin)
+    thhetmax = max(maxval(thetamax,1), thhetmax)
 
     write(6,*) 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
     write(6,*) 'th het min/max:', thhetmin / pi * 180., thhetmax / pi * 180.
@@ -780,15 +782,11 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           enddo
        enddo
        
-!#########################################################################################
-! MvD: - overwrites the region if multiple heterogeneities are used
-!#########################################################################################
-
        !min/max of heterogeneous region
-       rhetmin = minval(rhet(1:icount))
-       rhetmax = maxval(rhet(1:icount))
-       thhetmin = minval(thhet(1:icount))
-       thhetmax = maxval(thhet(1:icount))
+       rhetmin = min(minval(rhet(1:icount)), rhetmin)
+       rhetmax = max(maxval(rhet(1:icount)), rhetmax)
+       thhetmin = min(minval(thhet(1:icount)), thhetmin)
+       thhetmax = max(maxval(thhet(1:icount)), thhetmax)
 
        write(6,*) mynum, 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
        write(6,*) mynum, 'th het min/max:', thhetmin * 180. / pi, thhetmax * 180. / pi
@@ -841,15 +839,11 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           enddo
        enddo
        
-!#########################################################################################
-! MvD: - overwrites the region if multiple heterogeneities are used
-!#########################################################################################
-
        !min/max of heterogeneous region
-       rhetmin = minval(rhet(1:icount))
-       rhetmax = maxval(rhet(1:icount))
-       thhetmin = minval(thhet(1:icount))
-       thhetmax = maxval(thhet(1:icount))
+       rhetmin = min(minval(rhet(1:icount)), rhetmin)
+       rhetmax = max(maxval(rhet(1:icount)), rhetmax)
+       thhetmin = min(minval(thhet(1:icount)), thhetmin)
+       thhetmax = max(maxval(thhet(1:icount)), thhetmax)
 
        write(6,*) mynum, 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
        write(6,*) mynum, 'th het min/max:', thhetmin * 180. / pi, thhetmax * 180. / pi
@@ -1225,15 +1219,11 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           endif !foundit
        enddo
        
-!#########################################################################################
-! MvD: - overwrites the region if multiple heterogeneities are used
-!#########################################################################################
-
        !min/max of heterogeneous region
-       rhetmin = minval(rhet(1:icount))
-       rhetmax = maxval(rhet(1:icount))
-       thhetmin = minval(thhet(1:icount))
-       thhetmax = maxval(thhet(1:icount))
+       rhetmin = min(minval(rhet(1:icount)), rhetmin)
+       rhetmax = max(maxval(rhet(1:icount)), rhetmax)
+       thhetmin = min(minval(thhet(1:icount)), thhetmin)
+       thhetmax = max(maxval(thhet(1:icount)), thhetmax)
        
        write(6,*) mynum, 'r het min/max:', rhetmin/1000., rhetmax/1000.
        write(6,*) mynum, 'th het min/max:', thhetmin*180./pi, thhetmax*180./pi
