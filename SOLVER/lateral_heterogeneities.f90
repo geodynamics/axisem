@@ -62,16 +62,19 @@ subroutine compute_heterogeneities(rho,lambda,mu)
           write(6,*)'Unknown heterogeneity input file type!!'
           stop
        endif
+
+       if (add_up) then
+          mu = mupost
+          lambda = lambdapost
+          rho = rhopost
+       endif
     enddo
  
-!#########################################################################################
-! MvD: - this way, if heterogeneities overlap, the value of the last in the
-!        input file is used
-!#########################################################################################
-    ! write final changes to model!
-    mu = mupost
-    lambda = lambdapost
-    rho = rhopost
+    if (.not. add_up) then
+       mu = mupost
+       lambda = lambdapost
+       rho = rhopost
+    endif
  
     write(6,*)'final model done, now vtk files...'
     call plot_hetero_region_vtk(rho,lambda,mu)
@@ -110,7 +113,7 @@ subroutine read_param_hetero
     write(6,*) 'starting read_param_hetero'
     open(unit=91, file='inparam_hetero')
 
-    read(91,*)num_het
+    read(91,*) num_het
     if (lpr) write(6,*) 'adding ', num_het, ' regions...'
 
     allocate(het_format(num_het), het_file_discr(num_het), &
@@ -119,6 +122,8 @@ subroutine read_param_hetero
              r_het2(num_het), th_het1(num_het), th_het2(num_het), &
              delta_rho(num_het), delta_vp(num_het), delta_vs(num_het), &
              inverseshape(num_het)) 
+    
+    read(91,*) add_up
 
     do ij = 1, num_het
        read(91,*) junk
@@ -126,6 +131,12 @@ subroutine read_param_hetero
 
        if (het_format(ij) == 'discr') then
           read(91,*) het_file_discr(ij)
+       elseif (het_format(ij) == 'rndm') then
+          read(91,*) r_het1(ij), r_het2(ij)
+          read(91,*) th_het1(ij), th_het2(ij)
+          read(91,*) delta_rho(ij)
+          read(91,*) delta_vp(ij)
+          read(91,*) delta_vs(ij)
        else
           read(91,*) het_funct_type(ij)
           read(91,*) rdep(ij)
@@ -556,7 +567,7 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
     use commun
     use data_mesh, only : naxel, ax_el
-    use utlity, only :  rcoord,zcoord
+    use utlity, only :  thetacoord, rcoord, zcoord
 
     implicit none 
 
@@ -565,7 +576,7 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rhopost, lambdapost, mupost
     integer :: hetind
     real(kind=8) :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
-    real(kind=8) :: vptmp, vstmp, rhotmp, s, z, r, th, gauss_val
+    real(kind=8) :: vptmp, vstmp, rhotmp, th
     integer :: iel, ipol, jpol, icount, i
     real(kind=8) :: rand
     real(kind=8), allocatable :: r_rad(:), rand_rad(:), r_radtmp(:), rand_radtmp(:)
@@ -674,22 +685,26 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     ! add randomly to each radius, i.e. just altering the 1D background model
     do iel=1, nelem
        i = minloc(abs(rcoord(npol/2,npol/2,iel) - r_rad(1:icount)),1)
-       rand = rand_rad(i)
-       do jpol=0, npol
-          do ipol=0, npol   
-             vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-             vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
-                            rho(ipol,jpol,iel) )
+       th = thetacoord(npol/2,npol/2,iel)
 
-             rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(hetind) * rand)
+       if (th >= th_het1(hetind) .and. th <= th_het2(hetind)) then
+          rand = rand_rad(i)
+          do jpol=0, npol
+             do ipol=0, npol   
+                vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
+                vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
+                               rho(ipol,jpol,iel) )
 
-             vptmp = vptmp * (1. + delta_vp(hetind) * rand)
-             vstmp = vstmp * (1. + delta_vs(hetind) * rand)  
+                rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(hetind) * rand)
 
-             lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * ( vptmp**2 - two*vstmp**2)
-             mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
+                vptmp = vptmp * (1. + delta_vp(hetind) * rand)
+                vstmp = vstmp * (1. + delta_vs(hetind) * rand)  
+
+                lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * ( vptmp**2 - two*vstmp**2)
+                mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
+             enddo
           enddo
-       enddo
+       endif
     enddo
 
 end subroutine load_random
