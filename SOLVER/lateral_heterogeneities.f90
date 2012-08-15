@@ -21,7 +21,7 @@ subroutine compute_heterogeneities(rho,lambda,mu)
 
     include 'mesh_params.h'
 
-    integer ::  ij
+    integer :: ij
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
     double precision, dimension(0:npol,0:npol,nelem) :: rhopost,lambdapost,mupost
@@ -57,22 +57,22 @@ subroutine compute_heterogeneities(rho,lambda,mu)
           call load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
        elseif (het_format(ij) == 'rndm') then 
           ! add random fluctuations to radial model
-          call load_random(rho,lambda,mu,ij) 
+          call load_random(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
        else
           write(6,*)'Unknown heterogeneity input file type!!'
           stop
        endif
     enddo
  
-    !!% write final changes to model!
+!#########################################################################################
+! MvD: - this way, if heterogeneities overlap, the value of the last in the
+!        input file is used
+!#########################################################################################
+    ! write final changes to model!
     mu = mupost
     lambda = lambdapost
     rho = rhopost
  
-!#########################################################################################
-! MvD: - only last heterogeneity is plotted at the moment
-!#########################################################################################
-
     write(6,*)'final model done, now vtk files...'
     call plot_hetero_region_vtk(rho,lambda,mu)
 
@@ -101,6 +101,7 @@ subroutine read_param_hetero
     inquire(file="inparam_hetero", EXIST=file_exists)
 
     if (.not. file_exists) then 
+       write(6,*) ''
        write(6,*) 'ERROR: lateral heterogeneity set in inparam, but'
        write(6,*) '       inparam_hetro does not exist!'
        stop
@@ -254,6 +255,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 !#########################################################################################
 ! MvD: - stopping the code here until this is fixed
 !#########################################################################################
+    write(6,*) ''
     write(6,*) 'ERROR:'
     write(6,*) '   discrete input: interpolation wrong so far - work in progress...'
     stop
@@ -550,7 +552,7 @@ end subroutine plot_discrete_input
 
 
 !----------------------------------------------------------------------------------------
-subroutine load_random(rho,lambda,mu,hetind)
+subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
     use commun
     use data_mesh, only : naxel, ax_el
@@ -560,7 +562,7 @@ subroutine load_random(rho,lambda,mu,hetind)
 
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
-    double precision, dimension(0:npol,0:npol,nelem) :: rhopost, lambdapost, mupost
+    double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rhopost, lambdapost, mupost
     integer :: hetind
     real(kind=8) :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
     real(kind=8) :: vptmp, vstmp, rhotmp, s, z, r, th, gauss_val
@@ -662,21 +664,28 @@ subroutine load_random(rho,lambda,mu,hetind)
        call broadcast_dble(r_radtmp(i),0)
        r_rad(i) = r_radtmp(i)
        call broadcast_dble(rand_radtmp(i),0)
-       rand_rad(i) = rand_radtmp(i)
+       if (r_rad(i) >= r_het1(hetind) .and. r_rad(i) <= r_het2(hetind)) then
+          rand_rad(i) = rand_radtmp(i)
+       else
+          rand_rad(i) = 0.
+       endif
     enddo
-
+    
     ! add randomly to each radius, i.e. just altering the 1D background model
     do iel=1, nelem
-       i = minloc(abs(rcoord(npol/2,npol/2,iel)-r_rad(1:icount)),1)
+       i = minloc(abs(rcoord(npol/2,npol/2,iel) - r_rad(1:icount)),1)
        rand = rand_rad(i)
        do jpol=0, npol
           do ipol=0, npol   
              vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
              vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
                             rho(ipol,jpol,iel) )
-             rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(1) * rand)
-             vptmp = vptmp * (1. + delta_vp(1) * rand)
-             vstmp = vstmp * (1. + delta_vs(1) * rand)  
+
+             rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(hetind) * rand)
+
+             vptmp = vptmp * (1. + delta_vp(hetind) * rand)
+             vstmp = vstmp * (1. + delta_vs(hetind) * rand)  
+
              lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * ( vptmp**2 - two*vstmp**2)
              mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
           enddo
