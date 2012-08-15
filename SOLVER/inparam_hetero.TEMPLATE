@@ -2,6 +2,7 @@
 .false.             overlapping heterogeneities: true - add up, false - use last
 ######1###################
 rndm                format of heterogeneity reading: const, discr, funct
+2Dgll               1Delem, 1Dgll, 2Delem, 2Dgll
 3480000., 5480000.  minimum/maximum radius of heterogeneous region [m]
 20., 90 .           minimum/maximum colatitude of heterogeneous region [deg] 
 0.   			    delta rho (density perturbation) in % with respect to reference model

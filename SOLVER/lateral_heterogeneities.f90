@@ -58,9 +58,6 @@ subroutine compute_heterogeneities(rho,lambda,mu)
        elseif (het_format(ij) == 'rndm') then 
           ! add random fluctuations to radial model
           call load_random(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
-       else
-          write(6,*)'Unknown heterogeneity input file type!!'
-          stop
        endif
 
        if (add_up) then
@@ -132,12 +129,13 @@ subroutine read_param_hetero
        if (het_format(ij) == 'discr') then
           read(91,*) het_file_discr(ij)
        elseif (het_format(ij) == 'rndm') then
+          read(91,*) het_funct_type(ij)
           read(91,*) r_het1(ij), r_het2(ij)
           read(91,*) th_het1(ij), th_het2(ij)
           read(91,*) delta_rho(ij)
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
-       else
+       elseif (het_format(ij) == 'funct') then
           read(91,*) het_funct_type(ij)
           read(91,*) rdep(ij)
           read(91,*) grad(ij)
@@ -147,6 +145,9 @@ subroutine read_param_hetero
           read(91,*) delta_rho(ij)
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
+       else
+          write(6,*)'Unknown heterogeneity input type: ', het_format(ij)
+          stop
        endif
      
 !#########################################################################################
@@ -576,136 +577,197 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rhopost, lambdapost, mupost
     integer :: hetind
     real(kind=8) :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
-    real(kind=8) :: vptmp, vstmp, rhotmp, th
+    real(kind=8) :: vptmp, vstmp, rhotmp, th, r
     integer :: iel, ipol, jpol, icount, i
     real(kind=8) :: rand
     real(kind=8), allocatable :: r_rad(:), rand_rad(:), r_radtmp(:), rand_radtmp(:)
 
-    write(6,*)'add random anomalies to structure'
     
-    !###################################################################### 
-    ! MvD: Do we still need this?
-    !###################################################################### 
+    if (het_funct_type(hetind) == '2Dgll') then
+       write(6,*)'add 2D random anomalies to structure'
 
-    !!$! add randomly to each 2D point : laterally heterogeneous and same random
-    !!                                   number to vp,vs,rho
-    !!$do iel=1,nelem
-    !!$   do jpol=0,npol
-    !!$      do ipol=0,npol
-    !!$         call random_number(rand)
-    !!$         rand = 2.*rand-1.
-    !!$         vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-    !!$         vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / rho(ipol,jpol,iel) )
-    !!$         rho(ipol,jpol,iel) = rho(ipol,jpol,iel)* (1. + delta_rho(1)*rand)
-    !!$         vptmp = vptmp*(1. + delta_vp(1)*rand)
-    !!$         vstmp = vstmp*(1. + delta_vs(1)*rand)
-    !!$         lambda(ipol,jpol,iel) = rho(ipol,jpol,iel) *( vptmp*vptmp - two*vstmp*vstmp )
-    !!$         mu(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp*vstmp
-    !!$      enddo
-    !!$   enddo
-    !!$enddo
+       ! add randomly to each 2D point : laterally heterogeneous and same random
+       !                                 number to vp,vs,rho
+       do iel=1, nelem
+          th = thetacoord(npol/2,npol/2,iel)
+          r = rcoord(npol/2,npol/2,iel)
 
-    !!$! go along axis to find the radial profile
-    !!$allocate(r_radtmp(naxel*(npol+1)), rand_radtmp(naxel*(npol+1)))
-    !!$if (mynum==0) then 
-    !!$icount=0
-    !!$do iel=1,naxel
-    !!$   do jpol=0,npol
-    !!$      if (zcoord(0,jpol,ax_el(iel)) >=0.) then 
-    !!$         icount=icount+1
-    !!$         r_radtmp(icount) = rcoord(0,jpol,ax_el(iel))
-    !!$         call random_number(rand)
-    !!$         rand = 2.*rand-1.
-    !!$         rand_radtmp(icount)=rand
-    !!$      endif
-    !!$   enddo
-    !!$enddo
-    !!$endif 
-    !!$
-    !!$! broadcast the profile to all processors
-    !!$call broadcast_int(icount,0)
-    !!$write(6,*)mynum,'number of radii:',icount
-    !!$allocate(r_rad(icount),rand_rad(icount))
-    !!$do i=1,icount
-    !!$   call broadcast_dble(r_radtmp(i),0)
-    !!$   r_rad(i)=r_radtmp(i)
-    !!$   call broadcast_dble(rand_radtmp(i),0)
-    !!$   rand_rad(i)=rand_radtmp(i)
-    !!$enddo
-    !!$
-    !!$! add randomly to each radius, i.e. just altering the 1D background model
-    !!$do iel=1,nelem
-    !!$   do jpol=0,npol
-    !!$      do ipol=0,npol
-    !!$         i = minloc(abs(rcoord(ipol,jpol,iel)-r_rad(1:icount)),1)
-    !!$         rand = rand_rad(i)
-    !!$         vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-    !!$         vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / rho(ipol,jpol,iel) )
-    !!$         rho(ipol,jpol,iel) = rho(ipol,jpol,iel)* (1. + delta_rho(1)*rand)
-    !!$         vptmp = vptmp*(1. + delta_vp(1)*rand)
-    !!$         vstmp = vstmp*(1. + delta_vs(1)*rand)
-    !!$         lambda(ipol,jpol,iel) = rho(ipol,jpol,iel) *( vptmp*vptmp - two*vstmp*vstmp )
-    !!$         mu(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp*vstmp
-    !!$      enddo
-    !!$   enddo
-    !!$enddo
+          if (th >= th_het1(hetind) .and. th <= th_het2(hetind) .and. &
+             r >= r_het1(hetind) .and. r <= r_het2(hetind)) then
 
+             do jpol=0, npol
+                do ipol=0, npol
+                   call random_number(rand)
+                   rand = 2. * rand - 1.
+                   vstmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
+                   vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) /&
+                                rho(ipol,jpol,iel) )
 
-    ! go along axis to find the radial profile, only per element (not GLL point)
-    allocate(r_radtmp(naxel*(npol+1)), rand_radtmp(naxel*(npol+1)))
-    if (mynum==0) then 
-       icount = 0
-       do iel=1, naxel
-          if (zcoord(0,npol/2,ax_el(iel)) >=0.) then 
-             icount = icount + 1
-             r_radtmp(icount) = rcoord(0,npol/2,ax_el(iel))
-             call random_number(rand)
-             rand = 2. * rand - 1.
-             rand_radtmp(icount) = rand
+                   rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel)* (1. + delta_rho(hetind)*rand)
+
+                   vptmp = vptmp*(1. + delta_vp(hetind) * rand)
+                   vstmp = vstmp*(1. + delta_vs(hetind) * rand)
+                   lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (vptmp**2 - two*vstmp**2)
+                   mupost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp**2
+                enddo
+             enddo
           endif
        enddo
-    endif 
 
-    ! broadcast the profile to all processors
-    call broadcast_int(icount,0)
-    write(6,*) mynum, 'number of radii:', icount
+    elseif (het_funct_type(hetind) == '2Delem') then
+       write(6,*)'add 2D random anomalies to structure'
 
-    allocate(r_rad(icount), rand_rad(icount))
-    do i=1, icount
-       call broadcast_dble(r_radtmp(i),0)
-       r_rad(i) = r_radtmp(i)
-       call broadcast_dble(rand_radtmp(i),0)
-       if (r_rad(i) >= r_het1(hetind) .and. r_rad(i) <= r_het2(hetind)) then
-          rand_rad(i) = rand_radtmp(i)
-       else
-          rand_rad(i) = 0.
-       endif
-    enddo
-    
-    ! add randomly to each radius, i.e. just altering the 1D background model
-    do iel=1, nelem
-       i = minloc(abs(rcoord(npol/2,npol/2,iel) - r_rad(1:icount)),1)
-       th = thetacoord(npol/2,npol/2,iel)
+       ! add randomly to each 2D point : laterally heterogeneous and same random
+       !                                 number to vp,vs,rho
+       do iel=1, nelem
+          th = thetacoord(npol/2,npol/2,iel)
+          r = rcoord(npol/2,npol/2,iel)
 
-       if (th >= th_het1(hetind) .and. th <= th_het2(hetind)) then
-          rand = rand_rad(i)
-          do jpol=0, npol
-             do ipol=0, npol   
-                vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-                vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
-                               rho(ipol,jpol,iel) )
+          if (th >= th_het1(hetind) .and. th <= th_het2(hetind) .and. &
+             r >= r_het1(hetind) .and. r <= r_het2(hetind)) then
 
-                rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(hetind) * rand)
+             call random_number(rand)
+             rand = 2. * rand - 1.
 
-                vptmp = vptmp * (1. + delta_vp(hetind) * rand)
-                vstmp = vstmp * (1. + delta_vs(hetind) * rand)  
+             do jpol=0, npol
+                do ipol=0, npol
+                   vstmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
+                   vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) /&
+                                rho(ipol,jpol,iel) )
 
-                lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * ( vptmp**2 - two*vstmp**2)
-                mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
+                   rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel)* (1. + delta_rho(hetind)*rand)
+
+                   vptmp = vptmp*(1. + delta_vp(hetind) * rand)
+                   vstmp = vstmp*(1. + delta_vs(hetind) * rand)
+                   lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (vptmp**2 - two*vstmp**2)
+                   mupost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp**2
+                enddo
+             enddo
+          endif
+       enddo
+
+    elseif (het_funct_type(hetind) == '1Dgll') then
+       write(6,*)'add 1D random anomalies to structure per GLL point'
+       ! go along axis to find the radial profile
+       allocate(r_radtmp(naxel*(npol+1)), rand_radtmp(naxel*(npol+1)))
+       if (mynum == 0) then 
+          icount = 0
+          do iel=1, naxel
+             do jpol=0, npol
+                if (zcoord(0,jpol,ax_el(iel)) >= 0.) then 
+                   icount = icount + 1
+                   r_radtmp(icount) = rcoord(0,jpol,ax_el(iel))
+                   call random_number(rand)
+                   rand = 2. * rand - 1.
+                   rand_radtmp(icount) = rand
+                endif
              enddo
           enddo
-       endif
-    enddo
+       endif 
+       
+       ! broadcast the profile to all processors
+       call broadcast_int(icount,0)
+       write(6,*) mynum, 'number of radii: ', icount
+       allocate(r_rad(icount),rand_rad(icount))
+       do i=1,icount
+          call broadcast_dble(r_radtmp(i),0)
+          r_rad(i) = r_radtmp(i)
+          call broadcast_dble(rand_radtmp(i),0)
+          rand_rad(i) = rand_radtmp(i)
+       enddo
+       
+       ! add randomly to each radius, i.e. just altering the 1D background model
+       do iel=1, nelem
+          do jpol=0, npol
+             do ipol=0,npol
+                th = thetacoord(ipol,jpol,iel)
+                
+                i = minloc(abs(rcoord(ipol,jpol,iel)-r_rad(1:icount)),1)
+
+                if (th >= th_het1(hetind) .and. th <= th_het2(hetind) .and. &
+                   r_rad(i) >= r_het1(hetind) .and. r_rad(i) <= r_het2(hetind)) then
+
+                   rand = rand_rad(i)
+                   vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
+                   vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / rho(ipol,jpol,iel) )
+                   rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel)* (1. + delta_rho(hetind)*rand)
+
+                   vptmp = vptmp*(1. + delta_vp(hetind)*rand)
+                   vstmp = vstmp*(1. + delta_vs(hetind)*rand)
+
+                   lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) *( vptmp*vptmp - two*vstmp*vstmp )
+                   mupost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp*vstmp
+                endif
+             enddo
+          enddo
+       enddo
+
+    elseif (het_funct_type(hetind) == '1Delem') then
+       write(6,*)'add 1D random anomalies to structure per element'
+
+       ! go along axis to find the radial profile, only per element (not GLL point)
+       allocate(r_radtmp(naxel*(npol+1)), rand_radtmp(naxel*(npol+1)))
+       if (mynum==0) then 
+          icount = 0
+          do iel=1, naxel
+             if (zcoord(0,npol/2,ax_el(iel)) >=0.) then 
+                icount = icount + 1
+                r_radtmp(icount) = rcoord(0,npol/2,ax_el(iel))
+                call random_number(rand)
+                rand = 2. * rand - 1.
+                rand_radtmp(icount) = rand
+             endif
+          enddo
+       endif 
+
+       ! broadcast the profile to all processors
+       call broadcast_int(icount,0)
+       write(6,*) mynum, 'number of radii:', icount
+
+       allocate(r_rad(icount), rand_rad(icount))
+       do i=1, icount
+          call broadcast_dble(r_radtmp(i),0)
+          r_rad(i) = r_radtmp(i)
+          call broadcast_dble(rand_radtmp(i),0)
+          rand_rad(i) = rand_radtmp(i)
+       enddo
+       
+       ! add randomly to each radius, i.e. just altering the 1D background model
+       do iel=1, nelem
+          i = minloc(abs(rcoord(npol/2,npol/2,iel) - r_rad(1:icount)),1)
+          th = thetacoord(npol/2,npol/2,iel)
+
+          if (th >= th_het1(hetind) .and. th <= th_het2(hetind) .and. &
+             r_rad(i) >= r_het1(hetind) .and. r_rad(i) <= r_het2(hetind)) then
+
+             rand = rand_rad(i)
+             do jpol=0, npol
+                do ipol=0, npol   
+                   vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
+                   vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
+                                  rho(ipol,jpol,iel) )
+
+                   rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(hetind) * rand)
+
+                   vptmp = vptmp * (1. + delta_vp(hetind) * rand)
+                   vstmp = vstmp * (1. + delta_vs(hetind) * rand)  
+
+                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * ( vptmp**2 - two*vstmp**2)
+                   mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
+                enddo
+             enddo
+          endif
+       enddo
+    else
+        write(6,*) 'ERROR: bad parameter: ', het_funct_type(hetind)
+        stop
+    endif
+
+    !min/max of heterogeneous region
+    rhetmin = min(r_het1(hetind), rhetmin)
+    rhetmax = max(r_het2(hetind), rhetmax)
+    thhetmin = min(th_het1(hetind), thhetmin)
+    thhetmax = max(th_het2(hetind), thhetmax)
 
 end subroutine load_random
 !-----------------------------------------------------------------------------------------
