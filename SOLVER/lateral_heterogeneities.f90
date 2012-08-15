@@ -77,8 +77,8 @@ subroutine compute_heterogeneities(rho,lambda,mu)
     call plot_hetero_region_vtk(rho,lambda,mu)
 
     deallocate(het_format, het_file_discr, het_funct_type, rdep, grad, &
-               gradrdep1, gradrdep2, r_het1, r_het2, th_het1, th_het2, ph_het1, &
-               ph_het2, delta_rho, delta_vp, delta_vs, inverseshape) 
+               gradrdep1, gradrdep2, r_het1, r_het2, th_het1, th_het2, &
+               delta_rho, delta_vp, delta_vs, inverseshape) 
 
     if (lpr) then
        write(6,*)
@@ -116,8 +116,8 @@ subroutine read_param_hetero
              het_funct_type(num_het), rdep(num_het), grad(num_het), &
              gradrdep1(num_het), gradrdep2(num_het), r_het1(num_het), &
              r_het2(num_het), th_het1(num_het), th_het2(num_het), &
-             ph_het1(num_het), ph_het2(num_het), delta_rho(num_het), &
-             delta_vp(num_het), delta_vs(num_het), inverseshape(num_het)) 
+             delta_rho(num_het), delta_vp(num_het), delta_vs(num_het), &
+             inverseshape(num_het)) 
 
     do ij = 1, num_het
        read(91,*) junk
@@ -132,10 +132,6 @@ subroutine read_param_hetero
           read(91,*) gradrdep1(ij),gradrdep2(ij)
           read(91,*) r_het1(ij),r_het2(ij)
           read(91,*) th_het1(ij),th_het2(ij)
-!#########################################################################################
-! MvD: - seems like phi is never ever used, so why have it as parameter?
-!#########################################################################################
-          read(91,*) ph_het1(ij),ph_het2(ij)
           read(91,*) delta_rho(ij)
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
@@ -154,8 +150,6 @@ subroutine read_param_hetero
     ! degree to radians
     th_het1 = th_het1 / 180. * pi
     th_het2 = th_het2 / 180. * pi
-    ph_het1 = ph_het1 / 180. * pi
-    ph_het2 = ph_het2 / 180. * pi
 
     ! percent to decimal
     delta_rho = delta_rho / 100.
@@ -183,19 +177,19 @@ subroutine read_param_hetero
 
        do i=1, num_het
           write(6,*)'Before rotation r th ph 1:', &
-             r_het1(i), th_het1(i) * 180. / pi, ph_het1(i) * 180. / pi
+             r_het1(i), th_het1(i) * 180. / pi
           write(6,*)'Before rotation r th ph 2:', &
-             r_het2(i), th_het2(i) * 180. / pi, ph_het2(i) * 180. / pi
+             r_het2(i), th_het2(i) * 180. / pi
        enddo
 
-       call rotate_hetero(num_het, 1, r_het1, th_het1, ph_het1)
-       call rotate_hetero(num_het, 1, r_het2, th_het2, ph_het2)
+       call rotate_hetero(num_het, r_het1, th_het1)
+       call rotate_hetero(num_het, r_het2, th_het2)
 
        do i=1, num_het
           write(6,*)'After rotation r th ph 1:', &
-             r_het1(i), th_het1(i) * 180. / pi, ph_het1(i) * 180. / pi
+             r_het1(i), th_het1(i) * 180. / pi
           write(6,*)'After rotation r th ph 2:', &
-             r_het2(i), th_het2(i) * 180. / pi, ph_het2(i) * 180. / pi
+             r_het2(i), th_het2(i) * 180. / pi
        enddo
     endif
 
@@ -211,43 +205,30 @@ end subroutine read_param_hetero
 
 
 !-----------------------------------------------------------------------------------------
-subroutine rotate_hetero(n,m,r,th,ph)
+subroutine rotate_hetero(n,r,th)
     implicit none
 
-    integer, intent(in) :: n,m
-    double precision,intent(inout), dimension(1:n,1:m) :: r,th,ph
+    integer, intent(in) :: n
+    double precision,intent(inout), dimension(1:n) :: r,th
     double precision :: x_vec(3),x_vec_rot(3),r_r, arg1
-    integer :: i,j
+    integer :: j
 
-!#########################################################################################
-! MvD: - why the double index while in the other functions there is only one dimension?
-!#########################################################################################
-
-    do i=1, m
-       do j=1, n
-           
-           x_vec(1) = r(j,i) * dsin(th(j,i)) * dcos(ph(j,i))
-           x_vec(2) = r(j,i) * dsin(th(j,i)) * dsin(ph(j,i))
-           x_vec(3) = r(j,i) * dcos(th(j,i)) 
-           
-           x_vec_rot = matmul(trans_rot_mat,x_vec)
-           
-           write(23,*) x_vec
-           write(23,*) x_vec_rot
-
-           r_r = dsqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2 )
-           th(j,i) = dacos((x_vec_rot(3)  + smallval_dble )/ ( r_r + smallval_dble) )
+    do j=1, n
+        x_vec(1) = r(j) * dsin(th(j))
+        x_vec(2) = 0.d0
+        x_vec(3) = r(j) * dcos(th(j)) 
         
-           arg1 = (x_vec_rot(1)  + smallval_dble) / &
-                  ((x_vec_rot(1)**2 + x_vec_rot(2)**2)**.5 + smallval_dble)
-
-           if (x_vec_rot(2) >= 0.) then
-              ph(j,i) = acos(arg1)
-           else
-              ph(j,i) = 2. * pi - acos(arg1)
-           end if
-       enddo
-    enddo 
+        x_vec_rot = matmul(trans_rot_mat,x_vec)
+        
+        write(23,*) x_vec
+        write(23,*) x_vec_rot
+ 
+        r_r = dsqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2 )
+        th(j) = dacos((x_vec_rot(3)  + smallval_dble )/ ( r_r + smallval_dble) )
+     
+        arg1 = (x_vec_rot(1)  + smallval_dble) / &
+               ((x_vec_rot(1)**2 + x_vec_rot(2)**2)**.5 + smallval_dble)
+    enddo
 
 end subroutine rotate_hetero
 !-----------------------------------------------------------------------------------------
@@ -348,9 +329,8 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
        if (rot_src) then 
           write(6,*) mynum, 'rotate since source is not beneath north pole'
-          call rotate_hetero(num_het_pts_region(i),1,rhet2(1:num_het_pts_region(i),i), &
-                             thhet2(1:num_het_pts_region(i),i), &
-                             phhet2(1:num_het_pts_region(i),i))
+          call rotate_hetero(num_het_pts_region(i), rhet2(1:num_het_pts_region(i),i), &
+                             thhet2(1:num_het_pts_region(i),i))
 
           rmin(i) = minval(rhet2(1:num_het_pts_region(i),i),1)
           rmax(i) = maxval(rhet2(1:num_het_pts_region(i),i),1)
