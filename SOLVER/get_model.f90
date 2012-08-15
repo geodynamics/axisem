@@ -430,39 +430,6 @@ double precision :: a_ICA2, b_ICA2, c_ICA2
   modelstring = bkgrdmodel
 
 
-!**********************************************************************
-! <Inner Core Anisotropy>
-!
-! Hard Coded Parameters for Now
-!**********************************************************************
-  
-  !define fast axis in the cartesian system with norpole at (0,0,1)
-  fast_axis_np(1) = zero
-  fast_axis_np(2) = zero
-  fast_axis_np(3) = one
-
-  a_ICA1 = 0.0 !-0.0028
-  b_ICA1 = 0.0 !-0.0185
-  c_ICA1 = 0.0 !0.0537
-  
-  a_ICA2 = 0.0
-  b_ICA2 = 0.0
-  c_ICA2 = 0.0
-  
-  theta_split_ICA = 60. / 180. * pi
-  
-  if (rot_src) then 
-    fast_axis_src = matmul(transpose(rot_mat), fast_axis_np)
-  else
-    fast_axis_src = fast_axis_np
-  endif
-        
-  if (lpr) then
-      write(6,*) 'Inner Core With Anisotropy !!!'
-      write(6,*) '  Fast Axis        :', fast_axis_np
-      write(6,*) '  Fast Axis rotated:', fast_axis_src 
-  endif
-
   iel_count=0
 !========================
   do iel=1,nelem
@@ -482,55 +449,18 @@ double precision :: a_ICA2, b_ICA2, c_ICA2
            
            lambda(ipol,jpol,iel) = rho(ipol,jpol,iel) * (vphtmp**2 - two*vshtmp**2)
            mu(ipol,jpol,iel) = rho(ipol,jpol,iel) * vshtmp**2
+
            if (vsvtmp > (smallval_sngl * vphtmp)) then
               xi_ani(ipol,jpol,iel) = vshtmp**2 / vsvtmp**2
            else
               xi_ani(ipol,jpol,iel) = one
            endif
+           
            phi_ani(ipol,jpol,iel) = vpvtmp**2 / vphtmp**2
             
-           ! If in inner core: 
-           if (iidom == ndisc) then
-              ! compute theta and phi of the fast axis (phi is not well defined
-              ! at the northpole)
-              
-              fa_ani_theta(ipol,jpol,iel) = acos(fast_axis_src(3))
-
-              arg1 = (fast_axis_src(1) + smallval_dble) / &
-                     ((fast_axis_src(1)**2 + fast_axis_src(2)**2)**.5 + smallval_dble)
-              
-              if (fast_axis_src(2) >= 0.) then
-                 fa_ani_phi(ipol,jpol,iel) = acos(arg1)
-              else
-                 fa_ani_phi(ipol,jpol,iel) = 2.*pi - acos(arg1)
-              end if
-
-              if (.not. (vphtmp == vpvtmp .and. vshtmp == vsvtmp)) then 
-                 write(6,*)
-                 write(6,*) 'ERROR: Inner Core should be isotropic in the spherical' 
-                 write(6,*) '       symmetric background model'
-                 stop
-              endif
-              
-              xi_ani(ipol,jpol,iel) = one
-            
-              if (thetacoord(ipol, jpol, iel) < theta_split_ICA) then
-                  phi_ani(ipol,jpol,iel) = 1. + 2. * (b_ICA1 + c_ICA1) / (1. + a_ICA1)
-                  eta_ani(ipol,jpol,iel) = &
-                    (vphtmp**2 * (1 + a_ICA1) * (1 + a_ICA1 + b_ICA1) - 2. * vshtmp**2) &
-                    / (vphtmp**2 * (1 + a_ICA1)**2 - 2. * vshtmp**2)
-              else
-                  phi_ani(ipol,jpol,iel) = 1. + 2. * (b_ICA2 + c_ICA2) / (1. + a_ICA2)
-                  eta_ani(ipol,jpol,iel) = &
-                    (vphtmp**2 * (1 + a_ICA2) * (1 + a_ICA2 + b_ICA2) - 2. * vshtmp**2) &
-                    / (vphtmp**2 * (1 + a_ICA2)**2 - 2. * vshtmp**2)
-              endif
-
-           else
-              ! if not in inner core, put radial anisotropy 
-              fa_ani_theta(ipol,jpol,iel) = thetacoord(ipol, jpol, iel)
-              fa_ani_phi(ipol,jpol,iel) = 0.
-           endif
+           ! radial anisotropy (otherwise lateral heterogeneity!)
+           fa_ani_theta(ipol,jpol,iel) = thetacoord(ipol, jpol, iel)
+           fa_ani_phi(ipol,jpol,iel) = 0.
 
            if (save_large_tests) &
                 write(5454,12) r, iidom, vphtmp, vpvtmp, vshtmp, vsvtmp, &
@@ -593,17 +523,12 @@ double precision :: a_ICA2, b_ICA2, c_ICA2
 
 ! XXX check if this works (it might!)
 ! TNM Oct 29: addition of heterogeneities in separate routine
-! if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
+  if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
 
 ! plot final velocity model in vtk
  write(6,*)mynum,'plotting vtks for the model properties....'
 
  call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
-
-
-!**********************************************************************
-! <\Inner Core Anisotropy>
-!**********************************************************************
 
 !@@@@@@@@@@@@@@@@@
 ! Some tests....
@@ -2307,7 +2232,7 @@ do iel=1,nelem
 
    do i=1,4
 
-      rho1(ct+1)  =  rho(0,0,iel)
+      rho1(ct+1) = rho(0,0,iel)
       vp1(ct+1) = sqrt( (lambda(0,0,iel)+2.*mu(0,0,iel) ) / rho1(ct+1)  )
       vs1(ct+1) = sqrt( mu(0,0,iel)  / rho1(ct+1)  )
 
@@ -2321,7 +2246,7 @@ do iel=1,nelem
         fa_ani_phi1(ct+1) = fa_ani_phi(0,0,iel)
       endif
 
-      rho1(ct+2)  =  rho(npol,0,iel)
+      rho1(ct+2) = rho(npol,0,iel)
       vp1(ct+2) = sqrt( (lambda(npol,0,iel)+2.*mu(npol,0,iel) ) / rho1(ct+2)  )
       vs1(ct+2) = sqrt( mu(npol,0,iel)  / rho1(ct+2)  )
 
@@ -2335,9 +2260,9 @@ do iel=1,nelem
         fa_ani_phi1(ct+2) = fa_ani_phi(npol,0,iel)
       endif
 
-      rho1(ct+3)  =  rho(npol,npol,iel)
-      vp1(ct+3) = sqrt( (lambda(npol,npol,iel)+2.*mu(npol,npol,iel) ) / rho1(ct+2)  )
-      vs1(ct+3) = sqrt( mu(npol,npol,iel)  / rho1(ct+2)  )
+      rho1(ct+3) = rho(npol,npol,iel)
+      vp1(ct+3) = sqrt( (lambda(npol,npol,iel)+2.*mu(npol,npol,iel) ) / rho1(ct+3)  )
+      vs1(ct+3) = sqrt( mu(npol,npol,iel)  / rho1(ct+3)  )
 
       if (plot_ani) then
         vpv1(ct+3) = sqrt(phi_ani(npol,npol,iel)) * vp1(ct+3)
@@ -2349,12 +2274,12 @@ do iel=1,nelem
         fa_ani_phi1(ct+3) = fa_ani_phi(npol,npol,iel)
       endif
 
-      rho1(ct+4)  =  rho(0,npol,iel)
-      vp1(ct+4) = sqrt( (lambda(0,npol,iel)+2.*mu(0,npol,iel) ) / rho1(ct+2)  )
-      vs1(ct+4) = sqrt( mu(0,npol,iel)  / rho1(ct+2)  )
+      rho1(ct+4) = rho(0,npol,iel)
+      vp1(ct+4) = sqrt( (lambda(0,npol,iel)+2.*mu(0,npol,iel) ) / rho1(ct+4)  )
+      vs1(ct+4) = sqrt( mu(0,npol,iel)  / rho1(ct+4)  )
 
       if (plot_ani) then
-        vpv1(ct+4) = sqrt(phi_ani(0,npol,iel)) * vp1(ct+3)
+        vpv1(ct+4) = sqrt(phi_ani(0,npol,iel)) * vp1(ct+4)
         vsv1(ct+4) = vs1(ct+4) / sqrt(xi_ani(0,npol,iel))
         xi1(ct+4) = xi_ani(0,npol,iel)
         phi1(ct+4) = phi_ani(0,npol,iel)
@@ -2364,7 +2289,7 @@ do iel=1,nelem
       endif
 
    enddo
-   ct = ct+4
+   ct = ct + 4
 enddo
 
 if (plot_ani) then
