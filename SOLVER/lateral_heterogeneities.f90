@@ -150,9 +150,6 @@ subroutine read_param_hetero
           stop
        endif
      
-!#########################################################################################
-! MvD: - what does inverseshape stand for?
-!#########################################################################################
        inverseshape(ij) = index(het_funct_type(ij),'_i')-1
        
        if (inverseshape(ij) > 0) then
@@ -927,9 +924,6 @@ subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
        ! properties of the heterogeneity
 
        if (.not. rdep(hetind) ) then
-!#########################################################################################
-! MvD : what does the invershape test here?
-!#########################################################################################
           if ( inverseshape(hetind)>0 ) then
              idom = minloc(abs(discont - r_het2(hetind)),1)
              !do ij = 1, ndisc
@@ -1318,8 +1312,8 @@ subroutine plot_hetero_region_vtk(rho,lambda,mu)
 
     write(6,*) 'plotting heterogeneous region in pointwise vtk'
 
-    allocate(mesh2(nelem * npol**2,2), vp_all(nelem * npol**2), vs_all(nelem * npol**2), &
-             rho_all(nelem * npol**2))
+    allocate(mesh2(nelem * (npol + 1)**2,2), vp_all(nelem * (npol + 1)**2), &
+             vs_all(nelem * (npol + 1)**2), rho_all(nelem * (npol + 1)**2))
 
     if (lpr) then
        write(6,*) 'Heterogeneous region rmin,rmax [km]:', &
