@@ -156,6 +156,16 @@ character(len=3), intent(in) :: param !rho, vs,vp
      ak135=vp_ak*1000.
   elseif (param=='v_s') then
      ak135=vs_ak*1000.
+  elseif (param=='vpv') then
+     ak135=vp_ak*1000.
+  elseif (param=='vsv') then
+     ak135=vs_ak*1000.
+  elseif (param=='vph') then
+     ak135=vp_ak*1000.
+  elseif (param=='vsh') then
+     ak135=vs_ak*1000.
+  elseif (param=='eta') then
+     ak135=1.
   else
      write(6,*)'ERROR IN AK135 FUNCTION:',param,'NOT AN OPTION'
      stop
@@ -233,6 +243,16 @@ character(len=3), intent(in) :: param !rho, vs,vp
      prem_sub=vp_prem*1000.
   elseif (param=='v_s') then
      prem_sub=vs_prem*1000.
+  elseif (param=='vpv') then
+     prem_sub=vp_prem*1000.
+  elseif (param=='vsv') then
+     prem_sub=vs_prem*1000.
+  elseif (param=='vph') then
+     prem_sub=vp_prem*1000.
+  elseif (param=='vsh') then
+     prem_sub=vs_prem*1000.
+  elseif (param=='eta') then
+     prem_sub=1.
   else
      write(6,*)'ERROR IN PREM_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
@@ -451,6 +471,16 @@ character(len=3), intent(in) :: param !rho, vs,vp
      prem_solid_sub=vp_prem*1000.
   elseif (param=='v_s') then
      prem_solid_sub=vs_prem*1000.
+  elseif (param=='vpv') then
+     prem_solid_sub=vp_prem*1000.
+  elseif (param=='vsv') then
+     prem_solid_sub=vs_prem*1000.
+  elseif (param=='vph') then
+     prem_solid_sub=vp_prem*1000.
+  elseif (param=='vsh') then
+     prem_solid_sub=vs_prem*1000.
+  elseif (param=='eta') then
+     prem_solid_sub=1.
   else
      write(6,*)'ERROR IN PREM_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
@@ -525,6 +555,16 @@ character(len=3), intent(in) :: param !rho, vs,vp
      prem_onecrust_sub=vp_prem*1000.
   elseif (param=='v_s') then
      prem_onecrust_sub=vs_prem*1000.
+  elseif (param=='vpv') then
+     prem_onecrust_sub=vp_prem*1000.
+  elseif (param=='vsv') then
+     prem_onecrust_sub=vs_prem*1000.
+  elseif (param=='vph') then
+     prem_onecrust_sub=vp_prem*1000.
+  elseif (param=='vsh') then
+     prem_onecrust_sub=vs_prem*1000.
+  elseif (param=='eta') then
+     prem_onecrust_sub=1.
   else
      write(6,*)'ERROR IN PREM_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
@@ -726,6 +766,16 @@ character(len=3), intent(in) :: param !rho, vs,vp
      prem_light_sub=vp_prem*1000.
   elseif (param=='v_s') then
      prem_light_sub=vs_prem*1000.
+  elseif (param=='vpv') then
+     prem_light_sub=vp_prem*1000.
+  elseif (param=='vsv') then
+     prem_light_sub=vs_prem*1000.
+  elseif (param=='vph') then
+     prem_light_sub=vp_prem*1000.
+  elseif (param=='vsh') then
+     prem_light_sub=vs_prem*1000.
+  elseif (param=='eta') then
+     prem_light_sub=1.
   else
      write(6,*)'ERROR IN PREM_LIGHT_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
@@ -920,6 +970,16 @@ character(len=3), intent(in) :: param !rho, vs,vp
      prem_solid_light_sub=vp_prem*1000.
   elseif (param=='v_s') then
      prem_solid_light_sub=vs_prem*1000.
+  elseif (param=='vpv') then
+     prem_solid_light_sub=vp_prem*1000.
+  elseif (param=='vsv') then
+     prem_solid_light_sub=vs_prem*1000.
+  elseif (param=='vph') then
+     prem_solid_light_sub=vp_prem*1000.
+  elseif (param=='vsh') then
+     prem_solid_light_sub=vs_prem*1000.
+  elseif (param=='eta') then
+     prem_solid_light_sub=1.
   else
      write(6,*)'ERROR IN PREM_LIGHT_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
@@ -1031,6 +1091,16 @@ double precision x1,x2
      iasp91_sub=vp*1000.
   elseif (param=='v_s') then
      iasp91_sub=vs*1000.
+  elseif (param=='vpv') then
+     iasp91_sub=vp*1000.
+  elseif (param=='vsv') then
+     iasp91_sub=vs*1000.
+  elseif (param=='vph') then
+     iasp91_sub=vp*1000.
+  elseif (param=='vsh') then
+     iasp91_sub=vs*1000.
+  elseif (param=='eta') then
+     iasp91_sub=1.
   else
      write(6,*)'ERROR IN IASP91_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
@@ -1085,6 +1155,11 @@ logical :: bkgrdmodelfile_exists
         if (param=='rho') arbitr_sub = rhotmp(idom)
         if (param=='v_p') arbitr_sub = vptmp(idom)
         if (param=='v_s') arbitr_sub = vstmp(idom)
+        if (param=='vpv') arbitr_sub = vptmp(idom)
+        if (param=='vsv') arbitr_sub = vstmp(idom)
+        if (param=='vph') arbitr_sub = vptmp(idom)
+        if (param=='vsh') arbitr_sub = vstmp(idom)
+        if (param=='eta') arbitr_sub = 1.
         deallocate(disconttmp,vstmp,vptmp,rhotmp)
     else 
         write(6,*)'Background model file', &

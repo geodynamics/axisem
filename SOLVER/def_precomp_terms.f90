@@ -58,8 +58,9 @@ double precision, dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
 
 ! load velocity/density model  (velocities in m/s, density in kg/m^3 )
   if(lpr)write(6,*)'  define background model....';call flush(6)
+
   if (ani_true) then
-    if(lpr)write(6,*)'  background model is anisotropic....';call flush(6)
+    if(lpr)write(6,*)'  model is anisotropic....';call flush(6)
     call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
   else 
     call read_model(rho,lambda,mu)

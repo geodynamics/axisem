@@ -33,4 +33,5 @@ colatlon        receiver file type: 'colatlon','stations','database'
 .false.         do mesh tests? Suggested to do once per mesh and unedited source code
 .false.         save large test files (valence etc.)? Generally not needed
 binary          Output format for seismograms and wavefields: binary, netcdf
+.false.         force anisotropic model handling
 

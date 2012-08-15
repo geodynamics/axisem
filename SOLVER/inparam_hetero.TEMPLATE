@@ -8,7 +8,7 @@ rndm                format of heterogeneity reading: const, discr, funct
 0.   			    delta rho (density perturbation) in % with respect to reference model
 45.                 delta vp (P vel. perturbation) in % with respect to reference model
 45.                 delta vs (S vel. perturbation) in % with respect to reference model
-######1###################
+######2###################
 funct               format of heterogeneity reading: const, discr, funct
 sinus               function type: sinus, gauss, trian, gss1d, inclp, inclr, const
 .true.              variation in elastic properties increasing with depth?
@@ -19,6 +19,6 @@ sinus               function type: sinus, gauss, trian, gss1d, inclp, inclr, con
 40.   			    delta rho (density perturbation) in % with respect to reference model
 -45.                delta vp (P vel. perturbation) in % with respect to reference model
 -45.                delta vs (S vel. perturbation) in % with respect to reference model
-######2###################
+######3###################
 discr               format of heterogeneity reading: const, discr, funct
 '../discr_testconst.sph'    fname for discrete het., not used if not discr above

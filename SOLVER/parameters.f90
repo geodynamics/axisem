@@ -97,6 +97,7 @@ integer :: i
     read(5,*)do_mesh_tests
     read(5,*)save_large_tests
     read(5,*)output_format
+    read(5,*)force_ani
   close(5)
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.

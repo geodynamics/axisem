@@ -38,6 +38,7 @@ use data_mesh
 use data_comm
 use data_proc
 use data_time
+use data_io, ONLY : force_ani
 use data_numbering, ONLY : nglob,nglob_solid,igloc_solid,igloc_fluid
 use commun, ONLY : barrier,psum,pmax,pmin
 use background_models, ONLY: model_is_ani
@@ -164,8 +165,12 @@ integer           :: globnaxel,globnaxel_solid,globnaxel_fluid
    do idom=1,ndisc
       read(1000+mynum) discont(idom),solid_domain(idom),idom_fluid(idom) 
    enddo
-  
-   ani_true = model_is_ani(bkgrdmodel)
+ 
+   if (force_ani) then
+      ani_true = .true.
+   else
+      ani_true = model_is_ani(bkgrdmodel)
+   endif
   
    read(1000+mynum)rmin,minh_ic,maxh_ic,maxh_icb
    write(69,*)

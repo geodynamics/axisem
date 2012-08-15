@@ -28,6 +28,7 @@ public
   character(len=3)  :: rot_rec
   logical           :: srcvic,add_hetero,file_exists,use_netcdf 
   character(len=6)  :: output_format 
+  logical           :: force_ani
 
 ! NetCDF variables
   integer           :: ncid_out, ncid_recout, ncid_snapout
