@@ -359,13 +359,10 @@ double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: fa_ani_theta, fa_ani_phi
 double precision :: s,z,r,theta,r1,r2,r3,r4,th1,th2,th3,th4
-double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp, arg1
+double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp
 integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count,ij,jj
 logical :: foundit
 character(len=100) :: modelstring
-double precision, dimension(1:3) :: fast_axis_np, fast_axis_src
-double precision :: a_ICA1, b_ICA1, c_ICA1, theta_split_ICA
-double precision :: a_ICA2, b_ICA2, c_ICA2
 
   if (make_homo ) then 
      write(6,*)'  '
@@ -521,18 +518,17 @@ double precision :: a_ICA2, b_ICA2, c_ICA2
 12 format(1pe15.7,i4,6(1pe15.7))
 14 format(5(1pe13.4))
 
-! XXX check if this works (it might!)
-! TNM Oct 29: addition of heterogeneities in separate routine
-  if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
+  if (add_hetero) call compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, &
+                         eta_ani, fa_ani_theta, fa_ani_phi, ieldom)
 
 ! plot final velocity model in vtk
- write(6,*)mynum,'plotting vtks for the model properties....'
+  write(6,*)mynum,'plotting vtks for the model properties....'
 
- call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+  call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
 
 !@@@@@@@@@@@@@@@@@
 ! Some tests....
-!@@@@@@@@@@@@@@@@@
+!@@@@@@@@@@@@@@@@
 if (do_mesh_tests) then
   call barrier
 

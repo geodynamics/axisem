@@ -16,7 +16,8 @@ private
 contains
 
 !----------------------------------------------------------------------------------------
-subroutine compute_heterogeneities(rho,lambda,mu)
+subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                                   fa_ani_theta, fa_ani_phi, ieldom)
     implicit none
 
     include 'mesh_params.h'
@@ -24,11 +25,12 @@ subroutine compute_heterogeneities(rho,lambda,mu)
     integer :: ij
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
+    double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
+           xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
+    integer, dimension(nelem), intent(in), optional :: ieldom
     double precision, dimension(0:npol,0:npol,nelem) :: rhopost,lambdapost,mupost
-
-    mupost = mu
-    lambdapost = lambda
-    rhopost = rho
+    double precision, dimension(:,:,:), allocatable :: &
+           xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
 
     if (lpr) then
        write(6,*)
@@ -36,12 +38,37 @@ subroutine compute_heterogeneities(rho,lambda,mu)
        write(6,*) '   ++++++++    Lateral Heterogeneities  ++++++++'
        write(6,*) '   +++++++++++++++++++++++++++++++++++++++++++++'
        write(6,*)
+       write(6,*)
        write(6,*) 'read parameter file for heterogeneities: inparam_hetero'
        write(6,*)
        write(6,*) ' !!!!!!!!! W A R N I N G !!!!!!!! '
        write(6,*) 'These lateral additions have not been thoroughly tested yet!'
        write(6,*)
     endif
+
+    if (present(xi_ani) .and. present(phi_ani) .and.  present(eta_ani) &
+          .and. present(fa_ani_theta) .and. present(fa_ani_phi)) then
+       allocate(xi_ani_post(0:npol,0:npol,nelem))
+       allocate(phi_ani_post(0:npol,0:npol,nelem))
+       allocate(eta_ani_post(0:npol,0:npol,nelem))
+       allocate(fa_ani_theta_post(0:npol,0:npol,nelem))
+       allocate(fa_ani_phi_post(0:npol,0:npol,nelem))
+       ani_hetero = .true.
+    else
+       ani_hetero = .false.
+    endif
+    
+    mupost = mu
+    lambdapost = lambda
+    rhopost = rho
+    if (ani_hetero) then
+       xi_ani_post = xi_ani
+       phi_ani_post = phi_ani
+       eta_ani_post = eta_ani
+       fa_ani_theta_post = fa_ani_theta
+       fa_ani_phi_post = fa_ani_phi
+    endif
+
 
     call read_param_hetero
 
@@ -58,12 +85,25 @@ subroutine compute_heterogeneities(rho,lambda,mu)
        elseif (het_format(ij) == 'rndm') then 
           ! add random fluctuations to radial model
           call load_random(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
+       elseif (het_format(ij) == 'ica') then 
+          ! add inner core anisotropy
+          call load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+                        fa_ani_phi, rhopost, lambdapost, mupost, xi_ani_post, &
+                        phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, &
+                        ij, ieldom)
        endif
 
        if (add_up) then
           mu = mupost
           lambda = lambdapost
           rho = rhopost
+          if (ani_hetero) then
+             xi_ani = xi_ani_post
+             phi_ani = phi_ani_post
+             eta_ani = eta_ani_post
+             fa_ani_theta = fa_ani_theta_post
+             fa_ani_phi = fa_ani_phi_post
+          endif
        endif
     enddo
  
@@ -71,10 +111,17 @@ subroutine compute_heterogeneities(rho,lambda,mu)
        mu = mupost
        lambda = lambdapost
        rho = rhopost
+       if (ani_hetero) then
+          xi_ani = xi_ani_post
+          phi_ani = phi_ani_post
+          eta_ani = eta_ani_post
+          fa_ani_theta = fa_ani_theta_post
+          fa_ani_phi = fa_ani_phi_post
+       endif
     endif
  
     write(6,*)'final model done, now vtk files...'
-    call plot_hetero_region_vtk(rho,lambda,mu)
+    call plot_hetero_region_vtk(rho, lambda, mu)
 
     deallocate(het_format, het_file_discr, het_funct_type, rdep, grad, &
                gradrdep1, gradrdep2, r_het1, r_het2, th_het1, th_het2, &
@@ -145,6 +192,8 @@ subroutine read_param_hetero
           read(91,*) delta_rho(ij)
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
+       elseif (het_format(ij) == 'ica') then
+          write(6,*) 'bla'
        else
           write(6,*)'Unknown heterogeneity input type: ', het_format(ij)
           stop
@@ -167,7 +216,7 @@ subroutine read_param_hetero
     delta_vs = delta_vs / 100.
 
     if (lpr) then 
-       do ij=1,num_het
+       do ij=1, num_het
           if (het_format(ij)=='funct' .or. het_format(ij)=='const') then
              write(6,*) 'Specification of heterogeneous region:', ij
              write(6,*) 'Radius (lower/upper bound) [km]:', &
@@ -242,6 +291,119 @@ subroutine rotate_hetero(n,r,th)
 
 end subroutine rotate_hetero
 !-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+                    fa_ani_phi, rhopost, lambdapost, mupost, xi_ani_post, &
+                    phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, &
+                    hetind, ieldom)
+
+    use utlity, only: thetacoord, rcoord
+    use data_mesh, only: discont
+    implicit none
+
+    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu, &
+           xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
+    double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rhopost, &
+           lambdapost, mupost, &
+           xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
+    integer, dimension(nelem), intent(in) :: ieldom
+    integer :: hetind
+    double precision, dimension(1:3) :: fast_axis_np, fast_axis_src
+    double precision :: a_ICA1, b_ICA1, c_ICA1, theta_split_ICA
+    double precision :: a_ICA2, b_ICA2, c_ICA2
+    double precision :: vptmp, vstmp, arg1
+    integer :: iel,ipol,jpol
+    
+    !define fast axis in the cartesian system with norpole at (0,0,1)
+    fast_axis_np(1) = zero
+    fast_axis_np(2) = zero
+    fast_axis_np(3) = one
+  
+    a_ICA1 = -0.0028 ! 0.0 
+    b_ICA1 = -0.0185 ! 0.0 
+    c_ICA1 =  0.0537 ! 0.0 
+                     !     
+    a_ICA2 = -0.0028 ! 0.0 
+    b_ICA2 = -0.0185 ! 0.0 
+    c_ICA2 =  0.0537 ! 0.0 
+    
+    theta_split_ICA = 60. / 180. * pi
+    
+    if (rot_src) then 
+      fast_axis_src = matmul(transpose(rot_mat), fast_axis_np)
+    else
+      fast_axis_src = fast_axis_np
+    endif
+          
+    if (lpr) then
+        write(6,*) 'Inner Core With Anisotropy !!!'
+        write(6,*) '  Fast Axis        :', fast_axis_np
+        write(6,*) '  Fast Axis rotated:', fast_axis_src 
+    endif
+  
+    ! compute theta and phi of the fast axis (phi is not well defined
+    ! at the northpole)
+    do iel=1, nelem
+       if (ieldom(iel) == ndisc) then  
+          do ipol=0, npol
+             do jpol=0, npol
+                
+                vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
+                             rho(ipol,jpol,iel))
+                vstmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel))
+
+                ! XXX need to recompute lambda as well!
+
+                
+                fa_ani_theta_post(ipol,jpol,iel) = acos(fast_axis_src(3))
+  
+                arg1 = (fast_axis_src(1) + smallval_dble) / &
+                       ((fast_axis_src(1)**2 + fast_axis_src(2)**2)**.5 + smallval_dble)
+                
+                if (fast_axis_src(2) >= 0.) then
+                   fa_ani_phi_post(ipol,jpol,iel) = acos(arg1)
+                else
+                   fa_ani_phi_post(ipol,jpol,iel) = 2. * pi - acos(arg1)
+                end if
+                
+                xi_ani_post(ipol,jpol,iel) = one
+                
+                if (thetacoord(ipol, jpol, iel) < theta_split_ICA) then
+                    lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vptmp**2 * &
+                            (1. + a_ICA1)**2 - 2. * mu(ipol,jpol,iel)
+
+                    phi_ani_post(ipol,jpol,iel) = (1. + 2. * (a_ICA1 + b_ICA1 + c_ICA1)) &
+                                                / (1. + a_ICA1)
+
+                    eta_ani_post(ipol,jpol,iel) = &
+                      (vptmp**2 * (1 + a_ICA1) * (1 + a_ICA1 + b_ICA1) - 2. * vstmp**2) &
+                      / (vptmp**2 * (1 + a_ICA1)**2 - 2. * vstmp**2)
+                else
+                    lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vptmp**2 * &
+                            (1. + a_ICA2)**2 - 2. * mu(ipol,jpol,iel)
+
+                    phi_ani_post(ipol,jpol,iel) = (1. + 2. * (a_ICA2 + b_ICA2 + c_ICA2)) &
+                                                / (1. + a_ICA2)
+                    eta_ani_post(ipol,jpol,iel) = &
+                      (vptmp**2 * (1 + a_ICA2) * (1 + a_ICA2 + b_ICA2) - 2. * vstmp**2) &
+                      / (vptmp**2 * (1 + a_ICA2)**2 - 2. * vstmp**2)
+                endif
+                rhetmax = max(rcoord(ipol,jpol,iel), rhetmax)
+             enddo
+          enddo
+       endif
+    enddo
+
+    ! for plotting discrete points within heterogeneous region
+    rhetmin = 0.
+    thhetmin = 0.
+    thhetmax = pi
+
+end subroutine load_ica
+!-----------------------------------------------------------------------------------------
+
 
 !-----------------------------------------------------------------------------------------
 subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
@@ -602,10 +764,10 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
                    rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel)* (1. + delta_rho(hetind)*rand)
 
-                   vptmp = vptmp*(1. + delta_vp(hetind) * rand)
-                   vstmp = vstmp*(1. + delta_vs(hetind) * rand)
-                   lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (vptmp**2 - two*vstmp**2)
-                   mupost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp**2
+                   vptmp = vptmp * (1. + delta_vp(hetind) * rand)
+                   vstmp = vstmp * (1. + delta_vs(hetind) * rand)
+                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp**2 - two*vstmp**2)
+                   mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
                 enddo
              enddo
           endif
@@ -636,8 +798,8 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
                    vptmp = vptmp*(1. + delta_vp(hetind) * rand)
                    vstmp = vstmp*(1. + delta_vs(hetind) * rand)
-                   lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (vptmp**2 - two*vstmp**2)
-                   mupost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp**2
+                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp**2 - two*vstmp**2)
+                   mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
                 enddo
              enddo
           endif
@@ -692,8 +854,8 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                    vptmp = vptmp*(1. + delta_vp(hetind)*rand)
                    vstmp = vstmp*(1. + delta_vs(hetind)*rand)
 
-                   lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) *( vptmp*vptmp - two*vstmp*vstmp )
-                   mupost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp*vstmp
+                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) *( vptmp**2 - two*vstmp**2)
+                   mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
                 endif
              enddo
           enddo

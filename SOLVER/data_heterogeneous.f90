@@ -12,7 +12,7 @@ public
    character(len=10), allocatable :: het_format(:),het_funct_type(:)
    character(len=200), allocatable :: het_file_discr(:)
    logical, allocatable :: rdep(:),grad(:)
-   logical :: add_up
+   logical :: add_up, ani_hetero
    double precision, allocatable :: gradrdep1(:),gradrdep2(:)
    double precision, allocatable :: r_het1(:),r_het2(:),th_het1(:),th_het2(:)
    double precision, allocatable :: delta_rho(:),delta_vp(:),delta_vs(:)
