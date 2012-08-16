@@ -87,8 +87,15 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           call load_random(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
        elseif (het_format(ij) == 'ica') then 
           ! add inner core anisotropy
+          if (.not. ani_hetero) then
+             write(6,*) ''
+             write(6,*) 'ERROR: inner core anisotropy need an anisotropic model -'
+             write(6,*) '   either choose an anisotropic background model or'
+             write(6,*) '    activate force anisotropy in inparam!'
+             stop
+          endif
           call load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                        fa_ani_phi, rhopost, lambdapost, mupost, xi_ani_post, &
+                        fa_ani_phi, lambdapost, mupost, xi_ani_post, &
                         phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, &
                         ij, ieldom)
        endif
@@ -230,6 +237,8 @@ subroutine read_param_hetero
        enddo
     endif
 
+    !MvD: XXX only for some of the het_formats !
+
     ! need to rotate coordinates if source is not along axis (beneath the north pole)
     if (rot_src ) then 
        write(6,*) 'need to rotate the heterogeneous domain with the source....'
@@ -295,7 +304,7 @@ end subroutine rotate_hetero
 
 !-----------------------------------------------------------------------------------------
 subroutine load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                    fa_ani_phi, rhopost, lambdapost, mupost, xi_ani_post, &
+                    fa_ani_phi, lambdapost, mupost, xi_ani_post, &
                     phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, &
                     hetind, ieldom)
 
@@ -305,8 +314,7 @@ subroutine load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
 
     double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu, &
            xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
-    double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rhopost, &
-           lambdapost, mupost, &
+    double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambdapost, mupost, &
            xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
     integer, dimension(nelem), intent(in) :: ieldom
     integer :: hetind
@@ -338,9 +346,11 @@ subroutine load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
     endif
           
     if (lpr) then
-        write(6,*) 'Inner Core With Anisotropy !!!'
+        write(6,*) ''
+        write(6,*) 'Adding Inner Core Anisotropy !!!'
         write(6,*) '  Fast Axis        :', fast_axis_np
         write(6,*) '  Fast Axis rotated:', fast_axis_src 
+        write(6,*) ''
     endif
   
     ! compute theta and phi of the fast axis (phi is not well defined
