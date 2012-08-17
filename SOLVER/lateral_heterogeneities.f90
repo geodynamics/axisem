@@ -91,7 +91,7 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
              write(6,*) ''
              write(6,*) 'ERROR: inner core anisotropy need an anisotropic model -'
              write(6,*) '   either choose an anisotropic background model or'
-             write(6,*) '    activate force anisotropy in inparam!'
+             write(6,*) '   activate force anisotropy in inparam!'
              stop
           endif
           call load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, &
@@ -131,6 +131,9 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
     deallocate(het_format, het_file_discr, het_funct_type, rdep, grad, &
                gradrdep1, gradrdep2, r_het1, r_het2, th_het1, th_het2, &
                delta_rho, delta_vp, delta_vs, inverseshape) 
+
+    deallocate(fa_theta_ica, fa_phi_ica)
+    deallocate(a_ica, b_ica, c_ica)
 
     if (lpr) then
        write(6,*)
@@ -198,7 +201,21 @@ subroutine read_param_hetero
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
        elseif (het_format(ij) == 'ica') then
-          write(6,*) 'bla'
+          read(91,*) num_slices
+          
+          allocate(fa_theta_ica(num_slices), fa_phi_ica(num_slices))
+          allocate(a_ica(num_slices), b_ica(num_slices), c_ica(num_slices))
+          allocate(theta_slices(num_slices + 1))
+          
+          read(91,*) theta_slices
+             theta_slices = theta_slices / 180. * pi
+
+          do i = 1, num_slices
+             read(91,*) fa_theta_ica(i), fa_phi_ica(i)
+             fa_theta_ica(i) = fa_theta_ica(i) / 180. * pi
+             fa_phi_ica(i) = fa_phi_ica(i) / 180. * pi
+             read(91,*) a_ica(i), b_ica(i), c_ica(i)
+          enddo
        else
           write(6,*)'Unknown heterogeneity input type: ', het_format(ij)
           stop
@@ -316,41 +333,38 @@ subroutine load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, eta_
     double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambdapost, &
            xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
     integer, dimension(nelem), intent(in) :: ieldom
+    double precision, dimension(1:3) :: fast_axis_np
     integer :: hetind
-    double precision, dimension(1:3) :: fast_axis_np, fast_axis_src
-    double precision :: a_ICA1, b_ICA1, c_ICA1, theta_split_ICA
-    double precision :: a_ICA2, b_ICA2, c_ICA2
+    double precision, allocatable :: fast_axis_src(:,:)
     double precision :: vptmp, vstmp, arg1
-    integer :: iel,ipol,jpol
+    integer :: iel, ipol, jpol, i
     
-    !define fast axis in the cartesian system with norpole at (0,0,1)
-    fast_axis_np(1) = zero
-    fast_axis_np(2) = zero
-    fast_axis_np(3) = one
-  
-    a_ICA1 = -0.0028 ! 0.0 
-    b_ICA1 = -0.0185 ! 0.0 
-    c_ICA1 =  0.0537 ! 0.0 
-                     !     
-    a_ICA2 = -0.0028 ! 0.0 
-    b_ICA2 = -0.0185 ! 0.0 
-    c_ICA2 =  0.0537 ! 0.0 
-    
-    theta_split_ICA = 60. / 180. * pi
-    
-    if (rot_src) then 
-      fast_axis_src = matmul(transpose(rot_mat), fast_axis_np)
-    else
-      fast_axis_src = fast_axis_np
-    endif
-          
+    allocate(fast_axis_src(num_slices,1:3))
+
     if (lpr) then
         write(6,*) ''
         write(6,*) 'Adding Inner Core Anisotropy !!!'
-        write(6,*) '  Fast Axis        :', fast_axis_np
-        write(6,*) '  Fast Axis rotated:', fast_axis_src 
-        write(6,*) ''
     endif
+    
+    do i=1, num_slices
+        fast_axis_np(1) = sin(fa_theta_ica(i)) * cos(fa_phi_ica(i))
+        fast_axis_np(2) = sin(fa_theta_ica(i)) * sin(fa_phi_ica(i))
+        fast_axis_np(3) = cos(fa_theta_ica(i))
+        !if (rot_src) then 
+        !    fast_axis_src(i,:) = matmul(transpose(rot_mat), fast_axis_np)
+        !else
+            fast_axis_src(i,:) = fast_axis_np
+        !endif
+        if (lpr) then
+            write(6,*) i
+            write(6,*) '  Fast Axis        :', fast_axis_np
+            write(6,*) '  Fast Axis rotated:', fast_axis_src(i,:)
+            write(6,*) '  ROTATION of fastaxis disabled for now - does not make'
+            write(6,*) '  sense if not rotating in all three euler angles!'
+            write(6,*) ''
+        endif
+    enddo
+          
   
     ! compute theta and phi of the fast axis (phi is not well defined
     ! at the northpole)
@@ -363,39 +377,36 @@ subroutine load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, eta_
                              rho(ipol,jpol,iel))
                 vstmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel))
 
-                fa_ani_theta_post(ipol,jpol,iel) = acos(fast_axis_src(3))
+                do i=1, num_slices
+                    if (thetacoord(ipol, jpol, iel) <= theta_slices(i + 1) &
+                            .and. thetacoord(ipol, jpol, iel) >= theta_slices(i)) then
+
+                        fa_ani_theta_post(ipol,jpol,iel) = acos(fast_axis_src(i,3))
   
-                arg1 = (fast_axis_src(1) + smallval_dble) / &
-                       ((fast_axis_src(1)**2 + fast_axis_src(2)**2)**.5 + smallval_dble)
-                
-                if (fast_axis_src(2) >= 0.) then
-                   fa_ani_phi_post(ipol,jpol,iel) = acos(arg1)
-                else
-                   fa_ani_phi_post(ipol,jpol,iel) = 2. * pi - acos(arg1)
-                end if
-                
-                xi_ani_post(ipol,jpol,iel) = one
-                
-                if (thetacoord(ipol, jpol, iel) < theta_split_ICA) then
-                    lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vptmp**2 * &
-                            (1. + a_ICA1)**2 - 2. * mu(ipol,jpol,iel)
+                        arg1 = (fast_axis_src(i,1) + smallval_dble) / &
+                               ((fast_axis_src(i,1)**2 + fast_axis_src(i,2)**2)**.5 &
+                                + smallval_dble)
+                        
+                        if (fast_axis_src(i,2) >= 0.) then
+                           fa_ani_phi_post(ipol,jpol,iel) = acos(arg1)
+                        else
+                           fa_ani_phi_post(ipol,jpol,iel) = 2. * pi - acos(arg1)
+                        end if
+                        
+                        xi_ani_post(ipol,jpol,iel) = one
+                    
+                        lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vptmp**2 * &
+                                (1. + a_ica(i))**2 - 2. * mu(ipol,jpol,iel)
 
-                    phi_ani_post(ipol,jpol,iel) = (1. + 2. * (a_ICA1 + b_ICA1 + c_ICA1)) &
-                                                / (1. + a_ICA1)
+                        phi_ani_post(ipol,jpol,iel) = &
+                            (1. + 2. * (a_ica(i) + b_ica(i) + c_ica(i))) / (1. + a_ica(i))
 
-                    eta_ani_post(ipol,jpol,iel) = &
-                      (vptmp**2 * (1 + a_ICA1) * (1 + a_ICA1 + b_ICA1) - 2. * vstmp**2) &
-                      / (vptmp**2 * (1 + a_ICA1)**2 - 2. * vstmp**2)
-                else
-                    lambdapost(ipol,jpol,iel) = rho(ipol,jpol,iel) * vptmp**2 * &
-                            (1. + a_ICA2)**2 - 2. * mu(ipol,jpol,iel)
-
-                    phi_ani_post(ipol,jpol,iel) = (1. + 2. * (a_ICA2 + b_ICA2 + c_ICA2)) &
-                                                / (1. + a_ICA2)
-                    eta_ani_post(ipol,jpol,iel) = &
-                      (vptmp**2 * (1 + a_ICA2) * (1 + a_ICA2 + b_ICA2) - 2. * vstmp**2) &
-                      / (vptmp**2 * (1 + a_ICA2)**2 - 2. * vstmp**2)
-                endif
+                        eta_ani_post(ipol,jpol,iel) = &
+                            (vptmp**2 * (1 + a_ica(i)) * (1 + a_ica(i) + b_ica(i)) &
+                                                                  - 2. * vstmp**2) &
+                            / (vptmp**2 * (1 + a_ica(i))**2 - 2. * vstmp**2)
+                    endif
+                enddo
                 rhetmax = max(rcoord(ipol,jpol,iel), rhetmax)
              enddo
           enddo
