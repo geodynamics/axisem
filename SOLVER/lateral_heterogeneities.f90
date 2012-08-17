@@ -132,9 +132,9 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 
     call plot_hetero_region_vtk(rho, lambda, mu)
 
-    deallocate(het_format, het_file_discr, het_funct_type, rdep, grad, &
-               gradrdep1, gradrdep2, r_het1, r_het2, th_het1, th_het2, &
-               delta_rho, delta_vp, delta_vs, inverseshape) 
+    deallocate(het_format, het_file_discr, het_funct_type, rdep, grad, gradrdep1, &
+               gradrdep2, r_het1, r_het2, th_het1, th_het2, delta_rho, delta_vp, &
+               delta_vs, inverseshape, p_inv_dist, R_inv_dist) 
 
 
     if (lpr) then
@@ -175,7 +175,7 @@ subroutine read_param_hetero
              gradrdep1(num_het), gradrdep2(num_het), r_het1(num_het), &
              r_het2(num_het), th_het1(num_het), th_het2(num_het), &
              delta_rho(num_het), delta_vp(num_het), delta_vs(num_het), &
-             inverseshape(num_het)) 
+             inverseshape(num_het), p_inv_dist(num_het), R_inv_dist(num_het))
     
     read(91,*) add_up
 
@@ -185,6 +185,8 @@ subroutine read_param_hetero
 
        if (het_format(ij) == 'discr') then
           read(91,*) het_file_discr(ij)
+          read(91,*) p_inv_dist(ij)
+          read(91,*) R_inv_dist(ij)
 
        elseif (het_format(ij) == 'rndm') then
           read(91,*) het_funct_type(ij)
@@ -243,6 +245,8 @@ subroutine read_param_hetero
     delta_rho = delta_rho / 100.
     delta_vp = delta_vp / 100.
     delta_vs = delta_vs / 100.
+            
+    R_inv_dist = R_inv_dist * 1000.
 
     if (lpr) then 
        do ij=1, num_het
@@ -535,7 +539,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                    
                    call compute_coordinates(s, z, r, th, iel, ipol, jpol)
                    !call bilinear_interpolation(s, z, num_het_pts, shet, zhet, ind, w, wsum)
-                   call inverse_distance_weighting(s, z, num_het_pts, shet, zhet, w)
+                   call inverse_distance_weighting(s, z, num_het_pts, shet, zhet, w, hetind)
                    
                    vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
                                 rho(ipol,jpol,iel))
@@ -567,23 +571,39 @@ end subroutine load_het_discr
 
 
 !----------------------------------------------------------------------------------------
-subroutine inverse_distance_weighting(s0, z0, n, s, z, w)
+subroutine inverse_distance_weighting(s0, z0, n, s, z, w, hetind)
     implicit none
 
-    integer, intent(in) :: n
+    integer, intent(in) :: n, hetind
     double precision, intent(in) :: s0, z0, s(1:n), z(1:n)
     double precision, intent(out) :: w(1:n)
     double precision :: d2d, p
     integer :: i
 
-    p = 3.
-    
-    do i=1, n
-       d2d = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
-       w(i) = d2d**(-p)
-    enddo
+    w = 0.
 
-    w = w / sum(w)
+    if (R_inv_dist(hetind) == 0.) then
+        do i=1, n
+           d2d = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
+           w(i) = d2d**(-p_inv_dist(hetind))
+        enddo
+    else 
+        do i=1, n
+            d2d = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
+            if (d2d <= R_inv_dist(hetind)) then
+                w(i) = ((R_inv_dist(hetind) - d2d) / (R_inv_dist(hetind) * d2d)) &
+                        **p_inv_dist(hetind)
+            else
+                w(i) = 0.
+            endif
+        enddo
+    endif
+   
+    if (sum(w) > 0) then
+        w = w / sum(w)
+    else
+        w = 0.
+    endif
 
 
 end subroutine inverse_distance_weighting

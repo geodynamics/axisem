@@ -14,6 +14,7 @@ public
    logical, allocatable :: rdep(:),grad(:)
    logical :: add_up, ani_hetero
    double precision, allocatable :: gradrdep1(:),gradrdep2(:)
+   double precision, allocatable :: p_inv_dist(:), R_inv_dist(:)
    double precision, allocatable :: r_het1(:),r_het2(:),th_het1(:),th_het2(:)
    double precision, allocatable :: delta_rho(:), delta_vp(:), delta_vs(:)
    double precision, allocatable :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
@@ -22,6 +23,7 @@ public
    integer, allocatable :: inverseshape(:)
    integer :: num_slices
    double precision :: rhetmin, rhetmax, thhetmin, thhetmax
+
 
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

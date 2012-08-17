@@ -22,6 +22,8 @@ sinus               function type: sinus, gauss, trian, gss1d, inclp, inclr, con
 ######3###################
 discr               format of heterogeneity reading: const, discr, funct, ica
 '../discr_testconst.sph'    fname for discrete het., not used if not discr above
+2.                  p value for inverse distance weighting
+0.                  maximum radius of inverse distance weighting (0 = infinite) [km]
 ######4###################
 ica                 format of heterogeneity reading: const, discr, funct, ica
 2                   number of theta slices
