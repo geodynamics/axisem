@@ -259,7 +259,7 @@ subroutine read_param_hetero
     !MvD: XXX only for some of the het_formats !
 
     ! need to rotate coordinates if source is not along axis (beneath the north pole)
-    if (rot_src ) then 
+    if (rot_src .and. (het_format(ij) == 'rndm' .or. het_format(ij) == 'funct')) then 
        write(6,*) 'need to rotate the heterogeneous domain with the source....'
 
        do i=1, num_het
@@ -267,12 +267,10 @@ subroutine read_param_hetero
              r_het1(i), th_het1(i) * 180. / pi
           write(6,*)'Before rotation r th ph 2:', &
              r_het2(i), th_het2(i) * 180. / pi
-       enddo
 
-       call rotate_hetero(num_het, r_het1, th_het1)
-       call rotate_hetero(num_het, r_het2, th_het2)
+          call rotate_hetero(r_het1(i), th_het1(i))
+          call rotate_hetero(r_het2(i), th_het2(i))
 
-       do i=1, num_het
           write(6,*)'After rotation r th ph 1:', &
              r_het1(i), th_het1(i) * 180. / pi
           write(6,*)'After rotation r th ph 2:', &
@@ -292,30 +290,23 @@ end subroutine read_param_hetero
 
 
 !-----------------------------------------------------------------------------------------
-subroutine rotate_hetero(n,r,th)
+subroutine rotate_hetero(r,th)
     implicit none
 
-    integer, intent(in) :: n
-    double precision,intent(inout), dimension(1:n) :: r,th
-    double precision :: x_vec(3),x_vec_rot(3),r_r, arg1
-    integer :: j
+    double precision,intent(inout) :: r,th
+    double precision :: x_vec(3), x_vec_rot(3), r_r, arg1
 
-    do j=1, n
-        x_vec(1) = r(j) * dsin(th(j))
-        x_vec(2) = 0.d0
-        x_vec(3) = r(j) * dcos(th(j)) 
-        
-        x_vec_rot = matmul(trans_rot_mat,x_vec)
-        
-        write(23,*) x_vec
-        write(23,*) x_vec_rot
+    x_vec(1) = r * dsin(th)
+    x_vec(2) = 0.d0
+    x_vec(3) = r * dcos(th) 
+    
+    x_vec_rot = matmul(trans_rot_mat,x_vec)
+    
+    write(23,*) x_vec
+    write(23,*) x_vec_rot
  
-        r_r = dsqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2 )
-        th(j) = dacos((x_vec_rot(3)  + smallval_dble )/ ( r_r + smallval_dble) )
-     
-        arg1 = (x_vec_rot(1)  + smallval_dble) / &
-               ((x_vec_rot(1)**2 + x_vec_rot(2)**2)**.5 + smallval_dble)
-    enddo
+    r_r = dsqrt(x_vec_rot(1)**2 + x_vec_rot(2)**2 + x_vec_rot(3)**2 )
+    th = dacos((x_vec_rot(3)  + smallval_dble )/ ( r_r + smallval_dble) )
 
 end subroutine rotate_hetero
 !-----------------------------------------------------------------------------------------
@@ -458,7 +449,7 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
     allocate(num_het_pts_region(1:num_discr_het))
 
-    do i=1,num_discr_het 
+    do i=1, num_discr_het 
        read(91,*) num_het_pts_region(i)
        if (lpr) write(6,*) 'Region', i, 'has', num_het_pts_region(i), 'points.'
     enddo
@@ -519,8 +510,10 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
        if (rot_src) then 
           write(6,*) mynum, 'rotate since source is not beneath north pole'
-          call rotate_hetero(num_het_pts_region(i), rhet2(1:num_het_pts_region(i),i), &
-                             thhet2(1:num_het_pts_region(i),i))
+
+          do j=1, num_het_pts_region(i)
+             call rotate_hetero(rhet2(j,i), thhet2(j,i))
+          enddo
 
           rmin(i) = minval(rhet2(1:num_het_pts_region(i),i),1)
           rmax(i) = maxval(rhet2(1:num_het_pts_region(i),i),1)
