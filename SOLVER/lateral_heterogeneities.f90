@@ -96,6 +96,9 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           endif
           call load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, &
                         eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, ij, ieldom)
+                    
+          deallocate(fa_theta_ica, fa_phi_ica)
+          deallocate(a_ica, b_ica, c_ica)
        endif
 
        if (add_up) then
@@ -126,14 +129,13 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
     endif
  
     write(6,*)'final model done, now vtk files...'
+
     call plot_hetero_region_vtk(rho, lambda, mu)
 
     deallocate(het_format, het_file_discr, het_funct_type, rdep, grad, &
                gradrdep1, gradrdep2, r_het1, r_het2, th_het1, th_het2, &
                delta_rho, delta_vp, delta_vs, inverseshape) 
 
-    deallocate(fa_theta_ica, fa_phi_ica)
-    deallocate(a_ica, b_ica, c_ica)
 
     if (lpr) then
        write(6,*)
@@ -426,15 +428,13 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
     double precision, dimension(0:npol,0:npol,nelem) :: rhopost,lambdapost,mupost
     integer :: hetind
-    double precision, allocatable, dimension(:) :: disconttmp
-    double precision :: w(4), wsum, dr(4)
-    integer :: ndisctmp, ind(4), maxpts, iel, ipol, jpol, i, j
-    integer, allocatable :: num_het_pts_region(:), het_ind(:, :)
-    integer :: num_discr_het
+    double precision, allocatable, dimension(:) :: disconttmp, w
+    integer :: ndisctmp, iel, ipol, jpol, i, j
+    integer :: num_het_pts
     double precision :: s, z, r, th, r1, vptmp, vstmp, r2, r3, r4, th1, th2, th3, th4
-    double precision, allocatable, dimension(:) :: rmin, rmax, thetamin, thetamax
-    double precision, allocatable, dimension(:,:) :: shet, zhet
-    double precision, allocatable :: rhet2(:,:), thhet2(:,:), phhet2(:,:) 
+    double precision :: rmin, rmax, thetamin, thetamax
+    double precision, allocatable, dimension(:) :: shet, zhet
+    double precision, allocatable :: rhet2(:), thhet2(:)
 
 !#########################################################################################
 ! MvD: - stopping the code here until this is fixed
@@ -442,54 +442,23 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     write(6,*) ''
     write(6,*) 'ERROR:'
     write(6,*) '   discrete input: interpolation wrong so far - work in progress...'
-    stop
+    !stop
 
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 
     open(unit=91, file=trim(het_file_discr(hetind)))
 
-    read(91,*) num_discr_het
+    read(91,*) num_het_pts
+
+    if (lpr) write(6,*) 'number of points', num_het_pts
     
-    if (lpr) write(6,*) 'Number of distinct-discrete regions:', num_discr_het
+    allocate(rhet2(1:num_het_pts), thhet2(1:num_het_pts))
+    allocate(delta_vs2(1:num_het_pts), delta_vp2(1:num_het_pts), &
+             delta_rho2(1:num_het_pts),w(1:num_het_pts))
 
-    allocate(num_het_pts_region(1:num_discr_het))
-
-    do i=1, num_discr_het 
-       read(91,*) num_het_pts_region(i)
-       if (lpr) write(6,*) 'Region', i, 'has', num_het_pts_region(i), 'points.'
-    enddo
-
-    allocate(rmin(num_discr_het), rmax(num_discr_het), thetamin(num_discr_het), &
-             thetamax(num_discr_het))
-
-    nhet_pts = sum(num_het_pts_region)
-    maxpts = maxval(num_het_pts_region)
-
-    if (lpr) write(6,*) 'max number of points in one region:', maxpts
-    if (lpr) write(6,*) 'total number of points:', nhet_pts
-    
-    allocate(rhet2(1:maxpts,1:num_discr_het), thhet2(1:maxpts,1:num_discr_het), &
-             phhet2(1:maxpts,1:num_discr_het))
-    allocate(delta_vs2(1:maxpts,1:num_discr_het), delta_vp2(1:maxpts,1:num_discr_het), &
-             delta_rho2(1:maxpts,1:num_discr_het))
-    allocate(het_ind(1:maxpts,1:num_discr_het))
-
-    rhet2 = -5000.
-    thhet2 = -5000.
-    phhet2 = -5000.
-    delta_vp2 = -5000.
-    delta_vs2 = -5000.
-    delta_rho2 = -5000.
-    
     write(6,*) mynum, 'read coordinates & medium properties...'
-    do i=1, num_discr_het
-       do j=1, num_het_pts_region(i)
-          read(91,*) rhet2(j,i), thhet2(j,i), phhet2(j,i), delta_vp2(j,i), &
-                     delta_vs2(j,i), delta_rho2(j,i)
-          write(6,*) 'reading line', j, 'of', maxpts, ':', rhet2(j,i), &
-                     thhet2(j,i), phhet2(j,i), delta_vp2(j,i), delta_vs2(j,i), &
-                     delta_rho2(j,i)
-       enddo
+    do j=1, num_het_pts
+       read(91,*) rhet2(j), thhet2(j), delta_vp2(j), delta_vs2(j), delta_rho2(j)
     enddo
 
     close(91)
@@ -500,113 +469,132 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     delta_vs2 = delta_vs2 / 100.
     delta_rho2 = delta_rho2 / 100.
     thhet2 = thhet2 * pi / 180.
-    phhet2 = phhet2 * pi / 180.
     rhet2 = rhet2 * 1000.
 
     ! Rotate coordinates if source is not on axis
-    do i=1, num_discr_het
-       rmin(i) = minval(rhet2(1:num_het_pts_region(i),i),1)
-       rmax(i) = maxval(rhet2(1:num_het_pts_region(i),i),1)
-       thetamin(i) = minval(thhet2(1:num_het_pts_region(i),i),1)
-       thetamax(i) = maxval(thhet2(1:num_het_pts_region(i),i),1)
+    rmin = minval(rhet2(1:num_het_pts))
+    rmax = maxval(rhet2(1:num_het_pts))
+    thetamin = minval(thhet2(1:num_het_pts))
+    thetamax = maxval(thhet2(1:num_het_pts))
 
-       write(6,*) mynum, 'r min/max:', i,rmin(i) / 1000., rmax(i) / 1000.
-       write(6,*) mynum, 'th min/max:', i,thetamin(i) / pi * 180., thetamax(i) / pi * 180.
+    write(6,*) mynum, 'r min/max:', rmin / 1000., rmax / 1000.
+    write(6,*) mynum, 'th min/max:', thetamin / pi * 180., thetamax / pi * 180.
 
-       if (rot_src) then 
-          write(6,*) mynum, 'rotate since source is not beneath north pole'
+    if (rot_src) then 
+       write(6,*) mynum, 'rotate since source is not beneath north pole'
 
-          do j=1, num_het_pts_region(i)
-             call rotate_hetero(rhet2(j,i), thhet2(j,i))
-          enddo
+       do j=1, num_het_pts
+          call rotate_hetero(rhet2(j), thhet2(j))
+       enddo
 
-          rmin(i) = minval(rhet2(1:num_het_pts_region(i),i),1)
-          rmax(i) = maxval(rhet2(1:num_het_pts_region(i),i),1)
-          thetamin(i) = minval(thhet2(1:num_het_pts_region(i),i),1)
-          thetamax(i) = maxval(thhet2(1:num_het_pts_region(i),i),1)
+       rmin = minval(rhet2)
+       rmax = maxval(rhet2)
+       thetamin = minval(thhet2)
+       thetamax = maxval(thhet2)
 
-          write(6,*) mynum, 'r min/max after rotation:', i, rmin(i) / 1000., &
-                     rmax(i) / 1000.
-          write(6,*) mynum, 'th min/max after rotation:', i, thetamin(i) / pi * 180., &
-                     thetamax(i) / pi * 180.
-       endif
-    enddo
+       write(6,*) mynum, 'r min/max after rotation:', rmin / 1000., rmax / 1000.
+       write(6,*) mynum, 'th min/max after rotation:', thetamin / pi * 180., &
+                  thetamax / pi * 180.
+    endif
 
     ! plot discrete input file in vtk
-    call plot_discrete_input(num_discr_het, num_het_pts_region, rhet2, thhet2, phhet2)
+    call plot_discrete_input(num_het_pts, rhet2, thhet2)
 
     ! for plotting discrete points within heterogeneous region
-    rhetmin = min(minval(rmin,1), rhetmin)
-    rhetmax = max(maxval(rmax,1), rhetmax)
-    thhetmin = min(minval(thetamin,1), thhetmin)
-    thhetmax = max(maxval(thetamax,1), thhetmax)
+    rhetmin = min(rmin, rhetmin)
+    rhetmax = max(rmax, rhetmax)
+    thhetmin = min(thetamin, thhetmin)
+    thhetmax = max(thetamax, thhetmax)
 
     write(6,*) 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
     write(6,*) 'th het min/max:', thhetmin / pi * 180., thhetmax / pi * 180.
 
     ! revert to cylindrical 
-    allocate (shet(1:maxpts,1:num_discr_het), zhet(1:maxpts,1:num_discr_het))
+    allocate (shet(1:num_het_pts), zhet(1:num_het_pts))
     shet = rhet2 * sin(thhet2) 
     zhet = rhet2 * cos(thhet2)
 
     write(6,*) mynum, 'locate GLL points within heterogeneous regions & '
     write(6,*) mynum, 'interpolate over 4 adjacent points'
 
-    ind = 1
-    wsum = 0
-    w = 0
-
     do iel=1, nelem
        call compute_coordinates(s, z, r1, th1, iel, npol, npol)
        call compute_coordinates(s, z, r2, th2, iel, 0, 0)
-       do i=1, num_discr_het
-          r = max(r1,r2)
-          th = max(th1,th2)
-          if ( r>=rmin(i) .and. th>=thetamin(i) ) then
-             r = min(r1,r2)
-             th = min(th1,th2)
-             if ( r<=rmax(i) .and. th<=thetamax(i) ) then
-                do ipol=0,npol
-                   do jpol=0,npol
-                      ! find closest 4 points of discrete heterogeneous mesh
-                      call compute_coordinates(s, z, r, th, iel, ipol, jpol)
-                      call bilinear_interpolation(s, z, num_het_pts_region(i), &
-                                                  shet(1:num_het_pts_region(i),i), &
-                                                  zhet(1:num_het_pts_region(i),i), &
-                                                  ind, w, wsum)
-                      ! bilinear interpolationx
-                      ! f(x,y) = [x2-x x-x1] [f(11) f(12); f(21) f(22)] [y2-y; y-y1] * &
-                      !          1/(x2-x1)(y2-y1)
-                      vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
-                                   rho(ipol,jpol,iel))
-                      vstmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel))
-                      rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * &
-                                               (1. + sum(w * delta_rho2(ind,i)) * wsum)
-                      vptmp = vptmp * (1. + sum(w * delta_vp2(ind,i)) * wsum)
-                      vstmp = vstmp * (1. + sum(w * delta_vs2(ind,i)) * wsum)
-                      mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
-                      lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
-                                                  (vptmp**2 - 2. * vstmp**2)
-                   enddo
+       call compute_coordinates(s, z, r3, th3, iel, 0, npol)
+       call compute_coordinates(s, z, r4, th4, iel, npol, 0)
+
+       r = max(max(r1,r2), max(r3, r4))
+       th = max(max(th1,th2), max(th3, th4))
+       if ( r >= rmin .and. th >= thetamin ) then
+          r = min(min(r1,r2), min(r3, r4))
+          th = min(min(th1,th2), min(th3, th4))
+          if ( r <= rmax .and. th <= thetamax ) then
+             do ipol=0, npol
+                do jpol=0, npol
+                   ! find closest 4 points of discrete heterogeneous mesh
+                   
+                   call compute_coordinates(s, z, r, th, iel, ipol, jpol)
+                   !call bilinear_interpolation(s, z, num_het_pts, shet, zhet, ind, w, wsum)
+                   call inverse_distance_weighting(s, z, num_het_pts, shet, zhet, w)
+                   
+                   vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
+                                rho(ipol,jpol,iel))
+                   vstmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel))
+
+                   rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * &
+                                            (1. + sum(w * delta_rho2))
+
+                   vptmp = vptmp * (1. + sum(w * delta_vp2))
+                   vstmp = vstmp * (1. + sum(w * delta_vs2))
+
+                   mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
+                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
+                                               (vptmp**2 - 2. * vstmp**2)
                 enddo
-             endif
+             enddo
           endif
-       enddo
+       endif
     enddo
 
     write(6,*) mynum, 'DONE loading discrete grid'
     
-    deallocate(rhet2, thhet2, phhet2)
+    deallocate(rhet2, thhet2)
     deallocate(delta_vs2, delta_vp2, delta_rho2)
-    deallocate(het_ind)
-    deallocate (shet, zhet)
+    deallocate(shet, zhet)
 
 end subroutine load_het_discr
 !----------------------------------------------------------------------------------------
 
 
 !----------------------------------------------------------------------------------------
-subroutine bilinear_interpolation(s0,z0,n,s,z,ind,w,wsum)
+subroutine inverse_distance_weighting(s0, z0, n, s, z, w)
+    implicit none
+
+    integer, intent(in) :: n
+    double precision, intent(in) :: s0, z0, s(1:n), z(1:n)
+    double precision, intent(out) :: w(1:n)
+    double precision :: d2d, p
+    integer :: i
+
+    p = 3.
+    
+    do i=1, n
+       d2d = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
+       w(i) = d2d**(-p)
+    enddo
+
+    w = w / sum(w)
+
+
+end subroutine inverse_distance_weighting
+!----------------------------------------------------------------------------------------
+
+
+
+!----------------------------------------------------------------------------------------
+subroutine bilinear_interpolation(s0, z0, n, s, z, ind, w, wsum)
+    ! This is NOT a bilinear interpolation, this is inverse distance weighting
+    ! over the closest 4 points (one in each quadrant) !!
     implicit none
 
     ! implemented by fanie, find_closest4_points didnt really work for me...
@@ -620,49 +608,37 @@ subroutine bilinear_interpolation(s0,z0,n,s,z,ind,w,wsum)
     ! choose 4 closest points, numbered after quadrant seen from s0,z0
     ! better: find minimum in array after calculating 2D-distance d2d in loop over n
     do i=1, n
-        if ((s(i)-s0)>=0.0 .and. (z(i)-z0)>=0.0) then
-            d2d(i,1) = sqrt((s(i)-s0)**2+(z(i)-z0)**2)
+        d2d(i,1) = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
+        if ((s(i) >= s0) .and. (z(i) >= z0)) then
             d2d(i,2) = 1
-            write(6,*) 'bilinttest', (s(i)-s0), (z(i)-z0), d2d(i,1), 1
-        elseif ((s0-s(i))>=0.0 .and. (z(i)-z0)>=0.0) then
-            d2d(i,1) = sqrt((s0-s(i))**2 + (z(i)-z0)**2)
+        elseif ((s(i) <= s0) .and. (z(i) >= z0)) then
             d2d(i,2) = 2
-            write(6,*) 'bilinttest', (s(i)-s0), (z(i)-z0), d2d(i,1), 2
-        elseif ((s0-s(i))>=0.0 .and. (z0-z(i))>=0.0) then
-            d2d(i,1) = sqrt((s0-s(i))**2 + (z0-z(i))**2)
+        elseif ((s(i) <= s0) .and. (z(i) <= z0)) then
             d2d(i,2) = 3
-            write(6,*) 'bilinttest', (s(i)-s0), (z(i)-z0), d2d(i,1), 3
-        elseif ((s(i)-s0)>=0.0 .and. (z0-z(i))>=0.0) then
-            d2d(i,1) = sqrt((s(i)-s0)**2+(z0-z(i))**2)
+        elseif ((s(i) >= s0) .and. (z(i) <= z0)) then
             d2d(i,2) = 4
-            write(6,*) 'bilinttest', (s(i)-s0), (z(i)-z0), d2d(i,1), 4
         endif
     enddo
 
     ! find minimum of d2d for each quadrant
-    ds1 = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==1)
-    ds2 = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==2)
-    ds3 = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==3)
-    ds4 = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==4)
-    is1 = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==1)
-    is2 = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==2)
-    is3 = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==3)
-    is4 = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==4)
-
-    dr(1) = ds1
-    dr(2) = ds2
-    dr(3) = ds3
-    dr(4) = ds4
-
-    ind(1) = is1
-    ind(2) = is2
-    ind(3) = is3
-    ind(4) = is4
+    dr(1) = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==1)
+    dr(2) = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==2)
+    dr(3) = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==3)
+    dr(4) = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==4)
+    ind(1) = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==1)
+    ind(2) = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==2)
+    ind(3) = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==3)
+    ind(4) = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==4)
 
     write(6,*) 'bil int1', dr(1), ind(1)
     write(6,*) 'bil int2', dr(2), ind(2)
     write(6,*) 'bil int3', dr(3), ind(3)
     write(6,*) 'bil int4', dr(4), ind(4)
+
+    p = 2
+
+    ! MvD: I think the reason why this does not work is, that you do not allways
+    ! find 4 neighbours in the four quadrants...
 
     ! inverse distance weighting
     do i=1, 4
@@ -671,65 +647,63 @@ subroutine bilinear_interpolation(s0,z0,n,s,z,ind,w,wsum)
 
     wsum = 1. / sum(w)
 
-    ! bilinear interpolation (implemented by fanie)
-    ! f(x,y) = [x2-x x-x1] [f(11) f(12); f(21) f(22)] [y2-y; y-y1] * 1/(x2-x1)(y2-y1)
 
 end subroutine bilinear_interpolation
 !----------------------------------------------------------------------------------------
 
 
 !----------------------------------------------------------------------------------------
-subroutine plot_discrete_input(num_discr_het, num_het_pts_region, rhet2, thhet2, phhet2)
+subroutine plot_discrete_input(num_het_pts, rhet2, thhet2)
 
     use background_models, only : velocity
-    use data_mesh, only : discont,bkgrdmodel
+    use data_mesh, only : discont, bkgrdmodel
 
     implicit none
 
-    integer, intent(in) :: num_het_pts_region(:), num_discr_het
+    integer, intent(in) :: num_het_pts
     integer :: i,j,idom,icount
     real, allocatable, dimension(:,:) :: meshtmp
     real, allocatable, dimension(:) :: vptmp,vstmp,rhotmp
     character(len=80) :: fname
-    double precision, intent(in) :: rhet2(:,:), thhet2(:,:), phhet2(:,:)
+    double precision, intent(in) :: rhet2(:), thhet2(:)
 
-    allocate(vptmp(nhet_pts), vstmp(nhet_pts), rhotmp(nhet_pts), meshtmp(nhet_pts,2))
+    allocate(vptmp(num_het_pts), vstmp(num_het_pts), rhotmp(num_het_pts), &
+             meshtmp(num_het_pts,2))
     icount = 0
-    do i=1, num_discr_het
-       do j=1, num_het_pts_region(i)
-          icount = icount + 1
-          idom = minloc(abs(discont-rhet2(j,i)),1)
+    do j=1, num_het_pts
+       icount = icount + 1
+       idom = minloc((discont - rhet2(j)),1, mask=(discont - rhet2(j))>=0.)
+       write(6,*) idom
 
 !#########################################################################################
 ! MvD: - calling velocityi() here causes problems with anisotropy, anway it is
 !        called already in get_model, so why not use the lame parameters here?
 !#########################################################################################
 
-          vptmp(icount) = velocity(rhet2(j,i), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-          vptmp(icount) = vptmp(icount) * (1. + delta_vp2(j,i))
+       vptmp(icount) = velocity(rhet2(j), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+       vptmp(icount) = vptmp(icount) * (1. + delta_vp2(j))
 
-          vstmp(icount) = velocity(rhet2(j,i), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
-          vstmp(icount) = vstmp(icount) * (1. + delta_vs2(j,i))
+       vstmp(icount) = velocity(rhet2(j), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+       vstmp(icount) = vstmp(icount) * (1. + delta_vs2(j))
 
-          rhotmp(icount) = velocity(rhet2(j,i), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
-          rhotmp(icount) = rhotmp(icount)* (1.+delta_rho2(j,i))
+       rhotmp(icount) = velocity(rhet2(j), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+       rhotmp(icount) = rhotmp(icount)* (1. + delta_rho2(j))
 
-          meshtmp(icount,1) = rhet2(j,i) * sin(thhet2(j,i))
-          meshtmp(icount,2) = rhet2(j,i) * cos(thhet2(j,i))
-       enddo
+       meshtmp(icount,1) = rhet2(j) * sin(thhet2(j))
+       meshtmp(icount,2) = rhet2(j) * cos(thhet2(j))
     enddo
 
     fname = trim('Info/model_rho_discr_het'//appmynum)
-    call write_VTK_bin_scal_pts(rhotmp(1:nhet_pts), meshtmp(1:nhet_pts,1:2), &
-                                nhet_pts, fname)
+    call write_VTK_bin_scal_pts(rhotmp(1:num_het_pts), meshtmp(1:num_het_pts,1:2), &
+                                num_het_pts, fname)
 
     fname = trim('Info/model_vp_discr_het'//appmynum)
-    call write_VTK_bin_scal_pts(vptmp(1:nhet_pts), meshtmp(1:nhet_pts,1:2), &
-                                nhet_pts, fname)
+    call write_VTK_bin_scal_pts(vptmp(1:num_het_pts), meshtmp(1:num_het_pts,1:2), &
+                                num_het_pts, fname)
 
     fname = trim('Info/model_vs_discr_het'//appmynum)
-    call write_VTK_bin_scal_pts(vstmp(1:nhet_pts), meshtmp(1:nhet_pts,1:2), &
-                                nhet_pts, fname)
+    call write_VTK_bin_scal_pts(vstmp(1:num_het_pts), meshtmp(1:num_het_pts,1:2), &
+                                num_het_pts, fname)
 
     deallocate(meshtmp, vptmp, vstmp, rhotmp)
 
@@ -948,7 +922,7 @@ end subroutine load_random
 
 
 !-----------------------------------------------------------------------------------------
-subroutine load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
+subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
 
 ! added by fanie for sharp discontinuites
     use background_models, only : velocity
@@ -1614,7 +1588,7 @@ subroutine write_VTK_bin_scal_pts(u2,mesh1,rows,filename)
    close(100)
    write(6,*)'...saved ',trim(filename)//'.vtk'
 
-end subroutine write_vtk_bin_scal_pts
+end subroutine write_VTK_bin_scal_pts
 !-----------------------------------------------------------------------------
 
 end module lateral_heterogeneities
