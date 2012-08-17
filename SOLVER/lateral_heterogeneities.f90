@@ -183,6 +183,7 @@ subroutine read_param_hetero
 
        if (het_format(ij) == 'discr') then
           read(91,*) het_file_discr(ij)
+
        elseif (het_format(ij) == 'rndm') then
           read(91,*) het_funct_type(ij)
           read(91,*) r_het1(ij), r_het2(ij)
@@ -190,6 +191,13 @@ subroutine read_param_hetero
           read(91,*) delta_rho(ij)
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
+
+          inverseshape(ij) = index(het_funct_type(ij),'_i')-1
+          
+          if (inverseshape(ij) > 0) then
+              het_funct_type(ij) = het_funct_type(ij)(1:inverseshape(ij))
+          endif
+
        elseif (het_format(ij) == 'funct') then
           read(91,*) het_funct_type(ij)
           read(91,*) rdep(ij)
@@ -200,6 +208,7 @@ subroutine read_param_hetero
           read(91,*) delta_rho(ij)
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
+
        elseif (het_format(ij) == 'ica') then
           read(91,*) num_slices
           
@@ -216,16 +225,12 @@ subroutine read_param_hetero
              fa_phi_ica(i) = fa_phi_ica(i) / 180. * pi
              read(91,*) a_ica(i), b_ica(i), c_ica(i)
           enddo
+
        else
           write(6,*)'Unknown heterogeneity input type: ', het_format(ij)
           stop
        endif
      
-       inverseshape(ij) = index(het_funct_type(ij),'_i')-1
-       
-       if (inverseshape(ij) > 0) then
-           het_funct_type(ij) = het_funct_type(ij)(1:inverseshape(ij))
-       endif
     enddo
 
     ! degree to radians
