@@ -440,14 +440,6 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     double precision, allocatable, dimension(:) :: shet, zhet
     double precision, allocatable :: rhet2(:), thhet2(:)
 
-!#########################################################################################
-! MvD: - stopping the code here until this is fixed
-!#########################################################################################
-    write(6,*) ''
-    write(6,*) 'ERROR:'
-    write(6,*) '   discrete input: interpolation wrong so far - work in progress...'
-    !stop
-
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 
     open(unit=91, file=trim(het_file_discr(hetind)))
@@ -535,10 +527,8 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
           if ( r <= rmax .and. th <= thetamax ) then
              do ipol=0, npol
                 do jpol=0, npol
-                   ! find closest 4 points of discrete heterogeneous mesh
                    
                    call compute_coordinates(s, z, r, th, iel, ipol, jpol)
-                   !call bilinear_interpolation(s, z, num_het_pts, shet, zhet, ind, w, wsum)
                    call inverse_distance_weighting(s, z, num_het_pts, shet, zhet, w, hetind)
                    
                    vptmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
@@ -607,68 +597,6 @@ subroutine inverse_distance_weighting(s0, z0, n, s, z, w, hetind)
 
 
 end subroutine inverse_distance_weighting
-!----------------------------------------------------------------------------------------
-
-
-
-!----------------------------------------------------------------------------------------
-subroutine bilinear_interpolation(s0, z0, n, s, z, ind, w, wsum)
-    ! This is NOT a bilinear interpolation, this is inverse distance weighting
-    ! over the closest 4 points (one in each quadrant) !!
-    implicit none
-
-    ! implemented by fanie, find_closest4_points didnt really work for me...
-    integer, intent(in) :: n
-    double precision, intent(in) :: s0, z0, s(1:n), z(1:n)
-    integer, intent(out) :: ind(4)
-    double precision, intent(out) :: w(4), wsum
-    integer :: i, p, is1, is2, is3, is4, iz1, iz2, iz3, iz4
-    double precision :: dr(4), d2d(n,2), ds1, ds2, ds3, ds4
-
-    ! choose 4 closest points, numbered after quadrant seen from s0,z0
-    ! better: find minimum in array after calculating 2D-distance d2d in loop over n
-    do i=1, n
-        d2d(i,1) = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
-        if ((s(i) >= s0) .and. (z(i) >= z0)) then
-            d2d(i,2) = 1
-        elseif ((s(i) <= s0) .and. (z(i) >= z0)) then
-            d2d(i,2) = 2
-        elseif ((s(i) <= s0) .and. (z(i) <= z0)) then
-            d2d(i,2) = 3
-        elseif ((s(i) >= s0) .and. (z(i) <= z0)) then
-            d2d(i,2) = 4
-        endif
-    enddo
-
-    ! find minimum of d2d for each quadrant
-    dr(1) = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==1)
-    dr(2) = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==2)
-    dr(3) = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==3)
-    dr(4) = minval(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==4)
-    ind(1) = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==1)
-    ind(2) = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==2)
-    ind(3) = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==3)
-    ind(4) = minloc(d2d(1:n,1), DIM=1, MASK=(d2d(1:n,2))==4)
-
-    write(6,*) 'bil int1', dr(1), ind(1)
-    write(6,*) 'bil int2', dr(2), ind(2)
-    write(6,*) 'bil int3', dr(3), ind(3)
-    write(6,*) 'bil int4', dr(4), ind(4)
-
-    p = 2
-
-    ! MvD: I think the reason why this does not work is, that you do not allways
-    ! find 4 neighbours in the four quadrants...
-
-    ! inverse distance weighting
-    do i=1, 4
-       w(i) = (dr(i))**(-p)
-    enddo
-
-    wsum = 1. / sum(w)
-
-
-end subroutine bilinear_interpolation
 !----------------------------------------------------------------------------------------
 
 
