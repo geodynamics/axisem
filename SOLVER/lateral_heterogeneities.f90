@@ -94,10 +94,8 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
              write(6,*) '    activate force anisotropy in inparam!'
              stop
           endif
-          call load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                        fa_ani_phi, lambdapost, mupost, xi_ani_post, &
-                        phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, &
-                        ij, ieldom)
+          call load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, &
+                        eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, ij, ieldom)
        endif
 
        if (add_up) then
@@ -224,15 +222,19 @@ subroutine read_param_hetero
 
     if (lpr) then 
        do ij=1, num_het
-          if (het_format(ij)=='funct' .or. het_format(ij)=='const') then
-             write(6,*) 'Specification of heterogeneous region:', ij
-             write(6,*) 'Radius (lower/upper bound) [km]:', &
+          write(6,*) ''
+          write(6,*) 'Lateral Heterogeneity No. ', ij, 'of type ', het_format(ij)
+          write(6,*) ''
+          if (het_format(ij)=='funct' .or. het_format(ij)=='rndm') then
+             write(6,*) ''
+             write(6,*) '   Radius (lower/upper bound) [km]:', &
                          r_het1(ij) / 1000., r_het2(ij) / 1000.
-             write(6,*) 'Colatitude (lower/upper bound) [deg]:', &
+             write(6,*) '   Colatitude (lower/upper bound) [deg]:', &
                          th_het1(ij) * 180. / pi, th_het2(ij) * 180. / pi
-             write(6,*) 'delta rho [%]:', delta_rho(ij)
-             write(6,*) 'delta vp  [%]:', delta_vp(ij)
-             write(6,*) 'delta vs  [%]:', delta_vs(ij)
+             write(6,*) '   delta rho [%]:', delta_rho(ij)
+             write(6,*) '   delta vp  [%]:', delta_vp(ij)
+             write(6,*) '   delta vs  [%]:', delta_vs(ij)
+             write(6,*) ''
           endif
        enddo
     endif
@@ -303,18 +305,15 @@ end subroutine rotate_hetero
 
 
 !-----------------------------------------------------------------------------------------
-subroutine load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                    fa_ani_phi, lambdapost, mupost, xi_ani_post, &
-                    phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, &
-                    hetind, ieldom)
+subroutine load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, eta_ani_post, &
+                    fa_ani_theta_post, fa_ani_phi_post, hetind, ieldom)
 
     use utlity, only: thetacoord, rcoord
     use data_mesh, only: discont
     implicit none
 
-    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu, &
-           xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
-    double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambdapost, mupost, &
+    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
+    double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambdapost, &
            xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
     integer, dimension(nelem), intent(in) :: ieldom
     integer :: hetind
@@ -364,9 +363,6 @@ subroutine load_ica(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
                              rho(ipol,jpol,iel))
                 vstmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel))
 
-                ! XXX need to recompute lambda as well!
-
-                
                 fa_ani_theta_post(ipol,jpol,iel) = acos(fast_axis_src(3))
   
                 arg1 = (fast_axis_src(1) + smallval_dble) / &
