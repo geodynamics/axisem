@@ -2200,7 +2200,7 @@ integer :: npts_vtk,ct,iel,i
 real, allocatable ::  x(:),y(:),z0(:)
 logical :: plot_ani
 
-npts_vtk=nelem *4
+npts_vtk = nelem * 4
 allocate(vp1(npts_vtk),vs1(npts_vtk),rho1(npts_vtk))
 if (present(xi_ani) .and. present(phi_ani) .and.  present(eta_ani) &
     .and. present(fa_ani_theta) .and. present(fa_ani_phi))then
@@ -2211,22 +2211,23 @@ if (present(xi_ani) .and. present(phi_ani) .and.  present(eta_ani) &
 else
     plot_ani = .false.
 endif
+
 allocate(x(npts_vtk),y(npts_vtk),z0(npts_vtk))
 
-z0=0.d0
-ct=0
-do iel=1,nelem
+z0 = 0.d0
+ct = 0
+do iel=1, nelem
 
-   x(ct+1)=scoord(0,0,iel)
-   x(ct+2)=scoord(npol,0,iel)
-   x(ct+3)=scoord(npol,npol,iel)
-   x(ct+4)=scoord(0,npol,iel)
-   y(ct+1)=zcoord(0,0,iel)
-   y(ct+2)=zcoord(npol,0,iel)
-   y(ct+3)=zcoord(npol,npol,iel)
-   y(ct+4)=zcoord(0,npol,iel)
+   x(ct+1) = scoord(0,0,iel)
+   x(ct+2) = scoord(npol,0,iel)
+   x(ct+3) = scoord(npol,npol,iel)
+   x(ct+4) = scoord(0,npol,iel)
+   y(ct+1) = zcoord(0,0,iel)
+   y(ct+2) = zcoord(npol,0,iel)
+   y(ct+3) = zcoord(npol,npol,iel)
+   y(ct+4) = zcoord(0,npol,iel)
 
-   do i=1,4
+   do i=1, 4
 
       rho1(ct+1) = rho(0,0,iel)
       vp1(ct+1) = sqrt( (lambda(0,0,iel)+2.*mu(0,0,iel) ) / rho1(ct+1)  )
