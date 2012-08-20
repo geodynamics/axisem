@@ -130,6 +130,10 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
  
     write(6,*)'final model done, now vtk files...'
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! MvD: generalize for anisotropic media
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     call plot_hetero_region_vtk(rho, lambda, mu)
 
     deallocate(het_format, het_file_discr, het_funct_type, rdep, grad, gradrdep1, &
@@ -427,28 +431,34 @@ end subroutine load_ica
 
 
 !-----------------------------------------------------------------------------------------
-subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
+subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, &
+                           xi_ani, phi_ani, eta_ani, xi_ani_post, phi_ani_post, &
+                           eta_ani_post)
     implicit none
 
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
-    double precision, dimension(0:npol,0:npol,nelem) :: rhopost,lambdapost,mupost
+    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho
+    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
+    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
+                                                            lambdapost, mupost
+
+    double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+                                                            xi_ani, phi_ani, eta_ani
+    double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
+                                               xi_ani_post, phi_ani_post, eta_ani_post
     integer :: hetind
     double precision, allocatable, dimension(:) :: w
     integer :: iel, ipol, jpol, i, j
     integer :: num_het_pts
-    double precision :: s, z, r, th, r1, vptmp, vstmp, r2, r3, r4, th1, th2, th3, th4
+    double precision :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
+    double precision :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
     double precision :: rmin, rmax, thetamin, thetamax
     double precision, allocatable, dimension(:) :: shet, zhet
     double precision, allocatable :: rhet2(:), thhet2(:)
     double precision, allocatable :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
+    double precision, allocatable :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
+                                     delta_vsv2(:), delta_eta2(:)
     double precision, allocatable :: rho2(:), vp2(:), vs2(:)
 
-    if (.not. het_ani_discr(hetind) == 'iso') then
-        write(6,*) 'ERROR: discrete input only iso at the moment'
-        stop
-    endif
-    
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 
     open(unit=91, file=trim(het_file_discr(hetind)))
@@ -461,9 +471,9 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
     write(6,*) mynum, 'read coordinates & medium properties...'
     
-    if (het_rel_discr(hetind) == 'rel') then
+    if (het_rel_discr(hetind) == 'rel' .and. het_ani_discr(hetind) == 'iso') then
         allocate(delta_vs2(1:num_het_pts), delta_vp2(1:num_het_pts), &
-             delta_rho2(1:num_het_pts), w(1:num_het_pts))
+                 delta_rho2(1:num_het_pts), w(1:num_het_pts))
 
         do j=1, num_het_pts
             read(91,*) rhet2(j), thhet2(j), delta_vp2(j), delta_vs2(j), delta_rho2(j)
@@ -475,7 +485,35 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
         delta_vs2 = delta_vs2 / 100.
         delta_rho2 = delta_rho2 / 100.
 
-    elseif (het_rel_discr(hetind) == 'abs') then
+    elseif (het_rel_discr(hetind) == 'rel' .and. het_ani_discr(hetind) == 'radial') then
+
+        if (.not. ani_hetero) then
+           write(6,*) ''
+           write(6,*) 'ERROR: anisotropic heterogeneity needs an anisotropic model -'
+           write(6,*) '   either choose an anisotropic background model or'
+           write(6,*) '   activate force anisotropy in inparam!'
+           stop
+        endif
+
+        allocate(delta_vsh2(1:num_het_pts), delta_vph2(1:num_het_pts), &
+                 delta_vsv2(1:num_het_pts), delta_vpv2(1:num_het_pts), &
+                 delta_rho2(1:num_het_pts), delta_eta2(1:num_het_pts), w(1:num_het_pts))
+
+        do j=1, num_het_pts
+            read(91,*) rhet2(j), thhet2(j), delta_vpv2(j), delta_vsv2(j), &
+                       delta_vph2(j), delta_vsh2(j), delta_rho2(j), delta_eta2(j)
+        enddo
+        
+        if (lpr) write(6,*) 'percent -> fraction'
+       
+        delta_vpv2 = delta_vpv2 / 100.
+        delta_vsv2 = delta_vsv2 / 100.
+        delta_vph2 = delta_vph2 / 100.
+        delta_vsh2 = delta_vsh2 / 100.
+        delta_rho2 = delta_rho2 / 100.
+        delta_eta2 = delta_eta2 / 100.
+
+    elseif (het_rel_discr(hetind) == 'abs' .and. het_ani_discr(hetind) == 'iso') then
         allocate(vs2(1:num_het_pts), vp2(1:num_het_pts), &
              rho2(1:num_het_pts), w(1:num_het_pts))
         
@@ -484,7 +522,8 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
         enddo
 
     else
-        write(6,*) 'ERROR: ', het_rel_discr(hetind), 'should be either rel or abs'
+        write(6,*) 'ERROR: combination', het_rel_discr(hetind), 'and ', &
+                    het_ani_discr(hetind), 'not yet implemented'
         stop
     endif
 
@@ -520,11 +559,19 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     endif
 
     ! plot discrete input file in vtk (needs to be done only once)
-    if (lpr .and. het_rel_discr(hetind) == 'rel') then
+    if (lpr .and. het_rel_discr(hetind) == 'rel' .and. &
+            het_ani_discr(hetind) == 'iso') then
         call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, &
                                  delta_vp2=delta_vp2, delta_vs2=delta_vs2, &
                                  delta_rho2=delta_rho2)
-    elseif (lpr .and. het_rel_discr(hetind) == 'abs') then
+    elseif (lpr .and. het_rel_discr(hetind) == 'rel' .and. &
+            het_ani_discr(hetind) == 'radial') then
+        call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, &
+                                 delta_vpv2=delta_vpv2, delta_vsv2=delta_vsv2, &
+                                 delta_vph2=delta_vph2, delta_vsh2=delta_vsh2, &
+                                 delta_rho2=delta_rho2, delta_eta2=delta_eta2)
+    elseif (lpr .and. het_rel_discr(hetind) == 'abs' .and. & 
+            het_ani_discr(hetind) == 'iso') then
         call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, &
                                  vp2=vp2, vs2=vs2, rho2=rho2)
     endif
@@ -579,10 +626,31 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
                       vptmp = vptmp * (1. + sum(w * delta_vp2))
                       vstmp = vstmp * (1. + sum(w * delta_vs2))
                    
+                   elseif (het_ani_discr(hetind) == 'radial' .and. &
+                            het_rel_discr(hetind) == 'rel') then
+                   
+                      vphtmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
+                                   rho(ipol,jpol,iel))
+
+                      vshtmp = sqrt(mu(ipol,jpol,iel) / rho(ipol,jpol,iel))
+                      
+                      vpvtmp = sqrt(phi_ani(ipol,jpol,iel)) * vphtmp
+                      
+                      vsvtmp =  vshtmp / sqrt(xi_ani(ipol,jpol,iel))
+
+                      etatmp =  eta_ani(ipol,jpol,iel)
+
+                      rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * &
+                                            (1. + sum(w * delta_rho2))
+
+                      vpvtmp = vpvtmp * (1. + sum(w * delta_vpv2))
+                      vsvtmp = vsvtmp * (1. + sum(w * delta_vsv2))
+                      vphtmp = vphtmp * (1. + sum(w * delta_vph2))
+                      vshtmp = vshtmp * (1. + sum(w * delta_vsh2))
+                      etatmp = etatmp * (1. + sum(w * delta_eta2))
+                   
                    elseif (het_ani_discr(hetind) == 'iso' .and. &
                             het_rel_discr(hetind) == 'abs') then
-                      
-                      write(6,*) 'BLA'
                       
                       rhopost(ipol,jpol,iel) = sum(w * rho2)
                       vptmp = sum(w * vp2)
@@ -590,10 +658,24 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
                    endif
 
-                   mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
-                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
-                                               (vptmp**2 - 2. * vstmp**2)
-                   write(6,*) 'BLUBB'
+                   if (het_ani_discr(hetind) == 'iso') then
+
+                      mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
+                      lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
+                                                   (vptmp**2 - 2. * vstmp**2)
+
+                   elseif (het_ani_discr(hetind) == 'radial') then
+                      
+                      mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vshtmp**2
+                      lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
+                                                   (vphtmp**2 - 2. * vshtmp**2)
+
+                      xi_ani_post(ipol,jpol,iel) = vshtmp**2 / vsvtmp**2
+                      phi_ani_post(ipol,jpol,iel) = vpvtmp**2 / vphtmp**2
+
+                      eta_ani_post(ipol,jpol,iel) = etatmp
+
+                   endif 
                 enddo
              enddo
           endif
@@ -608,6 +690,10 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     if (het_ani_discr(hetind) == 'iso' .and. &
             het_rel_discr(hetind) == 'rel') then
         deallocate(delta_vs2, delta_vp2, delta_rho2)
+    elseif (het_ani_discr(hetind) == 'radial' .and. &
+            het_rel_discr(hetind) == 'rel') then
+        deallocate(delta_vsv2, delta_vpv2, delta_rho2)
+        deallocate(delta_vsh2, delta_vph2, delta_eta2)
     elseif (het_ani_discr(hetind) == 'iso' .and. &
             het_rel_discr(hetind) == 'abs') then
         deallocate(vs2, vp2, rho2)
@@ -661,7 +747,9 @@ end subroutine inverse_distance_weighting
 
 !----------------------------------------------------------------------------------------
 subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, delta_vs2, &
-                               delta_rho2, vp2, vs2, rho2)
+                               delta_rho2, delta_vpv2, delta_vsv2, &
+                               delta_vph2, delta_vsh2, vp2, vs2, rho2, delta_eta2)
+
 
     use background_models, only : velocity
     use data_mesh, only : discont, bkgrdmodel
@@ -671,16 +759,19 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
     integer, intent(in) :: hetind, num_het_pts
     double precision, intent(in) :: rhet2(:), thhet2(:)
     double precision, intent(in), optional:: delta_vp2(:), delta_vs2(:), delta_rho2(:)
+    double precision, intent(in), optional:: delta_vpv2(:), delta_vsv2(:), &
+                                             delta_vph2(:), delta_vsh2(:), delta_eta2(:)
     double precision, intent(in), optional:: vp2(:), vs2(:), rho2(:)
     integer :: j, idom
     real, allocatable, dimension(:,:) :: meshtmp
     real, allocatable, dimension(:) :: vptmp, vstmp, rhotmp
+    real, allocatable, dimension(:) :: vpvtmp, vsvtmp, vphtmp, vshtmp, etatmp
     character(len=80) :: fname
 
-    allocate(vptmp(num_het_pts), vstmp(num_het_pts), rhotmp(num_het_pts), &
-             meshtmp(num_het_pts,2))
+    allocate(meshtmp(num_het_pts,2))
 
     if (het_ani_discr(hetind) == 'iso' .and. het_rel_discr(hetind) == 'rel') then
+        allocate(vptmp(num_het_pts), vstmp(num_het_pts), rhotmp(num_het_pts))
 
         do j=1, num_het_pts
            idom = minloc((discont - rhet2(j)),1, mask=(discont - rhet2(j))>=0.)
@@ -694,7 +785,36 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
            rhotmp(j) = velocity(rhet2(j), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
            rhotmp(j) = rhotmp(j)* (1. + delta_rho2(j))
         enddo
+
+    elseif (het_ani_discr(hetind) == 'radial' .and. het_rel_discr(hetind) == 'rel') then
+        allocate(vpvtmp(num_het_pts), vsvtmp(num_het_pts), rhotmp(num_het_pts), &
+                 vphtmp(num_het_pts), vshtmp(num_het_pts), etatmp(num_het_pts))
+
+        do j=1, num_het_pts
+           idom = minloc((discont - rhet2(j)),1, mask=(discont - rhet2(j))>=0.)
+
+           vpvtmp(j) = velocity(rhet2(j), 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+           vpvtmp(j) = vpvtmp(j) * (1. + delta_vpv2(j))
+           
+           vphtmp(j) = velocity(rhet2(j), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+           vphtmp(j) = vphtmp(j) * (1. + delta_vph2(j))
+
+           vsvtmp(j) = velocity(rhet2(j), 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
+           vsvtmp(j) = vsvtmp(j) * (1. + delta_vsv2(j))
+
+           vshtmp(j) = velocity(rhet2(j), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+           vshtmp(j) = vshtmp(j) * (1. + delta_vsh2(j))
+
+           rhotmp(j) = velocity(rhet2(j), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+           rhotmp(j) = rhotmp(j)* (1. + delta_rho2(j))
+           
+           etatmp(j) = velocity(rhet2(j), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+           etatmp = etatmp(j)* (1. + delta_eta2(j))
+        enddo
+        
     elseif (het_ani_discr(hetind) == 'iso' .and. het_rel_discr(hetind) == 'abs') then
+        allocate(vptmp(num_het_pts), vstmp(num_het_pts), rhotmp(num_het_pts))
+
         vptmp = vp2
         vstmp = vs2
         rhotmp = rho2
@@ -708,24 +828,47 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
     fname = trim('Info/model_rho_discr_het_'//appmynum)
     call write_VTK_bin_scal_pts(rhotmp, meshtmp, num_het_pts, fname)
 
-    fname = trim('Info/model_vp_discr_het_'//appmynum)
-    call write_VTK_bin_scal_pts(vptmp, meshtmp, num_het_pts, fname)
+    if (het_ani_discr(hetind) == 'iso') then
+        fname = trim('Info/model_vp_discr_het_'//appmynum)
+        call write_VTK_bin_scal_pts(vptmp, meshtmp, num_het_pts, fname)
 
-    fname = trim('Info/model_vs_discr_het_'//appmynum)
-    call write_VTK_bin_scal_pts(vstmp, meshtmp, num_het_pts, fname)
+        fname = trim('Info/model_vs_discr_het_'//appmynum)
+        call write_VTK_bin_scal_pts(vstmp, meshtmp, num_het_pts, fname)
 
-    if (het_rel_discr(hetind) == 'rel') then
-        fname = trim('Info/model_rho_discr_het_rel_'//appmynum)
-        call write_VTK_bin_scal_pts(real(delta_rho2), meshtmp, num_het_pts, fname)
+        if (het_rel_discr(hetind) == 'rel') then
+            fname = trim('Info/model_rho_discr_het_rel_'//appmynum)
+            call write_VTK_bin_scal_pts(real(delta_rho2), meshtmp, num_het_pts, fname)
 
-        fname = trim('Info/model_vp_discr_het_rel_'//appmynum)
-        call write_VTK_bin_scal_pts(real(delta_vp2), meshtmp, num_het_pts, fname)
+            fname = trim('Info/model_vp_discr_het_rel_'//appmynum)
+            call write_VTK_bin_scal_pts(real(delta_vp2), meshtmp, num_het_pts, fname)
 
-        fname = trim('Info/model_vs_discr_het_rel_'//appmynum)
-        call write_VTK_bin_scal_pts(real(delta_vs2), meshtmp, num_het_pts, fname)
+            fname = trim('Info/model_vs_discr_het_rel_'//appmynum)
+            call write_VTK_bin_scal_pts(real(delta_vs2), meshtmp, num_het_pts, fname)
+        endif
+    elseif (het_ani_discr(hetind) == 'radial') then
+        fname = trim('Info/model_vpv_discr_het_'//appmynum)
+        call write_VTK_bin_scal_pts(vpvtmp, meshtmp, num_het_pts, fname)
+
+        fname = trim('Info/model_vsv_discr_het_'//appmynum)
+        call write_VTK_bin_scal_pts(vsvtmp, meshtmp, num_het_pts, fname)
+
+        fname = trim('Info/model_vph_discr_het_'//appmynum)
+        call write_VTK_bin_scal_pts(vphtmp, meshtmp, num_het_pts, fname)
+
+        fname = trim('Info/model_vsh_discr_het_'//appmynum)
+        call write_VTK_bin_scal_pts(vshtmp, meshtmp, num_het_pts, fname)
+        
+        fname = trim('Info/model_eta_discr_het_'//appmynum)
+        call write_VTK_bin_scal_pts(etatmp, meshtmp, num_het_pts, fname)
     endif
 
-    deallocate(meshtmp, vptmp, vstmp, rhotmp)
+    if (het_ani_discr(hetind) == 'iso') then
+        deallocate(vptmp, vstmp)
+    elseif (het_ani_discr(hetind) == 'radial') then
+        deallocate(vpvtmp, vsvtmp, vphtmp, vshtmp, etatmp)
+    endif
+
+    deallocate(meshtmp, rhotmp)
 
 end subroutine plot_discrete_input
 !----------------------------------------------------------------------------------------
@@ -1471,6 +1614,9 @@ end subroutine load_het_funct
 
 !----------------------------------------------------------------------------------------
 subroutine plot_hetero_region_vtk(rho,lambda,mu)
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! MvD: generalize for anisotropic media
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
     double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho 
