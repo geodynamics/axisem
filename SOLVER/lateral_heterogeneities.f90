@@ -530,12 +530,6 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     endif
 
 
-    ! for plotting discrete points within heterogeneous region
-    rhetmin = min(rmin, rhetmin)
-    rhetmax = max(rmax, rhetmax)
-    thhetmin = min(thetamin, thhetmin)
-    thhetmax = max(thetamax, thhetmax)
-
     write(6,*) 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
     write(6,*) 'th het min/max:', thhetmin / pi * 180., thhetmax / pi * 180.
 
@@ -554,10 +548,18 @@ subroutine load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
        r = max(max(r1,r2), max(r3, r4))
        th = max(max(th1,th2), max(th3, th4))
-       if ( r >= rmin .and. th >= thetamin ) then
+    
+       if (r >= rmin .and. th >= thetamin) then
           r = min(min(r1,r2), min(r3, r4))
           th = min(min(th1,th2), min(th3, th4))
-          if ( r <= rmax .and. th <= thetamax ) then
+          if (r <= rmax .and. th <= thetamax) then
+
+             !to plot all gll points in elements effected:
+             rhetmax = max(max(max(r1,r2), max(r3, r4)), rhetmax)
+             thhetmax = max(max(max(th1,th2), max(th3, th4)), thhetmax)
+             rhetmin = min(min(min(r1,r2), min(r3, r4)), rhetmin)
+             thhetmin = min(min(min(th1,th2), min(th3, th4)), thhetmin)
+
              do ipol=0, npol
                 do jpol=0, npol
                    
