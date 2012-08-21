@@ -86,7 +86,7 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           else
              call load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, ij, &
                            xi_ani, phi_ani, eta_ani, xi_ani_post, phi_ani_post, &
-                           eta_ani_post)
+                           eta_ani_post, fa_ani_theta_post, fa_ani_phi_post)
           endif
        elseif (het_format(ij) == 'rndm') then 
           ! add random fluctuations to radial model
@@ -440,7 +440,7 @@ end subroutine load_ica
 !-----------------------------------------------------------------------------------------
 subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, &
                            xi_ani, phi_ani, eta_ani, xi_ani_post, phi_ani_post, &
-                           eta_ani_post)
+                           eta_ani_post, fa_ani_theta_post, fa_ani_phi_post)
     implicit none
 
     double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho
@@ -452,12 +452,15 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                                                             xi_ani, phi_ani, eta_ani
     double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
                                                xi_ani_post, phi_ani_post, eta_ani_post
+    double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
+                                               fa_ani_theta_post, fa_ani_phi_post
     integer :: hetind
     double precision, allocatable, dimension(:) :: w
     integer :: iel, ipol, jpol, i, j
     integer :: num_het_pts
     double precision :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
     double precision :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
+    double precision :: fa_theta_tmp, fa_phi_tmp
     double precision :: rmin, rmax, thetamin, thetamax
     double precision, allocatable, dimension(:) :: shet, zhet
     double precision, allocatable :: rhet2(:), thhet2(:)
@@ -465,6 +468,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     double precision, allocatable :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
                                      delta_vsv2(:), delta_eta2(:)
     double precision, allocatable :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
+    double precision, allocatable :: fa_theta2(:), fa_phi2(:)
     double precision, allocatable :: rho2(:), vp2(:), vs2(:)
 
     write(6,*) mynum, 'reading discrete heterogeneity file...'
@@ -489,7 +493,6 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
         endif
 
     endif
-
 
     open(unit=91, file=trim(het_file_discr(hetind)))
 
@@ -535,6 +538,28 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
         delta_rho2 = delta_rho2 / 100.
         delta_eta2 = delta_eta2 / 100.
 
+    elseif (het_rel_discr(hetind) == 'rel' .and. het_ani_discr(hetind) == 'hex') then
+
+        allocate(delta_vsh2(1:num_het_pts), delta_vph2(1:num_het_pts), &
+                 delta_vsv2(1:num_het_pts), delta_vpv2(1:num_het_pts), &
+                 delta_rho2(1:num_het_pts), delta_eta2(1:num_het_pts), &
+                 fa_theta2(1:num_het_pts), fa_phi2(1:num_het_pts), w(1:num_het_pts))
+
+        do j=1, num_het_pts
+            read(91,*) rhet2(j), thhet2(j), delta_vpv2(j), delta_vsv2(j), &
+                       delta_vph2(j), delta_vsh2(j), delta_rho2(j), delta_eta2(j), &
+                       fa_theta2(j), fa_phi2(j)
+        enddo
+        
+        if (lpr) write(6,*) 'percent -> fraction'
+       
+        delta_vpv2 = delta_vpv2 / 100.
+        delta_vsv2 = delta_vsv2 / 100.
+        delta_vph2 = delta_vph2 / 100.
+        delta_vsh2 = delta_vsh2 / 100.
+        delta_rho2 = delta_rho2 / 100.
+        delta_eta2 = delta_eta2 / 100.
+
     elseif (het_rel_discr(hetind) == 'abs' .and. het_ani_discr(hetind) == 'iso') then
         allocate(vs2(1:num_het_pts), vp2(1:num_het_pts), &
              rho2(1:num_het_pts), w(1:num_het_pts))
@@ -552,6 +577,18 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
         do j=1, num_het_pts
             read(91,*) rhet2(j), thhet2(j), vpv2(j), vsv2(j), vph2(j), vsh2(j), &
                        rho2(j), eta2(j)
+        enddo
+    
+    elseif (het_rel_discr(hetind) == 'abs' .and. het_ani_discr(hetind) == 'hex') then
+
+        allocate(vsh2(1:num_het_pts), vph2(1:num_het_pts), &
+                 vsv2(1:num_het_pts), vpv2(1:num_het_pts), &
+                 rho2(1:num_het_pts), eta2(1:num_het_pts), &
+                 fa_theta2(1:num_het_pts), fa_phi2(1:num_het_pts), w(1:num_het_pts))
+
+        do j=1, num_het_pts
+            read(91,*) rhet2(j), thhet2(j), vpv2(j), vsv2(j), vph2(j), vsh2(j), & 
+                       rho2(j), eta2(j), fa_theta2(j), fa_phi2(j)
         enddo
 
     else
@@ -607,6 +644,15 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                                  delta_vph2=delta_vph2, delta_vsh2=delta_vsh2, &
                                  delta_rho2=delta_rho2, delta_eta2=delta_eta2)
 
+    elseif (lpr .and. het_rel_discr(hetind) == 'rel' .and. &
+            het_ani_discr(hetind) == 'hex') then
+
+        call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, &
+                                 delta_vpv2=delta_vpv2, delta_vsv2=delta_vsv2, &
+                                 delta_vph2=delta_vph2, delta_vsh2=delta_vsh2, &
+                                 delta_rho2=delta_rho2, delta_eta2=delta_eta2, &
+                                 fa_theta2=fa_theta2, fa_phi2=fa_phi2)
+
     elseif (lpr .and. het_rel_discr(hetind) == 'abs' .and. & 
             het_ani_discr(hetind) == 'iso') then
 
@@ -618,6 +664,14 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
 
         call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, vpv2=vpv2, &
                                  vsv2=vsv2, vph2=vph2, vsh2=vsh2, rho2=rho2, eta2=eta2)
+    
+    elseif (lpr .and. het_rel_discr(hetind) == 'abs' .and. &
+            het_ani_discr(hetind) == 'hex') then
+
+        call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, vpv2=vpv2, &
+                                 vsv2=vsv2, vph2=vph2, vsh2=vsh2, rho2=rho2, eta2=eta2, &
+                                 fa_theta2=fa_theta2, fa_phi2=fa_phi2)
+
     endif
 
 
@@ -670,7 +724,8 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                       vptmp = vptmp * (1. + sum(w * delta_vp2))
                       vstmp = vstmp * (1. + sum(w * delta_vs2))
                    
-                   elseif (het_ani_discr(hetind) == 'radial' .and. &
+                   elseif ((het_ani_discr(hetind) == 'radial' .or. &
+                            het_ani_discr(hetind) == 'hex') .and. &
                             het_rel_discr(hetind) == 'rel') then
                    
                       vphtmp = sqrt((lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
@@ -692,6 +747,11 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                       vphtmp = vphtmp * (1. + sum(w * delta_vph2))
                       vshtmp = vshtmp * (1. + sum(w * delta_vsh2))
                       etatmp = etatmp * (1. + sum(w * delta_eta2))
+
+                      if (het_ani_discr(hetind) == 'hex') then
+                         fa_theta_tmp = sum(w * fa_theta2)
+                         fa_phi_tmp = sum(w * fa_phi2)
+                      endif
                    
                    elseif (het_ani_discr(hetind) == 'iso' .and. &
                             het_rel_discr(hetind) == 'abs') then
@@ -700,7 +760,8 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                       vptmp = sum(w * vp2)
                       vstmp = sum(w * vs2)
 
-                   elseif (het_ani_discr(hetind) == 'radial' .and. &
+                   elseif ((het_ani_discr(hetind) == 'radial' .or. &
+                            het_ani_discr(hetind) == 'hex') .and. &
                             het_rel_discr(hetind) == 'abs') then
                    
                       rhopost(ipol,jpol,iel) = sum(w * rho2)
@@ -709,6 +770,11 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                       vphtmp = sum(w * vph2)
                       vshtmp = sum(w * vsh2)
                       etatmp = sum(w * eta2)
+                      
+                      if (het_ani_discr(hetind) == 'hex') then
+                         fa_theta_tmp = sum(w * fa_theta2)
+                         fa_phi_tmp = sum(w * fa_phi2)
+                      endif
                    
                    endif
 
@@ -718,7 +784,8 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                       lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
                                                    (vptmp**2 - 2. * vstmp**2)
 
-                   elseif (het_ani_discr(hetind) == 'radial') then
+                   elseif (het_ani_discr(hetind) == 'radial' .or. &
+                           het_ani_discr(hetind) == 'hex') then
                       
                       mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vshtmp**2
                       lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
@@ -728,7 +795,11 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                       phi_ani_post(ipol,jpol,iel) = vpvtmp**2 / vphtmp**2
 
                       eta_ani_post(ipol,jpol,iel) = etatmp
-
+                      
+                      if (het_ani_discr(hetind) == 'hex') then
+                         fa_ani_theta_post(ipol,jpol,iel) = fa_theta_tmp
+                         fa_ani_phi_post(ipol,jpol,iel) = fa_theta_tmp
+                      endif
                    endif 
                 enddo
              enddo
@@ -749,8 +820,13 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     elseif (het_ani_discr(hetind) == 'radial' .and. &
             het_rel_discr(hetind) == 'rel') then
 
-        deallocate(delta_vsv2, delta_vpv2, delta_rho2)
-        deallocate(delta_vsh2, delta_vph2, delta_eta2)
+        deallocate(delta_vsv2, delta_vpv2, delta_rho2, delta_vsh2, delta_vph2, delta_eta2)
+
+    elseif (het_ani_discr(hetind) == 'hex' .and. &
+            het_rel_discr(hetind) == 'rel') then
+
+        deallocate(delta_vsv2, delta_vpv2, delta_rho2, delta_vsh2, delta_vph2, &
+                   delta_eta2, fa_theta2, fa_phi2)
 
     elseif (het_ani_discr(hetind) == 'iso' .and. &
             het_rel_discr(hetind) == 'abs') then
@@ -761,6 +837,11 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
             het_rel_discr(hetind) == 'abs') then
 
         deallocate(vsv2, vpv2, rho2, vsh2, vph2, eta2)
+    
+    elseif (het_ani_discr(hetind) == 'hex' .and. &
+            het_rel_discr(hetind) == 'rel') then
+
+        deallocate(vsv2, vpv2, rho2, vsh2, vph2, eta2, fa_theta2, fa_phi2)
 
     endif
 
@@ -814,7 +895,7 @@ end subroutine inverse_distance_weighting
 subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, delta_vs2, &
                                delta_rho2, delta_vpv2, delta_vsv2, &
                                delta_vph2, delta_vsh2, delta_eta2, vp2, vs2, rho2, &
-                               vpv2, vsv2, vph2, vsh2, eta2)
+                               vpv2, vsv2, vph2, vsh2, eta2, fa_theta2, fa_phi2)
 
 
     use background_models, only : velocity
@@ -829,10 +910,13 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
                                              delta_vph2(:), delta_vsh2(:), delta_eta2(:)
     double precision, intent(in), optional:: vpv2(:), vsv2(:), vph2(:), vsh2(:), eta2(:)
     double precision, intent(in), optional:: vp2(:), vs2(:), rho2(:)
+    double precision, intent(in), optional:: fa_theta2(:), fa_phi2(:)
+
     integer :: j, idom
     real, allocatable, dimension(:,:) :: meshtmp
     real, allocatable, dimension(:) :: vptmp, vstmp, rhotmp
     real, allocatable, dimension(:) :: vpvtmp, vsvtmp, vphtmp, vshtmp, etatmp
+    real, allocatable, dimension(:) :: fa_theta_tmp, fa_phi_tmp
     character(len=80) :: fname
 
     allocate(meshtmp(num_het_pts,2))
@@ -853,7 +937,9 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
            rhotmp(j) = rhotmp(j)* (1. + delta_rho2(j))
         enddo
 
-    elseif (het_ani_discr(hetind) == 'radial' .and. het_rel_discr(hetind) == 'rel') then
+    elseif ((het_ani_discr(hetind) == 'radial' .or. het_ani_discr(hetind) == 'hex') &
+            .and. het_rel_discr(hetind) == 'rel') then
+
         allocate(vpvtmp(num_het_pts), vsvtmp(num_het_pts), rhotmp(num_het_pts), &
                  vphtmp(num_het_pts), vshtmp(num_het_pts), etatmp(num_het_pts))
 
@@ -880,6 +966,13 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
 
         enddo
         
+        if (het_ani_discr(hetind) == 'hex') then
+           allocate(fa_theta_tmp(num_het_pts), fa_phi_tmp(num_het_pts))
+
+            fa_theta_tmp = fa_theta2
+            fa_phi_tmp = fa_phi2
+        endif
+        
     elseif (het_ani_discr(hetind) == 'iso' .and. het_rel_discr(hetind) == 'abs') then
         allocate(vptmp(num_het_pts), vstmp(num_het_pts), rhotmp(num_het_pts))
 
@@ -887,7 +980,8 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
         vstmp = vs2
         rhotmp = rho2
     
-    elseif (het_ani_discr(hetind) == 'radial' .and. het_rel_discr(hetind) == 'abs') then
+    elseif ((het_ani_discr(hetind) == 'radial' .or. het_ani_discr(hetind) == 'hex') &
+            .and. het_rel_discr(hetind) == 'abs') then
         allocate(vpvtmp(num_het_pts), vsvtmp(num_het_pts), rhotmp(num_het_pts), &
                  vphtmp(num_het_pts), vshtmp(num_het_pts), etatmp(num_het_pts))
 
@@ -897,6 +991,14 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
         vshtmp = vsh2
         rhotmp = rho2
         etatmp = eta2
+        
+        if (het_ani_discr(hetind) == 'hex') then
+           allocate(fa_theta_tmp(num_het_pts), fa_phi_tmp(num_het_pts))
+
+            fa_theta_tmp = fa_theta2
+            fa_phi_tmp = fa_phi2
+        endif
+
     endif
 
     do j=1, num_het_pts
@@ -925,7 +1027,7 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
             call write_VTK_bin_scal_pts(real(delta_vs2), meshtmp, num_het_pts, fname)
         endif
 
-    elseif (het_ani_discr(hetind) == 'radial') then
+    elseif (het_ani_discr(hetind) == 'radial' .or. het_ani_discr(hetind) == 'hex') then
         fname = trim('Info/model_vpv_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(vpvtmp, meshtmp, num_het_pts, fname)
 
@@ -940,12 +1042,23 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
         
         fname = trim('Info/model_eta_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(etatmp, meshtmp, num_het_pts, fname)
+        
+        if (het_ani_discr(hetind) == 'hex') then
+           fname = trim('Info/model_fa_theta_discr_het_'//appmynum)
+           call write_VTK_bin_scal_pts(fa_theta_tmp, meshtmp, num_het_pts, fname)
+           
+           fname = trim('Info/model_fa_phi_discr_het_'//appmynum)
+           call write_VTK_bin_scal_pts(fa_phi_tmp, meshtmp, num_het_pts, fname)
+        endif
     endif
 
     if (het_ani_discr(hetind) == 'iso') then
         deallocate(vptmp, vstmp)
     elseif (het_ani_discr(hetind) == 'radial') then
         deallocate(vpvtmp, vsvtmp, vphtmp, vshtmp, etatmp)
+        if (het_ani_discr(hetind) == 'hex') then
+            deallocate(fa_theta_tmp, fa_phi_tmp)
+        endif
     endif
 
     deallocate(meshtmp, rhotmp)
