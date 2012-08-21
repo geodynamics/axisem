@@ -81,7 +81,13 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           call load_het_funct(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
        elseif (het_format(ij) == 'discr') then
           ! interpolate discrete model of arbitrary locations/perturbations
-          call load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
+          if (.not. ani_hetero) then
+             call load_het_discr(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
+          else
+             call load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, ij, &
+                           xi_ani, phi_ani, eta_ani, xi_ani_post, phi_ani_post, &
+                           eta_ani_post)
+          endif
        elseif (het_format(ij) == 'rndm') then 
           ! add random fluctuations to radial model
           call load_random(rho,lambda,mu,rhopost,lambdapost,mupost,ij) 
@@ -130,11 +136,12 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
  
     write(6,*)'final model done, now vtk files...'
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! MvD: generalize for anisotropic media
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    call plot_hetero_region_vtk(rho, lambda, mu)
+    if (ani_hetero) then
+       call plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                                   fa_ani_theta, fa_ani_phi)
+    else
+       call plot_hetero_region_vtk(rho, lambda, mu)
+    endif
 
     deallocate(het_format, het_file_discr, het_funct_type, rdep, grad, gradrdep1, &
                gradrdep2, r_het1, r_het2, th_het1, th_het2, delta_rho, delta_vp, &
@@ -457,9 +464,32 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     double precision, allocatable :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
     double precision, allocatable :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
                                      delta_vsv2(:), delta_eta2(:)
+    double precision, allocatable :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
     double precision, allocatable :: rho2(:), vp2(:), vs2(:)
 
     write(6,*) mynum, 'reading discrete heterogeneity file...'
+
+
+    if (.not. het_ani_discr(hetind) == 'iso') then
+
+        if (.not. ani_hetero) then
+           write(6,*) ''
+           write(6,*) 'ERROR: anisotropic heterogeneity needs an anisotropic model -'
+           write(6,*) '   either choose an anisotropic background model or'
+           write(6,*) '   activate force anisotropy in inparam!'
+           stop
+        endif
+
+        if (.not. (present(xi_ani) .and.  present(phi_ani) .and.  present(eta_ani) .and. &
+                present(xi_ani_post) .and.  present(phi_ani_post) &
+                .and.  present(eta_ani_post))) then
+           write(6,*) ''
+           write(6,*) 'ERROR: needs anisotropic parameters in function call!!'
+           stop
+        endif
+
+    endif
+
 
     open(unit=91, file=trim(het_file_discr(hetind)))
 
@@ -487,14 +517,6 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
 
     elseif (het_rel_discr(hetind) == 'rel' .and. het_ani_discr(hetind) == 'radial') then
 
-        if (.not. ani_hetero) then
-           write(6,*) ''
-           write(6,*) 'ERROR: anisotropic heterogeneity needs an anisotropic model -'
-           write(6,*) '   either choose an anisotropic background model or'
-           write(6,*) '   activate force anisotropy in inparam!'
-           stop
-        endif
-
         allocate(delta_vsh2(1:num_het_pts), delta_vph2(1:num_het_pts), &
                  delta_vsv2(1:num_het_pts), delta_vpv2(1:num_het_pts), &
                  delta_rho2(1:num_het_pts), delta_eta2(1:num_het_pts), w(1:num_het_pts))
@@ -519,6 +541,17 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
         
         do j=1, num_het_pts
             read(91,*) rhet2(j), thhet2(j), vp2(j), vs2(j), rho2(j)
+        enddo
+    
+    elseif (het_rel_discr(hetind) == 'abs' .and. het_ani_discr(hetind) == 'radial') then
+
+        allocate(vsh2(1:num_het_pts), vph2(1:num_het_pts), &
+                 vsv2(1:num_het_pts), vpv2(1:num_het_pts), &
+                 rho2(1:num_het_pts), eta2(1:num_het_pts), w(1:num_het_pts))
+
+        do j=1, num_het_pts
+            read(91,*) rhet2(j), thhet2(j), vpv2(j), vsv2(j), vph2(j), vsh2(j), &
+                       rho2(j), eta2(j)
         enddo
 
     else
@@ -561,19 +594,30 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     ! plot discrete input file in vtk (needs to be done only once)
     if (lpr .and. het_rel_discr(hetind) == 'rel' .and. &
             het_ani_discr(hetind) == 'iso') then
+
         call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, &
                                  delta_vp2=delta_vp2, delta_vs2=delta_vs2, &
                                  delta_rho2=delta_rho2)
+
     elseif (lpr .and. het_rel_discr(hetind) == 'rel' .and. &
             het_ani_discr(hetind) == 'radial') then
+
         call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, &
                                  delta_vpv2=delta_vpv2, delta_vsv2=delta_vsv2, &
                                  delta_vph2=delta_vph2, delta_vsh2=delta_vsh2, &
                                  delta_rho2=delta_rho2, delta_eta2=delta_eta2)
+
     elseif (lpr .and. het_rel_discr(hetind) == 'abs' .and. & 
             het_ani_discr(hetind) == 'iso') then
+
         call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, &
                                  vp2=vp2, vs2=vs2, rho2=rho2)
+
+    elseif (lpr .and. het_rel_discr(hetind) == 'abs' .and. &
+            het_ani_discr(hetind) == 'radial') then
+
+        call plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, vpv2=vpv2, &
+                                 vsv2=vsv2, vph2=vph2, vsh2=vsh2, rho2=rho2, eta2=eta2)
     endif
 
 
@@ -656,6 +700,16 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                       vptmp = sum(w * vp2)
                       vstmp = sum(w * vs2)
 
+                   elseif (het_ani_discr(hetind) == 'radial' .and. &
+                            het_rel_discr(hetind) == 'abs') then
+                   
+                      rhopost(ipol,jpol,iel) = sum(w * rho2)
+                      vpvtmp = sum(w * vpv2)
+                      vsvtmp = sum(w * vsv2)
+                      vphtmp = sum(w * vph2)
+                      vshtmp = sum(w * vsh2)
+                      etatmp = sum(w * eta2)
+                   
                    endif
 
                    if (het_ani_discr(hetind) == 'iso') then
@@ -689,14 +743,25 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
 
     if (het_ani_discr(hetind) == 'iso' .and. &
             het_rel_discr(hetind) == 'rel') then
+
         deallocate(delta_vs2, delta_vp2, delta_rho2)
+
     elseif (het_ani_discr(hetind) == 'radial' .and. &
             het_rel_discr(hetind) == 'rel') then
+
         deallocate(delta_vsv2, delta_vpv2, delta_rho2)
         deallocate(delta_vsh2, delta_vph2, delta_eta2)
+
     elseif (het_ani_discr(hetind) == 'iso' .and. &
             het_rel_discr(hetind) == 'abs') then
+
         deallocate(vs2, vp2, rho2)
+
+    elseif (het_ani_discr(hetind) == 'radial' .and. &
+            het_rel_discr(hetind) == 'abs') then
+
+        deallocate(vsv2, vpv2, rho2, vsh2, vph2, eta2)
+
     endif
 
 end subroutine load_het_discr
@@ -748,7 +813,8 @@ end subroutine inverse_distance_weighting
 !----------------------------------------------------------------------------------------
 subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, delta_vs2, &
                                delta_rho2, delta_vpv2, delta_vsv2, &
-                               delta_vph2, delta_vsh2, vp2, vs2, rho2, delta_eta2)
+                               delta_vph2, delta_vsh2, delta_eta2, vp2, vs2, rho2, &
+                               vpv2, vsv2, vph2, vsh2, eta2)
 
 
     use background_models, only : velocity
@@ -761,6 +827,7 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
     double precision, intent(in), optional:: delta_vp2(:), delta_vs2(:), delta_rho2(:)
     double precision, intent(in), optional:: delta_vpv2(:), delta_vsv2(:), &
                                              delta_vph2(:), delta_vsh2(:), delta_eta2(:)
+    double precision, intent(in), optional:: vpv2(:), vsv2(:), vph2(:), vsh2(:), eta2(:)
     double precision, intent(in), optional:: vp2(:), vs2(:), rho2(:)
     integer :: j, idom
     real, allocatable, dimension(:,:) :: meshtmp
@@ -809,7 +876,8 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
            rhotmp(j) = rhotmp(j)* (1. + delta_rho2(j))
            
            etatmp(j) = velocity(rhet2(j), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
-           etatmp = etatmp(j)* (1. + delta_eta2(j))
+           etatmp(j) = etatmp(j)* (1. + delta_eta2(j))
+
         enddo
         
     elseif (het_ani_discr(hetind) == 'iso' .and. het_rel_discr(hetind) == 'abs') then
@@ -818,6 +886,17 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
         vptmp = vp2
         vstmp = vs2
         rhotmp = rho2
+    
+    elseif (het_ani_discr(hetind) == 'radial' .and. het_rel_discr(hetind) == 'abs') then
+        allocate(vpvtmp(num_het_pts), vsvtmp(num_het_pts), rhotmp(num_het_pts), &
+                 vphtmp(num_het_pts), vshtmp(num_het_pts), etatmp(num_het_pts))
+
+        vpvtmp = vpv2
+        vphtmp = vph2
+        vsvtmp = vsv2
+        vshtmp = vsh2
+        rhotmp = rho2
+        etatmp = eta2
     endif
 
     do j=1, num_het_pts
@@ -845,6 +924,7 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
             fname = trim('Info/model_vs_discr_het_rel_'//appmynum)
             call write_VTK_bin_scal_pts(real(delta_vs2), meshtmp, num_het_pts, fname)
         endif
+
     elseif (het_ani_discr(hetind) == 'radial') then
         fname = trim('Info/model_vpv_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(vpvtmp, meshtmp, num_het_pts, fname)
@@ -1613,15 +1693,17 @@ end subroutine load_het_funct
 
 
 !----------------------------------------------------------------------------------------
-subroutine plot_hetero_region_vtk(rho,lambda,mu)
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! MvD: generalize for anisotropic media
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                                  fa_ani_theta, fa_ani_phi)
+    
     implicit none
 
-    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho 
-    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
-    real, dimension(:), allocatable :: vp_all,vs_all,rho_all
+    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
+    double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+                                    xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
+    real, dimension(:), allocatable :: vp_all, vs_all, rho_all
+    real, dimension(:), allocatable :: vph_all, vsh_all, vpv_all, vsv_all, eta_all
+    real, dimension(:), allocatable :: xi_all, phi_all, fa_theta_all, fa_phi_all
     real, dimension(:,:), allocatable :: mesh2
     character(len=80) :: fname
     double precision :: s, z, r, th
@@ -1629,8 +1711,17 @@ subroutine plot_hetero_region_vtk(rho,lambda,mu)
 
     write(6,*) 'plotting heterogeneous region in pointwise vtk'
 
-    allocate(mesh2(nelem * (npol + 1)**2,2), vp_all(nelem * (npol + 1)**2), &
-             vs_all(nelem * (npol + 1)**2), rho_all(nelem * (npol + 1)**2))
+    allocate(mesh2(nelem * (npol + 1)**2,2), rho_all(nelem * (npol + 1)**2))
+
+    if (.not. ani_hetero) then
+       allocate(vp_all(nelem * (npol + 1)**2), vs_all(nelem * (npol + 1)**2))
+    else
+       allocate(vph_all(nelem * (npol + 1)**2), vsh_all(nelem * (npol + 1)**2), &
+                vpv_all(nelem * (npol + 1)**2), vsv_all(nelem * (npol + 1)**2), &
+                fa_theta_all(nelem * (npol + 1)**2), fa_phi_all(nelem * (npol + 1)**2), &
+                eta_all(nelem * (npol + 1)**2), xi_all(nelem * (npol + 1)**2), &
+                phi_all(nelem * (npol + 1)**2))
+    endif
 
     if (lpr) then
        write(6,*) 'Heterogeneous region rmin,rmax [km]:', &
@@ -1650,43 +1741,99 @@ subroutine plot_hetero_region_vtk(rho,lambda,mu)
                 icount = icount + 1
                 mesh2(icount,1) = real(s)
                 mesh2(icount,2) = real(z)
-                vp_all(icount) = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel) ) / &
-                                       rho(ipol,jpol,iel)  )
-                vs_all(icount) = sqrt( (mu(ipol,jpol,iel) ) / rho(ipol,jpol,iel)  )
+                
                 rho_all(icount) = rho(ipol,jpol,iel) 
-!#########################################################################################
-! MvD: - file 666 + mynum is never opened, so how does this work? - well, it doesnt...
-!      - why the multiplication whith 0.2 and 0.3 ??
-!#########################################################################################
-                !write(666+mynum,20) r / 1000., th * 180. / pi, 0.0, -vp_all(icount) * 0.2, &
-                !                    -vs_all(icount) * 0.4, rho(ipol,jpol,iel) * 0.3
+                
+                if (.not. ani_hetero) then
+
+                   vp_all(icount) = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel) ) / &
+                                          rho(ipol,jpol,iel)  )
+                   vs_all(icount) = sqrt( (mu(ipol,jpol,iel) ) / rho(ipol,jpol,iel)  )
+
+                else
+                   
+                   vph_all(icount) = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel) ) / &
+                                          rho(ipol,jpol,iel)  )
+                   vsh_all(icount) = sqrt( (mu(ipol,jpol,iel) ) / rho(ipol,jpol,iel)  )
+
+                   vpv_all(icount) = sqrt(phi_ani(ipol,jpol,iel)) * vph_all(icount)
+                   
+                   vsv_all(icount) =  vsh_all(icount) / sqrt(xi_ani(ipol,jpol,iel))
+
+                   eta_all(icount) =  eta_ani(ipol,jpol,iel)
+                   xi_all(icount) =  xi_ani(ipol,jpol,iel)
+                   phi_all(icount) =  phi_ani(ipol,jpol,iel)
+                   fa_theta_all(icount) =  fa_ani_theta(ipol,jpol,iel)
+                   fa_phi_all(icount) =  fa_ani_phi(ipol,jpol,iel)
+                endif
              endif
           enddo
        enddo
     enddo
 
-    20 format(3(1pe12.3), 3(1pe10.1))
-
     write(6,*) mynum, 'number of points inside heterogeneous region:', icount
 
     if (icount > 0) then
 
-        fname = trim('Info/model_vp_gll_het'//appmynum)
-        call write_VTK_bin_scal_pts(real(vp_all(1:icount)), real(mesh2(1:icount,1:2)), &
-                                    icount, fname)
-
-        fname = trim('Info/model_vs_gll_het'//appmynum)
-        call write_VTK_bin_scal_pts(real(vs_all(1:icount)), real(mesh2(1:icount,1:2)), &
-                                    icount, fname)
-
         fname = trim('Info/model_rho_gll_het'//appmynum)
         call write_VTK_bin_scal_pts(real(rho_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                     icount, fname)
+        if (.not. ani_hetero) then
+           fname = trim('Info/model_vp_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(vp_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+
+           fname = trim('Info/model_vs_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(vs_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+        
+           deallocate(vp_all, vs_all)
+        else
+           
+           fname = trim('Info/model_vph_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(vph_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+
+           fname = trim('Info/model_vsh_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(vsh_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+        
+           fname = trim('Info/model_vpv_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(vpv_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+
+           fname = trim('Info/model_vsv_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(vsv_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+        
+           fname = trim('Info/model_eta_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(eta_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+           
+           fname = trim('Info/model_xi_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(xi_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+           
+           fname = trim('Info/model_phi_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(phi_all(1:icount)), real(mesh2(1:icount,1:2)), &
+                                       icount, fname)
+
+           fname = trim('Info/model_fa_theta_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(fa_theta_all(1:icount)), &
+                                       real(mesh2(1:icount,1:2)), icount, fname)
+
+           fname = trim('Info/model_fa_phi_gll_het'//appmynum)
+           call write_VTK_bin_scal_pts(real(fa_phi_all(1:icount)), &
+                                       real(mesh2(1:icount,1:2)), icount, fname)
+
+           deallocate(vph_all, vsh_all, vpv_all, vsv_all, fa_theta_all, fa_phi_all, &
+                      eta_all, xi_all, phi_all)
+        endif
     else
         write(6,*) mynum, 'WARNING: not writing empty vtk file (icount = 0)'
     endif
 
-    deallocate(mesh2, vp_all, vs_all, rho_all)
+    deallocate(mesh2, rho_all)
 
 end subroutine plot_hetero_region_vtk
 !-----------------------------------------------------------------------------------------
