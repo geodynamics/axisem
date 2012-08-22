@@ -2132,52 +2132,62 @@ character (len=55) :: filename
 character (len=50) :: ss; !stream
 !points structure
 
-do i=5,elems*5,5
- cell(i-4)=4;
- enddo
-t=0
-do i=5,elems*5,5
-t=t+4
-cell(i-3)=t-4;
-cell(i-2)=t-3;
-cell(i-1)=t-2;
-cell(i)=t-1;
+do i=5, elems*5, 5
+   cell(i-4) = 4
 enddo
 
-!do i=1,elems
-! cell_type(i)=9
-!enddo
-cell_type=9
-! write(6,*)'computing vtk file ',trim(filename),' ...'
-open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+t=0
+
+do i=5,elems*5,5
+   t = t + 4
+   cell(i-3) = t - 4
+   cell(i-2) = t - 3
+   cell(i-1) = t - 2
+   cell(i) = t - 1
+enddo
+
+cell_type = 9
+
+open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
+     convert='big_endian')
 write(100) '# vtk DataFile Version 4.0'//char(10)
 write(100) 'mittico'//char(10)
 write(100) 'BINARY'//char(10)
 write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
 write(ss,fmt='(A6,I10,A5)') 'POINTS',elems*4,'float'
 write(100) ss//char(10)
+
 !points
 write(100) (x(i),y(i),z(i),i=1,elems*4)
 write(100) char(10)
+
 !cell topology
 write(ss,fmt='(A5,2I10)') 'CELLS',elems,elems*5
 write(100) char(10)//ss//char(10)
 write(100) cell
 write(100) char(10)
+
 !cell type
 write(ss,fmt='(A10,2I10)') 'CELL_TYPES',elems
 write(100) char(10)//ss//char(10)
 write(100) cell_type
 write(100) char(10)
+
 !data
 write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
 write(100) char(10)//ss//char(10)
 write(100) 'SCALARS data float 1'//char(10)
 write(100) 'LOOKUP_TABLE default'//char(10) !color table?
 write(100) u1
+
+!do i=1,elems*4
+!   write(100) u1(i), u1(i) * 2.
+!enddo
+
 close(100)
 write(6,*)'...saved ',trim(filename)//'.vtk'
-end subroutine write_vtk_bin_scal
+
+end subroutine write_VTK_bin_scal
 !-----------------------------------------------------------------------------
 
 !=============================================================================
@@ -2197,10 +2207,11 @@ real, dimension(:), allocatable :: xi1,phi1
 real, dimension(:), allocatable :: fa_ani_theta1, fa_ani_phi1
 character(len=80) :: fname
 integer :: npts_vtk,ct,iel,i
-real, allocatable ::  x(:),y(:),z0(:)
+!real, allocatable ::  x(:),y(:),z0(:)
 logical :: plot_ani
 
 npts_vtk = nelem * 4
+
 allocate(vp1(npts_vtk),vs1(npts_vtk),rho1(npts_vtk))
 if (present(xi_ani) .and. present(phi_ani) .and.  present(eta_ani) &
     .and. present(fa_ani_theta) .and. present(fa_ani_phi))then
@@ -2227,65 +2238,63 @@ do iel=1, nelem
    y(ct+3) = zcoord(npol,npol,iel)
    y(ct+4) = zcoord(0,npol,iel)
 
-   do i=1, 4
 
-      rho1(ct+1) = rho(0,0,iel)
-      vp1(ct+1) = sqrt( (lambda(0,0,iel)+2.*mu(0,0,iel) ) / rho1(ct+1)  )
-      vs1(ct+1) = sqrt( mu(0,0,iel)  / rho1(ct+1)  )
+   rho1(ct+1) = rho(0,0,iel)
+   vp1(ct+1) = sqrt( (lambda(0,0,iel)+2.*mu(0,0,iel) ) / rho1(ct+1)  )
+   vs1(ct+1) = sqrt( mu(0,0,iel)  / rho1(ct+1)  )
 
-      if (plot_ani) then
-        vpv1(ct+1) = sqrt(phi_ani(0,0,iel)) * vp1(ct+1)
-        vsv1(ct+1) = vs1(ct+1) / sqrt(xi_ani(0,0,iel))
-        xi1(ct+1) = xi_ani(0,0,iel)
-        phi1(ct+1) = phi_ani(0,0,iel)
-        eta1(ct+1) = eta_ani(0,0,iel)
-        fa_ani_theta1(ct+1) = fa_ani_theta(0,0,iel)
-        fa_ani_phi1(ct+1) = fa_ani_phi(0,0,iel)
-      endif
+   if (plot_ani) then
+     vpv1(ct+1) = sqrt(phi_ani(0,0,iel)) * vp1(ct+1)
+     vsv1(ct+1) = vs1(ct+1) / sqrt(xi_ani(0,0,iel))
+     xi1(ct+1) = xi_ani(0,0,iel)
+     phi1(ct+1) = phi_ani(0,0,iel)
+     eta1(ct+1) = eta_ani(0,0,iel)
+     fa_ani_theta1(ct+1) = fa_ani_theta(0,0,iel)
+     fa_ani_phi1(ct+1) = fa_ani_phi(0,0,iel)
+   endif
 
-      rho1(ct+2) = rho(npol,0,iel)
-      vp1(ct+2) = sqrt( (lambda(npol,0,iel)+2.*mu(npol,0,iel) ) / rho1(ct+2)  )
-      vs1(ct+2) = sqrt( mu(npol,0,iel)  / rho1(ct+2)  )
+   rho1(ct+2) = rho(npol,0,iel)
+   vp1(ct+2) = sqrt( (lambda(npol,0,iel)+2.*mu(npol,0,iel) ) / rho1(ct+2)  )
+   vs1(ct+2) = sqrt( mu(npol,0,iel)  / rho1(ct+2)  )
 
-      if (plot_ani) then
-        vpv1(ct+2) = sqrt(phi_ani(npol,0,iel)) * vp1(ct+2)
-        vsv1(ct+2) = vs1(ct+2) / sqrt(xi_ani(npol,0,iel))
-        xi1(ct+2) = xi_ani(npol,0,iel)
-        phi1(ct+2) = phi_ani(npol,0,iel)
-        eta1(ct+2) = eta_ani(npol,0,iel)
-        fa_ani_theta1(ct+2) = fa_ani_theta(npol,0,iel)
-        fa_ani_phi1(ct+2) = fa_ani_phi(npol,0,iel)
-      endif
+   if (plot_ani) then
+     vpv1(ct+2) = sqrt(phi_ani(npol,0,iel)) * vp1(ct+2)
+     vsv1(ct+2) = vs1(ct+2) / sqrt(xi_ani(npol,0,iel))
+     xi1(ct+2) = xi_ani(npol,0,iel)
+     phi1(ct+2) = phi_ani(npol,0,iel)
+     eta1(ct+2) = eta_ani(npol,0,iel)
+     fa_ani_theta1(ct+2) = fa_ani_theta(npol,0,iel)
+     fa_ani_phi1(ct+2) = fa_ani_phi(npol,0,iel)
+   endif
 
-      rho1(ct+3) = rho(npol,npol,iel)
-      vp1(ct+3) = sqrt( (lambda(npol,npol,iel)+2.*mu(npol,npol,iel) ) / rho1(ct+3)  )
-      vs1(ct+3) = sqrt( mu(npol,npol,iel)  / rho1(ct+3)  )
+   rho1(ct+3) = rho(npol,npol,iel)
+   vp1(ct+3) = sqrt( (lambda(npol,npol,iel)+2.*mu(npol,npol,iel) ) / rho1(ct+3)  )
+   vs1(ct+3) = sqrt( mu(npol,npol,iel)  / rho1(ct+3)  )
 
-      if (plot_ani) then
-        vpv1(ct+3) = sqrt(phi_ani(npol,npol,iel)) * vp1(ct+3)
-        vsv1(ct+3) = vs1(ct+3) / sqrt(xi_ani(npol,npol,iel))
-        xi1(ct+3) = xi_ani(npol,npol,iel)
-        phi1(ct+3) = phi_ani(npol,npol,iel)
-        eta1(ct+3) = eta_ani(npol,npol,iel)
-        fa_ani_theta1(ct+3) = fa_ani_theta(npol,npol,iel)
-        fa_ani_phi1(ct+3) = fa_ani_phi(npol,npol,iel)
-      endif
+   if (plot_ani) then
+     vpv1(ct+3) = sqrt(phi_ani(npol,npol,iel)) * vp1(ct+3)
+     vsv1(ct+3) = vs1(ct+3) / sqrt(xi_ani(npol,npol,iel))
+     xi1(ct+3) = xi_ani(npol,npol,iel)
+     phi1(ct+3) = phi_ani(npol,npol,iel)
+     eta1(ct+3) = eta_ani(npol,npol,iel)
+     fa_ani_theta1(ct+3) = fa_ani_theta(npol,npol,iel)
+     fa_ani_phi1(ct+3) = fa_ani_phi(npol,npol,iel)
+   endif
 
-      rho1(ct+4) = rho(0,npol,iel)
-      vp1(ct+4) = sqrt( (lambda(0,npol,iel)+2.*mu(0,npol,iel) ) / rho1(ct+4)  )
-      vs1(ct+4) = sqrt( mu(0,npol,iel)  / rho1(ct+4)  )
+   rho1(ct+4) = rho(0,npol,iel)
+   vp1(ct+4) = sqrt( (lambda(0,npol,iel)+2.*mu(0,npol,iel) ) / rho1(ct+4)  )
+   vs1(ct+4) = sqrt( mu(0,npol,iel)  / rho1(ct+4)  )
 
-      if (plot_ani) then
-        vpv1(ct+4) = sqrt(phi_ani(0,npol,iel)) * vp1(ct+4)
-        vsv1(ct+4) = vs1(ct+4) / sqrt(xi_ani(0,npol,iel))
-        xi1(ct+4) = xi_ani(0,npol,iel)
-        phi1(ct+4) = phi_ani(0,npol,iel)
-        eta1(ct+4) = eta_ani(0,npol,iel)
-        fa_ani_theta1(ct+4) = fa_ani_theta(0,npol,iel)
-        fa_ani_phi1(ct+4) = fa_ani_phi(0,npol,iel)
-      endif
+   if (plot_ani) then
+     vpv1(ct+4) = sqrt(phi_ani(0,npol,iel)) * vp1(ct+4)
+     vsv1(ct+4) = vs1(ct+4) / sqrt(xi_ani(0,npol,iel))
+     xi1(ct+4) = xi_ani(0,npol,iel)
+     phi1(ct+4) = phi_ani(0,npol,iel)
+     eta1(ct+4) = eta_ani(0,npol,iel)
+     fa_ani_theta1(ct+4) = fa_ani_theta(0,npol,iel)
+     fa_ani_phi1(ct+4) = fa_ani_phi(0,npol,iel)
+   endif
 
-   enddo
    ct = ct + 4
 enddo
 

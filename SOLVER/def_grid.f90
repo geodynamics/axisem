@@ -245,9 +245,10 @@ use data_pointwise
   deallocate(lnods)
   deallocate(crd_nodes)
   deallocate(eltype,coarsing,north,axis)
-  if (allocated(ielsolid)) deallocate(ielsolid)
-!af 
-  if (allocated(ielfluid)) deallocate(ielfluid)
+
+! keeping ielsolid and ielfluid for vtk snapshots
+  !if (allocated(ielsolid)) deallocate(ielsolid)
+  !if (allocated(ielfluid)) deallocate(ielfluid)
   if (allocated(spher_radii)) deallocate(spher_radii)
 
 ! NEED TO CHECK THESE DEPENDENCIES IN DETAIL

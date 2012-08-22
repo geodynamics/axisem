@@ -50,7 +50,9 @@ public
   character(len=80), dimension(:), allocatable :: fname_rec_seis
   character(len=80), dimension(:), allocatable :: fname_rec_velo
 !end af
-  
+
+!for vtk snapshots
+  real, allocatable ::  x(:),y(:),z0(:)
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

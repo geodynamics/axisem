@@ -27,9 +27,7 @@ include "mesh_params.h"
 ! (s,z) components of fluid potential
   real(kind=realkind), allocatable :: usz_fluid(:,:,:,:)
 
-real(kind=realkind), allocatable:: deviator(:,:,:,:)
-
-
+  real(kind=realkind), allocatable :: deviator(:,:,:,:)
 
 
   real(kind=realkind), allocatable :: inv_s_fluid(:,:,:)

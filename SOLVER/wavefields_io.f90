@@ -182,6 +182,97 @@ real(kind=realkind)             :: dsdchi,prefac
 end subroutine glob_snapshot_midpoint
 !=============================================================================
 
+!-----------------------------------------------------------------------------
+
+subroutine glob_snapshot_vtk(f_sol,chi)
+
+   use data_source, ONLY : src_type
+   use data_pointwise, ONLY : inv_rho_fluid, inv_s_rho_fluid
+   use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+   use data_mesh_preloop, only: ielfluid, ielsolid
+   
+   include 'mesh_params.h'
+   
+   real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
+   real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+   character(len=4)                :: appisnap
+   integer                         :: iel, iidim, npts_vtk, ct
+   real(kind=realkind)             :: dsdchi, prefac
+   !real, allocatable               :: x(:), y(:), z0(:)
+   real, allocatable               :: u(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
+   character(len=80)               :: fname
+
+   allocate(usz_fl(0:npol,0:npol,1:nel_fluid,2))
+   allocate(up_fl(0:npol,0:npol,1:nel_fluid))
+   
+   npts_vtk = nelem * 4
+
+   allocate(u(npts_vtk,1:3))
+
+   if (src_type(1)=='monopole') prefac = 0.
+   if (src_type(1)=='dipole')   prefac = 1.
+   if (src_type(1)=='quadpole') prefac = 2.
+ 
+   call define_io_appendix(appisnap,isnap)
+ 
+   if (have_fluid) then
+      call axisym_laplacian_fluid(chi,usz_fl)
+      usz_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
+      usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
+
+      up_fl(:,:,:) = prefac * chi * inv_s_rho_fluid
+
+      do iel=1, nel_fluid
+         ct = (ielfluid(iel) - 1) * 4 
+         
+         u(ct + 1, 1) = usz_fl(0,0,iel,1)
+         u(ct + 1, 2) = up_fl(0,0,iel)
+         u(ct + 1, 3) = usz_fl(0,0,iel,2)
+
+         u(ct + 2, 1) = usz_fl(npol,0,iel,1)
+         u(ct + 2, 2) = up_fl(npol,0,iel)
+         u(ct + 2, 3) = usz_fl(npol,0,iel,2)
+
+         u(ct + 3, 1) = usz_fl(npol,npol,iel,1)
+         u(ct + 3, 2) = up_fl(npol,npol,iel)
+         u(ct + 3, 3) = usz_fl(npol,npol,iel,2)
+
+         u(ct + 4, 1) = usz_fl(0,npol,iel,1)
+         u(ct + 4, 2) = up_fl(0,npol,iel)
+         u(ct + 4, 3) = usz_fl(0,npol,iel,2)
+      enddo
+   endif
+   
+   deallocate(usz_fl, up_fl)
+      
+   do iel=1, nel_solid
+      ct = (ielsolid(iel) - 1) * 4 
+      
+      u(ct + 1, 1) = f_sol(0,0,iel,1)
+      u(ct + 1, 2) = f_sol(0,0,iel,2)
+      u(ct + 1, 3) = f_sol(0,0,iel,3)
+
+      u(ct + 2, 1) = f_sol(npol,0,iel,1)
+      u(ct + 2, 2) = f_sol(npol,0,iel,2)
+      u(ct + 2, 3) = f_sol(npol,0,iel,3)
+
+      u(ct + 3, 1) = f_sol(npol,npol,iel,1)
+      u(ct + 3, 2) = f_sol(npol,npol,iel,2)
+      u(ct + 3, 3) = f_sol(npol,npol,iel,3)
+
+      u(ct + 4, 1) = f_sol(0,npol,iel,1)
+      u(ct + 4, 2) = f_sol(0,npol,iel,2)
+      u(ct + 4, 3) = f_sol(0,npol,iel,3)
+   enddo
+   
+   fname = datapath(1:lfdata)//'/vtk_snap_' //appmynum//'_'//appisnap
+   call write_VTK_bin_multi_scal(x, y, z0, u, npts_vtk/4, fname)
+
+   deallocate(u)
+
+end subroutine glob_snapshot_vtk
+!=============================================================================
+
 
 !-----------------------------------------------------------------------------
 subroutine solid_snapshot(f,ibeg,iend,jbeg,jend)
@@ -933,70 +1024,72 @@ end subroutine eradicate_src_elem_values
 
 
 !-----------------------------------------------------------------------------
-subroutine write_VTK_bin_scal(u2,mesh,rows,filename)
-
- implicit none
- integer*4 :: i,rows
- real, dimension(1:rows), intent(in) :: u2
- real, dimension(1:rows) :: u1
-real, dimension(1:rows,2), intent(in) :: mesh
- integer*4, dimension(1:rows*2) :: cell
- integer*4, dimension(1:rows) :: cell_type
-  character (len=55) :: filename;
- character (len=50) :: ss; !stream
- 
-! write(6,*) size(W_vtk(:,1)),rows
+subroutine write_VTK_bin_multi_scal(x,y,z,u1,elems,filename)
+implicit none
+integer*4 :: i,t,elems
+real*4, dimension(1:elems*4), intent(in) :: x, y, z
+real*4, dimension(1:elems*4, 1:3), intent(in) :: u1
+integer*4, dimension(1:elems*5) :: cell
+integer*4, dimension(1:elems) :: cell_type
+character (len=55) :: filename
+character (len=50) :: ss; !stream
 !points structure
 
-do i=2,rows*2,2
- cell(i-1)=1;
- cell(i)=(i/2)-1;
-enddo
-do i=1,rows
- cell_type(i)=1
+do i=5, elems*5, 5
+   cell(i-4) = 4
 enddo
 
-u1=real(u2)
-do i=1,rows
-    if (abs(u1(i))<1.e-25) u1(i)=0.0
+t=0
+
+do i=5,elems*5,5
+   t = t + 4
+   cell(i-3) = t - 4
+   cell(i-2) = t - 3
+   cell(i-1) = t - 2
+   cell(i) = t - 1
 enddo
-write(6789,*)size(u1),maxval(u1),minval(u1)
 
- write(6,*)'computing vtk file ',trim(filename),' ...'
-open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+cell_type = 9
 
+open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
+     convert='big_endian')
 write(100) '# vtk DataFile Version 4.0'//char(10)
 write(100) 'mittico'//char(10)
 write(100) 'BINARY'//char(10)
 write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
-write(ss,fmt='(A6,I10,A5)') 'POINTS',rows,'float'
+write(ss,fmt='(A6,I10,A5)') 'POINTS',elems*4,'float'
 write(100) ss//char(10)
+
 !points
-do i=1,rows
-write(100) mesh(i,1),0.0,mesh(i,2)
-enddo
+write(100) (x(i),y(i),z(i),i=1,elems*4)
 write(100) char(10)
+
 !cell topology
-write(ss,fmt='(A5,2I10)') 'CELLS',rows,rows*2
+write(ss,fmt='(A5,2I10)') 'CELLS',elems,elems*5
 write(100) char(10)//ss//char(10)
 write(100) cell
 write(100) char(10)
+
 !cell type
-write(ss,fmt='(A10,2I10)') 'CELL_TYPES',rows
+write(ss,fmt='(A10,2I10)') 'CELL_TYPES',elems
 write(100) char(10)//ss//char(10)
 write(100) cell_type
 write(100) char(10)
-!data
-write(ss,fmt='(A10,I10)') 'CELL_DATA',rows
-write(100) char(10)//ss//char(10)
-write(100) 'SCALARS '//trim(filename)//' float 1'//char(10)
-write(100) 'LOOKUP_TABLE default'//char(10) !color table?
-write(100) real(u1)
- close(100)
-write(6,*)'...saved ',trim(filename)//'.vtk'
-end subroutine write_vtk_bin_scal
-!-----------------------------------------------------------------------------
 
+!data
+write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
+write(100) char(10)//ss//char(10)
+write(100) 'SCALARS data float 3'//char(10)
+write(100) 'LOOKUP_TABLE default'//char(10) !color table?
+
+do i=1,elems*4
+   write(100) u1(i,1), u1(i,2), u1(i,3)
+enddo
+
+close(100)
+write(6,*)'...saved ',trim(filename)//'.vtk'
+
+end subroutine write_VTK_bin_multi_scal
 
 !================================
 end module wavefields_io

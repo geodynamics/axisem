@@ -912,6 +912,9 @@ real(kind=realkind) :: time
            write(6,*)
         endif
        call glob_snapshot_midpoint(disp,chi,ibeg,iend,ibeg,iend)
+
+       ! uncomment to produce 2D vtk snapshots
+       !call glob_snapshot_vtk(disp,chi)
      endif
   endif
 
