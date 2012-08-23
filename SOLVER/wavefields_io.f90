@@ -200,7 +200,7 @@ subroutine glob_snapshot_vtk(f_sol,chi)
    real(kind=realkind)             :: dsdchi, prefac
    !real, allocatable               :: x(:), y(:), z0(:)
    real, allocatable               :: u(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
-   character(len=80)               :: fname
+   character(len=120)              :: fname
 
    allocate(usz_fl(0:npol,0:npol,1:nel_fluid,2))
    allocate(up_fl(0:npol,0:npol,1:nel_fluid))
@@ -1031,7 +1031,7 @@ real*4, dimension(1:elems*4), intent(in) :: x, y, z
 real*4, dimension(1:elems*4, 1:3), intent(in) :: u1
 integer*4, dimension(1:elems*5) :: cell
 integer*4, dimension(1:elems) :: cell_type
-character (len=55) :: filename
+character (len=120) :: filename
 character (len=50) :: ss; !stream
 !points structure
 
