@@ -34,12 +34,17 @@ try:
     from obspy.signal import util, cosTaper, detrend
 except Exception, error:
     obspy_error = 'Please install obspy (http://obspy.org/)'
-    print "\n*************************************"
+    print "\n======================================"
+    print 'Error in importing:'
     print error
-    print "*************************************"
+    print "------------------"
     print "No MISC and TEST functionalities"
     print obspy_error
-    print "*************************************\n"
+    print "======================================"
+    print "\n\n-----------------------------------"
+    print 'AXISEM will start running in 10 sec'
+    print "-----------------------------------\n"
+    time.sleep(10)
 
 ########################################################################
 ############################# Main Program #############################
@@ -166,7 +171,7 @@ def PyAxi(**kwargs):
 
             inparam_mesh_open.close()
             print inparam_mesh_read[1] + inparam_mesh_read[2] + inparam_mesh_read[3]
-
+            
             print "================"
             print "make clean; make"
             print "================"
@@ -177,7 +182,17 @@ def PyAxi(**kwargs):
             output = subprocess.check_call(['make'])
             if output != 0: print output_print
                 
-                
+            # Delete previous mesh_params.h, meshdb.dat*, Diags/*
+            print "\n==========================================================="
+            print 'Removing previous mesh_params.h*, meshdb.dat* and ./Diags/*'
+            print "===========================================================\n"
+            output = subprocess.check_call(['rm', '-rf', './mesh_params.h*'])
+            if output != 0: print output_print
+            output = subprocess.check_call(['rm', '-rf', './meshdb.dat*'])
+            if output != 0: print output_print
+            output = subprocess.check_call(['rm', '-rf', './Diags/*'])
+            if output != 0: print output_print
+            
             if os.path.isfile('xmesh'):
                 print "\n================="
                 print "xmesh --- Created"
@@ -761,9 +776,17 @@ def read_input_file():
     try:
         config.read(os.path.join(sys.argv[1], 'inpython.cfg'))
         input['inpython_address'] = os.path.join(sys.argv[1], 'inpython.cfg')
+        print '\n****************************************'
+        print 'Read the input file (inpython.cfg) from:'
+        print os.path.join(sys.argv[1], 'inpython.cfg')
+        print '****************************************\n'
     except Exception, error:
         config.read(os.path.join(os.getcwd(), 'inpython.cfg'))
         input['inpython_address'] = os.path.join(os.getcwd(), 'inpython.cfg')
+        print '\n****************************************'
+        print 'Read the input file (inpython.cfg) from:'
+        print os.path.join(os.getcwd(), 'inpython.cfg')
+        print '****************************************\n'
     
     if not os.path.isabs(input['inpython_address']):
         input['inpython_address'] = os.path.join(os.getcwd(), \
@@ -794,7 +817,7 @@ def read_input_file():
         input['mesher_move'] = 'Y'
         input['solver_cp'] = 'Y'
     
-    
+
     input['mpi_compiler'] = config.get('mpi_netCDF', 'mpi_compiler')
     input['netCDF'] = config.get('mpi_netCDF', 'netCDF')
     input['netCDF_include'] = config.get('mpi_netCDF', 'netCDF_include')
@@ -1033,7 +1056,7 @@ def axisem2mseed(path):
     print fname
     st.write(fname, format='MSEED')
 
-########################## axisem2mseed ################################
+########################## convSTF ################################
 
 def convSTF(st, sigma=30.):
 
