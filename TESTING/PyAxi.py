@@ -150,8 +150,10 @@ def PyAxi(**kwargs):
             print "Change inparam_mesh"
             print "==================="
 
-            if not os.path.isfile('./inparam_mesh'):
-                subprocess.check_call(['cp', './inparam_mesh.TEMPLATE', './inparam_mesh'])
+            if os.path.isfile('./inparam_mesh'):
+                subprocess.check_call(['rm', './inparam_mesh'])
+            subprocess.check_call(['cp', './inparam_mesh.TEMPLATE', './inparam_mesh'])
+            
             inparam_mesh_open = open('./inparam_mesh', 'r')
             
             inparam_mesh_read = inparam_mesh_open.readlines()
@@ -314,8 +316,9 @@ def PyAxi(**kwargs):
             print "Change inparam"
             print "=============="
             
-            if not os.path.isfile('inparam'):
-                subprocess.check_call(['cp', 'inparam.TEMPLATE', 'inparam'])
+            if os.path.isfile('inparam'):
+                subprocess.check_call(['rm', 'inparam'])
+            subprocess.check_call(['cp', 'inparam.TEMPLATE', 'inparam'])
             
             inparam_solver_open = open('./inparam', 'r')
             inparam_solver_read = inparam_solver_open.readlines()
@@ -353,6 +356,10 @@ def PyAxi(**kwargs):
                 print "Change the Source params"
                 print "========================"
                 
+                if os.path.isfile('sourceparams.dat'):
+                    subprocess.check_call(['rm', 'sourceparams.dat'])
+                subprocess.check_call(['cp', 'sourceparams.dat.TEMPLATE', 'sourceparams.dat'])
+                
                 source_open = open('./sourceparams.dat', 'r')
                 source_read = source_open.readlines()
                 source_read[0] = input['src_Mzz'] + ' ' + input['src_Mxx'] + ' ' + \
@@ -388,8 +395,9 @@ def PyAxi(**kwargs):
                 print "Change the Source params"
                 print "========================"
                 
-                if not os.path.isfile('CMTSOLUTION'):
-                    subprocess.check_call(['cp', 'CMTSOLUTION.TEMPLATE', 'CMTSOLUTION'])
+                if os.path.isfile('CMTSOLUTION'):
+                    subprocess.check_call(['rm', 'CMTSOLUTION'])
+                subprocess.check_call(['cp', 'CMTSOLUTION.TEMPLATE', 'CMTSOLUTION'])
                 
                 source_open = open('./CMTSOLUTION', 'r')
                 source_read = source_open.readlines()
@@ -556,6 +564,11 @@ def PyAxi(**kwargs):
         print "\n==============="
         print "Post Processing"
         print "===============\n"
+        
+        if os.path.isdir(os.path.join(input['axi_address'], 'SOLVER', \
+                            input['solver_name'], 'Data_Postprocessing')):
+            subprocess.check_call(['rm', '-rf', os.path.join(input['axi_address'], 'SOLVER', \
+                            input['solver_name'], 'Data_Postprocessing')])
         
         if input['source_type'] == 'sourceparams':
             os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
