@@ -113,6 +113,19 @@ def PyAxi(**kwargs):
         print "======\n"
         os.chdir(os.path.join(input['axi_address'], 'MESHER'))
         
+        # Delete previous mesh_params.h, meshdb.dat*, Diags/*
+        print "==============================================================================="
+        print 'Removing previous mesh_params.h*, meshdb.dat*, ./Diags/* and unrolled_loops.f90'
+        print "===============================================================================\n"
+        output = subprocess.check_call(['rm', '-rf', './mesh_params.h*'])
+        if output != 0: print output_print
+        output = subprocess.check_call(['rm', '-rf', './meshdb.dat*'])
+        if output != 0: print output_print
+        output = subprocess.check_call(['rm', '-rf', './Diags/*'])
+        if output != 0: print output_print
+        output = subprocess.check_call(['rm', '-rf', './unrolled_loops.f90'])
+        if output != 0: print output_print
+        
         # Create Mesher Makefile (required just once!)
         if input['mesher_makefile'] != 'N':
             print "========================="
@@ -177,22 +190,11 @@ def PyAxi(**kwargs):
             print "================"
             print "make clean; make"
             print "================"
-
+            
             output = subprocess.check_call(['make', 'clean'])
             if output != 0: print output_print
             
             output = subprocess.check_call(['make'])
-            if output != 0: print output_print
-                
-            # Delete previous mesh_params.h, meshdb.dat*, Diags/*
-            print "\n==========================================================="
-            print 'Removing previous mesh_params.h*, meshdb.dat* and ./Diags/*'
-            print "===========================================================\n"
-            output = subprocess.check_call(['rm', '-rf', './mesh_params.h*'])
-            if output != 0: print output_print
-            output = subprocess.check_call(['rm', '-rf', './meshdb.dat*'])
-            if output != 0: print output_print
-            output = subprocess.check_call(['rm', '-rf', './Diags/*'])
             if output != 0: print output_print
             
             if os.path.isfile('xmesh'):
@@ -204,7 +206,26 @@ def PyAxi(**kwargs):
             print "================="
             output = subprocess.check_call(['./submit.csh'])
             if output != 0: print output_print
-        
+            
+            # check the xmesh whether it is finished or not!
+            process_name= "xmesh"
+            check_process="running"
+            t_check = 0
+            
+            print '--------------------------------'
+            while check_process=="running":
+                tmp = os.popen("ps -Af").read()
+                if process_name in tmp[:]:
+                    print "The submit.csh is still running. (" + str(t_check) + " sec)"
+                    time.sleep(2)
+                    t_check+=2
+                    
+                else:
+                    print '********'
+                    print "The submit.csh is done!"
+                    check_process='DONE'
+            print '--------------------------------'    
+            
         # move the mesh to the SOLVER folder
         if input['mesher_move'] != 'N':
             # Giving xmesh chance to complete its output.
@@ -218,11 +239,12 @@ def PyAxi(**kwargs):
             if os.path.isdir(os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])):
                 subprocess.check_call(['rm', '-rf', \
                     os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])])
-                print '#######################################################################'
+                
+                print '\n#######################################################################'
                 print "Remove the mesh files from MESHES dir (before running the movemesh.csh)"
                 print os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])
                 print "is removed"
-                print '#######################################################################'
+                print '#######################################################################\n'
                 
             #os.path.join('..', 'SOLVER', 'MESHES')])
             
