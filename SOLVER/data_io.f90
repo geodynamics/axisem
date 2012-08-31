@@ -15,6 +15,7 @@ public
   logical           :: save_large_tests 
   logical           :: dump_energy
   logical           :: dump_snaps_glob
+  logical           :: dump_xdmf_vtk
   logical           :: dump_snaps_solflu
   logical           :: dump_wavefields
   logical           :: need_fluid_displ
@@ -42,17 +43,17 @@ public
 ! ndumppts_el=(iend-ibeg+1)**2
   integer           :: ndumppts_el
 
+! for xdmf dumps
+  integer           :: i_n_xdmf, j_n_xdmf
+  integer, allocatable :: i_arr_xdmf(:), j_arr_xdmf(:)
+
 ! rotations
   double precision :: rot_mat(3,3),trans_rot_mat(3,3)
   double precision, allocatable, dimension(:,:) :: recfac
 
-!af
   character(len=80), dimension(:), allocatable :: fname_rec_seis
   character(len=80), dimension(:), allocatable :: fname_rec_velo
-!end af
 
-!for vtk snapshots
-  real, allocatable ::  x(:),y(:),z0(:)
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

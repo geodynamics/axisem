@@ -84,6 +84,11 @@ use meshes_io
      call dump_glob_grid_midpoint(ibeg,iend,ibeg,iend)
   endif
 
+  if (dump_xdmf_vtk) then
+     if (lpr) write(6,*)'  dumping mesh for xdmf snapshots...'
+     call dump_xdmf_grid()
+  endif
+
   if (dump_snaps_solflu) then
      if (lpr) write(6,*)'  dumping solid & fluid grids for snapshots...'
      call dump_solid_grid(ibeg,iend,ibeg,iend)
@@ -912,9 +917,18 @@ real(kind=realkind) :: time
            write(6,*)
         endif
        call glob_snapshot_midpoint(disp,chi,ibeg,iend,ibeg,iend)
-
-       ! uncomment to produce 2D vtk snapshots
-       !call glob_snapshot_vtk(disp,chi)
+     endif
+  endif
+  
+  if (dump_xdmf_vtk) then
+    if (mod(iter,snap_it)==0) then
+        isnap=isnap+1
+        if (lpr) then
+           write(6,*)
+           write(6,*)'Writing global xdmf snap to file:',isnap
+           write(6,*)
+        endif
+        call glob_snapshot_xdmf(disp,chi)
      endif
   endif
 

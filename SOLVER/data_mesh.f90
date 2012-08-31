@@ -105,6 +105,9 @@ public
   integer, allocatable         :: cmbfile_el(:,:),loc2globcmb(:)
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  integer                      :: nelem_plot, npoint_plot
+  logical, allocatable         :: plotting_mask(:,:,:)
+  integer, allocatable         :: mapping_ijel_iplot(:,:,:)
 
 !=======================
 end module data_mesh

@@ -45,6 +45,10 @@ if ( ! -f inparam_hetero) then
   cp inparam_hetero.TEMPLATE inparam_hetero
 endif
 
+if ( ! -f inparam_xdmf) then 
+  cp inparam_xdmf.TEMPLATE inparam_xdmf
+endif
+
 
 # Check arguments: source types and submission queues
 set multisrc = 'false'
@@ -276,6 +280,7 @@ foreach isrc (${num_src_arr})
         cp $homedir/mpif.h .
         cp $homedir/inparam .
         cp $homedir/inparam_hetero .
+        cp $homedir/inparam_xdmf .
         cp $homedir/*.bm .
 
         cd $mainrundir

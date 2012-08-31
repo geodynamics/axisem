@@ -16,6 +16,7 @@ colatlon        receiver file type: 'colatlon','stations','database'
 ./Data          data output path: meshes, wavefields, seismograms, related info
 ./Info          info output path: summary, test and information files
 .false.         save global snapshots for wavefield movies (WARNING: Large!)
+.false.         save XDMF files (high resolution 2D wavefields), more options in inparam_xdmf
 20.0            approximate time intervall between snapshots [s]
 
 ######## OUTPUT: SENSITIVITY KERNELS ###################################################

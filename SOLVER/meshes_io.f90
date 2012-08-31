@@ -217,6 +217,289 @@ end subroutine dump_glob_grid_midpoint
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+subroutine dump_xdmf_grid()
+
+use data_numbering
+
+    integer              :: iel, ipol, jpol, ipol1, jpol1, i, j, ct, ipt, idest
+    real*4, allocatable  :: points(:,:)
+    integer, allocatable :: grid(:,:), mapping(:)
+    logical, allocatable :: check(:)
+    character(len=120)   :: fname
+    
+    inquire(file="inparam_xdmf", EXIST=file_exists)
+
+    if (.not. file_exists) then 
+       write(6,*) ''
+       write(6,*) 'ERROR: xdmf output set in inparam, but'
+       write(6,*) '       inparam_xdmf does not exist!'
+       stop
+    endif
+
+    open(unit=91, file='inparam_xdmf')
+
+    read(91,*) i_n_xdmf
+    allocate(i_arr_xdmf(1:i_n_xdmf))
+    read(91,*) i_arr_xdmf
+    
+    read(91,*) j_n_xdmf
+    allocate(j_arr_xdmf(1:j_n_xdmf))
+    read(91,*) j_arr_xdmf
+
+    close(91)
+
+    nelem_plot = nelem * (i_n_xdmf - 1) * (j_n_xdmf - 1)
+
+    allocate(check(nglob_fluid + nglob_solid))
+    allocate(mapping(nglob_fluid + nglob_solid))
+    allocate(mapping_ijel_iplot(i_n_xdmf, j_n_xdmf, nelem))
+    allocate(plotting_mask(i_n_xdmf, j_n_xdmf, nelem))
+    
+    check = .false.
+    plotting_mask = .false.
+    
+    ct = 0
+
+    if (lpr) write(6,*) '   construction of mapping for xdmf plotting...'
+
+    do iel=1, nel_fluid
+        do i=1, i_n_xdmf
+            ipol = i_arr_xdmf(i)
+            do j=1, j_n_xdmf
+                jpol = j_arr_xdmf(j)
+               
+                ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+                idest = igloc_fluid(ipt)
+                
+                if (.not. check(idest)) then
+                    ct = ct + 1
+                    check(idest) = .true.
+                    mapping(idest) = ct
+                    plotting_mask(i,j,iel) = .true.
+                endif
+                mapping_ijel_iplot(i,j,iel) = mapping(idest)
+            enddo
+        enddo
+    enddo
+    
+    do iel=1, nel_solid
+        do i=1, i_n_xdmf
+            ipol = i_arr_xdmf(i)
+            do j=1, j_n_xdmf
+                jpol = j_arr_xdmf(j)
+               
+                ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+                idest = igloc_solid(ipt) + nglob_fluid
+                
+                if (.not. check(idest)) then
+                    ct = ct + 1
+                    check(idest) = .true.
+                    mapping(idest) = ct
+                    plotting_mask(i,j,iel + nel_fluid) = .true.
+                endif
+                mapping_ijel_iplot(i,j,iel + nel_fluid) = mapping(idest)
+            enddo
+        enddo
+    enddo
+    
+    deallocate(check, mapping)
+    npoint_plot = ct
+    
+    allocate(points(1:2,1:npoint_plot))
+
+    points = 0.
+  
+    do iel=1, nel_fluid
+    
+        do i=1, i_n_xdmf - 1
+            ipol = i_arr_xdmf(i)
+            ipol1 = i_arr_xdmf(i+1)
+
+            do j=1, j_n_xdmf - 1
+                jpol = j_arr_xdmf(j)
+                jpol1 = j_arr_xdmf(j+1)
+    
+                if (plotting_mask(i,j,iel)) then
+                    ct = mapping_ijel_iplot(i,j,iel)
+                    points(1,ct) = scoord(ipol,jpol,ielfluid(iel))
+                    points(2,ct) = zcoord(ipol,jpol,ielfluid(iel))
+                endif
+                
+                if (plotting_mask(i+1,j,iel)) then
+                    ct = mapping_ijel_iplot(i+1,j,iel)
+                    points(1,ct) = scoord(ipol1,jpol,ielfluid(iel))
+                    points(2,ct) = zcoord(ipol1,jpol,ielfluid(iel))
+                endif
+                
+                if (plotting_mask(i+1,j+1,iel)) then
+                    ct = mapping_ijel_iplot(i+1,j+1,iel)
+                    points(1,ct) = scoord(ipol1,jpol1,ielfluid(iel))
+                    points(2,ct) = zcoord(ipol1,jpol1,ielfluid(iel))
+                endif
+                
+                if (plotting_mask(i,j+1,iel)) then
+                    ct = mapping_ijel_iplot(i,j+1,iel)
+                    points(1,ct) = scoord(ipol,jpol1,ielfluid(iel))
+                    points(2,ct) = zcoord(ipol,jpol1,ielfluid(iel))
+                endif
+            enddo
+        enddo
+    enddo
+    
+    do iel=1, nel_solid
+    
+        do i=1, i_n_xdmf - 1
+            ipol = i_arr_xdmf(i)
+            ipol1 = i_arr_xdmf(i+1)
+
+            do j=1, j_n_xdmf - 1
+                jpol = j_arr_xdmf(j)
+                jpol1 = j_arr_xdmf(j+1)
+    
+                if (plotting_mask(i,j,iel + nel_fluid)) then
+                    ct = mapping_ijel_iplot(i,j,iel + nel_fluid)
+                    points(1,ct) = scoord(ipol,jpol,ielsolid(iel))
+                    points(2,ct) = zcoord(ipol,jpol,ielsolid(iel))
+                endif
+                
+                if (plotting_mask(i+1,j,iel + nel_fluid)) then
+                    ct = mapping_ijel_iplot(i+1,j,iel + nel_fluid)
+                    points(1,ct) = scoord(ipol1,jpol,ielsolid(iel))
+                    points(2,ct) = zcoord(ipol1,jpol,ielsolid(iel))
+                endif
+                
+                if (plotting_mask(i+1,j+1,iel + nel_fluid)) then
+                    ct = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid)
+                    points(1,ct) = scoord(ipol1,jpol1,ielsolid(iel))
+                    points(2,ct) = zcoord(ipol1,jpol1,ielsolid(iel))
+                endif
+                
+                if (plotting_mask(i,j+1,iel + nel_fluid)) then
+                    ct = mapping_ijel_iplot(i,j+1,iel + nel_fluid)
+                    points(1,ct) = scoord(ipol,jpol1,ielsolid(iel))
+                    points(2,ct) = zcoord(ipol,jpol1,ielsolid(iel))
+                endif
+            enddo
+        enddo
+    enddo
+    
+    if (lpr) write(6,*) '   .... finished construction of mapping for xdmf plotting'
+
+    fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
+    open(100, file=trim(fname), access='stream', status='replace', &
+        convert='little_endian')
+    write(100) points
+    close(100)
+
+    deallocate(points)
+
+    allocate(grid(1:4, 1:nelem_plot))
+    
+    ct = 1
+    
+    do iel=1, nel_fluid
+        do i=1, i_n_xdmf - 1
+            do j=1, j_n_xdmf - 1
+                grid(1,ct) = mapping_ijel_iplot(i,j,iel) - 1
+                grid(2,ct) = mapping_ijel_iplot(i+1,j,iel) - 1
+                grid(3,ct) = mapping_ijel_iplot(i+1,j+1,iel) - 1
+                grid(4,ct) = mapping_ijel_iplot(i,j+1,iel) - 1
+                ct = ct + 1
+            enddo
+        enddo
+    enddo
+    
+    do iel=1, nel_solid
+        do i=1, i_n_xdmf - 1
+            do j=1, j_n_xdmf - 1
+                grid(1,ct) = mapping_ijel_iplot(i,j,iel + nel_fluid) - 1
+                grid(2,ct) = mapping_ijel_iplot(i+1,j,iel + nel_fluid) - 1
+                grid(3,ct) = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid) - 1
+                grid(4,ct) = mapping_ijel_iplot(i,j+1,iel + nel_fluid) - 1
+                ct = ct + 1
+            enddo
+        enddo
+    enddo
+    
+    fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
+    open(100, file=trim(fname), access='stream', status='replace', &
+        convert='little_endian')
+    write(100) grid
+    close(100)
+    
+    fname = datapath(1:lfdata) // '/xdmf_meshonly_' // appmynum // '.xdmf'
+    open(100, file=trim(fname))
+    write(100, 732) nelem_plot, nelem_plot, 'xdmf_grid_' // appmynum // '.dat', &
+                    npoint_plot, 'xdmf_points_' // appmynum // '.dat'
+
+732 format(&    
+    '<?xml version="1.0" ?>',/&
+    '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
+    '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
+    '<Domain>',/&
+    '<Grid Name="CellsTime" GridType="Collection" CollectionType="Temporal">',/&
+    '    <Grid GridType="Uniform">',/&
+    '      <Time Value="0.000" />',/&
+    '      <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
+    '        <DataItem Dimensions="',i10,' 4" NumberType="Int" Format="binary">',/&
+                ,A20,/&
+    '        </DataItem>',/&
+    '      </Topology>',/&
+    '      <Geometry GeometryType="XY">',/&
+    '        <DataItem Dimensions="',i10,' 2" NumberType="Float" Format="binary">',/&
+                ,A20/&
+    '        </DataItem>',/&
+    '      </Geometry>',/&
+    '    </Grid>',/&
+    '</Grid>',/&
+    '</Domain>',/&
+    '</Xdmf>')
+    
+    close(100)
+    
+    fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
+    open(100, file=trim(fname))
+    write(100, 733) nelem_plot, 'xdmf_grid_' // appmynum // '.dat', &
+                    npoint_plot, 'xdmf_points_' // appmynum // '.dat'
+
+733 format(&    
+    '<?xml version="1.0" ?>',/&
+    '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
+    '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
+    '<Domain>',/,/&
+    '<DataItem Name="grid" Dimensions="',i10,' 4" NumberType="Int" Format="binary">',/&
+    '  ', A,/&
+    '</DataItem>',/&
+    '<DataItem Name="points" Dimensions="',i10,' 2" NumberType="Float" Format="binary">',/&
+    '  ', A,/&
+    '</DataItem>',/,/&
+    '<Grid Name="CellsTime" GridType="Collection" CollectionType="Temporal">',/)
+    
+    close(100)
+
+end subroutine dump_xdmf_grid
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine finish_xdmf_xml()
+
+    character(len=120) :: fname
+
+    fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
+    open(100, file=trim(fname), access='append')
+    write(100, 736) 
+
+736 format(&    
+    '</Grid>',/&
+    '</Domain>',/&
+    '</Xdmf>')
+    
+    close(100)
+
+end subroutine finish_xdmf_xml
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 subroutine dump_solid_grid(ibeg,iend,jbeg,jend)
 !
 ! Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 

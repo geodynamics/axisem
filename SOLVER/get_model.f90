@@ -2207,7 +2207,7 @@ real, dimension(:), allocatable :: xi1,phi1
 real, dimension(:), allocatable :: fa_ani_theta1, fa_ani_phi1
 character(len=80) :: fname
 integer :: npts_vtk,ct,iel,i
-!real, allocatable ::  x(:),y(:),z0(:)
+real, allocatable ::  x(:),y(:),z0(:)
 logical :: plot_ani
 
 npts_vtk = nelem * 4

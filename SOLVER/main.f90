@@ -13,6 +13,7 @@ use get_mesh,       ONLY : read_db
 use def_grid,       ONLY : init_grid,mesh_tests,deallocate_preloop_arrays
 use time_evol_wave, ONLY : prepare_waves,time_loop
 use commun,         ONLY : pinit, pend,barrier
+use meshes_io,      ONLY : finish_xdmf_xml
 
 implicit none
 
@@ -77,6 +78,11 @@ implicit none
     if(lpr)write(6,*)'MAIN: Flush and close all netcdf files ...................'
     call end_netcdf_output !Flush and close all netcdf files 
   end if
+  
+  if (dump_xdmf_vtk) then
+     if (lpr) write(6,*)'  finishing xdmf xml file...'
+     call finish_xdmf_xml()
+  endif
   call end_clock ! clocks
 
   call pend ! commun

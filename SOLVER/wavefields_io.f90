@@ -182,95 +182,239 @@ real(kind=realkind)             :: dsdchi,prefac
 end subroutine glob_snapshot_midpoint
 !=============================================================================
 
+
 !-----------------------------------------------------------------------------
+subroutine glob_snapshot_xdmf(f_sol, chi)
 
-subroutine glob_snapshot_vtk(f_sol,chi)
+    use data_source, ONLY : src_type
+    use data_pointwise, ONLY : inv_rho_fluid, inv_s_rho_fluid
+    use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+    use data_time, only : t
+    
+    include 'mesh_params.h'
+    
+    real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
+    real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+    character(len=4)     :: appisnap
+    integer              :: iel, iidim, ct, ipol, jpol, ipol1, jpol1, i, j
+    real(kind=realkind)  :: dsdchi, prefac
+    real*4, allocatable  :: u(:,:), u_new(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
+    character(len=120)   :: fname
 
-   use data_source, ONLY : src_type
-   use data_pointwise, ONLY : inv_rho_fluid, inv_s_rho_fluid
-   use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
-   use data_mesh_preloop, only: ielfluid, ielsolid
-   
-   include 'mesh_params.h'
-   
-   real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
-   real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
-   character(len=4)                :: appisnap
-   integer                         :: iel, iidim, npts_vtk, ct
-   real(kind=realkind)             :: dsdchi, prefac
-   !real, allocatable               :: x(:), y(:), z0(:)
-   real, allocatable               :: u(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
-   character(len=120)              :: fname
+    allocate(usz_fl(0:npol,0:npol,1:nel_fluid,2))
+    allocate(up_fl(0:npol,0:npol,1:nel_fluid))
+    
+    allocate(u(1:3,1:npoint_plot))
 
-   allocate(usz_fl(0:npol,0:npol,1:nel_fluid,2))
-   allocate(up_fl(0:npol,0:npol,1:nel_fluid))
-   
-   npts_vtk = nelem * 4
-
-   allocate(u(npts_vtk,1:3))
-
-   if (src_type(1)=='monopole') prefac = 0.
-   if (src_type(1)=='dipole')   prefac = 1.
-   if (src_type(1)=='quadpole') prefac = 2.
+    if (src_type(1)=='monopole') prefac = 0.
+    if (src_type(1)=='dipole')   prefac = 1.
+    if (src_type(1)=='quadpole') prefac = 2.
  
-   call define_io_appendix(appisnap,isnap)
+    call define_io_appendix(appisnap,isnap)
  
-   if (have_fluid) then
-      call axisym_laplacian_fluid(chi,usz_fl)
-      usz_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
-      usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
+    if (have_fluid) then
+       call axisym_laplacian_fluid(chi,usz_fl)
+       usz_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
+       usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
 
-      up_fl(:,:,:) = prefac * chi * inv_s_rho_fluid
+       up_fl(:,:,:) = prefac * chi * inv_s_rho_fluid
 
-      do iel=1, nel_fluid
-         ct = (ielfluid(iel) - 1) * 4 
-         
-         u(ct + 1, 1) = usz_fl(0,0,iel,1)
-         u(ct + 1, 2) = up_fl(0,0,iel)
-         u(ct + 1, 3) = usz_fl(0,0,iel,2)
+       do iel=1, nel_fluid
+           do i=1, i_n_xdmf - 1
+               ipol = i_arr_xdmf(i)
+               ipol1 = i_arr_xdmf(i+1)
 
-         u(ct + 2, 1) = usz_fl(npol,0,iel,1)
-         u(ct + 2, 2) = up_fl(npol,0,iel)
-         u(ct + 2, 3) = usz_fl(npol,0,iel,2)
+               do j=1, j_n_xdmf - 1
+                   jpol = j_arr_xdmf(j)
+                   jpol1 = j_arr_xdmf(j+1)
+       
+                   if (plotting_mask(i,j,iel)) then
+                       ct = mapping_ijel_iplot(i,j,iel)
+                       u(1, ct) = usz_fl(ipol,jpol,iel,1)
+                       u(2, ct) =  up_fl(ipol,jpol,iel)
+                       u(3, ct) = usz_fl(ipol,jpol,iel,2)
+                   endif
 
-         u(ct + 3, 1) = usz_fl(npol,npol,iel,1)
-         u(ct + 3, 2) = up_fl(npol,npol,iel)
-         u(ct + 3, 3) = usz_fl(npol,npol,iel,2)
+                   if (plotting_mask(i+1,j,iel)) then
+                       ct = mapping_ijel_iplot(i+1,j,iel)
+                       u(1, ct) = usz_fl(ipol1,jpol,iel,1)
+                       u(2, ct) =  up_fl(ipol1,jpol,iel)
+                       u(3, ct) = usz_fl(ipol1,jpol,iel,2)
+                   endif
 
-         u(ct + 4, 1) = usz_fl(0,npol,iel,1)
-         u(ct + 4, 2) = up_fl(0,npol,iel)
-         u(ct + 4, 3) = usz_fl(0,npol,iel,2)
-      enddo
-   endif
-   
-   deallocate(usz_fl, up_fl)
+                   if (plotting_mask(i+1,j+1,iel)) then
+                       ct = mapping_ijel_iplot(i+1,j+1,iel)
+                       u(1, ct) = usz_fl(ipol1,jpol1,iel,1)
+                       u(2, ct) =  up_fl(ipol1,jpol1,iel)
+                       u(3, ct) = usz_fl(ipol1,jpol1,iel,2)
+                   endif
+
+                   if (plotting_mask(i,j+1,iel)) then
+                       ct = mapping_ijel_iplot(i,j+1,iel)
+                       u(1, ct) = usz_fl(ipol,jpol1,iel,1)
+                       u(2, ct) =  up_fl(ipol,jpol1,iel)
+                       u(3, ct) = usz_fl(ipol,jpol1,iel,2)
+                   endif
+               enddo
+           enddo
+       enddo
+    endif
+    
+    deallocate(usz_fl, up_fl)
+    
+    do iel=1, nel_solid
+        do i=1, i_n_xdmf - 1
+            ipol = i_arr_xdmf(i)
+            ipol1 = i_arr_xdmf(i+1)
+
+            do j=1, j_n_xdmf - 1
+                jpol = j_arr_xdmf(j)
+                jpol1 = j_arr_xdmf(j+1)
+    
+                if (plotting_mask(i,j,iel + nel_fluid)) then
+                    ct = mapping_ijel_iplot(i,j,iel + nel_fluid)
+                    u(1, ct) = f_sol(ipol,jpol,iel,1)
+                    u(2, ct) = f_sol(ipol,jpol,iel,2)
+                    u(3, ct) = f_sol(ipol,jpol,iel,3)
+                endif
+                
+                if (plotting_mask(i+1,j,iel + nel_fluid)) then
+                    ct = mapping_ijel_iplot(i+1,j,iel + nel_fluid)
+                    u(1, ct) = f_sol(ipol1,jpol,iel,1)
+                    u(2, ct) = f_sol(ipol1,jpol,iel,2)
+                    u(3, ct) = f_sol(ipol1,jpol,iel,3)
+                endif
+                
+                if (plotting_mask(i+1,j+1,iel + nel_fluid)) then
+                    ct = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid)
+                    u(1, ct) = f_sol(ipol1,jpol1,iel,1)
+                    u(2, ct) = f_sol(ipol1,jpol1,iel,2)
+                    u(3, ct) = f_sol(ipol1,jpol1,iel,3)
+                endif
+                
+                if (plotting_mask(i,j+1,iel + nel_fluid)) then
+                    ct = mapping_ijel_iplot(i,j+1,iel + nel_fluid)
+                    u(1, ct) = f_sol(ipol,jpol1,iel,1)
+                    u(2, ct) = f_sol(ipol,jpol1,iel,2)
+                    u(3, ct) = f_sol(ipol,jpol1,iel,3)
+                endif
+            enddo
+        enddo
+    enddo
       
-   do iel=1, nel_solid
-      ct = (ielsolid(iel) - 1) * 4 
-      
-      u(ct + 1, 1) = f_sol(0,0,iel,1)
-      u(ct + 1, 2) = f_sol(0,0,iel,2)
-      u(ct + 1, 3) = f_sol(0,0,iel,3)
+    ct = 0
+    
+    fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'_'//appisnap//'.dat'
+    open(100, file=trim(fname), access='stream', status='replace', &
+        convert='little_endian')
+    write(100) u(1,:)
+    close(100)
 
-      u(ct + 2, 1) = f_sol(npol,0,iel,1)
-      u(ct + 2, 2) = f_sol(npol,0,iel,2)
-      u(ct + 2, 3) = f_sol(npol,0,iel,3)
+    if (.not. src_type(1)=='monopole') then
+        fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'_'//appisnap//'.dat'
+        open(100, file=trim(fname), access='stream', status='replace', &
+            convert='little_endian')
+        write(100) u(2,:)
+        close(100)
+    endif
 
-      u(ct + 3, 1) = f_sol(npol,npol,iel,1)
-      u(ct + 3, 2) = f_sol(npol,npol,iel,2)
-      u(ct + 3, 3) = f_sol(npol,npol,iel,3)
+    fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'_'//appisnap//'.dat'
+    open(100, file=trim(fname), access='stream', status='replace', &
+        convert='little_endian')
+    write(100) u(3,:)
+    close(100)
 
-      u(ct + 4, 1) = f_sol(0,npol,iel,1)
-      u(ct + 4, 2) = f_sol(0,npol,iel,2)
-      u(ct + 4, 3) = f_sol(0,npol,iel,3)
-   enddo
-   
-   fname = datapath(1:lfdata)//'/vtk_snap_' //appmynum//'_'//appisnap
-   call write_VTK_bin_multi_scal(x, y, z0, u, npts_vtk/4, fname)
+    deallocate(u)
+    
+    fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
+    open(100, file=trim(fname), access='append')
 
-   deallocate(u)
+    if (src_type(1)=='monopole') then
+        write(100, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                    npoint_plot, 'xdmf_snap_s_' //appmynum//'_'//appisnap//'.dat', &
+                    npoint_plot, 'xdmf_snap_z_' //appmynum//'_'//appisnap//'.dat', &
+                    npoint_plot, appisnap, appisnap
+    else
+        write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                    npoint_plot, 'xdmf_snap_s_' //appmynum//'_'//appisnap//'.dat', &
+                    npoint_plot, 'xdmf_snap_p_' //appmynum//'_'//appisnap//'.dat', &
+                    npoint_plot, 'xdmf_snap_z_' //appmynum//'_'//appisnap//'.dat', &
+                    npoint_plot, appisnap, appisnap, appisnap
+    endif
 
-end subroutine glob_snapshot_vtk
+734 format(&    
+    '    <Grid Name="', A,'" GridType="Uniform">',/&
+    '      <Time Value="',F8.2,'" />',/&
+    '      <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'grid', A,']" />',/&
+    '      </Topology>',/&
+    '      <Geometry GeometryType="XY">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '      </Geometry>',/&
+    '      <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
+    '        <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
+    '           ', A,/&
+    '        </DataItem>',/&
+    '      </Attribute>',/&
+    '      <Attribute Name="u_z" AttributeType="Scalar" Center="Node">',/&
+    '        <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
+    '           ', A,/&
+    '        </DataItem>',/&
+    '      </Attribute>',/,/&
+    '      <Attribute Name="abs" AttributeType="Scalar" Center="Node">',/&
+    '        <DataItem ItemType="Function" Function="SQRT($0 * $0 + $1 * $1)" Dimensions="', I10,'">',/&
+    '          <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_s"]/DataItem[1]',/&
+    '          </DataItem>',/&
+    '          <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_z"]/DataItem[1]',/&
+    '          </DataItem>',/&
+    '        </DataItem>',/&
+    '      </Attribute>',/&
+    '    </Grid>',/)
+
+735 format(&    
+    '    <Grid Name="', A,'" GridType="Uniform">',/&
+    '      <Time Value="',F8.2,'" />',/&
+    '      <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'grid', A,']" />',/&
+    '      </Topology>',/&
+    '      <Geometry GeometryType="XY">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '      </Geometry>',/&
+    '      <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
+    '        <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
+    '           ', A,/&
+    '        </DataItem>',/&
+    '      </Attribute>',/&
+    '      <Attribute Name="u_p" AttributeType="Scalar" Center="Node">',/&
+    '        <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
+    '           ', A,/&
+    '        </DataItem>',/&
+    '      </Attribute>',/&
+    '      <Attribute Name="u_z" AttributeType="Scalar" Center="Node">',/&
+    '        <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
+    '           ', A,/&
+    '        </DataItem>',/&
+    '      </Attribute>',/,/&
+    '      <Attribute Name="abs" AttributeType="Scalar" Center="Node">',/&
+    '        <DataItem ItemType="Function" Function="SQRT($0 * $0 + $1 * $1 + $2 * $2)" Dimensions="', I10,'">',/&
+    '          <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_s"]/DataItem[1]',/&
+    '          </DataItem>',/&
+    '          <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_p"]/DataItem[1]',/&
+    '          </DataItem>',/&
+    '          <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_z"]/DataItem[1]',/&
+    '          </DataItem>',/&
+    '        </DataItem>',/&
+    '      </Attribute>',/&
+    '    </Grid>',/)
+    
+    close(100)
+
+end subroutine glob_snapshot_xdmf
 !=============================================================================
 
 
@@ -1018,78 +1162,7 @@ if (have_src) then
    enddo
 endif
 
-
 end subroutine eradicate_src_elem_values
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
-!-----------------------------------------------------------------------------
-subroutine write_VTK_bin_multi_scal(x,y,z,u1,elems,filename)
-implicit none
-integer*4 :: i,t,elems
-real*4, dimension(1:elems*4), intent(in) :: x, y, z
-real*4, dimension(1:elems*4, 1:3), intent(in) :: u1
-integer*4, dimension(1:elems*5) :: cell
-integer*4, dimension(1:elems) :: cell_type
-character (len=120) :: filename
-character (len=50) :: ss; !stream
-!points structure
-
-do i=5, elems*5, 5
-   cell(i-4) = 4
-enddo
-
-t=0
-
-do i=5,elems*5,5
-   t = t + 4
-   cell(i-3) = t - 4
-   cell(i-2) = t - 3
-   cell(i-1) = t - 2
-   cell(i) = t - 1
-enddo
-
-cell_type = 9
-
-open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
-     convert='big_endian')
-write(100) '# vtk DataFile Version 4.0'//char(10)
-write(100) 'mittico'//char(10)
-write(100) 'BINARY'//char(10)
-write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
-write(ss,fmt='(A6,I10,A5)') 'POINTS',elems*4,'float'
-write(100) ss//char(10)
-
-!points
-write(100) (x(i),y(i),z(i),i=1,elems*4)
-write(100) char(10)
-
-!cell topology
-write(ss,fmt='(A5,2I10)') 'CELLS',elems,elems*5
-write(100) char(10)//ss//char(10)
-write(100) cell
-write(100) char(10)
-
-!cell type
-write(ss,fmt='(A10,2I10)') 'CELL_TYPES',elems
-write(100) char(10)//ss//char(10)
-write(100) cell_type
-write(100) char(10)
-
-!data
-write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
-write(100) char(10)//ss//char(10)
-write(100) 'SCALARS data float 3'//char(10)
-write(100) 'LOOKUP_TABLE default'//char(10) !color table?
-
-do i=1,elems*4
-   write(100) u1(i,1), u1(i,2), u1(i,3)
-enddo
-
-close(100)
-write(6,*)'...saved ',trim(filename)//'.vtk'
-
-end subroutine write_VTK_bin_multi_scal
 
 !================================
 end module wavefields_io
