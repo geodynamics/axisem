@@ -63,7 +63,7 @@ integer :: i
 
   open(5,file='inparam',POSITION='REWIND')
     read(5,*)junk
-    read(5,*)num_simul;write(6,*)num_simul
+    read(5,*)num_simul
     read(5,*)junk
 
     read(5,*)seislength_t
