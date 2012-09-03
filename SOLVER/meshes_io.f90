@@ -13,7 +13,7 @@ use data_mesh_preloop, ONLY : ielsolid,ielfluid
 use data_proc
 use data_io
 
-use utlity, ONLY : scoord, zcoord
+use utlity, ONLY : scoord, zcoord, rcoord, thetacoord
 
 implicit none
 
@@ -224,8 +224,9 @@ use data_numbering
     integer              :: iel, ipol, jpol, ipol1, jpol1, i, j, ct, ipt, idest
     real*4, allocatable  :: points(:,:)
     integer, allocatable :: grid(:,:), mapping(:)
-    logical, allocatable :: check(:)
+    logical, allocatable :: check(:), mask_tp_elem(:)
     character(len=120)   :: fname
+    double precision     :: rmin, rmax, thetamin, thetamax
     
     inquire(file="inparam_xdmf", EXIST=file_exists)
 
@@ -238,6 +239,15 @@ use data_numbering
 
     open(unit=91, file='inparam_xdmf')
 
+    read(91,*) rmin, rmax
+    read(91,*) thetamin, thetamax
+
+    rmin = rmin * 1000
+    rmax = rmax * 1000
+    
+    thetamin = thetamin * pi / 180.
+    thetamax = thetamax * pi / 180.
+    
     read(91,*) i_n_xdmf
     allocate(i_arr_xdmf(1:i_n_xdmf))
     read(91,*) i_arr_xdmf
@@ -248,7 +258,48 @@ use data_numbering
 
     close(91)
 
-    nelem_plot = nelem * (i_n_xdmf - 1) * (j_n_xdmf - 1)
+    allocate(mask_tp_elem(nelem))
+    mask_tp_elem = .false.
+
+    ct = 0
+
+    do iel=1, nel_fluid
+        if (min(min(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
+                min(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) < rmax &
+            .and. &
+            max(max(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
+                max(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) > rmin &
+            .and. &
+            min(min(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
+                min(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) < thetamax &
+            .and. &
+            max(max(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
+                max(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) > thetamin) &
+            then        
+            ct = ct + 1
+            mask_tp_elem(iel) = .true.
+        endif
+    enddo
+    
+    do iel=1, nel_solid
+        if (min(min(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
+                min(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) < rmax &
+            .and. &
+            max(max(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
+                max(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) > rmin &
+            .and. &
+            min(min(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
+                min(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) < thetamax &
+            .and. &
+            max(max(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
+                max(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) > thetamin) &
+            then        
+            ct = ct + 1
+            mask_tp_elem(iel + nel_fluid) = .true.
+        endif
+    enddo
+    
+    nelem_plot = ct * (i_n_xdmf - 1) * (j_n_xdmf - 1)
 
     allocate(check(nglob_fluid + nglob_solid))
     allocate(mapping(nglob_fluid + nglob_solid))
@@ -263,6 +314,7 @@ use data_numbering
     if (lpr) write(6,*) '   construction of mapping for xdmf plotting...'
 
     do iel=1, nel_fluid
+        if (.not.  mask_tp_elem(iel)) cycle
         do i=1, i_n_xdmf
             ipol = i_arr_xdmf(i)
             do j=1, j_n_xdmf
@@ -283,6 +335,7 @@ use data_numbering
     enddo
     
     do iel=1, nel_solid
+        if (.not.  mask_tp_elem(iel + nel_fluid)) cycle
         do i=1, i_n_xdmf
             ipol = i_arr_xdmf(i)
             do j=1, j_n_xdmf
@@ -398,6 +451,7 @@ use data_numbering
     ct = 1
     
     do iel=1, nel_fluid
+        if (.not.  mask_tp_elem(iel)) cycle
         do i=1, i_n_xdmf - 1
             do j=1, j_n_xdmf - 1
                 grid(1,ct) = mapping_ijel_iplot(i,j,iel) - 1
@@ -410,6 +464,7 @@ use data_numbering
     enddo
     
     do iel=1, nel_solid
+        if (.not.  mask_tp_elem(iel + nel_fluid)) cycle
         do i=1, i_n_xdmf - 1
             do j=1, j_n_xdmf - 1
                 grid(1,ct) = mapping_ijel_iplot(i,j,iel + nel_fluid) - 1

@@ -302,8 +302,6 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
         enddo
     enddo
       
-    ct = 0
-    
     fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'_'//appisnap//'.dat'
     open(100, file=trim(fname), access='stream', status='replace', &
         convert='little_endian')

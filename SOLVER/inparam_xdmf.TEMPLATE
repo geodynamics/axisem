@@ -1,4 +1,6 @@
-3               number of gll points to be plotted in i direction
-0 2 4           indices of gll points in i direction
-3               number of gll points to be plotted in j direction
-0 2 4           indices of gll points in j direction
+0. 7000.            radius: rmin, rmax in km
+0. 180.             colatitude: thetamin, thetamax
+3                   number of gll points to be plotted in i direction
+0 2 4               indices of gll points in i direction
+3                   number of gll points to be plotted in j direction
+0 2 4               indices of gll points in j direction
