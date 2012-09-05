@@ -355,14 +355,16 @@ def PyAxi(**kwargs):
                 "    source file type: 'sourceparams','cmtsolut'\n"
             inparam_solver_read[11] = input['receiver_type'] + \
                 "        receiver file type: 'colatlon','stations'\n"
-            
+            inparam_solver_read[18] = input['save_XDMF'] + \
+                "         save XDMF files (high resolution 2D wavefields), more options in inparam_xdmf\n"
             if input['netCDF'] == 'N':
-                inparam_solver_read[34] = 'binary' + \
+                inparam_solver_read[35] = 'binary' + \
                     '          Output format for seismograms and wavefields: binary, netcdf\n'
             elif input['netCDF'] != 'N':
-                inparam_solver_read[34] = 'netcdf' + \
+                inparam_solver_read[35] = 'netcdf' + \
                     '          Output format for seismograms and wavefields: binary, netcdf\n'
-            
+            inparam_solver_read[36] = input['force_aniso'] + \
+                "         force anisotropic model handling"
             inparam_solver_open.close()
             inparam_solver_open = open('./inparam', 'w')
 
@@ -868,6 +870,8 @@ def read_input_file():
     input['time_step'] = config.get('solver', 'time_step')
     input['source_type'] = config.get('solver', 'source_type')
     input['receiver_type'] = config.get('solver', 'receiver_type')
+    input['save_XDMF'] = config.get('solver', 'save_XDMF')
+    input['force_aniso'] = config.get('solver', 'force_aniso')
     
     input['sourceparams_type'] = config.get('solver', 'sourceparams_type')
     input['sourceparams_MDQ'] = config.get('solver', 'sourceparams_MDQ')
