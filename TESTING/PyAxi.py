@@ -221,7 +221,7 @@ def PyAxi(**kwargs):
                     t_check+=2
                     
                 else:
-                    print '********'
+                    print '==============================='
                     print "The submit.csh is done!"
                     check_process='DONE'
             print '--------------------------------'    
@@ -317,7 +317,7 @@ def PyAxi(**kwargs):
                 search = 'LIBS = '
                 for i in range(0, len(makefile_read)):
                     if makefile_read[i].find(search) != -1:
-                        makefile_read[i] = 'LIBS = -lm -lnetcdf -lnetcdff' + '\n'
+                        makefile_read[i] = 'LIBS = -lm -L/usr/lib -lnetcdf -lnetcdff' + '\n'
                         num_1 = i
                 search = 'INCLUDE ='
                 for i in range(0, len(makefile_read)):
@@ -352,9 +352,9 @@ def PyAxi(**kwargs):
             inparam_solver_read[5] = input['time_step'] + \
                 "            time step [s]. Put to 0.0 to use mesher's suggestion (mesh_params.h)\n"
             inparam_solver_read[10] = input['source_type'] + \
-                "    source file type: 'sourceparams','cmtsolut'\n"
+                "        source file type: 'sourceparams','cmtsolut'\n"
             inparam_solver_read[11] = input['receiver_type'] + \
-                "        receiver file type: 'colatlon','stations'\n"
+                "        receiver file type: 'colatlon','stations','database'\n"
             inparam_solver_read[18] = input['save_XDMF'] + \
                 "         save XDMF files (high resolution 2D wavefields), more options in inparam_xdmf\n"
             if input['netCDF'] == 'N':
@@ -426,6 +426,9 @@ def PyAxi(**kwargs):
                 source_open = open('./CMTSOLUTION', 'r')
                 source_read = source_open.readlines()
                 
+                source_read[0] = input['cmt_STF'] + \
+                                " PDE 1994  6  9  0 33 16.40 -13.8300  " + \
+                                "-67.5600 637.0 6.9 6.8 NORTHERNBOLIVIA" + '\n'
                 source_read[4] = 'latitude:      ' + input['cmt_lat'] + '\n'
                 source_read[5] = 'longitude:     ' + input['cmt_lon'] + '\n'
                 source_read[6] = 'depth:         ' + input['cmt_dp'] + '\n'
@@ -443,7 +446,7 @@ def PyAxi(**kwargs):
                     source_open.write(source_read[i])
 
                 source_open.close()
-                print source_read[4] + source_read[5] + \
+                print source_read[0] + source_read[4] + source_read[5] + \
                             source_read[6] + source_read[7] + \
                             source_read[8] + source_read[9] + \
                             source_read[10] + source_read[11] + \
@@ -651,6 +654,16 @@ def PyAxi(**kwargs):
                                 'Data_Postprocessing', 'SEISMOGRAMS')
                 
         axisem2mseed(path = path)
+    
+    if input['mseed_test'] != 'N':
+        print "\n===================="
+        print "Creating MSEED files"
+        print "====================\n"
+        
+        path = os.path.join(input['axi_address'], 'SOLVER', input['solver_name'], \
+                                'Data_Postprocessing', 'SEISMOGRAMS')
+                
+        axisem2mseed_test(path = path)
         
     t2_misc = time.time()
     ##############################################################
@@ -873,6 +886,9 @@ def read_input_file():
     input['save_XDMF'] = config.get('solver', 'save_XDMF')
     input['force_aniso'] = config.get('solver', 'force_aniso')
     
+    if input['receiver_type'] == 'database':
+        input['netCDF'] = 'Y'
+
     input['sourceparams_type'] = config.get('solver', 'sourceparams_type')
     input['sourceparams_MDQ'] = config.get('solver', 'sourceparams_MDQ')
     
@@ -888,6 +904,7 @@ def read_input_file():
     input['source_lon'] = config.get('solver', 'source_lon')
     input['source_stf'] = config.get('solver', 'source_stf')
     
+    input['cmt_STF'] = config.get('solver', 'cmt_STF')
     input['cmt_lat'] = config.get('solver', 'cmt_lat')
     input['cmt_lon'] = config.get('solver', 'cmt_lon')
     input['cmt_dp'] = config.get('solver', 'cmt_dp')
@@ -917,6 +934,12 @@ def read_input_file():
     input['post_negative'] = config.get('post_processing', 'post_negative')
     
     input['mseed'] = config.get('MISC', 'mseed')
+    input['mseed_test'] = config.get('MISC', 'mseed_test')
+    input['convSTF'] = config.get('MISC', 'convSTF')
+    input['halfduration'] = eval(config.get('MISC', 'halfduration'))
+    input['filter'] = config.get('MISC', 'filter')
+    input['fmin'] = eval(config.get('MISC', 'fmin'))
+    input['fmax'] = eval(config.get('MISC', 'fmax'))
     
     input['test'] = config.get('test_section', 'test')
     input['test_folder'] = config.get('test_section', 'test_folder')
@@ -1059,6 +1082,67 @@ def edit_param_post_processing(post_process_read):
 ########################## axisem2mseed ################################
 
 def axisem2mseed(path):
+    
+    """
+    change .dat files into MSEED format
+    """
+    
+    global input
+    
+    if not os.path.isdir(os.path.join(path, 'MSEED')):
+        os.mkdir(os.path.join(path, 'MSEED'))
+    else:
+        print 'Following directory already exists:'
+        print os.path.join(path, 'MSEED')
+        sys.exit()
+        
+    t = UTCDateTime(0)
+    traces = []
+    
+    for file in glob.iglob(os.path.join(path, '*.dat')):
+        stationID = file.split('/')[-1].split('_')[0]
+        networkID = file.split('/')[-1].split('_')[1]
+        chan = file.split('/')[-1].split('_')[-1].split('.')[0]
+        if chan == 'E':
+            chan = 'BHE'
+        elif chan == 'N':
+            chan = 'BHN'
+        elif chan == 'Z':
+            chan = 'BHZ'
+        try:
+            dat = np.loadtxt(file)
+            npts = len(dat[:,0])
+            
+            stats = {'network': networkID, 
+                     'station': stationID, 
+                     'location': '',
+                     'channel': chan, 
+                     'npts': npts, 
+                     'sampling_rate': (npts - 1.)/(dat[-1,0] - dat[0,0]),
+                     'starttime': t + dat[0,0],
+                     'mseed' : {'dataquality': 'D'}}
+            
+            st = Stream(Trace(data=dat[:,1], header=stats))
+            if input['convSTF'] == 'Y':
+                sigma =  input['halfduration'] / np.sqrt(2.) / 3.5
+                convSTF(st, sigma=sigma)
+            if input['filter'] == 'Y':
+                st.filter('lowpass', freq=input['fmax'], corners=2)
+                st.filter('lowpass', freq=input['fmax'], corners=2)
+                st.filter('lowpass', freq=input['fmax'], corners=2)
+                st.filter('lowpass', freq=input['fmax'], corners=2)
+                st.filter('highpass', freq=input['fmin'], corners=2)
+                st.filter('highpass', freq=input['fmin'], corners=2)
+            fname =  os.path.join(path, 'MSEED', 'dis.' + stationID + '..' + chan)
+            st.write(fname, format='MSEED')
+        except Exception, e:
+            print e
+            print networkID + '.' + stationID + '.' + chan + '.mseed'
+            print '-------------------------------------------------'
+
+########################## axisem2mseed_test ###########################
+
+def axisem2mseed_test(path):
     
     """
     change .dat files into MSEED format
