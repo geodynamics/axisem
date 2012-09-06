@@ -8,10 +8,6 @@
 #   Email:     hosseini@geophysik.uni-muenchen.de
 #-------------------------------------------------------------------
 
-"""
-The address should be given in more flexible way (automated/....)
-"""
-
 import subprocess
 import sys
 import os

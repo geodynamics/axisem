@@ -3,7 +3,7 @@
 
 #-------------------------------------------------------------------
 #   Filename:  PyAxi.py
-#   Purpose:   Interface for AXISEM in Python
+#   Purpose:   Python interface for AXISEM
 #   Author:    Kasra Hosseini
 #   Email:     hosseini@geophysik.uni-muenchen.de
 #-------------------------------------------------------------------
@@ -56,8 +56,10 @@ def PyAxi(**kwargs):
     PyAxi is the function dedicated to the main part of the code.
     
     To run this code:
-    1. change the "inpython.cfg" file based on what you want
+    1. change the "inpython.cfg" file based on the inputs that you want
     2. type: python PyAxi.py
+    3. if you have run the code once before with the same name, then PyAxi
+       will ask whether it should remove the folder or not!
     """
     
     # global variables
@@ -95,7 +97,6 @@ def PyAxi(**kwargs):
         elif user_raw_input == 'R':
             print "Removing the directory and continue the program!"
             print '--------------------------------------------------------'
-            #shutil.rmtree(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
             subprocess.check_call(['rm', '-rf', \
                 os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])])
         elif user_raw_input == 'S':
@@ -217,7 +218,7 @@ def PyAxi(**kwargs):
                 tmp = os.popen("ps -Af").read()
                 if process_name in tmp[:]:
                     print "The submit.csh is still running. (" + str(t_check) + " sec)"
-                    time.sleep(2)
+                    time.sleep(1)
                     t_check+=2
                     
                 else:
@@ -235,18 +236,16 @@ def PyAxi(**kwargs):
             print os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])
             print "==================="
             
-            #if os.path.isdir(os.path.join('..', 'SOLVER', 'MESHES')):
             if os.path.isdir(os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])):
+                print '\n#######################################################################'
+                print "Remove the mesh files from MESHES dir (before running the movemesh.csh)"
+                
                 subprocess.check_call(['rm', '-rf', \
                     os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])])
                 
-                print '\n#######################################################################'
-                print "Remove the mesh files from MESHES dir (before running the movemesh.csh)"
                 print os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])
                 print "is removed"
                 print '#######################################################################\n'
-                
-            #os.path.join('..', 'SOLVER', 'MESHES')])
             
             output = subprocess.check_call(['./movemesh.csh', input['mesh_name']])
             if output != 0: print output_print
@@ -522,8 +521,8 @@ def PyAxi(**kwargs):
             test_3 = -1
             test_4 = -1
             
-            time.sleep(20)
-            print_output = "Just after 20 seconds!"
+            time.sleep(10)
+            print_output = "Just after 10 seconds!"
             
             if input['source_type'] == 'sourceparams':
                 while (test == -1):
@@ -692,14 +691,6 @@ def PyAxi(**kwargs):
                                 'Data_Postprocessing', 'SEISMOGRAMS', 'seismograms.mseed'), \
                 os.path.join(folder_new, 'axisem.mseed')])
         
-        """
-        if not os.path.isfile(os.path.join(folder, 'axisem.mseed')):
-            subprocess.check_call(['cp', \
-                os.path.join(input['axi_address'], 'SOLVER', input['solver_name'], \
-                                'Data_Postprocessing', 'SEISMOGRAMS', 'seismograms.mseed'), \
-                os.path.join(folder, 'axisem.mseed')])
-        """
-        
         sgs = []
         st = read(os.path.join(folder, 'axisem.mseed'))
         sgs.append(st)
@@ -720,10 +711,6 @@ def PyAxi(**kwargs):
 
         for sg in sgs:
             sg.filter('lowpass', freq=fmax, corners=2)
-            sg.filter('lowpass', freq=fmax, corners=2)
-            sg.filter('lowpass', freq=fmax, corners=2)
-            sg.filter('lowpass', freq=fmax, corners=2)
-            sg.filter('highpass', freq=fmin, corners=2)
             sg.filter('highpass', freq=fmin, corners=2)
 
         nstat = eval(input['test_nstat'])
@@ -885,9 +872,6 @@ def read_input_file():
     input['receiver_type'] = config.get('solver', 'receiver_type')
     input['save_XDMF'] = config.get('solver', 'save_XDMF')
     input['force_aniso'] = config.get('solver', 'force_aniso')
-    
-    if input['receiver_type'] == 'database':
-        input['netCDF'] = 'Y'
 
     input['sourceparams_type'] = config.get('solver', 'sourceparams_type')
     input['sourceparams_MDQ'] = config.get('solver', 'sourceparams_MDQ')
@@ -950,17 +934,6 @@ def read_input_file():
     input['test_half'] = config.get('test_section', 'halfduration')
     input['test_nstat'] = config.get('test_section', 'nstat')
     
-    """
-    if input['all_steps'] != 'N':
-        input['mesher'] = 'Y'
-        input['solver'] = 'Y'
-        input['mesher_makefile'] = 'Y'
-        input['mesher_make'] = 'Y'
-        input['mesher_move'] = 'Y'
-        input['solver_cp'] = 'Y'
-        input['solver_makefile'] = 'Y'
-        input['solver_make'] = 'Y'
-    """
     if input['new_mesh'] == 'Y':
         input['mesher'] = 'Y'
         input['solver'] = 'Y'
@@ -993,7 +966,11 @@ def read_input_file():
         print "(solver_name flag in inpython.cfg)"
         print input['solver_name']
         print '##################################'
-        
+    
+    if input['receiver_type'] == 'database':
+        input['netCDF'] = 'Y'
+        input['post_processing'] = 'N'
+    
     if obspy_error != 'N':
         input['test'] = 'N'
         input['mseed'] = 'N'
