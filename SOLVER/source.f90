@@ -916,7 +916,7 @@ subroutine delta_src
      signal = 0.
      if (lpr .and. trim(discrete_choice)==trim(dirac_approx(j))) &
               write(6,*)' Approximation type:',trim(dirac_approx(j))
-     if (lpr) open(unit=60,file='Info/discrete_dirac_'//trim(dirac_approx(j))//'.dat')
+     if (lpr) open(unit=60,file=infopath(1:lfinfo)//'/discrete_dirac_'//trim(dirac_approx(j))//'.dat')
 
      do i=1,niter
         t=dble(i)*deltat
@@ -979,8 +979,8 @@ subroutine delta_src
   stf=stf*magnitude
   
 if (lpr)  then 
-   open(unit=61,file='Info/discrete_chosen_dirac_'//trim(discrete_choice)//'.dat')
-   open(unit=62,file='Info/discrete_chosen_heavi_'//trim(discrete_choice)//'.dat')
+   open(unit=61,file=infopath(1:lfinfo)//'/discrete_chosen_dirac_'//trim(discrete_choice)//'.dat')
+   open(unit=62,file=infopath(1:lfinfo)//'/discrete_chosen_heavi_'//trim(discrete_choice)//'.dat')
    int_stf(1:niter)=0.
    signal(:)=0.
    do i=1,niter

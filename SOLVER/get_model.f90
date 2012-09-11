@@ -2299,45 +2299,45 @@ do iel=1, nelem
 enddo
 
 if (plot_ani) then
-   fname=trim('Info/model_vph_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_vph_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,vp1,npts_vtk/4,fname)
 
-   fname=trim('Info/model_vsh_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_vsh_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,vs1,npts_vtk/4,fname)
 
-   fname=trim('Info/model_rho_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_rho_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,rho1,npts_vtk/4,fname)
 
-   fname=trim('Info/model_vpv_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_vpv_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,vpv1,npts_vtk/4,fname)
    
-   fname=trim('Info/model_vsv_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_vsv_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,vsv1,npts_vtk/4,fname)
    
-   fname=trim('Info/model_eta_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_eta_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,eta1,npts_vtk/4,fname)
    
-   fname=trim('Info/model_xi_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_xi_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,xi1,npts_vtk/4,fname)
    
-   fname=trim('Info/model_phi_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_phi_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,phi1,npts_vtk/4,fname)
 
-   fname=trim('Info/model_fa_theta_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_fa_theta_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,fa_ani_theta1,npts_vtk/4,fname)
 
-   fname=trim('Info/model_fa_phi_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_fa_phi_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,fa_ani_phi1,npts_vtk/4,fname)
 
    deallocate(vp1,vs1,rho1, vsv1, vpv1, eta1, xi1, phi1, fa_ani_theta1, fa_ani_phi1)
 else
-   fname=trim('Info/model_vp_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_vp_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,vp1,npts_vtk/4,fname)
 
-   fname=trim('Info/model_vs_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_vs_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,vs1,npts_vtk/4,fname)
 
-   fname=trim('Info/model_rho_'//appmynum)
+   fname=trim(infopath(1:lfinfo)//'/model_rho_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,rho1,npts_vtk/4,fname)
    deallocate(vp1,vs1,rho1)
 endif

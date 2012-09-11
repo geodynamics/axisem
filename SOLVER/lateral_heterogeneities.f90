@@ -1006,48 +1006,48 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
         meshtmp(j,2) = rhet2(j) * cos(thhet2(j))
     enddo
 
-    fname = trim('Info/model_rho_discr_het_'//appmynum)
+    fname = trim(infopath(1:lfinfo)//'/model_rho_discr_het_'//appmynum)
     call write_VTK_bin_scal_pts(rhotmp, meshtmp, num_het_pts, fname)
 
     if (het_ani_discr(hetind) == 'iso') then
-        fname = trim('Info/model_vp_discr_het_'//appmynum)
+        fname = trim(infopath(1:lfinfo)//'/model_vp_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(vptmp, meshtmp, num_het_pts, fname)
 
-        fname = trim('Info/model_vs_discr_het_'//appmynum)
+        fname = trim(infopath(1:lfinfo)//'/model_vs_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(vstmp, meshtmp, num_het_pts, fname)
 
         if (het_rel_discr(hetind) == 'rel') then
-            fname = trim('Info/model_rho_discr_het_rel_'//appmynum)
+            fname = trim(infopath(1:lfinfo)//'/model_rho_discr_het_rel_'//appmynum)
             call write_VTK_bin_scal_pts(real(delta_rho2), meshtmp, num_het_pts, fname)
 
-            fname = trim('Info/model_vp_discr_het_rel_'//appmynum)
+            fname = trim(infopath(1:lfinfo)//'/model_vp_discr_het_rel_'//appmynum)
             call write_VTK_bin_scal_pts(real(delta_vp2), meshtmp, num_het_pts, fname)
 
-            fname = trim('Info/model_vs_discr_het_rel_'//appmynum)
+            fname = trim(infopath(1:lfinfo)//'/model_vs_discr_het_rel_'//appmynum)
             call write_VTK_bin_scal_pts(real(delta_vs2), meshtmp, num_het_pts, fname)
         endif
 
     elseif (het_ani_discr(hetind) == 'radial' .or. het_ani_discr(hetind) == 'hex') then
-        fname = trim('Info/model_vpv_discr_het_'//appmynum)
+        fname = trim(infopath(1:lfinfo)//'/model_vpv_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(vpvtmp, meshtmp, num_het_pts, fname)
 
-        fname = trim('Info/model_vsv_discr_het_'//appmynum)
+        fname = trim(infopath(1:lfinfo)//'/model_vsv_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(vsvtmp, meshtmp, num_het_pts, fname)
 
-        fname = trim('Info/model_vph_discr_het_'//appmynum)
+        fname = trim(infopath(1:lfinfo)//'/model_vph_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(vphtmp, meshtmp, num_het_pts, fname)
 
-        fname = trim('Info/model_vsh_discr_het_'//appmynum)
+        fname = trim(infopath(1:lfinfo)//'/model_vsh_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(vshtmp, meshtmp, num_het_pts, fname)
         
-        fname = trim('Info/model_eta_discr_het_'//appmynum)
+        fname = trim(infopath(1:lfinfo)//'/model_eta_discr_het_'//appmynum)
         call write_VTK_bin_scal_pts(etatmp, meshtmp, num_het_pts, fname)
         
         if (het_ani_discr(hetind) == 'hex') then
-           fname = trim('Info/model_fa_theta_discr_het_'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_fa_theta_discr_het_'//appmynum)
            call write_VTK_bin_scal_pts(fa_theta_tmp, meshtmp, num_het_pts, fname)
            
-           fname = trim('Info/model_fa_phi_discr_het_'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_fa_phi_discr_het_'//appmynum)
            call write_VTK_bin_scal_pts(fa_phi_tmp, meshtmp, num_het_pts, fname)
         endif
     endif
@@ -1888,54 +1888,54 @@ subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 
     if (icount > 0) then
 
-        fname = trim('Info/model_rho_gll_het'//appmynum)
+        fname = trim(infopath(1:lfinfo)//'/model_rho_gll_het'//appmynum)
         call write_VTK_bin_scal_pts(real(rho_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                     icount, fname)
         if (.not. ani_hetero) then
-           fname = trim('Info/model_vp_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_vp_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(vp_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
 
-           fname = trim('Info/model_vs_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_vs_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(vs_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
         
            deallocate(vp_all, vs_all)
         else
            
-           fname = trim('Info/model_vph_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_vph_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(vph_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
 
-           fname = trim('Info/model_vsh_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_vsh_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(vsh_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
         
-           fname = trim('Info/model_vpv_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_vpv_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(vpv_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
 
-           fname = trim('Info/model_vsv_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_vsv_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(vsv_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
         
-           fname = trim('Info/model_eta_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_eta_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(eta_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
            
-           fname = trim('Info/model_xi_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_xi_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(xi_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
            
-           fname = trim('Info/model_phi_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_phi_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(phi_all(1:icount)), real(mesh2(1:icount,1:2)), &
                                        icount, fname)
 
-           fname = trim('Info/model_fa_theta_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_fa_theta_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(fa_theta_all(1:icount)), &
                                        real(mesh2(1:icount,1:2)), icount, fname)
 
-           fname = trim('Info/model_fa_phi_gll_het'//appmynum)
+           fname = trim(infopath(1:lfinfo)//'/model_fa_phi_gll_het'//appmynum)
            call write_VTK_bin_scal_pts(real(fa_phi_all(1:icount)), &
                                        real(mesh2(1:icount,1:2)), icount, fname)
 
