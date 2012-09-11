@@ -2205,7 +2205,7 @@ real, dimension(:), allocatable :: vp1,vs1,rho1
 real, dimension(:), allocatable :: vpv1,vsv1,eta1
 real, dimension(:), allocatable :: xi1,phi1
 real, dimension(:), allocatable :: fa_ani_theta1, fa_ani_phi1
-character(len=80) :: fname
+character(len=200) :: fname
 integer :: npts_vtk,ct,iel,i
 real, allocatable ::  x(:),y(:),z0(:)
 logical :: plot_ani
