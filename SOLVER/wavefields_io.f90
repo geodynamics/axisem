@@ -302,23 +302,23 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
         enddo
     enddo
       
-    fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'_'//appisnap//'.dat'
-    open(100, file=trim(fname), access='stream', status='replace', &
-        convert='little_endian')
+    fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'.dat'
+    open(100, file=trim(fname), access='stream', status='unknown', &
+        convert='little_endian', position='append')
     write(100) u(1,:)
     close(100)
 
     if (.not. src_type(1)=='monopole') then
-        fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'_'//appisnap//'.dat'
-        open(100, file=trim(fname), access='stream', status='replace', &
-            convert='little_endian')
+        fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'.dat'
+        open(100, file=trim(fname), access='stream', status='unknown', &
+            convert='little_endian', position='append')
         write(100) u(2,:)
         close(100)
     endif
 
-    fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'_'//appisnap//'.dat'
-    open(100, file=trim(fname), access='stream', status='replace', &
-        convert='little_endian')
+    fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'.dat'
+    open(100, file=trim(fname), access='stream', status='unknown', &
+        convert='little_endian', position='append')
     write(100) u(3,:)
     close(100)
 
@@ -329,14 +329,14 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
 
     if (src_type(1)=='monopole') then
         write(100, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                    npoint_plot, 'xdmf_snap_s_' //appmynum//'_'//appisnap//'.dat', &
-                    npoint_plot, 'xdmf_snap_z_' //appmynum//'_'//appisnap//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_s_'//appmynum//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_z_'//appmynum//'.dat', &
                     npoint_plot, appisnap, appisnap
     else
         write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                    npoint_plot, 'xdmf_snap_s_' //appmynum//'_'//appisnap//'.dat', &
-                    npoint_plot, 'xdmf_snap_p_' //appmynum//'_'//appisnap//'.dat', &
-                    npoint_plot, 'xdmf_snap_z_' //appmynum//'_'//appisnap//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_s_'//appmynum//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_p_'//appmynum//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_z_'//appmynum//'.dat', &
                     npoint_plot, appisnap, appisnap, appisnap
     endif
 
@@ -350,17 +350,31 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
     '        </Geometry>',/&
     '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
-    '            <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
-    '                ', A,/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
+    '                </DataItem>',/&
     '            </DataItem>',/&
     '        </Attribute>',/&
     '        <Attribute Name="u_z" AttributeType="Scalar" Center="Node">',/&
-    '            <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
-    '                ', A,/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
+    '                </DataItem>',/&
     '            </DataItem>',/&
-    '        </Attribute>',/,/&
+    '        </Attribute>',/&
     '        <Attribute Name="abs" AttributeType="Scalar" Center="Node">',/&
-    '            <DataItem ItemType="Function" Function="SQRT($0 * $0 + $1 * $1)" Dimensions="', I10,'">',/&
+    '            <DataItem ItemType="Function" Function="sqrt($0 * $0 + $1 * $1)" Dimensions="', I10,'">',/&
     '                <DataItem Reference="XML">',/&
     '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_s"]/DataItem[1]',/&
     '                </DataItem>',/&
@@ -381,22 +395,43 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
     '        </Geometry>',/&
     '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
-    '            <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
-    '                ', A,/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
+    '                </DataItem>',/&
     '            </DataItem>',/&
     '        </Attribute>',/&
     '        <Attribute Name="u_p" AttributeType="Scalar" Center="Node">',/&
-    '            <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
-    '                ', A,/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
+    '                </DataItem>',/&
     '            </DataItem>',/&
     '        </Attribute>',/&
     '        <Attribute Name="u_z" AttributeType="Scalar" Center="Node">',/&
-    '            <DataItem Dimensions="',i10,'" NumberType="Float" Format="binary">',/&
-    '                ', A,/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
+    '                </DataItem>',/&
     '            </DataItem>',/&
-    '        </Attribute>',/,/&
+    '        </Attribute>',/&
     '        <Attribute Name="abs" AttributeType="Scalar" Center="Node">',/&
-    '            <DataItem ItemType="Function" Function="SQRT($0 * $0 + $1 * $1 + $2 * $2)" Dimensions="', I10,'">',/&
+    '            <DataItem ItemType="Function" Function="sqrt($0 * $0 + $1 * $1 + $2 * $2)" Dimensions="', I10,'">',/&
     '                <DataItem Reference="XML">',/&
     '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_s"]/DataItem[1]',/&
     '                </DataItem>',/&
