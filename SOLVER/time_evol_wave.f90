@@ -84,7 +84,7 @@ use meshes_io
      call dump_glob_grid_midpoint(ibeg,iend,ibeg,iend)
   endif
 
-  if (dump_xdmf_vtk) then
+  if (dump_xdmf) then
      if (lpr) write(6,*)'  dumping mesh for xdmf snapshots...'
      call dump_xdmf_grid()
   endif
@@ -878,7 +878,6 @@ real(kind=realkind) :: time
     iseismo=iseismo+1
     if(use_netcdf)   then
       call nc_compute_recfile_seis_bare(disp)
-!      call compute_recfile_seis_bare(disp)
     else
       call compute_recfile_seis_bare(disp)
     endif
@@ -920,7 +919,7 @@ real(kind=realkind) :: time
      endif
   endif
   
-  if (dump_xdmf_vtk) then
+  if (dump_xdmf) then
     if (mod(iter,snap_it)==0) then
         isnap=isnap+1
         if (lpr) then

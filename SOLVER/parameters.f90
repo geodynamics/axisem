@@ -80,7 +80,7 @@ integer :: i
     read(5,10)datapath; datapath=trim(datapath)
     read(5,10)infopath; infopath=trim(infopath)
     read(5,*)dump_snaps_glob
-    read(5,*)dump_xdmf_vtk
+    read(5,*)dump_xdmf
     read(5,*)snap_dt
     read(5,*)junk
 
@@ -318,7 +318,7 @@ endif
 
 ! Need to decide here since this boolean is needed in def_precomp_terms
   need_fluid_displ = .false.
-  if (dump_snaps_glob .or. dump_xdmf_vtk .or. dump_snaps_solflu .or. dump_energy .or. & 
+  if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
        dump_wavefields .and. dump_type=='fullfields') then
 ! Need to add this for each new type of wavefield dumping method that 
 ! requires the fluid displacement/velocities
@@ -485,7 +485,7 @@ subroutine compute_numerical_parameters
 
   ! snapshot output, convert from interval given in seconds to 
   ! incremental time steps
-  if (dump_snaps_glob .or. dump_xdmf_vtk .or. dump_snaps_solflu) then
+  if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
      snap_it=floor(snap_dt/deltat)
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
      nsnap = floor(real(niter)/real(snap_it))
@@ -904,8 +904,8 @@ character(len=7) :: clogic
      write(6,19)'     Sum wavefields:', sum_fields
      write(6,19)'     Dump energy       :',dump_energy
      write(6,18)'     Glob/solflu snaps :',dump_snaps_glob,dump_snaps_solflu
-     write(6,18)'     XDMF VTK          :', dump_xdmf_vtk
-     if (dump_snaps_glob .or. dump_xdmf_vtk .or. dump_snaps_solflu) then
+     write(6,18)'     XDMF VTK          :', dump_xdmf
+     if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
         write(6,11)'     snap interval [s] :',snap_dt
         write(6,10)'     # snaps           :',snap_it
      endif
@@ -948,7 +948,7 @@ character(len=7) :: clogic
         write(55,22)0,'number of strain dumps'       
         write(55,21)0.,'strain dump sampling rate [s]' 
      endif
-   if (dump_snaps_glob .or. dump_xdmf_vtk .or. dump_snaps_solflu) then
+   if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
       write(55,22) nsnap,'number of snapshot dumps'
       write(55,21)deltat*real(snap_it),'snapshot dump sampling rate [s]'      
    else

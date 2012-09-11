@@ -15,7 +15,7 @@ public
   logical           :: save_large_tests 
   logical           :: dump_energy
   logical           :: dump_snaps_glob
-  logical           :: dump_xdmf_vtk
+  logical           :: dump_xdmf
   logical           :: dump_snaps_solflu
   logical           :: dump_wavefields
   logical           :: need_fluid_displ

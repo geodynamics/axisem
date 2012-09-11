@@ -79,7 +79,7 @@ implicit none
     call end_netcdf_output !Flush and close all netcdf files 
   end if
   
-  if (dump_xdmf_vtk) then
+  if (dump_xdmf) then
      if (lpr) write(6,*)'  finishing xdmf xml file...'
      call finish_xdmf_xml()
   endif
