@@ -32,6 +32,8 @@ use def_precomp_terms
 use source
 use clocks_mod
 use meshes_io
+    
+  character(len=120) :: fname
 
   if (lpr) then
   write(6,*)''
@@ -87,6 +89,20 @@ use meshes_io
   if (dump_xdmf) then
      if (lpr) write(6,*)'  dumping mesh for xdmf snapshots...'
      call dump_xdmf_grid()
+
+     fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'.dat'
+     open(13100, file=trim(fname), access='stream', status='unknown', &
+         convert='little_endian', position='append')
+
+     if (.not. src_type(1)=='monopole') then
+         fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'.dat'
+         open(13101, file=trim(fname), access='stream', status='unknown', &
+             convert='little_endian', position='append')
+     endif
+
+     fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'.dat'
+     open(13102, file=trim(fname), access='stream', status='unknown', &
+         convert='little_endian', position='append')
   endif
 
   if (dump_snaps_solflu) then

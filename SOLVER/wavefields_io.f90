@@ -301,26 +301,14 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
             enddo
         enddo
     enddo
-      
-    fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'.dat'
-    open(100, file=trim(fname), access='stream', status='unknown', &
-        convert='little_endian', position='append')
-    write(100) u(1,:)
-    close(100)
+    
+    write(13100) u(1,:)
 
     if (.not. src_type(1)=='monopole') then
-        fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'.dat'
-        open(100, file=trim(fname), access='stream', status='unknown', &
-            convert='little_endian', position='append')
-        write(100) u(2,:)
-        close(100)
+        write(13101) u(2,:)
     endif
 
-    fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'.dat'
-    open(100, file=trim(fname), access='stream', status='unknown', &
-        convert='little_endian', position='append')
-    write(100) u(3,:)
-    close(100)
+    write(13102) u(3,:)
 
     deallocate(u)
     

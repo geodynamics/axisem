@@ -538,6 +538,8 @@ end subroutine dump_xdmf_grid
 !-----------------------------------------------------------------------------
 subroutine finish_xdmf_xml()
 
+use data_source, ONLY : src_type
+
     character(len=120) :: fname
 
     fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
@@ -550,6 +552,9 @@ subroutine finish_xdmf_xml()
     '</Xdmf>')
     
     close(100)
+    close(13100)
+    if (.not. src_type(1)=='monopole') close(13101)
+    close(13102)
 
 end subroutine finish_xdmf_xml
 !=============================================================================
