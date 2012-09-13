@@ -1,9 +1,10 @@
 module nc_routines
     use global_parameters
     real, allocatable :: recdumpvar(:,:,:) 
+
 contains
 
-
+!-----------------------------------------------------------------------------------------
 subroutine check(status)
 ! Translates netcdf error codes into error messages
     use netcdf
@@ -16,8 +17,10 @@ subroutine check(status)
     end if
 
 end subroutine check  
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine nc_dump_field_1d(f,flen,varname,appisnap)
     use netcdf
     use data_proc, ONLY : mynum
@@ -37,20 +40,14 @@ subroutine nc_dump_field_1d(f,flen,varname,appisnap)
   
     read(appisnap,*) isnap_loc
   
-  !  if (status /= nf90_NoErr) then
-  !    call check( nf90_redef(ncid_out))
-  !    call check( nf90_def_dim(ncid_out, trim(varname), len=flen, dimid=nc_f_dimid) )
-  !    call check( nf90_def_var(ncid_out, trim(varname), NF90_FLOAT, &
-  !                             (/nc_f_dimid, nc_proc_dimid, nc_1d_dimid/), nc_varid) )
-  !    call check( nf90_enddef(ncid_out))
-  !  end if
-  
     call check( nf90_put_var(ncid_snapout, nc_varid, start=(/1, mynum+1, isnap_loc+1/), &
                              count=(/flen, 1, 1/), values=f) )
   
 end subroutine nc_dump_field_1d
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
     use netcdf
     use data_io 
@@ -78,14 +75,11 @@ subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
                                      values=recdumpvar(:,:,irec) ) )
         end do
     end if
-  
-  !    do irec = 1, nrec
-  !      call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, loc2globrec(irec)/), &
-  !                & count = (/1, dim2, 1/), values=recfield(irec,:)) )
-  !    end do
 end subroutine
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
     use netcdf
     use data_io 
@@ -96,18 +90,17 @@ subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
     real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
     integer                                      :: irec
     
-    !write(6,*) flen, appisnap, trim(varname), ncid_out
-  
     do irec = 1, nrec
-        !write(6,*) nc_varid, idump, irec, mynum
         call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, irec, &
                                  mynum+1/), count = (/1, dim2, 1, 1/), &
                                  values=recfield(irec,:)) )
     end do
   
 end subroutine
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec_proc)
     use data_io
     use data_proc, ONLY: nproc, mynum 
@@ -131,11 +124,11 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
     
     
     varname = (/'strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
-      &         'straintrace_sol', 'strain_dsus_flu', 'strain_dsuz_flu', &
-      &         'strain_dpup_flu', 'straintrace_flu', 'velo_sol       ', &
-      &         'velo_flu       '/)
+                'straintrace_sol', 'strain_dsus_flu', 'strain_dsuz_flu', &
+                'strain_dpup_flu', 'straintrace_flu', 'velo_sol       ', &
+                'velo_flu       '/)
       
-    if (mynum.eq.0) then    
+    if (mynum .eq. 0) then    
       write(6,*) '  Producing groups for Seismograms and Snapshots'
       call check( nf90_def_grp( ncid_out, "Seismograms", ncid_recout) )
       call check( nf90_def_grp( ncid_out, "Snapshots", ncid_snapout) )
@@ -151,7 +144,7 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
           call check( nf90_def_dim(ncid_snapout, trim(varname(ivar)), &
                                    len=NF90_UNLIMITED, dimid=nc_f_dimid) )
           call check( nf90_def_var(ncid_snapout, trim(varname(ivar)), NF90_FLOAT,  &
-                    & (/nc_f_dimid, nc_proc_dimid, nc_snap_dimid/), nc_varid) )
+                      (/nc_f_dimid, nc_proc_dimid, nc_snap_dimid/), nc_varid) )
           write(6,100) trim(varname(ivar)), nc_varid
 100       format('  Netcdf variable ',A16,' with ID ', I3, ' produced.')       
         end do
@@ -215,8 +208,8 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
       do irec=1,nrec
           !write(6,*) 'Write name ', rec_names(irec), ' of receiver',irec
           call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = (/irec, 1/),&
-          &         count = (/1, 40/), &
-          &         values = (rec_names(irec))) )
+                      count = (/1, 40/), &
+                      values = (rec_names(irec))) )
       end do
       write(6,*) 'done'
       call check( nf90_redef ( ncid_out))
@@ -225,8 +218,10 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
     allocate(recdumpvar(niter,3,nrec))
 
 end subroutine nc_define_receiverfile
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine define_netcdf_output
 ! Creates the netcdf output file for wavefields and defines the dimension 
 ! nc_1d_dimid, as unlimited.
@@ -234,34 +229,32 @@ subroutine define_netcdf_output
     use data_io
     use netcdf
     use data_proc, ONLY: nproc
-    !use commpi
     implicit none    
-    !character(len=16) nc_filename
+    write (6,*) 'Preparing netcdf file for ', nproc, ' processors'
+    call check( nf90_create ( path=datapath(1:lfdata)//"/axisem_output.nc4", &
+                cmode=ior(nf90_CLOBBER,nf90_hdf5), &
+                ncid=ncid_out)) 
 
-    !nc_filename = datapath(1:lfdata)
-    !if (use_netcdf) then
-      write (6,*) 'Preparing netcdf file for ', nproc, ' processors'
-      call check( nf90_create ( path=datapath(1:lfdata)//"/axisem_output.nc4", &
-        & cmode=ior(nf90_CLOBBER,nf90_hdf5), &
-        & ncid=ncid_out)) !, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL)) 
-
-      write(6,*) 'Netcdf file with ID ',ncid_out,' produced.'
-    !end if
-    !call check( nf90_close ( ncid_out))
+    write(6,*) 'Netcdf file with ID ',ncid_out,' produced.'
 end subroutine
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine nc_write_att_char(attribute_value, attribute_name)
   use netcdf
   use data_io
   character(len=*), intent(in)  :: attribute_name, attribute_value
+
   !write(6,*) 'Writing ', attribute_value, ' to attr. ', attribute_name, &
   !           ' in netcdf ID', ncid_out
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 
 end subroutine nc_write_att_char
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine nc_write_att_real(attribute_value, attribute_name)
     use netcdf
     use data_io
@@ -271,8 +264,10 @@ subroutine nc_write_att_real(attribute_value, attribute_name)
     call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 
 end subroutine nc_write_att_real
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine nc_write_att_int(attribute_value, attribute_name)
   use netcdf
   use data_io
@@ -282,19 +277,10 @@ subroutine nc_write_att_int(attribute_value, attribute_name)
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 
 end subroutine nc_write_att_int
+!-----------------------------------------------------------------------------------------
 
 
-!subroutine nc_write_att_log(attribute_value, attribute_name)
-!  use netcdf
-!  use data_io
-!  character(len=*),  intent(in)  :: attribute_name
-!  logical, intent(in)                :: attribute_value
-!
-!  call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
-!
-!end subroutine nc_write_att_log
-
-
+!-----------------------------------------------------------------------------------------
 subroutine nc_open_parallel
     use data_io
     use netcdf
@@ -313,7 +299,8 @@ subroutine nc_open_parallel
 
     call barrier
     call check( nf90_open ( path=datapath(1:lfdata)//"/axisem_output.nc4", & 
-                & mode=NF90_WRITE, ncid=ncid_out, comm = MPI_COMM_WORLD, info = MPI_INFO_NULL))
+                mode=NF90_WRITE, ncid=ncid_out, comm = MPI_COMM_WORLD, &
+                info = MPI_INFO_NULL))
     write(6,*) '  Proc ', mynum, ' opened file and is ready to rupture'
 
     call check( nf90_inq_grp_ncid(ncid_out, "Seismograms", ncid_recout) )
@@ -323,20 +310,24 @@ subroutine nc_open_parallel
     end if
 
     call check( nf90_inq_varid( ncid_recout, "displacement", nc_disp_varid) )
-    call check( nf90_inq_varid( ncid_recout, "surface_displacement", nc_surfelem_disp_varid ) )
-    call check( nf90_inq_varid( ncid_recout, "surface_velocity", nc_surfelem_velo_varid ) )
+    call check( nf90_inq_varid( ncid_recout, "surface_displacement", &
+                nc_surfelem_disp_varid ) )
+    call check( nf90_inq_varid( ncid_recout, "surface_velocity", &
+                nc_surfelem_velo_varid ) )
 end subroutine
+!-----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
 subroutine end_netcdf_output
 ! Closes the netcdf output files
   
-    use data_io, only: ncid_out, ncid_recout
+    use data_io, only: ncid_out
     use netcdf
     integer  status 
     status = nf90_close(ncid_out)
-    !status = nf90_close(ncid_recout)
 end subroutine
+!-----------------------------------------------------------------------------------------
 
 
 end module nc_routines
