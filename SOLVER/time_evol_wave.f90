@@ -993,13 +993,9 @@ real(kind=realkind) :: time
 !!It starts from 
     istrain=istrain+1
 
-    if(use_netcdf)   then
-      call compute_surfelem_nc(disp,velo)
-    else
-      call compute_surfelem(disp,velo)
-    endif
+    call compute_surfelem(disp,velo)
        
-        select case (dump_type)
+    select case (dump_type)
 
         case ('displ_only')
 !       Only dump the 3-comp displacement and velocity fields in solid 

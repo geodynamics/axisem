@@ -1,6 +1,8 @@
 module nc_routines
   use global_parameters
-  real, allocatable :: recdumpvar(:,:,:) 
+  real, allocatable :: recdumpvar(:,:,:), recdumpvar_disp(:,:,:), recdumpvar_velo(:,:,:) 
+  real, allocatable :: recdumpvar_strain(:,:,:), recdumpvar_srcdisp(:,:,:) 
+
 contains
 
 !-----------------------------------------------------------------------------------------
@@ -28,12 +30,12 @@ subroutine nc_dump_field_1d(f,flen,varname,appisnap)
     character(len=*), intent(in)      :: varname
     character(len=4), intent(in)      :: appisnap
     integer                           :: isnap_loc, ivar
-    ! Check whether this Variable already exists in file ncid_out
     write(6,*) flen, mynum, appisnap, trim(varname), ncid_out, ncid_snapout
 
     read(appisnap,*) isnap_loc
 
     do ivar = 1, nvar
+        ! Check whether this Variable already exists in file ncid_out
         if (trim(varnamelist(ivar))==trim(varname)) exit
     end do
 
@@ -75,6 +77,61 @@ subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
                                      start=(/idump-99, 1, loc2globrec(irec)/), &
                                      count = (/100, dim2, 1/), values=recdumpvar(:,:,irec)) )
         end do
+    end if
+
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_surface(surffield, disporvelo, nrec, dim2, idump)
+    use netcdf
+    use data_io 
+    use data_mesh, ONLY: loc2globrec
+    use data_time, ONLY: niter
+    use data_proc, ONLY : mynum
+    implicit none
+    integer, intent(in)                          :: nrec, dim2, idump
+    real(kind=realkind), intent(inout), dimension(nrec,dim2) :: surffield
+    integer                                      :: irec, nc_varid
+    character(len=4)                             :: disporvelo
+   
+    write(6,*) 'In nc_dump_surface to dump ', disporvelo, ' no.', idump, ' nrec=', nrec, ' dim2=', dim2 
+    select case(disporvelo)
+    case('disp')
+      recdumpvar_disp(mod(idump-1,100)+1,:,:) = transpose(surffield(:,:))
+      nc_varid = nc_surfelem_disp_varid
+    case('velo')
+      recdumpvar_velo(mod(idump-1,100)+1,:,:) = transpose(surffield(:,:))
+      nc_varid = nc_surfelem_velo_varid
+    case('stra')
+      recdumpvar_strain(mod(idump-1,100)+1,:,:) = transpose(surffield(:,:))
+      nc_varid = nc_surfelem_strain_varid
+    case('srcd')
+      recdumpvar_srcdisp(mod(idump-1,100)+1,:,:) = transpose(surffield(:,:))
+      nc_varid = nc_surfelem_disp_src_varid
+    end select
+
+    if ((idump*0.01) .eq. (niter*0.01)) then
+        do irec = 1, nrec
+            call check( nf90_put_var(ncid_snapout, nc_varid, &
+                                     start=(/idump, 1, 1/), &
+                                     count = (/1, dim2, 1/), values=surffield(:,:)) )
+        end do
+    end if
+
+    if (mod(idump,100).eq.0) then 
+        write(6,*) 'writing surface stuff to netcdf file'
+        select case(disporvelo)
+        case('disp')
+            call check( nf90_put_var(ncid_snapout, nc_varid, &
+                                 start=(/idump-99, 1, 1/), &
+                                 count = (/100, dim2, 1/), values=recdumpvar_disp(:,:,:)) )
+        case('velo')
+            call check( nf90_put_var(ncid_snapout, nc_varid, &
+                                 start=(/idump-99, 1, 1/), &
+                                 count = (/100, dim2, 1/), values=recdumpvar_velo(:,:,:)) )
+        end select
+        write(6,*) 'done'
     end if
 
 end subroutine
@@ -160,7 +217,7 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
                                          dimids = (/nc_f_dimid(ivar), nc_proc_dimid, nc_snap_dimid/), &
                                          varid = nc_field_varid(ivar)) )
                 call check( nf90_put_att(ncid_snapout, nc_field_varid(ivar), '_FillValue', 0.0) )
-                write(6,100) trim(varnamelist(ivar)), ivar, varlength(ivar), nc_field_varid(ivar)
+                write(6,100) trim(varnamelist(ivar)), nc_field_varid(ivar), varlength(ivar)
 100             format('  Netcdf variable ',A16,' with ID ', I3, ' and length', I8, ' produced.')       
             end do
         end if
@@ -168,13 +225,22 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
         write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
         write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
         call check( nf90_def_dim( ncid_recout, "timesteps", nsamples, nc_times_dimid) )
+        write(6,110) "timesteps", nsamples, nc_times_dimid 
         call check( nf90_def_dim( ncid_recout, "receivers", nrec, nc_rec_dimid) )
+        write(6,110) "receivers", nrec, nc_rec_dimid
         call check( nf90_def_dim( ncid_recout, "processors", nproc, nc_recproc_dimid) )
-        call check( nf90_def_dim( ncid_recout, "surf_elems", maxind, nc_surf_dimid) ) 
+        write(6,110) "processors", nproc, nc_recproc_dimid
+        call check( nf90_def_dim( ncid_recout, "surf_elems", maxind, nc_surf_dimid) )     
+        write(6,110) "surf_elems", maxind, nc_surf_dimid
         call check( nf90_def_dim( ncid_recout, "components", 3, nc_comp_dimid) )
-        call check( nf90_def_dim( ncid_recout, "recnamlength", 40, nc_recnam_dimid) )
+        write(6,110) "components", 3, nc_comp_dimid
+        call check( nf90_def_dim( ncid_recout, "straincomponents", 3, nc_strcomp_dimid) )
+        write(6,110) "straincomponents", 6, nc_strcomp_dimid
+        call check( nf90_def_dim( ncid_recout, "recnamlength", 40, nc_recnam_dimid) ) 
+        write(6,110) "recnamlength", 40, nc_recnam_dimid
         write(6,*) 'NetCDF dimensions defined'
-        
+110     format('Dimension ',A,' with length ' I8,' and ID', I6) 
+
         write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
         call flush(6)
         call check( nf90_def_var( ncid_recout, "displacement", NF90_FLOAT, &
@@ -184,16 +250,28 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
         call check( nf90_put_att(ncid_recout, nc_disp_varid, '_FillValue', 0.0) )
         
         call check( nf90_def_var( ncid_recout, "surface_displacement", NF90_FLOAT, &
-                                  (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), &
+                                  (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid /), &
                                   nc_surfelem_disp_varid, deflate_level=4 ) )
         call check( nf90_put_att(ncid_recout, nc_surfelem_disp_varid, 'units', 'meters'))
         
         call check( nf90_def_var( ncid_recout, "surface_velocity", NF90_FLOAT, &
-                                  (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid, nc_recproc_dimid/), &
+                                  (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid /), &
                                   nc_surfelem_velo_varid, deflate_level=4 ) )
         call check( nf90_put_att( ncid_recout, nc_surfelem_velo_varid, 'units', &
                                   'meters per second') )
         
+        call check( nf90_def_var( ncid_recout, "surface_strain", NF90_FLOAT, &
+                                  (/nc_times_dimid, nc_strcomp_dimid, nc_surf_dimid /), &
+                                  nc_surfelem_strain_varid, deflate_level=4 ) )
+        call check( nf90_put_att( ncid_recout, nc_surfelem_velo_varid, 'units', &
+                                  ' ') )
+
+        call check( nf90_def_var( ncid_recout, "surface_disp_src", NF90_FLOAT, &
+                                  (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid /), &
+                                  nc_surfelem_disp_src_varid, deflate_level=4 ) )
+        call check( nf90_put_att( ncid_recout, nc_surfelem_velo_varid, 'units', &
+                                  'meters') )
+
         call check( nf90_def_var( ncid_recout, "Lat_req", NF90_FLOAT, (/nc_rec_dimid/), &
                                   nc_latr_varid) )
 
@@ -231,6 +309,10 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
     end if       
 
     allocate(recdumpvar(niter,3,nrec))
+    allocate(recdumpvar_disp(100,3,maxind))
+    allocate(recdumpvar_velo(100,3,maxind))
+    allocate(recdumpvar_strain(100,6,maxind))
+    allocate(recdumpvar_srcdisp(100,3,maxind))
 
 end subroutine nc_define_receiverfile
 !-----------------------------------------------------------------------------------------

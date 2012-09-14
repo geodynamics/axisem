@@ -232,8 +232,6 @@ double precision :: s,z,r,theta
 
   if (dump_wavefields) then
     if(use_netcdf)   then
-           
-       
 
     else 
 
@@ -241,6 +239,8 @@ double precision :: s,z,r,theta
           call define_io_appendix(appielem,iel+mynum*maxind)
           open(unit=40000000+iel,file=datapath(1:lfdata)// &
                     '/surfelem_disp.dat'//appielem)
+
+
           open(unit=50000000+iel,file=datapath(1:lfdata)// &
                                       '/surfelem_velo.dat'//appielem)
        enddo
@@ -1305,79 +1305,65 @@ subroutine compute_surfelem(disp,velo)
 ! which are both needed for kernels (du and v0 inside the cross-correlation)
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
+use data_io,     ONLY : istrain
 use data_source, ONLY : src_type
-
+use nc_routines, ONLY : nc_dump_surface
 include "mesh_params.h"
 
 real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
 real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
+real(kind=realkind)             :: dumpvar(maxind,3)
 
 integer :: i
 
-  if (src_type(1)=='monopole') then
-  do i=1,maxind
-     write(40000000+i,*)real(disp(npol/2,jsurfel(i),surfelem(i),1)),&
-                        real(disp(npol/2,jsurfel(i),surfelem(i),3))
-     write(50000000+i,*)real(velo(npol/2,jsurfel(i),surfelem(i),1)),&
-                        real(velo(npol/2,jsurfel(i),surfelem(i),3))
-  enddo
+  if (use_netcdf) then
+      if (src_type(1)=='monopole') then
+          do i=1,maxind
+              dumpvar(i,1) = real(disp(npol/2,jsurfel(i),surfelem(i),1))
+              dumpvar(i,2) = real(disp(npol/2,jsurfel(i),surfelem(i),3))
+          enddo
+          call nc_dump_surface(dumpvar(:,1:2), 'velo', maxind, 2, istrain)
+          do i=1,maxind
+              dumpvar(i,1) = real(velo(npol/2,jsurfel(i),surfelem(i),1))
+              dumpvar(i,2) = real(velo(npol/2,jsurfel(i),surfelem(i),3))
+          end do
+          call nc_dump_surface(dumpvar(:,1:2), 'disp', maxind, 2, istrain)
+      
+      else
+          do i=1,maxind
+              dumpvar(i,:) = real(disp(npol/2,jsurfel(i),surfelem(i),:))
+          end do
+          call nc_dump_surface(dumpvar(:,1:3), 'velo', maxind, 3, istrain)
+          do i=1,maxind    
+              dumpvar(i,:) = real(velo(npol/2,jsurfel(i),surfelem(i),:))
+          end do
+          call nc_dump_surface(dumpvar(:,1:3), 'disp', maxind, 3, istrain)
+      end if
 
   else
-     do i=1,maxind
-     write(40000000+i,*)real(disp(npol/2,jsurfel(i),surfelem(i),1)),&
-                        real(disp(npol/2,jsurfel(i),surfelem(i),2)),&
-                        real(disp(npol/2,jsurfel(i),surfelem(i),3))  
-     write(50000000+i,*)real(velo(npol/2,jsurfel(i),surfelem(i),1)),&
-                        real(velo(npol/2,jsurfel(i),surfelem(i),2)),&
-                        real(velo(npol/2,jsurfel(i),surfelem(i),3))
-     enddo
-  endif
+      if (src_type(1)=='monopole') then
+      do i=1,maxind
+         write(40000000+i,*)real(disp(npol/2,jsurfel(i),surfelem(i),1)),&
+                            real(disp(npol/2,jsurfel(i),surfelem(i),3))
+         write(50000000+i,*)real(velo(npol/2,jsurfel(i),surfelem(i),1)),&
+                            real(velo(npol/2,jsurfel(i),surfelem(i),3))
+      enddo
+
+      else
+         do i=1,maxind
+         write(40000000+i,*)real(disp(npol/2,jsurfel(i),surfelem(i),1)),&
+                            real(disp(npol/2,jsurfel(i),surfelem(i),2)),&
+                            real(disp(npol/2,jsurfel(i),surfelem(i),3))  
+         write(50000000+i,*)real(velo(npol/2,jsurfel(i),surfelem(i),1)),&
+                            real(velo(npol/2,jsurfel(i),surfelem(i),2)),&
+                            real(velo(npol/2,jsurfel(i),surfelem(i),3))
+         enddo
+      end if !monopole
+  end if !netcdf
 
 end subroutine compute_surfelem
 !=============================================================================
 
-!-----------------------------------------------------------------------------
-subroutine compute_surfelem_nc(disp,velo)
-!
-! Save one displacement and velocity trace for each element on the surface 
-! which are both needed for kernels (du and v0 inside the cross-correlation)
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use data_source, ONLY : src_type
-use nc_routines, ONLY : nc_dump_rec_perproc
-
-include "mesh_params.h"
-!!!!andrea 
-!!this function saves surface seismogram to one netcdf file pro-processor
-!!the global mapping is still given by the surfelem_coords file.
-real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
-real(kind=realkind),dimension(:,:),allocatable :: velo_surf,disp_surf
-character(len=50) :: filename
-integer :: i
-allocate(velo_surf(3,maxind),disp_surf(3,maxind))
-do i=1,maxind
-     disp_surf(1,i)=real(disp(npol/2,jsurfel(i),surfelem(i),1))
-     disp_surf(2,i)=real(disp(npol/2,jsurfel(i),surfelem(i),2))
-     disp_surf(3,i)=real(disp(npol/2,jsurfel(i),surfelem(i),3))  
-     velo_surf(1,i)=real(velo(npol/2,jsurfel(i),surfelem(i),1))
-     velo_surf(2,i)=real(velo(npol/2,jsurfel(i),surfelem(i),2))
-     velo_surf(3,i)=real(velo(npol/2,jsurfel(i),surfelem(i),3))
-enddo
-
-!filename=datapath(1:lfdata)//'/surfelem_disp'//appmynum//'.nc'
-!  call dump_matrix_ncdf(disp_surf,istrain,3,maxind,filename)
-!filename=datapath(1:lfdata)//'/surfelem_velo'//appmynum//'.nc'
-!  call dump_matrix_ncdf(velo_surf,istrain,3,maxind,filename)
-
-call nc_dump_rec_perproc(disp_surf,nc_surfelem_disp_varid,maxind,3,istrain)
-call nc_dump_rec_perproc(velo_surf,nc_surfelem_velo_varid,maxind,3,istrain)
-
-deallocate(velo_surf)
-deallocate(disp_surf)
-end subroutine compute_surfelem_nc
 
 !-----------------------------------------------------------------------------
 subroutine compute_surfelem_strain(u)
@@ -1398,9 +1384,12 @@ use wavefields_io, ONLY : dump_half_f1_f2_over_s_fluid
 use wavefields_io, ONLY : dump_f1_f2_over_s_fluid
 use wavefields_io, ONLY : dump_field_1d, dump_field_over_s_solid_1d
 use wavefields_io, ONLY : dump_field_over_s_fluid_and_add
+use nc_routines, ONLY   : nc_dump_surface
+
 
 real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,2)
 real(kind=realkind)             :: lap_flu(0:npol,0:npol,nel_fluid,2)
+real(kind=realkind)             :: dumpvar(maxind, 6)
 character(len=5)                :: appisnap
 
 include "mesh_params.h"
@@ -1459,18 +1448,27 @@ strain=0.
                                real(.5,kind=realkind) *lap_sol(npol/2,:,:,2) ) ! dz up
 
    endif
+  if (use_netcdf) then
+      do i=1,maxind
+        dumpvar(i,:) = real(strain(j,surfelem(i),1:6))
+      enddo
+      call nc_dump_surface(dumpvar(:,1:6), 'stra', maxind, 6, istrain)
+      do i=1,maxind
+        dumpvar(i,1:3) = real(u(npol/2,j,surfelem(i),1:3))
+      enddo
+      call nc_dump_surface(dumpvar(:,1:3), 'srcd', maxind, 3, istrain)
+  else
 
-  do i=1,maxind
-     do j=0,npol
-!        write(60000000+i,20)(real(strain(jsurfel(i),surfelem(i),jj)),jj=1,6)
-!        write(70000000+i,30)(real(u(jsurfel(i),surfelem(i),jj)),jj=1,3)
-        write(60000000+i,20)(real(strain(j,surfelem(i),jj)),jj=1,6)
-        write(70000000+i,30)(real(u(npol/2,j,surfelem(i),jj)),jj=1,3)
-     enddo
-  enddo
+      do i=1,maxind
+         do j=0,npol
+            write(60000000+i,20)(real(strain(j,surfelem(i),jj)),jj=1,6)
+            write(70000000+i,30)(real(u(npol/2,j,surfelem(i),jj)),jj=1,3)
+         enddo
+      enddo
 
 20 format(6(1pe11.3))
 30 format(3(1pe11.3))
+  end if
 
 end subroutine compute_surfelem_strain
 !=============================================================================

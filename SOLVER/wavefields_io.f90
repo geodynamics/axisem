@@ -1114,20 +1114,19 @@ real(kind=realkind)            :: fflu(0:npol,0:npol,1:nel_fluid,3)
     fflu(ibeg:iend,ibeg:iend,:,2) = phicomp
     fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
                         &        usz_fluid(ibeg:iend,ibeg:iend,:,2)      
+
+    glen = size(fflu(ibeg:iend,ibeg:iend,:,1))
+
   ! dump velocity vector inside fluid
     if (use_netcdf) then
       call nc_dump_field_1d(fflu(ibeg:iend,ibeg:iend,:,:), &
-                       &   glen*2, 'velo_flu', appisnap)
+                       &   glen*3, 'velo_flu', appisnap)
     else
       open(unit=960000+mynum,file=datapath(1:lfdata)//'/velo_flu_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
                                  FORM="UNFORMATTED",STATUS="REPLACE")
 
       write(960000+mynum) (fflu(ibeg:iend,ibeg:iend,:,i),i=1,3)
- !                         nv_rho_fluid(ibeg:iend,ibeg:iend,:)* &
- !                         usz_fluid(ibeg:iend,ibeg:iend,:,1),phicomp, &
- !                         inv_rho_fluid(ibeg:iend,ibeg:iend,:)* &
- !                         usz_fluid(ibeg:iend,ibeg:iend,:,2)
       close(960000+mynum)
     end if ! netcdf
   endif ! have_fluid
