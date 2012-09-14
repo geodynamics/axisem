@@ -32,11 +32,15 @@ public
   logical           :: force_ani
 
 ! NetCDF variables
+  integer, parameter:: nvar = 10
   integer           :: ncid_out, ncid_recout, ncid_snapout
   integer           :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
   integer           :: nc_times_dimid, nc_comp_dimid, nc_disp_varid
   integer           :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
-! indices to limit dumping to select contiguous range of GLL points:
+  integer           :: nc_field_varid(nvar)
+  character(len=16) :: varnamelist(nvar)
+  
+  ! indices to limit dumping to select contiguous range of GLL points:
 ! 0<=ibeg<=iend<=npol
 ! For the time being: dump the same in xeta and eta directions
   integer           :: ibeg,iend

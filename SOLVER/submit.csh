@@ -31,14 +31,9 @@ set output_format = `grep "Output format" inparam |awk '{print $1}'`
 set netcdf_make = `grep LIBS Makefile | grep netcdf |wc -l` 
 echo "OUTPUT FORMAT:" $output_format $netcdf_make
 if ( $output_format == "netcdf" && $netcdf_make < 1 ) then 
-  echo "WARNING: Cannot save output into netcdf, missing the library link..."
-  echo "Now changing output to binary..."
-  set length_inparam = `wc -l inparam |awk '{print $1}'`
-  @ length_inparam --
-  head -n $length_inparam inparam > 'inparam.binary'
-  echo "binary          Output format for seismograms and wavefields: binary, netcdf" >> 'inparam.binary'
-  mv inparam inparam.NETCDF
-  cp inparam.binary inparam
+  echo "ERROR: Cannot save output into netcdf, axisem was compiled without netcdf."
+  echo "Run makemake.csh with option -netcdf and try again!"
+  exit
 endif
 
 if ( ! -f inparam_hetero) then 
