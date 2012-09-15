@@ -33,7 +33,7 @@ public
 
 ! NetCDF variables
   integer, parameter:: nvar = 10
-  integer           :: ncid_out, ncid_recout, ncid_snapout
+  integer           :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout
   integer           :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
   integer           :: nc_times_dimid, nc_comp_dimid, nc_disp_varid
   integer           :: nc_strcomp_dimid
