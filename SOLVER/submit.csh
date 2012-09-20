@@ -272,7 +272,6 @@ foreach isrc (${num_src_arr})
         cp $homedir/xsem .
         cp $homedir/mesh_params.h .
         cp $homedir/$recfile . 
-        cp $homedir/mpif.h .
         cp $homedir/inparam .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
@@ -319,7 +318,7 @@ foreach isrc (${num_src_arr})
 
     ########## LSF SCHEDULER ######################
             if ( $queue == 'lsf' ) then 
-                bsub -R "rusage[mem=2048]" -I -n $nodnum mpirun -n $nodnum ./xsem > $outputname &
+                bsub -R "rusage[mem=2048]" -I -n $nodnum mpirun -n $nodnum ./xsem 2>&1 > $outputname &
 
     ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 
@@ -333,7 +332,7 @@ foreach isrc (${num_src_arr})
 
     ######## SUBMIT LOCALLY #######
         else 
-            mpirun.openmpi -n $nodnum ./xsem > $outputname &
+            mpirun.openmpi -n $nodnum ./xsem 2>&1 > $outputname &
         endif
 
         echo "Job running in directory $isim"

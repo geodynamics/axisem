@@ -15,13 +15,6 @@ else
   /bin/cp -f nc_routines.f90.GHOST nc_routines.f90
 endif
 
-# check for mpif.h
-if ( $?MPIHOME ) then
-  /bin/cp -f $MPIHOME/include/mpif.h .
-else
-  echo "Please locate your mpi directory and copy the mpif.h to this solver directory."
-endif
-
 echo $1 $2 $3
 if (${#argv} < 1) then 
 ./perlmakemake.pl
