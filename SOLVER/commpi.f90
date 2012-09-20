@@ -19,7 +19,6 @@ use data_proc
 use data_comm
 use mpi
 implicit none
-!include 'mpif.h'
 
 public 
 
