@@ -2016,8 +2016,6 @@ double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
 double precision, intent(in) :: mu(0:npol,0:npol,nelem)
 double precision             :: s,z,r,theta,vp,vs,ro,pts_per_km
 integer                      :: iel,ipol,jpol,idom,iidom
-!af pgf
-character(len=100) :: modelstring
 
   if (save_large_tests) then
      open(unit=5454,file=infopath(1:lfinfo)//&
@@ -2069,15 +2067,17 @@ character(len=100) :: modelstring
 12 format(4(1pe12.4))
 
 ! output radial model with km-scale resolution and points on discontinuities
-  if (do_mesh_tests) then
+  if (do_mesh_tests .or. (dump_wavefields .and. mynum == 0)) then
      pts_per_km = 2.
    
-     modelstring=bkgrdmodel!(1:(index(bkgrdmodel,' ')-1))
      if (lpr) write(6,13)pts_per_km
 13 format('     fine-scale radial model output; points per km:',f7.2)
 
      open(unit=5454,file=infopath(1:lfinfo)//&
           '/backgroundmodel_kmscale.dat'//appmynum)
+
+     write(5454,*) ceiling(router/1000.*pts_per_km)+1
+
      do iel=1,ceiling(router/1000.*pts_per_km)+1
         r = router-(real(iel)-1)*1000./pts_per_km
         idom = 1000
@@ -2110,9 +2110,9 @@ character(len=100) :: modelstring
            write(6,*)procstrg,'Couldn"t find domain for radius=',r
            stop
         endif
-        vp=velocity(r,'v_p',idom,modelstring,lfbkgrdmodel)
-        vs=velocity(r,'v_s',idom,modelstring,lfbkgrdmodel)
-        ro=velocity(r,'rho',idom,modelstring,lfbkgrdmodel)
+        vp = velocity(r,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
+        vs = velocity(r,'v_s',idom,bkgrdmodel,lfbkgrdmodel)
+        ro = velocity(r,'rho',idom,bkgrdmodel,lfbkgrdmodel)
         write(5454,12)r,vp,vs,ro
      enddo
   endif
