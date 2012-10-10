@@ -1173,13 +1173,12 @@ subroutine create_kernel_header
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+    use data_mesh, ONLY: hmax_glob
     use data_io, ONLY: nstrain
     character(len=8) :: mydate
     character(len=10) :: mytime
     character(len=80) :: dbname2
     integer :: lfdbname
-
-    !nstrain=floor(real(niter)/real(strain_it))
 
     call date_and_time(mydate,mytime)
     dbname2='mesh_params_kernel.h'
@@ -1198,6 +1197,7 @@ subroutine create_kernel_header
     write(97,*)''
     write(97,9)'nt',niter,'number of time steps'
     write(97,19)'deltat',deltat,'time step'
+    write(97,17)'hmax', hmax_glob,'maximum element size'
     write(97,9)'ndumps',nstrain, 'total wavefield dumps'
     write(97,9)'strain_samp',int(strain_samp),'dumps per period'
     write(97,18)"src_type",src_type(1),'source type'
@@ -1221,6 +1221,7 @@ subroutine create_kernel_header
     write(6,*)
 
 9 format(' integer, parameter :: ',A12,' =',i10,'  ! ',A27)
+17 format(' real, parameter    :: ',A12,' =',f10.2,'  ! ',A27)
 19 format(' real, parameter    :: ',A12,' =',f10.5,'  ! ',A27)
 18 format(' character(len=10), parameter    :: ',A12," ='",A10,"'  ! ",A27)
 28 format(' character(len=100), parameter    :: ',A12," ='",A10,"'  ! ",A27)
