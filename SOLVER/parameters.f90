@@ -1198,6 +1198,8 @@ subroutine create_kernel_header
     write(97,9)'nt',niter,'number of time steps'
     write(97,19)'deltat',deltat,'time step'
     write(97,17)'hmax', hmax_glob,'maximum element size'
+    write(97,17)'vpmax', vpmax,'maximum p-velocity'
+    write(97,17)'rmax', router, 'maximum radius'
     write(97,9)'ndumps',nstrain, 'total wavefield dumps'
     write(97,9)'strain_samp',int(strain_samp),'dumps per period'
     write(97,18)"src_type",src_type(1),'source type'
@@ -1220,9 +1222,9 @@ subroutine create_kernel_header
     write(6,*)'wrote parameters for kerner into ',dbname2(1:lfdbname)
     write(6,*)
 
-9 format(' integer, parameter :: ',A12,' =',i10,'  ! ',A27)
-17 format(' real, parameter    :: ',A12,' =',f10.2,'  ! ',A27)
-19 format(' real, parameter    :: ',A12,' =',f10.5,'  ! ',A27)
+9  format(' integer, parameter :: ',A12,' =',i11,'  ! ',A27)
+17 format(' real, parameter    :: ',A12,' =',f11.2,'  ! ',A27)
+19 format(' real, parameter    :: ',A12,' =',f11.5,'  ! ',A27)
 18 format(' character(len=10), parameter    :: ',A12," ='",A10,"'  ! ",A27)
 28 format(' character(len=100), parameter    :: ',A12," ='",A10,"'  ! ",A27)
 31 format(' logical, parameter    :: have_fluid=.true.')
