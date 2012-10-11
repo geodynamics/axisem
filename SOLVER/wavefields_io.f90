@@ -224,6 +224,8 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
        usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
 
        up_fl(:,:,:) = prefac * chi * inv_s_rho_fluid
+       ! (n.b. up_fl is zero at the axes for all source types, prefac = 0 for
+       ! monopole and chi > 0 for dipole and quadrupole)
 
        do iel=1, nel_fluid
            do i=1, i_n_xdmf - 1
@@ -1050,74 +1052,76 @@ subroutine dump_velo_global(v,dchi)
 
   ! sssssssssssss dump velocity vector inside solid ssssssssssssssssssssssssssss
 
-
-  f=v
+  f = v
   if (src_dump_type == 'mask') then
-    call eradicate_src_elem_vec_values(f)
+     call eradicate_src_elem_vec_values(f)
   end if
 
   glen = size(f(ibeg:iend,ibeg:iend,:,1))
 
   if (use_netcdf) then
-    if (src_type(1)/='monopole') then
-      call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,:)), &
-                       &   glen*3, 'velo_sol', appisnap)
-    else
-      call nc_dump_field_1d(f(ibeg:iend,ibeg:iend,:,(/1,3/)), &
-                       &   glen*2, 'velo_sol', appisnap)
-    end if
+     if (src_type(1)/='monopole') then
+        call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,:)), &
+                              glen*3, 'velo_sol', appisnap)
+     else
+        call nc_dump_field_1d(f(ibeg:iend,ibeg:iend,:,(/1,3/)), &
+                              glen*2, 'velo_sol', appisnap)
+     end if
   else
-    open(unit=95000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
-                              //appmynum//'_'//appisnap//'.bindat',&
-                              FORM="UNFORMATTED",STATUS="REPLACE")
-    if (src_type(1)/='monopole') then
-       write(95000+mynum) (f(ibeg:iend,ibeg:iend,:,i),i=1,3)
-    else
-       write(95000+mynum) f(ibeg:iend,ibeg:iend,:,1), &
-                          f(ibeg:iend,ibeg:iend,:,3)
-    end if
-    close(95000+mynum)
+     open(unit=95000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
+                               //appmynum//'_'//appisnap//'.bindat',&
+                               FORM="UNFORMATTED",STATUS="REPLACE")
+     if (src_type(1)/='monopole') then
+        write(95000+mynum) (f(ibeg:iend,ibeg:iend,:,i),i=1,3)
+     else
+        write(95000+mynum) f(ibeg:iend,ibeg:iend,:,1), &
+                           f(ibeg:iend,ibeg:iend,:,3)
+     end if
+     close(95000+mynum)
   end if
 
   ! ffffffff fluid region ffffffffffffffffffffffffffffffffffffffffffffffffffffff
 
   if (have_fluid) then 
-  ! compute velocity vector inside fluid
-    call axisym_laplacian_fluid(dchi,usz_fluid)
+     ! compute velocity vector inside fluid
+    call axisym_laplacian_fluid(dchi, usz_fluid)
 
-  ! phi component needs special care: m/(s rho) dchi
-    call collocate0_1d(inv_s_rho_fluid,dchi,phicomp,npoint_fluid)
+    ! phi component needs special care: m/(s rho) dchi
+    call collocate0_1d(inv_s_rho_fluid, dchi, phicomp, npoint_fluid)
 
-  ! Take care of axial singularity for phi component of fluid velocity
+    ! Take care of axial singularity for phi component of fluid velocity
     if (have_axis) then
-       call dsdf_fluid_allaxis(dchi,dsdchi)
-       do iel=1,naxel_fluid
-          phicomp(0,:,ax_el_fluid(iel))=dsdchi(:,iel)* &
-               phicomp(0,:,ax_el_fluid(iel))
+       call dsdf_fluid_allaxis(dchi, dsdchi)
+       do iel=1, naxel_fluid
+          phicomp(0,:,ax_el_fluid(iel)) = dsdchi(:,iel) *  phicomp(0,:,ax_el_fluid(iel))
+          ! MvD: I think this is wrong, because it ends up with (at the axes)
+          ! phicomp = dsdchi * inv_s_rho_fluid * dchi
+          ! where inv_s_rho_fluid takes the value uf inv_rho_fluid (l'hopital)
+          ! it does not cause problems, because up_fluid is zero for all sources
+          ! at the axes anyway
        enddo
     endif
 
     call define_io_appendix(appisnap,istrain)
 
     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
-                        &        usz_fluid(ibeg:iend,ibeg:iend,:,1)
+                                    usz_fluid(ibeg:iend,ibeg:iend,:,1)
     fflu(ibeg:iend,ibeg:iend,:,2) = phicomp
     fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
-                        &        usz_fluid(ibeg:iend,ibeg:iend,:,2)      
+                                    usz_fluid(ibeg:iend,ibeg:iend,:,2)      
 
     glen = size(fflu(ibeg:iend,ibeg:iend,:,1))
 
-  ! dump velocity vector inside fluid
+    ! dump velocity vector inside fluid
     if (use_netcdf) then
-      call nc_dump_field_1d(fflu(ibeg:iend,ibeg:iend,:,:), &
-                       &   glen*3, 'velo_flu', appisnap)
+       call nc_dump_field_1d(fflu(ibeg:iend,ibeg:iend,:,:), glen*3, 'velo_flu', appisnap)
     else
-      open(unit=960000+mynum,file=datapath(1:lfdata)//'/velo_flu_'&
-                                //appmynum//'_'//appisnap//'.bindat',&
-                                 FORM="UNFORMATTED",STATUS="REPLACE")
+       open(unit=960000+mynum,file=datapath(1:lfdata)//'/velo_flu_'&
+                                 //appmynum//'_'//appisnap//'.bindat',&
+                                  FORM="UNFORMATTED",STATUS="REPLACE")
 
-      write(960000+mynum) (fflu(ibeg:iend,ibeg:iend,:,i),i=1,3)
-      close(960000+mynum)
+       write(960000+mynum) (fflu(ibeg:iend,ibeg:iend,:,i), i=1,3)
+       close(960000+mynum)
     end if ! netcdf
   endif ! have_fluid
 
