@@ -210,14 +210,14 @@ REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: mxm1,mxm2
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: dzdxi,dzdeta,dsdf_el
 integer                                      :: ielem,iel
 
-  do ielem=1,naxel_solid
-    iel=ax_el_solid(ielem) 
+  do ielem=1, naxel_solid
+    iel = ax_el_solid(ielem) 
     dzdeta = DzDeta_over_J_sol(:,:,iel)
     dzdxi  = DzDxi_over_J_sol(:,:,iel)
-    call mxm(G1T,f(:,:,iel),mxm1) 
-    call mxm(f(:,:,iel),G2,mxm2)
-    call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf_el,nsize)
-    dsdf(:,ielem)=dsdf_el(0,:)
+    call mxm(G1T, f(:,:,iel), mxm1) 
+    call mxm(f(:,:,iel), G2, mxm2)
+    call collocate2_sum_1d(dzdeta, mxm1, dzdxi, mxm2, dsdf_el, nsize)
+    dsdf(:,ielem) = dsdf_el(0,:)
   enddo
 
 end subroutine dsdf_solid_allaxis

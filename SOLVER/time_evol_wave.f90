@@ -1132,7 +1132,7 @@ subroutine compute_strain(u,chi)
  
    ! s,z components, identical for all source types..........................
    if (src_type(1)=='dipole') then
-      call axisym_laplacian_solid(u(:,:,:,1)+u(:,:,:,2),lap_sol)
+      call axisym_laplacian_solid(u(:,:,:,1) + u(:,:,:,2),lap_sol)
    else
       call axisym_laplacian_solid(u(:,:,:,1),lap_sol) ! 1: dsus, 2: dzus
    endif

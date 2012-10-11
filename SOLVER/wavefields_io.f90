@@ -21,7 +21,7 @@ contains
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !-----------------------------------------------------------------------------
-subroutine glob_snapshot(f_sol,chi,ibeg,iend,jbeg,jend)
+subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
 !
 ! Dumps the global displacement snapshots [m] in ASCII format
 ! When reading the fluid wavefield, one needs to multiply all 
@@ -31,86 +31,87 @@ subroutine glob_snapshot(f_sol,chi,ibeg,iend,jbeg,jend)
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_pointwise, ONLY : usz_fluid
-use data_source, ONLY : src_type
-use pointwise_derivatives, ONLY: axisym_laplacian_fluid,dsdf_fluid_axis
-
-include 'mesh_params.h'
-
-integer, intent(in)             :: ibeg,iend,jbeg,jend
-real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
-real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
-character(len=4)                :: appisnap
-integer                         :: iel, ipol,jpol,iidim
-real(kind=realkind)             :: dsdchi,prefac
-
-! When reading the fluid wavefield, one needs to multiply all components 
-! with inv_rho_fluid and the phi component with one/scoord!!
-
-  if (src_type(1)=='monopole') prefac=zero
-  if (src_type(1)=='dipole')   prefac=one
-  if (src_type(1)=='quadpole') prefac=two
-
-  call define_io_appendix(appisnap,isnap)
-
-  open(unit=2500+mynum,file=datapath(1:lfdata)//'/snap_'&
+  use data_pointwise, ONLY : usz_fluid
+  use data_source, ONLY : src_type
+  use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+  
+  include 'mesh_params.h'
+  
+  integer, intent(in)             :: ibeg, iend, jbeg, jend
+  real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
+  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  character(len=4)                :: appisnap
+  integer                         :: iel, ipol, jpol, iidim
+  real(kind=realkind)             :: dsdchi, prefac
+  
+  ! When reading the fluid wavefield, one needs to multiply all components 
+  ! with inv_rho_fluid and the phi component with one/scoord!!
+  
+  if (src_type(1) == 'monopole') prefac = zero
+  if (src_type(1) == 'dipole')   prefac = one
+  if (src_type(1) == 'quadpole') prefac = two
+  
+  call define_io_appendix(appisnap, isnap)
+  
+  open(unit=2500+mynum, file=datapath(1:lfdata)//'/snap_'&
                             //appmynum//'_'//appisnap//'.dat')
-
+  
   if (have_fluid) then
-     call axisym_laplacian_fluid(chi,usz_fluid)
-     do iel=1,nel_fluid
-
-              if ( axis_fluid(iel)) then
-                 call dsdf_fluid_axis(chi(:,:,iel),iel,0,dsdchi)
-                 write(2500+mynum,*)usz_fluid(0,0,iel,1),prefac*dsdchi*&
-                                  chi(0,0,iel),usz_fluid(0,0,iel,2)
-              else
-                 write(2500+mynum,*)usz_fluid(0,0,iel,1), &
-                                    prefac*chi(0,0,iel), &
-                                    usz_fluid(0,0,iel,2)
-              endif
-
-                 write(2500+mynum,*)usz_fluid(npol,0,iel,1), &
-                                    prefac*chi(npol,0,iel), &
-                                    usz_fluid(npol,0,iel,2)
-
-                 write(2500+mynum,*)usz_fluid(npol,npol,iel,1), &
-                                    prefac*chi(npol,npol,iel), &
-                                    usz_fluid(npol,npol,iel,2)
-
-              if ( axis_fluid(iel)) then
-                 call dsdf_fluid_axis(chi(:,:,iel),iel,npol,dsdchi)
-                 write(2500+mynum,*)usz_fluid(0,npol,iel,1),prefac*dsdchi*&
-                                  chi(0,npol,iel),usz_fluid(0,npol,iel,2)
-              else
-                 write(2500+mynum,*)usz_fluid(0,npol,iel,1), &
-                                    prefac*chi(0,npol,iel), &
-                                    usz_fluid(0,npol,iel,2)
-              endif
-
+     call axisym_laplacian_fluid(chi, usz_fluid)
+     do iel=1, nel_fluid
+  
+        if (axis_fluid(iel)) then
+           call dsdf_fluid_axis(chi(:,:,iel), iel, 0, dsdchi)
+           write(2500+mynum,*) usz_fluid(0,0,iel,1), prefac * dsdchi * chi(0,0,iel), &
+                               usz_fluid(0,0,iel,2)
+        else
+           write(2500+mynum,*) usz_fluid(0,0,iel,1), &
+                               prefac * chi(0,0,iel), &
+                               usz_fluid(0,0,iel,2)
+        endif
+  
+           write(2500+mynum,*) usz_fluid(npol,0,iel,1), &
+                               prefac * chi(npol,0,iel), &
+                               usz_fluid(npol,0,iel,2)
+  
+           write(2500+mynum,*) usz_fluid(npol,npol,iel,1), &
+                               prefac * chi(npol,npol,iel), &
+                               usz_fluid(npol,npol,iel,2)
+  
+        if ( axis_fluid(iel)) then
+           call dsdf_fluid_axis(chi(:,:,iel), iel, npol, dsdchi)
+           write(2500+mynum,*) usz_fluid(0,npol,iel,1), prefac * dsdchi * chi(0,npol,iel), &
+                               usz_fluid(0,npol,iel,2)
+        else
+           write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
+                               prefac * chi(0,npol,iel), &
+                               usz_fluid(0,npol,iel,2)
+        endif
+  
      enddo
   endif ! have_fluid
-
-  do iel=1,nel_solid
-           write(2500+mynum,*)(f_sol(0,0,iel,iidim),iidim=1,3)
-           write(2500+mynum,*)(f_sol(npol,0,iel,iidim),iidim=1,3)
-           write(2500+mynum,*)(f_sol(npol,npol,iel,iidim),iidim=1,3)
-           write(2500+mynum,*)(f_sol(0,npol,iel,iidim),iidim=1,3)
+  
+  do iel=1, nel_solid
+     write(2500+mynum,*) (f_sol(0,0,iel,iidim), iidim=1,3)
+     write(2500+mynum,*) (f_sol(npol,0,iel,iidim), iidim=1,3)
+     write(2500+mynum,*) (f_sol(npol,npol,iel,iidim), iidim=1,3)
+     write(2500+mynum,*) (f_sol(0,npol,iel,iidim), iidim=1,3)
   enddo
-
+  
   close(2500+mynum)
-
-
-!  h_real=real(hmax/(period/(pts_wavelngth*real(npol))))
-!  fname=trim(diagpath)//'/mesh_hmax'
-!  call write_VTK_bin_scal(h_real,mesh2,neltot,fname)
+  
+  
+  !  h_real=real(hmax/(period/(pts_wavelngth*real(npol))))
+  !  fname=trim(diagpath)//'/mesh_hmax'
+  !  call write_VTK_bin_scal(h_real,mesh2,neltot,fname)
 
 
 end subroutine glob_snapshot
 !=============================================================================
 
+
 !-----------------------------------------------------------------------------
-subroutine glob_snapshot_midpoint(f_sol,chi,ibeg,iend,jbeg,jend)
+subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
 !
 ! Dumps the global displacement snapshots [m] in ASCII format
 ! When reading the fluid wavefield, one needs to multiply all 
@@ -120,63 +121,64 @@ subroutine glob_snapshot_midpoint(f_sol,chi,ibeg,iend,jbeg,jend)
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_pointwise, ONLY : usz_fluid
-use data_source, ONLY : src_type
-use pointwise_derivatives, ONLY: axisym_laplacian_fluid,dsdf_fluid_axis
+  use data_pointwise, ONLY : usz_fluid
+  use data_source, ONLY : src_type
+  use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+  
+  include 'mesh_params.h'
+  
+  integer, intent(in)             :: ibeg, iend, jbeg, jend
+  real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
+  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  character(len=4)                :: appisnap
+  integer                         :: iel, ipol, jpol, iidim
+  real(kind=realkind)             :: dsdchi, prefac
+  
+  ! When reading the fluid wavefield, one needs to multiply all components 
+  ! with inv_rho_fluid and the phi component with one/scoord!!
+  
+  if (src_type(1) == 'monopole') prefac = zero
+  if (src_type(1) == 'dipole')   prefac = one
+  if (src_type(1) == 'quadpole') prefac = two
 
-include 'mesh_params.h'
+  call define_io_appendix(appisnap, isnap)
 
-integer, intent(in)             :: ibeg,iend,jbeg,jend
-real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
-real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
-character(len=4)                :: appisnap
-integer                         :: iel, ipol,jpol,iidim
-real(kind=realkind)             :: dsdchi,prefac
-
-! When reading the fluid wavefield, one needs to multiply all components 
-! with inv_rho_fluid and the phi component with one/scoord!!
-
-  if (src_type(1)=='monopole') prefac=zero
-  if (src_type(1)=='dipole')   prefac=one
-  if (src_type(1)=='quadpole') prefac=two
-
-  call define_io_appendix(appisnap,isnap)
-
-  open(unit=2500+mynum,file=datapath(1:lfdata)//'/snap_'&
-                            //appmynum//'_'//appisnap//'.dat' ,FORM="UNFORMATTED",STATUS="REPLACE")
+  open(unit=2500+mynum, file=datapath(1:lfdata)//'/snap_'//appmynum//'_'//appisnap//'.dat', &
+       FORM="UNFORMATTED",STATUS="REPLACE")
 
   if (have_fluid) then
-     call axisym_laplacian_fluid(chi,usz_fluid)
-     do iel=1,nel_fluid
-        do jpol=0,npol,npol/2
-           do ipol=0,npol,npol/2
+     call axisym_laplacian_fluid(chi, usz_fluid)
+     do iel=1, nel_fluid
+        do jpol=0, npol, npol/2
+           do ipol=0, npol, npol/2
 
-              if ( axis_fluid(iel)) then
-                 call dsdf_fluid_axis(chi(:,:,iel),iel,jpol,dsdchi)
-                 write(2500+mynum)usz_fluid(ipol,jpol,iel,1),prefac*dsdchi*&
-                                  chi(ipol,jpol,iel),usz_fluid(ipol,jpol,iel,2)
+              if (axis_fluid(iel)) then
+                 call dsdf_fluid_axis(chi(:,:,iel), iel, jpol, dsdchi)
+                 write(2500+mynum) usz_fluid(ipol,jpol,iel,1), &
+                                   prefac * dsdchi * chi(ipol,jpol,iel), &
+                                   usz_fluid(ipol,jpol,iel,2)
               else
-                 write(2500+mynum)usz_fluid(ipol,jpol,iel,1), &
-                                    prefac*chi(ipol,jpol,iel), &
-                                    usz_fluid(ipol,jpol,iel,2)
+                 write(2500+mynum) usz_fluid(ipol,jpol,iel,1), &
+                                   prefac * chi(ipol,jpol,iel), &
+                                   usz_fluid(ipol,jpol,iel,2)
               endif
-              enddo
            enddo
+        enddo
      enddo
   endif ! have_fluid
 
-  do iel=1,nel_solid
-     do jpol=0,npol,npol/2
-        do ipol=0,npol,npol/2
-           write(2500+mynum)(f_sol(ipol,jpol,iel,iidim),iidim=1,3)
+  do iel=1, nel_solid
+     do jpol=0, npol, npol/2
+        do ipol=0, npol, npol/2
+           write(2500+mynum) (f_sol(ipol,jpol,iel,iidim), iidim=1,3)
         enddo
      enddo
   enddo
   close(2500+mynum)
 
-!  h_real=real(hmax/(period/(pts_wavelngth*real(npol))))
-!  fname=trim(diagpath)//'/mesh_hmax'
-!  call write_VTK_bin_scal(h_real,mesh2,neltot,fname)
+  ! h_real=real(hmax/(period/(pts_wavelngth*real(npol))))
+  ! fname=trim(diagpath)//'/mesh_hmax'
+  ! call write_VTK_bin_scal(h_real,mesh2,neltot,fname)
 
 
 end subroutine glob_snapshot_midpoint
@@ -185,6 +187,10 @@ end subroutine glob_snapshot_midpoint
 
 !-----------------------------------------------------------------------------
 subroutine glob_snapshot_xdmf(f_sol, chi)
+!
+! Dumps the global displacement snapshots in binary plus XDMF descriptor
+!
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     use data_source, ONLY : src_type
     use data_pointwise, ONLY : inv_rho_fluid, inv_s_rho_fluid
@@ -195,25 +201,25 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     
     real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
     real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
-    character(len=4)     :: appisnap
-    integer              :: iel, iidim, ct, ipol, jpol, ipol1, jpol1, i, j
-    real(kind=realkind)  :: dsdchi, prefac
-    real*4, allocatable  :: u(:,:), u_new(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
-    character(len=120)   :: fname
+    character(len=4)                :: appisnap
+    integer                         :: iel, iidim, ct, ipol, jpol, ipol1, jpol1, i, j
+    real(kind=realkind)             :: dsdchi, prefac
+    real*4, allocatable             :: u(:,:), u_new(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
+    character(len=120)              :: fname
 
     allocate(usz_fl(0:npol,0:npol,1:nel_fluid,2))
     allocate(up_fl(0:npol,0:npol,1:nel_fluid))
     
     allocate(u(1:3,1:npoint_plot))
 
-    if (src_type(1)=='monopole') prefac = 0.
-    if (src_type(1)=='dipole')   prefac = 1.
-    if (src_type(1)=='quadpole') prefac = 2.
+    if (src_type(1) == 'monopole') prefac = 0.
+    if (src_type(1) == 'dipole')   prefac = 1.
+    if (src_type(1) == 'quadpole') prefac = 2.
  
-    call define_io_appendix(appisnap,isnap)
+    call define_io_appendix(appisnap, isnap)
  
     if (have_fluid) then
-       call axisym_laplacian_fluid(chi,usz_fl)
+       call axisym_laplacian_fluid(chi, usz_fl)
        usz_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
        usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
 
@@ -440,29 +446,29 @@ end subroutine glob_snapshot_xdmf
 
 
 !-----------------------------------------------------------------------------
-subroutine solid_snapshot(f,ibeg,iend,jbeg,jend)
+subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
 !
 ! Dumps the displacement snapshots [m] in the solid region in ASCII format
 ! Convention for order in the file: First the fluid, then the solid domain.
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-include 'mesh_params.h'
-
-integer, intent(in)             :: ibeg,iend,jbeg,jend
-real(kind=realkind), intent(in) :: f(0:npol,0:npol,1:nel_solid,3)
-character(len=4)                :: appisnap
-integer                         :: iel, ipol,jpol,idim
+  include 'mesh_params.h'
+  
+  integer, intent(in)             :: ibeg, iend, jbeg, jend
+  real(kind=realkind), intent(in) :: f(0:npol,0:npol,1:nel_solid,3)
+  character(len=4)                :: appisnap
+  integer                         :: iel, ipol, jpol, idim
 
   call define_io_appendix(appisnap,isnap)
 
-  open(unit=3500+mynum,file=datapath(1:lfdata)//'/snap_solid_'&
-                            //appmynum//'_'//appisnap//'.dat')
+  open(unit=3500+mynum, file=datapath(1:lfdata)//'/snap_solid_'&
+                             //appmynum//'_'//appisnap//'.dat')
 
-  do iel=1,nel_solid
-     do jpol=ibeg,iend
-        do ipol=jbeg,jend
-           write(3500+mynum,*)(f(ipol,jpol,iel,idim),idim=1,3)
+  do iel=1, nel_solid
+     do jpol=ibeg, iend
+        do ipol=jbeg, jend
+           write(3500+mynum,*) (f(ipol,jpol,iel,idim),idim=1,3)
         enddo
      enddo
   enddo
@@ -471,46 +477,48 @@ integer                         :: iel, ipol,jpol,idim
 end subroutine solid_snapshot
 !=============================================================================
 
+
 !-----------------------------------------------------------------------------
+subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
 
-subroutine fluid_snapshot(chi,ibeg,iend,jbeg,jend)
+  use data_pointwise, ONLY : usz_fluid
+  use data_source, ONLY : src_type
+  use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+  
+  include 'mesh_params.h'
+  
+  integer, intent(in)             :: ibeg, iend, jbeg, jend
+  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  character(len=4)                :: appisnap
+  integer                         :: iel, ipol, jpol
+  real(kind=realkind)             :: dsdchi, prefac
+  
+  ! When reading the fluid wavefield, one needs to multiply all components 
+  ! with inv_rho_fluid and the phi component with one/scoord!!
 
-use data_pointwise, ONLY : usz_fluid
-use data_source, ONLY : src_type
-use pointwise_derivatives, ONLY: axisym_laplacian_fluid,dsdf_fluid_axis
+  if (src_type(1) == 'monopole') prefac = zero
+  if (src_type(1) == 'dipole')   prefac = one
+  if (src_type(1) == 'quadpole') prefac = two
 
-include 'mesh_params.h'
+  call axisym_laplacian_fluid(chi, usz_fluid)
 
-integer, intent(in)             :: ibeg,iend,jbeg,jend
-real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
-character(len=4)                :: appisnap
-integer                         :: iel,ipol,jpol
-real(kind=realkind)             :: dsdchi,prefac
+  call define_io_appendix(appisnap, isnap)
 
-! When reading the fluid wavefield, one needs to multiply all components 
-! with inv_rho_fluid and the phi component with one/scoord!!
+  open(unit=4500+mynum, file=datapath(1:lfdata)//'/snap_fluid_'&
+                             //appmynum//'_'//appisnap//'.dat')
 
-  if (src_type(1)=='monopole') prefac=zero
-  if (src_type(1)=='dipole')   prefac=one
-  if (src_type(1)=='quadpole') prefac=two
-
-  call axisym_laplacian_fluid(chi,usz_fluid)
-
-  call define_io_appendix(appisnap,isnap)
-
-  open(unit=4500+mynum,file=datapath(1:lfdata)//'/snap_fluid_'&
-                            //appmynum//'_'//appisnap//'.dat')
-
-  do iel=1,nel_fluid
-     do jpol=jbeg,jend
-        do ipol=ibeg,iend
+  do iel=1, nel_fluid
+     do jpol=jbeg, jend
+        do ipol=ibeg, iend
            if ( axis_fluid(iel) .and. ipol==0 ) then
-              call dsdf_fluid_axis(chi(:,:,iel),iel,jpol,dsdchi)
-              write(4500+mynum,*)usz_fluid(ipol,jpol,iel,1),prefac*dsdchi* &
-                                chi(ipol,jpol,iel),usz_fluid(ipol,jpol,iel,2)
+              call dsdf_fluid_axis(chi(:,:,iel), iel, jpol, dsdchi)
+              write(4500+mynum,*) usz_fluid(ipol,jpol,iel,1), &
+                                  prefac * dsdchi * chi(ipol,jpol,iel), &
+                                  usz_fluid(ipol,jpol,iel,2)
            else
-              write(4500+mynum,*)usz_fluid(ipol,jpol,iel,1),prefac*&
-                                 chi(ipol,jpol,iel),usz_fluid(ipol,jpol,iel,2)
+              write(4500+mynum,*) usz_fluid(ipol,jpol,iel,1), &
+                                  prefac * chi(ipol,jpol,iel), &
+                                  usz_fluid(ipol,jpol,iel,2)
            endif
         enddo
      enddo
@@ -522,21 +530,20 @@ end subroutine fluid_snapshot
 !=============================================================================
 
 
-
 !--------------------------------------------------------------------------
-subroutine dump_field_1d(f,filename,appisnap,n)
+subroutine dump_field_1d(f, filename, appisnap, n)
 
-use data_proc, ONLY : appmynum
-use data_source, ONLY : have_src,src_dump_type
-
-include 'mesh_params.h'
-
-integer, intent(in) :: n
-real(kind=realkind),intent(inout) :: f(0:npol,0:npol,1:n)
-character(len=16), intent(in)     :: filename
-character(len=4), intent(in)      :: appisnap
-real(kind=realkind), allocatable :: f1(:),f2(:)
-integer :: i,j,iel,ii, f1len
+  use data_proc, ONLY : appmynum
+  use data_source, ONLY : have_src,src_dump_type
+  
+  include 'mesh_params.h'
+  
+  integer, intent(in)                 :: n
+  real(kind=realkind),intent(inout)   :: f(0:npol,0:npol,1:n)
+  character(len=16), intent(in)       :: filename
+  character(len=4), intent(in)        :: appisnap
+  real(kind=realkind), allocatable    :: f1(:),f2(:)
+  integer                             :: i, j, iel, ii, f1len
 
   if (have_src .and. src_dump_type == 'mask' .and. n==nel_solid) &
        call eradicate_src_elem_values(f)
@@ -544,158 +551,148 @@ integer :: i,j,iel,ii, f1len
   f1len = (iend-ibeg+1)**2*n
   allocate(f1(f1len))
 
-!  ii=0
-!  do iel=1,n
-!     do j=ibeg,iend
-!        do i=ibeg,iend
-!           ii=ii+1
-!           f1(ii)=f(i,j,iel)
-!        enddo
-!     enddo
-!  enddo
+  !ii=0
+  !do iel=1,n
+  !   do j=ibeg,iend
+  !      do i=ibeg,iend
+  !         ii=ii+1
+  !         f1(ii)=f(i,j,iel)
+  !      enddo
+  !   enddo
+  !enddo
   
-!  f1 = reshape(f(ibeg:iend,ibeg:iend,1:n),(/f1len/))
+  !f1 = reshape(f(ibeg:iend,ibeg:iend,1:n),(/f1len/))
   f1 = pack(f(ibeg:iend,ibeg:iend,1:n),.true.)
   
   if (use_netcdf) then
-    call nc_dump_field_1d(f1,f1len,filename(2:),appisnap)
+    call nc_dump_field_1d(f1, f1len, filename(2:), appisnap)
   
   else ! Binary
-    open(unit=25000+mynum,file=datapath(1:lfdata)//filename//'_'&
-                              //appmynum//'_'//appisnap//'.bindat',&
-                              FORM="UNFORMATTED",STATUS="UNKNOWN",POSITION="REWIND")
+    open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_'&
+                                //appmynum//'_'//appisnap//'.bindat',&
+                                FORM="UNFORMATTED",STATUS="UNKNOWN",POSITION="REWIND")
     write(25000+mynum) f1
     close(25000+mynum)
   end if
 
   deallocate(f1)
 
-
 end subroutine dump_field_1d
 !=============================================================================
 
 
 !--------------------------------------------------------------------------
-subroutine dump_field_over_s_solid_1d(f,filename,appisnap)
+subroutine dump_field_over_s_solid_1d(f, filename, appisnap)
 
-use data_proc, ONLY : appmynum
-use data_pointwise, ONLY: inv_s_solid
-use pointwise_derivatives, ONLY: dsdf_solid_allaxis
-use data_source, ONLY : have_src,src_dump_type
+  use data_proc, ONLY : appmynum
+  use data_pointwise, ONLY: inv_s_solid
+  use pointwise_derivatives, ONLY: dsdf_solid_allaxis
+  use data_source, ONLY : have_src, src_dump_type
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: f(0:npol,0:npol,nel_solid)
+  character(len=16), intent(in)  :: filename
+  character(len=4), intent(in)   :: appisnap
+  real(kind=realkind)            :: dsdf(0:npol,naxel_solid)
+  integer                        :: iel, glen
+  real(kind=realkind)            :: g(0:npol,0:npol,nel_solid)
 
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in) :: f(0:npol,0:npol,nel_solid)
-character(len=16), intent(in)  :: filename
-character(len=4), intent(in)   :: appisnap
-real(kind=realkind)            :: dsdf(0:npol,naxel_solid)
-integer                        :: iel,i,glen
-!real(kind=realkind) :: f1d((npol+1)**2*nel_solid)
-real(kind=realkind)            :: g(0:npol,0:npol,nel_solid)
-
-
-
-  i=0
-
-! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
-! inv_s_solid is always multiplied into the wavefield... not just at 
-! the axis! Changed it to this case.... not warranted though!
+  ! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
+  ! inv_s_solid is always multiplied into the wavefield... not just at 
+  ! the axis! Changed it to this case.... not warranted though!
 
   if (have_axis) then 
-     call dsdf_solid_allaxis(f,dsdf) ! axial f/s
-     do iel=1,naxel_solid
-        inv_s_solid(0,:,ax_el_solid(iel))=dsdf(:,iel)
+     call dsdf_solid_allaxis(f, dsdf) ! axial f/s
+     do iel=1, naxel_solid
+        inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
      enddo
   endif
-
-  g = inv_s_solid*f
+  
+  ! XXX: does this result in df/ds * f at the axis??
+  g = inv_s_solid * f
 
   if (have_src .and. src_dump_type == 'mask') then 
-    call eradicate_src_elem_values(g)
+     call eradicate_src_elem_values(g)
   end if
   
   glen = size(g)
   if (use_netcdf) then
-    call nc_dump_field_1d(g,glen,filename(2:),appisnap)
+     call nc_dump_field_1d(g,glen,filename(2:),appisnap)
   else
-    open(unit=35000+mynum,file=datapath(1:lfdata)//filename//'_'&
-                            //appmynum//'_'//appisnap//'.bindat',&
-                            FORM="UNFORMATTED",STATUS="REPLACE")
-    write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
-    close(35000+mynum)
+     open(unit=35000+mynum, file=datapath(1:lfdata)//filename//'_'&
+                                 //appmynum//'_'//appisnap//'.bindat',&
+                                 FORM="UNFORMATTED",STATUS="REPLACE")
+     write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
+     close(35000+mynum)
   end if
 
 end subroutine dump_field_over_s_solid_1d
 !=============================================================================
 
 
-
-
 !--------------------------------------------------------------------------
-subroutine dump_field_over_s_solid_and_add(f,g,filename1,filename2,appisnap)
+subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
 !
-! This routine acts like the one above, calculating the term f/s in the solid,
-! but additionally adds field g to the dump. This is convenient for the 
+! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
+! the solid, but additionally adds field g to the dump. This is convenient for the 
 ! strain trace, where (dsus+dzuz) has been computed beforehand.
 !
-use data_proc, ONLY : appmynum
-use data_pointwise, ONLY: inv_s_solid
-use pointwise_derivatives, ONLY: dsdf_solid_allaxis
-use data_source, ONLY : have_src,src_dump_type
-
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in) :: f(0:npol,0:npol,nel_solid)
-real(kind=realkind),intent(inout) :: g(0:npol,0:npol,nel_solid)
-character(len=16), intent(in)  :: filename1,filename2
-character(len=4), intent(in)   :: appisnap
-real(kind=realkind)            :: dsdf(0:npol,naxel_solid)
-integer                        :: iel,i,glen
-
-  i=0
-
-! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
-! inv_s_solid is always multiplied into the wavefield... not just at 
-! the axis! Changed it to this case.... not warranted though!
+  use data_proc, ONLY : appmynum
+  use data_pointwise, ONLY: inv_s_solid
+  use pointwise_derivatives, ONLY: dsdf_solid_allaxis
+  use data_source, ONLY : have_src, src_dump_type
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in)      :: f(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(inout)   :: g(0:npol,0:npol,nel_solid)
+  character(len=16), intent(in)       :: filename1, filename2
+  character(len=4), intent(in)        :: appisnap
+  real(kind=realkind)                 :: dsdf(0:npol,naxel_solid)
+  integer                             :: iel, glen
+  
+  ! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
+  ! inv_s_solid is always multiplied into the wavefield... not just at 
+  ! the axis! Changed it to this case.... not warranted though!
 
   if (have_axis) then 
-     call dsdf_solid_allaxis(f,dsdf) ! axial f/s
-     do iel=1,naxel_solid
-        inv_s_solid(0,:,ax_el_solid(iel))=dsdf(:,iel)
+     call dsdf_solid_allaxis(f, dsdf) ! axial f/s
+     do iel=1, naxel_solid
+        inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
      enddo
   endif
 
-! construct masked f/s (e.g. Epp)
+  ! construct masked f/s (e.g. Epp)
   if (have_src .and. src_dump_type == 'mask') &
        call eradicate_src_elem_values(inv_s_solid)
 
-! construct sum of f/s and g (e.g. straintrace)
-  g = inv_s_solid*f + g
+  ! construct sum of f/s and g (e.g. straintrace)
+  ! XXX: does this result in df/ds * f at the axis??
+  g = inv_s_solid * f + g
 
   if (have_src .and. src_dump_type == 'mask') &
        call eradicate_src_elem_values(g)
 
-
   glen = size(g(ibeg:iend,ibeg:iend,:))
   if (use_netcdf) then
-    call nc_dump_field_1d(&
-          &  (inv_s_solid(ibeg:iend,ibeg:iend,:)*f(ibeg:iend,ibeg:iend,:)), &
-          &  glen, filename1(2:), appisnap)
-    call nc_dump_field_1d(g(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
+     call nc_dump_field_1d(&
+           &  (inv_s_solid(ibeg:iend,ibeg:iend,:) * f(ibeg:iend,ibeg:iend,:)), &
+           &  glen, filename1(2:), appisnap)
+     call nc_dump_field_1d(g(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
+
   else
+     open(unit=39000+mynum, file=datapath(1:lfdata)//filename1//'_'&
+                               //appmynum//'_'//appisnap//'.bindat',&
+                               FORM="UNFORMATTED",STATUS="REPLACE")
+     write(39000+mynum) inv_s_solid(ibeg:iend,ibeg:iend,:) * f(ibeg:iend,ibeg:iend,:)
+     close(39000+mynum)
 
-    open(unit=39000+mynum,file=datapath(1:lfdata)//filename1//'_'&
-                              //appmynum//'_'//appisnap//'.bindat',&
-                              FORM="UNFORMATTED",STATUS="REPLACE")
-    write(39000+mynum) inv_s_solid(ibeg:iend,ibeg:iend,:)* &
-                       f(ibeg:iend,ibeg:iend,:)
-    close(39000+mynum)
-
-    open(unit=35000+mynum,file=datapath(1:lfdata)//filename2//'_'&
-                              //appmynum//'_'//appisnap//'.bindat',&
-                              FORM="UNFORMATTED",STATUS="REPLACE")
-    write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
-    close(35000+mynum)
+     open(unit=35000+mynum, file=datapath(1:lfdata)//filename2//'_'&
+                               //appmynum//'_'//appisnap//'.bindat',&
+                               FORM="UNFORMATTED",STATUS="REPLACE")
+     write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
+     close(35000+mynum)
 
   end if
 
@@ -706,32 +703,32 @@ end subroutine dump_field_over_s_solid_and_add
 !--------------------------------------------------------------------------
 subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
 !
-! This routine acts like the one above, calculating the term f/s in the solid,
-! but additionally adds field g to the dump. This is convenient for the 
+! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
+! the solid, but additionally adds field g to the dump. This is convenient for the 
 ! strain trace, where (dsus+dzuz) has been computed beforehand.
 !
-use data_proc, ONLY : appmynum
-use data_pointwise, ONLY: inv_s_solid
-use pointwise_derivatives, ONLY: dsdf_solid_allaxis
-use data_source, ONLY : have_src,src_dump_type
-
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_solid)
-real(kind=realkind),intent(inout) :: g(0:npol,0:npol,nel_solid)
-character(len=16), intent(in)     :: filename
-character(len=4), intent(in)      :: appisnap
-real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
-integer                           :: iel, glen
-
-! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
-! inv_s_solid is always multiplied into the wavefield... not just at 
-! the axis! Changed it to this case.... not warranted though!
+  use data_proc, ONLY : appmynum
+  use data_pointwise, ONLY: inv_s_solid
+  use pointwise_derivatives, ONLY: dsdf_solid_allaxis
+  use data_source, ONLY : have_src,src_dump_type
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(inout) :: g(0:npol,0:npol,nel_solid)
+  character(len=16), intent(in)     :: filename
+  character(len=4), intent(in)      :: appisnap
+  real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
+  integer                           :: iel, glen
+  
+  ! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
+  ! inv_s_solid is always multiplied into the wavefield... not just at 
+  ! the axis! Changed it to this case.... not warranted though!
 
   if (have_axis) then 
-     call dsdf_solid_allaxis(f,dsdf) ! axial f/s
+     call dsdf_solid_allaxis(f, dsdf) ! axial f/s
      do iel=1,naxel_solid
-        inv_s_solid(0,:,ax_el_solid(iel))=dsdf(:,iel)
+        inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
      enddo
   endif
 
@@ -742,13 +739,13 @@ integer                           :: iel, glen
 
   glen = size(g(ibeg:iend,ibeg:iend,:))
   if (use_netcdf) then
-    call nc_dump_field_1d(g(ibeg:iend,ibeg:iend,:), glen, filename(2:), appisnap)
+     call nc_dump_field_1d(g(ibeg:iend,ibeg:iend,:), glen, filename(2:), appisnap)
   else
-    open(unit=35000+mynum,file=datapath(1:lfdata)//filename//'_'&
-                              //appmynum//'_'//appisnap//'.bindat',&
-                              FORM="UNFORMATTED",STATUS="REPLACE")
-    write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
-    close(35000+mynum)
+     open(unit=35000+mynum,file=datapath(1:lfdata)//filename//'_'&
+                                //appmynum//'_'//appisnap//'.bindat',&
+                                FORM="UNFORMATTED",STATUS="REPLACE")
+     write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
+     close(35000+mynum)
   end if
 
 end subroutine dump_half_field_over_s_solid_1d_add
@@ -758,45 +755,43 @@ end subroutine dump_half_field_over_s_solid_1d_add
 !--------------------------------------------------------------------------
 subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
 !
-! This routine acts like the one above, calculating the term f/s in the fluid,
-! but additionally adds field g to the dump. This is convenient for the 
+! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
+! the fluid, but additionally adds field g to the dump. This is convenient for the 
 ! strain trace, where (dsus+dzuz) has been computed beforehand.
 !
-use data_proc, ONLY : appmynum
-use data_pointwise, ONLY: inv_s_fluid!,deviator
-use pointwise_derivatives, ONLY: dsdf_fluid_allaxis
-use data_source, ONLY : src_dump_type
+  use data_proc, ONLY : appmynum
+  use data_pointwise, ONLY: inv_s_fluid!,deviator
+  use pointwise_derivatives, ONLY: dsdf_fluid_allaxis
+  use data_source, ONLY : src_dump_type
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(inout) :: g(0:npol,0:npol,nel_fluid)
+  character(len=16), intent(in)     :: filename1,filename2
+  character(len=4), intent(in)      :: appisnap
+  real(kind=realkind)               :: dsdf(0:npol,naxel_fluid)
+  integer                           :: iel, glen
 
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in) :: f(0:npol,0:npol,nel_fluid)
-real(kind=realkind),intent(inout) :: g(0:npol,0:npol,nel_fluid)
-character(len=16), intent(in)  :: filename1,filename2
-character(len=4), intent(in)   :: appisnap
-real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
-integer                        :: iel,i,glen
-
-  i=0
-
-! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
-! inv_s_fluid is always multiplied into the wavefield... not just at 
-! the axis! Changed it to this case.... not warranted though!
+  ! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
+  ! inv_s_fluid is always multiplied into the wavefield... not just at 
+  ! the axis! Changed it to this case.... not warranted though!
 
   if (have_axis) then 
-     call dsdf_fluid_allaxis(f,dsdf) ! axial f/s
+     call dsdf_fluid_allaxis(f, dsdf) ! axial f/s
      do iel=1,naxel_fluid
-        inv_s_fluid(0,:,ax_el_fluid(iel))=dsdf(:,iel)
+        inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
      enddo
   endif
 
   glen = size(f(ibeg:iend,ibeg:iend,:))
   if (use_netcdf) then
-    call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:)* f(ibeg:iend,ibeg:iend,:),&
-      &  glen, filename1(2:), appisnap)
-    call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:)* f(ibeg:iend,ibeg:iend,:) &
-      & + g(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
+    call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:) * f(ibeg:iend,ibeg:iend,:), &
+                          glen, filename1(2:), appisnap)
+    call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:) * f(ibeg:iend,ibeg:iend,:) +  &
+                          g(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
   else !Binary
-  ! f/s (e.g. Epp)
+    ! f/s (e.g. Epp)
     open(unit=39000+mynum,file=datapath(1:lfdata)//filename1//'_'&
                               //appmynum//'_'//appisnap//'.bindat',&
                               FORM="UNFORMATTED",STATUS="REPLACE")
@@ -804,9 +799,7 @@ integer                        :: iel,i,glen
                        f(ibeg:iend,ibeg:iend,:)
     close(39000+mynum)
 
-
-
-  ! sum of f/s and g (e.g. straintrace)
+    ! sum of f/s and g (e.g. straintrace)
     open(unit=35000+mynum,file=datapath(1:lfdata)//filename2//'_'&
                               //appmynum//'_'//appisnap//'.bindat',&
                               FORM="UNFORMATTED",STATUS="REPLACE")
@@ -822,17 +815,17 @@ end subroutine dump_field_over_s_fluid_and_add
 !--------------------------------------------------------------------------
 subroutine dump_half_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
-use data_proc, ONLY : appmynum
-use data_pointwise, ONLY: inv_s_fluid
-use pointwise_derivatives, ONLY : dsdf_fluid_allaxis
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in) :: f1(0:npol,0:npol,nel_fluid)
-real(kind=realkind),intent(in) :: f2(0:npol,0:npol,nel_fluid)
-character(len=16), intent(in)  :: filename
-character(len=4), intent(in)   :: appisnap
-real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
-integer                        :: iel,glen
+  use data_proc, ONLY : appmynum
+  use data_pointwise, ONLY: inv_s_fluid
+  use pointwise_derivatives, ONLY : dsdf_fluid_allaxis
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: f1(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in) :: f2(0:npol,0:npol,nel_fluid)
+  character(len=16), intent(in)  :: filename
+  character(len=4), intent(in)   :: appisnap
+  real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
+  integer                        :: iel, glen
 
   if (have_axis) then
      call dsdf_fluid_allaxis(f2,dsdf) ! axial f/s
@@ -843,20 +836,20 @@ integer                        :: iel,glen
 
   glen = size(f1(ibeg:iend,ibeg:iend,:))
   if (use_netcdf) then
-    call nc_dump_field_1d(0.5*(f1(ibeg:iend,ibeg:iend,:) + &
-                       &   inv_s_fluid(ibeg:iend,ibeg:iend,:)* &
-                       &   f2(ibeg:iend,ibeg:iend,:)),&
-                       &   glen, filename(2:), appisnap)
+     call nc_dump_field_1d(0.5 * ( f1(ibeg:iend,ibeg:iend,:) + &
+                                   inv_s_fluid(ibeg:iend,ibeg:iend,:) * &
+                                   f2(ibeg:iend,ibeg:iend,:) ), &
+                           glen, filename(2:), appisnap)
   else
-    open(unit=65000+mynum,file=datapath(1:lfdata)//filename//'_'&
-                              //appmynum//'_'//appisnap//'.bindat',&
-                              FORM="UNFORMATTED",STATUS="REPLACE")
-
-    write(65000+mynum) 0.5*(f1(ibeg:iend,ibeg:iend,:) + &
-                       inv_s_fluid(ibeg:iend,ibeg:iend,:)* &
-                       f2(ibeg:iend,ibeg:iend,:))
-
-    close(65000+mynum)
+     open(unit=65000+mynum, file=datapath(1:lfdata)//filename//'_'&
+                                //appmynum//'_'//appisnap//'.bindat',&
+                                FORM="UNFORMATTED",STATUS="REPLACE")
+ 
+     write(65000+mynum) 0.5 * ( f1(ibeg:iend,ibeg:iend,:) + &
+                                inv_s_fluid(ibeg:iend,ibeg:iend,:) * &
+                                f2(ibeg:iend,ibeg:iend,:) )
+ 
+     close(65000+mynum)
   end if
 
 end subroutine dump_half_f1_f2_over_s_fluid
