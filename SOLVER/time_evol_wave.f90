@@ -1080,8 +1080,8 @@ subroutine compute_strain(u,chi)
 !
 ! Compute the full, global strain tensor on-the-fly. Each of 6 (monopole: 4)
 ! components is stored separately for solid and fluid domains respectively.
-! For computational reasons, the E(13)=0/5(dsduz+dzdus) term is stored in two 
-! separate files dsduz and dzdus. Note the prefactor 1/2 for postprocessing!
+! For computational reasons, the E(13) = 1/2 (dsduz + dzdus) term is stored in
+! two separate files dsduz and dzdus. Note the prefactor 1/2 for postprocessing!
 !
 ! NOTES FOR THE DIPOLE: 
 ! - The dipole case is transfered to the (s,phi,z) system here.
@@ -1099,198 +1099,177 @@ subroutine compute_strain(u,chi)
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_pointwise, ONLY: inv_rho_fluid,inv_s_rho_fluid,usz_fluid!,deviator
-use data_source, ONLY: src_type
-use pointwise_derivatives, ONLY: axisym_laplacian_fluid,axisym_laplacian_fluid_add
-use pointwise_derivatives, ONLY: axisym_laplacian_solid,axisym_laplacian_solid_add
-use unit_stride_colloc, ONLY: collocate0_1d_existent
-use wavefields_io, ONLY : dump_field_over_s_solid_and_add
-use wavefields_io, ONLY : dump_half_field_over_s_solid_1d_add
-use wavefields_io, ONLY : dump_half_f1_f2_over_s_fluid
-use wavefields_io, ONLY : dump_f1_f2_over_s_fluid
-use wavefields_io, ONLY : dump_field_1d, dump_field_over_s_solid_1d
-use wavefields_io, ONLY : dump_field_over_s_fluid_and_add
-
-include 'mesh_params.h'
-
-real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
-real(kind=realkind), intent(in) :: chi(0:npol,0:npol,nel_fluid)
-
-real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,2)
-real(kind=realkind)             :: lap_flu(0:npol,0:npol,nel_fluid,2)
-character(len=5)                :: appisnap
-
-!allocate(deviator(ibeg:iend,ibeg:iend,1:nel_fluid,1:4))
-
-  call define_io_appendix(appisnap,istrain)
-
-! SSSSSSS Solid region SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-
-! s,z components, identical for all source types..........................
-  if (src_type(1)=='dipole') then
-    call axisym_laplacian_solid(u(:,:,:,1)+u(:,:,:,2),lap_sol)
-  else
-    call axisym_laplacian_solid(u(:,:,:,1),lap_sol) ! 1: dsus, 2: dzus
-  endif
-
-  call dump_field_1d(lap_sol(:,:,:,1), &
-                     '/strain_dsus_sol',appisnap,nel_solid) 
-
-  call axisym_laplacian_solid_add(u(:,:,:,3),lap_sol) ! 1:dsuz+dzus,2:dzuz+dsus
-
-! calculate entire E31 term: (dsuz+dzus)/2
-  lap_sol(:,:,:,1) = lap_sol(:,:,:,1) * real(.5,kind=realkind)
-  call dump_field_1d(lap_sol(:,:,:,1),'/strain_dsuz_sol',appisnap,nel_solid)
-
-! Components involving phi....................................................
-   if (src_type(1)=='monopole') then
-      call dump_field_over_s_solid_and_add(u(:,:,:,1),&!Epp,Eii
-                                           lap_sol(:,:,:,2),&
-                               '/strain_dpup_sol', '/straintrace_sol',appisnap)
-
-! __________________________________________________________________________
-
-   elseif (src_type(1)=='dipole') then 
-      call dump_field_over_s_solid_and_add(real(2.,kind=realkind)* &
-                                           u(:,:,:,2),&!Epp,Eii
-                                           lap_sol(:,:,:,2), &
-                               '/strain_dpup_sol','/straintrace_sol',appisnap) 
-
-      call axisym_laplacian_solid(u(:,:,:,1)-u(:,:,:,2),lap_sol) !1:dsup,2:dzup
-
-      call dump_half_field_over_s_solid_1d_add(real(2.,kind=realkind)*&
-                                             u(:,:,:,2),&
-                                             lap_sol(:,:,:,1),&
-                                             '/strain_dsup_sol',appisnap) !E12
-
-      call dump_half_field_over_s_solid_1d_add(u(:,:,:,3), &
-                                            lap_sol(:,:,:,2),&
-                                           '/strain_dzup_sol',appisnap) !E23
-
-! __________________________________________________________________________
-   elseif (src_type(1)=='quadpole') then
-      call dump_field_over_s_solid_and_add(u(:,:,:,1)- &
-                    real(2.,kind=realkind)*u(:,:,:,2),&!Epp,Eii
-                    lap_sol(:,:,:,2),'/strain_dpup_sol', &
-                    '/straintrace_sol',appisnap) 
-
-      call axisym_laplacian_solid(u(:,:,:,2),lap_sol) ! 1: dsup, 2: dzup
-
-      call dump_half_field_over_s_solid_1d_add(real(2.,kind=realkind)* &
-                                               u(:,:,:,1)- &
-                                               u(:,:,:,2), &
-                                             lap_sol(:,:,:,1),&
-                                             '/strain_dsup_sol',appisnap) !E12
-
-      call dump_half_field_over_s_solid_1d_add(real(2.,kind=realkind)* &
-                                                u(:,:,:,3), &
-                         lap_sol(:,:,:,2), '/strain_dzup_sol',appisnap) !E23
-
-   endif
-
-! FFFFFF Fluid region FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
-!
-! Fluid-region strain tensor is computed just like in the solid but for 
-! displacement components ds(chi), dz(chi).
-
-! - - - - - - - - - -
-  if (have_fluid) then
-! - - - - - - - - - -
-
-! construct displacements in the fluid
-     call axisym_laplacian_fluid(chi,usz_fluid)
-     call collocate0_1d_existent(usz_fluid(:,:,:,1),inv_rho_fluid,npoint_fluid)
-     call collocate0_1d_existent(usz_fluid(:,:,:,2),inv_rho_fluid,npoint_fluid)
+   use data_pointwise, ONLY: inv_rho_fluid, inv_s_rho_fluid, usz_fluid  !,deviator
+   use data_source, ONLY: src_type
+   use pointwise_derivatives, ONLY: axisym_laplacian_fluid_add
+   use pointwise_derivatives, ONLY: axisym_laplacian_fluid
+   use pointwise_derivatives, ONLY: axisym_laplacian_solid_add
+   use pointwise_derivatives, ONLY: axisym_laplacian_solid
+   use unit_stride_colloc, ONLY: collocate0_1d_existent
+   use wavefields_io, ONLY : dump_field_over_s_solid_and_add
+   use wavefields_io, ONLY : dump_half_field_over_s_solid_1d_add
+   use wavefields_io, ONLY : dump_half_f1_f2_over_s_fluid
+   use wavefields_io, ONLY : dump_f1_f2_over_s_fluid
+   use wavefields_io, ONLY : dump_field_1d
+   use wavefields_io, ONLY : dump_field_over_s_solid_1d
+   use wavefields_io, ONLY : dump_field_over_s_fluid_and_add
+   
+   include 'mesh_params.h'
+   
+   real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
+   real(kind=realkind), intent(in) :: chi(0:npol,0:npol,nel_fluid)
+   
+   real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,2)
+   real(kind=realkind)             :: lap_flu(0:npol,0:npol,nel_fluid,2)
+   character(len=5)                :: appisnap
+   real(kind=realkind), parameter  :: two_rk = real(2.,kind=realkind)
  
-! laplacian of s component
-     call axisym_laplacian_fluid(usz_fluid(:,:,:,1),lap_flu) ! dsus, dzus
-
-!     deviator(ibeg:iend,ibeg:iend,:,1) = lap_flu(ibeg:iend,ibeg:iend,:,1)
-
-! save Ess
-     call dump_field_1d(lap_flu(:,:,:,1),'/strain_dsus_flu', &
-                        appisnap,nel_fluid) ! E11
-
-! laplacian of z component added to s-comp laplacian for strain trace and E13
-     call axisym_laplacian_fluid_add(usz_fluid(:,:,:,2),lap_flu)!1:dsuz+dzus,2:dzuz+dsus
-
-! calculate entire E31 term: (dsuz+dzus)/2
-     lap_flu(:,:,:,1) = lap_flu(:,:,:,1) * real(.5,kind=realkind)
-
-!     deviator(ibeg:iend,ibeg:iend,:,4) = lap_flu(ibeg:iend,ibeg:iend,:,1)
-
-     call dump_field_1d(lap_flu(:,:,:,1),'/strain_dsuz_flu',appisnap,nel_fluid)
-
-! Components involving phi................................................
-
-! __________________________________________________________________________
-     if (src_type(1)=='monopole') then
-! Calculate us/s and straintrace
-      call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1),& !Epp,Eii
-                                           lap_flu(:,:,:,2),& 
-                         '/strain_dpup_flu', '/straintrace_flu',appisnap) 
-
-! __________________________________________________________________________
-     elseif (src_type(1)=='dipole') then
-      call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1)-&
-                                      inv_s_rho_fluid*chi,&
-                                      lap_flu(:,:,:,2), & 
-                      '/strain_dpup_flu', '/straintrace_flu',appisnap)!Epp,Eii
-
-! laplacian of phi component
-        call axisym_laplacian_fluid(inv_s_rho_fluid*chi,lap_flu) ! dsup, dzup
-
-        call dump_half_f1_f2_over_s_fluid(lap_flu(:,:,:,1), &
-                                       usz_fluid(:,:,:,1)-&
-                                       inv_s_rho_fluid*chi,&
-                                         '/strain_dsup_flu',appisnap) ! E12
-
-        call dump_half_f1_f2_over_s_fluid(lap_flu(:,:,:,2),&
-                                          usz_fluid(:,:,:,2),&
-                                          '/strain_dzup_flu',appisnap)! E23
-
-! __________________________________________________________________________
-     elseif (src_type(1)=='quadpole') then
-      call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1)-&     !Epp,Eii
-                                           real(2.,kind=realkind)*&
-                                           inv_s_rho_fluid*chi, &
-                                           lap_flu(:,:,:,2),& 
-                         '/strain_dpup_flu', '/straintrace_flu',appisnap) 
-
-! laplacian of phi component
-        call axisym_laplacian_fluid(inv_s_rho_fluid*chi,lap_flu) ! dsup, dzup
-
-        call dump_f1_f2_over_s_fluid(lap_flu(:,:,:,1),&
-                                     usz_fluid(:,:,:,1)-&
-                                     inv_s_rho_fluid*chi, &
-                                     '/strain_dsup_flu',appisnap)!E12
-                                         
-
-        call dump_half_f1_f2_over_s_fluid(lap_flu(:,:,:,2),&
-                                          real(2.,kind=realkind)*& 
-                                          usz_fluid(:,:,:,2), &
-                                          '/strain_dzup_flu',appisnap)!E23
-     endif !src_type
-
-
-!     write(333,*)deviator(3,3,50,1)-deviator(3,3,50,3)/3., &
-!                 deviator(3,3,50,2)-deviator(3,3,50,3)/3., &
-!                 2./3.*deviator(3,3,50,3) - deviator(3,3,50,2) - &
-!                 deviator(3,3,50,1), deviator(3,3,50,4)
-
-     
-!     write(334,*)deviator(3,1,5,1)-deviator(3,1,5,3)/3., &
-!                 deviator(3,1,5,2)-deviator(3,1,5,3)/3., &
-!                 2./3.*deviator(3,1,5,3) - deviator(3,1,5,2) - &
-!                 deviator(3,1,5,1), deviator(3,1,5,4)
-!
-
-
-! - - - - - - - - - -
-  endif ! have_fluid
-! - - - - - - - - - -
-
-!  deallocate(deviator)
+   !allocate(deviator(ibeg:iend,ibeg:iend,1:nel_fluid,1:4))
+ 
+   call define_io_appendix(appisnap,istrain)
+ 
+   ! SSSSSSS Solid region SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
+ 
+   ! s,z components, identical for all source types..........................
+   if (src_type(1)=='dipole') then
+      call axisym_laplacian_solid(u(:,:,:,1)+u(:,:,:,2),lap_sol)
+   else
+      call axisym_laplacian_solid(u(:,:,:,1),lap_sol) ! 1: dsus, 2: dzus
+   endif
+ 
+   call dump_field_1d(lap_sol(:,:,:,1), &
+                      '/strain_dsus_sol',appisnap,nel_solid) 
+ 
+   call axisym_laplacian_solid_add(u(:,:,:,3),lap_sol) ! 1:dsuz+dzus,2:dzuz+dsus
+ 
+   ! calculate entire E31 term: (dsuz+dzus)/2
+   lap_sol(:,:,:,1) = lap_sol(:,:,:,1) / two_rk
+   call dump_field_1d(lap_sol(:,:,:,1),'/strain_dsuz_sol',appisnap,nel_solid)
+ 
+   ! Components involving phi....................................................
+   if (src_type(1) == 'monopole') then
+      call dump_field_over_s_solid_and_add(u(:,:,:,1), & !Epp,Eii
+                                           lap_sol(:,:,:,2), &
+                                           '/strain_dpup_sol', '/straintrace_sol', &
+                                           appisnap)
+ 
+   elseif (src_type(1) == 'dipole') then 
+      call dump_field_over_s_solid_and_add(two_rk * u(:,:,:,2), & !Epp,Eii
+                                           lap_sol(:,:,:,2), &
+                                           '/strain_dpup_sol', '/straintrace_sol', &
+                                           appisnap) 
+ 
+      call axisym_laplacian_solid(u(:,:,:,1) - u(:,:,:,2),lap_sol) !1:dsup,2:dzup
+ 
+      call dump_half_field_over_s_solid_1d_add(two_rk * u(:,:,:,2), &
+                                               lap_sol(:,:,:,1), &
+                                               '/strain_dsup_sol', appisnap) !E12
+ 
+      call dump_half_field_over_s_solid_1d_add(u(:,:,:,3), lap_sol(:,:,:,2), &
+                                               '/strain_dzup_sol', appisnap) !E23
+ 
+   elseif (src_type(1) == 'quadpole') then
+      call dump_field_over_s_solid_and_add(u(:,:,:,1) - two_rk * u(:,:,:,2), & !Epp,Eii
+                                           lap_sol(:,:,:,2),'/strain_dpup_sol', &
+                                           '/straintrace_sol', appisnap) 
+  
+      call axisym_laplacian_solid(u(:,:,:,2), lap_sol) ! 1: dsup, 2: dzup
+ 
+      call dump_half_field_over_s_solid_1d_add(two_rk * u(:,:,:,1) - u(:,:,:,2), &
+                                               lap_sol(:,:,:,1), &
+                                               '/strain_dsup_sol', appisnap) !E12
+  
+      call dump_half_field_over_s_solid_1d_add(two_rk * u(:,:,:,3), lap_sol(:,:,:,2), &
+                                               '/strain_dzup_sol',appisnap) !E23
+   endif
+ 
+   ! FFFFFF Fluid region FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+   !
+   ! Fluid-region strain tensor is computed just like in the solid but for 
+   ! displacement components ds(chi), dz(chi).
+ 
+   if (have_fluid) then
+ 
+      ! construct displacements in the fluid
+      call axisym_laplacian_fluid(chi,usz_fluid)
+      call collocate0_1d_existent(usz_fluid(:,:,:,1),inv_rho_fluid,npoint_fluid)
+      call collocate0_1d_existent(usz_fluid(:,:,:,2),inv_rho_fluid,npoint_fluid)
+  
+      ! laplacian of s component
+      call axisym_laplacian_fluid(usz_fluid(:,:,:,1),lap_flu)   ! dsus, dzus
+ 
+      !     deviator(ibeg:iend,ibeg:iend,:,1) = lap_flu(ibeg:iend,ibeg:iend,:,1)
+ 
+      ! save Ess
+      call dump_field_1d(lap_flu(:,:,:,1),'/strain_dsus_flu', &
+                          appisnap,nel_fluid)   ! E11
+ 
+      ! laplacian of z component added to s-comp laplacian for strain trace and E13
+      call axisym_laplacian_fluid_add(usz_fluid(:,:,:,2),lap_flu)  !1:dsuz+dzus,2:dzuz+dsus
+ 
+      ! calculate entire E31 term: (dsuz+dzus)/2
+      lap_flu(:,:,:,1) = lap_flu(:,:,:,1) / two_rk
+ 
+      !     deviator(ibeg:iend,ibeg:iend,:,4) = lap_flu(ibeg:iend,ibeg:iend,:,1)
+ 
+      call dump_field_1d(lap_flu(:,:,:,1),'/strain_dsuz_flu',appisnap,nel_fluid)
+ 
+      ! Components involving phi................................................
+ 
+      if (src_type(1)=='monopole') then
+         ! Calculate us/s and straintrace
+         call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1), lap_flu(:,:,:,2),& !Epp,Eii
+                                              '/strain_dpup_flu', '/straintrace_flu', &
+                                              appisnap) 
+ 
+      elseif (src_type(1)=='dipole') then
+         call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi, &
+                                              lap_flu(:,:,:,2), '/strain_dpup_flu', &
+                                              '/straintrace_flu', appisnap)  !Epp,Eii
+ 
+         ! laplacian of phi component
+         call axisym_laplacian_fluid(inv_s_rho_fluid * chi,lap_flu)   ! dsup, dzup
+ 
+         call dump_half_f1_f2_over_s_fluid(lap_flu(:,:,:,1), &
+                                           usz_fluid(:,:,:,1) - inv_s_rho_fluid*chi, &
+                                           '/strain_dsup_flu', appisnap)   ! E12
+ 
+         call dump_half_f1_f2_over_s_fluid(lap_flu(:,:,:,2), usz_fluid(:,:,:,2), &
+                                           '/strain_dzup_flu', appisnap)  ! E23
+ 
+      elseif (src_type(1)=='quadpole') then
+         call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1) - &
+                                              two_rk * inv_s_rho_fluid * chi, &  !Epp,Eii
+                                              lap_flu(:,:,:,2), & 
+                                              '/strain_dpup_flu', '/straintrace_flu', &
+                                              appisnap) 
+ 
+         ! laplacian of phi component
+         call axisym_laplacian_fluid(inv_s_rho_fluid * chi,lap_flu)   ! dsup, dzup
+ 
+         call dump_f1_f2_over_s_fluid(lap_flu(:,:,:,1), &
+                                      usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi, &
+                                      '/strain_dsup_flu', appisnap)   !E12
+                                          
+ 
+         call dump_half_f1_f2_over_s_fluid(lap_flu(:,:,:,2), two_rk * usz_fluid(:,:,:,2), &
+                                            '/strain_dzup_flu', appisnap)   !E23
+      endif   !src_type
+ 
+ 
+      !write(333,*)deviator(3,3,50,1)-deviator(3,3,50,3)/3., &
+      !            deviator(3,3,50,2)-deviator(3,3,50,3)/3., &
+      !            2./3.*deviator(3,3,50,3) - deviator(3,3,50,2) - &
+      !            deviator(3,3,50,1), deviator(3,3,50,4)
+       
+      !write(334,*)deviator(3,1,5,1)-deviator(3,1,5,3)/3., &
+      !            deviator(3,1,5,2)-deviator(3,1,5,3)/3., &
+      !            2./3.*deviator(3,1,5,3) - deviator(3,1,5,2) - &
+      !            deviator(3,1,5,1), deviator(3,1,5,4)
+ 
+   endif   ! have_fluid
+ 
+   !deallocate(deviator)
 
 end subroutine compute_strain
 !=============================================================================
