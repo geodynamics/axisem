@@ -539,40 +539,32 @@ subroutine dump_field_1d(f, filename, appisnap, n)
   include 'mesh_params.h'
   
   integer, intent(in)                 :: n
-  real(kind=realkind),intent(inout)   :: f(0:npol,0:npol,1:n)
+  real(kind=realkind),intent(in)      :: f(0:npol,0:npol,1:n)
+  real(kind=realkind)                 :: floc(0:npol,0:npol,1:n)
   character(len=16), intent(in)       :: filename
   character(len=4), intent(in)        :: appisnap
-  real(kind=realkind), allocatable    :: f1(:),f2(:)
+  real(kind=realkind), allocatable    :: f1(:), f2(:)
   integer                             :: i, j, iel, ii, f1len
 
+  floc = f
+
   if (have_src .and. src_dump_type == 'mask' .and. n==nel_solid) &
-       call eradicate_src_elem_values(f)
+       call eradicate_src_elem_values(floc)
 
   f1len = (iend-ibeg+1)**2*n
   allocate(f1(f1len))
 
-  !ii=0
-  !do iel=1,n
-  !   do j=ibeg,iend
-  !      do i=ibeg,iend
-  !         ii=ii+1
-  !         f1(ii)=f(i,j,iel)
-  !      enddo
-  !   enddo
-  !enddo
-  
-  !f1 = reshape(f(ibeg:iend,ibeg:iend,1:n),(/f1len/))
-  f1 = pack(f(ibeg:iend,ibeg:iend,1:n),.true.)
+  f1 = pack(floc(ibeg:iend,ibeg:iend,1:n),.true.)
   
   if (use_netcdf) then
-    call nc_dump_field_1d(f1, f1len, filename(2:), appisnap)
+     call nc_dump_field_1d(f1, f1len, filename(2:), appisnap)
   
   else ! Binary
-    open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_'&
-                                //appmynum//'_'//appisnap//'.bindat',&
-                                FORM="UNFORMATTED",STATUS="UNKNOWN",POSITION="REWIND")
-    write(25000+mynum) f1
-    close(25000+mynum)
+     open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_'&
+                                 //appmynum//'_'//appisnap//'.bindat',&
+                                 FORM="UNFORMATTED",STATUS="UNKNOWN",POSITION="REWIND")
+     write(25000+mynum) f1
+     close(25000+mynum)
   end if
 
   deallocate(f1)
@@ -596,34 +588,33 @@ subroutine dump_field_over_s_solid_1d(f, filename, appisnap)
   character(len=4), intent(in)   :: appisnap
   real(kind=realkind)            :: dsdf(0:npol,naxel_solid)
   integer                        :: iel, glen
-  real(kind=realkind)            :: g(0:npol,0:npol,nel_solid)
+  real(kind=realkind)            :: floc(0:npol,0:npol,nel_solid)
+  real(kind=realkind)            :: gloc(0:npol,0:npol,nel_solid)
 
-  ! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
-  ! inv_s_solid is always multiplied into the wavefield... not just at 
-  ! the axis! Changed it to this case.... not warranted though!
+  floc = f
 
   if (have_axis) then 
-     call dsdf_solid_allaxis(f, dsdf) ! axial f/s
+     call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
      do iel=1, naxel_solid
         inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+        floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
      enddo
   endif
   
-  ! XXX: does this result in df/ds * f at the axis??
-  g = inv_s_solid * f
+  gloc = inv_s_solid * floc
 
   if (have_src .and. src_dump_type == 'mask') then 
-     call eradicate_src_elem_values(g)
+     call eradicate_src_elem_values(gloc)
   end if
   
-  glen = size(g)
+  glen = size(gloc)
   if (use_netcdf) then
-     call nc_dump_field_1d(g,glen,filename(2:),appisnap)
+     call nc_dump_field_1d(gloc,glen,filename(2:),appisnap)
   else
      open(unit=35000+mynum, file=datapath(1:lfdata)//filename//'_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
                                  FORM="UNFORMATTED",STATUS="REPLACE")
-     write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
+     write(35000+mynum) gloc(ibeg:iend,ibeg:iend,:)
      close(35000+mynum)
   end if
 
@@ -646,52 +637,54 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   include 'mesh_params.h'
   
   real(kind=realkind),intent(in)      :: f(0:npol,0:npol,nel_solid)
-  real(kind=realkind),intent(inout)   :: g(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(in)      :: g(0:npol,0:npol,nel_solid)
+  real(kind=realkind)                 :: floc(0:npol,0:npol,nel_solid)
+  real(kind=realkind)                 :: gloc(0:npol,0:npol,nel_solid)
   character(len=16), intent(in)       :: filename1, filename2
   character(len=4), intent(in)        :: appisnap
   real(kind=realkind)                 :: dsdf(0:npol,naxel_solid)
   integer                             :: iel, glen
   
-  ! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
-  ! inv_s_solid is always multiplied into the wavefield... not just at 
-  ! the axis! Changed it to this case.... not warranted though!
+  floc = f
+  gloc = g
 
   if (have_axis) then 
-     call dsdf_solid_allaxis(f, dsdf) ! axial f/s
+     call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
      do iel=1, naxel_solid
         inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+        floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
      enddo
   endif
 
   ! construct masked f/s (e.g. Epp)
-  if (have_src .and. src_dump_type == 'mask') &
-       call eradicate_src_elem_values(inv_s_solid)
+  if (have_src .and. src_dump_type == 'mask') then
+       call eradicate_src_elem_values(floc)
+       call eradicate_src_elem_values(gloc)
+  endif
 
   ! construct sum of f/s and g (e.g. straintrace)
-  ! XXX: does this result in df/ds * f at the axis??
-  g = inv_s_solid * f + g
+  gloc = inv_s_solid * floc + gloc
 
   if (have_src .and. src_dump_type == 'mask') &
-       call eradicate_src_elem_values(g)
 
-  glen = size(g(ibeg:iend,ibeg:iend,:))
+  glen = size(gloc(ibeg:iend,ibeg:iend,:))
   if (use_netcdf) then
      call nc_dump_field_1d(&
-           &  (inv_s_solid(ibeg:iend,ibeg:iend,:) * f(ibeg:iend,ibeg:iend,:)), &
+           &  (inv_s_solid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:)), &
            &  glen, filename1(2:), appisnap)
-     call nc_dump_field_1d(g(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
+     call nc_dump_field_1d(gloc(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
 
   else
      open(unit=39000+mynum, file=datapath(1:lfdata)//filename1//'_'&
                                //appmynum//'_'//appisnap//'.bindat',&
                                FORM="UNFORMATTED",STATUS="REPLACE")
-     write(39000+mynum) inv_s_solid(ibeg:iend,ibeg:iend,:) * f(ibeg:iend,ibeg:iend,:)
+     write(39000+mynum) inv_s_solid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:)
      close(39000+mynum)
 
      open(unit=35000+mynum, file=datapath(1:lfdata)//filename2//'_'&
                                //appmynum//'_'//appisnap//'.bindat',&
                                FORM="UNFORMATTED",STATUS="REPLACE")
-     write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
+     write(35000+mynum) gloc(ibeg:iend,ibeg:iend,:)
      close(35000+mynum)
 
   end if
@@ -715,36 +708,38 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
   include 'mesh_params.h'
   
   real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_solid)
-  real(kind=realkind),intent(inout) :: g(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(in)    :: g(0:npol,0:npol,nel_solid)
+  real(kind=realkind)                 :: floc(0:npol,0:npol,nel_solid)
+  real(kind=realkind)                 :: gloc(0:npol,0:npol,nel_solid)
   character(len=16), intent(in)     :: filename
   character(len=4), intent(in)      :: appisnap
   real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
   integer                           :: iel, glen
-  
-  ! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
-  ! inv_s_solid is always multiplied into the wavefield... not just at 
-  ! the axis! Changed it to this case.... not warranted though!
 
+  floc = f
+  gloc = g
+  
   if (have_axis) then 
-     call dsdf_solid_allaxis(f, dsdf) ! axial f/s
+     call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
      do iel=1,naxel_solid
         inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+        floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
      enddo
   endif
 
-  g = real(.5,kind=realkind) * ( inv_s_solid * f + g )
+  gloc = ( inv_s_solid * floc + gloc ) * .5
 
   if (have_src .and. src_dump_type == 'mask') &
-       call eradicate_src_elem_values(g)
+       call eradicate_src_elem_values(gloc)
 
-  glen = size(g(ibeg:iend,ibeg:iend,:))
+  glen = size(gloc(ibeg:iend,ibeg:iend,:))
   if (use_netcdf) then
-     call nc_dump_field_1d(g(ibeg:iend,ibeg:iend,:), glen, filename(2:), appisnap)
+     call nc_dump_field_1d(gloc(ibeg:iend,ibeg:iend,:), glen, filename(2:), appisnap)
   else
      open(unit=35000+mynum,file=datapath(1:lfdata)//filename//'_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
                                 FORM="UNFORMATTED",STATUS="REPLACE")
-     write(35000+mynum) g(ibeg:iend,ibeg:iend,:)
+     write(35000+mynum) gloc(ibeg:iend,ibeg:iend,:)
      close(35000+mynum)
   end if
 
@@ -767,36 +762,38 @@ subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
   include 'mesh_params.h'
   
   real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_fluid)
-  real(kind=realkind),intent(inout) :: g(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in)    :: g(0:npol,0:npol,nel_fluid)
+  real(kind=realkind)               :: floc(0:npol,0:npol,nel_fluid)
+  real(kind=realkind)               :: gloc(0:npol,0:npol,nel_fluid)
   character(len=16), intent(in)     :: filename1,filename2
   character(len=4), intent(in)      :: appisnap
   real(kind=realkind)               :: dsdf(0:npol,naxel_fluid)
   integer                           :: iel, glen
 
-  ! TARJE JAN 14 2009: Confusion. Methinks this needs to be such that 
-  ! inv_s_fluid is always multiplied into the wavefield... not just at 
-  ! the axis! Changed it to this case.... not warranted though!
+  floc = f
+  gloc = g
 
   if (have_axis) then 
-     call dsdf_fluid_allaxis(f, dsdf) ! axial f/s
+     call dsdf_fluid_allaxis(floc, dsdf) ! axial f/s
      do iel=1,naxel_fluid
         inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
+        floc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
      enddo
   endif
 
-  glen = size(f(ibeg:iend,ibeg:iend,:))
+  glen = size(floc(ibeg:iend,ibeg:iend,:))
   if (use_netcdf) then
-    call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:) * f(ibeg:iend,ibeg:iend,:), &
+    call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:), &
                           glen, filename1(2:), appisnap)
-    call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:) * f(ibeg:iend,ibeg:iend,:) +  &
-                          g(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
+    call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:) +  &
+                          gloc(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
   else !Binary
     ! f/s (e.g. Epp)
     open(unit=39000+mynum,file=datapath(1:lfdata)//filename1//'_'&
                               //appmynum//'_'//appisnap//'.bindat',&
                               FORM="UNFORMATTED",STATUS="REPLACE")
     write(39000+mynum) inv_s_fluid(ibeg:iend,ibeg:iend,:)* &
-                       f(ibeg:iend,ibeg:iend,:)
+                       floc(ibeg:iend,ibeg:iend,:)
     close(39000+mynum)
 
     ! sum of f/s and g (e.g. straintrace)
@@ -804,7 +801,7 @@ subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
                               //appmynum//'_'//appisnap//'.bindat',&
                               FORM="UNFORMATTED",STATUS="REPLACE")
     write(35000+mynum) inv_s_fluid(ibeg:iend,ibeg:iend,:)* &
-                       f(ibeg:iend,ibeg:iend,:) + g(ibeg:iend,ibeg:iend,:)
+                       floc(ibeg:iend,ibeg:iend,:) + gloc(ibeg:iend,ibeg:iend,:)
     close(35000+mynum)
   end if 
 
@@ -858,17 +855,17 @@ end subroutine dump_half_f1_f2_over_s_fluid
 !--------------------------------------------------------------------------
 subroutine dump_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
-use data_proc, ONLY : appmynum
-use data_pointwise, ONLY: inv_s_fluid
-use pointwise_derivatives, ONLY : dsdf_fluid_allaxis
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in) :: f1(0:npol,0:npol,nel_fluid)
-real(kind=realkind),intent(in) :: f2(0:npol,0:npol,nel_fluid)
-character(len=16), intent(in)  :: filename
-character(len=4), intent(in)   :: appisnap
-real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
-integer                        :: iel,glen
+  use data_proc, ONLY : appmynum
+  use data_pointwise, ONLY: inv_s_fluid
+  use pointwise_derivatives, ONLY : dsdf_fluid_allaxis
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: f1(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in) :: f2(0:npol,0:npol,nel_fluid)
+  character(len=16), intent(in)  :: filename
+  character(len=4), intent(in)   :: appisnap
+  real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
+  integer                        :: iel,glen
 
   if (have_axis) then
      call dsdf_fluid_allaxis(f2,dsdf) ! axial f/s
@@ -903,15 +900,15 @@ end subroutine dump_f1_f2_over_s_fluid
 !--------------------------------------------------------------------------
 subroutine dump_disp(u,chi)
 
-use data_source, ONLY : src_type,src_dump_type
-
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in) :: u(0:npol,0:npol,nel_solid,3)
-real(kind=realkind),intent(in) :: chi(0:npol,0:npol,nel_fluid)
-integer                        :: i, glen
-character(len=4)               :: appisnap
-real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
+  use data_source, ONLY : src_type,src_dump_type
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: u(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind),intent(in) :: chi(0:npol,0:npol,nel_fluid)
+  integer                        :: i, glen
+  character(len=4)               :: appisnap
+  real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
 
   call define_io_appendix(appisnap,istrain)
 
@@ -967,15 +964,15 @@ end subroutine dump_disp
 !--------------------------------------------------------------------------
 subroutine dump_velo_dchi(v,dchi)
 
-use data_source, ONLY : src_type,src_dump_type
-
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in) :: v(0:npol,0:npol,nel_solid,3)
-real(kind=realkind),intent(in) :: dchi(0:npol,0:npol,nel_fluid)
-integer                        :: i, glen
-character(len=4)               :: appisnap
-real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
+  use data_source, ONLY : src_type,src_dump_type
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: v(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind),intent(in) :: dchi(0:npol,0:npol,nel_fluid)
+  integer                        :: i, glen
+  character(len=4)               :: appisnap
+  real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
 
   call define_io_appendix(appisnap,istrain)
 
@@ -987,7 +984,7 @@ real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
   
   glen = size(f(ibeg:iend,ibeg:iend,:,1))
 
-! Dump solid velocity vector
+  ! Dump solid velocity vector
   if (use_netcdf) then
     if (src_type(1)/='monopole') then
       call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,:)), &
@@ -1010,7 +1007,7 @@ real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
     close(85000+mynum)
   end if
 
-! Dump fluid potential 1st derivative
+  ! Dump fluid potential 1st derivative
   if (have_fluid) then 
     if (use_netcdf) then
       glen = size(dchi)
@@ -1032,26 +1029,26 @@ end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------
 subroutine dump_velo_global(v,dchi)
 
-use data_pointwise, ONLY: inv_rho_fluid,inv_s_rho_fluid,usz_fluid
-use data_source, ONLY : src_type,src_dump_type
-use pointwise_derivatives, ONLY: axisym_laplacian_fluid,dsdf_fluid_allaxis
-use unit_stride_colloc, ONLY : collocate0_1d
-
-include 'mesh_params.h'
-
-real(kind=realkind),intent(in) :: v(:,:,:,:)
-real(kind=realkind),intent(in) :: dchi(:,:,:)
-
-real(kind=realkind)            :: phicomp(0:npol,0:npol,nel_fluid)
-integer                        :: i,iel,glen
-character(len=4)               :: appisnap
-real(kind=realkind)            :: dsdchi(0:npol,naxel_fluid)
-real(kind=realkind)            :: f(0:npol,0:npol,1:nel_solid,3)
-real(kind=realkind)            :: fflu(0:npol,0:npol,1:nel_fluid,3)
+  use data_pointwise, ONLY: inv_rho_fluid,inv_s_rho_fluid,usz_fluid
+  use data_source, ONLY : src_type,src_dump_type
+  use pointwise_derivatives, ONLY: axisym_laplacian_fluid,dsdf_fluid_allaxis
+  use unit_stride_colloc, ONLY : collocate0_1d
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: v(:,:,:,:)
+  real(kind=realkind),intent(in) :: dchi(:,:,:)
+  
+  real(kind=realkind)            :: phicomp(0:npol,0:npol,nel_fluid)
+  integer                        :: i,iel,glen
+  character(len=4)               :: appisnap
+  real(kind=realkind)            :: dsdchi(0:npol,naxel_fluid)
+  real(kind=realkind)            :: f(0:npol,0:npol,1:nel_solid,3)
+  real(kind=realkind)            :: fflu(0:npol,0:npol,1:nel_fluid,3)
 
   call define_io_appendix(appisnap,istrain)
 
-! sssssssssssss dump velocity vector inside solid ssssssssssssssssssssssssssss
+  ! sssssssssssss dump velocity vector inside solid ssssssssssssssssssssssssssss
 
 
   f=v
@@ -1082,16 +1079,16 @@ real(kind=realkind)            :: fflu(0:npol,0:npol,1:nel_fluid,3)
     close(95000+mynum)
   end if
 
-! ffffffff fluid region ffffffffffffffffffffffffffffffffffffffffffffffffffffff
+  ! ffffffff fluid region ffffffffffffffffffffffffffffffffffffffffffffffffffffff
 
   if (have_fluid) then 
-! compute velocity vector inside fluid
+  ! compute velocity vector inside fluid
     call axisym_laplacian_fluid(dchi,usz_fluid)
 
-! phi component needs special care: m/(s rho) dchi
+  ! phi component needs special care: m/(s rho) dchi
     call collocate0_1d(inv_s_rho_fluid,dchi,phicomp,npoint_fluid)
 
-! Take care of axial singularity for phi component of fluid velocity
+  ! Take care of axial singularity for phi component of fluid velocity
     if (have_axis) then
        call dsdf_fluid_allaxis(dchi,dsdchi)
        do iel=1,naxel_fluid
@@ -1136,18 +1133,18 @@ subroutine eradicate_src_elem_vec_values(u)
 ! assembled neighboring elements)
 ! This is a preliminary test for the wavefield dumps.
 
-use data_source, ONLY : nelsrc,ielsrc,have_src
-
-include 'mesh_params.h'
-
-real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel_solid,3)
-integer :: iel
-
-if (have_src) then
-   do iel=1,nelsrc
-      u(0:npol,0:npol,ielsrc(iel),1:3) = real(0.,kind=realkind)
-   enddo
-endif
+  use data_source, ONLY : nelsrc,ielsrc,have_src
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel_solid,3)
+  integer :: iel
+  
+  if (have_src) then
+     do iel=1,nelsrc
+        u(0:npol,0:npol,ielsrc(iel),1:3) = real(0.,kind=realkind)
+     enddo
+  endif
 
 end subroutine eradicate_src_elem_vec_values
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -1161,19 +1158,19 @@ subroutine eradicate_src_elem_values(u)
 ! assembled neighboring elements)
 ! This is a preliminary test for the wavefield dumps.
 
-use data_source, ONLY : nelsrc,ielsrc,have_src
+ use data_source, ONLY : nelsrc,ielsrc,have_src
+ 
+ include 'mesh_params.h'
 
-include 'mesh_params.h'
-
-real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel_solid)
-integer :: iel
-
-if (have_src) then
-
-   do iel=1,nelsrc
-      u(0:npol,0:npol,ielsrc(iel)) = real(0.,kind=realkind)
-   enddo
-endif
+  real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel_solid)
+  integer :: iel
+  
+  if (have_src) then
+  
+     do iel=1,nelsrc
+        u(0:npol,0:npol,ielsrc(iel)) = real(0.,kind=realkind)
+     enddo
+  endif
 
 end subroutine eradicate_src_elem_values
 
