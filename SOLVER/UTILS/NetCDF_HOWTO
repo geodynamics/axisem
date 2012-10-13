@@ -1,0 +1,41 @@
+zlib 1.2.7
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4/zlib-1.2.7.tar.gz
+tar -xvf zlib-1.2.7.tar.gz
+cd zlib-1.2.7
+./configure --prefix=$HOME/local
+make check
+make install
+cd ..
+
+HDF 1.8.9
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4/hdf5-1.8.9.tar.gz
+tar -xvf hdf5-1.8.9.tar.gz
+cd hdf5-1.8.9
+FC=mpif90.openmpi CC=mpicc.openmpi ./configure --enable-parallel --prefix=$HOME/local --with-zlib=$HOME/local --enable-fortran
+# -j parallelizes make -s reduces output
+make -sj
+#check seems to freeze at test ph5diff. whatever...
+make check 
+make install
+cd ..
+
+
+# netcdf-4.2.1.1$
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.2.1.1.tar.gz
+tar -xvf netcdf-4.2.1.1.tar.gz
+cd netcdf-4.2.1.1
+LDFLAGS=-L$HOME/local/lib CPPFLAGS=-I$HOME/local/include CC=mpicc.openmpi ./configure --enable-netcdf-4 --enable-dap --enable-shared --enable-parallel-tests --prefix=$HOME/local
+make check # all tests should succeed.
+make install
+cd ..
+
+#netcdf-fortran-4.2$
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-4.2.tar.gz
+tar -xvf netcdf-fortran-4.2.tar.gz
+cd fortran-4.2
+CC=mpicc.openmpi FC=mpif90.openmpi CPPFLAGS="-I$HOME/local/include -DgFortran" LD_LIBRARY_PATH=$HOME/local/lib LDFLAGS="-L$HOME/local/lib -lnetcdf" ./configure --prefix=$HOME/local --enable-parallel-tests
+# bug in the netcdf release. By default, the parallel tests are not enabled, whatever you set in configure. Replace the makefile in nf_test with the one attached to run the parallel tests.
+make check
+make install
+cd ..
+
