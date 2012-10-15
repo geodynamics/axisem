@@ -32,7 +32,7 @@ cd ..
 #netcdf-fortran-4.2$
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-4.2.tar.gz
 tar -xvf netcdf-fortran-4.2.tar.gz
-cd fortran-4.2
+cd netcdf-fortran-4.2
 CC=mpicc.openmpi FC=mpif90.openmpi CPPFLAGS="-I$HOME/local/include -DgFortran" LD_LIBRARY_PATH=$HOME/local/lib LDFLAGS="-L$HOME/local/lib -lnetcdf" ./configure --prefix=$HOME/local --enable-parallel-tests
 # bug in the netcdf release. By default, the parallel tests are not enabled, whatever you set in configure. Replace the makefile in nf_test with the one attached to run the parallel tests.
 make check
