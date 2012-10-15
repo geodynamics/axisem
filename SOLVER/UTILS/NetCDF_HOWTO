@@ -1,4 +1,9 @@
-zlib 1.2.7
+#!/bin/bash
+
+set -e
+
+
+#zlib 1.2.7
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4/zlib-1.2.7.tar.gz
 tar -xvf zlib-1.2.7.tar.gz
 cd zlib-1.2.7
@@ -7,13 +12,23 @@ make check
 make install
 cd ..
 
-HDF 1.8.9
+
+#HDF 1.8.9
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4/hdf5-1.8.9.tar.gz
 tar -xvf hdf5-1.8.9.tar.gz
 cd hdf5-1.8.9
-FC=mpif90.openmpi CC=mpicc.openmpi ./configure --enable-parallel --prefix=$HOME/local --with-zlib=$HOME/local --enable-fortran
+# to use older version of gcc (4.6 seems to have a problem, see http://www.mail-archive.com/hdf-forum@hdfgroup.org/msg02983.html):
+export OMPI_CC=gcc-4.5
+export CC=mpicc.openmpi
+# there seems to be a problem with PIC, so if make check in netcdf tells you to recompile hdf5 with -fpic, uncomment this line:
+#export CC="mpicc.openmpi -fPIC"
+export FC=mpif90.openmpi 
+
+./configure --enable-parallel --prefix=$HOME/local --with-zlib=$HOME/local --enable-fortran
+
 # -j parallelizes make -s reduces output
 make -sj
+
 #check seems to freeze at test ph5diff. whatever...
 make check 
 make install
@@ -28,6 +43,7 @@ LDFLAGS=-L$HOME/local/lib CPPFLAGS=-I$HOME/local/include CC=mpicc.openmpi ./conf
 make check # all tests should succeed.
 make install
 cd ..
+
 
 #netcdf-fortran-4.2$
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-4.2.tar.gz
