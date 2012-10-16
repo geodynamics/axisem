@@ -139,7 +139,7 @@ subroutine read_sourceparams
            Mij=0.
            Mij(1:3)=magnitude
         elseif (src_type(2)=='vertforce' .or. src_type(2)=='xforce' .or. src_type(2)=='yforce') then
-           magnitude=1.
+           magnitude=Mij(1) 
         endif
 
 !    -----------------------------------------------------------------
