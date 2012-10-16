@@ -73,12 +73,12 @@ implicit none
   enddo
   
   if (use_netcdf) then
-    if(lpr)write(6,*)'MAIN: Flush and close all netcdf files ...................'
+    if(lpr)write(6,*)'MAIN: Flush and close all netcdf files ...................'; call flush(6)
     call end_netcdf_output !Flush and close all netcdf files 
   end if
   
   if (dump_xdmf) then
-     if (lpr) write(6,*)'  finishing xdmf xml file...'
+     if (lpr) write(6,*)'MAIN: Finishing xdmf xml file...'; call flush(6)
      call finish_xdmf_xml()
   endif
   call end_clock ! clocks

@@ -1,11 +1,13 @@
 module nc_routines
+  use data_proc, ONLY : mynum, nproc, lpr
   use global_parameters
   real, allocatable   :: recdumpvar(:,:,:), recdumpvar_disp(:,:,:), recdumpvar_velo(:,:,:) 
   real, allocatable   :: recdumpvar_strain(:,:,:), recdumpvar_srcdisp(:,:,:) 
   real, allocatable   :: oneddumpvar_flu(:,:,:)
   real, allocatable   :: oneddumpvar_sol(:,:,:)
-  integer, parameter  :: dumpstepsnap = 10, dumpsteprec = 100
-  integer             :: gllperelem
+  integer, parameter  :: dumpsteprec = 100
+  integer             :: gllperelem, stepstodump
+  integer             :: outputplan, dumpstepsnap
 
 contains
 
@@ -29,9 +31,8 @@ end subroutine check
 
 
 !-----------------------------------------------------------------------------------------
-subroutine nc_dump_field_1d(f,flen,varname,appisnap)
+subroutine nc_dump_field_1d(f, flen, varname, appisnap)
     use netcdf
-    use data_proc, ONLY : mynum
     use data_io, ONLY   : ncid_out, ncid_snapout, nc_field_varid, varnamelist
     use data_io, ONLY   : nvar, nstrain
     implicit none
@@ -46,7 +47,7 @@ subroutine nc_dump_field_1d(f,flen,varname,appisnap)
     read(appisnap,*) isnap_loc
 
     do ivar = 1, nvar
-        ! Check whether this Variable already exists in file ncid_out
+        ! Check whether this Variable actually exists in file ncid_out
         if (trim(varnamelist(ivar))==trim(varname)) exit
     end do
     if (ivar>nvar) then
@@ -91,52 +92,54 @@ subroutine nc_dump_field_1d(f,flen,varname,appisnap)
         oneddumpvar_flu(1:nel_fluid, mod(isnap_loc-1,dumpstepsnap)+1,5:7) = &
                         reshape(f,(/nel_fluid,3/))
     end if
+    stepstodump = stepstodump + 1
     
-    !oneddumpvar(1:flen,mod(isnap_loc-1,dumpstepsnap)+1,ivar) = f  !processor specific dump variable
-    
+89  format(I4, ' iterations are over, dumping ', A16, A4, I8)            
     if (mod(isnap_loc,dumpstepsnap).eq.0) then 
         if (ivar<=4) then !solid variable
-            write(6,*) dumpstepsnap, ' iterations are over, dumping ', trim(varname), appisnap
+            if (lpr) write(6,89) dumpstepsnap, trim(varname), appisnap, stepstodump
             call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
                         start=(/1, mynum+1, isnap_loc-dumpstepsnap+1/),              &
                         count=(/flen, 1, dumpstepsnap/),                             &
                         values=oneddumpvar_sol(1:flen,:,ivar) ) )
         
         elseif (ivar==5) then !solid variable
-            write(6,*) dumpstepsnap, ' iterations are over, dumping ', trim(varname), appisnap
+            if (lpr) write(6,89) dumpstepsnap, trim(varname), appisnap, stepstodump
             call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
                                      start=(/1, mynum+1, isnap_loc-dumpstepsnap+1/), &
                                      count=(/flen, 1, dumpstepsnap/),                &
-                                     values=reshape(source = oneddumpvar_sol(1:flen/3,:,5:7 ), &
+                                     values=reshape(source=oneddumpvar_sol(1:flen/3,:,5:7),&
                                                     shape=(/flen/3, 3, dumpstepsnap/), &
                                                     order=(/1,3,2/) ) ) )
         
         elseif ((ivar>5).and.(ivar<10)) then !fluid variable
-            write(6,*) dumpstepsnap, ' iterations are over, dumping ', trim(varname), appisnap
+            if (lpr) write(6,89) dumpstepsnap, trim(varname), appisnap, stepstodump
             call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
                         start=(/1, mynum+1, isnap_loc-dumpstepsnap+1/),              &
                         count=(/flen, 1, dumpstepsnap/),                             &
                         values=oneddumpvar_flu(1:flen,:,ivar-5) ) )
         
         elseif (ivar==10) then !fluid variable
-            write(6,*) dumpstepsnap, ' iterations are over, dumping ', trim(varname), appisnap
+            if (lpr) write(6,89) dumpstepsnap, trim(varname), appisnap, stepstodump
             call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
                                      start=(/1, mynum+1, isnap_loc-dumpstepsnap+1/), &
                                      count=(/flen, 1, dumpstepsnap/),                &
-                                     values=reshape(source = oneddumpvar_flu(1:flen/3,:,5:7 ), &
+                                     values=reshape(source=oneddumpvar_flu(1:flen/3,:,5:7),&
                                                     shape=(/flen/3, 3, dumpstepsnap/), &
                                                     order=(/1,3,2/) ) ) )
         end if
+
+        stepstodump=0
     end if
     
     !if ((isnap_loc/dumpstepsnap).eq.(nsnap/dumpstepsnap)) then
     if ((nstrain - isnap_loc)<dumpstepsnap) then
         write(6,*) 'Only nsnap - isnap_loc = ', nstrain - isnap_loc, ' snaps to go.'
-        write(6,90) trim(varname), ivar, nc_field_varid(ivar)
+!        write(6,90) trim(varname), ivar, nc_field_varid(ivar)
 90 format('Found var ', A16, ' in entry', I3, ' with varid ', I6)
         call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
                     start=(/1, mynum+1, isnap_loc/), count=(/flen, 1, 1/), values=f) )
-        write(6,*) 'written'
+!        write(6,*) 'written'
     end if
   
 end subroutine nc_dump_field_1d
@@ -149,7 +152,6 @@ subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
     use data_io 
     use data_mesh, ONLY: loc2globrec
     use data_time, ONLY: niter
-    use data_proc, ONLY : mynum
     implicit none
     integer, intent(in)                          :: nrec, dim2, idump, nc_varid
     real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
@@ -190,7 +192,6 @@ subroutine nc_dump_surface(surffield, disporvelo, nrec, dim2, idump)
     use data_io 
     use data_mesh, ONLY: loc2globrec, maxind
     use data_time, ONLY: niter
-    use data_proc, ONLY : mynum, nproc
     implicit none
     integer, intent(in)                          :: nrec, dim2, idump
     real(kind=realkind), intent(inout), dimension(nrec,dim2) :: surffield
@@ -258,7 +259,6 @@ end subroutine
 subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
     use netcdf
     use data_io 
-    use data_proc, ONLY: mynum
     implicit none
     integer, intent(in)                          :: nrec, dim2, idump, nc_varid
     real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
@@ -279,7 +279,6 @@ end subroutine
 subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec_proc)
 
     use data_io
-    use data_proc, ONLY: nproc, mynum 
     use data_time, ONLY: niter, strain_it
     use netcdf
     use data_mesh, ONLY: maxind
@@ -327,14 +326,15 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
                                       dimid=nc_snap_dimid) )
             call check( nf90_def_dim( ncid=ncid_snapout, name="processors", len=nproc, &
                                       dimid=nc_proc_dimid) )
-            do ivar=1, nvar
+            do ivar=1, nvar ! The big snapshot variables for the kerner.
                 call check( nf90_def_dim(ncid=ncid_snapout, &
                                          name="dim_"//trim(varnamelist(ivar)), &
                                          len=varlength(ivar), dimid=nc_f_dimid(ivar)) )
                 call check( nf90_def_var(ncid=ncid_snapout, name=trim(varnamelist(ivar)), &
                                          xtype = NF90_FLOAT, &
                                          dimids = (/nc_f_dimid(ivar), nc_proc_dimid, nc_snap_dimid/), &
-                                         varid = nc_field_varid(ivar)) )
+                                         varid = nc_field_varid(ivar), &
+                                         chunksizes = (/varlength(ivar), 1, dumpstepsnap/) ))
        
                 if (nproc.eq.0) then
                     call check( nf90_def_var_deflate(ncid=ncid_snapout, &
@@ -461,7 +461,6 @@ subroutine define_netcdf_output
     use commpi,      ONLY : MPI_COMM_WORLD, MPI_INFO_NULL
     use commun,      ONLY : barrier
     use netcdf
-    use data_proc, ONLY: nproc, mynum
     implicit none    
     integer  :: nmode, ncid_test, test_dimid, test_varid, status
 
@@ -471,29 +470,38 @@ subroutine define_netcdf_output
     ! which reliably crashes, when applied to the serial library is nf90_put_var, 
     ! so we try that here.
     call barrier
-    call check( nf90_create (path=datapath(1:lfdata)//"/parallel_test_.nc4", &
-                             cmode=nmode, ncid=ncid_test, &
-                             comm=MPI_COMM_WORLD, info=MPI_INFO_NULL))
-    call check( nf90_def_dim(ncid=ncid_test, name='testdim', len=nproc, dimid=test_dimid))
-    call check( nf90_def_var(ncid=ncid_test, name='testvar', xtype=NF90_INT, &
-                             dimids=test_dimid, varid=test_varid) )
-    call check( nf90_enddef(ncid_test) )
-    status = nf90_var_par_access(ncid_test,test_varid,nf90_collective)
-    if (status.ne.0) then
-        if (mynum.eq.0) then
-            write(6,*) '******************************************************************'
-            write(6,*) '* The NetCDF4 library on the system does not support Parallel    *'
-            write(6,*) '* HDF5 IO. This is a known issue in current Debian and probably  *'
-            write(6,*) '* Ubuntu releases. You probably have to rebuild the library with *'
-            write(6,*) '* support for parallel IO. See UTILS/NetCDF4_HOWTO.              *'
-            write(6,*) '******************************************************************'
+    if (nproc>1) then
+        call check( nf90_create (path=datapath(1:lfdata)//"/parallel_test_.nc4", &
+                                 cmode=nmode, ncid=ncid_test, &
+                                 comm=MPI_COMM_WORLD, info=MPI_INFO_NULL))
+        call check( nf90_def_dim(ncid=ncid_test, name='testdim', len=nproc, dimid=test_dimid))
+        call check( nf90_def_var(ncid=ncid_test, name='testvar', xtype=NF90_INT, &
+                                 dimids=test_dimid, varid=test_varid) )
+        call check( nf90_enddef(ncid_test) )
+        status = nf90_var_par_access(ncid_test,test_varid,nf90_collective)
+        if (status.ne.0) then
+            if (mynum.eq.0) then
+                write(6,*) '******************************************************************'
+                write(6,*) '* The NetCDF4 library on the system does not support Parallel    *'
+                write(6,*) '* HDF5 IO. This is a known issue in current Debian and probably  *'
+                write(6,*) '* Ubuntu releases. You probably have to rebuild the library with *'
+                write(6,*) '* support for parallel IO. See UTILS/NetCDF4_HOWTO.              *'
+                write(6,*) '******************************************************************'
+            end if
+            stop 1
         end if
-        stop 1
+        !call check( nf90_put_var(ncid_test, test_varid, values=mynum, start=mynum+1, count=1))
+        call check( nf90_close(ncid_test) )
+        call barrier
+        if (mynum.eq.0) write(6,*) 'Test for parallel NetCDF4 passed'
+    else 
+        if (mynum.eq.0) write(6,*) 'Test for parallel NetCDF4 not necessary.'
     end if
-    !call check( nf90_put_var(ncid_test, test_varid, values=mynum, start=mynum+1, count=1))
-    call check( nf90_close(ncid_test) )
-    call barrier
-    if (mynum.eq.0) write(6,*) 'Test for parallel NetCDF4 passed'
+
+    dumpstepsnap = max(128,nproc)
+    outputplan = mynum*(dumpstepsnap/nproc)
+    write(6,*) mynum, outputplan
+60  format('Proc ', I4, ' will dump at position ', I4)
 
     nmode = ior(NF90_CLOBBER,NF90_NETCDF4)
     if (mynum.eq.0) then
@@ -550,13 +558,12 @@ end subroutine nc_write_att_int
 subroutine nc_open_parallel
     use data_io
     use netcdf
-    use data_proc 
-    use commpi,      ONLY : MPI_COMM_WORLD, MPI_INFO_NULL
-    use commun,      ONLY : barrier
+    use commpi,     ONLY : MPI_COMM_WORLD, MPI_INFO_NULL
+    use commun,     ONLY : barrier
     implicit none
-    integer  status, ivar, nmode
+    integer             :: status, ivar, nmode
     !integer, parameter :: par_access_mode = nf90_collective
-    integer, parameter :: par_access_mode = nf90_independent
+    integer, parameter  :: par_access_mode = nf90_independent
     
     varnamelist = (/'strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
                     'straintrace_sol', 'velo_sol       ', 'strain_dsus_flu', &
@@ -592,7 +599,8 @@ subroutine nc_open_parallel
             if (nproc>1) then
                 call check( nf90_var_par_access(ncid=ncid_snapout,&
                                             varid=nc_field_varid(ivar),&
-                                            access=par_access_mode))
+                                            access=nf90_collective))
+                                       !     access=par_access_mode))
             end if
         end do
     end if
@@ -625,7 +633,8 @@ subroutine nc_open_parallel
                                     varid=nc_surfelem_disp_src_varid,&
                                     access=par_access_mode))
     
-    write(6,*) '  Proc ', mynum, ' opened file and is ready to rupture'
+    write(6,70) mynum
+70  format('Proc ', I3, ' opened file and is ready to rupture')    
 end subroutine
 !-----------------------------------------------------------------------------------------
 
@@ -635,8 +644,10 @@ subroutine end_netcdf_output
     use data_io, only: ncid_out, ncid_recout
     use netcdf
     use commun, only: barrier
+
     call barrier
     call check( nf90_close(ncid_out) )
+
 end subroutine
 !-----------------------------------------------------------------------------------------
 
