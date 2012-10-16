@@ -55,3 +55,10 @@ make check
 make install
 cd ..
 
+
+echo 'You might want to put these to lines in your Makefile to make sure, the'
+echo 'libraries just compiled are used:'
+echo ''
+echo 'LIBS = -lm  -L $(HOME)/local/lib -lnetcdff -Wl,-rpath,$(HOME)/local/lib'
+echo 'INCLUDE = -I $(HOME)/local/include'
+
