@@ -727,6 +727,8 @@ def PyAxi(**kwargs):
         dt = sgs[i][0].stats.delta
         npts = sgs[i][0].stats.npts
         t.append(np.linspace(0., dt * (npts -1), npts) + (t0 -  UTCDateTime(0)))
+
+        print t0, dt, npts
         
         i = 1
         t0 = sgs[i][0].stats.starttime
@@ -734,11 +736,15 @@ def PyAxi(**kwargs):
         npts = sgs[i][0].stats.npts
         t.append(np.linspace(0., dt * (npts -1), npts) + (t0 -  UTCDateTime(0)))
         
+        print t0, dt, npts
+        
         i = 2
         t0 = sgs[i][0].stats.starttime
         dt = sgs[i][0].stats.delta
         npts = sgs[i][0].stats.npts
         t.append(np.linspace(0., dt * (npts -1), npts) + (t0 -  UTCDateTime(0)))
+        
+        print t0, dt, npts
         
         for chan in chans:
             plt.figure()
@@ -753,6 +759,7 @@ def PyAxi(**kwargs):
 
             print maxi
 
+            l2misfit = []
 
             for n in stats:
                 stat = '*%02d' % (n,)
@@ -761,13 +768,24 @@ def PyAxi(**kwargs):
                     dat = sg.select(station=stat, channel='*'+chan)[0].data
                     if i == 0:
                         maxl = dat.max()
-                    dat = dat / maxi
+                    dat = dat / maxi * 2.
                     #dat = dat / maxl / 2.
                     
                     if n == 1:
                         plt.plot(t[i], dat + n, colors[i], label=labels[i], ls=linestyles[i])
                     else:
                         plt.plot(t[i], dat + n, colors[i], label='_nolegend_', ls=linestyles[i])
+                # compute l2 misfits
+                dat1 = sgs[0].select(station=stat, channel='*'+chan)[0].data
+                dat2 = sgs[2].select(station=stat, channel='*'+chan)[0].data
+                l2misfit.append(((dat1 - dat2)**2).sum()**.5 / maxi /
+                        sgs[0][0].stats.npts)
+            
+            # write l2 misfits to file
+            fl2 = open(os.path.join(folder_new, 'l2misfit_%s.dat' % chan), 'w')
+            for l2 in l2misfit:
+                fl2.write("%4.2e\n" % l2)
+            fl2.close()
 
 
             plt.xlabel('time / seconds')
@@ -780,10 +798,15 @@ def PyAxi(**kwargs):
             fig.set_size_inches((16,12))
 
             plt.suptitle(chan)
-            plt.subplots_adjust(hspace=0.3, wspace=0.2, left=0.08, right=0.95, top=0.93, bottom=0.07)
+            plt.subplots_adjust(hspace=0.3, wspace=0.2, left=0.08, right=0.95,
+                    top=0.93, bottom=0.07)
 
-            #plt.savefig('record_section_%s.pdf' % (chan))
-        plt.show()
+            if input['save_plots'] != 'N':
+                plt.savefig(os.path.join(folder_new, 'record_section_%s.%s' %
+                        (chan, input['plot_format'])))
+
+        if input['save_plots'] == 'N':
+            plt.show()
     
     t2_test = time.time()
     
@@ -928,6 +951,8 @@ def read_input_file():
     input['test'] = config.get('test_section', 'test')
     input['test_folder'] = config.get('test_section', 'test_folder')
     input['plot'] = config.get('test_section', 'plot')
+    input['save_plots'] = config.get('test_section', 'save_plots')
+    input['plot_format'] = config.get('test_section', 'plot_format')
     input['test_chans'] = config.get('test_section', 'chans')
     input['test_fmin'] = config.get('test_section', 'fmin')
     input['test_fmax'] = config.get('test_section', 'fmax')
