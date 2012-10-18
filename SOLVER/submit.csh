@@ -44,6 +44,11 @@ if ( ! -f inparam_xdmf) then
   cp inparam_xdmf.TEMPLATE inparam_xdmf
 endif
 
+# if the mesh has different npol (hence unrolled loops), copy unrolled_loops.f90
+set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
+if ( `diff unrolled_loops.f90 $meshdir/unrolled_loops.f90 | wc -l` != "0" ) then
+  cp $meshdir/unrolled_loops.f90 .
+endif
 
 # Check arguments: source types and submission queues
 set multisrc = 'false'
