@@ -441,6 +441,8 @@ end subroutine load_ica
 subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, &
                            xi_ani, phi_ani, eta_ani, xi_ani_post, phi_ani_post, &
                            eta_ani_post, fa_ani_theta_post, fa_ani_phi_post)
+    use kdtree2_module
+
     implicit none
 
     double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho
@@ -462,7 +464,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     double precision :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
     double precision :: fa_theta_tmp, fa_phi_tmp
     double precision :: rmin, rmax, thetamin, thetamax
-    double precision, allocatable, dimension(:) :: shet, zhet
+    double precision, allocatable, dimension(:,:) :: szhet
     double precision, allocatable :: rhet2(:), thhet2(:)
     double precision, allocatable :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
     double precision, allocatable :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
@@ -470,6 +472,9 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     double precision, allocatable :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
     double precision, allocatable :: fa_theta2(:), fa_phi2(:)
     double precision, allocatable :: rho2(:), vp2(:), vs2(:)
+
+    type(kdtree2), pointer :: tree
+    
 
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 
@@ -679,9 +684,11 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     write(6,*) 'th het min/max:', thhetmin / pi * 180., thhetmax / pi * 180.
 
     ! revert to cylindrical 
-    allocate (shet(1:num_het_pts), zhet(1:num_het_pts))
-    shet = rhet2 * sin(thhet2) 
-    zhet = rhet2 * cos(thhet2)
+    allocate (szhet(2,1:num_het_pts))
+    szhet(1,:) = rhet2 * sin(thhet2) 
+    szhet(2,:) = rhet2 * cos(thhet2)
+
+    tree => kdtree2_create(real(szhet), sort=.false., rearrange=.true.) 
 
     write(6,*) mynum, 'locate GLL points within heterogeneous regions & '
 
@@ -709,7 +716,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                 do jpol=0, npol
                    
                    call compute_coordinates(s, z, r, th, iel, ipol, jpol)
-                   call inverse_distance_weighting(s, z, num_het_pts, shet, zhet, w, hetind)
+                   call inverse_distance_weighting(s, z, tree, w, hetind)
 
                    if (het_ani_discr(hetind) == 'iso' .and. &
                             het_rel_discr(hetind) == 'rel') then
@@ -806,11 +813,14 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
           endif
        endif
     enddo
+    
+    call kdtree2_destroy(tree)  
 
     write(6,*) mynum, 'DONE loading discrete grid'
     
     deallocate(rhet2, thhet2)
-    deallocate(shet, zhet)
+    !deallocate(shet, zhet)
+    deallocate(szhet)
 
     if (het_ani_discr(hetind) == 'iso' .and. &
             het_rel_discr(hetind) == 'rel') then
@@ -850,34 +860,49 @@ end subroutine load_het_discr
 
 
 !----------------------------------------------------------------------------------------
-subroutine inverse_distance_weighting(s0, z0, n, s, z, w, hetind)
+subroutine inverse_distance_weighting(s0, z0, tree, w, hetind)
+    use kdtree2_module
+
     implicit none
 
-    integer, intent(in) :: n, hetind
-    double precision, intent(in) :: s0, z0, s(1:n), z(1:n)
-    double precision, intent(out) :: w(1:n)
-    double precision :: d2d, p
-    integer :: i
+    type(kdtree2), pointer :: tree
+    integer, intent(in) :: hetind
+    double precision, intent(in) :: s0, z0
+    double precision, intent(out) :: w(1:tree%n)
+    double precision :: p
+    integer :: i, nfound
+    real(kdkind), dimension(2)   :: qv
+
+    type(kdtree2_result), allocatable :: results(:) 
 
     w = 0.
 
-    if (R_inv_dist(hetind) == 0.) then
-        ! http://en.wikipedia.org/wiki/Inverse_distance_weighting#Basic_Form
-        do i=1, n
-           d2d = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
-           w(i) = d2d**(-p_inv_dist(hetind))
-        enddo
-    else 
-        ! http://en.wikipedia.org/wiki/Inverse_distance_weighting#Modified_Shepard.27s_Method
-        do i=1, n
-            d2d = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
-            if (d2d <= R_inv_dist(hetind)) then
-                w(i) = ((R_inv_dist(hetind) - d2d) / (R_inv_dist(hetind) * d2d)) &
-                        **p_inv_dist(hetind)
-            else
-                w(i) = 0.
-            endif
-        enddo
+    qv(1) = s0
+    qv(2) = z0
+
+    if (p_inv_dist(hetind) <= 100.) then
+        if (R_inv_dist(hetind) == 0.) then
+            ! http://en.wikipedia.org/wiki/Inverse_distance_weighting#Basic_Form
+            do i=1, tree%n
+               !d2d = sqrt((s(i) - s0)**2 + (z(i) - z0)**2)
+               d2d = sqrt((tree%the_data(1,i) - s0)**2 + (tree%the_data(2,i) - z0)**2)
+               w(i) = d2d**(-p_inv_dist(hetind))
+            enddo
+        else
+            ! http://en.wikipedia.org/wiki/Inverse_distance_weighting#Modified_Shepard.27s_Method
+            allocate(results(tree%n)) 
+            call kdtree2_r_nearest(tp=tree, qv=qv, r2=real(R_inv_dist(hetind)**2), &
+                    nfound=nfound, nalloc=tree%n, results=results)
+            do i=1, nfound
+                w(results(i)%idx) = ((R_inv_dist(hetind) - results(i)%dis) / & 
+                                     (R_inv_dist(hetind) * results(i)%dis)) &
+                                    **p_inv_dist(hetind)
+            enddo
+        endif
+    else
+        allocate(results(1)) 
+        call kdtree2_n_nearest(tp=tree, qv=qv, nn=1, results=results)
+        w(results(1)%idx) = 1.
     endif
    
     if (sum(w) > 0) then
