@@ -869,7 +869,7 @@ subroutine inverse_distance_weighting(s0, z0, tree, w, hetind)
     integer, intent(in) :: hetind
     double precision, intent(in) :: s0, z0
     double precision, intent(out) :: w(1:tree%n)
-    double precision :: p
+    double precision :: d2d
     integer :: i, nfound
     real(kdkind), dimension(2)   :: qv
 
