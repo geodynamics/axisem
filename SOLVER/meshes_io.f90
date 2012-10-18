@@ -312,6 +312,7 @@ use data_numbering
     ct = 0
 
     if (lpr) write(6,*) '   construction of mapping for xdmf plotting...'
+    if (lpr) write(6,*) '   ...fluid part...'
 
     do iel=1, nel_fluid
         if (.not.  mask_tp_elem(iel)) cycle
@@ -333,6 +334,8 @@ use data_numbering
             enddo
         enddo
     enddo
+    
+    if (lpr) write(6,*) '   ...solid part...'
     
     do iel=1, nel_solid
         if (.not.  mask_tp_elem(iel + nel_fluid)) cycle
@@ -359,6 +362,8 @@ use data_numbering
     npoint_plot = ct
     
     allocate(points(1:2,1:npoint_plot))
+    
+    if (lpr) write(6,*) '   ...collecting coordinates...'
 
     points = 0.
   
@@ -448,6 +453,8 @@ use data_numbering
 
     allocate(grid(1:4, 1:nelem_plot))
     
+    if (lpr) write(6,*) '   .... constructing grid for xdmf plotting'
+    
     ct = 1
     
     do iel=1, nel_fluid
@@ -475,6 +482,8 @@ use data_numbering
             enddo
         enddo
     enddo
+    
+    if (lpr) write(6,*) '   .... writing grid + header of xdmf to file'
     
     fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
     open(100, file=trim(fname), access='stream', status='replace', &
