@@ -717,8 +717,8 @@ def PyAxi(**kwargs):
         stats = np.arange(nstat) + 1
 
         labels = ['Axisem-ref', 'Yspec', 'Axisem-new']
-        colors = ['k', 'r', 'b']
-        linestyles = ['--', '-', '-']
+        colors = ['r', 'gray', 'b']
+        linestyles = ['-', '-', '-']
 
         t = []
         
@@ -766,8 +766,8 @@ def PyAxi(**kwargs):
                 print stat
                 for i, sg in enumerate(sgs):
                     dat = sg.select(station=stat, channel='*'+chan)[0].data
-                    if i == 0:
-                        maxl = dat.max()
+                    #if i == 0:
+                    #    maxl = dat.max()
                     dat = dat / maxi * 2.
                     #dat = dat / maxl / 2.
                     
@@ -804,6 +804,24 @@ def PyAxi(**kwargs):
             if input['save_plots'] != 'N':
                 plt.savefig(os.path.join(folder_new, 'record_section_%s.%s' %
                         (chan, input['plot_format'])))
+
+            plt.figure()
+
+            plt.semilogy(np.arange(nstat) + 1, np.array(l2misfit) + 1e-12, 'o')
+            plt.xlabel('trace')
+            plt.xlabel('l2 - misfit to reference data')
+            plt.ylim(1e-12, 1.)
+
+            plt.axhline(y=1e-8, color='k', ls='--')
+            
+            if input['save_plots'] != 'N':
+                plt.savefig(os.path.join(folder_new, 'l2_misfit__%s.%s' %
+                        (chan, input['plot_format'])))
+
+            if np.max(l2misfit) > 1e-8:
+                fwarn = open(os.path.join(folder_new, 'warning.dat'), 'a')
+                fwarn.write("maximum l2 norm misfit larger then 1e-8 in chan %s trace %d\n" % (chan, np.argmax(l2misfit)))
+                fwarn.close()
 
         if input['save_plots'] == 'N':
             plt.show()
