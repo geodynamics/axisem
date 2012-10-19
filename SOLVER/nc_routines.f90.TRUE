@@ -1,13 +1,19 @@
+!> Contains all the routines for NetCDF handling.
 module nc_routines
   use data_proc, ONLY : mynum, nproc, lpr
   use global_parameters
-  real, allocatable   :: recdumpvar(:,:,:), recdumpvar_disp(:,:,:), recdumpvar_velo(:,:,:) 
-  real, allocatable   :: recdumpvar_strain(:,:,:), recdumpvar_srcdisp(:,:,:) 
-  real, allocatable   :: oneddumpvar_flu(:,:,:)
-  real, allocatable   :: oneddumpvar_sol(:,:,:)
-  integer, parameter  :: dumpsteprec = 100
-  integer             :: gllperelem, stepstodump
-  integer             :: outputplan, dumpstepsnap
+  real, allocatable   :: recdumpvar(:,:,:)       !< Buffer variable for recorder 
+  real, allocatable   :: recdumpvar_disp(:,:,:)  !< Buffer variable for displacement at recorder
+  real, allocatable   :: recdumpvar_velo(:,:,:)  !< Buffer variable for velocity at recorder
+  real, allocatable   :: recdumpvar_strain(:,:,:) !< Buffer variable for strain
+  real, allocatable   :: recdumpvar_srcdisp(:,:,:) !< Buffer variable for source displacement
+  real, allocatable   :: oneddumpvar_flu(:,:,:)  !< Buffer variable for everything fluid dumped in nc_dump_field_1d
+  real, allocatable   :: oneddumpvar_sol(:,:,:)  !< Buffer variable for everything solid dumped in nc_dump_field_1d
+  integer, parameter  :: dumpsteprec = 100       !< Number of steps before receiver specific stuff is dumped
+  integer             :: dumpstepsnap            !< Number of steps before kernel specific stuff is dumped 
+  integer             :: gllperelem              !< Number of GLL points per element 
+  integer             :: outputplan              !< When is this processor supposed to dump. @todo: Implement this Round-Robin Output
+  integer             :: stepstodump             !< How many steps since last dump?
 
 contains
 
@@ -31,23 +37,26 @@ end subroutine check
 
 
 !-----------------------------------------------------------------------------------------
+!> Routine to dump the wavefield variables for the Kerner. Collects input in
+!! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
+!! @todo: Change from local (processor-specific) IO to global.
 subroutine nc_dump_field_1d(f, flen, varname, appisnap)
     use netcdf
     use data_io, ONLY   : ncid_out, ncid_snapout, nc_field_varid, varnamelist
     use data_io, ONLY   : nvar, nstrain
+
     implicit none
     include 'mesh_params.h'
-    integer, intent(in)               :: flen
-    real(kind=realkind), intent(in)   :: f(flen)
-    character(len=*), intent(in)      :: varname
-    character(len=4), intent(in)      :: appisnap
-    integer                           :: isnap_loc, ivar
+    real(kind=realkind), intent(in)   :: f(flen)  !< Data to dump
+    integer, intent(in)               :: flen     !< Length of f
+    character(len=*), intent(in)      :: varname  !< Internal name of data to dump. Is used to identify the NetCDF Variable in question
+    character(len=4), intent(in)      :: appisnap !< String which contains snapshot number
+    integer                           :: isnap_loc, ivar 
     !write(6,*) flen, mynum, appisnap,' ', trim(varname), ncid_out, ncid_snapout
 
     read(appisnap,*) isnap_loc
-
     do ivar = 1, nvar
-        ! Check whether this Variable actually exists in file ncid_out
+        !< Check whether this Variable actually exists in file ncid_out
         if (trim(varnamelist(ivar))==trim(varname)) exit
     end do
     if (ivar>nvar) then
@@ -146,6 +155,8 @@ end subroutine nc_dump_field_1d
 
 
 !-----------------------------------------------------------------------------------------
+!> Dump receiver specific stuff, especially displacement and velocity
+!! N.B.: Works with global indices.
 subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
     use netcdf
     use data_io 
@@ -186,6 +197,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> Dump stuff along surface
 subroutine nc_dump_surface(surffield, disporvelo, nrec, dim2, idump)
     use netcdf
     use data_io 
@@ -254,27 +266,29 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 
-!-----------------------------------------------------------------------------------------
-subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
-    use netcdf
-    use data_io 
-    implicit none
-    integer, intent(in)                          :: nrec, dim2, idump, nc_varid
-    real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
-    integer                                      :: irec
-    
-    !write(6,*) flen, appisnap, trim(varname), ncid_out
+!!-----------------------------------------------------------------------------------------
+!subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
+!    use netcdf
+!    use data_io 
+!    implicit none
+!    integer, intent(in)                          :: nrec, dim2, idump, nc_varid
+!    real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
+!    integer                                      :: irec
+!    
+!    !write(6,*) flen, appisnap, trim(varname), ncid_out
+!
+!    do irec = 1, nrec
+!      !write(6,*) nc_varid, idump, irec, mynum
+!      call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, irec, mynum+1/), &
+!                & count = (/1, dim2, 1, 1/), values=recfield(irec,:)) )
+!    end do
+!end subroutine
+!!-----------------------------------------------------------------------------------------
 
-    do irec = 1, nrec
-      !write(6,*) nc_varid, idump, irec, mynum
-      call check( nf90_put_var(ncid_recout, nc_varid, start=(/idump, 1, irec, mynum+1/), &
-                & count = (/1, dim2, 1, 1/), values=recfield(irec,:)) )
-    end do
-end subroutine
-!-----------------------------------------------------------------------------------------
-
 
 !-----------------------------------------------------------------------------------------
+!> Define the output file variables and dimensions
+!! and allocate buffer variables.
 subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec_proc)
 
     use data_io
@@ -284,17 +298,21 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
     implicit none
     include 'mesh_params.h'
 
-    integer, intent(in)                         :: nrec 
-    character(len=40),intent(in)                :: rec_names(nrec)
-    real(8), dimension(nrec),intent(in) :: rec_th, rec_th_req, rec_ph
-    integer, dimension(nrec),intent(in) :: rec_proc
-    integer  :: irec
-    integer  :: nc_latr_varid, nc_lon_varid, nc_lat_varid,  nc_ph_varid
-    integer  :: nc_thr_varid, nc_th_varid, nc_proc_varid, nc_recnam_dimid
-    integer  :: nc_recnam_varid, nc_surf_dimid
-    character(len=16), dimension(nvar) :: varname 
-    integer                            :: ivar
-    integer,dimension(nvar)            :: nc_f_dimid, varlength
+    integer, intent(in)                 :: nrec              !< Number of receivers
+    character(len=40),intent(in)        :: rec_names(nrec)   !< Receiver names
+    real(8), dimension(nrec),intent(in) :: rec_th            !< Receiver theta 
+    real(8), dimension(nrec),intent(in) :: rec_th_req        !< Requested receiver theta
+    real(8), dimension(nrec),intent(in) :: rec_ph            !< Receiver phi
+    integer, dimension(nrec),intent(in) :: rec_proc          !< Receiver processor
+    character(len=16), dimension(nvar)  :: varname            
+    integer                             :: ivar
+    integer, dimension(nvar)            :: nc_f_dimid, varlength
+    integer                             :: irec
+    integer                             :: nc_latr_varid, nc_lon_varid 
+    integer                             :: nc_lat_varid, nc_ph_varid
+    integer                             :: nc_thr_varid, nc_th_varid 
+    integer                             :: nc_proc_varid, nc_recnam_dimid
+    integer                             :: nc_recnam_varid, nc_surf_dimid
     
     varnamelist = (/'strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
                     'straintrace_sol', 'velo_sol       ', 'strain_dsus_flu', &
@@ -454,6 +472,9 @@ end subroutine nc_define_receiverfile
 
 
 !-----------------------------------------------------------------------------------------
+!> Test whether parallel NetCDF is possible
+!! Processor 0 opens output file so that nc_define_receiverfile can define 
+!! the dimensions and variables in it.
 subroutine define_netcdf_output
 
     use data_io
@@ -515,6 +536,7 @@ end subroutine
 
 
 !-----------------------------------------------------------------------------------------
+!> Write NetCDF attribute of type Character
 subroutine nc_write_att_char(attribute_value, attribute_name)
     use netcdf
     use data_io
@@ -528,6 +550,7 @@ end subroutine nc_write_att_char
 
 
 !-----------------------------------------------------------------------------------------
+!> Write NetCDF attribute of type Real
 subroutine nc_write_att_real(attribute_value, attribute_name)
   use netcdf
   use data_io
@@ -541,6 +564,7 @@ end subroutine nc_write_att_real
 
 
 !-----------------------------------------------------------------------------------------
+!> Write NetCDF attribute of type Integer
 subroutine nc_write_att_int(attribute_value, attribute_name)
   use netcdf
   use data_io
@@ -554,6 +578,7 @@ end subroutine nc_write_att_int
 
 
 !-----------------------------------------------------------------------------------------
+!> Open the NetCDF output file in parallel and check for variable IDs.
 subroutine nc_open_parallel
     use data_io
     use netcdf
@@ -639,6 +664,7 @@ end subroutine
 
 
 !-----------------------------------------------------------------------------------------
+!> Close the Output file. Contains barrier.
 subroutine end_netcdf_output
     use data_io, only: ncid_out, ncid_recout
     use netcdf
