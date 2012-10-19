@@ -12,11 +12,11 @@ module nc_routines
 contains
 
 !-----------------------------------------------------------------------------------------
+!> Translates NetCDF error code into readable message
 subroutine check(status)
-  ! Translates netcdf error codes into error messages
     use netcdf
     implicit none
-    integer, intent ( in) :: status
+    integer, intent ( in) :: status !< Error code
 
     if(status /= nf90_noerr) then 
         if(status.eq.-101) then
@@ -132,9 +132,8 @@ subroutine nc_dump_field_1d(f, flen, varname, appisnap)
         stepstodump=0
     end if
     
-    !if ((isnap_loc/dumpstepsnap).eq.(nsnap/dumpstepsnap)) then
     if ((nstrain - isnap_loc)<dumpstepsnap) then
-        write(6,*) 'Only nsnap - isnap_loc = ', nstrain - isnap_loc, ' snaps to go.'
+        if (lpr) write(6,*) 'Only nsnap - isnap_loc = ', nstrain - isnap_loc, ' snaps to go.'
 !        write(6,90) trim(varname), ivar, nc_field_varid(ivar)
 90 format('Found var ', A16, ' in entry', I3, ' with varid ', I6)
         call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
