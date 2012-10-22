@@ -746,8 +746,11 @@ def PyAxi(**kwargs):
         
         print t0, dt, npts
         
+        misfitplot = plt.figure()
+
         for chan in chans:
-            plt.figure()
+            recsec = plt.figure()
+            ax = recsec.gca()
             maxi = 0.
 
             # find global maxium
@@ -772,9 +775,9 @@ def PyAxi(**kwargs):
                     #dat = dat / maxl / 2.
                     
                     if n == 1:
-                        plt.plot(t[i], dat + n, colors[i], label=labels[i], ls=linestyles[i])
+                        ax.plot(t[i], dat + n, colors[i], label=labels[i], ls=linestyles[i])
                     else:
-                        plt.plot(t[i], dat + n, colors[i], label='_nolegend_', ls=linestyles[i])
+                        ax.plot(t[i], dat + n, colors[i], label='_nolegend_', ls=linestyles[i])
                 # compute l2 misfits
                 dat1 = sgs[0].select(station=stat, channel='*'+chan)[0].data
                 dat2 = sgs[2].select(station=stat, channel='*'+chan)[0].data
@@ -788,43 +791,44 @@ def PyAxi(**kwargs):
             fl2.close()
 
 
-            plt.xlabel('time / seconds')
-            plt.xlim(0, 1800)
-            plt.ylim(0, nstat + 1)
+            ax.set_xlabel('time / seconds')
+            ax.set_xlim(0, 1800)
+            ax.set_ylim(0, nstat + 1)
 
-            plt.legend()
+            ax.legend()
 
-            fig = plt.gcf()
-            fig.set_size_inches((16,12))
+            recsec.set_size_inches((16,12))
 
-            plt.suptitle(chan)
-            plt.subplots_adjust(hspace=0.3, wspace=0.2, left=0.08, right=0.95,
+            recsec.suptitle(chan)
+            recsec.subplots_adjust(hspace=0.3, wspace=0.2, left=0.08, right=0.95,
                     top=0.93, bottom=0.07)
 
             if input['save_plots'] != 'N':
-                plt.savefig(os.path.join(folder_new, 'record_section_%s.%s' %
+                recsec.savefig(os.path.join(folder_new, 'record_section_%s.%s' %
                         (chan, input['plot_format'])))
 
-            plt.figure()
-
-            plt.semilogy(np.arange(nstat) + 1, np.array(l2misfit) + 1e-12, 'o')
-            plt.xlabel('trace')
-            plt.xlabel('l2 - misfit to reference data')
-            plt.ylim(1e-12, 1.)
-
-            plt.axhline(y=1e-8, color='k', ls='--')
+            ax = misfitplot.gca()
             
-            if input['save_plots'] != 'N':
-                plt.savefig(os.path.join(folder_new, 'l2_misfit__%s.%s' %
-                        (chan, input['plot_format'])))
+            ax.semilogy(np.arange(nstat) + 1, np.array(l2misfit) + 1e-12, 'o', label=chan)
+            ax.set_xlabel('trace')
+            ax.set_ylabel('l2 - misfit to reference data')
+            ax.set_ylim(1e-12, 1.)
 
+            ax.axhline(y=1e-8, color='k', ls='--')
+            
             if np.max(l2misfit) > 1e-8:
                 fwarn = open(os.path.join(folder_new, 'warning.dat'), 'a')
-                fwarn.write("maximum l2 norm misfit larger then 1e-8 in chan %s trace %d\n" % (chan, np.argmax(l2misfit)))
+                fwarn.write("maximum l2 norm misfit larger then 1e-8 in chan %s trace %d\n" 
+                             % (chan, np.argmax(l2misfit)))
                 fwarn.close()
 
+        ax = misfitplot.gca()
+        ax.legend()
         if input['save_plots'] == 'N':
             plt.show()
+        else:
+            misfitplot.savefig(os.path.join(folder_new, 'l2_misfit.%s' %
+                    input['plot_format']))
     
     t2_test = time.time()
     
