@@ -342,5 +342,9 @@ print "........you may need to include further netcdf libraries (libnetcdf_c++,l
 print "........you may wish to find the appropriate INCLUDE (locate NETCDF.mod)\n\n";
 
 }
+
+
+system("vi Makefile -c ':g/kdtree2.o:/d' -c ':wq'");
+
 print "DONE.\n"
 
