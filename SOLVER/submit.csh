@@ -281,6 +281,7 @@ foreach isrc (${num_src_arr})
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
         cp $homedir/*.bm .
+        cp $homedir/Makefile .
 
         cd $mainrundir
         
