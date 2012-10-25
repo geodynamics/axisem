@@ -325,6 +325,10 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
                   nel_fluid*3/)
     gllperelem = (iend-ibeg+1)**2
     varlength = varlength * gllperelem
+
+    if (nstrain<=dumpstepsnap) then
+        dumpstepsnap = nstrain
+    end if
     
     if (mynum.eq.0) then    
         write(6,*) '  Producing groups for Seismograms and Snapshots'
@@ -518,9 +522,10 @@ subroutine define_netcdf_output
         if (mynum.eq.0) write(6,*) 'Test for parallel NetCDF4 not necessary.'
     end if
 
-    dumpstepsnap = max(128,nproc)
+    dumpstepsnap = max(128,nproc) ! Will later be reduced to nstrain, if this is smaller
+                                  ! than value given here
     outputplan = mynum*(dumpstepsnap/nproc)
-    write(6,*) mynum, outputplan
+    write(6,60) mynum, outputplan
 60  format('Proc ', I4, ' will dump at position ', I4)
 
     nmode = ior(NF90_CLOBBER,NF90_NETCDF4)
