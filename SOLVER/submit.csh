@@ -27,15 +27,6 @@ endif
 set datapath = `grep "data output path" inparam  |awk '{print $1}'`
 set infopath = `grep "info output path" inparam |awk '{print $1}'`
 
-set output_format = `grep "Output format" inparam |awk '{print $1}'`
-set netcdf_make = `grep LIBS Makefile | grep netcdf |wc -l` 
-echo "OUTPUT FORMAT:" $output_format $netcdf_make
-if ( $output_format == "netcdf" && $netcdf_make < 1 ) then 
-  echo "ERROR: Cannot save output into netcdf, axisem was compiled without netcdf."
-  echo "Run makemake.csh with option -netcdf and try again!"
-  exit
-endif
-
 if ( ! -f inparam_hetero) then 
   cp inparam_hetero.TEMPLATE inparam_hetero
 endif
@@ -264,6 +255,7 @@ foreach isrc (${num_src_arr})
         
         mkdir Code
         cp -p $homedir/*.f90 Code
+        cp -p $homedir/*.F90 Code
         cp -p $homedir/Makefile Code
         
         echo "copying crucial files for the simulation..."
@@ -281,7 +273,6 @@ foreach isrc (${num_src_arr})
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
         cp $homedir/*.bm .
-        cp $homedir/Makefile .
 
         cd $mainrundir
         

@@ -19,8 +19,8 @@ use commun
 
 implicit none
 
-public :: open_local_param_file,readin_parameters
-public :: compute_numerical_parameters,write_parameters
+public :: open_local_param_file, readin_parameters
+public :: compute_numerical_parameters, write_parameters
 private
 
 contains
@@ -112,6 +112,10 @@ integer :: i
   use_netcdf = .false.
   if (output_format=='netcdf') then
     use_netcdf = .true.
+#ifndef unc
+    write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
+    stop 2
+#endif
   end if
 
 !af test
@@ -649,8 +653,15 @@ subroutine compute_numerical_parameters
   iseismo=0
 
   ! netcdf format
-  use_netcdf=.false.
+  use_netcdf = .false.
   if (output_format=='netcdf')	use_netcdf=.true.
+  
+#ifndef unc
+  if (use_netcdf) then
+     write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
+     stop 2
+  endif
+#endif
 
   ! mesh info: coordinates of elements and collocation points               
   open(2222+mynum,file=infopath(1:lfinfo)//'/axial_points.dat'//appmynum)
@@ -714,7 +725,9 @@ end subroutine compute_numerical_parameters
 subroutine write_parameters
 
 use data_comm
+#ifdef unc
 use nc_routines
+#endif
 use data_numbering, ONLY : nglob,nglob_solid
 
 include 'mesh_params.h'
@@ -978,6 +991,7 @@ character(len=7) :: clogic
 
   endif ! lpr
 
+#ifdef unc
   if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
 ! write generic simulation info file
     write(6,*) ' Writing simulation info to netcdf file attributes' 
@@ -1022,6 +1036,7 @@ character(len=7) :: clogic
     write(clogic,*) use_netcdf
     call nc_write_att_char(clogic,'use netcdf for wavefield output?')
   end if
+#endif
 
 
 ! output for each processor==============================================
