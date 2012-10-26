@@ -1,5 +1,9 @@
 !> Contains all the routines for NetCDF handling.
 module nc_routines
+
+#ifdef unc
+  use netcdf
+#endif
   use data_proc, ONLY : mynum, nproc, lpr
   use global_parameters
   real, allocatable   :: recdumpvar(:,:,:)       !< Buffer variable for recorder 
@@ -16,12 +20,10 @@ module nc_routines
   integer             :: stepstodump             !< How many steps since last dump?
 
 contains
-
+#ifdef unc
 !-----------------------------------------------------------------------------------------
 !> Translates NetCDF error code into readable message
 subroutine check(status)
-#ifdef unc
-    use netcdf
     implicit none
     integer, intent ( in) :: status !< Error code
 
@@ -33,7 +35,6 @@ subroutine check(status)
             stop 1
         end if
     end if
-#endif
 end subroutine check  
 !-----------------------------------------------------------------------------------------
 
@@ -43,8 +44,6 @@ end subroutine check
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
 !! @todo: Change from local (processor-specific) IO to global.
 subroutine nc_dump_field_1d(f, flen, varname, appisnap)
-#ifdef unc
-    use netcdf
     use data_io, ONLY   : ncid_out, ncid_snapout, nc_field_varid, varnamelist
     use data_io, ONLY   : nvar, nstrain
 
@@ -153,7 +152,6 @@ subroutine nc_dump_field_1d(f, flen, varname, appisnap)
 !        write(6,*) 'written'
     end if
   
-#endif
 end subroutine nc_dump_field_1d
 !-----------------------------------------------------------------------------------------
 
@@ -162,8 +160,6 @@ end subroutine nc_dump_field_1d
 !> Dump receiver specific stuff, especially displacement and velocity
 !! N.B.: Works with global indices.
 subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
-#ifdef unc
-    use netcdf
     use data_io 
     use data_mesh, ONLY: loc2globrec
     use data_time, ONLY: niter
@@ -198,15 +194,12 @@ subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
         end do
     end if
 
-#endif
 end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 !> Dump stuff along surface
 subroutine nc_dump_surface(surffield, disporvelo, nrec, dim2, idump)
-#ifdef unc
-    use netcdf
     use data_io 
     use data_mesh, ONLY: loc2globrec, maxind
     use data_time, ONLY: niter
@@ -269,7 +262,6 @@ subroutine nc_dump_surface(surffield, disporvelo, nrec, dim2, idump)
         !write(6,*) 'done'
     end if
 
-#endif
 end subroutine
 !-----------------------------------------------------------------------------------------
 
@@ -298,11 +290,9 @@ end subroutine
 !> Define the output file variables and dimensions
 !! and allocate buffer variables.
 subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec_proc)
-#ifdef unc
 
     use data_io
     use data_time, ONLY: niter, strain_it
-    use netcdf
     use data_mesh, ONLY: maxind
     implicit none
     include 'mesh_params.h'
@@ -480,7 +470,6 @@ subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, r
         allocate(oneddumpvar_flu(nel_fluid*gllperelem, dumpstepsnap, 7) )
         allocate(oneddumpvar_sol(nel_solid*gllperelem, dumpstepsnap, 7) )
     end if
-#endif
 end subroutine nc_define_receiverfile
 !-----------------------------------------------------------------------------------------
 
@@ -490,12 +479,10 @@ end subroutine nc_define_receiverfile
 !! Processor 0 opens output file so that nc_define_receiverfile can define 
 !! the dimensions and variables in it.
 subroutine define_netcdf_output
-#ifdef unc
 
     use data_io
     use commpi,      ONLY : MPI_COMM_WORLD, MPI_INFO_NULL
     use commun,      ONLY : barrier
-    use netcdf
     implicit none    
     integer  :: nmode, ncid_test, test_dimid, test_varid, status
 
@@ -547,7 +534,6 @@ subroutine define_netcdf_output
                                   cmode=nmode, ncid=ncid_out))
         write(6,*) 'Netcdf file with ID ',ncid_out,' produced.'
     end if
-#endif
 end subroutine
 !-----------------------------------------------------------------------------------------
 
@@ -555,15 +541,12 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !> Write NetCDF attribute of type Character
 subroutine nc_write_att_char(attribute_value, attribute_name)
-#ifdef unc
-    use netcdf
     use data_io
     character(len=*), intent(in)  :: attribute_name, attribute_value
 
     !write(6,*) 'Writing ', attribute_value, ' to attr. ', attribute_name, ' in netcdf ID', ncid_out
     call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 
-#endif
 end subroutine nc_write_att_char
 !-----------------------------------------------------------------------------------------
 
@@ -571,15 +554,12 @@ end subroutine nc_write_att_char
 !-----------------------------------------------------------------------------------------
 !> Write NetCDF attribute of type Real
 subroutine nc_write_att_real(attribute_value, attribute_name)
-#ifdef unc
-  use netcdf
   use data_io
   character(len=*),  intent(in)  :: attribute_name
   real, intent(in)                :: attribute_value
 
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 
-#endif
 end subroutine nc_write_att_real
 !-----------------------------------------------------------------------------------------
 
@@ -587,15 +567,12 @@ end subroutine nc_write_att_real
 !-----------------------------------------------------------------------------------------
 !> Write NetCDF attribute of type Integer
 subroutine nc_write_att_int(attribute_value, attribute_name)
-#ifdef unc
-  use netcdf
   use data_io
   character(len=*),  intent(in)  :: attribute_name
   integer, intent(in)                :: attribute_value
 
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 
-#endif
 end subroutine nc_write_att_int
 !-----------------------------------------------------------------------------------------
 
@@ -603,9 +580,7 @@ end subroutine nc_write_att_int
 !-----------------------------------------------------------------------------------------
 !> Open the NetCDF output file in parallel and check for variable IDs.
 subroutine nc_open_parallel
-#ifdef unc
     use data_io
-    use netcdf
     use commpi,     ONLY : MPI_COMM_WORLD, MPI_INFO_NULL
     use commun,     ONLY : barrier
     implicit none
@@ -683,7 +658,6 @@ subroutine nc_open_parallel
     
     write(6,70) mynum
 70  format('Proc ', I3, ' opened file and is ready to rupture')    
-#endif
 end subroutine
 !-----------------------------------------------------------------------------------------
 
@@ -691,15 +665,111 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !> Close the Output file. Contains barrier.
 subroutine end_netcdf_output
-#ifdef unc
     use data_io, only: ncid_out, ncid_recout
-    use netcdf
     use commun, only: barrier
 
     call barrier
     call check( nf90_close(ncid_out) )
 
-#endif
 end subroutine
 !-----------------------------------------------------------------------------------------
+
+
+!> Remainder is just for the compile wo NetCDF case
+#else
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_field_1d(f,flen,varname,appisnap)
+    implicit none
+    integer, intent(in)               :: flen
+    real(kind=realkind), intent(in)   :: f(flen)
+    character(len=*), intent(in)      :: varname
+    character(len=4), intent(in)      :: appisnap
+end subroutine nc_dump_field_1d
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
+    implicit none
+    integer, intent(in)                          :: nrec, dim2, idump, nc_varid
+    real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_surface(surffield, disporvelo, nrec, dim2, idump)
+    implicit none
+    integer, intent(in)                          :: nrec, dim2, idump
+    real(kind=realkind), intent(inout), dimension(nrec,dim2) :: surffield
+    character(len=4)                             :: disporvelo
+end subroutine nc_dump_surface
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_rec_perproc(recfield, nc_varid, nrec, dim2, idump)
+    implicit none
+    integer, intent(in)                          :: nrec, dim2, idump, nc_varid
+    real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
+end subroutine nc_dump_rec_perproc
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_define_receiverfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec_proc)
+    implicit none
+    integer, intent(in)                         :: nrec 
+    character(len=40),intent(in)                :: rec_names(nrec)
+    real(8), dimension(nrec),intent(in) :: rec_th, rec_th_req, rec_ph
+    integer, dimension(nrec),intent(in) :: rec_proc
+end subroutine nc_define_receiverfile
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine define_netcdf_output
+    implicit none    
+end subroutine define_netcdf_output
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_write_att_char(attribute_value, attribute_name)
+    character(len=*), intent(in)  :: attribute_name, attribute_value
+end subroutine nc_write_att_char
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_write_att_real(attribute_value, attribute_name)
+  character(len=*),  intent(in)  :: attribute_name
+  real, intent(in)                :: attribute_value
+end subroutine nc_write_att_real
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_write_att_int(attribute_value, attribute_name)
+  character(len=*),  intent(in)  :: attribute_name
+  integer, intent(in)                :: attribute_value
+end subroutine nc_write_att_int
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_open_parallel
+    implicit none
+end subroutine nc_open_parallel
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine end_netcdf_output
+
+end subroutine end_netcdf_output
+!-----------------------------------------------------------------------------------------
+#endif
 end module nc_routines

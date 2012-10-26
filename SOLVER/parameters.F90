@@ -725,9 +725,7 @@ end subroutine compute_numerical_parameters
 subroutine write_parameters
 
 use data_comm
-#ifdef unc
 use nc_routines
-#endif
 use data_numbering, ONLY : nglob,nglob_solid
 
 include 'mesh_params.h'
@@ -991,7 +989,6 @@ character(len=7) :: clogic
 
   endif ! lpr
 
-#ifdef unc
   if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
 ! write generic simulation info file
     write(6,*) ' Writing simulation info to netcdf file attributes' 
@@ -1036,7 +1033,6 @@ character(len=7) :: clogic
     write(clogic,*) use_netcdf
     call nc_write_att_char(clogic,'use netcdf for wavefield output?')
   end if
-#endif
 
 
 ! output for each processor==============================================
