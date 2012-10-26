@@ -892,11 +892,9 @@ real(kind=realkind) :: time
 ! receiver locations read in from file (only 3-comp. displacements)
 
     iseismo=iseismo+1
-#ifdef unc
     if(use_netcdf)   then
       call nc_compute_recfile_seis_bare(disp)
     endif
-#endif
     if(.not. use_netcdf)   then
       call compute_recfile_seis_bare(disp)
     endif

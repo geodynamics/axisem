@@ -10,9 +10,7 @@ use global_parameters
 use data_mesh
 use data_proc
 use data_io
-#ifdef unc
 use nc_routines
-#endif
 
 implicit none
 
@@ -563,12 +561,9 @@ subroutine dump_field_1d(f, filename, appisnap, n)
 
   f1 = pack(floc(ibeg:iend,ibeg:iend,1:n),.true.)
   
-#ifdef unc
   if (use_netcdf) then
      call nc_dump_field_1d(f1, f1len, filename(2:), appisnap)
-  endif
-#endif  
-  if (.not. use_netcdf) then
+  else
      open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
                                  FORM="UNFORMATTED",STATUS="UNKNOWN",POSITION="REWIND")
@@ -617,13 +612,9 @@ subroutine dump_field_over_s_solid_1d(f, filename, appisnap)
   end if
   
   glen = size(gloc)
-#ifdef unc
   if (use_netcdf) then
      call nc_dump_field_1d(gloc,glen,filename(2:),appisnap)
-  endif
-#endif
-
-  if (.not. use_netcdf) then
+  else
      open(unit=35000+mynum, file=datapath(1:lfdata)//filename//'_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
                                  FORM="UNFORMATTED",STATUS="REPLACE")
@@ -682,16 +673,12 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
 
   glen = size(gloc(ibeg:iend,ibeg:iend,:))
 
-#ifdef unc
   if (use_netcdf) then
      call nc_dump_field_1d(&
            &  (inv_s_solid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:)), &
            &  glen, filename1(2:), appisnap)
      call nc_dump_field_1d(gloc(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
-  end if 
-#endif
-
-  if (.not. use_netcdf) then
+  else
      open(unit=39000+mynum, file=datapath(1:lfdata)//filename1//'_'&
                                //appmynum//'_'//appisnap//'.bindat',&
                                FORM="UNFORMATTED",STATUS="REPLACE")
@@ -751,13 +738,9 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
 
   glen = size(gloc(ibeg:iend,ibeg:iend,:))
 
-#ifdef unc
   if (use_netcdf) then
      call nc_dump_field_1d(gloc(ibeg:iend,ibeg:iend,:), glen, filename(2:), appisnap)
-  end if 
-#endif
-
-  if (.not. use_netcdf) then
+  else
      open(unit=35000+mynum,file=datapath(1:lfdata)//filename//'_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
                                 FORM="UNFORMATTED",STATUS="REPLACE")
@@ -805,16 +788,12 @@ subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
 
   glen = size(floc(ibeg:iend,ibeg:iend,:))
 
-#ifdef unc
   if (use_netcdf) then
     call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:), &
                           glen, filename1(2:), appisnap)
     call nc_dump_field_1d(inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:) +  &
                           gloc(ibeg:iend,ibeg:iend,:), glen, filename2(2:), appisnap)
-  end if 
-#endif
-
-  if (.not. use_netcdf) then
+  else
     ! f/s (e.g. Epp)
     open(unit=39000+mynum,file=datapath(1:lfdata)//filename1//'_'&
                               //appmynum//'_'//appisnap//'.bindat',&
@@ -864,16 +843,12 @@ subroutine dump_half_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
   glen = size(f1(ibeg:iend,ibeg:iend,:))
 
-#ifdef unc
   if (use_netcdf) then
      call nc_dump_field_1d(0.5 * ( f1(ibeg:iend,ibeg:iend,:) + &
                                    inv_s_fluid(ibeg:iend,ibeg:iend,:) * &
                                    f2loc(ibeg:iend,ibeg:iend,:) ), &
                            glen, filename(2:), appisnap)
-  end if 
-#endif
-
-  if (.not. use_netcdf) then
+  else
      open(unit=65000+mynum, file=datapath(1:lfdata)//filename//'_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
                                 FORM="UNFORMATTED",STATUS="REPLACE")
@@ -916,16 +891,12 @@ subroutine dump_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
   glen = size(f1(ibeg:iend,ibeg:iend,:))
 
-#ifdef unc
   if (use_netcdf) then
      call nc_dump_field_1d((f1(ibeg:iend,ibeg:iend,:) + &
                             inv_s_fluid(ibeg:iend,ibeg:iend,:) * &
                             f2loc(ibeg:iend,ibeg:iend,:)), &
                             glen, filename(2:), appisnap)
-  end if 
-#endif
-
-  if (.not. use_netcdf) then
+  else
       open(unit=65000+mynum,file=datapath(1:lfdata)//filename//'_'&
            //appmynum//'_'//appisnap//'.bindat',&
            FORM="UNFORMATTED",STATUS="REPLACE")
@@ -966,17 +937,13 @@ subroutine dump_disp(u, chi)
 ! Dump solid displacement
   glen = size(f(ibeg:iend,ibeg:iend,:,1))
 
-#ifdef unc
   if (use_netcdf) then
      if (src_type(1)/='monopole') then
        call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,:)), glen*3, 'disp_sol', appisnap)
      else
        call nc_dump_field_1d(f(ibeg:iend,ibeg:iend,:,(/1,3/)), glen*2, 'disp_sol', appisnap)
      end if
-  end if 
-#endif
-
-  if (.not. use_netcdf) then
+  else
      open(unit=75000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
                                //appmynum//'_'//appisnap//'.bindat',&
                                FORM="UNFORMATTED",STATUS="REPLACE")
@@ -991,14 +958,10 @@ subroutine dump_disp(u, chi)
 
 ! Dump fluid potential 
   if (have_fluid) then 
-#ifdef unc
      if (use_netcdf) then
         glen = size(chi)
         call nc_dump_field_1d( chi, glen, 'chi_flu', appisnap)
-      end if 
-#endif
-
-      if (.not. use_netcdf) then
+     else
         open(unit=76000+mynum,file=datapath(1:lfdata)//'/chi_flu_'&
                                   //appmynum//'_'//appisnap//'.bindat',&
                                   FORM="UNFORMATTED",STATUS="REPLACE")
@@ -1036,17 +999,13 @@ subroutine dump_velo_dchi(v, dchi)
   glen = size(f(ibeg:iend,ibeg:iend,:,1))
 
   ! Dump solid velocity vector
-#ifdef unc
   if (use_netcdf) then
      if (src_type(1)/='monopole') then
         call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,:)), glen*3, 'velo_sol', appisnap)
      else
         call nc_dump_field_1d(f(ibeg:iend,ibeg:iend,:,(/1,3/)), glen*2, 'velo_sol', appisnap)
      end if
-  end if 
-#endif
-
-  if (.not. use_netcdf) then
+  else
      open(unit=85000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
                                 FORM="UNFORMATTED",STATUS="REPLACE")
@@ -1061,13 +1020,10 @@ subroutine dump_velo_dchi(v, dchi)
 
   ! Dump fluid potential 1st derivative
   if (have_fluid) then 
-#ifdef unc
      if (use_netcdf) then
         glen = size(dchi)
         call nc_dump_field_1d( dchi, glen, 'dchi_flu', appisnap)
-     end if
-#endif
-     if (.not. use_netcdf) then
+     else
         open(unit=86000+mynum,file=datapath(1:lfdata)//'/dchi_flu_'&
                                    //appmynum//'_'//appisnap//'.bindat',&
                                    FORM="UNFORMATTED",STATUS="REPLACE")
@@ -1112,17 +1068,13 @@ subroutine dump_velo_global(v,dchi)
 
   glen = size(f(ibeg:iend,ibeg:iend,:,1))
 
-#ifdef unc
   if (use_netcdf) then
      if (src_type(1)/='monopole') then
         call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,:)), glen*3, 'velo_sol', appisnap)
      else
         call nc_dump_field_1d(f(ibeg:iend,ibeg:iend,:,(/1,3/)), glen*2, 'velo_sol', appisnap)
      end if
-  end if 
-#endif
-
-  if (.not. use_netcdf) then
+  else
      open(unit=95000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
                                 FORM="UNFORMATTED",STATUS="REPLACE")
@@ -1168,13 +1120,9 @@ subroutine dump_velo_global(v,dchi)
     glen = size(fflu(ibeg:iend,ibeg:iend,:,1))
 
     ! dump velocity vector inside fluid
-#ifdef unc
     if (use_netcdf) then
        call nc_dump_field_1d(fflu(ibeg:iend,ibeg:iend,:,:), glen*3, 'velo_flu', appisnap)
-    end if 
-#endif
-
-  if (.not. use_netcdf) then
+    else
        open(unit=960000+mynum,file=datapath(1:lfdata)//'/velo_flu_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
                                   FORM="UNFORMATTED",STATUS="REPLACE")

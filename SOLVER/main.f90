@@ -5,9 +5,7 @@ program axisem
 use data_proc 
 use data_io
 use data_time   
-#ifdef unc
 use nc_routines,    ONLY : define_netcdf_output, end_netcdf_output, nc_open_parallel 
-#endif
 use data_source,    ONLY : isim,num_simul
 use data_mesh,      ONLY : do_mesh_tests
 use parameters,     ONLY : open_local_param_file,readin_parameters
@@ -32,13 +30,11 @@ implicit none
   if(lpr)write(6,*)'MAIN: Reading parameters..................................'
   call readin_parameters ! parameters
   
-#ifdef unc
   if(use_netcdf) then
     if (lpr) write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
     call define_netcdf_output
     if (lpr)  write(6,*)'MAIN: netcdf file prepared ...............................'
   end if
-#endif
   
   if(lpr)write(6,*)'MAIN: Reading mesh database...............................'
   call read_db  ! get_mesh
@@ -64,13 +60,11 @@ implicit none
           'MAIN: Deallocating arrays not needed in the time loop.....';call flush(6)
      call deallocate_preloop_arrays
  
-#ifdef unc
      if (use_netcdf) then
        if(lpr)write(6,*) &
           'MAIN: Opening Netcdf file for parallel output.............';call flush(6)
        call nc_open_parallel()
      end if
-#endif
     
      call barrier ! Just making sure we're all ready to rupture...
      
@@ -78,12 +72,10 @@ implicit none
      call time_loop ! time_evol_wave
   enddo
 
-#ifdef unc
   if (use_netcdf) then
     if(lpr)write(6,*)'MAIN: Flush and close all netcdf files ...................'; call flush(6)
     call end_netcdf_output !Flush and close all netcdf files 
   end if
-#endif
   
   if (dump_xdmf) then
      if (lpr) write(6,*)'MAIN: Finishing xdmf xml file...'; call flush(6)

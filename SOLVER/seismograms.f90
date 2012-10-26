@@ -273,9 +273,7 @@ use data_mesh, ONLY: loc2globrec
 use data_source, ONLY : src_type,rot_src,srccolat,srclon
 use commun
 use rotations, ONLY : rotate_receivers_recfile,save_google_earth_kml
-#ifdef unc
 use nc_routines, ONLY: nc_define_receiverfile
-#endif
 
 integer                      :: i,iel,ipol,irec,num_rec_glob
 integer                      :: count_diff_loc,count_procs
@@ -614,11 +612,9 @@ integer ierror
  
   enddo
   close(9998+mynum)
-#ifdef unc
   if (use_netcdf) then
     call nc_define_receiverfile(num_rec_glob, receiver_name, recfile_th_glob, recfile_readth, recfile_readph, rec2proc)
   end if
-#endif
 
   write(69,15)count_diff_loc,num_rec
   write(69,*)'  Maximal receiver location error [m]:',maxreclocerr
@@ -1159,7 +1155,6 @@ endif !src_type(1)
 end subroutine compute_recfile_seis_bare
 !=============================================================================
 
-#ifdef unc
 subroutine nc_compute_recfile_seis_bare(disp)
 
 use data_io,     ONLY : nc_disp_varid, iseismo 
@@ -1236,7 +1231,6 @@ deallocate(velo_surf)
 deallocate(disp_surf)
 
 end subroutine nc_compute_recfile_seis_bare
-#endif
 
 !-----------------------------------------------------------------------------
 !af
@@ -1312,9 +1306,7 @@ subroutine compute_surfelem(disp,velo)
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 use data_io,     ONLY : istrain
 use data_source, ONLY : src_type
-#ifdef unc
 use nc_routines, ONLY : nc_dump_surface
-#endif
 include "mesh_params.h"
 
 real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
@@ -1323,7 +1315,6 @@ real(kind=realkind)             :: dumpvar(maxind,3)
 
 integer :: i
 
-#ifdef unc
   if (use_netcdf) then
       if (src_type(1)=='monopole') then
           do i=1,maxind
@@ -1348,7 +1339,6 @@ integer :: i
           call nc_dump_surface(dumpvar(:,1:3), 'disp', maxind, 3, istrain)
       end if
   endif 
-#endif
   if (.not. use_netcdf) then
       if (src_type(1)=='monopole') then
       do i=1,maxind
@@ -1393,9 +1383,7 @@ use wavefields_io, ONLY : dump_half_f1_f2_over_s_fluid
 use wavefields_io, ONLY : dump_f1_f2_over_s_fluid
 use wavefields_io, ONLY : dump_field_1d, dump_field_over_s_solid_1d
 use wavefields_io, ONLY : dump_field_over_s_fluid_and_add
-#ifdef unc
 use nc_routines, ONLY   : nc_dump_surface
-#endif
 
 
 real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,2)
@@ -1459,7 +1447,6 @@ strain=0.
                                real(.5,kind=realkind) *lap_sol(npol/2,:,:,2) ) ! dz up
 
    endif
-#ifdef unc
   if (use_netcdf) then
       do i=1,maxind
         dumpvar(i,:) = real(strain(j,surfelem(i),1:6))
@@ -1470,7 +1457,6 @@ strain=0.
       enddo
       call nc_dump_surface(dumpvar(:,1:3), 'srcd', maxind, 3, istrain)
   end if
-#endif
   if (.not. use_netcdf) then
 
       do i=1,maxind
