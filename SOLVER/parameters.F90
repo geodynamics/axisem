@@ -592,8 +592,8 @@ subroutine compute_numerical_parameters
 
      ! parameters for source-time function time shift
      found_shift=.false.
-     do i=1,ceiling(2.*discrete_dirac_halfwidth/deltat)
-        dshift = deltat*ceiling(2.*discrete_dirac_halfwidth/deltat) + real(i)*deltat
+     do i=1,ceiling(4.*discrete_dirac_halfwidth/deltat)
+        dshift = deltat*ceiling(4.*discrete_dirac_halfwidth/deltat) + real(i)*deltat
         if ( .not. found_shift .and. abs(nint(dshift/deltat_coarse)-dshift/deltat_coarse)<0.01*deltat &
              .and. abs(nint(dshift/deltat)-dshift/deltat)<0.01*deltat &
              .and. abs(nint(dshift/seis_dt)-dshift/seis_dt)<0.01*deltat) then 
