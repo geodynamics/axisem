@@ -277,10 +277,10 @@ def PyAxi(**kwargs):
             print "Create Solver Makefile"
             print "=========================\n"
             if input['netCDF'] == 'N':
-                output = subprocess.check_call('./makemake.csh')
+                output = subprocess.check_call('./makemake.pl')
                 if output != 0: print output_print
             elif input['netCDF'] != 'N':
-                output = subprocess.check_call(['./makemake.csh', '-netcdf'])
+                output = subprocess.check_call(['./makemake.pl', '-netcdf'])
                 if output != 0: print output_print
         # Change the input files + make clean; make
         if input['solver_make'] != 'N':
