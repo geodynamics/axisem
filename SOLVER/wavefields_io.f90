@@ -1110,7 +1110,7 @@ subroutine dump_velo_global(v,dchi)
     call define_io_appendix(appisnap,istrain)
     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
                                     usz_fluid(ibeg:iend,ibeg:iend,:,1)
-    fflu(ibeg:iend,ibeg:iend,:,2) = phicomp
+    fflu(ibeg:iend,ibeg:iend,:,2) = phicomp(ibeg:iend,ibeg:iend,:)
     fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
                                     usz_fluid(ibeg:iend,ibeg:iend,:,2)      
 
