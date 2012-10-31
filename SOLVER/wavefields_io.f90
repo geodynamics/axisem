@@ -669,8 +669,6 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   ! construct sum of f/s and g (e.g. straintrace)
   gloc = inv_s_solid * floc + gloc
 
-  if (have_src .and. src_dump_type == 'mask') &
-
   glen = size(gloc(ibeg:iend,ibeg:iend,:))
 
   if (use_netcdf) then
@@ -1110,7 +1108,6 @@ subroutine dump_velo_global(v,dchi)
     !endif
 
     call define_io_appendix(appisnap,istrain)
-
     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
                                     usz_fluid(ibeg:iend,ibeg:iend,:,1)
     fflu(ibeg:iend,ibeg:iend,:,2) = phicomp
