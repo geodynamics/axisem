@@ -892,10 +892,9 @@ real(kind=realkind) :: time
 ! receiver locations read in from file (only 3-comp. displacements)
 
     iseismo=iseismo+1
-    if(use_netcdf)   then
+    if (use_netcdf)   then
       call nc_compute_recfile_seis_bare(disp)
-    endif
-    if(.not. use_netcdf)   then
+    else
       call compute_recfile_seis_bare(disp)
     endif
     
@@ -978,6 +977,8 @@ real(kind=realkind) :: time
 ! more memory and CPU time during the SEM, but no post-processing necessary. 
 ! Any kind of spatial distribution can be dumped, meaning in the long run 
 ! this should be the more effective choice.
+!
+! Currently, 'fullfields' is the hardcoded choice (parameters.f90:110)
 ! 
 ! Possible cases in between these dumpsters are considered but not yet 
 ! implemented (e.g. dumping 1/s, inverse fluid density, but compute derivatives
@@ -985,40 +986,46 @@ real(kind=realkind) :: time
 
   if (dump_wavefields) then
 
-   if (mod(iter,strain_it)==0) then
+    if (mod(iter,strain_it)==0) then
 
 ! dump displacement and velocity in each surface element
 !! for netcdf people set .true. in inparam to use it instead of the standard
 
 !!the update of the strain has to preceed the call to the function. 
 !!It starts from 
-    istrain=istrain+1
+      istrain=istrain+1
 
-    call compute_surfelem(disp,velo)
+      call compute_surfelem(disp,velo)
        
-    select case (dump_type)
+      select case (dump_type)
 
         case ('displ_only')
-!       Only dump the 3-comp displacement and velocity fields in solid 
-!       and potential & its derivative in fluid.
-!       Minimal permanent storage, minimal run-time memory, minimal CPU time, 
-!       but extensive post-processing (need to compute strain tensor).
-           call dump_disp(disp,chi)       ! displacement in solid, chi in fluid
-           call dump_velo_dchi(velo,dchi) ! velocity in solid, dchi in fluid
+!         Only dump the 3-comp displacement and velocity fields in solid 
+!         and potential & its derivative in fluid.
+!         Minimal permanent storage, minimal run-time memory, minimal CPU time, 
+!         but extensive post-processing (need to compute strain tensor).
+             call dump_disp(disp,chi)       ! displacement in solid, chi in fluid
+             call dump_velo_dchi(velo,dchi) ! velocity in solid, dchi in fluid
 
-        case ('fullfields')
-!       Compute strain tensor on-the-fly here and dump the 6 components.
-!       Also compute corresponding fields in the fluid.
-!       Maximal permanent storage, maximal run-time memory, maximal CPU time, 
-!       but no post-processeing necessary as these are the fields that 
-!       constitute density and elastic kernels.
-          call compute_strain(disp,chi)    ! strain globally
-          call dump_velo_global(velo,dchi) ! velocity globally
+        case ('fullfields') ! Hardcoded choice
+!         Compute strain tensor on-the-fly here and dump the 6 components.
+!         Also compute corresponding fields in the fluid.
+!         Maximal permanent storage, maximal run-time memory, maximal CPU time, 
+!         but no post-processeing necessary as these are the fields that 
+!         constitute density and elastic kernels.
+            call compute_strain(disp,chi)    ! strain globally
+            call dump_velo_global(velo,dchi) ! velocity globally
 
-       end select
-     
+        end select
+       
+!>      Check, whether it is time to dump the buffer variables to disk and if so,
+!!      do so.
+        if (use_netcdf) call nc_dump_stuff_to_disk(istrain)
+
     endif ! dumping interval strain_it
-  endif   ! dump?
+
+
+endif   ! dump_wavefields?
 
 end subroutine dump_stuff
 !=============================================================================
