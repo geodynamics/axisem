@@ -33,10 +33,9 @@ contains
 !-----------------------------------------------------------------------------------------
 !> Translates NetCDF error code into readable message
 subroutine check(status)
-#ifdef unc
     implicit none
     integer, intent ( in) :: status !< Error code
-
+#ifdef unc
     if(status /= nf90_noerr) then 
         if(status.eq.-101) then
             write(6,*) 'Nonfatal HDF5 problem' 
@@ -206,12 +205,12 @@ subroutine nc_dump_field_1d(f, flen, varname, appisnap)
 end subroutine nc_dump_field_1d
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_stuff_to_disk(isnap_loc)
-#ifdef unc
 
     use data_io, ONLY    : nstrain
     use commun,  ONLY    : barrier
     implicit none
     integer, intent(in) :: isnap_loc
+#ifdef unc
     integer             :: iproc
     real                :: tick, tack
     
@@ -374,13 +373,13 @@ end subroutine nc_dump_all_strain
 !> Dump receiver specific stuff, especially displacement and velocity
 !! N.B.: Works with global indices.
 subroutine nc_dump_rec(recfield, nc_varid, nrec, dim2, idump)
-#ifdef unc
     use data_io 
     use data_mesh, ONLY: loc2globrec
     use data_time, ONLY: niter
     implicit none
     integer, intent(in)                          :: nrec, dim2, idump, nc_varid
     real(kind=realkind), intent(inout), dimension(nrec,dim2) :: recfield
+#ifdef unc
     integer                                      :: irec, status
     
     recdumpvar(mod(idump-1,100)+1,:,:) = transpose(recfield(:,:))
@@ -749,7 +748,8 @@ subroutine define_netcdf_output
     !dumpstepsnap = max(dumpbuffersize,nproc) 
     dumpstepsnap = int(dumpbuffersize/nproc+1)*nproc ! Will later be reduced to nstrain, if this is smaller
                                                   ! than value given here
-    if (lpr) write(6,*) '  Dumping NetCDF file to disk every', dumpstepsnap, ' snaps'                                                  
+    if (lpr) write(6,*) '  Dumping NetCDF file to disk every', &
+                        dumpstepsnap, ' snaps'                                                  
     outputplan = mynum*(dumpstepsnap/nproc)
 
     allocate(dumpposition(0:dumpstepsnap-1))
