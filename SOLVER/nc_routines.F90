@@ -27,7 +27,7 @@ module nc_routines
 
 !! @todo These parameters should move to a input file soon
   integer             :: dumpbuffersize = 256    !< How often should each processor dump its buffer to disk?
-  logical             :: deflate        = .true. !< Should output be compressed?
+  logical             :: deflate        = .false. !< Should output be compressed?
   integer             :: deflate_level  = 5      !< Compression level (0 lowest, 9 highest)
 contains
 !-----------------------------------------------------------------------------------------
