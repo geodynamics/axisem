@@ -294,9 +294,9 @@ character(len=20), allocatable, dimension(:) :: rec_name,rec_network
 double precision, allocatable, dimension(:) :: reclat,reclon,recelevation,recbury
 integer ierror
 
-  irec=0
-  count_diff_loc=0
-  dtheta_rec=0. ! default for all cases but database (which has regular spacing)
+    irec=0
+    count_diff_loc=0
+    dtheta_rec=0. ! default for all cases but database (which has regular spacing)
 
 ! Read receiver location file:
 ! line1: number of receivers
@@ -304,15 +304,19 @@ integer ierror
 
     if (rec_file_type=='colatlon') then
        if (lpr) write(6,*)'  reading receiver colatitudes and longitudes from receivers.dat...'
-       open(unit=34,file='receivers.dat',iostat=ierror,position='rewind')
-       read(34,*)num_rec_glob
+       open(unit=34, file='receivers.dat', iostat=ierror, status='old', position='rewind')
+       read(34,*) num_rec_glob
        write(6,*)'  # total receivers:',num_rec_glob; call flush(6)
-       allocate(recfile_readth(1:num_rec_glob),recfile_th_glob(1:num_rec_glob))
-       allocate(recfile_th_loc(1:num_rec_glob),recfile_el_loc(1:num_rec_glob,3))
-       allocate(loc2globrec_loc(1:num_rec_glob),rec2proc(1:num_rec_glob))
-       allocate(recfile_readph(1:num_rec_glob))
-       allocate(recfile_ph_loc2(1:num_rec_glob))   
-       allocate(receiver_name(num_rec_glob))
+       allocate( recfile_readth (1:num_rec_glob) )
+       allocate( recfile_th_glob(1:num_rec_glob) )
+       allocate( recfile_th_loc (1:num_rec_glob) )
+       allocate( recfile_el_loc (1:num_rec_glob,3))
+       allocate( loc2globrec_loc(1:num_rec_glob) )
+       allocate( rec2proc       (1:num_rec_glob) )
+       allocate( recfile_readph (1:num_rec_glob) )
+       allocate( recfile_ph_loc2(1:num_rec_glob) )   
+       allocate( receiver_name  (1:num_rec_glob) )
+
        open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
 !       call BSORT2(recfile_readth,num_rec_glob) ! need to sort the indices as well....
 
@@ -320,17 +324,20 @@ integer ierror
           read(34,*)recfile_readth(i),recfile_readph(i)
           call define_io_appendix(appielem,i)
           receiver_name(i) = 'recfile_'//appielem
-          write(30,*)trim(receiver_name(i)),recfile_readth(i),recfile_readph(i)
+          write(30,*) trim(receiver_name(i)), recfile_readth(i), recfile_readph(i)
        enddo
-       close(34); close(30)
+       close(34) 
+       close(30)
 
     elseif (rec_file_type=='database') then 
        if (lpr) write(6,*)'  generating receiver colatitudes at every element edge and midpoint...'
        if (lpr) write(6,*)'  ... which is useful for databases and sinc interpolation'
-       dtheta_rec = abs(180./pi*(thetacoord(npol,npol,ielsolid(surfelem(1)))-thetacoord(0,npol,ielsolid(surfelem(1))))/2.)
+       dtheta_rec = abs( (thetacoord(npol,npol,ielsolid(surfelem(1))) &
+                        - thetacoord(0,   npol,ielsolid(surfelem(1))) ) * 180. / pi ) / 2
        if (lpr) then
-         write(6,*)'delta theta (mid-to-edge), (edge-to-edge) [deg]:',dtheta_rec, &
-            abs((thetacoord(npol,npol,ielsolid(surfelem(1)))-thetacoord(0,npol,ielsolid(surfelem(1))))*180./pi)
+         write(6,*) 'delta theta (mid-to-edge), (edge-to-edge) [deg]:', dtheta_rec, &
+                    abs( (thetacoord(npol,npol,ielsolid(surfelem(1))) &
+                        - thetacoord(0,   npol,ielsolid(surfelem(1))) ) * 180. / pi )
          write(6,*)mynum,'number of surface elements:',maxind
          write(6,*)mynum,'number of global recs (ideal,real):',(180./dtheta_rec)+1,num_rec_glob
        end if
@@ -377,10 +384,10 @@ integer ierror
        allocate(rec_name(num_rec_glob),rec_network(num_rec_glob))
        allocate(reclat(num_rec_glob),reclon(num_rec_glob),recelevation(num_rec_glob),recbury(num_rec_glob))
        allocate(receiver_name(num_rec_glob))
-      open(unit=34,file='STATIONS',iostat=ierror,status='old',action='read',position='rewind')
+       open(unit=34,file='STATIONS',iostat=ierror,status='old',action='read',position='rewind')
        open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
 
-      do i=1,num_rec_glob
+       do i=1,num_rec_glob
           read(34,*)rec_name(i),rec_network(i),reclat(i),reclon(i),recelevation(i),recbury(i)
           if (reclon(i)<=zero) then 
              recfile_readph(i)=reclon(i)+360.d0 
@@ -440,8 +447,9 @@ integer ierror
        call rotate_receivers_recfile(num_rec_glob,recfile_readth,recfile_readph,receiver_name)
     else
       if ((lpr).and.(.not.(rec_file_type=='database'))) then
-        call save_google_earth_kml(real(srccolat*180.0/pi),real(srclon*180.d0/pi), &
-                        real(recfile_readth),real(recfile_readph),num_rec_glob,'original',receiver_name)
+        call save_google_earth_kml( real(srccolat*180.0/pi), real(srclon*180.d0/pi), &
+                                    real(recfile_readth), real(recfile_readph), &
+                                    num_rec_glob, 'original', receiver_name  )
       end if
     endif
 
@@ -572,9 +580,9 @@ integer ierror
   write(9998+mynum,*)num_rec
   do i=1,num_rec ! Only over newly found local receiver locations
 
-        write(9998+mynum,13)i,recfile_readth(loc2globrec(i)),recfile_th(i),&
-                            recfile_ph_loc(i),  &
-                            recfile_el(i,1),recfile_el(i,2),recfile_el(i,3)
+     write(9998+mynum,13) i, recfile_readth(loc2globrec(i)), recfile_th(i), &
+                          recfile_ph_loc(i),                                &
+                          recfile_el(i,1), recfile_el(i,2), recfile_el(i,3)
 
      call define_io_appendix(appielem,loc2globrec(i))
 
@@ -582,7 +590,7 @@ integer ierror
           min_distance_dim) then
         count_diff_loc=count_diff_loc+1
         write(6,22)procstrg, &
-                  recfile_readth(loc2globrec(i)),recfile_th(i)
+                  recfile_readth(loc2globrec(i)), recfile_th(i)
         if (dabs(recfile_readth(loc2globrec(i))-recfile_th(i))> maxreclocerr) &
              maxreclocerr=dabs(recfile_readth(loc2globrec(i))-recfile_th(i))/ &
                           180.*pi*router
@@ -634,20 +642,20 @@ allocate(recfac(num_rec,5))
 if (rot_rec=='sph') then ! rotating to r,phi,theta
    if (lpr) write(6,*) &
             '  Calculating prefactors for rotating components to spherical...'
-   recfac(:,1) = sin(recfile_th*pi/180.)
-   recfac(:,2) = cos(recfile_th*pi/180.)
-   recfac(:,3) = 1.d0
-   recfac(:,4) = cos(recfile_th*pi/180.)
+   recfac(:,1) =  sin(recfile_th*pi/180.)
+   recfac(:,2) =  cos(recfile_th*pi/180.)
+   recfac(:,3) =  1.d0
+   recfac(:,4) =  cos(recfile_th*pi/180.)
    recfac(:,5) = -sin(recfile_th*pi/180.)
 
 elseif (rot_rec=='enz') then ! rotating to East North Z
    if (lpr) write(6,*) &
             '  Calculating prefactors for rotating components to NEZ...'
-   recfac(:,1) = sin(recfile_th*pi/180.)
-   recfac(:,2) = cos(recfile_th*pi/180.)
-   recfac(:,3) = 1.d0
+   recfac(:,1) =  sin(recfile_th*pi/180.)
+   recfac(:,2) =  cos(recfile_th*pi/180.)
+   recfac(:,3) =  1.d0
    recfac(:,4) = -cos(recfile_th*pi/180.)
-   recfac(:,5) = sin(recfile_th*pi/180.)
+   recfac(:,5) =  sin(recfile_th*pi/180.)
 
 elseif (rot_rec=='xyz') then ! rotating to Greenwich xyz
    if (lpr) write(6,*) &
@@ -678,7 +686,7 @@ if (correct_azi) then
             '  Calculating prefactors for correct azimuth for',src_type(2)
       recfac(:,1) =  cos(recfile_ph_loc)*recfac(:,1)
       recfac(:,2) =  cos(recfile_ph_loc)*recfac(:,2)
-      recfac(:,3) =  -sin(recfile_ph_loc)*recfac(:,3)
+      recfac(:,3) = -sin(recfile_ph_loc)*recfac(:,3)
       recfac(:,4) =  cos(recfile_ph_loc)*recfac(:,4)
       recfac(:,5) =  cos(recfile_ph_loc)*recfac(:,5)
 
@@ -696,7 +704,7 @@ if (correct_azi) then
             '  Calculating prefactors for correct azimuth for',src_type(2)
       recfac(:,1) =  cos(2.d0*recfile_ph_loc)*recfac(:,1)
       recfac(:,2) =  cos(2.d0*recfile_ph_loc)*recfac(:,2)
-      recfac(:,3) =  -sin(2.d0*recfile_ph_loc)*recfac(:,3)
+      recfac(:,3) = -sin(2.d0*recfile_ph_loc)*recfac(:,3)
       recfac(:,4) =  cos(2.d0*recfile_ph_loc)*recfac(:,4)
       recfac(:,5) =  cos(2.d0*recfile_ph_loc)*recfac(:,5)
       
@@ -772,7 +780,7 @@ double precision             :: maxcmblocerr
 ! Read receiver location file:
 ! line1: number of receivers
 ! line2 --> line(number of receivers+1): colatitudes [deg]
-  open(99999,file='receivers.dat',POSITION='REWIND')
+  open(99999,file='receivers.dat',status='old',POSITION='REWIND')
     read(99999,*)num_cmb_glob
     allocate(cmbfile_readth(1:num_cmb_glob),cmbfile_th_glob(1:num_cmb_glob))
     allocate(cmbfile_th_loc(1:num_cmb_glob),cmbfile_el_loc(1:num_cmb_glob,3))
@@ -1157,13 +1165,11 @@ end subroutine compute_recfile_seis_bare
 
 subroutine nc_compute_recfile_seis_bare(disp)
 
-use data_io,     ONLY : nc_disp_varid, iseismo 
 use data_source, ONLY : src_type
 use nc_routines, ONLY : nc_dump_rec
 implicit none
 include "mesh_params.h"
 real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-!real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
 real(kind=realkind),dimension(:,:),allocatable :: velo_surf,disp_surf
 character(len=50) :: filename
 integer :: i
@@ -1171,61 +1177,32 @@ allocate(velo_surf(3,num_rec),disp_surf(3,num_rec))
 
 if (src_type(1)=='monopole') then
 ! order: u_s, u_z
-do i=1,num_rec
-     disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-     disp_surf(2,i)= 0.0 !real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-     disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
-!     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-!     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-!     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
-enddo
-
-!filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
-!call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
-!filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
-!call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+    do i=1,num_rec
+         disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+         disp_surf(2,i)= 0.0 
+         disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+    enddo
 
 elseif (src_type(1)=='dipole') then
-do i=1,num_rec
-
-     disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-     disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-     disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
-       
-!     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-!     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-!     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
-enddo
-
-!filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
-!call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
-!filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
-!call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+    
+    do i=1,num_rec
+         disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
+                    disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+         disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
+                    disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+         disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+    enddo
 
 elseif (src_type(1)=='quadpole') then
 
-do i=1,num_rec
-     disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-     disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-     disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
-!     velo_surf(1,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-!     velo_surf(2,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-!     velo_surf(3,i)=real(velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
-enddo
+    do i=1,num_rec
+         disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+         disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+         disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+    enddo
 
-!filename=datapath(1:lfdata)//'/recfile_disp'//appmynum//'.nc'
-!	call dump_matrix_ncdf(disp_surf,iseismo,3,num_rec,filename)
-!filename=datapath(1:lfdata)//'/recfile_velo'//appmynum//'.nc'
-!call dump_matrix_ncdf(velo_surf,iseismo,3,num_rec,filename)
+end if !src_type(1)
 
-endif !src_type(1)
-
-call nc_dump_rec(disp_surf,nc_disp_varid,num_rec,3,iseismo)
-!if(lpr) print *, 'iseismo: ', iseismo, disp_surf(1,1:5)
 
 deallocate(velo_surf)
 deallocate(disp_surf)
@@ -1312,8 +1289,9 @@ include "mesh_params.h"
 real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
 real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
 real(kind=realkind)             :: dumpvar(maxind,3)
+integer                         :: i
 
-integer :: i
+  dumpvar = 0.0
 
   if (use_netcdf) then
       if (src_type(1)=='monopole') then
@@ -1321,25 +1299,26 @@ integer :: i
               dumpvar(i,1) = real(disp(npol/2,jsurfel(i),surfelem(i),1))
               dumpvar(i,2) = real(disp(npol/2,jsurfel(i),surfelem(i),3))
           enddo
-          call nc_dump_surface(dumpvar(:,1:2), 'velo', maxind, 2, istrain)
-          do i=1,maxind
-              dumpvar(i,1) = real(velo(npol/2,jsurfel(i),surfelem(i),1))
-              dumpvar(i,2) = real(velo(npol/2,jsurfel(i),surfelem(i),3))
-          end do
-          call nc_dump_surface(dumpvar(:,1:2), 'disp', maxind, 2, istrain)
-      
       else
           do i=1,maxind
               dumpvar(i,:) = real(disp(npol/2,jsurfel(i),surfelem(i),:))
           end do
-          call nc_dump_surface(dumpvar(:,1:3), 'velo', maxind, 3, istrain)
+      end if !monopole
+      call nc_dump_surface(dumpvar(:,1:3), 'disp', maxind, 3, istrain)
+      
+      if (src_type(1)=='monopole') then
+          do i=1,maxind
+              dumpvar(i,1) = real(velo(npol/2,jsurfel(i),surfelem(i),1))
+              dumpvar(i,2) = real(velo(npol/2,jsurfel(i),surfelem(i),3))
+          end do
+      else
           do i=1,maxind    
               dumpvar(i,:) = real(velo(npol/2,jsurfel(i),surfelem(i),:))
           end do
-          call nc_dump_surface(dumpvar(:,1:3), 'disp', maxind, 3, istrain)
-      end if
-  endif 
-  if (.not. use_netcdf) then
+      end if !monopole
+      call nc_dump_surface(dumpvar(:,1:3), 'velo', maxind, 3, istrain)
+
+  else !use_netcdf
       if (src_type(1)=='monopole') then
       do i=1,maxind
          write(40000000+i,*)real(disp(npol/2,jsurfel(i),surfelem(i),1)),&
