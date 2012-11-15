@@ -20,7 +20,7 @@ public
   logical           :: dump_wavefields
   logical           :: need_fluid_displ
   double precision  :: strain_samp
-  integer           :: iseismo !! to keep track of the seismo snaps
+  integer           :: iseismo !< to keep track of the seismo snaps
   integer           :: istrain,isnap
   integer           :: nsamples, nstrain, nsnap !Number of seismogram samples, kernel dumps, wavefield snapshots
   character(len=12) :: dump_type
@@ -31,18 +31,8 @@ public
   character(len=6)  :: output_format 
   logical           :: force_ani
 
-! NetCDF variables
-  integer, parameter:: nvar = 10
-  integer           :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout
-  integer           :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
-  integer           :: nc_times_dimid, nc_comp_dimid, nc_disp_varid
-  integer           :: nc_strcomp_dimid
-  integer           :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
-  integer           :: nc_surfelem_strain_varid, nc_surfelem_disp_src_varid
-  integer           :: nc_field_varid(nvar)
-  character(len=16) :: varnamelist(nvar)
   
-  ! indices to limit dumping to select contiguous range of GLL points:
+! indices to limit dumping to select contiguous range of GLL points:
 ! 0<=ibeg<=iend<=npol
 ! For the time being: dump the same in xeta and eta directions
   integer           :: ibeg,iend
