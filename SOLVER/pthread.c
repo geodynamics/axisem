@@ -18,12 +18,12 @@ void *cfunc_thread(void* valp)
    int one = 1;
    val = *((int*)valp);
    //printf("2nd value from fortran; %d \n", val);
-#if defined(__GFORTRAN__)
+#if defined(__GNUC__)
    __nc_routines_MOD_nc_dump_strain_to_disk();
 #elif defined(__INTEL_COMPILER)    
    nc_routines_mp_nc_dump_strain_to_disk_();
 #else
-   error "Compiler not supported"
+   error "Compiler not supported";
 #endif
    pthread_exit(NULL);
 }
