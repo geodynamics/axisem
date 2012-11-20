@@ -259,7 +259,7 @@ sub MakeDependsf90 {
       /^\s*include\s+["\']([^"\']+)["\']/i && push(@incs,$1);
       /^\s*use\s+([^\s,!]+)/i && push(@modules, &toLower($1));
       }
-      ($objfile = $file) =~ s/\.f90$/.o/;
+      ($objfile = $file) =~ s/\.(f|F)90$/.o/;
       print MAKEFILE "$objfile: ";
       undef @dependencies;
       foreach $module (@modules) {
