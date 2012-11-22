@@ -1,3 +1,4 @@
+!> Various subroutines for seismogram preparation and dumping
 !========================
 module seismograms
 !========================
@@ -259,6 +260,9 @@ end subroutine prepare_seismograms
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Read colatitudes [deg] from a file receivers.dat and locate closest grid 
+!! point for seismograms, output grid point locations in 
+!! receiver_pts.dat<PROCID>
 subroutine prepare_from_recfile_seis
 !
 ! Read colatitudes [deg] from a file receivers.dat and locate closest grid 
@@ -273,7 +277,7 @@ use data_mesh, ONLY: loc2globrec
 use data_source, ONLY : src_type,rot_src,srccolat,srclon
 use commun
 use rotations, ONLY : rotate_receivers_recfile,save_google_earth_kml
-use nc_routines, ONLY: nc_define_receiverfile
+use nc_routines, ONLY: nc_define_outputfile
 
 integer                      :: i,iel,ipol,irec,num_rec_glob
 integer                      :: count_diff_loc,count_procs
@@ -285,7 +289,7 @@ double precision,allocatable :: recfile_th_loc(:),recfile_el_loc(:,:)
 double precision,allocatable :: recfile_th(:),recfile_ph_loc(:),recfile_ph_loc2(:)
 integer,allocatable          :: rec2proc(:),loc2globrec_loc(:)!, loc2globrec(:)
 character(len=4)             :: appielem
-character(len=100)         :: junk
+character(len=100)           :: junk
 character(len=40), allocatable :: receiver_name(:)
 double precision             :: maxreclocerr
 
@@ -334,6 +338,7 @@ integer ierror
        if (lpr) write(6,*)'  ... which is useful for databases and sinc interpolation'
        dtheta_rec = abs( (thetacoord(npol,npol,ielsolid(surfelem(1))) &
                         - thetacoord(0,   npol,ielsolid(surfelem(1))) ) * 180. / pi ) / 2
+       num_rec_glob = ceiling(180./dtheta_rec)+1
        if (lpr) then
          write(6,*) 'delta theta (mid-to-edge), (edge-to-edge) [deg]:', dtheta_rec, &
                     abs( (thetacoord(npol,npol,ielsolid(surfelem(1))) &
@@ -341,7 +346,6 @@ integer ierror
          write(6,*)mynum,'number of surface elements:',maxind
          write(6,*)mynum,'number of global recs (ideal,real):',(180./dtheta_rec)+1,num_rec_glob
        end if
-       num_rec_glob = ceiling(180./dtheta_rec)+1
        allocate(recfile_readth(num_rec_glob),recfile_readph(num_rec_glob))
        do i=1,num_rec_glob
           recfile_readth(i) = dtheta_rec*real(i-1)
@@ -611,17 +615,14 @@ integer ierror
 
 
   if(.not.(use_netcdf))   then
-!          write(6,*)mynum,'REC NAME 1:',i,loc2globrec(i),size(receiver_name)
-!          write(6,*)mynum,'REC NAME 2:',trim(receiver_name(loc2globrec(i)))
      write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
      open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
-!     open(300000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_velo.dat')
   endif
  
   enddo
   close(9998+mynum)
   if (use_netcdf) then
-    call nc_define_receiverfile(num_rec_glob, receiver_name, recfile_th_glob, recfile_readth, recfile_readph, rec2proc)
+    call nc_define_outputfile(num_rec_glob, receiver_name, recfile_th_glob, recfile_readth, recfile_readph, rec2proc)
   end if
 
   write(69,15)count_diff_loc,num_rec
@@ -1119,10 +1120,6 @@ integer :: i
            write(100000+i,*) &
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1), &
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-                                              
-!           write(300000+i,*) &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1), &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
         enddo
 
      elseif (src_type(1)=='dipole') then
@@ -1131,17 +1128,10 @@ integer :: i
 ! 
            write(100000+i,*) &
                 disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2) , &
+                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2),  &
                 disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
                 disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
                 disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-                                              
-!           write(300000+i,*) &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
         enddo
 
      elseif (src_type(1)=='quadpole') then
@@ -1151,61 +1141,58 @@ integer :: i
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1), &
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
                disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
-                                              
-!           write(300000+i,*) &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) , &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2), &
-!                velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3)
         enddo
 
 endif !src_type(1)
 
 end subroutine compute_recfile_seis_bare
 !=============================================================================
+!! Calculate displacement at receiver locations and pass to nc_dump_rec
 
-subroutine nc_compute_recfile_seis_bare(disp)
+subroutine nc_compute_recfile_seis_bare(disp) 
 
 use data_source, ONLY : src_type
 use nc_routines, ONLY : nc_dump_rec
 implicit none
 include "mesh_params.h"
-real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-real(kind=realkind),dimension(:,:),allocatable :: velo_surf,disp_surf
-character(len=50) :: filename
-integer :: i
-allocate(velo_surf(3,num_rec),disp_surf(3,num_rec))
+real(kind=realkind), intent(in)  :: disp(0:npol,0:npol,nel_solid,3)
+real(kind=realkind)              :: disp_rec(3,num_rec)
+character(len=50)                :: filename
+integer                          :: i
+
+!allocate(disp_surf(3,num_rec))
 
 if (src_type(1)=='monopole') then
 ! order: u_s, u_z
     do i=1,num_rec
-         disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-         disp_surf(2,i)= 0.0 
-         disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+         disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+         disp_rec(2,i)= 0.0 
+         disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
     enddo
 
 elseif (src_type(1)=='dipole') then
     
     do i=1,num_rec
-         disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
-                    disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-         disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
-                    disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-         disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+         disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) + &
+                            disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+         disp_rec(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) - &
+                            disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+         disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
     enddo
 
 elseif (src_type(1)=='quadpole') then
 
     do i=1,num_rec
-         disp_surf(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-         disp_surf(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-         disp_surf(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+         disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
+         disp_rec(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
+         disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
     enddo
 
 end if !src_type(1)
 
+call nc_dump_rec(disp_rec) 
 
-deallocate(velo_surf)
-deallocate(disp_surf)
+!deallocate(disp_surf)
 
 end subroutine nc_compute_recfile_seis_bare
 
@@ -1288,7 +1275,7 @@ include "mesh_params.h"
 
 real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
 real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
-real(kind=realkind)             :: dumpvar(maxind,3)
+real                            :: dumpvar(maxind,3)
 integer                         :: i
 
   dumpvar = 0.0
@@ -1304,7 +1291,7 @@ integer                         :: i
               dumpvar(i,:) = real(disp(npol/2,jsurfel(i),surfelem(i),:))
           end do
       end if !monopole
-      call nc_dump_surface(dumpvar(:,1:3), 'disp', maxind, 3, istrain)
+      call nc_dump_surface(dumpvar(:,:), 'disp', maxind, 3, istrain)
       
       if (src_type(1)=='monopole') then
           do i=1,maxind
@@ -1316,7 +1303,7 @@ integer                         :: i
               dumpvar(i,:) = real(velo(npol/2,jsurfel(i),surfelem(i),:))
           end do
       end if !monopole
-      call nc_dump_surface(dumpvar(:,1:3), 'velo', maxind, 3, istrain)
+      call nc_dump_surface(dumpvar(:,:), 'velo', maxind, 3, istrain)
 
   else !use_netcdf
       if (src_type(1)=='monopole') then
@@ -1364,16 +1351,16 @@ use wavefields_io, ONLY : dump_field_1d, dump_field_over_s_solid_1d
 use wavefields_io, ONLY : dump_field_over_s_fluid_and_add
 use nc_routines, ONLY   : nc_dump_surface
 
+include "mesh_params.h"
+real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
 
 real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,2)
 real(kind=realkind)             :: lap_flu(0:npol,0:npol,nel_fluid,2)
 real(kind=realkind)             :: dumpvar(maxind, 6)
+real(kind=realkind)             :: strain(0:npol,nel_solid,6)
 character(len=5)                :: appisnap
 
-include "mesh_params.h"
 
-real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
-real(kind=realkind) :: strain(0:npol,nel_solid,6)
 
 integer :: i,jj,j
 
