@@ -1020,7 +1020,7 @@ real(kind=realkind) :: time
        
 !>      Check, whether it is time to dump the buffer variables to disk and if so,
 !!      do so.
-        if (use_netcdf) call nc_dump_stuff_to_disk(istrain)
+        if (use_netcdf) call nc_dump_strain(istrain)
 
     endif ! dumping interval strain_it
 

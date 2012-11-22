@@ -478,12 +478,12 @@ subroutine compute_numerical_parameters
   endif
   deltat_coarse=seis_dt
 
-  nsamples = floor(real(niter)/real(seis_it))
+  nseismo = floor(real(niter)/real(seis_it))
 
   if (lpr) then
      write(6,22)'    offered seismogram sampling:',deltat*seis_it,' seconds'
      write(6,13)'    ...that is, every          :',seis_it,' timesteps'
-     write(6,11)'    number of samples          :',nsamples
+     write(6,11)'    number of samples          :',nseismo
   endif
 22 format(a33,f9.2,a10)
 
@@ -949,7 +949,7 @@ character(len=7) :: clogic
      write(55,21)src_depth/1000.,'source depth [km]'
      write(55,25)magnitude,'scalar source magnitude'
      write(55,22)num_rec_tot,'number of receivers'
-     write(55,22)nsamples,'length of seismogram [time samples]'
+     write(55,22)nseismo,'length of seismogram [time samples]'
      write(55,21)real(deltat)*real(seis_it),'seismogram sampling [s]'
      write(55,24)correct_azi,'compute seismograms at correct azimuth?'
      if (dump_wavefields) then
@@ -1003,7 +1003,7 @@ character(len=7) :: clogic
     call nc_write_att_real(real(src_depth/1000.),'source depth in km')
     call nc_write_att_real(real(magnitude),'scalar source magnitude')
     call nc_write_att_int(num_rec_tot,'number of receivers')
-    call nc_write_att_int(nsamples,'length of seismogram  in time samples')
+    call nc_write_att_int(nseismo,'length of seismogram  in time samples')
     call nc_write_att_real(real(deltat)*real(seis_it),'seismogram sampling in sec')
     write(clogic,*) correct_azi
     call nc_write_att_char(clogic,'compute seismograms at correct azimuth?')

@@ -548,15 +548,15 @@ subroutine dump_field_1d(f, filename, appisnap, n)
   real(kind=realkind)                 :: floc(0:npol,0:npol,1:n)
   character(len=16), intent(in)       :: filename
   character(len=4), intent(in)        :: appisnap
-  real(kind=realkind), allocatable    :: f1(:), f2(:)
-  integer                             :: i, j, iel, ii, f1len
+  real(kind=realkind), allocatable    :: f1(:)
+  integer                             :: f1len
 
   floc = f
 
   if (have_src .and. src_dump_type == 'mask' .and. n==nel_solid) &
        call eradicate_src_elem_values(floc)
 
-  f1len = (iend-ibeg+1)**2*n
+  f1len = (iend-ibeg+1)**2 * n
   allocate(f1(f1len))
 
   f1 = pack(floc(ibeg:iend,ibeg:iend,1:n),.true.)
@@ -580,20 +580,20 @@ end subroutine dump_field_1d
 !--------------------------------------------------------------------------
 subroutine dump_field_over_s_solid_1d(f, filename, appisnap)
 
-  use data_proc, ONLY : appmynum
-  use data_pointwise, ONLY: inv_s_solid
+  use data_proc,             ONLY: appmynum
+  use data_pointwise,        ONLY: inv_s_solid
   use pointwise_derivatives, ONLY: dsdf_solid_allaxis
-  use data_source, ONLY : have_src, src_dump_type
+  use data_source,           ONLY: have_src, src_dump_type
   
   include 'mesh_params.h'
   
-  real(kind=realkind),intent(in) :: f(0:npol,0:npol,nel_solid)
-  character(len=16), intent(in)  :: filename
-  character(len=4), intent(in)   :: appisnap
-  real(kind=realkind)            :: dsdf(0:npol,naxel_solid)
-  integer                        :: iel, glen
-  real(kind=realkind)            :: floc(0:npol,0:npol,nel_solid)
-  real(kind=realkind)            :: gloc(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(in)  :: f(0:npol,0:npol,nel_solid)
+  character(len=16), intent(in)   :: filename
+  character(len=4), intent(in)    :: appisnap
+  real(kind=realkind)             :: dsdf(0:npol,naxel_solid)
+  integer                         :: iel, glen
+  real(kind=realkind)             :: floc(0:npol,0:npol,nel_solid)
+  real(kind=realkind),allocatable :: gloc(:,:,:)
 
   floc = f
 
@@ -604,13 +604,13 @@ subroutine dump_field_over_s_solid_1d(f, filename, appisnap)
         floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
      enddo
   endif
-  
-  gloc = inv_s_solid * floc
 
   if (have_src .and. src_dump_type == 'mask') then 
-     call eradicate_src_elem_values(gloc)
+     call eradicate_src_elem_values(floc)
   end if
   
+  allocate(gloc(ibeg:iend,ibeg:iend,nel_solid)) 
+  gloc = inv_s_solid(ibeg:iend,ibeg:iend,1:nel_solid) * floc(ibeg:iend,ibeg:iend,1:nel_solid)
   glen = size(gloc)
   if (use_netcdf) then
      call nc_dump_field_1d(gloc,glen,filename(2:),appisnap)
@@ -711,8 +711,8 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
   
   real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_solid)
   real(kind=realkind),intent(in)    :: g(0:npol,0:npol,nel_solid)
-  real(kind=realkind)                 :: floc(0:npol,0:npol,nel_solid)
-  real(kind=realkind)                 :: gloc(0:npol,0:npol,nel_solid)
+  real(kind=realkind)               :: floc(0:npol,0:npol,nel_solid)
+  real(kind=realkind)               :: gloc(0:npol,0:npol,nel_solid)
   character(len=16), intent(in)     :: filename
   character(len=4), intent(in)      :: appisnap
   real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
