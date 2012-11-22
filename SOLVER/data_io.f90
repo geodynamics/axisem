@@ -1,3 +1,5 @@
+!> Miscellaneous variables relevant to any read/write process such as 
+!! paths, logicals describing what to save, sampling rate of dumps
 !=================
 module data_io
 !=================
@@ -17,18 +19,21 @@ public
   logical           :: dump_snaps_glob
   logical           :: dump_xdmf
   logical           :: dump_snaps_solflu
-  logical           :: dump_wavefields
+  logical           :: dump_wavefields !< N.B. This is not wavefield snapshots, but kernel wavefields. Belongs to nstrain and istrain
   logical           :: need_fluid_displ
   double precision  :: strain_samp
-  integer           :: iseismo !< to keep track of the seismo snaps
-  integer           :: istrain,isnap
-  integer           :: nsamples, nstrain, nsnap !Number of seismogram samples, kernel dumps, wavefield snapshots
+  integer           :: iseismo  !< current seismogram sample
+  integer           :: istrain  !< current kernel wavefield sample
+  integer           :: isnap    !< current wavefield sample (for plotting)
+  integer           :: nseismo  !< Number of seismogram samples
+  integer           :: nstrain  !< Number of wavefield dumps for kernels
+  integer           :: nsnap    !< Number of wavefield snapshots
   character(len=12) :: dump_type
   character(len=8)  :: rec_file_type
   logical           :: correct_azi,sum_seis,sum_fields
   character(len=3)  :: rot_rec
   logical           :: srcvic,add_hetero,file_exists,use_netcdf 
-  character(len=6)  :: output_format 
+  character(len=6)  :: output_format  !< netcdf or binary
   logical           :: force_ani
 
   
