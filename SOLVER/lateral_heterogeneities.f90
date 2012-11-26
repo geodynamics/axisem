@@ -1843,7 +1843,7 @@ subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
     real, dimension(:), allocatable :: vph_all, vsh_all, vpv_all, vsv_all, eta_all
     real, dimension(:), allocatable :: xi_all, phi_all, fa_theta_all, fa_phi_all
     real, dimension(:,:), allocatable :: mesh2
-    character(len=80) :: fname
+    character(len=200) :: fname
     double precision :: s, z, r, th
     integer :: iel, ipol, jpol, icount
 
