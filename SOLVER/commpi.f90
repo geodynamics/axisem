@@ -17,8 +17,13 @@ use global_parameters
 use data_mesh, ONLY: gvec_solid,gvec_fluid
 use data_proc
 use data_comm
+
+! in case you have problems with the mpi module, you might try to use the
+! include below, in which case you will have to specify the location in the 
+! Makefile or copy to the build directory!
+use mpi
 implicit none
-include 'mpif.h'
+!include 'mpif.h'
 
 public 
 
