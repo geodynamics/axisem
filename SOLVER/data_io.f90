@@ -12,7 +12,7 @@ public
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-  character(len=80) :: datapath,infopath
+  character(len=200) :: datapath,infopath
   integer           :: lfdata,lfinfo
   logical           :: save_large_tests 
   logical           :: dump_energy

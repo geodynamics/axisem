@@ -942,7 +942,7 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
     real, allocatable, dimension(:) :: vptmp, vstmp, rhotmp
     real, allocatable, dimension(:) :: vpvtmp, vsvtmp, vphtmp, vshtmp, etatmp
     real, allocatable, dimension(:) :: fa_theta_tmp, fa_phi_tmp
-    character(len=80) :: fname
+    character(len=200) :: fname
 
     allocate(meshtmp(num_het_pts,2))
 
@@ -1987,7 +1987,7 @@ subroutine write_VTK_bin_scal_pts(u2,mesh1,rows,filename)
    real, dimension(1:rows,1:2), intent(in) :: mesh1
    integer, dimension(1:rows*2) :: cell
    integer, dimension(1:rows) :: cell_type
-   character (len=55) :: filename
+   character (len=200) :: filename
    character (len=50) :: ss !stream
     
    !points structure
