@@ -161,7 +161,7 @@ end if
 
 deallocate(attributed)
 
-call plot_dd_vtk
+  if (dump_mesh_vtk) call plot_dd_vtk
   
 !  call out_dd ! to plot dd
 

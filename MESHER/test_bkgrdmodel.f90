@@ -141,12 +141,16 @@ end if
 open(unit=62,file=diagpath(1:lfdiag)//'/radial_velocity.dat')  
 
 ! vtk preparations
-npts_vtk=neltot*4
-allocate(mesh2(neltot,2),h_real(neltot))
-allocate(vp1(npts_vtk),vs1(npts_vtk),rho1(npts_vtk))
-allocate(x(npts_vtk),y(npts_vtk),z(npts_vtk))
-z=0.d0
-ct=0
+npts_vtk = neltot * 4
+
+if (dump_mesh_vtk) then
+    allocate(mesh2(neltot,2), h_real(neltot))
+    allocate(vp1(npts_vtk), vs1(npts_vtk), rho1(npts_vtk))
+    allocate(x(npts_vtk), y(npts_vtk), z(npts_vtk))
+    z = 0.d0
+endif
+
+ct = 0
 
 write(6,*)'starting big loop....'
 do iel = 1, neltot
@@ -262,60 +266,62 @@ do iel = 1, neltot
    end if
 
    ! save into vtk====================================
+   if (dump_mesh_vtk) then
 
-   x(ct+1)=sgll(0,0,iel)
-   x(ct+2)=sgll(npol,0,iel)
-   x(ct+3)=sgll(npol,npol,iel)
-   x(ct+4)=sgll(0,npol,iel)
-   y(ct+1)=zgll(0,0,iel)
-   y(ct+2)=zgll(npol,0,iel)
-   y(ct+3)=zgll(npol,npol,iel)
-   y(ct+4)=zgll(0,npol,iel)
+      x(ct+1)=sgll(0,0,iel)
+      x(ct+2)=sgll(npol,0,iel)
+      x(ct+3)=sgll(npol,npol,iel)
+      x(ct+4)=sgll(0,npol,iel)
+      y(ct+1)=zgll(0,0,iel)
+      y(ct+2)=zgll(npol,0,iel)
+      y(ct+3)=zgll(npol,npol,iel)
+      y(ct+4)=zgll(0,npol,iel)
 
-   if (bkgrdmodel=='solar') then 
-      vp1(ct+1)=v_p(0,0,iel)
-      vs1(ct+1)=v_s(0,0,iel)
-      rho1(ct+1)=rho(0,0,iel)
+      if (bkgrdmodel=='solar') then 
+         vp1(ct+1)=v_p(0,0,iel)
+         vs1(ct+1)=v_s(0,0,iel)
+         rho1(ct+1)=rho(0,0,iel)
 
-      vp1(ct+2)=v_p(npol,0,iel)
-      vs1(ct+2)=v_s(npol,0,iel)
-      rho1(ct+2)=rho(npol,0,iel)
+         vp1(ct+2)=v_p(npol,0,iel)
+         vs1(ct+2)=v_s(npol,0,iel)
+         rho1(ct+2)=rho(npol,0,iel)
 
-      vp1(ct+3)=v_p(npol,npol,iel)
-      vs1(ct+3)=v_s(npol,npol,iel)
-      rho1(ct+3)=rho(npol,npol,iel)
+         vp1(ct+3)=v_p(npol,npol,iel)
+         vs1(ct+3)=v_s(npol,npol,iel)
+         rho1(ct+3)=rho(npol,npol,iel)
 
-      vp1(ct+4)=v_p(0,npol,iel)
-      vs1(ct+4)=v_s(0,npol,iel)
-      rho1(ct+4)=rho(0,npol,iel)
+         vp1(ct+4)=v_p(0,npol,iel)
+         vs1(ct+4)=v_s(0,npol,iel)
+         rho1(ct+4)=rho(0,npol,iel)
 
-   else 
-      r=sqrt(  (x(ct+1))**2 + (y(ct+1))**2 )
-      vp1(ct+1)=velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
-      vs1(ct+1)=velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)      
-      rho1(ct+1)=velocity(r*router,'rho',region(iel),bkgrdmodel,lfbkgrdmodel)    
+      else 
+         r=sqrt(  (x(ct+1))**2 + (y(ct+1))**2 )
+         vp1(ct+1)=velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
+         vs1(ct+1)=velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)      
+         rho1(ct+1)=velocity(r*router,'rho',region(iel),bkgrdmodel,lfbkgrdmodel)    
 
-      r=sqrt(  (x(ct+2))**2 + (y(ct+2))**2 )
-      vp1(ct+2)=velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
-      vs1(ct+2)=velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)      
-      rho1(ct+2)=velocity(r*router,'rho',region(iel),bkgrdmodel,lfbkgrdmodel)    
+         r=sqrt(  (x(ct+2))**2 + (y(ct+2))**2 )
+         vp1(ct+2)=velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
+         vs1(ct+2)=velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)      
+         rho1(ct+2)=velocity(r*router,'rho',region(iel),bkgrdmodel,lfbkgrdmodel)    
 
-      r=sqrt(  (x(ct+3))**2 + (y(ct+3))**2 )
-      vp1(ct+3)=velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
-      vs1(ct+3)=velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)      
-      rho1(ct+3)=velocity(r*router,'rho',region(iel),bkgrdmodel,lfbkgrdmodel)    
+         r=sqrt(  (x(ct+3))**2 + (y(ct+3))**2 )
+         vp1(ct+3)=velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
+         vs1(ct+3)=velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)      
+         rho1(ct+3)=velocity(r*router,'rho',region(iel),bkgrdmodel,lfbkgrdmodel)    
 
-      r=sqrt(  (x(ct+4))**2 + (y(ct+4))**2 )
-      vp1(ct+4)=velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
-      vs1(ct+4)=velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)      
-      rho1(ct+4)=velocity(r*router,'rho',region(iel),bkgrdmodel,lfbkgrdmodel)     
+         r=sqrt(  (x(ct+4))**2 + (y(ct+4))**2 )
+         vp1(ct+4)=velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
+         vs1(ct+4)=velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)      
+         rho1(ct+4)=velocity(r*router,'rho',region(iel),bkgrdmodel,lfbkgrdmodel)     
 
+      endif
+
+      mesh2(iel,1) = real(s1)
+      mesh2(iel,2) = real(z1)
    endif
 
    ct = ct+4
-
-   mesh2(iel,1)=real(s1)
-   mesh2(iel,2)=real(z1)
 
    !=======================================
 
@@ -323,62 +329,52 @@ end do ! iel
 
 if (bkgrdmodel=='solar') deallocate(v_p,v_s,rho)
 
-fname=trim(diagpath)//'/mesh_vp'
-call write_VTK_bin_scal(x,y,z,vp1,npts_vtk/4,fname)
-deallocate(vp1)
-
-fname=trim(diagpath)//'/mesh_vs'
-call write_VTK_bin_scal(x,y,z,vs1,npts_vtk/4,fname)
-deallocate(vs1)
-
-fname=trim(diagpath)//'/mesh_rho'
-call write_VTK_bin_scal(x,y,z,rho1,npts_vtk/4,fname)
-deallocate(rho1)
+if (dump_mesh_vtk) then
+  fname=trim(diagpath)//'/mesh_vp'
+  call write_VTK_bin_scal(x,y,z,vp1,npts_vtk/4,fname)
+  deallocate(vp1)
   
-deallocate(x,y,z)
+  fname=trim(diagpath)//'/mesh_vs'
+  call write_VTK_bin_scal(x,y,z,vs1,npts_vtk/4,fname)
+  deallocate(vs1)
+  
+  fname=trim(diagpath)//'/mesh_rho'
+  call write_VTK_bin_scal(x,y,z,rho1,npts_vtk/4,fname)
+  deallocate(rho1)
+    
+  deallocate(x,y,z)
 
   h_real=real(hmax/(period/(pts_wavelngth*real(npol))))
   write(6,*)'minmax hmax:',minval(h_real),maxval(h_real)
-  if (period > 2.5) then
-    fname=trim(diagpath)//'/mesh_hmax'
-    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
-  endif
+  fname=trim(diagpath)//'/mesh_hmax'
+  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
 
   h_real=real(hmin/(dt/courant))
   write(6,*)'minmax hmin:',minval(h_real),maxval(h_real)
-  if (period > 2.5) then
-    fname=trim(diagpath)//'/mesh_hmin'
-    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
-  endif
+  fname=trim(diagpath)//'/mesh_hmin'
+  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
 
   h_real=real(period/hmax)
   write(6,*)'minmax pts wavelngth:',minval(h_real),maxval(h_real)
-  if (period > 2.5) then
-    fname=trim(diagpath)//'/mesh_pts_wavelength'
-    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
-  endif
+  fname=trim(diagpath)//'/mesh_pts_wavelength'
+  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
 
   h_real=real(dt/hmin)
   write(6,*)'minmax courant:',minval(h_real),maxval(h_real)
-  if (period > 2.5) then
-    fname=trim(diagpath)//'/mesh_courant'
-    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
-  endif
+  fname=trim(diagpath)//'/mesh_courant'
+  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
 
   h_real=real(courant*hmin)
   write(6,*)'minmax dt:',minval(h_real),maxval(h_real)
-  if (period > 2.5) then
-    fname=trim(diagpath)//'/mesh_dt'
-    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
-  endif
+  fname=trim(diagpath)//'/mesh_dt'
+  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
 
   h_real=real(pts_wavelngth*real(npol)*hmax)
   write(6,*)'minmax period:',minval(h_real),maxval(h_real)
-  if (period > 2.5) then
-    fname=trim(diagpath)//'/mesh_period'
-    call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
-  endif
+  fname=trim(diagpath)//'/mesh_period'
+  call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
   deallocate(mesh2,h_real)
+endif
 
 char_time_max=maxval(hmax)
 char_time_max_globel=maxloc(hmax,1)
@@ -409,7 +405,7 @@ call flush(6)
 end if
 
 if (dump_mesh_info_screen) then 
- if (ntoobig >0) then 
+ if (ntoobig > 0) then 
   write(6,*)
   write(6,*)'**********************************************************'
   write(6,*)'SERIOUS WARNING:',ntoobig,'elements are too LARGE!'; call flush(6)
@@ -421,7 +417,7 @@ if (dump_mesh_info_screen) then
   write(6,*)'**********************************************************'
  endif
 
- if (ntoosmall >0) then
+ if (ntoosmall > 0) then
   write(6,*)
   write(6,*)'**********************************************************'
   write(6,*)'SERIOUS WARNING:',ntoosmall,'elements are too SMALL!'; call flush(6)
@@ -706,7 +702,6 @@ end subroutine interp_vel
 !=============================================================================
 
 
-!
 !=============================
 end module test_bkgrdmodel
 !=============================

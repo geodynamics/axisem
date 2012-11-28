@@ -77,7 +77,7 @@ subroutine generate_skeleton
     call donot_generate_southern_hemisphere 
    end if
 
-   write(6,*);write(6,"(10x,' THE TOTAL NUMBER OF ELEMENTS IS ',i7 )"), neltot; write(6,*)
+   write(6,*);write(6,"(10x,' THE TOTAL NUMBER OF ELEMENTS IS ',i10 )"), neltot; write(6,*)
 
    call generate_serendipity(npointot,neltot,sg,zg)
 
@@ -439,7 +439,7 @@ write(100) 'LOOKUP_TABLE default'//char(10) !color table?
 write(100) real(u1)
  close(100)
 write(6,*)'...saved ',trim(filename)
-end subroutine write_vtk_bin_scal
+end subroutine write_VTK_bin_scal
 !-----------------------------------------------------------------------------
 
 
@@ -1559,14 +1559,14 @@ subroutine gather_skeleton
   write(6,*)
   write(6,"(10x,'SKELETON INFORMATIONS (NORTHERN HEMISPHERE ONLY)')")
   write(6,*)
-  write(6,"(10x,'Number of elements in the outer shell:    ',i7)")  nelo
-  write(6,"(10x,'Number of elements in the inner shell:    ',i7)")  neli
-  write(6,"(10x,'Number of elements in the central square: ',i7)")  nelsq
-  write(6,"(10x,'Number of elements in the buffer layer:   ',i7)")  nelbuf
+  write(6,"(10x,'Number of elements in the outer shell:    ',i10)")  nelo
+  write(6,"(10x,'Number of elements in the inner shell:    ',i10)")  neli
+  write(6,"(10x,'Number of elements in the central square: ',i10)")  nelsq
+  write(6,"(10x,'Number of elements in the buffer layer:   ',i10)")  nelbuf
 !
   neltot = nelo + neli + nelsq + nelbuf
   write(6,*)
-  write(6,"(10x,'Total num. of elements in northern skel.: ',i7)")  neltot
+  write(6,"(10x,'Total num. of elements in northern skel.: ',i10)")  neltot
   write(6,*)
   write(6,*)
 ! 

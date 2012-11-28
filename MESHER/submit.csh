@@ -13,6 +13,8 @@ endif
 
 if ( ! -d Diags ) then
   mkdir Diags
+else
+  rm -rf Diags/*
 endif
 
 ########## LSF SCHEDULER ######################
