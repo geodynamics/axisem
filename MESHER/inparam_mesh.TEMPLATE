@@ -1,10 +1,11 @@
 ####### INPUT FILE FOR AXISEM MESHER ##########################################
 'prem_light'  	    Background model: 'prem','prem_solid' etc (SEE BELOW)
-40.        	    DOMINANT period [s]
+40.        	        DOMINANT period [s]
 2              	    Number of processors to be used
+.true.              write vtk output (may cause memory problems for high frequencies (~2s))
 ######## Don't change anything below unless you know what you're doing ########
 .true.              Resolve inner-core shear wave (ignored if not prem)?
-4		    Polynomial order of basis for GLL points inside elements
+4		            Polynomial order of basis for GLL points inside elements
 1.5d0               Number of elements per DOMINANT wavelength
 0.6d0               Courant number
 6.371e+6            Surface radius [m]
