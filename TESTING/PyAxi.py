@@ -249,10 +249,12 @@ def PyAxi(**kwargs):
             inparam_mesh_read[1] = input['model'] + \
                 "  \t    Background model: 'prem','prem_solid' etc (SEE BELOW)\n"
             inparam_mesh_read[2] = input['period'] + \
-                "        \t    DOMINANT period [s]\n"
+                "            \t    DOMINANT period [s]\n"
             inparam_mesh_read[3] = input['no_proc'] + \
                 "              \t    Number of processors to be used\n"
-
+            inparam_mesh_read[4] = input['vtk_output'] + \
+                "              write vtk output (may cause memory problems " + \
+                "for high frequencies (~2s))\n"
             inparam_mesh_open.close()
             inparam_mesh_open = open('./inparam_mesh', 'w')
 
@@ -1119,7 +1121,7 @@ def read_input_file():
     input['model'] = config.get('mesher', 'model')
     input['period'] = config.get('mesher', 'period')
     input['no_proc'] = config.get('mesher', 'no_proc')
-    
+    input['vtk_output'] = config.get('mesher', 'vtk_output')    
     
     input['no_simu'] = config.get('solver', 'no_simu')
     input['seis_length'] = config.get('solver', 'seis_length')
