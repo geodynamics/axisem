@@ -1031,10 +1031,10 @@ def PyAxi(**kwargs):
 
         ax = misfitplot.gca()
         ax.legend()
-        if input['save_plots'] == 'N':
-            plt.show()
-        else:
+        if input['save_plots'] != 'N':
             misfitplot.savefig(os.path.join(folder_new, 'l2_misfit.' + input['plot_format']))
+        if input['plot'] != 'N':
+            plt.show()
     
     t2_test = time.time()
     
