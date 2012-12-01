@@ -469,7 +469,7 @@ integer,allocatable :: proc_central(:,:),num_columns(:),upper_boundary_el(:)
 integer,allocatable :: num_columns_hi(:),num_columns_lo(:),num_el(:)
 integer,allocatable :: count_assi(:)
 double precision :: a,b
-integer :: nproc_opt, nn
+integer :: nproc_opt, nproc_opt_buff, nn
 
 if (dump_mesh_info_screen) then 
     write(6,*)
@@ -485,11 +485,17 @@ if (nproc <= 4) then
     write(6,*)
     write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
     write(6,*) '   suggested number of processors for optimal mesh decomposition:'
-    do nn=1, 5
+    do nn=1, 10
         nproc_opt = ndivs / (2 * nn)
         if (mod(nproc_opt, 4) > 0) nproc_opt = nproc_opt + 4 - mod(nproc_opt, 4)
-        if (nproc_opt > 4) write(6,*) nproc_opt
+        if (nproc_opt > 4) then
+           if (nproc_opt .ne. nproc_opt_buff) write(6,*) nproc_opt
+        else
+           exit
+        end if
+        nproc_opt_buff = nproc_opt
     enddo
+    write(6,*) '   1, 2 and 4 are always decomposed optimally'
     write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
     write(6,*)
 else
@@ -497,6 +503,7 @@ else
     write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
     write(6,*) '   to get suggestions for optimal number of processors,'
     write(6,*) '   run the mesher with nproc <= 4!'
+    write(6,*) '   1, 2 and 4 are always decomposed optimally'
     write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
     write(6,*)
 end if
