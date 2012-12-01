@@ -277,6 +277,7 @@ end subroutine plot_dd_vtk
         write(6,*)
         write(6,*)'PROBLEM: central cube decomposition not implemented for &
             nproc = ',nproc
+        write(6,*)'         nproc should be in [1, 2, 6] or a multiple of 4!'
         stop
     endif
 
@@ -468,6 +469,7 @@ integer,allocatable :: proc_central(:,:),num_columns(:),upper_boundary_el(:)
 integer,allocatable :: num_columns_hi(:),num_columns_lo(:),num_el(:)
 integer,allocatable :: count_assi(:)
 double precision :: a,b
+integer :: nproc_opt, nn
 
 if (dump_mesh_info_screen) then 
     write(6,*)
@@ -476,6 +478,26 @@ if (dump_mesh_info_screen) then
     write(6,*)'ndivs,nproc:',ndivs,nproc
     write(6,*)'==> each processor should have el=',ndivs**2/nproc*2
     write(6,*)'<><><><><><><><><><><><><><><><><><><><><><><><><><>'
+    write(6,*)
+end if
+
+if (nproc <= 4) then 
+    write(6,*)
+    write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    write(6,*) '   suggested number of processors for optimal mesh decomposition:'
+    do nn=1, 5
+        nproc_opt = ndivs / (2 * nn)
+        if (mod(nproc_opt, 4) > 0) nproc_opt = nproc_opt + 4 - mod(nproc_opt, 4)
+        if (nproc_opt > 4) write(6,*) nproc_opt
+    enddo
+    write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    write(6,*)
+else
+    write(6,*)
+    write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+    write(6,*) '   to get suggestions for optimal number of processors,'
+    write(6,*) '   run the mesher with nproc <= 4!'
+    write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
     write(6,*)
 end if
 
