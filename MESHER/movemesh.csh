@@ -23,7 +23,7 @@ else
   exit
 endif
 
-# convert relative to ablsoute path:
+# convert relative to absolute path:
 cd $meshpath
 set meshpath = `echo $PWD`
 cd $homepath
