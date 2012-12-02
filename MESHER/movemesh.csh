@@ -1,12 +1,16 @@
 #!/bin/csh -f
 
+# test if mesher finished without problems:
+if (`tail -n 1 OUTPUT |grep 'DONE WITH MESHER'|wc -l` != '1') then
+  echo "ERROR: MESHER did not finish yet or encountered a problem."
+  echo "       Check 'OUTPUT' file for more details."
+  exit
+else
+  echo 'MESHER finished smoothly...'
+endif
+
 set homepath = `echo $PWD`
 set meshpath = "../SOLVER/MESHES/$1"
-
-if ( ! -f mesh_params.h) then
-  echo "ERROR: mesh_params.h does not exist. Did the MESHER run smoothly?"
-  exit
-endif
 
 if ( ! -d ../SOLVER/MESHES ) then
   mkdir ../SOLVER/MESHES
@@ -19,13 +23,14 @@ else
   exit
 endif
 
+# convert relative to ablsoute path:
 cd $meshpath
 set meshpath = `echo $PWD`
 cd $homepath
 
-echo "Moving mesh to" $meshpath
+echo "character(len=200) :: meshpath='$meshpath'" >> mesh_params.h
 
-echo "character(len=100) :: meshpath='$meshpath'" >> mesh_params.h
+echo "Moving mesh to" $meshpath
 
 mv meshdb.dat0* $meshpath
 mv mesh_params.h* $meshpath
@@ -44,7 +49,8 @@ cp -p xmesh $meshpath/Code
 
 mv Diags/* $meshpath
 
-set dump_files = `head -n 9 inparam_mesh |tail -n 1 |awk '{print $1}'`
+# we should really get rid of this head/tail stuff:
+set dump_files = `head -n 12 inparam_mesh |tail -n 1 |awk '{print $1}'`
 if ( $dump_files == '.true.') then
   cd UTILS 
   ./plot_meshes.csh
@@ -59,9 +65,11 @@ if ( $dump_files == '.true.') then
 endif 
 
 echo "Contents in" $meshpath ":"
-ls $meshpath; cd $meshpath
+ls $meshpath
+cd $meshpath
 echo "Total size: `du -sh` "
 echo "DONE."
+
 #./plot_proc_meshes.csh
 #cp -p grid_proc* $meshpath
 

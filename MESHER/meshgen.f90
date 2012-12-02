@@ -216,7 +216,7 @@ double precision, intent(in) :: sg2(8,nel),zg2(8,nel)
 integer :: iel
 !af test
 !integer :: ipt
-character(len=80) :: fname
+!character(len=80) :: fname
 
 !do iel=1,2
 ! do ipt = 1,8

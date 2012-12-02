@@ -172,41 +172,39 @@ deallocate(attributed)
 subroutine plot_dd_vtk
     use test_bkgrdmodel, only : write_VTK_bin_scal_old, write_VTK_bin_scal
 
-    real, allocatable, dimension(:,:) :: mesh1
-    integer :: iel
-    character(len=80) :: fname
+    real, allocatable, dimension(:,:)   :: mesh1
+    integer                             :: iel
+    character(len=200)                  :: fname
     real(kind=realkind), dimension(:), allocatable :: wel2proc
 
-    integer :: ct
-    real, allocatable ::  x(:),y(:),z(:)
+    integer                             :: ct
+    real, allocatable                   ::  x(:), y(:), z(:)
 
     ! write VTK with point data
 
     allocate(mesh1(neltot,2))
-    do iel=1,neltot
-        mesh1(iel,1)=real(sgll(npol/2,npol/2,iel))
-        mesh1(iel,2)=real(zgll(npol/2,npol/2,iel))
+    do iel=1, neltot
+        mesh1(iel,1) = real(sgll(npol/2,npol/2,iel))
+        mesh1(iel,2) = real(zgll(npol/2,npol/2,iel))
     enddo
 
-    fname=trim(diagpath)//'/mesh_domaindecomposition'
+    fname = trim(diagpath)//'/mesh_domaindecomposition'
     allocate(wel2proc(1:neltot))
-    wel2proc=real(el2proc)
-    if (period > 2.5) then
-        call write_VTK_bin_scal_old(wel2proc,mesh1,neltot,fname)
-    endif
+    wel2proc = real(el2proc)
+    call write_VTK_bin_scal_old(wel2proc, mesh1, neltot, fname)
     deallocate(wel2proc)
 
     ! write VTK with cell data
 
     allocate(wel2proc(1:neltot*4))
 
-    fname=trim(diagpath)//'/mesh_domaindecomposition_cell'
+    fname = trim(diagpath)//'/mesh_domaindecomposition_cell'
 
-    allocate(x(neltot*4),y(neltot*4),z(neltot*4))
-    z=0.d0
-    ct=0
+    allocate(x(neltot*4), y(neltot*4), z(neltot*4))
+    z = 0.d0
+    ct = 0
 
-    do iel = 1, neltot
+    do iel=1, neltot
         x(ct+1) = sgll(0,0,iel)
         x(ct+2) = sgll(npol,0,iel)
         x(ct+3) = sgll(npol,npol,iel)
@@ -215,19 +213,20 @@ subroutine plot_dd_vtk
         y(ct+2) = zgll(npol,0,iel)
         y(ct+3) = zgll(npol,npol,iel)
         y(ct+4) = zgll(0,npol,iel)
-        wel2proc(ct+1)=real(el2proc(iel))
-        wel2proc(ct+2)=real(el2proc(iel))
-        wel2proc(ct+3)=real(el2proc(iel))
-        wel2proc(ct+4)=real(el2proc(iel))
+        wel2proc(ct+1) = real(el2proc(iel))
+        wel2proc(ct+2) = real(el2proc(iel))
+        wel2proc(ct+3) = real(el2proc(iel))
+        wel2proc(ct+4) = real(el2proc(iel))
         
-        ct = ct+4
+        ct = ct + 4
     enddo
     
-    call write_VTK_bin_scal(x,y,z,wel2proc,neltot,fname)
+    call write_VTK_bin_scal(x, y, z, wel2proc, neltot, fname)
 
-    deallocate(x,y,z)
+    deallocate(x, y, z)
     deallocate(wel2proc)
     deallocate(mesh1)
+
 end subroutine plot_dd_vtk
 !--------------------------------------------------------------------------
 
