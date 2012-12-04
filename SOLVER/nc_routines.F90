@@ -726,7 +726,7 @@ subroutine define_netcdf_output
     integer  :: iproc, err
 
     nmode = ior(NF90_CLOBBER,NF90_NETCDF4)
-    nmode = ior(nmode, nf90_mpiio)
+    ! nmode = ior(nmode, nf90_mpiio)
     ! Testing, whether the netcdf4 library supports parallel IO. The only function
     ! which reliably crashes, when applied to the serial library is nf90_put_var, 
     ! so we try that here.

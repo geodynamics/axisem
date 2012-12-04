@@ -997,52 +997,8 @@ if ( trim(stf_type)=='quheavi') stf=int_stf
 
 deallocate(timetmp,signal,int_stf)
 
-!  if (lpr) call write_convolve_routine
 
 end subroutine delta_src
-!=============================================================================
-
-
-!-----------------------------------------------------------------------------
-subroutine write_convolve_routine
-
-logical :: mono_log
-integer :: nrec
-
-open(99999,file='receivers.dat',POSITION='REWIND',status='old',action='read')
-    read(99999,*)nrec
-close(99999)
-
-mono_log=.false.
-if (src_type(1)=='monopole') mono_log=.true.
-
-open(unit=101,file=datapath(1:lfdata)//'/input_convolve.txt',status='replace',action='write')
-  write(101,*)seis_it*deltat
-  write(101,*)nrec
-  write(101,*)niter/seis_it
-  write(101,*)mono_log
-  write(101,*)'seisantipode1.dat'
- if (.not. mono_log) write(101,*)'seisantipode2.dat'
-  write(101,*)'seisantipode3.dat'
-  write(101,*)'seisepicenter1.dat'
- if (.not. mono_log) write(101,*)'seisepicenter2.dat'
-  write(101,*)'seisepicenter3.dat'
-  write(101,*)'seisequator1.dat'
- if (.not. mono_log) write(101,*)'seisequator2.dat'
-  write(101,*)'seisequator3.dat'
-  write(101,*)'seishypocenter1.dat'
- if (.not. mono_log) write(101,*)'seishypocenter2.dat'
-  write(101,*)'seishypocenter3.dat'
-close(101)
-
-write(6,*)
-write(6,*)"  wrote post-processing convolution info into 'input_convolve.txt'"
-write(6,*)"  use 'convolve_with_stf.f90' to convolve:"
-write(6,*)"  f90 convolve_with_stf.f90 -o convolve_with_stf.x"
-write(6,*)"  ./convolve_with_stf.csh <period> "
-
-end subroutine write_convolve_routine
-!=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine gauss_t(nstf_t,t,stf_t)
