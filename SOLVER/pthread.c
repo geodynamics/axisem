@@ -8,24 +8,17 @@
 pthread_t thread;
 
 // stub - so c knows what the function looks like
-void __nc_routines_MOD_nc_dump_all_strain();
+void __nc_routines_MOD_nc_dump_strain_to_disk();
 //void __nc_routines_MOD_nc_dump_all_strain(int* stepstodump);
 
 // tread that calls the IO function from fortran
 void *cfunc_thread(void* valp)
 {
    int val;
-   int one = 1;
    val = *((int*)valp);
    //printf("2nd value from fortran; %d \n", val);
+   nc_dump_strain_to_disk();
 #if defined(unc)
-#if defined(__GNUC__)
-   __nc_routines_MOD_nc_dump_strain_to_disk();
-#elif defined(__INTEL_COMPILER)    
-   nc_routines_mp_nc_dump_strain_to_disk_();
-#else
-   error "Compiler not supported";
-#endif
 #endif
    pthread_exit(NULL);
 }
