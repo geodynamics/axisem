@@ -4,6 +4,7 @@ module nc_routines
 #ifdef unc
   use netcdf
 #endif
+  use iso_c_binding
   use data_proc, ONLY : mynum, nproc, lpr
   use global_parameters
   real, allocatable   :: recdumpvar(:,:,:)       !< Buffer variable for recorder 
@@ -193,7 +194,7 @@ subroutine nc_dump_strain(isnap_loc)
         if (mynum.eq.0) then
             call cpu_time(tack)
             if ((tack-tick).gt.0.5) then
-30              format('Computiation was halted for ', F7.2, ' s to wait for ',/&
+30              format('Computation was halted for ', F7.2, ' s to wait for ',/&
                        'dumping processor. Consider adapting netCDF output variables',/&
                        '(disable compression, increase dumpstepsnap)')
                 write(6,30) tack-tick
@@ -201,6 +202,7 @@ subroutine nc_dump_strain(isnap_loc)
         end if
 
         if (mod(isnap_loc, dumpstepsnap).eq.outputplan) then 
+            write(6,*) mynum, ' should dump now'
             call c_wait_for_io()
             isnap_global = isnap_loc 
             ndumps = stepstodump
@@ -240,7 +242,7 @@ subroutine nc_dump_strain(isnap_loc)
 end subroutine nc_dump_strain
 
 !-----------------------------------------------------------------------------------------
-subroutine nc_dump_strain_to_disk()
+subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 #ifdef unc
 
     use data_io
@@ -250,12 +252,11 @@ subroutine nc_dump_strain_to_disk()
 
     implicit none
     include 'mesh_params.h'
-    !integer, intent(in)               :: stepstodump
     integer                           :: ivar, flen, isnap_loc
     real                              :: tick, tack
     integer                           :: dumpsize
     integer                           :: nvar_deriv
-        
+
     dumpsize = 0
     call cpu_time(tick)
 
