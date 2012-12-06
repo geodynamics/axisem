@@ -1068,10 +1068,10 @@ subroutine dump_velo_global(v,dchi)
 
   if (use_netcdf) then
      if (src_type(1)/='monopole') then
-        call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,:)), glen*3, 'velo_sol', appisnap)
-     else
-        call nc_dump_field_1d(f(ibeg:iend,ibeg:iend,:,(/1,3/)), glen*2, 'velo_sol', appisnap)
+        call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,2)), glen, 'velo_sol_p', appisnap)
      end if
+     call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,1)), glen, 'velo_sol_s', appisnap)
+     call nc_dump_field_1d((f(ibeg:iend,ibeg:iend,:,3)), glen, 'velo_sol_z', appisnap)
   else
      open(unit=95000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
@@ -1118,7 +1118,11 @@ subroutine dump_velo_global(v,dchi)
 
     ! dump velocity vector inside fluid
     if (use_netcdf) then
-       call nc_dump_field_1d(fflu(ibeg:iend,ibeg:iend,:,:), glen*3, 'velo_flu', appisnap)
+       call nc_dump_field_1d(fflu(ibeg:iend,ibeg:iend,:,1), glen, 'velo_flu_s', appisnap)
+       call nc_dump_field_1d(fflu(ibeg:iend,ibeg:iend,:,3), glen, 'velo_flu_z', appisnap)
+       if (src_type(1)/='monopole') then
+         call nc_dump_field_1d(fflu(ibeg:iend,ibeg:iend,:,2), glen, 'velo_flu_p', appisnap)
+       end if
     else
        open(unit=960000+mynum,file=datapath(1:lfdata)//'/velo_flu_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
