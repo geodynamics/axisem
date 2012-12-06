@@ -4,45 +4,60 @@ module nc_routines
 #ifdef unc
   use netcdf
 #endif
-  use iso_c_binding
-  use data_proc, ONLY : mynum, nproc, lpr
-  use global_parameters
-  real, allocatable   :: recdumpvar(:,:,:)       !< Buffer variable for recorder 
-  real, allocatable   :: surfdumpvar_disp(:,:,:)  !< Buffer variable for displacement at surface
-  real, allocatable   :: surfdumpvar_velo(:,:,:)  !< Buffer variable for velocity at surface 
-  real, allocatable   :: surfdumpvar_strain(:,:,:) !< Buffer variable for strain at surface
-  real, allocatable   :: surfdumpvar_srcdisp(:,:,:) !< Buffer variable for source displacement at surface
-  real, allocatable   :: oneddumpvar_flu(:,:,:)  !< Buffer variable for everything fluid dumped in nc_dump_field_1d
-  real, allocatable   :: oneddumpvar_sol(:,:,:)  !< Buffer variable for everything solid dumped in nc_dump_field_1d
-  integer, parameter  :: dumpsteprec = 100       !< Number of steps before receiver specific stuff is dumped
-  integer             :: dumpstepsnap            !< Number of steps before kernel specific stuff is dumped 
-  integer             :: gllperelem              !< Number of GLL points per element 
-  integer             :: outputplan              !< When is this processor supposed to dump. 
-  integer             :: stepstodump             !< How many steps since last dump?
-  integer,allocatable :: varsfilled(:)           !< Has variable been written to buffer in this step?
-  integer,allocatable :: varlength(:)            !< Length of strain dump variables
-  integer             :: isnap_global            !< Global variables, so that we do not have to pass data to the C subroutine
-  integer             :: ndumps                  !< dito
-  logical,allocatable :: dumpposition(:)         !< Will any processor dump at this value of isnap?
+    use iso_c_binding
+    use data_proc, ONLY : mynum, nproc, lpr
+    use commpi,    ONLY : MPI_COMM_WORLD, MPI_INFO_NULL
+    use commun,    ONLY : barrier
+    use data_proc, ONLY : mynum, nproc, lpr
+    use global_parameters
+
+    implicit none
+
+    real, allocatable   :: recdumpvar(:,:,:)       !< Buffer variable for recorder 
+    real, allocatable   :: surfdumpvar_disp(:,:,:)  !< Buffer variable for displacement at surface
+    real, allocatable   :: surfdumpvar_velo(:,:,:)  !< Buffer variable for velocity at surface 
+    real, allocatable   :: surfdumpvar_strain(:,:,:) !< Buffer variable for strain at surface
+    real, allocatable   :: surfdumpvar_srcdisp(:,:,:) !< Buffer variable for source displacement at surface
+    real, allocatable   :: oneddumpvar_flu(:,:,:)  !< Buffer variable for everything fluid dumped in nc_dump_field_1d
+    real, allocatable   :: oneddumpvar_sol(:,:,:)  !< Buffer variable for everything solid dumped in nc_dump_field_1d
+    integer             :: dumpstepsnap            !< Number of steps before kernel specific stuff is dumped 
+    integer             :: gllperelem              !< Number of GLL points per element 
+    integer             :: outputplan              !< When is this processor supposed to dump. 
+    integer             :: stepstodump             !< How many steps since last dump?
+    integer,allocatable :: varsfilled(:)           !< Has variable been written to buffer in this step?
+    integer,allocatable :: varlength(:)            !< Length of strain dump variables
+    integer             :: isnap_global            !< Global variables, so that we do not have to pass data to the C subroutine
+    integer             :: ndumps                  !< dito
+    logical,allocatable :: dumpposition(:)         !< Will any processor dump at this value of isnap?
+    integer             :: npoints                 !< Number of GLL points to plot for this processor
+    integer             :: npoints_global          !< Number of GLL points to plot for all processors
+    integer             :: npts_sol, npts_flu      !< Number of GLL points to plot in solid/fluid domain
+    integer             :: npts_sol_global         !< Number of GLL points to plot in solid domain for all processors
+    integer             :: npts_flu_global         !< Number of GLL points to plot in fluid domain for all processors
+    
+
+    ! Stuff moved from data_io
+    integer             :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout
+    integer             :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
+    integer             :: nc_times_dimid, nc_comp_dimid, nc_disp_varid
+    integer             :: nc_strcomp_dimid
+    integer             :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
+    integer             :: nc_surfelem_strain_varid, nc_surfelem_disp_src_varid
+    integer             :: nc_mesh_sol_varid, nc_mesh_flu_varid
+    integer             :: nc_point_dimid, nc_pt_sol_dimid, nc_pt_flu_dimid
+    integer             :: nc_szcoord_dimid
+    integer,allocatable :: nc_field_varid(:)
+    character(len=16), allocatable  :: varnamelist(:)
+    integer             :: nvar = -1
   
-  ! Stuff moved from data_io
-  integer             :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout
-  integer             :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
-  integer             :: nc_times_dimid, nc_comp_dimid, nc_disp_varid
-  integer             :: nc_strcomp_dimid
-  integer             :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
-  integer             :: nc_surfelem_strain_varid, nc_surfelem_disp_src_varid
-  integer,allocatable :: nc_field_varid(:)
-  character(len=16), allocatable  :: varnamelist(:)
-  integer             :: nvar = -1
 
 
 
 !! @todo These parameters should move to a input file soon
-  integer             :: dumpbuffersize = 256    !< How often should each processor dump its buffer to disk?
-  logical             :: deflate        = .false. !< Should output be compressed?
-  integer             :: deflate_level  = 5      !< Compression level (0 lowest, 9 highest)
-  logical             :: verbose        = .true. !< @todo Will hopefully be a global variable one day
+    integer             :: dumpbuffersize = 256    !< How often should each processor dump its buffer to disk?
+    logical             :: deflate        = .false. !< Should output be compressed?
+    integer             :: deflate_level  = 5      !< Compression level (0 lowest, 9 highest)
+    logical             :: verbose        = .true. !< @todo Will hopefully be a global variable one day
 contains
 !-----------------------------------------------------------------------------------------
 !> Translates NetCDF error code into readable message
@@ -69,7 +84,6 @@ end subroutine check
 !! @todo: Change from local (processor-specific) IO to global.
 subroutine nc_dump_field_1d(f, flen, varname, appisnap)
     use data_io,     ONLY : nstrain
-    use commun,      ONLY : barrier
     use data_source, ONLY : src_type
 
     implicit none
@@ -94,6 +108,7 @@ subroutine nc_dump_field_1d(f, flen, varname, appisnap)
             ' which is not in varnamelist. Contact a developer and shout at him!'
         stop 1
     end if
+! Should be fixed in rev. 277 (was in makemake.pl)
 20  format('Something is so wrong here', A16, ', flen', I8, ' nel_solid ', I8, /&
            'Probably an error during recompilation. Please run "make clean" and', /&
            'try again. If problem persists, please send a mail to the developers')
@@ -170,7 +185,6 @@ end subroutine nc_dump_field_1d
 subroutine nc_dump_strain(isnap_loc)
 
     use data_io, ONLY    : nstrain
-    use commun,  ONLY    : barrier
     implicit none
     integer, intent(in) :: isnap_loc
 #ifdef unc
@@ -202,7 +216,6 @@ subroutine nc_dump_strain(isnap_loc)
         end if
 
         if (mod(isnap_loc, dumpstepsnap).eq.outputplan) then 
-            write(6,*) mynum, ' should dump now'
             call c_wait_for_io()
             isnap_global = isnap_loc 
             ndumps = stepstodump
@@ -257,6 +270,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     integer                           :: dumpsize
     integer                           :: nvar_deriv
 
+        
     dumpsize = 0
     call cpu_time(tick)
 
@@ -283,8 +297,8 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     do ivar=1,nvar_deriv
         flen = varlength(ivar)
         call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
-                                 start=(/1, mynum+1, isnap_loc-ndumps+1/),              &
-                                 count=(/flen, 1, ndumps/),                             &
+                                 start=(/mynum*npts_sol+1, isnap_loc-ndumps+1/),              &
+                                 count=(/flen, ndumps/),                             &
                                  values=oneddumpvar_sol(1:flen,1:ndumps,ivar) ) )
         dumpsize = dumpsize + flen*ndumps
     end do
@@ -292,8 +306,8 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     ivar = nvar_deriv + 1
     flen = varlength(ivar)
     call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
-                             start=(/1, mynum+1, isnap_loc-ndumps+1/), &
-                             count=(/flen, 1, ndumps/),                &
+                             start=(/mynum*npts_sol+1, 1, isnap_loc-ndumps+1/), &
+                             count=(/flen/3, 3, ndumps/),                &
                              values=reshape(source=oneddumpvar_sol(1:flen/3,1:ndumps,ivar:ivar+2), &
                                             shape=(/flen/3, 3, ndumps/), &
                                             order=(/1,3,2/) ) ) )
@@ -302,8 +316,8 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     do ivar=nvar_deriv + 2,nvar_deriv*2+1 !< fluid variable
         flen = varlength(ivar)
         call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
-                                 start=(/1, mynum+1, isnap_loc-ndumps+1/),              &
-                                 count=(/flen, 1, ndumps/),                             &
+                                 start=(/mynum*npts_flu+1, isnap_loc-ndumps+1/),              &
+                                 count=(/flen, ndumps/),                             &
                                  values=oneddumpvar_flu(1:flen,1:ndumps,ivar-nvar_deriv-1) ) )
         dumpsize = dumpsize + flen*ndumps
     end do
@@ -311,8 +325,8 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     ivar = nvar_deriv*2+2
     flen = varlength(ivar)
     call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
-                             start=(/1, mynum+1, isnap_loc-ndumps+1/), &
-                             count=(/flen, 1, ndumps/),                &
+                             start=(/mynum*npts_flu+1, 1, isnap_loc-ndumps+1/), &
+                             count=(/flen/3, 3, ndumps/),                &
                              values=reshape(source=oneddumpvar_flu(1:flen/3,1:ndumps,&
                                                    nvar_deriv+1:nvar_deriv+3),&
                                             shape=(/flen/3, 3, ndumps/), &
@@ -444,6 +458,47 @@ subroutine nc_dump_surface(surffield, disporvelo, nrec, dim2, idump)
 end subroutine
 !-----------------------------------------------------------------------------------------
 
+subroutine nc_dump_mesh(scoord_sol, zcoord_sol, scoord_flu, zcoord_flu)
+    use data_io,                   only : datapath, lfdata
+    real(8), intent(in), dimension(:)   :: scoord_sol, zcoord_sol
+    real(8), intent(in), dimension(:)   :: scoord_flu, zcoord_flu
+    integer                             :: iproc
+#ifdef unc
+    if ((npts_sol.ne.size(scoord_sol)).or.(npts_flu.ne.size(scoord_flu)) ) then
+        write(6,*) 'Inconsistency in mesh size in nc_dump_mesh_solid'
+        stop
+    end if
+    do iproc = 0,nproc-1
+        if (mynum.eq.iproc) then
+            call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
+                                  mode=NF90_WRITE, ncid=ncid_out) )
+            call check( nf90_inq_varid( ncid_snapout, "solid mesh", nc_mesh_sol_varid ) )
+            call check( nf90_put_var(ncid_snapout, varid = nc_mesh_sol_varid, &
+                                     values = scoord_sol, &
+                                     start  = (/1,mynum*npts_sol+1/), &
+                                     count  = (/1,npts_sol/) ))
+            call check( nf90_put_var(ncid_snapout, varid = nc_mesh_sol_varid, &
+                                     values = zcoord_sol, &
+                                     start  = (/2,mynum*npts_sol+1/), &
+                                     count  = (/1,npts_sol/) ))
+            
+            call check( nf90_inq_varid( ncid_snapout, "fluid mesh", nc_mesh_flu_varid ) )
+            call check( nf90_put_var(ncid_snapout, varid = nc_mesh_flu_varid, &
+                                     values = scoord_flu, &
+                                     start  = (/1,mynum*npts_flu+1/), &
+                                     count  = (/1,npts_flu/) ))
+            call check( nf90_put_var(ncid_snapout, varid = nc_mesh_flu_varid, &
+                                     values = zcoord_flu, &
+                                     start  = (/2,mynum*npts_flu+1/), &
+                                     count  = (/1,npts_flu/) ))
+            
+            call check( nf90_close(ncid_out))
+        end if
+        call barrier
+    end do
+#endif
+end subroutine nc_dump_mesh
+    
 
 !-----------------------------------------------------------------------------------------
 !> Define the output file variables and dimensions
@@ -518,6 +573,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         gllperelem = (iend-ibeg+1)**2
         varlength = varlength * gllperelem
+        npoints = nelem * gllperelem
+        npoints_global = npoints * nproc
+        npts_sol = nel_solid * gllperelem
+        npts_flu = nel_fluid * gllperelem 
+        npts_sol_global = nel_solid * gllperelem * nproc
+        npts_flu_global = nel_fluid * gllperelem * nproc
 
         if (mynum.eq.0) then
             !write(6,*) gllperelem, nel_fluid, nel_solid
@@ -592,29 +653,73 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       dimid=nc_snap_dimid) )
             call check( nf90_def_dim( ncid=ncid_snapout, name="processors", len=nproc, &
                                       dimid=nc_proc_dimid) )
-            do ivar=1, nvar ! The big snapshot variables for the kerner.
-                call check( nf90_def_dim(ncid=ncid_snapout, &
-                                         name="dim_"//trim(varnamelist(ivar)), &
-                                         len=varlength(ivar), dimid=nc_f_dimid(ivar)) )
+            
+            call check( nf90_def_dim(ncid=ncid_snapout, name='gllpoints_solid', &
+                                     len=npts_sol_global, dimid=nc_pt_sol_dimid) )
+            call check( nf90_def_dim(ncid=ncid_snapout, name='gllpoints_fluid', &
+                                     len=npts_flu_global, dimid=nc_pt_flu_dimid) )
+
+            call check( nf90_def_dim(ncid=ncid_snapout, name='S-Z-Coordinate', &
+                                     len=2, dimid=nc_szcoord_dimid) )
+
+
+            call check( nf90_def_var(ncid=ncid_snapout, name='solid mesh', &
+                                     xtype = NF90_DOUBLE, &
+                                     dimids = (/nc_szcoord_dimid, nc_pt_sol_dimid/),&
+                                     varid = nc_mesh_sol_varid) )
+            call check( nf90_def_var(ncid=ncid_snapout, name='fluid mesh', &
+                                     xtype = NF90_DOUBLE, &
+                                     dimids = (/nc_szcoord_dimid, nc_pt_flu_dimid/),&
+                                     varid = nc_mesh_flu_varid) )
+
+
+            do ivar=1, nvar/2-1 ! The big snapshot variables for the kerner.
+!                call check( nf90_def_dim(ncid=ncid_snapout, &
+!                                         name="dim_"//trim(varnamelist(ivar)), &
+!                                         len=varlength(ivar), dimid=nc_f_dimid(ivar)) )
+!                call check( nf90_def_var(ncid=ncid_snapout, name=trim(varnamelist(ivar)), &
+!                                         xtype = NF90_FLOAT, &
+!                                         dimids = (/nc_f_dimid(ivar), nc_proc_dimid, nc_snap_dimid/),&
+!                                         varid = nc_field_varid(ivar), &
+!                                         chunksizes = (/varlength(ivar), 1, 1/) ))
+       
                 call check( nf90_def_var(ncid=ncid_snapout, name=trim(varnamelist(ivar)), &
                                          xtype = NF90_FLOAT, &
-                                         dimids = (/nc_f_dimid(ivar), nc_proc_dimid, nc_snap_dimid/),&
+                                         dimids = (/nc_pt_sol_dimid, nc_snap_dimid/),&
                                          varid = nc_field_varid(ivar), &
-                                         chunksizes = (/varlength(ivar), 1, 1/) ))
-       
-                if (deflate) then
-                    call check( nf90_def_var_deflate(ncid=ncid_snapout, &
-                                                     varid=nc_field_varid(ivar), &
-                                                     shuffle=1, deflate=1, &
-                                                     deflate_level=deflate_level) )
-                end if
+                                         chunksizes = (/npts_sol_global, 1/) ))
+                !if (deflate) then
+                !    call check( nf90_def_var_deflate(ncid=ncid_snapout, &
+                !                                     varid=nc_field_varid(ivar), &
+                !                                     shuffle=1, deflate=1, &
+                !                                     deflate_level=deflate_level) )
+                !end if
                 call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
                                               no_fill=1, fill=0) )
                 write(6,100) trim(varnamelist(ivar)), nc_field_varid(ivar), varlength(ivar)
 100             format('  Netcdf variable ',A16,' with ID ', I3, ' and length', I8, ' produced.')       
             end do
+            do ivar=nvar/2+1, nvar-1
+                call check( nf90_def_var(ncid=ncid_snapout, name=trim(varnamelist(ivar)), &
+                                         xtype = NF90_FLOAT, &
+                                         dimids = (/nc_pt_flu_dimid, nc_snap_dimid/),&
+                                         varid = nc_field_varid(ivar), &
+                                         chunksizes = (/npts_flu_global, 1/) ))
 
+                call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
+                                              no_fill=1, fill=0) )
+            end do
 
+            call check( nf90_def_var(ncid=ncid_snapout, name=trim(varnamelist(nvar/2)), &
+                                     xtype = NF90_FLOAT, &
+                                     dimids = (/nc_pt_sol_dimid, nc_comp_dimid, nc_snap_dimid/),&
+                                     varid = nc_field_varid(nvar/2), &
+                                     chunksizes = (/npts_sol_global, 3, 1/) ))
+            call check( nf90_def_var(ncid=ncid_snapout, name=trim(varnamelist(nvar)), &
+                                     xtype = NF90_FLOAT, &
+                                     dimids = (/nc_pt_flu_dimid, nc_comp_dimid, nc_snap_dimid/),&
+                                     varid = nc_field_varid(nvar), &
+                                     chunksizes = (/npts_flu_global, 3, 1/) ))
             varsfilled = 0
         
             ! Surface group in output file
@@ -720,8 +825,6 @@ subroutine define_netcdf_output
 #ifdef unc
 
     use data_io
-    use commpi,      ONLY : MPI_COMM_WORLD, MPI_INFO_NULL
-    use commun,      ONLY : barrier
     implicit none    
     integer  :: nmode, ncid_test, test_dimid, test_varid, status
     integer  :: iproc, err
@@ -840,8 +943,6 @@ end subroutine nc_write_att_int
 subroutine nc_open_parallel
 #ifdef unc
     use data_io
-    use commpi,     ONLY : MPI_COMM_WORLD, MPI_INFO_NULL
-    use commun,     ONLY : barrier
     implicit none
     integer             :: status, ivar, nmode
     !integer, parameter :: par_access_mode = nf90_collective
@@ -933,8 +1034,6 @@ end subroutine nc_open_parallel
 !> Close the Output file. Contains barrier.
 subroutine end_netcdf_output
 #ifdef unc
-    !use data_io, only: ncid_out, ncid_recout
-    use commun, only: barrier
     integer        :: iproc
 
     call barrier
