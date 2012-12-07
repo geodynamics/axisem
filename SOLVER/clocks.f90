@@ -34,7 +34,7 @@ module clocks_mod
   logical, private :: clocks_initialized=.FALSE.
 !clocks are stored in this internal type
   type, private :: clock
-    character(len=24) :: name
+    character(len=32) :: name
     integer :: ticks, calls
   end type clock
   type(clock) :: clocks(0:max_clocks)
@@ -202,7 +202,7 @@ subroutine clocks_exit(flag)
              total_time = clocks(i)%ticks*tick_rate
              time_per_call = total_time/clocks(i)%calls
 !            write(6,"(32x,a)") '   calls        t_call       t_total t_frac'
-             write(6,"(a32,i8,2f14.6,f7.3)") &
+             write(6,"(a40,i8,2f14.6,f7.3)") &
                   'CLOCKS: '//clocks(i)%name, &
                   clocks(i)%calls, time_per_call, total_time, total_time/cumul_time
          end if
