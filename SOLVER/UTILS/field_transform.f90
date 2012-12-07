@@ -32,7 +32,7 @@ program field_transformation
 
     double precision                :: time_fft, time_i, time_o, tick, tack
 
-    npointsperstep = 10000
+    npointsperstep = 40000
     nthreads = 4
 
     ! initialize timer
@@ -244,8 +244,8 @@ program field_transformation
         call cpu_time(tack)
         time_o = time_o + tack - tick
         print "('wrote ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
-            (ngll - nstep) * nsnap * 4 / 1048576., tack-tick, &
-            (ngll - nstep) * nsnap * 4 / 1048576. / (tack-tick)
+            (ngll - nstep) * nomega * 4 / 1048576., tack-tick, &
+            (ngll - nstep) * nomega * 4 / 1048576. / (tack-tick)
 
     enddo
 
