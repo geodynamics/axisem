@@ -32,8 +32,8 @@ program field_transformation
 
     double precision                :: time_fft, time_i, time_o, tick, tack
 
-    npointsperstep = 40000
-    nthreads = 4
+    npointsperstep = 10000
+    nthreads = 2
 
     ! initialize timer
     time_fft = 0
@@ -138,6 +138,7 @@ program field_transformation
                                  dimids=(/ncout_freq_dimid, ncout_gll_dimid/),&
                                  varid=ncout_field_varid(ivar, 1), &
                                  chunksizes = (/nomega, npointsperstep/)) )
+                                 !chunksizes = (/nomega, ngll/)) )
                                  !chunksizes = (/nomega, 1/)) )
 
         call check( nf90_def_var(ncid=ncout_fields_grpid, name=trim(varnamelist(ivar))//'_imag', &
@@ -146,6 +147,7 @@ program field_transformation
                                  varid=ncout_field_varid(ivar, 2), &
                                  chunksizes = (/nomega, npointsperstep/)) )
                                  !chunksizes = (/nomega, 1/)) )
+                                 !chunksizes = (/nomega, ngll/)) )
        
     end do
     call check( nf90_enddef(ncout_id))
@@ -213,7 +215,7 @@ program field_transformation
         ! special treatment of the last chunk (having less gll points)
         ! this should be put in the loop above to avoid doubble coding of
         ! read/write statements
-        nstep = nstep - npointsperstep
+        nstep = nstep
         datat = 0.
         call cpu_time(tick)
         call check( nf90_get_var(ncin_snap_grpid, ncin_field_varid(1), values=datat(1:ngll-nstep, 1:nsnap), &
@@ -236,16 +238,16 @@ program field_transformation
         ! write real and imaginary parts to output file
         call cpu_time(tick)
         ! MVD: npointsperstep should be too much, why no error???
-        call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 1), values=realpart(dataf), &
-                                 start=(/1, nstep+1/), count=(/nomega, npointsperstep/)) ) 
+        call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 1), values=realpart(dataf(:,ngll-nstep)), &
+                                 start=(/1, nstep+1/), count=(/nomega, ngll-nstep/)) ) 
 
-        call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 2), values=imagpart(dataf), &
-                                 start=(/1, nstep+1/), count=(/nomega, npointsperstep/)) ) 
+        call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 2), values=imagpart(dataf(:,ngll-nstep)), &
+                                 start=(/1, nstep+1/), count=(/nomega, ngll-nstep/)) ) 
         call cpu_time(tack)
         time_o = time_o + tack - tick
         print "('wrote ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
-            (ngll - nstep) * nomega * 4 / 1048576., tack-tick, &
-            (ngll - nstep) * nomega * 4 / 1048576. / (tack-tick)
+            (ngll - nstep) * nomega * 2 * 4 / 1048576., tack-tick, &
+            (ngll - nstep) * nomega * 2 * 4 / 1048576. / (tack-tick)
 
     enddo
 
