@@ -27,13 +27,13 @@ program field_transformation
     integer                         :: iret
     integer                         :: npointsperstep, istep, nstep
 
-    real(kind=8), dimension(:,:), allocatable       :: datat
+    real(kind=8), dimension(:,:), allocatable       :: datat, datat_t
     complex(kind=8), dimension(:,:), allocatable    :: dataf
 
     double precision                :: time_fft, time_i, time_o, tick, tack
 
     npointsperstep = 10000
-    nthreads = 2
+    nthreads = 4
 
     ! initialize timer
     time_fft = 0
@@ -146,17 +146,6 @@ program field_transformation
                                  varid=ncout_field_varid(ivar, 2), &
                                  chunksizes = (/nomega, npointsperstep/)) )
                                  !chunksizes = (/nomega, 1/)) )
-
-    !    !if (deflate) then
-    !    !    call check( nf90_def_var_deflate(ncid=ncid_snapout, &
-    !    !                                     varid=nc_field_varid(ivar), &
-    !    !                                     shuffle=1, deflate=1, &
-    !    !                                     deflate_level=deflate_level) )
-    !    !end if
-    !    !call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
-    !    !                              no_fill=1, fill=0) )
-    !    write(6,"('  Netcdf variable ',A16,' with ID ', I3, ' and length', I8, ' produced.')") &
-    !        trim(varnamelist(ivar)), ncout_field_varid(ivar), ngll
        
     end do
     call check( nf90_enddef(ncout_id))
@@ -168,13 +157,13 @@ program field_transformation
     print *, 'nomega = ',  nomega
 
     ! allocate working arrays for fourier transform
+    allocate(datat_t(1:npointsperstep, 1:ntimes))
     allocate(datat(1:ntimes, 1:npointsperstep))
     allocate(dataf(1:nomega, 1:npointsperstep))
 
     ! generate plan for fft
     call dfftw_plan_many_dft_r2c(plan_fftf, rank, ntimes, npointsperstep, datat, npointsperstep, istride, &
                                  ntimes, dataf, npointsperstep, ostride, nomega, FFTW_ESTIMATE)
-
 
     ! loop over fields
     do ivar=1, nvar
@@ -183,11 +172,13 @@ program field_transformation
         do while (nstep + 1 + npointsperstep < ngll)
             !initialize to zero for padding
             datat = 0.
+            dataf = 0.
             ! read a chunk of data
             call cpu_time(tick)
-            call check( nf90_get_var(ncin_snap_grpid, ncin_field_varid(1), values=datat(1:nsnap,:), &
-                                     start=(/nstep+1, 1/), count=(/npointsperstep, nsnap/), &
-                                     map=(/nsnap, 1/)) ) 
+            call check( nf90_get_var(ncin_snap_grpid, ncin_field_varid(1), values=datat_t(:,1:nsnap), &
+                                     start=(/nstep+1, 1/), count=(/npointsperstep, nsnap/)) )!, &
+                                     !map=(/nsnap, 1/)) ) 
+            datat(1:nsnap,:) = transpose(datat_t(:,1:nsnap))
             call cpu_time(tack)
             time_i = time_i + tack - tick
             print "('read  ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
@@ -220,14 +211,20 @@ program field_transformation
         end do
 
         ! special treatment of the last chunk (having less gll points)
+        ! this should be put in the loop above to avoid doubble coding of
+        ! read/write statements
         nstep = nstep - npointsperstep
         datat = 0.
         call cpu_time(tick)
-        call check( nf90_get_var(ncin_snap_grpid, ncin_field_varid(1), values=datat(:,1:ngll-nstep), &
-                                 start=(/nstep+1, 1/), count=(/ngll-nstep, nsnap/), &
-                                 map=(/nsnap, 1/)) ) 
+        call check( nf90_get_var(ncin_snap_grpid, ncin_field_varid(1), values=datat(1:ngll-nstep, 1:nsnap), &
+                                 start=(/nstep+1, 1/), count=(/ngll-nstep, nsnap/)) )!, &
+                                 !map=(/nsnap, 1/)) ) 
+        datat(1:nsnap,1:ngll-nstep) = transpose(datat_t(1:ngll-nstep,1:nsnap))
         call cpu_time(tack)
         time_i = time_i + tack - tick
+        print "('read  ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
+            (ngll - nstep) * nsnap * 4 / 1048576., tack-tick, &
+            (ngll - nstep) * nsnap * 4 / 1048576. / (tack-tick)
 
         ! ADD TAPERING HERE
 
@@ -246,6 +243,9 @@ program field_transformation
                                  start=(/1, nstep+1/), count=(/nomega, npointsperstep/)) ) 
         call cpu_time(tack)
         time_o = time_o + tack - tick
+        print "('wrote ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
+            (ngll - nstep) * nsnap * 4 / 1048576., tack-tick, &
+            (ngll - nstep) * nsnap * 4 / 1048576. / (tack-tick)
 
     enddo
 
