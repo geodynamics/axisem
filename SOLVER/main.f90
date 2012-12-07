@@ -134,6 +134,7 @@ character(len=10) :: mytime
   idmpi = clock_id('Only MPI routine')
   idstiff = clock_id('Solid stiffness routine')
   iddump = clock_id('Dump routine')
+  idnbio = clock_id('Non Blocking IO red light')
   if (lpr) then 
      write(6,*)':::::::::::::::::::::::::::::::::::::::::::&
                &:::::::::::::::::::::::::::'
