@@ -32,7 +32,7 @@ program field_transformation
 
     double precision                :: time_fft, time_i, time_o, tick, tack
 
-    npointsperstep = 1000
+    npointsperstep = 10000
     nthreads = 2
 
     ! initialize timer
@@ -54,7 +54,7 @@ program field_transformation
     endif
 
     ! open input netcdf file 
-    call check( nf90_open(path="../bla/Data/axisem_output.nc4", & 
+    call check( nf90_open(path="../bla_4_v2/Data/axisem_output.nc4", & 
                           mode=NF90_NOWRITE, ncid=ncin_id) )
 
     ! get Snapshots group id
@@ -137,13 +137,15 @@ program field_transformation
                                  xtype=NF90_FLOAT, &
                                  dimids=(/ncout_freq_dimid, ncout_gll_dimid/),&
                                  varid=ncout_field_varid(ivar, 1), &
-                                 chunksizes = (/nomega, 1/)) )
+                                 chunksizes = (/nomega, npointsperstep/)) )
+                                 !chunksizes = (/nomega, 1/)) )
 
         call check( nf90_def_var(ncid=ncout_fields_grpid, name=trim(varnamelist(ivar))//'_imag', &
                                  xtype=NF90_FLOAT, &
                                  dimids=(/ncout_freq_dimid, ncout_gll_dimid/),&
                                  varid=ncout_field_varid(ivar, 2), &
-                                 chunksizes = (/nomega, 1/)) )
+                                 chunksizes = (/nomega, npointsperstep/)) )
+                                 !chunksizes = (/nomega, 1/)) )
 
     !    !if (deflate) then
     !    !    call check( nf90_def_var_deflate(ncid=ncid_snapout, &
@@ -188,6 +190,9 @@ program field_transformation
                                      map=(/nsnap, 1/)) ) 
             call cpu_time(tack)
             time_i = time_i + tack - tick
+            print "('read  ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
+                npointsperstep * nsnap * 4 / 1048576., tack-tick, &
+                npointsperstep * nsnap * 4 / 1048576. / (tack-tick)
 
             ! ADD TAPERING HERE
 
@@ -206,6 +211,9 @@ program field_transformation
                                      start=(/1, nstep+1/), count=(/nomega, npointsperstep/)) ) 
             call cpu_time(tack)
             time_o = time_o + tack - tick
+            print "('wrote ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
+                npointsperstep * nomega * 2 * 4 / 1048576., tack-tick, &
+                npointsperstep * nomega * 2 * 4 / 1048576. / (tack-tick)
 
 
             nstep = nstep + npointsperstep
@@ -230,6 +238,7 @@ program field_transformation
 
         ! write real and imaginary parts to output file
         call cpu_time(tick)
+        ! MVD: npointsperstep should be too much, why no error???
         call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 1), values=realpart(dataf), &
                                  start=(/1, nstep+1/), count=(/nomega, npointsperstep/)) ) 
 
@@ -238,7 +247,6 @@ program field_transformation
         call cpu_time(tack)
         time_o = time_o + tack - tick
 
-
     enddo
 
     call dfftw_destroy_plan(plan_fftf)
@@ -246,8 +254,8 @@ program field_transformation
     call check( nf90_close(ncout_id))
 
     print *, 'Time spent for FFT: ', time_fft
-    print *, 'Time spent for I: ', time_i
-    print *, 'Time spent for O: ', time_o
+    print *, 'Time spent for I:   ', time_i
+    print *, 'Time spent for O:   ', time_o
     
     contains
 !-----------------------------------------------------------------------------------------
@@ -261,5 +269,6 @@ subroutine check(status)
     end if
 end subroutine check  
 !-----------------------------------------------------------------------------------------
+
 
 end program
