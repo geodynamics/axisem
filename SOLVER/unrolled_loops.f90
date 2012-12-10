@@ -4,7 +4,6 @@
 
  ! This module has been created by the mesher
  ! for polynomial order  4
- ! on 10/13/2012, at 21h 16min
 
    use global_parameters
 
