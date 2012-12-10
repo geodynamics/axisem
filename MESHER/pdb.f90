@@ -3710,7 +3710,7 @@ write(101,*)'!========================'
 write(101,*)
 write(101,*)'! This module has been created by the mesher'
 write(101,5) npol
-write(101,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
+!write(101,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
 write(101,*)
 write(101,*)'  use global_parameters'
 write(101,*)
