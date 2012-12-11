@@ -5,7 +5,7 @@ program axisem
 use data_proc 
 use data_io
 use data_time   
-use nc_routines,    ONLY : define_netcdf_output, end_netcdf_output, nc_open_parallel 
+use nc_routines,    ONLY : nc_create_outputfile, nc_end_output, nc_open_parallel 
 use data_source,    ONLY : isim,num_simul
 use data_mesh,      ONLY : do_mesh_tests
 use parameters,     ONLY : open_local_param_file,readin_parameters
@@ -32,7 +32,7 @@ implicit none
   
   if(use_netcdf) then
     if (lpr) write(6,*)'MAIN: Prepare netcdf files for wavefield output ..........'
-    call define_netcdf_output
+    call nc_create_outputfile
     if (lpr)  write(6,*)'MAIN: netcdf file prepared ...............................'
   end if
   
@@ -74,7 +74,7 @@ implicit none
 
   if (use_netcdf) then
     if(lpr)write(6,*)'MAIN: Flush and close all netcdf files ...................'; call flush(6)
-    call end_netcdf_output !Flush and close all netcdf files 
+    call nc_end_output ! Dump receiver seismograms to finalize netcdf output 
   end if
   
   if (dump_xdmf) then

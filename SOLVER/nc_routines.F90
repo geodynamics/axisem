@@ -55,7 +55,15 @@ module nc_routines
     logical             :: deflate        = .false. !< Should output be compressed?
     integer             :: deflate_level  = 5       !< Compression level (0 lowest, 9 highest)
     logical             :: verbose        = .true.  !< @todo Will hopefully be a global variable one day
+    
+    private 
+    public              :: nc_dump_strain, nc_dump_rec, nc_dump_field_1d, nc_dump_surface
+    public              :: nc_write_att_char, nc_write_att_real, nc_write_att_int
+    public              :: nc_define_outputfile, nc_open_parallel, nc_end_output
+    public              :: nc_create_outputfile, nc_dump_strain_to_disk
+
 contains
+
 
 !-----------------------------------------------------------------------------------------
 !> Translates NetCDF error code into readable message
@@ -79,7 +87,6 @@ end subroutine check
 !-----------------------------------------------------------------------------------------
 !> Routine to dump the wavefield variables for the Kerner. Collects input in
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
-!! @todo: Change from local (processor-specific) IO to global.
 subroutine nc_dump_field_1d(f, flen, varname, appisnap)
     use data_io,     ONLY : nstrain
     use data_source, ONLY : src_type
@@ -404,6 +411,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     call flush(6)
 
     ! MvD: do we need this initalization?
+    ! SCS: Not really, probably. But does it hurt?
     oneddumpvar_flu = 0.0
     oneddumpvar_sol = 0.0 
     surfdumpvar_disp = 0.0
@@ -875,9 +883,9 @@ end subroutine nc_define_outputfile
 
 
 !-----------------------------------------------------------------------------------------
-!> Processor 0 opens output file so that nc_define_receiverfile can define 
+!> Processor 0 opens output file so that nc_define_outputfile can define 
 !! the dimensions and variables in it.
-subroutine define_netcdf_output
+subroutine nc_create_outputfile
 #ifdef unc
 
     use data_io
@@ -1084,9 +1092,9 @@ end subroutine nc_open_parallel
 
 
 !-----------------------------------------------------------------------------------------
-! MvD: Missleading comment, whats happening really?
-!> Close the Output file. Contains barrier.
-subroutine end_netcdf_output
+!> Final dumps to netCDF file. In the moment contains only dump of 
+!! receiver seismograms.
+subroutine nc_end_output
 #ifdef unc
     integer        :: iproc
 
