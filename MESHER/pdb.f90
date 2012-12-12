@@ -14,125 +14,101 @@
   private
   contains
 
-!////////////////////////////////////////////////////////////////////////
 !dk create_pdb-----------------------------------------------------------
 subroutine create_pdb
+  ! Wrapper routine to define everything in the parallel global and solid/fluid!
+  ! worlds and dump the database for each processor. 
+  ! Additionally creating the header mesh_params.h containing all major mesh 
+  ! sizes for the solver and the solver routine unrolled_loops.f90 that depends 
+  ! on the polynomial order given in the mesher.
+  ! Whenever DATABASE occurs as a comment below, those parameters will be saved 
+  ! into the solver database.
+  ! 
+  ! Terminology: 
+  ! global - counting through the entire solid+fluid domain across processors
+  ! slobal - counting through the entire solid domain across processors
+  ! glocal - counting through a single processor's entire solid+fluid domain
+  ! slocal - counting through a single processor's solid domain
+  ! accordingly for fluid: flobal, flocal, and colloquially for sflobal, sflocal.
+  
   use data_gllmesh, only : sgll,zgll
-!
-! Wrapper routine to define everything in the parallel global and solid/fluid!
-! worlds and dump the database for each processor. 
-! Additionally creating the header mesh_params.h containing all major mesh 
-! sizes for the solver and the solver routine unrolled_loops.f90 that depends 
-! on the polynomial order given in the mesher.
-! Whenever DATABASE occurs as a comment below, those parameters will be saved 
-! into the solver database.
-! 
-! Terminology: 
-! global - counting through the entire solid+fluid domain across processors
-! slobal - counting through the entire solid domain across processors
-! glocal - counting through a single processor's entire solid+fluid domain
-! slocal - counting through a single processor's solid domain
-! accordingly for fluid: flobal, flocal, and colloquially for sflobal, sflocal.
-! 
-  integer :: nelmax
+
+  integer   :: nelmax
   if (dump_mesh_info_screen) then
-  write(6,*)
-  write(6,*)' ||||||||||||||| CREATING THE PARALLEL DATABASE ||||||||||||||||'
-  write(6,*)
+    write(6,*)
+    write(6,*)' ||||||||||||||| CREATING THE PARALLEL DATABASE ||||||||||||||||'
+    write(6,*)
   end if
-!!!!!!!!!!!!!!!!
-! af 05/08
-!
+
   if (allocated(iglob)) deallocate(iglob)
-! define glocal numbering
-! write(6,*) '  define local coordinates....';call flush(6)
+
+  ! define glocal numbering
   call define_local_coordinates ! needs sgll,zgll, creates sgglp,zgllp
-!!
-! write(6,*) '  define glocal numbering....';call flush(6)
+
+  write(6,*) '  define glocal numbering....'; call flush(6)
   call define_glocal_numbering ! needs sgllp,zgllp, creates igloc
-! write(6,*) '  define global2glocal....';call flush(6)
-! call define_global2glocal
-!!!!!!!!!!!!!!!!
-!af
-! TNM: Sept 2006: testing new method....
-!  write(6,*) '  define search global index....';call flush(6)
-!  call define_search_global_index
 
-!  write(6,*) '  partition global index....';call flush(6)
-!  call partition_global_index
-if (dump_mesh_info_files) then
-  open(2,file=diagpath(1:lfdiag)//'/crds',FORM='unformatted')
-  write(2) sgllp
-  close(2)
-  deallocate(sgllp,zgllp)
-endif
-
-! Solid-fluid distinction
-  write(6,*) '  define solflu coordinates....';call flush(6)
-  call define_sflocal_coordinates !   needs sgll, zgll 
+  ! Solid-fluid distinction
+  write(6,*) '  define solflu coordinates....'; call flush(6)
+  call define_sflocal_coordinates ! needs sgll, zgll 
                                   ! creates sgllp_solid, zgllp_solid
                                   ! creates sgllp_fluid, zgllp_fluid
   deallocate(sgll,zgll)
   nelmax = maxval(nel)
-if (dump_mesh_info_files) then
-  allocate(sgllp(0:npol,0:npol,nelmax,0:nproc-1))
-  open(2,file=diagpath(1:lfdiag)//'/crds',FORM='unformatted')
-  read(2) sgllp
-  close(2)
-endif
-!af
+
   if (allocated(zgllp)) deallocate(zgllp)
-  write(6,*) '  define axial elems....';call flush(6)
+
+  write(6,*) '  define axial elems....'; call flush(6)
   call define_axial_elem ! needs sgllp, sgllp_solid, sgllp_fluid
   if (allocated(sgllp)) deallocate(sgllp)
-!
-  write(6,*) '  define solflu numbering....';call flush(6)
+
+  write(6,*) '  define solflu numbering....'; call flush(6)
   call define_sflocal_numbering   ! needs sgllp_solid, zgllp_solid
                                   ! needs sgllp_fluid, zgllp_fluid
                                   ! creates igloc_solid,igloc_fluid
-  if (allocated(sgllp_solid) .and. .not. dump_mesh_info_files) deallocate(sgllp_solid)
-  if (allocated(sgllp_fluid).and. .not. dump_mesh_info_files) deallocate(sgllp_fluid)
-  if (allocated(zgllp_solid).and. .not. dump_mesh_info_files) deallocate(zgllp_solid)
-  if (allocated(zgllp_fluid).and. .not. dump_mesh_info_files) deallocate(zgllp_fluid)
-  write(6,*) '  define flobal2flocal etc....';call flush(6)
-  call define_sflobal2sflocal     ! needs iglob_solid,iglob_fluid
-                                  ! needs igloc_fluid,igloc_fluid
-! TNM: Sept 2006: testing new method....
-  write(6,*) '  define search sflobal index....';call flush(6)
+
+  if (allocated(sgllp_solid)) deallocate(sgllp_solid)
+  if (allocated(sgllp_fluid)) deallocate(sgllp_fluid)
+  if (allocated(zgllp_solid)) deallocate(zgllp_solid)
+  if (allocated(zgllp_fluid)) deallocate(zgllp_fluid)
+
+  write(6,*) '  define flobal2flocal etc....'; call flush(6)
+  call define_sflobal2sflocal     ! needs iglob_solid, iglob_fluid
+                                  ! needs igloc_fluid, igloc_fluid
+
+  write(6,*) '  define search sflobal index....'; call flush(6)
   call define_search_sflobal_index ! needs iglob_solid, iglob_fluid
 
-  write(6,*) '  partition sflobal index....';call flush(6)
+  write(6,*) '  partition sflobal index....'; call flush(6)
   call partition_sflobal_index
  
-  write(6,*) '  define local bdry elems....';call flush(6)
+  write(6,*) '  define local bdry elems....'; call flush(6)
   call define_local_bdry_elem
 
-! af
-! write(6,*) '  define axial elems....';call flush(6)
-! call define_axial_elem ! needs sgllp, sgllp_solid, sgllp_fluid
- 
-!if (allocated(zgllp)) deallocate(zgllp)
-!if (allocated(sgllp)) deallocate(sgllp)
 
-! For compliance with solver, we need the control points info for each process
-  write(6,*) '  generate processor serendipity....';call flush(6)
+  ! For compliance with solver, we need the control points info for each process
+  write(6,*) '  generate processor serendipity....'; call flush(6)
   call generate_serendipity_per_proc(sg,zg) ! needs sgp, zgp
-  write(6,*) '  define element type....';call flush(6)
+
+  write(6,*) '  define element type....'; call flush(6)
   call define_element_type ! 
 
-! Write out mesh database
-  write(6,*) '  write database....';call flush(6) 
+  ! Write out mesh database
+  write(6,*) '  write database....'; call flush(6) 
   call write_db
-! Check that database is written out correctly
-  write(6,*) '  read database....';call flush(6) 
-! af That test is not necessary
- call read_db 
+
+  ! Check that database is written out correctly
+  write(6,*) '  read database....'; call flush(6) 
+  ! af That test is not necessary
+  call read_db 
+
   write(6,*) ' create static header mesh_params.h ....';call flush(6) 
   call create_static_header
 
   write(6,*) ' create solver routine unrolled_loops.f90 ....';call flush(6) 
   call create_unrolled_loop_routines
-  end subroutine create_pdb
+
+end subroutine create_pdb
 !------------------------------------------------------------------------
   
 !dk define_local_coordinates---------------------------------------------
@@ -344,58 +320,9 @@ subroutine define_sflocal_coordinates
      enddo
   enddo
 
-!!$  do iproc = 0, nproc-1
-!!$   do iel = 1, nel_solid(iproc)
-!!$      write(9080,*)sgllp_solid(npol/2,npol/2,iel,iproc), &
-!!$                  zgllp_solid(npol/2,npol/2,iel,iproc)     
-!!$      write(9081,*)sgllp(npol/2,npol/2,procel_solidp(iel,iproc),iproc), &
-!!$                  zgllp(npol/2,npol/2,procel_solidp(iel,iproc),iproc)
-!!$   enddo
-!!$  enddo
-!!$
-!!$  do iproc = 0, nproc-1
-!!$   do iel = 1, nel_fluid(iproc)
-!!$      write(9090,*)sgllp_fluid(npol/2,npol/2,iel,iproc), &
-!!$                  zgllp_fluid(npol/2,npol/2,iel,iproc)     
-!!$      write(9091,*)sgllp(npol/2,npol/2,procel_fluidp(iel,iproc),iproc), &
-!!$                  zgllp(npol/2,npol/2,procel_fluidp(iel,iproc),iproc)
-!!$   enddo
-!!$  enddo
-
-
-! Test: write out S/F meshes (elementally)
-  if (have_fluid) then
-  if (dump_mesh_info_files) then 
-   open(unit=118,file=diagpath(1:lfdiag)//'/pcoords_fluid.dat')
-    do iproc = 0, nproc-1
-    do iel = 1, nel_fluid(iproc)
-       write(118,20)sgllp_fluid(npol/2,npol/2,iel,iproc), &
-                    zgllp_fluid(npol/2,npol/2,iel,iproc),iel, &
-                    procel_fluid(iel,iproc),procel_fluidp(iel,iproc)
-    enddo
-   enddo
-   close(118)
-  end if
-  endif
-
-
-  if (dump_mesh_info_files) then 
-   open(unit=118,file=diagpath(1:lfdiag)//'/pcoords_solid.dat')
-   do iproc = 0, nproc-1
-    do iel = 1, nel_solid(iproc)
-       write(118,20)sgllp_solid(npol/2,npol/2,iel,iproc), &
-                  zgllp_solid(npol/2,npol/2,iel,iproc),iel, &
-                  procel_solid(iel,iproc),procel_solidp(iel,iproc)
-    enddo
-   enddo
-   close(118)
-  end if
-
   deallocate(rsol,rflu)
 
-20 format(2(1pe12.3),3(i6))
-
-  end subroutine define_sflocal_coordinates
+end subroutine define_sflocal_coordinates
 !------------------------------------------------------------------------
 
 !dk define_glocal_numbering----------------------------------------------
@@ -459,13 +386,6 @@ subroutine define_glocal_numbering
   allocate(uglob2(nglobp(iproc))) 
   allocate(val(0:npol,0:npol,nel(iproc)))
 
-if (dump_mesh_info_files) then
-  call define_io_appendix(appiproc,iproc)
-  open(unit=69,file=diagpath(1:lfdiag)//'/valence_glob_per_proc.dat'//appiproc)
-  call define_io_appendix(appiproc,iproc)
-  open(unit=68,file=diagpath(1:lfdiag)//'/valence_glob_per_proc_central.dat'//appiproc)
-end if
-
 ! valence test, equivalent to how assembly is used in the solver
 ! use script plot_proc_valence.csh to generate GMT valence grids for each proc
 ! glocally and zoomed into r<0.2 ( denoted as *_central )
@@ -491,13 +411,6 @@ end if
     ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
     idest = wigloc(ipt)
     val(ipol,jpol,iel) = uglob2(idest)
-     if (dump_mesh_info_files) write(69,*)sgllp(ipol,jpol,iel,iproc),zgllp(ipol,jpol,iel,iproc),&
-                val(ipol,jpol,iel)
-     if (dsqrt(sgllp(ipol,jpol,iel,iproc)**2+zgllp(ipol,jpol,iel,iproc)**2) &
-          <= 0.2d0) then 
-     if (dump_mesh_info_files) write(68,*)sgllp(ipol,jpol,iel,iproc)*5.,zgllp(ipol,jpol,iel,iproc)*5.,&
-                val(ipol,jpol,iel)     
-     endif
 
 ! Check valence/global number inside central region
      if (eltypeg(procel(iel,iproc))=='linear') then 
@@ -516,9 +429,6 @@ end if
    end do
   end do
  end do
- if (dump_mesh_info_files) then 
-  close(69);close(68)
- end if
  deallocate(uglob2,val)
 !
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -640,13 +550,6 @@ end if
   allocate(uglob2_solid(nglobp_solid(iproc))) 
   allocate(val_solid(0:npol,0:npol,nel_solid(iproc)))
 
-  if (dump_mesh_info_files) then 
-   call define_io_appendix(appiproc,iproc)
-   open(unit=69,file=diagpath(1:lfdiag)//'/valence_glob_per_proc_solid.dat'//appiproc)
-   call define_io_appendix(appiproc,iproc)
-   open(unit=68,file=diagpath(1:lfdiag)//'/valence_glob_per_proc_central_solid.dat'//appiproc)
-  end if
-
 ! valence test, equivalent to how assembly is used in the solver
 ! use script plot_proc_valence.csh to generate GMT valence grids for each proc
 ! glocally and zoomed into r<0.2 ( denoted as *_central )
@@ -672,18 +575,6 @@ end if
           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
           idest = wigloc_solid(ipt)
           val_solid(ipol,jpol,iel) = uglob2_solid(idest)
-          if (dump_mesh_info_files) then
-           write(69,*)sgllp_solid(ipol,jpol,iel,iproc),&
-               zgllp_solid(ipol,jpol,iel,iproc),&
-               val_solid(ipol,jpol,iel)
-           if (sqrt(sgllp_solid(ipol,jpol,iel,iproc)**2+&
-               zgllp_solid(ipol,jpol,iel,iproc)**2) &
-               <= 0.2) then 
-             write(68,*)sgllp_solid(ipol,jpol,iel,iproc)*5.,&
-                  zgllp_solid(ipol,jpol,iel,iproc)*5.,&
-                  val_solid(ipol,jpol,iel)     
-           endif
-          end if
           
 ! Check valence/global number inside central region
           if (eltypeg(procel_solid(iel,iproc))=='linear') then 
@@ -705,9 +596,6 @@ end if
     end do
  end do
  
- if (dump_mesh_info_files) then
-  close(69);close(68)
- end if
  deallocate(uglob2_solid,val_solid)
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -746,13 +634,6 @@ end if
   allocate(uglob2_fluid(nglobp_fluid(iproc))) 
   allocate(val_fluid(0:npol,0:npol,nel_fluid(iproc)))
 
-  if (dump_mesh_info_files) then 
-   call define_io_appendix(appiproc,iproc)
-   open(unit=59,file=diagpath(1:lfdiag)//'/valence_glob_per_proc_fluid.dat'//appiproc)
-   call define_io_appendix(appiproc,iproc)
-   open(unit=58,file=diagpath(1:lfdiag)//'/valence_glob_per_proc_central_fluid.dat'//appiproc)
-  end if
-
 ! valence test, equivalent to how assembly is used in the solver
 ! use script plot_proc_valence.csh to generate GMT valence grids for each proc
 ! glocally and zoomed into r<0.2 ( denoted as *_central )
@@ -777,16 +658,6 @@ end if
     ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
     idest = wigloc_fluid(ipt)
     val_fluid(ipol,jpol,iel) = uglob2_fluid(idest)
-     if (dump_mesh_info_files) write(59,*)sgllp_fluid(ipol,jpol,iel,iproc),&
-                zgllp_fluid(ipol,jpol,iel,iproc),&
-                val_fluid(ipol,jpol,iel)
-     if (dsqrt(sgllp_fluid(ipol,jpol,iel,iproc)**2+&
-              zgllp_fluid(ipol,jpol,iel,iproc)**2) &
-          <= 0.2d0) then 
-     if (dump_mesh_info_files) write(58,*)sgllp_fluid(ipol,jpol,iel,iproc)*5.,&
-                zgllp_fluid(ipol,jpol,iel,iproc)*5.,&
-                val_fluid(ipol,jpol,iel)     
-     endif
 
 ! Check valence/global number inside central region
         do i=1,6 !possible valences
@@ -799,9 +670,6 @@ end if
 
  end do
 
- if (dump_mesh_info_files) then 
-  close(59);close(58)
- end if
  deallocate(uglob2_fluid,val_fluid)
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1818,68 +1686,53 @@ do iproct=0,nproc-1
   call define_io_appendix(appiproc,iproct)
 
 ! send
-  if (dump_mesh_info_files) &
-       open(unit=69,file=diagpath(1:lfdiag)//'/proc_sendtoproc.dat'//appiproc)
   uglob2_solid(:) = iproct
   val_solid(:,:,:)=0
   if (sizesendp_solid(iproct)>0) then 
-  do ip = 1, sizesendp_solid(iproct)
-     ipdes = listsendp_solid(ip,iproct)
-     do ipt = 1, sizemsgsendp_solid(ip,iproct)
-        ig = global_index_msg_solid(ipt,iproct,ipdes)
-        uglob2_solid(glocal_index_msg_sendp_solid(ipt,ip,iproct)) = ipdes
-     enddo
-  enddo
-
-  do iel = 1, nel_solid(iproct)
-     do ipol = 0, npol
-        do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           idest = igloc_solid(ipt,iproct)
-           val_solid(ipol,jpol,iel) = uglob2_solid(idest)
-           if (dump_mesh_info_files) & 
-           write(69,*)sgllp_solid(ipol,jpol,iel,iproct),&
-                      zgllp_solid(ipol,jpol,iel,iproct),&
-                      val_solid(ipol,jpol,iel)
+     do ip = 1, sizesendp_solid(iproct)
+        ipdes = listsendp_solid(ip,iproct)
+        do ipt = 1, sizemsgsendp_solid(ip,iproct)
+           ig = global_index_msg_solid(ipt,iproct,ipdes)
+           uglob2_solid(glocal_index_msg_sendp_solid(ipt,ip,iproct)) = ipdes
         enddo
      enddo
-  enddo
-  endif
 
-  if (dump_mesh_info_files) close(69)
+     do iel = 1, nel_solid(iproct)
+        do ipol = 0, npol
+           do jpol = 0, npol
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+              idest = igloc_solid(ipt,iproct)
+              val_solid(ipol,jpol,iel) = uglob2_solid(idest)
+           enddo
+        enddo
+     enddo
+  endif
 
   call define_io_appendix(appiproc,iproct)
 
 ! receive
-  if (dump_mesh_info_files) &
-       open(unit=69,file=diagpath(1:lfdiag)//'/proc_recvfromproc.dat'//appiproc)
   uglob2_solid(:) = iproct
   val_solid(:,:,:)=0
 
   if (sizerecvp_solid(iproct)>0) then 
-  do ip = 1, sizerecvp_solid(iproct)
-     ipdes = listrecvp_solid(ip,iproct)
-     do ipt = 1, sizemsgrecvp_solid(ip,iproct)
-        ig = global_index_msg_solid(ipt,iproct,ipdes)
-        uglob2_solid(glocal_index_msg_recvp_solid(ipt,ip,iproct)) = ipdes
-     enddo
-  enddo
-
-  do iel = 1, nel_solid(iproct)
-     do ipol = 0, npol
-        do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           idest = igloc_solid(ipt,iproct)
-           val_solid(ipol,jpol,iel) = uglob2_solid(idest)
-           if (dump_mesh_info_files) &
-           write(69,*)sgllp_solid(ipol,jpol,iel,iproct),&
-                      zgllp_solid(ipol,jpol,iel,iproct),&
-                      val_solid(ipol,jpol,iel)
+     do ip = 1, sizerecvp_solid(iproct)
+        ipdes = listrecvp_solid(ip,iproct)
+        do ipt = 1, sizemsgrecvp_solid(ip,iproct)
+           ig = global_index_msg_solid(ipt,iproct,ipdes)
+           uglob2_solid(glocal_index_msg_recvp_solid(ipt,ip,iproct)) = ipdes
         enddo
      enddo
-  enddo
+
+     do iel = 1, nel_solid(iproct)
+        do ipol = 0, npol
+           do jpol = 0, npol
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+              idest = igloc_solid(ipt,iproct)
+              val_solid(ipol,jpol,iel) = uglob2_solid(idest)
+           enddo
+        enddo
+     enddo
   endif
-  if (dump_mesh_info_files) close(69)
 
   deallocate(uglob2_solid,val_solid)
 
@@ -1889,11 +1742,6 @@ enddo
 
   deallocate(sizebin_solid,binp_solid)
   deallocate(global_index_msg_solid)
-
-  if (dump_mesh_info_files) then 
-     if (allocated(sgllp_solid)) deallocate(sgllp_solid)
-     if (allocated(zgllp_solid)) deallocate(zgllp_solid)
-endif 
 
   write(6,*)'End of solid messaging'; call flush(6) 
  
@@ -2401,9 +2249,7 @@ double precision :: rtmp
   end if
 
 
-!AF
  return
-!
 
 
 
@@ -2414,223 +2260,79 @@ double precision :: rtmp
 ! ===========  T E S  T   F R O M   H E R E   O N  ===========================
 
 
-
   !+++++++++++++
   if (have_fluid) then
   !++++++++++++
 
+     if (dump_mesh_info_screen) then 
+        write(6,*)'Solid-Fluid boundary tests'; call flush(6)
+     end if
 
-  if (dump_mesh_info_screen) then 
-   write(6,*)'Solid-Fluid boundary tests'; call flush(6)
-  end if
-!=================================>>>>
-  if (dump_mesh_info_files) then 
-!=================================>>>>
-! Write out jpol array
-  open(unit=67,file=diagpath(1:lfdiag)//'/bdry_jpol_solflu.dat')
-  do iproc=0,nproc-1
-   do iel=1,nbdry_el(iproc)
-     write(67,*)bdry_jpol_solidp(iel,iproc),bdry_jpol_fluidp(iel,iproc)
-  enddo
-  enddo
-  close(67)
+     !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+     ! New test: define field on fluid side, copy to solid, check difference
+     !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
-! Test: global against proc-arrays
-  open(unit=103,file=diagpath(1:lfdiag)//'/bdry_el_glob.dat')
-  do j=1,nbcnd
-     do iel=1,nbelem(j)/2
-        write(103,*) bdry_solid_el(iel,j),bdry_fluid_el(iel,j)
-     enddo
-  enddo
-  close(103)
-
-  open(unit=103,file=diagpath(1:lfdiag)//'/bdry_el_loc.dat')
-  do iproc=0,nproc-1
-     do iel=1,nbdry_el(iproc)
-        write(103,*) bdry_solid_elp(iel,iproc),bdry_fluid_elp(iel,iproc)
-     enddo
-  enddo
-  close(103)
-
-! Test: write bdry_solid/fluid array with coords
-  open(unit=103,file=diagpath(1:lfdiag)//'/bdry_radius_solel.dat')
-  do iproc=0,nproc-1
-     do iel=1,nbdry_el(iproc)
-      write(103,*)sqrt(sgllp_solid(npol/2,bdry_jpol_solidp(iel,iproc), &
-                                   bdry_solid_elp(iel,iproc),iproc)**2 + &
-                        zgllp_solid(npol/2,bdry_jpol_solidp(iel,iproc), &
-                                   bdry_solid_elp(iel,iproc),iproc)**2)* &
-                        router/1.d3,bdry_solid_elp(iel,iproc)
-     enddo
-  enddo
-  close(103)
-
-  open(unit=103,file=diagpath(1:lfdiag)//'/bdry_radius_fluel.dat')
-  do iproc=0,nproc-1
-     do iel=1,nbdry_el(iproc)
-      write(103,*)sqrt(sgllp_fluid(npol/2,bdry_jpol_fluidp(iel,iproc), &
-                                   bdry_fluid_elp(iel,iproc),iproc)**2 + &
-                        zgllp_fluid(npol/2,bdry_jpol_fluidp(iel,iproc), &
-                                   bdry_fluid_elp(iel,iproc),iproc)**2)* &
-                        router/1.d3,bdry_fluid_elp(iel,iproc)
-     enddo
-  enddo
-  close(103)
-
-! Test: bdry elem number and global coords
-  open(unit=103,file=diagpath(1:lfdiag)//'/bdry_pglobcoords_el.dat')
-  do iproc=0,nproc-1
-     do iel=1,nbdry_el(iproc)
-      write(103,*)sgllp(npol/2,npol/2,belemp(iel,iproc),iproc)*router/1000., &
-        zgllp(npol/2,npol/2,belemp(iel,iproc),iproc)*router/1000.,belemp(iel,iproc)
-     enddo
-  enddo
-  close(103)
-!=================================>>>>
-  end if
-!=================================>>>>
-!
-!<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-! New test: define field on fluid side, copy to solid, check difference
-!<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
-
-  allocate(tmpflufield(maxval(nel_fluid),0:npol,0:npol,0:nproc-1))
-  do iproc=0,nproc-1
-     do iel=1,nel_fluid(iproc)
-        do ipol=0,npol
-           do jpol=0,npol
-              ! make tmpflufield equal to theta
-              rtmp=sqrt(sgllp_fluid(ipol,jpol,iel,iproc)**2+ &
-                        zgllp_fluid(ipol,jpol,iel,iproc)**2)
-              tmpflufield(iel,ipol,jpol,iproc)= &
-                 asin(sgllp_fluid(ipol,jpol,iel,iproc)/rtmp)*180./pi
+     allocate(tmpflufield(maxval(nel_fluid),0:npol,0:npol,0:nproc-1))
+     do iproc=0,nproc-1
+        do iel=1,nel_fluid(iproc)
+           do ipol=0,npol
+              do jpol=0,npol
+                 ! make tmpflufield equal to theta
+                 rtmp=sqrt(sgllp_fluid(ipol,jpol,iel,iproc)**2+ &
+                           zgllp_fluid(ipol,jpol,iel,iproc)**2)
+                 tmpflufield(iel,ipol,jpol,iproc)= &
+                    asin(sgllp_fluid(ipol,jpol,iel,iproc)/rtmp)*180./pi
+              enddo
            enddo
         enddo
      enddo
-  enddo
-  
-  if (dump_mesh_info_screen)&
-            write(6,*)'Test bdry: maxval/loc fluid [deg]:', &
-            maxval(tmpflufield),maxloc(tmpflufield); call flush(6)
+     
+     if (dump_mesh_info_screen)&
+               write(6,*)'Test bdry: maxval/loc fluid [deg]:', &
+               maxval(tmpflufield),maxloc(tmpflufield); call flush(6)
 
-  ! Now copy the S/F boundary values to the solid domain
-  allocate(tmpsolfield(maxval(nel_solid),0:npol,0:npol,0:nproc-1))
-  tmpsolfield(1:maxval(nel_solid),0:npol,0:npol,0:nproc-1)=-45.
+     ! Now copy the S/F boundary values to the solid domain
+     allocate(tmpsolfield(maxval(nel_solid),0:npol,0:npol,0:nproc-1))
+     tmpsolfield(1:maxval(nel_solid),0:npol,0:npol,0:nproc-1)=-45.
 
-  do iproc=0,nproc-1
-     do iel=1,nbdry_el(iproc)
-        tmpsolfield(bdry_solid_elp(iel,iproc),0:npol, &
-                    bdry_jpol_solidp(iel,iproc),iproc)= &
-                    tmpflufield(bdry_fluid_elp(iel,iproc), &
-                    0:npol,bdry_jpol_fluidp(iel,iproc),iproc)
+     do iproc=0,nproc-1
+        do iel=1,nbdry_el(iproc)
+           tmpsolfield(bdry_solid_elp(iel,iproc),0:npol, &
+                       bdry_jpol_solidp(iel,iproc),iproc)= &
+                       tmpflufield(bdry_fluid_elp(iel,iproc), &
+                       0:npol,bdry_jpol_fluidp(iel,iproc),iproc)
+        enddo
      enddo
-  enddo
 
-  if (dump_mesh_info_screen) &
-             write(6,*)'Test bdry: maxval/loc solid [deg/indices]:', &
-             maxval(tmpsolfield),maxloc(tmpsolfield); call flush(6)
+     if (dump_mesh_info_screen) &
+                write(6,*)'Test bdry: maxval/loc solid [deg/indices]:', &
+                maxval(tmpsolfield),maxloc(tmpsolfield); call flush(6)
 
-  ! Write out the radii at which the solid field takes values >1 
-  ! (i.e., if other than S/F boundary radii, something's wrong....)
+        ! Write out the radii at which the solid field takes values >1 
+        ! (i.e., if other than S/F boundary radii, something's wrong....)
 
-  if (dump_mesh_info_screen .and. have_fluid) then 
-  write(6,*)'Testing S/F boundary copying...'
-  write(6,*)'File: bdrytest_solflubdry.dat contains:'
-  write(6,*)'iproc,iel_solid, rad,latitude, value at which things have been copied:'
-  end if
-  if (dump_mesh_info_files) &
-  open(unit=109,file=diagpath(1:lfdiag)//'/bdrytest_solflubdry.dat')
-  count=0
-  do iproc=0,nproc-1
-     do iel=1,nel_solid(iproc)
-        do ipol=0,npol
-           do jpol=0,npol
-              rtmp=sqrt(sgllp_solid(ipol,jpol,iel,iproc)**2+ &
-                        zgllp_solid(ipol,jpol,iel,iproc)**2)
-              if ( tmpsolfield(iel,ipol,jpol,iproc) >= 0.) then 
-                 count=count+1
-                 if (dump_mesh_info_files) &
-                  write(109,110)iproc,iel,rtmp, &
-                  asin(sgllp_solid(ipol,jpol,iel,iproc)/rtmp)*180./pi, &
-                  tmpsolfield(iel,ipol,jpol,iproc)
-              endif
+     if (dump_mesh_info_screen .and. have_fluid) then 
+        write(6,*)'Testing S/F boundary copying...'
+        write(6,*)'File: bdrytest_solflubdry.dat contains:'
+        write(6,*)'iproc,iel_solid, rad,latitude, value at which things have been copied:'
+     end if
+     count=0
+     do iproc=0,nproc-1
+        do iel=1,nel_solid(iproc)
+           do ipol=0,npol
+              do jpol=0,npol
+                 rtmp=sqrt(sgllp_solid(ipol,jpol,iel,iproc)**2+ &
+                           zgllp_solid(ipol,jpol,iel,iproc)**2)
+                 if ( tmpsolfield(iel,ipol,jpol,iproc) >= 0.) then 
+                    count=count+1
+                 endif
+              enddo
            enddo
         enddo
      enddo
-  enddo
-  if (dump_mesh_info_files) then 
-   call flush(109)
-   close(109)
-  end if
 
 110 format(i3,i9,3(1pe14.3))
 
-!==================================xxxcccxxxx
-  if (dump_mesh_info_files) then 
-!==================================xxxcccxxxx
-! write out both fields (elementally)
-
-  if (have_fluid) then
-! whole fluid
-  open(unit=111,file=diagpath(1:lfdiag)//'/bdrytest_flufield.dat')
-  do iproc=0,nproc-1
-     do iel=1,nel_fluid(iproc)
-        write(111,*)sgllp_fluid(npol/2,npol/2,iel,iproc), &
-                    zgllp_fluid(npol/2,npol/2,iel,iproc), &
-                    tmpflufield(iel,npol/2,npol/2,iproc)
-     enddo
-  enddo
-  close(111)
-  endif
-
-! whole solid
-  open(unit=112,file=diagpath(1:lfdiag)//'/bdrytest_solfield.dat')
-  do iproc=0,nproc-1
-     do iel=1,nel_solid(iproc)
-        write(112,*)sgllp_solid(npol/2,npol/2,iel,iproc), &
-                    zgllp_solid(npol/2,npol/2,iel,iproc), &
-                    tmpsolfield(iel,npol/2,npol/2,iproc)
-     enddo
-  enddo
-  close(112)
-
-! fluid boundary elements
-  if (have_fluid) then
-  open(unit=111,file=diagpath(1:lfdiag)//'/bdrytest_bdryflufield.dat')
-  do iproc=0,nproc-1
-     do iel=1,nbdry_el(iproc)
-        do ipol=0,npol
-        write(111,*)sgllp_fluid(ipol,npol/2,bdry_fluid_elp(iel,iproc),iproc), &
-                    zgllp_fluid(ipol,npol/2,bdry_fluid_elp(iel,iproc),iproc), &
-                    tmpflufield(bdry_fluid_elp(iel,iproc),ipol,bdry_jpol_fluidp(iel,iproc),iproc)
-        enddo
-     enddo
-  enddo
-  close(111)
-
-! solid boundary elements
-  open(unit=112,file=diagpath(1:lfdiag)//'/bdrytest_bdrysolfield.dat')
-  do iproc=0,nproc-1
-     do iel=1,nbdry_el(iproc)
-!       write(6,*)iel,bdry_solid_elp(iel,iproc),procel_solidp(bdry_solid_elp(iel,iproc),iproc)
-        do ipol=0,npol
-        write(112,*)sgllp_solid(ipol,npol/2,bdry_solid_elp(iel,iproc),iproc), &
-                    zgllp_solid(ipol,npol/2,bdry_solid_elp(iel,iproc),iproc), &
-                    tmpsolfield(bdry_solid_elp(iel,iproc),ipol,bdry_jpol_solidp(iel,iproc),iproc)
-!        write(112,*)sgllp(ipol,npol/2,procel_solid(bdry_solid_elp(iel,iproc),iproc),iproc), &
-!                    zgllp(ipol,npol/2,procel_solid(bdry_solid_elp(iel,iproc),iproc),iproc), &
-!                    tmpsolfield(bdry_solid_elp(iel,iproc),ipol,bdry_jpol_solidp(iel,iproc),iproc)
-
-
-        enddo
-     enddo
-  enddo
-  close(112)
-  endif
-
-!==================================xxxcccxxxx
-  end if 
-!==================================xxxcccxxxx
 
   if (count .ne. sum(nbdry_el)*(npol+1) ) then
      write(6,*)
@@ -2866,27 +2568,6 @@ end subroutine define_axial_elem
      end do
   end do
 
-! serendipity mesh for gnuplot, different file for each processor
-! use script plot_proc_meshes.csh to generate postscript views
-  if (dump_mesh_info_files) then 
-   do iproc=0,nproc-1
-     call define_io_appendix(appiproc,iproc)
-     open(unit=108,file=diagpath(1:lfdiag)//'/serend_coords_per_proc.dat'//appiproc)
-     do iel = 1,nel(iproc)
-        write(108,*)sgp(1,iel,iproc),zgp(1,iel,iproc)
-        write(108,*)sgp(2,iel,iproc),zgp(2,iel,iproc)
-        write(108,*)sgp(3,iel,iproc),zgp(3,iel,iproc)
-        write(108,*)sgp(4,iel,iproc),zgp(4,iel,iproc)
-        write(108,*)sgp(5,iel,iproc),zgp(5,iel,iproc)
-        write(108,*)sgp(6,iel,iproc),zgp(6,iel,iproc)
-        write(108,*)sgp(7,iel,iproc),zgp(7,iel,iproc)
-        write(108,*)sgp(8,iel,iproc),zgp(8,iel,iproc)
-        write(108,*)sgp(1,iel,iproc),zgp(1,iel,iproc)
-        write(108,*)
-     enddo
-   close(108)
-   enddo
-  end if
   end subroutine generate_serendipity_per_proc
 !------------------------------------------------------------------------
 
