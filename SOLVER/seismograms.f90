@@ -1291,7 +1291,7 @@ integer                         :: i
               dumpvar(i,:) = real(disp(npol/2,jsurfel(i),surfelem(i),:))
           end do
       end if !monopole
-      call nc_dump_surface(dumpvar(:,:), 'disp', maxind, 3, istrain)
+      call nc_dump_surface(dumpvar(:,:), 'disp')
       
       if (src_type(1)=='monopole') then
           do i=1,maxind
@@ -1303,7 +1303,7 @@ integer                         :: i
               dumpvar(i,:) = real(velo(npol/2,jsurfel(i),surfelem(i),:))
           end do
       end if !monopole
-      call nc_dump_surface(dumpvar(:,:), 'velo', maxind, 3, istrain)
+      call nc_dump_surface(dumpvar(:,:), 'velo')
 
   else !use_netcdf
       if (src_type(1)=='monopole') then
@@ -1343,12 +1343,6 @@ use data_source, ONLY: src_type
 use pointwise_derivatives, ONLY: axisym_laplacian_fluid,axisym_laplacian_fluid_add
 use pointwise_derivatives, ONLY: axisym_laplacian_solid,axisym_laplacian_solid_add
 use unit_stride_colloc, ONLY: collocate0_1d_existent
-use wavefields_io, ONLY : dump_field_over_s_solid_and_add
-use wavefields_io, ONLY : dump_half_field_over_s_solid_1d_add
-use wavefields_io, ONLY : dump_half_f1_f2_over_s_fluid
-use wavefields_io, ONLY : dump_f1_f2_over_s_fluid
-use wavefields_io, ONLY : dump_field_1d, dump_field_over_s_solid_1d
-use wavefields_io, ONLY : dump_field_over_s_fluid_and_add
 use nc_routines, ONLY   : nc_dump_surface
 
 include "mesh_params.h"
@@ -1417,11 +1411,11 @@ strain=0.
       do i=1,maxind
         dumpvar(i,:) = real(strain(j,surfelem(i),1:6))
       enddo
-      call nc_dump_surface(dumpvar(:,1:6), 'stra', maxind, 6, istrain)
+      call nc_dump_surface(dumpvar(:,1:6), 'stra')
       do i=1,maxind
         dumpvar(i,1:3) = real(u(npol/2,j,surfelem(i),1:3))
       enddo
-      call nc_dump_surface(dumpvar(:,1:3), 'srcd', maxind, 3, istrain)
+      call nc_dump_surface(dumpvar(:,1:3), 'srcd')
   end if
   if (.not. use_netcdf) then
 

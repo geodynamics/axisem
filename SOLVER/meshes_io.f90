@@ -662,15 +662,16 @@ subroutine dump_wavefields_mesh_1d
 ! The latter choice is more memory- and CPU-efficient, but requires 
 ! significant post-processing AND dumping the entire SEM mesh. 
 ! See compute_strain in time_evol_wave.f90 for more info.
+! 
+! CURRENTLY HARDCODED TO dump_type=='fullfields'
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 use data_io, ONLY : ibeg,iend,ndumppts_el
 use data_spec, ONLY : G1T,G2T,G2
 use data_pointwise
+use nc_routines, ONLY: nc_dump_mesh_sol, nc_dump_mesh_flu
 
-!double precision, dimension(:), allocatable :: ssol, zsol
-!double precision, dimension(:), allocatable :: sflu, zflu
 double precision, dimension(:,:,:), allocatable :: ssol, zsol
 double precision, dimension(:,:,:), allocatable :: sflu, zflu
 
@@ -684,12 +685,7 @@ integer :: iel, ipol,jpol,i
      if (lpr) then
         write(6,*)'  set strain dumping GLL boundaries to:'
         write(6,*)'    ipol=',ibeg,iend
-
      endif
-!     allocate(ssol(ndumppts_el*nel_solid))
-!     allocate(zsol(ndumppts_el*nel_solid))
-!     allocate(sflu(ndumppts_el*nel_fluid))
-!     allocate(zflu(ndumppts_el*nel_fluid))
 
      allocate(ssol(ibeg:iend,ibeg:iend,nel_solid))
      allocate(zsol(ibeg:iend,ibeg:iend,nel_solid))
@@ -698,57 +694,55 @@ integer :: iel, ipol,jpol,i
 
   endif
 
-i=0
 
 ! compute solid grid
   do iel=1,nel_solid
       do jpol=ibeg,iend
-        do ipol=ibeg,iend
-!           i=i+1
-!           ssol(i)=scoord(ipol,jpol,ielsolid(iel))
-!           zsol(i)=zcoord(ipol,jpol,ielsolid(iel))
-           
-           ssol(ipol,jpol,iel) = scoord(ipol,jpol,ielsolid(iel))
-           zsol(ipol,jpol,iel) = zcoord(ipol,jpol,ielsolid(iel))
-        enddo
+          do ipol=ibeg,iend
+              ssol(ipol,jpol,iel) = scoord(ipol,jpol,ielsolid(iel))
+              zsol(ipol,jpol,iel) = zcoord(ipol,jpol,ielsolid(iel))
+          enddo
      enddo
   enddo
 
 
-  if (lpr) &
-  write(6,*)'  dumping solid submesh for kernel wavefields...'
-  open(unit=2500+mynum,file=datapath(1:lfdata)//'/strain_mesh_sol_'&
-                            //appmynum//'.dat', &
-                            FORM="UNFORMATTED",STATUS="REPLACE")
+  if (lpr) write(6,*)'  dumping solid submesh for kernel wavefields...'
+  if (use_netcdf) then
+      call nc_dump_mesh_sol(real(ssol(ibeg:iend,ibeg:iend,:)), &
+                            real(zsol(ibeg:iend,ibeg:iend,:)))
 
-  write(2500+mynum)ssol(ibeg:iend,ibeg:iend,:),zsol(ibeg:iend,ibeg:iend,:)
-  close(2500+mynum)
+  else
+      open(unit=2500+mynum,file=datapath(1:lfdata)//'/strain_mesh_sol_'&
+                                //appmynum//'.dat', &
+                                FORM="UNFORMATTED",STATUS="REPLACE")
+
+      write(2500+mynum)ssol(ibeg:iend,ibeg:iend,:),zsol(ibeg:iend,ibeg:iend,:)
+      close(2500+mynum)
+  end if
   deallocate(ssol,zsol)
 
-  if (have_fluid) then
-
-i=0
-
 ! compute fluid grid
-     do iel=1,nel_fluid
-       do jpol=ibeg,iend
-         do ipol=ibeg,iend
-!              i=i+1
-!              sflu(i)=scoord(ipol,jpol,ielfluid(iel))
-!              zflu(i)=zcoord(ipol,jpol,ielfluid(iel))
-            sflu(ipol,jpol,iel) = scoord(ipol,jpol,ielfluid(iel))
-            zflu(ipol,jpol,iel) = zcoord(ipol,jpol,ielfluid(iel))
+  if (have_fluid) then
+      do iel=1,nel_fluid
+          do jpol=ibeg,iend
+              do ipol=ibeg,iend
+                  sflu(ipol,jpol,iel) = scoord(ipol,jpol,ielfluid(iel))
+                  zflu(ipol,jpol,iel) = zcoord(ipol,jpol,ielfluid(iel))
+              enddo
            enddo
-        enddo
-     enddo
-     if (lpr) &
-     write(6,*)'  dumping fluid submesh for kernel wavefields...'
-     open(unit=2600+mynum,file=datapath(1:lfdata)//'/strain_mesh_flu_'&
-          //appmynum//'.dat', &
-          FORM="UNFORMATTED",STATUS="REPLACE")
-     write(2600+mynum)sflu(ibeg:iend,ibeg:iend,:),zflu(ibeg:iend,ibeg:iend,:)
-     close(2600+mynum)
-     deallocate(sflu,zflu)
+      enddo
+      if (lpr) write(6,*)'  dumping fluid submesh for kernel wavefields...'
+      if (use_netcdf) then
+          call nc_dump_mesh_flu(real(sflu(ibeg:iend,ibeg:iend,:)),&
+                                real(zflu(ibeg:iend,ibeg:iend,:)))
+      else
+          open(unit=2600+mynum,file=datapath(1:lfdata)//'/strain_mesh_flu_'&
+               //appmynum//'.dat', &
+               FORM="UNFORMATTED",STATUS="REPLACE")
+          write(2600+mynum)sflu(ibeg:iend,ibeg:iend,:),zflu(ibeg:iend,ibeg:iend,:)
+          close(2600+mynum)
+      end if
+      deallocate(sflu,zflu)
   endif ! have_fluid
 
 
@@ -783,7 +777,7 @@ i=0
         open(unit=2600+mynum,file=datapath(1:lfdata)//'/inv_rho_fluid_'&
              //appmynum//'.dat', &
              FORM="UNFORMATTED",STATUS="REPLACE")
-        write(2600+mynum)inv_rho_fluid
+        write(2600+mynum) inv_rho_fluid
         close(2600+mynum)
      endif
 
@@ -791,12 +785,12 @@ i=0
      open(unit=2600+mynum,file=datapath(1:lfdata)//'/lagrange_derivs_'&
                                //appmynum//'.dat', &
                                FORM="UNFORMATTED",STATUS="REPLACE")
-     write(2600+mynum)G1T,G2T,G2
+     write(2600+mynum) G1T, G2T, G2
      close(2600+mynum)
 
      write(6,*)'  ...dumped it all.'
 
-  case ('fullfields')
+ case ('fullfields') !Hardcoded choice in parameters.f90:110
      if (lpr) then
         write(6,*)'  strain dump: Global strain tensor and velocity fields'
         write(6,*)'  ....no need to dump anything else.'
