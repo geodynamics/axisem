@@ -14,7 +14,6 @@
   integer, dimension(:,:), allocatable      :: procel_solid, procel_solidp
   integer, dimension(:,:), allocatable      :: inv_procel_solidp
   integer, dimension(:,:), allocatable      :: inv_procel_fluidp
-  integer, dimension(:,:,:,:), allocatable  :: global_index
   integer, dimension(:), allocatable        :: nbelong
   integer, dimension(:), allocatable        :: nprocb
   integer, dimension(:,:), allocatable      :: lprocb
@@ -42,7 +41,6 @@
   integer, dimension(:,:,:), allocatable    :: glocal_index_msg_sendp_fluid
 
 ! Solid-fluid
-  integer, dimension(:,:,:,:), allocatable  :: slobal_index, flobal_index
   integer, dimension(:), allocatable        :: nbelong_solid, nbelong_fluid
   integer, dimension(:), allocatable        :: nprocb_solid, nprocb_fluid
   integer, dimension(:,:), allocatable      :: lprocb_solid, lprocb_fluid

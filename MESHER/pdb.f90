@@ -835,7 +835,6 @@ integer, allocatable :: nbelong2(:,:)
 
   nbelong(:)=0; nbelong2(:,:) = 0; nprocbmax = 1
   nelmax = maxval(nel)
-  allocate(global_index(0:npol,0:npol,nelmax,0:nproc-1))
 
   do iproc = 0, nproc -1
      do iel = 1, nel(iproc)
@@ -843,8 +842,6 @@ integer, allocatable :: nbelong2(:,:)
         do jpol = 0, npol
            do ipol = 0, npol
               ipt = (ielg-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              global_index(ipol,jpol,iel,iproc) = iglob(ipt)
-              
               nbelong(iglob(ipt)) = nbelong(iglob(ipt)) + 1 ! global valence
               nbelong2(iproc,iglob(ipt)) = 1 ! this glob number is in iproc
               if (nprocbmax < sum(nbelong2(:,iglob(ipt)))) then
@@ -895,8 +892,6 @@ integer :: il,nprocbmax_solid,nprocbmax_fluid
 integer, allocatable :: nbelong2_solid(:,:),nbelong2_fluid(:,:)
 
   nelmax_solid = maxval(nel_solid); nelmax_fluid = maxval(nel_fluid)
-  allocate(slobal_index(0:npol,0:npol,nelmax_solid,0:nproc-1))
-  allocate(flobal_index(0:npol,0:npol,nelmax_fluid,0:nproc-1))
   allocate(nprocb_solid(nglobslob),nprocb_fluid(nglobflob))
 
   allocate(nbelong_solid(nglobslob))
@@ -918,7 +913,6 @@ endif
     do jpol = 0, npol
      do ipol = 0, npol
       ipt = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-      slobal_index(ipol,jpol,iel,iproc) = iglob_solid(ipt)
 
       nbelong_solid(iglob_solid(ipt)) = nbelong_solid(iglob_solid(ipt)) + 1 
       nbelong2_solid(iproc,iglob_solid(ipt)) = 1 ! this glob number is in iproc
@@ -937,7 +931,6 @@ if (have_fluid) then
     do jpol = 0, npol
      do ipol = 0, npol
       ipt = (inv_ielem_fluid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-      flobal_index(ipol,jpol,iel,iproc) = iglob_fluid(ipt)
 
       nbelong_fluid(iglob_fluid(ipt)) = nbelong_fluid(iglob_fluid(ipt)) + 1 
       nbelong2_fluid(iproc,iglob_fluid(ipt)) = 1 ! this glob number is in iproc
@@ -969,12 +962,6 @@ end if
 
   deallocate(nbelong2_solid)
 
-!  do iproc=0,nproc-1
-!  do ipt=1,nglobslob
-!    write(88888,*)lprocb_solid(iproc+1,ipt)
-!  enddo
-!  enddo
-
 if (have_fluid) then
 allocate(lprocb_fluid(nprocbmax_fluid,nglobflob))
 
@@ -993,13 +980,7 @@ allocate(lprocb_fluid(nprocbmax_fluid,nglobflob))
 
 endif
 
-!  do iproc=0,nproc-1
-!  do ipt=1,nglobslob
-!    write(88888,*)lprocb_fluid(iproc+1,ipt)
-!  enddo
-!  enddo
-
-  end subroutine define_search_sflobal_index
+end subroutine define_search_sflobal_index
 !------------------------------------------------------------------------
 
 !dk partition_global_index-----------------------------------------------
