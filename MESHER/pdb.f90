@@ -42,37 +42,24 @@ subroutine create_pdb
 
   if (allocated(iglob)) deallocate(iglob)
 
-  ! define glocal numbering
-  !call define_local_coordinates ! needs sgll,zgll, creates sgglp, zgllp
-
   write(6,*) '  define glocal numbering....'; call flush(6)
-  call define_glocal_numbering ! needs sgllp,zgllp, creates igloc
+  call define_glocal_numbering ! needs sgll,zgll, creates igloc
 
   ! Solid-fluid distinction
   write(6,*) '  define solflu coordinates....'; call flush(6)
   call define_sflocal_coordinates ! needs sgll, zgll 
-                                  ! creates sgllp_solid, zgllp_solid
-                                  ! creates sgllp_fluid, zgllp_fluid
+                                  ! creates procel_solidp     procel_fluidp 
+                                  !         inv_procel_solidp inv_procel_fluidp  
   nelmax = maxval(nel)
 
-  !if (allocated(zgllp)) deallocate(zgllp)
-
   write(6,*) '  define axial elems....'; call flush(6)
-  call define_axial_elem ! needs sgllp, sgllp_solid, sgllp_fluid
-  
-  !if (allocated(sgllp)) deallocate(sgllp)
+  call define_axial_elem ! needs sgll, sgll_solid, sgll_fluid
   
 
   write(6,*) '  define solflu numbering....'; call flush(6)
-  call define_sflocal_numbering   ! needs sgllp_solid, zgllp_solid
-                                  ! needs sgllp_fluid, zgllp_fluid
-                                  ! creates igloc_solid,igloc_fluid
+  call define_sflocal_numbering   ! needs sgll, zgll
+                                  ! creates igloc_solid, igloc_fluid
   deallocate(sgll,zgll)
-
-  !if (allocated(sgllp_solid)) deallocate(sgllp_solid)
-  !if (allocated(sgllp_fluid)) deallocate(sgllp_fluid)
-  !if (allocated(zgllp_solid)) deallocate(zgllp_solid)
-  !if (allocated(zgllp_fluid)) deallocate(zgllp_fluid)
 
   write(6,*) '  define flobal2flocal etc....'; call flush(6)
   call define_sflobal2sflocal     ! needs iglob_solid, iglob_fluid
@@ -113,50 +100,8 @@ subroutine create_pdb
 end subroutine create_pdb
 !------------------------------------------------------------------------
   
-!dk define_local_coordinates---------------------------------------------
-!subroutine define_local_coordinates
-!!
-!! Define local coords (sgllp,zgllp) for each processor.
-!! These arrays are NOT necessary for the solver!
-!!
-!  use data_gllmesh
-!  integer :: iproc,iel,ielg,jpol,ipol
-!  integer :: nelmax
-!  nelmax = maxval(nel)
-!  allocate(sgllp(0:npol,0:npol,nelmax,0:nproc-1)) ; sgllp(:,:,:,:) = 0.d0 
-!  do iproc = 0, nproc-1
-!   do iel = 1, nel(iproc)
-!    ielg = procel(iel,iproc)
-!!   write(63,*)'local,global el:',iel,ielg,fluid(ielg)
-!    do jpol = 0, npol
-!     do ipol = 0, npol
-!      sgllp(ipol,jpol,iel,iproc) = sgll(ipol,jpol,ielg)
-!     end do
-!    end do
-!   end do
-!  end do
-!! deallocate(sgll)
-!  allocate(zgllp(0:npol,0:npol,nelmax,0:nproc-1)) ; zgllp(:,:,:,:) = 0.d0
-!  do iproc = 0, nproc-1
-!   do iel = 1, nel(iproc)
-!    ielg = procel(iel,iproc)
-!!   write(63,*)'local,global el:',iel,ielg,fluid(ielg)
-!    do jpol = 0, npol
-!     do ipol = 0, npol
-!      zgllp(ipol,jpol,iel,iproc) = zgll(ipol,jpol,ielg)
-!     end do
-!    end do
-!   end do
-!  end do
-!!deallocate(zgll)
-!  end subroutine define_local_coordinates
-!------------------------------------------------------------------------
-
 !dk define_sflocal_coordinates-------------------------------------------
 subroutine define_sflocal_coordinates
-!
-! Define local coords (sgllp_solid,zgllp_solid) for each processor's solid 
-! and (sgllp_fluid,zgllp_fluid) for each processor's fluid regions.
 !
 ! NOTE: procel_fluid and procel_solid map the GLOBAL element numbers!!!
 ! i.e.: procel(1:nel_fluid(iproc),iproc)=procel_fluid(:,iproc)
@@ -180,9 +125,6 @@ subroutine define_sflocal_coordinates
   nelmax_solid = maxval(nel_solid)
   nelmax_fluid = maxval(nel_fluid)
 
-  !allocate(rsol(0:npol,0:npol,nelmax_solid,0:nproc-1))
-  !allocate(rflu(0:npol,0:npol,nelmax_fluid,0:nproc-1))
-
   ! initialize to crazy values
   rsol_max = -1e30
   rflu_max = -1e30
@@ -190,22 +132,11 @@ subroutine define_sflocal_coordinates
   rflu_min = 1e30
 
 ! Solid
-  !allocate(sgllp_solid(0:npol,0:npol,nelmax_solid,0:nproc-1))
-  !allocate(zgllp_solid(0:npol,0:npol,nelmax_solid,0:nproc-1))
-  !sgllp_solid(:,:,:,:) = 0.d0
-  !zgllp_solid(:,:,:,:) = 0.d0
-
   do iproc = 0, nproc-1
    do iel = 1, nel_solid(iproc)
     ielg = procel_solid(iel,iproc)
-!   write(63,*)'slocal,slobal el:',iel,ielg,fluid(ielg)
     do jpol = 0, npol
      do ipol = 0, npol
-      !sgllp_solid(ipol,jpol,iel,iproc) = sgll(ipol,jpol,ielg)
-      !zgllp_solid(ipol,jpol,iel,iproc) = zgll(ipol,jpol,ielg)
-      !rsol(ipol,jpol,iel,iproc) = &
-      !       sqrt(sgllp_solid(ipol,jpol,iel,iproc)**2+ &
-      !            zgllp_solid(ipol,jpol,iel,iproc)**2 )
       rsol_max = max(rsol_max, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
       rsol_min = min(rsol_min, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
      end do
@@ -218,27 +149,17 @@ subroutine define_sflocal_coordinates
 
 ! Fluid
   if (have_fluid) then
-  !allocate(sgllp_fluid(0:npol,0:npol,nelmax_fluid,0:nproc-1))
-  !allocate(zgllp_fluid(0:npol,0:npol,nelmax_fluid,0:nproc-1))
-  !sgllp_fluid(:,:,:,:) = 0.d0
-  !zgllp_fluid(:,:,:,:) = 0.d0
-
-  do iproc = 0, nproc-1
-   do iel = 1, nel_fluid(iproc)
-    ielg = procel_fluid(iel,iproc)
-!   write(63,*)'flocal,flobal el:',iel,ielg,fluid(ielg)
-    do jpol = 0, npol
-     do ipol = 0, npol
-      !sgllp_fluid(ipol,jpol,iel,iproc) = sgll(ipol,jpol,ielg)
-      !zgllp_fluid(ipol,jpol,iel,iproc) = zgll(ipol,jpol,ielg)
-      !rflu(ipol,jpol,iel,iproc) = sqrt(sgllp_fluid(ipol,jpol,iel,iproc)**2 + &
-      !                                 zgllp_fluid(ipol,jpol,iel,iproc)**2 )
-      rflu_max = max(rflu_max, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
-      rflu_min = min(rflu_min, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
+     do iproc = 0, nproc-1
+      do iel = 1, nel_fluid(iproc)
+       ielg = procel_fluid(iel,iproc)
+       do jpol = 0, npol
+        do ipol = 0, npol
+         rflu_max = max(rflu_max, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
+         rflu_min = min(rflu_min, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
+        end do
+       end do
+      end do
      end do
-    end do
-   end do
-  end do
   endif ! have_fluid
 
   rsol_max = sqrt(rsol_max)
@@ -250,10 +171,8 @@ subroutine define_sflocal_coordinates
   if (dump_mesh_info_screen) then
    write(6,*)'Solid-fluid coordinates:'
    if (have_solid) &
-   !write(6,*)'Min/max radius solid:',minval(rsol),maxval(rsol)
       write(6,*)'Min/max radius solid:', rsol_max, rsol_min
    if (have_fluid) &
-   !write(6,*)'Min/max radius fluid:',minval(rflu),maxval(rflu)
       write(6,*)'Min/max radius fluid:', rflu_max, rflu_min
   end if
 
@@ -390,8 +309,6 @@ subroutine define_glocal_numbering
       ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1 
       wsgll(ipt) = sgll(ipol,jpol,ielg)
       wzgll(ipt) = zgll(ipol,jpol,ielg)
-      !wsgll(ipt) = sgllp(ipol,jpol,iel,iproc)
-      !wzgll(ipt) = zgllp(ipol,jpol,iel,iproc)
      end do
     end do
    end do
@@ -507,8 +424,6 @@ end if
   integer :: nelmax_solid,nelmax_fluid,nelp_solid,nelp_fluid
   integer :: npointotp_solid,npointotp_fluid,wnglob_solid,wnglob_fluid
   integer :: iproc,ipol,jpol,iel,ipt, ielg
-!  real, dimension(:), allocatable :: wsgll_solid,wzgll_solid
-!  real, dimension(:), allocatable :: wsgll_fluid,wzgll_fluid
   double precision, dimension(:), allocatable :: wsgll_solid,wzgll_solid
   double precision, dimension(:), allocatable :: wsgll_fluid,wzgll_fluid
 
@@ -553,20 +468,15 @@ end if
 ! Solid
    if (have_solid) then
    do iel = 1, nelp_solid
-      print *, 'solid bla'
       ielg = procel_solid(iel,iproc)
-      print *, 'solid bli'
       do jpol = 0, npol
          do ipol = 0, npol
             ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-            !wsgll_solid(ipt) = sgllp_solid(ipol,jpol,iel,iproc)
-            !wzgll_solid(ipt) = zgllp_solid(ipol,jpol,iel,iproc)
             wsgll_solid(ipt) = sgll(ipol,jpol,ielg)
             wzgll_solid(ipt) = zgll(ipol,jpol,ielg)
          end do
       end do
    end do
-   print *, 'solid blub'
 
    allocate(wigloc_solid(npointotp_solid))
    allocate(wifseg_solid(npointotp_solid))
@@ -647,8 +557,6 @@ end if
          do jpol = 0, npol
             do ipol = 0, npol
                ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1 
-               !wsgll_fluid(ipt) = sgllp_fluid(ipol,jpol,iel,iproc)
-               !wzgll_fluid(ipt) = zgllp_fluid(ipol,jpol,iel,iproc)
                wsgll_fluid(ipt) = sgll(ipol,jpol,ielg)
                wzgll_fluid(ipt) = zgll(ipol,jpol,ielg)
             end do
@@ -2319,11 +2227,8 @@ double precision :: rtmp
               do jpol=0,npol
                  ! make tmpflufield equal to theta
                  rtmp=sqrt(sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
-                 !rtmp=sqrt(sgllp_fluid(ipol,jpol,iel,iproc)**2+ &
-                 !          zgllp_fluid(ipol,jpol,iel,iproc)**2)
                  tmpflufield(iel,ipol,jpol,iproc)= &
                     asin(sgll(ipol,jpol,ielg)/rtmp)*180./pi
-                    !asin(sgllp_fluid(ipol,jpol,iel,iproc)/rtmp)*180./pi
               enddo
            enddo
         enddo
@@ -2365,8 +2270,6 @@ double precision :: rtmp
            do ipol=0,npol
               do jpol=0,npol
                  rtmp=sqrt(sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
-                 !rtmp=sqrt(sgllp_solid(ipol,jpol,iel,iproc)**2+ &
-                 !          zgllp_solid(ipol,jpol,iel,iproc)**2)
                  if ( tmpsolfield(iel,ipol,jpol,iproc) >= 0.) then 
                     count=count+1
                  endif
@@ -2444,7 +2347,6 @@ do iproc=0,nproc-1
       ielg = procel(iel,iproc)
       
       if ( sgll(0,npol,ielg) < min_distance_nondim ) then 
-      !if ( sgllp(0,npol,iel,iproc) < min_distance_nondim ) then 
          axis(iel,iproc)=1
          naxelp(iproc)=naxelp(iproc)+1
          dummyax_elp(naxelp(iproc),iproc)=iel
@@ -2458,7 +2360,6 @@ do iproc=0,nproc-1
       ielg = procel_solid(iel,iproc)
       ! jpol=npol is random choice
 
-      !if ( sgllp_solid(0,npol,iel,iproc) < min_distance_nondim ) then 
       if ( sgll(0,npol,ielg) < min_distance_nondim ) then 
          axis_solid(iel,iproc)=1
          naxel_solidp(iproc)=naxel_solidp(iproc)+1
@@ -2470,7 +2371,6 @@ do iproc=0,nproc-1
    do iel=1,nel_fluid(iproc)
       ielg = procel_fluid(iel,iproc)
       ! jpol=npol is random choice
-      !if ( sgllp_fluid(0,npol,iel,iproc) < min_distance_nondim ) then 
       if ( sgll(0,npol,ielg) < min_distance_nondim ) then 
          axis_fluid(iel,iproc)=1
          naxel_fluidp(iproc)=naxel_fluidp(iproc)+1
