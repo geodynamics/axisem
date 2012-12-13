@@ -14,7 +14,6 @@
   private
   contains
 
-!dk create_pdb-----------------------------------------------------------
 subroutine create_pdb
   ! Wrapper routine to define everything in the parallel global and solid/fluid!
   ! worlds and dump the database for each processor. 
@@ -54,23 +53,18 @@ subroutine create_pdb
 
   write(6,*) '  define axial elems....'; call flush(6)
   call define_axial_elem ! needs sgll, sgll_solid, sgll_fluid
-  
 
   write(6,*) '  define solflu numbering....'; call flush(6)
   call define_sflocal_numbering   ! needs sgll, zgll
                                   ! creates igloc_solid, igloc_fluid
   deallocate(sgll,zgll)
 
-  write(6,*) '  define flobal2flocal etc....'; call flush(6)
-  call define_sflobal2sflocal     ! needs iglob_solid, iglob_fluid
-                                  ! needs igloc_fluid, igloc_fluid
-
   write(6,*) '  define search sflobal index....'; call flush(6)
   call define_search_sflobal_index ! needs iglob_solid, iglob_fluid
 
   write(6,*) '  partition sflobal index....'; call flush(6)
   call partition_sflobal_index
- 
+  
   write(6,*) '  define local bdry elems....'; call flush(6)
   call define_local_bdry_elem
 
@@ -292,8 +286,8 @@ subroutine define_glocal_numbering
   character(len=4) :: appiproc
 
   nelmax = maxval(nel)
-  allocate (igloc(nelmax*(npol+1)**2,0:nproc-1))
-  allocate (nglobp(0:nproc-1))
+  allocate(igloc(nelmax*(npol+1)**2,0:nproc-1))
+  allocate(nglobp(0:nproc-1))
 
 !===================
   do iproc = 0, nproc-1
@@ -301,7 +295,9 @@ subroutine define_glocal_numbering
 
    nelp = nel(iproc)  
    npointotp = nelp*(npol+1)**2
-   allocate(wsgll(npointotp),wzgll(npointotp))
+   allocate(wsgll(npointotp))
+   allocate(wzgll(npointotp))
+
    do iel = 1, nelp
     ielg = procel(iel,iproc)
     do jpol = 0, npol
@@ -445,10 +441,11 @@ end if
 
   nelmax_solid = maxval(nel_solid);   nelmax_fluid = maxval(nel_fluid)
 
-  allocate (igloc_solid(nelmax_solid*(npol+1)**2,0:nproc-1))
-  allocate (igloc_fluid(nelmax_fluid*(npol+1)**2,0:nproc-1))
+  allocate(igloc_solid(nelmax_solid*(npol+1)**2,0:nproc-1))
+  allocate(igloc_fluid(nelmax_fluid*(npol+1)**2,0:nproc-1))
 
-  allocate (nglobp_solid(0:nproc-1),nglobp_fluid(0:nproc-1))
+  allocate(nglobp_solid(0:nproc-1),nglobp_fluid(0:nproc-1))
+
   nglobp_solid(:) = 0;  nglobp_fluid(:) = 0
 
 !-----------------------
@@ -459,11 +456,15 @@ end if
    nelp_fluid = nel_fluid(iproc) 
    npointotp_solid = nelp_solid*(npol+1)**2
    npointotp_fluid = nelp_fluid*(npol+1)**2
-   if (have_solid) &
-        allocate(wsgll_solid(npointotp_solid),wzgll_solid(npointotp_solid))
+   if (have_solid) then 
+        allocate(wsgll_solid(npointotp_solid))
+        allocate(wzgll_solid(npointotp_solid))
+   end if
 
-   if (have_fluid) &
-        allocate(wsgll_fluid(npointotp_fluid),wzgll_fluid(npointotp_fluid))
+   if (have_fluid) then
+        allocate(wsgll_fluid(npointotp_fluid))
+        allocate(wzgll_fluid(npointotp_fluid))
+   end if
 
 ! Solid
    if (have_solid) then
@@ -717,8 +718,9 @@ subroutine define_global2glocal
 ! and deallocated there, in partition_global_index
 ! Both this and partition_global_index might well be redundant after all....
 !
-integer :: ipt,iel,ipol,jpol,iproc,ielg,iptg,igg,igp
-allocate(glob2gloc(nglobglob,0:nproc-1)) ; glob2gloc(:,:) = 0
+  integer :: ipt,iel,ipol,jpol,iproc,ielg,iptg,igg,igp
+  allocate(glob2gloc(nglobglob,0:nproc-1))
+  glob2gloc(:,:) = 0
 
   do iproc = 0, nproc-1
      do iel = 1, nel(iproc)
@@ -741,141 +743,81 @@ end subroutine define_global2glocal
 !------------------------------------------------------------------------
 
 !dk define_sflobal2sflocal-------------------------------------------------
-subroutine define_sflobal2sflocal
+subroutine define_sflobal2sflocal(iproc, solorflu)
 !
 ! Define bookkeeping array that for a given sflobal number, returns 
 ! the sflocal number. Used later on to partition global index into message 
 ! bins for the solid/fluid subdomains, and should be deallocated there, 
 ! in partition_sflobal_index
 !
-integer :: ipt,iel,ipol,jpol,iproc,ielg,iptg,igg,igp
+integer, intent(in) :: iproc
+logical, intent(in) :: solorflu
+integer             :: ipt, iel, ipol, jpol, ielg, iptg, igg, igp
 
-  if (dump_mesh_info_screen) then 
-   write(6,*)'Info on global numbering array sizes/values:'
-   write(6,*)'MAX INV_SOL/FLU     :',maxval(inv_ielem_solid),&
-                                    maxval(inv_ielem_fluid)
-!   write(6,*)'MAX/SIZE IGLOB      :',maxval(iglob),size(iglob)
-    if (have_solid) write(6,*)'MAX/SIZE IGLOB_SOLID:',maxval(iglob_solid),size(iglob_solid)
-  if (have_fluid) & 
-   write(6,*)'MAX/SIZ IGLOB_FLUID :',maxval(iglob_fluid), size(iglob_fluid)
+  if (dump_mesh_info_screen .and. iproc == 0) then 
+     write(6,*)'Info on global numbering array sizes/values:'
+     write(6,*)'MAX INV_SOL/FLU     :',maxval(inv_ielem_solid),&
+                                      maxval(inv_ielem_fluid)
+     if (have_solid) write(6,*)'MAX/SIZE IGLOB_SOLID:', &
+                        maxval(iglob_solid),size(iglob_solid)
+     if (have_fluid) & 
+         write(6,*)'MAX/SIZ IGLOB_FLUID :',maxval(iglob_fluid), size(iglob_fluid)
 
-    if (have_solid) write(6,*)'MAX/SIZE SOL IGLOC  :',maxval(igloc_solid),size(igloc_solid)
-   if (have_fluid) & 
-   write(6,*)'MAX/SIZE FLU IGLOC  :',maxval(igloc_fluid),size(igloc_fluid)
+     if (have_solid) write(6,*)'MAX/SIZE SOL IGLOC  :', &
+                        maxval(igloc_solid),size(igloc_solid)
 
-!  write(6,*)'MAX LOC/SOL/FLU    :',maxval(loc),maxval(loc_solid), &
-!                                   maxval(loc_fluid)
-!  write(6,*)'SIZ LOC/SOL/FLU    :',size(loc),size(loc_solid), &
-!                                   size(loc_fluid)
+     if (have_fluid) & 
+        write(6,*)'MAX/SIZE FLU IGLOC  :',maxval(igloc_fluid),size(igloc_fluid)
 
-   write(6,*)'MAX PROCEL/SOL/FLU  :',maxval(procel),maxval(procel_solid),&
-                                    maxval(procel_fluid)
-   write(6,*)'SIZ PROCEL/SOL/FLU  :',size(procel),size(procel_solid),&
-                                    size(procel_fluid)
-   write(6,*)
-  call flush(6)
+
+     write(6,*)'MAX PROCEL/SOL/FLU  :',maxval(procel),maxval(procel_solid),&
+                                      maxval(procel_fluid)
+     write(6,*)'SIZ PROCEL/SOL/FLU  :',size(procel),size(procel_solid),&
+                                      size(procel_fluid)
+     write(6,*)
+     call flush(6)
   end if 
 
 ! Solid
-  allocate(slob2sloc(nglobslob,0:nproc-1)) ; slob2sloc(:,:) = 0
-  do iproc = 0, nproc-1
-   do iel = 1, nel_solid(iproc)
-    ielg = procel_solid(iel,iproc) 
-    do jpol = 0, npol
-     do ipol = 0, npol
-      iptg = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-      ipt  = (iel -1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-      igg = iglob_solid(iptg)      ! slobal #
-      igp = igloc_solid(ipt,iproc) ! slocal #
-      slob2sloc(igg,iproc) = igp 
+  if (solorflu) then
+     slob2sloc(:) = 0
+    
+     do iel = 1, nel_solid(iproc)
+        ielg = procel_solid(iel,iproc) 
+        do jpol = 0, npol
+           do ipol = 0, npol
+              iptg = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+              ipt  = (iel -1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+              igg = iglob_solid(iptg)      ! slobal #
+              igp = igloc_solid(ipt,iproc) ! slocal #
+              slob2sloc(igg) = igp 
+           end do
+        end do
      end do
-    end do
-   end do
-  end do
+    !end do
 
 ! Fluid
-  if (have_fluid) then
-  allocate(flob2floc(nglobflob,0:nproc-1)) ; flob2floc(:,:) = 0
-  do iproc = 0, nproc-1
-   do iel = 1, nel_fluid(iproc)
-    ielg = procel_fluid(iel,iproc)
-    do jpol = 0, npol
-     do ipol = 0, npol
-      iptg = (inv_ielem_fluid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-      ipt  = (iel -1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-      igg = iglob_fluid(iptg)
-      igp = igloc_fluid(ipt,iproc) 
-      flob2floc(igg,iproc) = igp 
-     end do
-    end do
-   end do
-  end do
-  endif
+  else
+    if (have_fluid) then
+       flob2floc(:) = 0
+       do iel = 1, nel_fluid(iproc)
+          ielg = procel_fluid(iel,iproc)
+          do jpol = 0, npol
+             do ipol = 0, npol
+                iptg = (inv_ielem_fluid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+                ipt  = (iel -1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+                igg = iglob_fluid(iptg)
+                igp = igloc_fluid(ipt,iproc) 
+                flob2floc(igg) = igp 
+             end do
+          end do
+       end do
+    end if
+  end if
 
 end subroutine define_sflobal2sflocal
 !------------------------------------------------------------------------
 
-!dk define_search_global_index--------------------------------------------
-subroutine define_search_global_index
-!
-! Define a global index that given GLL coords for a proc returns global number.
-! Also defined are
-! nprocb: Given global number returns number of procs it belongs to (valence)
-! lprocb: Given global number and index of valence returns processor ID
-!
-integer :: iproc,ielg,iel,ipol,jpol,ipt,nelmax
-integer :: il,nprocbmax
-integer, allocatable :: nbelong2(:,:)
-
-  write(6,*) ' NEW GLOBAL INDEX SEARCH... ', nglobglob ; call flush(6)
-
-  allocate(nbelong(nglobglob))
-  allocate(nbelong2(0:nproc-1,nglobglob))
-  allocate(nprocb(nglobglob))
-
-  nbelong(:)=0; nbelong2(:,:) = 0; nprocbmax = 1
-  nelmax = maxval(nel)
-
-  do iproc = 0, nproc -1
-     do iel = 1, nel(iproc)
-        ielg = procel(iel,iproc) ! global element number
-        do jpol = 0, npol
-           do ipol = 0, npol
-              ipt = (ielg-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              nbelong(iglob(ipt)) = nbelong(iglob(ipt)) + 1 ! global valence
-              nbelong2(iproc,iglob(ipt)) = 1 ! this glob number is in iproc
-              if (nprocbmax < sum(nbelong2(:,iglob(ipt)))) then
-                 nprocbmax = sum(nbelong2(:,iglob(ipt)))
-              endif
-           end do
-        end do
-     end do
-  end do !iproc
-  
-  write(6,*)'nprocbmax=',nprocbmax
-  allocate(lprocb(nprocbmax,nglobglob))
-
-  do ipt=1,nglobglob
-     il=0
-     do iproc=0,nproc-1
-        if (nbelong2(iproc,ipt)==1) then
-           il = il + 1
-           lprocb(il,ipt)=iproc
-           nprocb(ipt)=il
-        endif
-     enddo
-  enddo
-
-  deallocate(nbelong2)
-
-!  do iproc=0,nproc-1
-!  do ipt=1,nglobglob
-!     write(88888,*)lprocb(iproc+1,ipt)
-!  enddo
-!  enddo
-
-  end subroutine define_search_global_index
-!------------------------------------------------------------------------
 
 !dk define_search_sflobal_index----------------------------------------------
 subroutine define_search_sflobal_index 
@@ -887,69 +829,72 @@ subroutine define_search_sflobal_index
 ! .... and correspondingly for fluid arrays.
 ! These are crucial for the partitioning, i.e. the heart of message passing.
 !
-integer :: iproc,ielg,iel,ipol,jpol,ipt,nelmax_solid,nelmax_fluid
-integer :: il,nprocbmax_solid,nprocbmax_fluid
-integer, allocatable :: nbelong2_solid(:,:),nbelong2_fluid(:,:)
+  integer :: iproc,ielg,iel,ipol,jpol,ipt,nelmax_solid,nelmax_fluid
+  integer :: il,nprocbmax_solid,nprocbmax_fluid
+  integer, allocatable :: nbelong2_solid(:,:), nbelong2_fluid(:,:)
 
-  nelmax_solid = maxval(nel_solid); nelmax_fluid = maxval(nel_fluid)
-  allocate(nprocb_solid(nglobslob),nprocb_fluid(nglobflob))
+  nelmax_solid = maxval(nel_solid)
+  nelmax_fluid = maxval(nel_fluid)
+  allocate(nprocb_solid(nglobslob))
+  allocate(nprocb_fluid(nglobflob))
 
   allocate(nbelong_solid(nglobslob))
   allocate(nbelong2_solid(0:nproc-1,nglobslob))
-  nbelong_solid(:)=0; nbelong2_solid(:,:) = 0; nprocbmax_solid = 1
 
+  nbelong_solid(:)    = 0
+  nbelong2_solid(:,:) = 0
+  nprocbmax_solid     = 1
 
-if (have_fluid) then
-  allocate(nbelong_fluid(nglobflob))
-  allocate(nbelong2_fluid(0:nproc-1,nglobflob))
-  nbelong_fluid(:)=0; nbelong2_fluid(:,:) = 0; nprocbmax_fluid = 1
-endif
+  if (have_fluid) then
+    allocate(nbelong_fluid(nglobflob))
+    allocate(nbelong2_fluid(0:nproc-1,nglobflob))
+    nbelong_fluid(:)    = 0
+    nbelong2_fluid(:,:) = 0
+    nprocbmax_fluid     = 1
+  endif
 
-  do iproc = 0, nproc -1 
+  do iproc = 0, nproc - 1 
 
-! solid
-   do iel = 1, nel_solid(iproc)
-    ielg = procel_solid(iel,iproc) ! global element number
-    do jpol = 0, npol
-     do ipol = 0, npol
-      ipt = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+     ! solid
+     do iel = 1, nel_solid(iproc)
+      ielg = procel_solid(iel,iproc) ! global element number
+      do jpol = 0, npol
+       do ipol = 0, npol
+        ipt = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
 
-      nbelong_solid(iglob_solid(ipt)) = nbelong_solid(iglob_solid(ipt)) + 1 
-      nbelong2_solid(iproc,iglob_solid(ipt)) = 1 ! this glob number is in iproc
-      if (nprocbmax_solid < sum(nbelong2_solid(:,iglob_solid(ipt)))) then
-        nprocbmax_solid = sum(nbelong2_solid(:,iglob_solid(ipt)))
-      endif  
+        nbelong_solid(iglob_solid(ipt)) = nbelong_solid(iglob_solid(ipt)) + 1 
+        nbelong2_solid(iproc,iglob_solid(ipt)) = 1 ! this glob number is in iproc
+        if (nprocbmax_solid < sum(nbelong2_solid(:,iglob_solid(ipt)))) then
+          nprocbmax_solid = sum(nbelong2_solid(:,iglob_solid(ipt)))
+        endif  
+       
+       end do
+      end do
+     end do
+
+     ! fluid
+     if (have_fluid) then
+        do iel = 1, nel_fluid(iproc)
+         ielg = procel_fluid(iel,iproc) ! global element number
+         do jpol = 0, npol
+          do ipol = 0, npol
+           ipt = (inv_ielem_fluid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
      
-     end do
-    end do
-   end do
-
-! fluid
-if (have_fluid) then
-   do iel = 1, nel_fluid(iproc)
-    ielg = procel_fluid(iel,iproc) ! global element number
-    do jpol = 0, npol
-     do ipol = 0, npol
-      ipt = (inv_ielem_fluid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-
-      nbelong_fluid(iglob_fluid(ipt)) = nbelong_fluid(iglob_fluid(ipt)) + 1 
-      nbelong2_fluid(iproc,iglob_fluid(ipt)) = 1 ! this glob number is in iproc
-      if (nprocbmax_fluid < sum(nbelong2_fluid(:,iglob_fluid(ipt)))) then
-        nprocbmax_fluid = sum(nbelong2_fluid(:,iglob_fluid(ipt)))
-      endif  
-
-     end do
-    end do
-   end do 
-
-end if
-
-
+           nbelong_fluid(iglob_fluid(ipt)) = nbelong_fluid(iglob_fluid(ipt)) + 1 
+           nbelong2_fluid(iproc,iglob_fluid(ipt)) = 1 ! this glob number is in iproc
+           if (nprocbmax_fluid < sum(nbelong2_fluid(:,iglob_fluid(ipt)))) then
+             nprocbmax_fluid = sum(nbelong2_fluid(:,iglob_fluid(ipt)))
+           endif  
+     
+          end do
+         end do
+        end do 
+     end if
   end do !iproc
 
   allocate(lprocb_solid(nprocbmax_solid,nglobslob))
 
-  do ipt=1,nglobslob
+  do ipt=1, nglobslob
      il=0
      do iproc=0,nproc-1
         if (nbelong2_solid(iproc,ipt)==1) then
@@ -962,23 +907,23 @@ end if
 
   deallocate(nbelong2_solid)
 
-if (have_fluid) then
-allocate(lprocb_fluid(nprocbmax_fluid,nglobflob))
-
-  do ipt=1,nglobflob
-     il=0
-     do iproc=0,nproc-1
-        if (nbelong2_fluid(iproc,ipt)==1) then
-           il = il + 1
-           lprocb_fluid(il,ipt)=iproc
-           nprocb_fluid(ipt) = il
-        endif
-     enddo
-  enddo
-
-  deallocate(nbelong2_fluid)
-
-endif
+  if (have_fluid) then
+  allocate(lprocb_fluid(nprocbmax_fluid,nglobflob))
+  
+    do ipt=1,nglobflob
+       il=0
+       do iproc=0,nproc-1
+          if (nbelong2_fluid(iproc,ipt)==1) then
+             il = il + 1
+             lprocb_fluid(il,ipt)=iproc
+             nprocb_fluid(ipt) = il
+          endif
+       enddo
+    enddo
+  
+    deallocate(nbelong2_fluid)
+  
+  endif
 
 end subroutine define_search_sflobal_index
 !------------------------------------------------------------------------
@@ -1099,7 +1044,8 @@ integer :: sizemsgmax,sizerecvpmax,sizesendpmax
   deallocate(index_msg)
 
 ! How many messages am I sending / receiving ? 
-  allocate(sizerecvp(0:nproc-1),sizesendp(0:nproc-1))
+  allocate(sizerecvp(0:nproc-1))
+  allocate(sizesendp(0:nproc-1))
   sizerecvp(0:nproc-1) = 0
   sizesendp(0:nproc-1) = 0 
   do iproct = 0, nproc -1
@@ -1296,7 +1242,7 @@ integer :: sizerecvpmax_fluid,sizesendpmax_fluid
 ! SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS SOLID SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS 
 
   if (dump_mesh_info_screen) write(6,*) 'Creating solid bins ' 
-  allocate (sizebin_solid(0:nproc-1))
+  allocate(sizebin_solid(0:nproc-1))
   sizebin_solid(0:nproc-1) = 0
   do ipt = 1, nglobslob
      iproct = lprocb_solid(1,ipt)! completely ad hoc choice
@@ -1432,7 +1378,8 @@ integer :: sizerecvpmax_fluid,sizesendpmax_fluid
   deallocate(index_msg_solid)
 
 ! How many messages am I sending / receiving ? 
-  allocate(sizerecvp_solid(0:nproc-1),sizesendp_solid(0:nproc-1))
+  allocate(sizerecvp_solid(0:nproc-1))
+  allocate(sizesendp_solid(0:nproc-1))
   sizerecvp_solid(0:nproc-1) = 0
   sizesendp_solid(0:nproc-1) = 0 
   do iproct = 0, nproc -1
@@ -1547,10 +1494,8 @@ integer :: sizerecvpmax_fluid,sizesendpmax_fluid
 !!  
 ! ALEX TUESDAY Pm : must change the second indices everywhere !!!!
 ! TO sizemsgrecvpmax AND sizemsgsenpmax RESPECTIVELY
-  allocate(glocal_index_msg_recvp_solid&
-              (sizemsgmax_solid,sizerecvpmax_solid,0:nproc-1))
-  allocate(glocal_index_msg_sendp_solid&
-              (sizemsgmax_solid,sizesendpmax_solid,0:nproc-1))
+  allocate(glocal_index_msg_recvp_solid(sizemsgmax_solid,sizerecvpmax_solid,0:nproc-1))
+  allocate(glocal_index_msg_sendp_solid(sizemsgmax_solid,sizesendpmax_solid,0:nproc-1))
 !  allocate(glocal_index_msg_recvp_solid&
 !              (sizemsgmax_solid,maxval(sizemsgrecvp_solid),0:nproc-1))
 !  allocate(glocal_index_msg_sendp_solid&
@@ -1563,10 +1508,13 @@ integer :: sizerecvpmax_fluid,sizesendpmax_fluid
 
   glocal_index_msg_recvp_solid = 0
   glocal_index_msg_sendp_solid = 0
+  
+  allocate(slob2sloc(nglobslob))
+
   do iproct = 0, nproc-1
-!! do iproct=0,0
-!     write(6,*)
-!     write(6,*) '--------------- PROC ',iproct,'------------------------'
+
+     call define_sflobal2sflocal(iproct, .true.)
+
      if (sizerecvp_solid(iproct)>0) then 
      do ip = 1, sizerecvp_solid(iproct)
         ipsrc = listrecvp_solid(ip,iproct)
@@ -1578,8 +1526,7 @@ integer :: sizerecvpmax_fluid,sizesendpmax_fluid
            if (ig<1) then 
               write(6,*)ipsrc,ipt,ip,ig
            endif
-!           write(6,*)'ipt,ip,ig',ipt,ip,ig; call flush(6)
-           glocal_index_msg_recvp_solid(ipt,ip,iproct) = slob2sloc(ig,iproct)
+           glocal_index_msg_recvp_solid(ipt,ip,iproct) = slob2sloc(ig)
         end do
      end do
      endif
@@ -1590,12 +1537,14 @@ integer :: sizerecvpmax_fluid,sizesendpmax_fluid
         write(6,*) ipdes, sizemsgsendp_solid(ip,iproct); call flush(6)
         do ipt = 1, sizemsgsendp_solid(ip,iproct)
            ig = global_index_msg_solid(ipt,iproct,ipdes)
-           glocal_index_msg_sendp_solid(ipt,ip,iproct) = slob2sloc(ig,iproct)
+           glocal_index_msg_sendp_solid(ipt,ip,iproct) = slob2sloc(ig)
         end do
      end do
      endif
   end do
-
+  
+  deallocate(slob2sloc)
+  
 21 format(80(i5,1x))
 
 !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -1675,7 +1624,7 @@ enddo
 
 if (have_fluid) then
   if (dump_mesh_info_screen) write(6,*) ' Creating fluid bins ' 
-  allocate (sizebin_fluid(0:nproc-1))
+  allocate(sizebin_fluid(0:nproc-1))
   sizebin_fluid(0:nproc-1) = 0 
   do ipt = 1, nglobflob
      iproct = lprocb_fluid(1,ipt)! completely ad hoc choice
@@ -1792,7 +1741,8 @@ if (have_fluid) then
   deallocate(index_msg_fluid)
 
 ! How many messages am I sending / receiving ? 
-  allocate(sizerecvp_fluid(0:nproc-1),sizesendp_fluid(0:nproc-1))
+  allocate(sizerecvp_fluid(0:nproc-1))
+  allocate(sizesendp_fluid(0:nproc-1))
   sizerecvp_fluid(0:nproc-1) = 0
   sizesendp_fluid(0:nproc-1) = 0 
   do iproct = 0, nproc -1
@@ -1905,10 +1855,8 @@ if (have_fluid) then
 !!  
 ! ALEX TUESDAY Pm : must change the second indices everywhere !!!!
 ! TO sizemsgrecvpmax AND sizemsgsenpmax RESPECTIVELY
-  allocate(glocal_index_msg_recvp_fluid&
-              (sizemsgmax_fluid,sizerecvpmax_fluid,0:nproc-1))
-  allocate(glocal_index_msg_sendp_fluid&
-              (sizemsgmax_fluid,sizesendpmax_fluid,0:nproc-1))
+  allocate(glocal_index_msg_recvp_fluid(sizemsgmax_fluid,sizerecvpmax_fluid,0:nproc-1))
+  allocate(glocal_index_msg_sendp_fluid(sizemsgmax_fluid,sizesendpmax_fluid,0:nproc-1))
 !  allocate(glocal_index_msg_recvp_fluid&
 !              (sizemsgmax_fluid,maxval(sizerecvp_fluid),0:nproc-1))
 !  allocate(glocal_index_msg_sendp_fluid&
@@ -1918,39 +1866,38 @@ if (have_fluid) then
 !!
   glocal_index_msg_recvp_fluid = 0
   glocal_index_msg_sendp_fluid = 0
+
+
+  allocate(flob2floc(nglobflob))
+
   do iproct = 0, nproc-1
-!! do iproct=0,0
-!     write(6,*)
-!     write(6,*) '--------------- PROC ',iproct,'------------------------'
-!     write(6,*) iproct,'  SHALL RECEIVE: '
-!!   write(6,*) iproct,sizerecvp_fluid(iproct)
+     call define_sflobal2sflocal(iproct, .false.)
+     
      if (sizerecvp_fluid(iproct)>0) then 
      do ip = 1, sizerecvp_fluid(iproct)
         ipsrc = listrecvp_fluid(ip,iproct)
-!        write(6,*) ipsrc, sizemsgrecvp_fluid(ip,iproct)
         do ipt = 1, sizemsgrecvp_fluid(ip,iproct)  
            ig = global_index_msg_fluid(ipt,ipsrc,iproct)
-           glocal_index_msg_recvp_fluid(ipt,ip,iproct) = flob2floc(ig,iproct)
-       !! write(6,*) ipsrc,ipt,ig,glocal_index_msg_recvp_fluid(ipt,ip,iproct)
+           glocal_index_msg_recvp_fluid(ipt,ip,iproct) = flob2floc(ig)
         end do
      end do
      endif
-!     write(6,*) iproct,'  SHALL SEND   : '
 
      if (sizesendp_fluid(iproct)>0) then 
      do ip = 1, sizesendp_fluid(iproct)
         ipdes = listsendp_fluid(ip,iproct)
-!        write(6,*) ipdes, sizemsgsendp_fluid(ip,iproct)
         do ipt = 1, sizemsgsendp_fluid(ip,iproct)
            ig = global_index_msg_fluid(ipt,iproct,ipdes)
-           glocal_index_msg_sendp_fluid(ipt,ip,iproct) = flob2floc(ig,iproct)
-!           write(6,*) ipdes,ipt,ig,glocal_index_msg_sendp_fluid(ipt,ip,iproct)
+           glocal_index_msg_sendp_fluid(ipt,ip,iproct) = flob2floc(ig)
         end do
      end do
      endif
   end do
 
 end if ! have_fluid
+  
+  deallocate(flob2floc)
+
 
 
   if (dump_mesh_info_screen .and. nproc>1) then 
@@ -2011,10 +1958,13 @@ integer count,ipol,jpol
 double precision, allocatable :: tmpsolfield(:,:,:,:), tmpflufield(:,:,:,:)
 double precision :: rtmp
 
-  allocate(nbdry_el(0:nproc-1),have_bdry_elemp(0:nproc-1))
+  allocate(nbdry_el(0:nproc-1))
+  allocate(have_bdry_elemp(0:nproc-1))
   allocate(belemp(sum(nbelem),0:nproc-1))
-  allocate(tmpsolid(sum(nbelem)/2,0:nproc-1),tmpfluid(sum(nbelem)/2,0:nproc-1))
-  allocate(jpolsol(sum(nbelem)/2,0:nproc-1),jpolflu(sum(nbelem)/2,0:nproc-1))
+  allocate(tmpsolid(sum(nbelem)/2,0:nproc-1))
+  allocate(tmpfluid(sum(nbelem)/2,0:nproc-1))
+  allocate(jpolsol(sum(nbelem)/2,0:nproc-1))
+  allocate(jpolflu(sum(nbelem)/2,0:nproc-1))
 
   tmpsolid = -1; tmpfluid = -1
 
@@ -2304,7 +2254,9 @@ allocate(dummyax_elp(maxval(nel),0:nproc-1))
 allocate(dummyax_el_solidp(maxval(nel_solid),0:nproc-1))
 allocate(dummyax_el_fluidp(maxval(nel_fluid),0:nproc-1))
 
-allocate(naxelp(0:nproc-1),naxel_solidp(0:nproc-1),naxel_fluidp(0:nproc-1))
+allocate(naxelp(0:nproc-1))
+allocate(naxel_solidp(0:nproc-1))
+allocate(naxel_fluidp(0:nproc-1))
 allocate(have_axis(0:nproc-1))
 allocate(axis(maxval(nel),0:nproc-1))
 allocate(axis_solid(maxval(nel_solid),0:nproc-1))
@@ -2426,7 +2378,8 @@ end subroutine define_axial_elem
   nelpmax = maxval(nel(:))
 
 ! elemental physical coordinates of serendipity control nodes, parallel
-  allocate(sgp(8,nelpmax,0:nproc-1),zgp(8,nelpmax,0:nproc-1))
+  allocate(sgp(8,nelpmax,0:nproc-1))
+  allocate(zgp(8,nelpmax,0:nproc-1))
   sgp(8,nelpmax,0:nproc-1) = 0.d0
   zgp(8,nelpmax,0:nproc-1) = 0.d0
 
@@ -2452,13 +2405,16 @@ end subroutine define_axial_elem
         zgp(8,iel,iproc) = .5d0*(zgp(7,iel,iproc)+zgp(1,iel,iproc))
      end do
 
-     allocate(sgpw(8,nelp),zgpw(8,nelp))
+     allocate(sgpw(8,nelp))
+     allocate(zgpw(8,nelp))
      do iel = 1, nelp
         sgpw(:,iel) = sgp(:,iel,iproc)
         zgpw(:,iel) = zgp(:,iel,iproc)
      end do
 
-     allocate(wiglob(npointotp),wloc(npointotp),wifseg(npointotp))
+     allocate(wiglob(npointotp))
+     allocate(wloc(npointotp))
+     allocate(wifseg(npointotp))
      wiglob(1:npointotp) = 0 
      wloc(1:npointotp) = 0
 
@@ -2479,7 +2435,8 @@ end subroutine define_axial_elem
 ! COORDINATES OF THESE CONTROL POINTS (GLOCALLY NUMBERED)
 ! TOPOLOGY OF THE ELEMENTS
   nglobmeshpmax = maxval(nglobmeshp)
-  allocate(scpp(nglobmeshpmax,0:nproc-1),zcpp(nglobmeshpmax,0:nproc-1))
+  allocate(scpp(nglobmeshpmax,0:nproc-1))
+  allocate(zcpp(nglobmeshpmax,0:nproc-1))
   scpp(nglobmeshpmax,0:nproc-1) = 0.d0
   zcpp(nglobmeshpmax,0:nproc-1) = 0.d0 
   allocate(lnodescp(nelpmax,8,0:nproc-1))
@@ -2513,7 +2470,8 @@ end subroutine define_axial_elem
   if (dump_mesh_info_screen) write(6,*) ' DEFINING ELEMENT TYPE ARRAY FOR EACH PROCESSOR '
   nelpmax=maxval(nel)
 
-  allocate(eltypep(nelpmax,0:nproc-1),coarsingp(nelpmax,0:nproc-1))
+  allocate(eltypep(nelpmax,0:nproc-1))
+  allocate(coarsingp(nelpmax,0:nproc-1))
   do iproc = 0, nproc-1
    nelp = nel(iproc)
    do iel = 1, nelp
@@ -2933,7 +2891,8 @@ integer :: lfdbname
    read(10) tmpnglob
 
 !  Element type
-   allocate(eltype(nelem),coarsingtmp(nelem))
+   allocate(eltype(nelem))
+   allocate(coarsingtmp(nelem))
    do iel = 1, nelem
     read(10) eltype(iel),coarsingtmp(iel)
    end do
@@ -3012,7 +2971,8 @@ integer :: lfdbname
    read(10) tmprouter,tmpresolve_inner_shear,tmphave_fluid
 !   read(10) tmpndisc
    tmpndisc=ndisc
-   allocate(tmpdiscont(tmpndisc),tmpsolid_domain(tmpndisc)) 
+   allocate(tmpdiscont(tmpndisc))
+   allocate(tmpsolid_domain(tmpndisc)) 
    allocate(tmpidom_fluid(tmpndisc))
    do idom=1,tmpndisc
       read(10) tmpdiscont(idom),tmpsolid_domain(idom),tmpidom_fluid(idom)
@@ -3040,7 +3000,8 @@ integer :: lfdbname
    read(10)tmphave_axis
    read(10)tmpnaxelp,tmpnaxel_solidp,tmpnaxel_fluidp
 
-   allocate(tmpax_elp(tmpnaxelp),tmpax_el_solidp(tmpnaxel_solidp))
+   allocate(tmpax_elp(tmpnaxelp))
+   allocate(tmpax_el_solidp(tmpnaxel_solidp))
    allocate(tmpax_el_fluidp(tmpnaxel_fluidp))
    do i=1,tmpnaxelp
       read(10)tmpax_elp(i)
@@ -3055,8 +3016,10 @@ integer :: lfdbname
    read(10) tmpsizerecv_solid
    if (dump_mesh_info_screen) write(6,*)'READ: size solid recv:',tmpsizerecv_solid; call flush(6)
    if ( tmpsizerecv_solid > 0) then 
-    allocate(tmplistrecv_solid(tmpsizerecv_solid)) ; tmplistrecv_solid(:) = -1
-    allocate(tmpsizemsgrecv_solid(tmpsizerecv_solid)) ; tmpsizemsgrecv_solid(:) = 0
+    allocate(tmplistrecv_solid(tmpsizerecv_solid))
+    tmplistrecv_solid(:) = -1
+    allocate(tmpsizemsgrecv_solid(tmpsizerecv_solid))
+    tmpsizemsgrecv_solid(:) = 0
     if (dump_mesh_info_screen) then
      write(6,*)'read listrecv_solid'; call flush(6)
     end if
@@ -3083,8 +3046,10 @@ integer :: lfdbname
    read(10) tmpsizesend_solid
    if (dump_mesh_info_screen) write(6,*)'READ: size solid send:',tmpsizesend_solid
    if ( tmpsizesend_solid > 0) then 
-    allocate(tmplistsend_solid(tmpsizesend_solid)) ; tmplistsend_solid(:) = -1
-    allocate(tmpsizemsgsend_solid(tmpsizesend_solid)) ; tmpsizemsgsend_solid(:) = 0
+    allocate(tmplistsend_solid(tmpsizesend_solid))
+    tmplistsend_solid(:) = -1
+    allocate(tmpsizemsgsend_solid(tmpsizesend_solid))
+    tmpsizemsgsend_solid(:) = 0
     read(10) tmplistsend_solid(:)
     read(10) tmpsizemsgsend_solid(:) 
     tmpsizemsgsendmax_solid = maxval(tmpsizemsgsend_solid(:))
@@ -3103,13 +3068,14 @@ integer :: lfdbname
       read(10) tmpsizerecv_fluid
       if (dump_mesh_info_screen) write(6,*)'READ: size fluid recv:',tmpsizerecv_fluid
       if ( tmpsizerecv_fluid > 0) then 
-         allocate(tmplistrecv_fluid(tmpsizerecv_fluid)) ; tmplistrecv_fluid(:) = -1
-         allocate(tmpsizemsgrecv_fluid(tmpsizerecv_fluid)) ; tmpsizemsgrecv_fluid(:) = 0
+         allocate(tmplistrecv_fluid(tmpsizerecv_fluid))
+         tmplistrecv_fluid(:) = -1
+         allocate(tmpsizemsgrecv_fluid(tmpsizerecv_fluid))
+         tmpsizemsgrecv_fluid(:) = 0
          read(10) tmplistrecv_fluid(:)
          read(10) tmpsizemsgrecv_fluid(:) 
          tmpsizemsgrecvmax_fluid = maxval(tmpsizemsgrecv_fluid(:))
-         allocate(tmpglocal_index_msg_recv_fluid&
-              (tmpsizemsgrecvmax_fluid,tmpsizerecv_fluid))
+         allocate(tmpglocal_index_msg_recv_fluid(tmpsizemsgrecvmax_fluid,tmpsizerecv_fluid))
          tmpglocal_index_msg_recv_fluid(:,:) = 0
          do imsg = 1, tmpsizerecv_fluid
             ipsrc = tmplistrecv_fluid(imsg) 
@@ -3121,13 +3087,14 @@ integer :: lfdbname
       read(10) tmpsizesend_fluid
       if (dump_mesh_info_screen) write(6,*)'READ: size fluid send:',tmpsizesend_fluid
       if ( tmpsizesend_fluid > 0) then 
-         allocate(tmplistsend_fluid(tmpsizesend_fluid)) ; tmplistsend_fluid(:) = -1
-         allocate(tmpsizemsgsend_fluid(tmpsizesend_fluid)) ; tmpsizemsgsend_fluid(:) = 0
+         allocate(tmplistsend_fluid(tmpsizesend_fluid))
+         tmplistsend_fluid(:) = -1
+         allocate(tmpsizemsgsend_fluid(tmpsizesend_fluid))
+         tmpsizemsgsend_fluid(:) = 0
          read(10) tmplistsend_fluid(:)
          read(10) tmpsizemsgsend_fluid(:) 
          tmpsizemsgsendmax_fluid = maxval(tmpsizemsgsend_fluid(:))
-         allocate(tmpglocal_index_msg_send_fluid&
-                  (tmpsizemsgsendmax_fluid,tmpsizesend_fluid))
+         allocate(tmpglocal_index_msg_send_fluid(tmpsizemsgsendmax_fluid,tmpsizesend_fluid))
          tmpglocal_index_msg_send_fluid(:,:) = 0
          do imsg = 1, tmpsizesend_fluid
             ipdes = tmplistsend_fluid(imsg)

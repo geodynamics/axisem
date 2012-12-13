@@ -48,7 +48,7 @@
   integer, dimension(:,:), allocatable      :: igloc_solid, igloc_fluid
   integer, dimension(:), allocatable        :: nglobp_solid, nglobp_fluid
 
-  integer, dimension(:,:), allocatable      :: slob2sloc, flob2floc
+  integer, dimension(:), allocatable        :: slob2sloc, flob2floc
 
   character(len=6), dimension(:,:), allocatable :: eltypep_solid, eltypep_fluid
 
