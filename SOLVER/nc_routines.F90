@@ -25,7 +25,6 @@ module nc_routines
     integer             :: gllperelem                 !< Number of GLL points per element 
     integer             :: outputplan                 !< When is this processor supposed to dump. 
     integer             :: stepstodump                !< How many steps since last dump?
-    integer,allocatable :: varlength(:)               !< Length of strain dump variables
     integer             :: isnap_global               !< Global variables, so that we do not have to pass data to the C subroutine
     integer             :: ndumps                     !< dito
     logical,allocatable :: dumpposition(:)            !< Will any processor dump at this value of isnap?
@@ -47,6 +46,7 @@ module nc_routines
     integer             :: nc_szcoord_dimid
     integer,allocatable :: nc_field_varid(:)
     character(len=16), allocatable  :: varnamelist(:)
+    character(len=12), allocatable  :: nc_varnamelist(:)
     integer             :: nvar = -1
 
 !! @todo These parameters should move to a input file soon
@@ -265,50 +265,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
         dumpsize = dumpsize + npoints * ndumps
     end do
         
-!    flen = varlength(ivar)
-!    call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
-!                             start=(/mynum*npts_sol+1, 1, isnap_loc-ndumps+1/), &
-!                             count=(/flen, ndumps/),                &
-!                             values=oneddumpvar_sol(1:flen,1:ndumps,ivar) ) )
-!                             !values=reshape(source=oneddumpvar_sol(1:flen/3,1:ndumps,ivar), &
-!                             !               shape=(/flen/3, 1, ndumps/), &
-!                             !               order=(/1,3,2/) ) ) )
-!    call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
-!                             start=(/mynum*npts_sol+1, 1, isnap_loc-ndumps+1/), &
-!                             count=(/flen, ndumps/),                &
-!                             values=oneddumpvar_sol(1:flen,1:ndumps,ivar+1) ) )
-!                             !values=reshape(source=oneddumpvar_sol(1:flen/3,1:ndumps,ivar+1), &
-!                             !               shape=(/flen/3, 1, ndumps/), &
-!                             !               order=(/1,3,2/) ) ) )
-!    call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
-!                             start=(/mynum*npts_sol+1, 1, isnap_loc-ndumps+1/), &
-!                             count=(/flen, ndumps/),                &
-!                             values=oneddumpvar_sol(1:flen,1:ndumps,ivar+2) ) )
-!                             !values=reshape(source=oneddumpvar_sol(1:flen/3,1:ndumps,ivar+2), &
-!                             !               shape=(/flen/3, 1, ndumps/), &
-!                             !               order=(/1,3,2/) ) ) )
     dumpsize = dumpsize + flen * ndumps
-    
-!    do ivar=nvar/2+1, nvar !nvar_deriv + 2,nvar_deriv*2+1 !< fluid variable
-!        flen = varlength(ivar)
-!        call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
-!                                 start=(/mynum*npts_flu+1, isnap_loc-ndumps+1/), &
-!                                 count=(/flen, ndumps/), &
-!                                 values=oneddumpvar_flu(1:flen,1:ndumps,ivar-nvar/2) ) )
-!        dumpsize = dumpsize + flen * ndumps
-!    end do
-        
-!    ivar = nvar_deriv*2+2
-!    flen = varlength(ivar)
-!    call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar),  &
-!                             start=(/mynum*npts_flu+1, 1, isnap_loc-ndumps+1/), &
-!                             count=(/flen/3, 3, ndumps/),                &
-!                             values=reshape(source=oneddumpvar_flu(1:flen/3,1:ndumps,&
-!                                                   nvar_deriv+1:nvar_deriv+3),&
-!                                            shape=(/flen/3, 3, ndumps/), &
-!                                            order=(/1,3,2/) ) ) )
-!    dumpsize = dumpsize + flen * ndumps
-
             
     !> Surface dumps 
     call check( nf90_put_var(ncid_surfout, nc_surfelem_disp_varid, &
@@ -586,7 +543,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end if
         allocate(varname(nvar))
         allocate(varnamelist(nvar))
-        allocate(varlength(nvar))
+        allocate(nc_varnamelist(nvar/2))
         allocate(nc_field_varid(nvar/2))
 
         if (src_type(1)  ==  'monopole') then 
@@ -595,11 +552,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                             'strain_dsus_flu', 'strain_dsuz_flu', 'strain_dpup_flu', &
                             'straintrace_flu', 'velo_flu_s     ', 'velo_flu_z     '/)
               
-!            varlength = (/nel_solid, nel_solid,   nel_solid, &
-!                          nel_solid, nel_solid,   nel_solid, &
-!                          nel_fluid, &
-!                          nel_fluid, nel_fluid,   nel_fluid, &
-!                          nel_fluid, nel_fluid/)
+            nc_varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                               'straintrace', 'velo_s     ', 'velo_z     '/)
         else
             varnamelist = (/'strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
                             'strain_dsup_sol', 'strain_dzup_sol', 'straintrace_sol', &
@@ -608,12 +562,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                             'strain_dsup_flu', 'strain_dzup_flu', 'straintrace_flu', &
                             'velo_flu_s     ', 'velo_flu_p     ', 'velo_flu_z     '/)
               
-!            varlength = (/nel_solid, nel_solid,   nel_solid, &
-!                          nel_solid, nel_solid,   nel_solid, &
-!                          nel_solid, nel_solid,   nel_solid, &
-!                          nel_fluid, nel_fluid,   nel_fluid, &
-!                          nel_fluid, nel_fluid,   nel_fluid, &
-!                          nel_fluid, nel_fluid,   nel_fluid /)
+            nc_varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                               'strain_dsup', 'strain_dzup', 'straintrace', &
+                               'velo_s     ', 'velo_p     ', 'velo_z     '/)
         end if
 
         gllperelem = (iend - ibeg + 1)**2
@@ -623,7 +574,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         npts_flu = nel_fluid * gllperelem 
         npts_sol_global = nel_solid * gllperelem * nproc
         npts_flu_global = nel_fluid * gllperelem * nproc
-        varlength = npoints !varlength * gllperelem
         
         if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
     end if ! dump_wavefields
@@ -720,7 +670,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
        
-                call check( nf90_def_var(ncid=ncid_snapout, name=trim(varnamelist(ivar)), &
+                call check( nf90_def_var(ncid=ncid_snapout, name=trim(nc_varnamelist(ivar)), &
                                          xtype = NF90_FLOAT, &
                                          dimids = (/nc_pt_dimid, nc_snap_dimid/),&
                                          varid = nc_field_varid(ivar), &
@@ -735,7 +685,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                               no_fill=1, fill=0) )
                 write(6,"('Netcdf variable ', A16,' with ID ', I3, ' and length', &
                         & I8, ' produced.')") &
-                          trim(varnamelist(ivar)), nc_field_varid(ivar), varlength(ivar)
+                          trim(nc_varnamelist(ivar)), nc_field_varid(ivar), npoints_global
             end do
 
 !            do ivar=nvar/2+1, nvar
@@ -971,7 +921,7 @@ subroutine nc_open_parallel
             if (dump_wavefields) then
                 call check( nf90_inq_grp_ncid(ncid_out, "Snapshots", ncid_snapout) )
                 do ivar=1, nvar/2
-                    call check( nf90_inq_varid( ncid_snapout, varnamelist(ivar), &
+                    call check( nf90_inq_varid( ncid_snapout, nc_varnamelist(ivar), &
                                 nc_field_varid(ivar)) )
                 end do
                 
