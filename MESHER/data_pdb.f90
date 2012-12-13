@@ -53,8 +53,8 @@
 
 !  real, dimension(:,:,:,:), allocatable :: sgllp_solid,zgllp_solid
 !  real, dimension(:,:,:,:), allocatable :: sgllp_fluid,zgllp_fluid
-   double precision, dimension(:,:,:,:), allocatable :: sgllp_solid,zgllp_solid
-   double precision, dimension(:,:,:,:), allocatable :: sgllp_fluid,zgllp_fluid
+!   double precision, dimension(:,:,:,:), allocatable :: sgllp_solid,zgllp_solid
+!   double precision, dimension(:,:,:,:), allocatable :: sgllp_fluid,zgllp_fluid
 
   character(len=6), dimension(:,:), allocatable :: eltypep_solid,eltypep_fluid
 
@@ -84,7 +84,7 @@
   integer, dimension(:,:), allocatable :: glob2gloc
 ! local coordinates
 !  real, dimension(:,:,:,:), allocatable :: sgllp,zgllp
-  double precision, dimension(:,:,:,:), allocatable :: sgllp,zgllp
+!  double precision, dimension(:,:,:,:), allocatable :: sgllp,zgllp
 !
 !======================
   end module data_pdb
