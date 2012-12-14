@@ -829,12 +829,13 @@ subroutine define_search_sflobal_index
 ! .... and correspondingly for fluid arrays.
 ! These are crucial for the partitioning, i.e. the heart of message passing.
 !
-  integer :: iproc,ielg,iel,ipol,jpol,ipt,nelmax_solid,nelmax_fluid
-  integer :: il,nprocbmax_solid,nprocbmax_fluid
+  integer :: iproc, ielg, iel, ipol, jpol, ipt, nelmax_solid, nelmax_fluid
+  integer :: il, nprocbmax_solid, nprocbmax_fluid
   integer, allocatable :: nbelong2_solid(:,:), nbelong2_fluid(:,:)
 
   nelmax_solid = maxval(nel_solid)
   nelmax_fluid = maxval(nel_fluid)
+
   allocate(nprocb_solid(nglobslob))
   allocate(nprocb_fluid(nglobflob))
 
@@ -845,61 +846,33 @@ subroutine define_search_sflobal_index
   nbelong2_solid(:,:) = 0
   nprocbmax_solid     = 1
 
-  if (have_fluid) then
-    allocate(nbelong_fluid(nglobflob))
-    allocate(nbelong2_fluid(0:nproc-1,nglobflob))
-    nbelong_fluid(:)    = 0
-    nbelong2_fluid(:,:) = 0
-    nprocbmax_fluid     = 1
-  endif
-
   do iproc = 0, nproc - 1 
-
      ! solid
      do iel = 1, nel_solid(iproc)
-      ielg = procel_solid(iel,iproc) ! global element number
-      do jpol = 0, npol
-       do ipol = 0, npol
-        ipt = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+        ielg = procel_solid(iel,iproc) ! global element number
+        do jpol = 0, npol
+           do ipol = 0, npol
+               ipt = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
 
-        nbelong_solid(iglob_solid(ipt)) = nbelong_solid(iglob_solid(ipt)) + 1 
-        nbelong2_solid(iproc,iglob_solid(ipt)) = 1 ! this glob number is in iproc
-        if (nprocbmax_solid < sum(nbelong2_solid(:,iglob_solid(ipt)))) then
-          nprocbmax_solid = sum(nbelong2_solid(:,iglob_solid(ipt)))
-        endif  
-       
-       end do
-      end do
+               nbelong_solid(iglob_solid(ipt)) = nbelong_solid(iglob_solid(ipt)) + 1 
+               nbelong2_solid(iproc,iglob_solid(ipt)) = 1
+               if (nprocbmax_solid < sum(nbelong2_solid(:,iglob_solid(ipt)))) then
+                 nprocbmax_solid = sum(nbelong2_solid(:,iglob_solid(ipt)))
+               endif  
+           
+           end do
+        end do
      end do
-
-     ! fluid
-     if (have_fluid) then
-        do iel = 1, nel_fluid(iproc)
-         ielg = procel_fluid(iel,iproc) ! global element number
-         do jpol = 0, npol
-          do ipol = 0, npol
-           ipt = (inv_ielem_fluid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-     
-           nbelong_fluid(iglob_fluid(ipt)) = nbelong_fluid(iglob_fluid(ipt)) + 1 
-           nbelong2_fluid(iproc,iglob_fluid(ipt)) = 1 ! this glob number is in iproc
-           if (nprocbmax_fluid < sum(nbelong2_fluid(:,iglob_fluid(ipt)))) then
-             nprocbmax_fluid = sum(nbelong2_fluid(:,iglob_fluid(ipt)))
-           endif  
-     
-          end do
-         end do
-        end do 
-     end if
   end do !iproc
 
   allocate(lprocb_solid(nprocbmax_solid,nglobslob))
 
   do ipt=1, nglobslob
-     il=0
-     do iproc=0,nproc-1
-        if (nbelong2_solid(iproc,ipt)==1) then
-           il=il+1
-           lprocb_solid(il,ipt)=iproc
+     il = 0
+     do iproc=0, nproc-1
+        if (nbelong2_solid(iproc,ipt) == 1) then
+           il = il + 1
+           lprocb_solid(il,ipt) = iproc
            nprocb_solid(ipt) = il
         endif
      enddo
@@ -907,23 +880,50 @@ subroutine define_search_sflobal_index
 
   deallocate(nbelong2_solid)
 
+  
+  
   if (have_fluid) then
-  allocate(lprocb_fluid(nprocbmax_fluid,nglobflob))
+     allocate(nbelong_fluid(nglobflob))
+     allocate(nbelong2_fluid(0:nproc-1,nglobflob))
+     nbelong_fluid(:)    = 0
+     nbelong2_fluid(:,:) = 0
+     nprocbmax_fluid     = 1
+
+     do iproc = 0, nproc - 1 
+        do iel = 1, nel_fluid(iproc)
+           ielg = procel_fluid(iel,iproc) ! global element number
+           do jpol = 0, npol
+              do ipol = 0, npol
+                 ipt = (inv_ielem_fluid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+     
+                 nbelong_fluid(iglob_fluid(ipt)) = &
+                            nbelong_fluid(iglob_fluid(ipt)) + 1 
+                 nbelong2_fluid(iproc,iglob_fluid(ipt)) = 1
+                 if (nprocbmax_fluid < sum(nbelong2_fluid(:,iglob_fluid(ipt)))) then
+                   nprocbmax_fluid = sum(nbelong2_fluid(:,iglob_fluid(ipt)))
+                 endif  
+     
+              end do
+           end do
+        end do 
+     end do
+
+     allocate(lprocb_fluid(nprocbmax_fluid,nglobflob))
   
-    do ipt=1,nglobflob
-       il=0
-       do iproc=0,nproc-1
-          if (nbelong2_fluid(iproc,ipt)==1) then
-             il = il + 1
-             lprocb_fluid(il,ipt)=iproc
-             nprocb_fluid(ipt) = il
-          endif
-       enddo
-    enddo
+     do ipt=1, nglobflob
+        il = 0
+        do iproc=0, nproc-1
+           if (nbelong2_fluid(iproc,ipt) == 1) then
+              il = il + 1
+              lprocb_fluid(il,ipt) = iproc
+              nprocb_fluid(ipt) = il
+           endif
+        enddo
+     enddo
   
-    deallocate(nbelong2_fluid)
+     deallocate(nbelong2_fluid)
   
-  endif
+  endif !have_fluid
 
 end subroutine define_search_sflobal_index
 !------------------------------------------------------------------------
