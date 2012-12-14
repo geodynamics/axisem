@@ -444,7 +444,8 @@ end if
   allocate(igloc_solid(nelmax_solid*(npol+1)**2,0:nproc-1))
   allocate(igloc_fluid(nelmax_fluid*(npol+1)**2,0:nproc-1))
 
-  allocate(nglobp_solid(0:nproc-1),nglobp_fluid(0:nproc-1))
+  allocate(nglobp_solid(0:nproc-1))
+  allocate(nglobp_fluid(0:nproc-1))
 
   nglobp_solid(:) = 0;  nglobp_fluid(:) = 0
 
@@ -840,26 +841,32 @@ subroutine define_search_sflobal_index
   allocate(nprocb_fluid(nglobflob))
 
   allocate(nbelong_solid(nglobslob))
-  allocate(nbelong2_solid(0:nproc-1,nglobslob))
+  allocate(nbelong2_solid(1:2,nglobslob))
 
+  nbelong2_solid(:,:) = -1 
   nbelong_solid(:)    = 0
-  nbelong2_solid(:,:) = 0
   nprocbmax_solid     = 1
 
+  ! solid
   do iproc = 0, nproc - 1 
-     ! solid
      do iel = 1, nel_solid(iproc)
         ielg = procel_solid(iel,iproc) ! global element number
         do jpol = 0, npol
            do ipol = 0, npol
-               ipt = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-
+               ipt = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
                nbelong_solid(iglob_solid(ipt)) = nbelong_solid(iglob_solid(ipt)) + 1 
-               nbelong2_solid(iproc,iglob_solid(ipt)) = 1
-               if (nprocbmax_solid < sum(nbelong2_solid(:,iglob_solid(ipt)))) then
-                 nprocbmax_solid = sum(nbelong2_solid(:,iglob_solid(ipt)))
-               endif  
-           
+
+               if (nbelong2_solid(1,iglob_solid(ipt)) == -1) then
+                  nbelong2_solid(1,iglob_solid(ipt)) = iproc
+               else if (nbelong2_solid(1,iglob_solid(ipt)) .ne. iproc &
+                  .and. nbelong2_solid(2,iglob_solid(ipt)) .ne. iproc) then
+                  if (nbelong2_solid(2,iglob_solid(ipt)) .ne. -1) then
+                     print *, 'a point with 3 processors? that is a bad idea!'
+                     stop 2
+                  end if
+                  nbelong2_solid(2,iglob_solid(ipt)) = iproc
+                  nprocbmax_solid = 2
+               end if
            end do
         end do
      end do
@@ -869,24 +876,28 @@ subroutine define_search_sflobal_index
 
   do ipt=1, nglobslob
      il = 0
-     do iproc=0, nproc-1
-        if (nbelong2_solid(iproc,ipt) == 1) then
-           il = il + 1
-           lprocb_solid(il,ipt) = iproc
-           nprocb_solid(ipt) = il
-        endif
-     enddo
+     if (nbelong2_solid(1,ipt) .ne. -1) then
+        il = il + 1
+        lprocb_solid(il,ipt) = nbelong2_solid(1,ipt)
+        nprocb_solid(ipt) = il
+     end if
+     if (nbelong2_solid(2,ipt) .ne. -1) then
+        il = il + 1
+        lprocb_solid(il,ipt) = nbelong2_solid(2,ipt)
+        nprocb_solid(ipt) = il
+     end if
   enddo
 
   deallocate(nbelong2_solid)
 
   
-  
+  ! fluid 
   if (have_fluid) then
      allocate(nbelong_fluid(nglobflob))
-     allocate(nbelong2_fluid(0:nproc-1,nglobflob))
+     allocate(nbelong2_fluid(1:2,nglobflob))
+
+     nbelong2_fluid(:,:) = -1 
      nbelong_fluid(:)    = 0
-     nbelong2_fluid(:,:) = 0
      nprocbmax_fluid     = 1
 
      do iproc = 0, nproc - 1 
@@ -898,10 +909,18 @@ subroutine define_search_sflobal_index
      
                  nbelong_fluid(iglob_fluid(ipt)) = &
                             nbelong_fluid(iglob_fluid(ipt)) + 1 
-                 nbelong2_fluid(iproc,iglob_fluid(ipt)) = 1
-                 if (nprocbmax_fluid < sum(nbelong2_fluid(:,iglob_fluid(ipt)))) then
-                   nprocbmax_fluid = sum(nbelong2_fluid(:,iglob_fluid(ipt)))
-                 endif  
+
+                 if (nbelong2_fluid(1,iglob_fluid(ipt)) == -1) then
+                    nbelong2_fluid(1,iglob_fluid(ipt)) = iproc
+                 else if (nbelong2_fluid(1,iglob_fluid(ipt)) .ne. iproc &
+                    .and. nbelong2_fluid(2,iglob_fluid(ipt)) .ne. iproc) then
+                    if (nbelong2_fluid(2,iglob_fluid(ipt)) .ne. -1) then
+                       print *, 'a point with 3 processors? that is a bad idea!'
+                       stop 2
+                    end if
+                    nbelong2_fluid(2,iglob_fluid(ipt)) = iproc
+                    nprocbmax_fluid = 2
+                 end if
      
               end do
            end do
@@ -912,13 +931,16 @@ subroutine define_search_sflobal_index
   
      do ipt=1, nglobflob
         il = 0
-        do iproc=0, nproc-1
-           if (nbelong2_fluid(iproc,ipt) == 1) then
-              il = il + 1
-              lprocb_fluid(il,ipt) = iproc
-              nprocb_fluid(ipt) = il
-           endif
-        enddo
+        if (nbelong2_fluid(1,ipt) .ne. -1) then
+           il = il + 1
+           lprocb_fluid(il,ipt) = nbelong2_fluid(1,ipt)
+           nprocb_fluid(ipt) = il
+        end if
+        if (nbelong2_fluid(2,ipt) .ne. -1) then
+           il = il + 1
+           lprocb_fluid(il,ipt) = nbelong2_fluid(2,ipt)
+           nprocb_fluid(ipt) = il
+        end if
      enddo
   
      deallocate(nbelong2_fluid)
