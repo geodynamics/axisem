@@ -44,6 +44,7 @@ cp -p Makefile $meshpath/Code
 cp -p makemake.pl $meshpath/Code
 cp -p inparam_mesh $meshpath/Code
 cp -p xmesh $meshpath/Code
+cp -p submit.csh $meshpath/Code
 
 #mv Diags/serend_coords_per_proc.dat* $meshpath
 
