@@ -1228,7 +1228,8 @@ subroutine decompose_inner_cube_opt(central_count)
     implicit none
     integer, intent(out)    :: central_count(0:nproc-1)
     integer                 :: nproc2, nlinsteps, ndivsppx0, ip, &
-                               ncorrections = 0, npart, is, iz, sign_buff, n
+                               ncorrections = 0, npart, is, iz, sign_buff, n, &
+                               ids, idz
     real                    :: r1, r2, stepsize, dphi
     real, allocatable       :: x0(:), x1(:), x2(:), x3(:), z0(:), z1(:), z2(:), &
                                z3(:), phi(:)
@@ -1344,6 +1345,28 @@ subroutine decompose_inner_cube_opt(central_count)
     do ip = 0, nproc2 - 1, 1
         proc_iq_min = .false.
         proc_iq_max = (proc == - 1)
+
+        ! initialize all elements within two elements distance of the last
+        ! processor to this proc, as otherwise they had two neighbours
+        ! relevant at high frequencies and lots of procs only
+        if (ip > 0) then
+            do is = 0, ndivs - 1, 1
+                do iz = 0, ndivs - 1, 1
+                    if (proc(is, iz) == nproc2 - ip) then
+                        do ids = -2, 2, 1
+                            do idz = -2, 2, 1
+                                if ((is + ids < 0) .or. (iz + idz < 0) .or. &
+                                        (is + ids > ndivs - 1) .or. (iz + idz > ndivs - 1)) then
+                                    continue
+                                elseif (proc(is + ids,iz + idz) == -1) then
+                                    proc_iq_min(is + ids, iz + idz) = .true.
+                                endif
+                            enddo
+                        enddo
+                    endif
+                enddo
+            enddo
+        endif
         
         stepsize = pi / 2. / 18. 
         sign_buff = 0
