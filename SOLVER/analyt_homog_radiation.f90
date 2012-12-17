@@ -5,12 +5,12 @@ module analyt_homog_radiation
   use global_parameters
   use data_mesh
   use data_time
-  use data_source, ONLY: t_0,zsrc,src_type,stf_type,magnitude,iel_src,jpol_src
+  use data_source, ONLY: t_0, zsrc, src_type, stf_type, magnitude, iel_src, jpol_src
   use data_io
 
   implicit none
 
-  public :: prepare_src_vicinity,src_vicinity
+  public :: prepare_src_vicinity, src_vicinity
   private
 
   integer                       :: nrdist

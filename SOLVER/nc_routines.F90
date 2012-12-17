@@ -11,28 +11,47 @@ module nc_routines
 
     implicit none
 
-    real, allocatable   :: recdumpvar(:,:,:)          !< Buffer variable for recorder 
-    real, allocatable   :: surfdumpvar_disp(:,:,:)    !< Buffer variable for displacement at surface
-    real, allocatable   :: surfdumpvar_velo(:,:,:)    !< Buffer variable for velocity at surface 
-    real, allocatable   :: surfdumpvar_strain(:,:,:)  !< Buffer variable for strain at surface
-    real, allocatable   :: surfdumpvar_srcdisp(:,:,:) !< Buffer variable for source displacement at surface
-!    real, allocatable   :: oneddumpvar_flu(:,:,:)     !< Buffer variable for everything fluid dumped in nc_dump_field_1d
-!    real, allocatable   :: oneddumpvar_sol(:,:,:)     !< Buffer variable for everything solid dumped in nc_dump_field_1d
-    real, allocatable   :: oneddumpvar(:,:,:)          !< Buffer variable for everything dumped in nc_dump_field_1d
+    !> Buffer variable for recorder 
+    real, allocatable   :: recdumpvar(:,:,:)
+    !> Buffer variable for displacement at surface
+    real, allocatable   :: surfdumpvar_disp(:,:,:)
+    !> Buffer variable for velocity at surface 
+    real, allocatable   :: surfdumpvar_velo(:,:,:)
+    !> Buffer variable for strain at surface
+    real, allocatable   :: surfdumpvar_strain(:,:,:)
+    !> Buffer variable for source displacement at surface
+    real, allocatable   :: surfdumpvar_srcdisp(:,:,:)
+!    real, allocatable   :: oneddumpvar_flu(:,:,:)    !< Buffer variable for everything fluid dumped in nc_dump_field_1d
+!    real, allocatable   :: oneddumpvar_sol(:,:,:)    !< Buffer variable for everything solid dumped in nc_dump_field_1d
+
+    !> Buffer variable for everything dumped in nc_dump_field_1d
+    real, allocatable   :: oneddumpvar(:,:,:)
     real, allocatable   :: scoord1d(:), zcoord1d(:)
     
-    integer             :: dumpstepsnap               !< Number of steps before kernel specific stuff is dumped 
-    integer             :: gllperelem                 !< Number of GLL points per element 
-    integer             :: outputplan                 !< When is this processor supposed to dump. 
-    integer             :: stepstodump                !< How many steps since last dump?
-    integer             :: isnap_global               !< Global variables, so that we do not have to pass data to the C subroutine
-    integer             :: ndumps                     !< dito
-    logical,allocatable :: dumpposition(:)            !< Will any processor dump at this value of isnap?
-    integer             :: npoints                    !< Number of GLL points to plot for this processor
-    integer             :: npoints_global             !< Number of GLL points to plot for all processors
-    integer             :: npts_sol, npts_flu         !< Number of GLL points to plot in solid/fluid domain
-    integer             :: npts_sol_global            !< Number of GLL points to plot in solid domain for all processors
-    integer             :: npts_flu_global            !< Number of GLL points to plot in fluid domain for all processors
+    !> Number of steps before kernel specific stuff is dumped 
+    integer             :: dumpstepsnap
+    !> Number of GLL points per element 
+    integer             :: gllperelem
+    !> When is this processor supposed to dump. 
+    integer             :: outputplan
+    !> How many steps since last dump?
+    integer             :: stepstodump
+    !> Global variables, so that we do not have to pass data to the C subroutine
+    integer             :: isnap_global
+    !> dito
+    integer             :: ndumps
+    !> Will any processor dump at this value of isnap?
+    logical,allocatable :: dumpposition(:)
+    !> Number of GLL points to plot for this processor
+    integer             :: npoints
+    !> Number of GLL points to plot for all processors
+    integer             :: npoints_global
+    !> Number of GLL points to plot in solid/fluid domain
+    integer             :: npts_sol, npts_flu
+    !> Number of GLL points to plot in solid domain for all processors
+    integer             :: npts_sol_global
+    !> Number of GLL points to plot in fluid domain for all processors
+    integer             :: npts_flu_global
 
     ! Stuff moved from data_io
     integer             :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout
@@ -49,11 +68,15 @@ module nc_routines
     character(len=12), allocatable  :: nc_varnamelist(:)
     integer             :: nvar = -1
 
-!! @todo These parameters should move to a input file soon
-    integer             :: dumpbuffersize = 256     !< How many snaps should be buffered in RAM?
-    logical             :: deflate        = .false. !< Should output be compressed?
-    integer             :: deflate_level  = 5       !< Compression level (0 lowest, 9 highest)
-    logical             :: verbose        = .true.  !< @todo Will hopefully be a global variable one day
+    !! @todo These parameters should move to a input file soon
+    !> How many snaps should be buffered in RAM?
+    integer             :: dumpbuffersize = 256
+    !> Should output be compressed?
+    logical             :: deflate = .false.
+    !> Compression level (0 lowest, 9 highest)
+    integer             :: deflate_level = 5
+    !> @todo Will hopefully be a global variable one day
+    logical             :: verbose = .true.
     
     private 
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
@@ -68,7 +91,6 @@ contains
 !-----------------------------------------------------------------------------------------
 !> Translates NetCDF error code into readable message
 subroutine check(status)
-    implicit none
     integer, intent ( in) :: status !< Error code
 #ifdef unc
     if (status /= nf90_noerr) then 
@@ -94,7 +116,6 @@ end subroutine barrier
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
 subroutine nc_dump_field_solid(f, varname)
 
-    implicit none
     include 'mesh_params.h'
     real(kind=realkind), intent(in)   :: f(npts_sol)  !< Data to dump
     character(len=*), intent(in)      :: varname  !< Internal name of data to dump. 
@@ -121,7 +142,6 @@ end subroutine nc_dump_field_solid
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
 subroutine nc_dump_field_fluid(f, varname)
 
-    implicit none
     include 'mesh_params.h'
     real(kind=realkind), intent(in)   :: f(npts_flu)  !< Data to dump
     character(len=*), intent(in)      :: varname  !< Internal name of data to dump. 
@@ -151,7 +171,6 @@ subroutine nc_dump_strain(isnap_loc)
     use clocks_mod, only : tick
     use data_time, only  : iclocknbio, idnbio
 
-    implicit none
     integer, intent(in) :: isnap_loc
 #ifdef unc
     integer             :: iproc
@@ -235,7 +254,6 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     use global_parameters, ONLY: realkind
     use data_mesh,         ONLY: loc2globrec, maxind
 
-    implicit none
     include 'mesh_params.h'
     integer                           :: ivar, flen, isnap_loc
     real                              :: tick, tack
@@ -318,7 +336,6 @@ end subroutine nc_dump_strain_to_disk
 subroutine nc_dump_rec(recfield)
     use data_mesh, ONLY: num_rec
     use data_io,   ONLY: iseismo
-    implicit none
     real, intent(in), dimension(3,num_rec) :: recfield
 #ifdef unc
     
@@ -335,7 +352,6 @@ subroutine nc_dump_rec_to_disk
     use data_mesh, ONLY: loc2globrec, num_rec
     use data_io,   ONLY: datapath, lfdata, nseismo
 
-    implicit none
     real                              :: tick, tack
     integer                           :: irec, dumpsize, icomp
 
@@ -369,7 +385,6 @@ end subroutine nc_dump_rec_to_disk
 subroutine nc_dump_surface(surffield, disporvelo)!, nrec, dim2)
     use data_mesh, ONLY: maxind
 
-    implicit none
     !integer, intent(in)                          :: nrec, dim2
     real(kind=realkind), intent(in), dimension(:,:) :: surffield
     character(len=4), intent(in)                 :: disporvelo
@@ -394,7 +409,6 @@ end subroutine
 subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
     use data_io, ONLY : ndumppts_el
-    implicit none
     include    'mesh_params.h'
     real, intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
 #ifdef unc
@@ -421,7 +435,6 @@ end subroutine nc_dump_mesh_sol
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
 
-    implicit none
     real, intent(in), dimension(:,:,:) :: scoord_flu, zcoord_flu 
 #ifdef unc
 
@@ -479,7 +492,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     use data_mesh,   ONLY: maxind, num_rec
     use data_source, ONLY: src_type
 
-    implicit none
     include 'mesh_params.h'
 
     integer, intent(in)                 :: nrec              !< Number of receivers
@@ -810,7 +822,6 @@ end subroutine nc_define_outputfile
 !#ifdef unc
 !
 !    !use data_io
-!    implicit none    
 !    !integer  :: nmode
 !    integer  :: iproc
 !
@@ -894,7 +905,6 @@ end subroutine nc_write_att_int
 subroutine nc_open_parallel
 #ifdef unc
     use data_io,   ONLY  : datapath, lfdata, dump_wavefields
-    implicit none
     integer             :: status, ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
     

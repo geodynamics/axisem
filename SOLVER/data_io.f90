@@ -19,7 +19,9 @@ public
   logical           :: dump_snaps_glob
   logical           :: dump_xdmf
   logical           :: dump_snaps_solflu
-  logical           :: dump_wavefields !< N.B. This is not wavefield snapshots, but kernel wavefields. Belongs to nstrain and istrain
+  !> N.B. This is not wavefield snapshots, but kernel wavefields. Belongs to nstrain and
+  !! istrain
+  logical           :: dump_wavefields 
   logical           :: need_fluid_displ
   double precision  :: strain_samp
   integer           :: iseismo  !< current seismogram sample
