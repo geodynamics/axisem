@@ -172,6 +172,9 @@ subroutine end_clock
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use clocks_mod, ONLY : clocks_exit
+  use data_proc,  ONLY : mynum
+
+  implicit none
 
   if(mynum==0) write(6,*)
   if(mynum==0) write(6,"(10x,'Summary of timing measurements:')")
@@ -192,9 +195,10 @@ end subroutine end_clock
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+  implicit none
   integer, intent(in)           :: iproc
   character(len=4), intent(out) :: app
-
+  
   write(app,"(I4.4)") iproc
 
 end subroutine define_io_appendix
@@ -208,7 +212,8 @@ end subroutine define_io_appendix
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 !
-!integer :: iunit
+!  implicit none
+!  integer :: iunit
 !
 !  iunit=iunit
 !
@@ -223,6 +228,7 @@ subroutine test_mpi
   use data_proc
   use global_parameters
   
+  implicit none
   integer               :: i, j
   double precision      :: t, t2, u, u2, sdble, sdble2
   real(kind=realkind)   :: s, s2
