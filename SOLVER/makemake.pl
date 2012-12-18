@@ -64,11 +64,11 @@ else {
 	print "Default compiler is gfortran\n";
 	print "If you want another compiler type ./makemake.pl <compiler_name> \n";
     if ($ARGV[0] eq 'debug' or $ARGV[1] eq 'debug'){
-	$F90_strg = 'mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace';
-	$FC_strg =  'gfortran -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace';
+	$F90_strg = 'mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace -g';
+	$FC_strg =  'gfortran -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace -g';
     } else {
-	$F90_strg = 'mpif90 -O3  -fbacktrace';
-	$FC_strg = 'gfortran -O3 -fbacktrace';	
+	$F90_strg = 'mpif90   -O3 -fbacktrace -g';
+	$FC_strg =  'gfortran -O3 -fbacktrace -g';	
     }
 }
 ###################################################################################
