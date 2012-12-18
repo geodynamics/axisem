@@ -657,9 +657,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
             call check( nf90_def_dim( ncid=ncid_snapout, name="snapshots", len=nstrain, &
                                       dimid=nc_snap_dimid) )
-            call check( nf90_def_dim( ncid=ncid_snapout, name="processors", len=nproc, &
-                                      dimid=nc_proc_dimid) )
-            
 !            call check( nf90_def_dim(ncid=ncid_snapout, name='gllpoints_solid', &
 !                                     len=npts_sol_global, dimid=nc_pt_sol_dimid) )
 !            call check( nf90_def_dim(ncid=ncid_snapout, name='gllpoints_fluid', &
