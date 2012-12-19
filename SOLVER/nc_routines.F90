@@ -4,12 +4,13 @@ module nc_routines
 #ifdef unc
     use netcdf
 #endif
-    use iso_c_binding
     use data_proc, ONLY : mynum, nproc, lpr
     use data_proc, ONLY : mynum, nproc, lpr
     use global_parameters
 
     implicit none
+    save
+    private 
 
     !> Buffer variable for recorder 
     real, allocatable   :: recdumpvar(:,:,:)
@@ -78,7 +79,6 @@ module nc_routines
     !> @todo Will hopefully be a global variable one day
     logical             :: verbose = .true.
     
-    private 
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
     public              :: nc_write_att_char, nc_write_att_real, nc_write_att_int
@@ -102,14 +102,15 @@ subroutine check(status)
 end subroutine check  
 !-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine barrier
  
     use commpi,    ONLY : pbarrier
     if (nproc>1) call pbarrier ! comment for serial
 
 end subroutine barrier
-!=============================================================================
+!-----------------------------------------------------------------------------------------
+
 
 !-----------------------------------------------------------------------------------------
 !> Routine to dump the wavefield variables for the Kerner. Collects input in
@@ -138,6 +139,9 @@ subroutine nc_dump_field_solid(f, varname)
 #endif
 end subroutine nc_dump_field_solid
 !-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
 !> Routine to dump the wavefield variables for the Kerner. Collects input in
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
 subroutine nc_dump_field_fluid(f, varname)
@@ -165,11 +169,28 @@ subroutine nc_dump_field_fluid(f, varname)
 #endif
 end subroutine nc_dump_field_fluid
 !-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
 subroutine nc_dump_strain(isnap_loc)
 
     use data_io, ONLY    : nstrain
     use clocks_mod, only : tick
     use data_time, only  : iclocknbio, idnbio
+
+    ! explicit interfaces to the c functions to avoide the underscore issues
+    ! (fortran 2003 standard)
+    interface
+        subroutine c_spawn_dumpthread(stepstodump) bind(c, name='c_spawn_dumpthread')
+            use, intrinsic      :: iso_c_binding, only : c_int
+            integer (c_int)     :: stepstodump
+        end subroutine 
+    end interface
+    
+    interface
+        subroutine c_wait_for_io() bind(c, name='c_wait_for_io')
+        end subroutine 
+    end interface
 
     integer, intent(in) :: isnap_loc
 #ifdef unc
@@ -405,6 +426,7 @@ subroutine nc_dump_surface(surffield, disporvelo)!, nrec, dim2)
 end subroutine
 !-----------------------------------------------------------------------------------------
 
+
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
@@ -431,6 +453,7 @@ subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 #endif
 end subroutine nc_dump_mesh_sol
 !-----------------------------------------------------------------------------------------
+
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
