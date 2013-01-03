@@ -102,39 +102,42 @@ integer :: i
   close(5)
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.
-   correct_azi=.false.
-   sum_seis=.false.
-   sum_fields=.false.
-   rot_rec='cyl'
-   dump_snaps_solflu=.false.
-   dump_type='fullfields'
+  correct_azi=.false.
+  sum_seis=.false.
+  sum_fields=.false.
+  rot_rec='cyl'
+  dump_snaps_solflu=.false.
+  dump_type='fullfields'
    
+  ! netcdf format
   use_netcdf = .false.
-  if (output_format=='netcdf') then
-    use_netcdf = .true.
+  if (output_format=='netcdf') use_netcdf=.true.
+  
 #ifndef unc
-    write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
-    stop 2
+  if (use_netcdf) then
+     write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
+     stop 2
+  endif
 #endif
-  end if
+
 
 !af test
- vphomo = vphomo*1.e3
- vshomo = vshomo*1.e3
- rhohomo = rhohomo*1.e3
+  vphomo = vphomo*1.e3
+  vshomo = vshomo*1.e3
+  rhohomo = rhohomo*1.e3
 !
- iend = npol-iend
+  iend = npol-iend
 
-if (src_dump_type=='anal') then
-   write(6,*)''
-   write(6,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-   write(6,*)''
-   write(6,*)'Analytical source wavefield dump not implemented YET!'
-   write(6,*)'          DOING NOTHING INSTEAD......................'
-   write(6,*)''
-   write(6,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-   write(6,*)''
-endif
+  if (src_dump_type=='anal') then
+     write(6,*)''
+     write(6,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+     write(6,*)''
+     write(6,*)'Analytical source wavefield dump not implemented YET!'
+     write(6,*)'          DOING NOTHING INSTEAD......................'
+     write(6,*)''
+     write(6,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+     write(6,*)''
+  endif
 
 10 format(a80)
 
@@ -343,7 +346,7 @@ end subroutine readin_parameters
 
 !-----------------------------------------------------------------------------
 subroutine compute_numerical_parameters
-
+  !use nc_routines, only: nc_write_snaptimesteps
   include "mesh_params.h"
 
   double precision :: s,z,r,theta,s_max,dshift
@@ -522,7 +525,8 @@ subroutine compute_numerical_parameters
   sampling_per_a = 1
   decay=3.5d0
 
-  if (.not. dump_wavefields .and. ( trim(stf_type)=='dirac_0' .or. trim(stf_type)=='queavi') &
+  if (.not. dump_wavefields & 
+      .and. ( trim(stf_type)=='dirac_0' .or. trim(stf_type)=='queavi') &
       .and. deltat_coarse>1.9*deltat ) then 
      period_vs_discrete_halfwidth = period/(2.*deltat_coarse)
      if (period_vs_discrete_halfwidth<15.) period_vs_discrete_halfwidth=15.
@@ -594,7 +598,8 @@ subroutine compute_numerical_parameters
      found_shift=.false.
      do i=1,ceiling(4.*discrete_dirac_halfwidth/deltat)
         dshift = deltat*ceiling(4.*discrete_dirac_halfwidth/deltat) + real(i)*deltat
-        if ( .not. found_shift .and. abs(nint(dshift/deltat_coarse)-dshift/deltat_coarse)<0.01*deltat &
+        if ( .not. found_shift &
+             .and. abs(nint(dshift/deltat_coarse)-dshift/deltat_coarse)<0.01*deltat &
              .and. abs(nint(dshift/deltat)-dshift/deltat)<0.01*deltat &
              .and. abs(nint(dshift/seis_dt)-dshift/seis_dt)<0.01*deltat) then 
            shift_fact_discrete_dirac = deltat_coarse*ceiling(dshift/deltat_coarse)
@@ -651,17 +656,6 @@ subroutine compute_numerical_parameters
   istrain = 0
   isnap = 0
   iseismo=0
-
-  ! netcdf format
-  use_netcdf = .false.
-  if (output_format=='netcdf')	use_netcdf=.true.
-  
-#ifndef unc
-  if (use_netcdf) then
-     write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
-     stop 2
-  endif
-#endif
 
   ! mesh info: coordinates of elements and collocation points               
   open(2222+mynum,file=infopath(1:lfinfo)//'/axial_points.dat'//appmynum)
