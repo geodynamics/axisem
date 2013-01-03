@@ -66,7 +66,7 @@ subroutine read_model(rho,lambda,mu)
 
 use commun, ONLY : barrier
 use lateral_heterogeneities
-
+use nc_routines, ONLY: nc_write_el_domains
 include 'mesh_params.h'
 
 
@@ -145,6 +145,11 @@ double precision, dimension(0:npol,0:npol,nelem) :: stmp,ztmp,v_p,v_s
   enddo
   close(65)
 10 format(i9,1pe11.3,i3,2(1pe11.3))
+  
+  if (use_netcdf) then
+     if (mynum.eq.0) call nc_write_el_domains(ieldom)
+  end if
+
 
   if (do_mesh_tests) then
     if (lpr) write(6,*)'    checking discontinuity discretization...' 

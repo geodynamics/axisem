@@ -199,6 +199,7 @@ double precision :: s,z,r,theta
 ! open files for displacement and velocity traces in each surface element
 
   allocate(jsurfel(maxind)) ! for surface strain
+  allocate(surfcoord(maxind)) ! theta of surface elements dumped for surface strain
 
      do iproc=0,nproc-1
         call barrier
@@ -218,6 +219,9 @@ double precision :: s,z,r,theta
               endif
               write(33333,*) 180./pi* &
                    thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
+
+              surfcoord(iel) = 180. / pi * &
+                               thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
 
               write(33334,11) 180./pi* &
                    thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),&

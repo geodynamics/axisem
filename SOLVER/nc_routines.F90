@@ -64,7 +64,7 @@ module nc_routines
     integer             :: nc_mesh_sol_varid, nc_mesh_flu_varid
     integer             :: nc_point_dimid, nc_pt_sol_dimid, nc_pt_flu_dimid
     integer             :: nc_szcoord_dimid
-    integer             :: nc_snaptime_varid
+    integer             :: nc_snaptime_varid, nc_elem_dom_varid, nc_surfelem_theta_varid
     integer,allocatable :: nc_field_varid(:)
     character(len=16), allocatable  :: varnamelist(:)
     character(len=12), allocatable  :: nc_varnamelist(:)
@@ -85,7 +85,7 @@ module nc_routines
     public              :: nc_write_att_char, nc_write_att_real, nc_write_att_int
     public              :: nc_define_outputfile, nc_open_parallel, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
-!    public              :: nc_write_snaptimesteps
+    public              :: nc_write_el_domains
 contains
 
 
@@ -111,6 +111,16 @@ subroutine barrier
 
 end subroutine barrier
 !-----------------------------------------------------------------------------------------
+
+subroutine nc_write_el_domains(idom)
+    integer, dimension(:), intent(in) :: idom
+
+#ifdef unc
+    call check( nf90_put_var(ncid   = ncid_snapout, &
+                             varid  = nc_elem_dom_varid, &
+                             values = idom) )
+#endif
+end subroutine
 
 !-----------------------------------------------------------------------------------------
 !subroutine nc_write_snaptimesteps(nstrain, t_0, strain_samp, strain_it)
@@ -521,8 +531,6 @@ end subroutine nc_dump_mesh_flu
 !
 !end subroutine nc_dump_mesh_to_disk
 
-
-
 !-----------------------------------------------------------------------------------------
 !> Define the output file variables and dimensions
 !! and allocate buffer variables.
@@ -719,6 +727,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       varid  = nc_mesh_z_varid) )
 
             call check( nf90_def_var( ncid   = ncid_snapout, &
+                                      name   = 'model_domain', &
+                                      xtype  = NF90_BYTE, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_elem_dom_varid) )
+
+            call check( nf90_def_var( ncid   = ncid_snapout, &
                                       name   = 'snapshot_times', &
                                       xtype  = NF90_DOUBLE, &
                                       dimids = nc_snap_dimid,&
@@ -766,6 +780,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_def_dim( ncid_surfout, "surf_elems", maxind*nproc, nc_surf_dimid) )     
             write(6,110) "surf_elems", maxind*nproc, nc_surf_dimid
 
+            call check( nf90_def_var( ncid_surfout, "elem_theta", NF90_FLOAT, &
+                                      (/nc_surf_dimid /), &
+                                      nc_surfelem_theta_varid) )
+            call check( nf90_put_att(ncid_surfout, nc_surfelem_theta_varid, 'units', 'degrees'))
+           
             call check( nf90_def_var( ncid_surfout, "displacement", NF90_FLOAT, &
                                       (/nc_times_dimid, nc_comp_dimid, nc_surf_dimid /), &
                                       nc_surfelem_disp_varid) )
@@ -960,6 +979,7 @@ end subroutine nc_write_att_int
 subroutine nc_open_parallel
 #ifdef unc
     use data_io,   ONLY  : datapath, lfdata, dump_wavefields
+    use data_mesh, ONLY  : maxind, surfcoord
     integer             :: status, ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
     
@@ -989,6 +1009,14 @@ subroutine nc_open_parallel
                     call check( nf90_inq_varid( ncid_snapout, nc_varnamelist(ivar), &
                                 nc_field_varid(ivar)) )
                 end do
+                
+                call check( nf90_inq_varid(ncid_surfout, "elem_theta", &
+                                           nc_surfelem_theta_varid) )
+                call check( nf90_put_var(ncid_surfout, &
+                                         varid  = nc_surfelem_theta_varid, &
+                                         values = surfcoord , &
+                                         start  = (/mynum*maxind+1/), &
+                                         count  = (/maxind/) ))
                 
                 call check( nf90_inq_varid(ncid_surfout, "displacement", &
                                            nc_surfelem_disp_varid) )
