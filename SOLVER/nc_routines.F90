@@ -64,6 +64,7 @@ module nc_routines
     integer             :: nc_mesh_sol_varid, nc_mesh_flu_varid
     integer             :: nc_point_dimid, nc_pt_sol_dimid, nc_pt_flu_dimid
     integer             :: nc_szcoord_dimid
+    integer             :: nc_snaptime_varid
     integer,allocatable :: nc_field_varid(:)
     character(len=16), allocatable  :: varnamelist(:)
     character(len=12), allocatable  :: nc_varnamelist(:)
@@ -84,7 +85,7 @@ module nc_routines
     public              :: nc_write_att_char, nc_write_att_real, nc_write_att_int
     public              :: nc_define_outputfile, nc_open_parallel, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
-
+!    public              :: nc_write_snaptimesteps
 contains
 
 
@@ -111,6 +112,24 @@ subroutine barrier
 end subroutine barrier
 !-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
+!subroutine nc_write_snaptimesteps(nstrain, t_0, strain_samp, strain_it)
+!    integer, intent(in)      :: nstrain, strain_it
+!    real(8), intent(in)      :: t_0, strain_samp
+!#ifdef unc
+!    real(8), dimension(nstrain) :: time
+!    integer                  :: i
+!    !write(2900+mynum,*)real(ielem)*t_0/real(strain_samp),ielem*strain_it
+!    time = dble((/ (i, i = 1, nstrain) /))
+!    time = time * t_0 / strain_samp
+!    call check( nf90_put_var(ncid   = ncid_snapout, &
+!                             varid  = nc_snaptime_varid, &
+!                             values = time, &
+!                             start  = (/1/) ) ) 
+!                             
+!#endif
+!end subroutine
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 !> Routine to dump the wavefield variables for the Kerner. Collects input in
@@ -510,10 +529,10 @@ end subroutine nc_dump_mesh_flu
 subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec_proc)
 
     use data_io,     ONLY: nseismo, nstrain, nseismo, ibeg, iend, dump_wavefields
-    use data_io,     ONLY: datapath, lfdata
+    use data_io,     ONLY: datapath, lfdata, strain_samp
     use data_time,   ONLY: strain_it
     use data_mesh,   ONLY: maxind, num_rec
-    use data_source, ONLY: src_type
+    use data_source, ONLY: src_type, t_0
 
     include 'mesh_params.h'
 
@@ -524,8 +543,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     real(8), dimension(nrec),intent(in) :: rec_ph            !< Receiver phi
     integer, dimension(nrec),intent(in) :: rec_proc          !< Receiver processor
 #ifdef unc
+    real(8), dimension(nstrain)         :: time
     character(len=16), allocatable      :: varname(:)
-    integer                             :: ivar
+    integer                             :: ivar, i
     integer                             :: irec, iproc, nmode
     integer                             :: nc_latr_varid, nc_lon_varid 
     integer                             :: nc_lat_varid, nc_ph_varid
@@ -657,7 +677,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         call check( nf90_def_var(ncid_recout, "Lat_req", NF90_FLOAT, (/nc_rec_dimid/), &
                                  nc_latr_varid) )
-
         call check( nf90_def_var(ncid_recout, "Lon", NF90_FLOAT, (/nc_rec_dimid/), &
                                  nc_lon_varid) )
         call check( nf90_def_var(ncid_recout, "Lat", NF90_FLOAT, (/nc_rec_dimid/), &
@@ -678,27 +697,32 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file'
             write(6,*) '  awaiting', nstrain, ' snapshots'
 
-            call check( nf90_def_dim( ncid=ncid_snapout, name="snapshots", len=nstrain, &
-                                      dimid=nc_snap_dimid) )
-!            call check( nf90_def_dim(ncid=ncid_snapout, name='gllpoints_solid', &
-!                                     len=npts_sol_global, dimid=nc_pt_sol_dimid) )
-!            call check( nf90_def_dim(ncid=ncid_snapout, name='gllpoints_fluid', &
-!                                     len=npts_flu_global, dimid=nc_pt_flu_dimid) )
-            call check( nf90_def_dim(ncid  = ncid_snapout, &
-                                     name  = 'gllpoints_all', &
-                                     len   = npoints_global, &
-                                     dimid = nc_pt_dimid) )
+            call check( nf90_def_dim( ncid  = ncid_snapout, &
+                                      name  = 'snapshots', &
+                                      len   = nstrain, &
+                                      dimid = nc_snap_dimid) )
+            call check( nf90_def_dim( ncid  = ncid_snapout, &
+                                      name  = 'gllpoints_all', &
+                                      len   = npoints_global, &
+                                      dimid = nc_pt_dimid) )
 
-            call check( nf90_def_var(ncid   = ncid_snapout,  &
-                                     name   ='mesh_S', &
-                                     xtype  = NF90_FLOAT, &
-                                     dimids = nc_pt_dimid,&
-                                     varid  = nc_mesh_s_varid) )
-            call check( nf90_def_var(ncid   = ncid_snapout, &
-                                     name   = 'mesh_Z', &
-                                     xtype  = NF90_FLOAT, &
-                                     dimids = nc_pt_dimid,&
-                                     varid  = nc_mesh_z_varid) )
+
+            call check( nf90_def_var( ncid   = ncid_snapout,  &
+                                      name   ='mesh_S', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_s_varid) )
+            call check( nf90_def_var( ncid   = ncid_snapout, &
+                                      name   = 'mesh_Z', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_z_varid) )
+
+            call check( nf90_def_var( ncid   = ncid_snapout, &
+                                      name   = 'snapshot_times', &
+                                      xtype  = NF90_DOUBLE, &
+                                      dimids = nc_snap_dimid,&
+                                      varid  = nc_snaptime_varid) )
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
        
@@ -768,6 +792,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         
         write(6,*) 'NetCDF variables defined'
         write(6,*)
+        ! Leave definition mode
         call check( nf90_enddef(ncid_out))
 
         write(6,*) 'Writing station info into NetCDF file...'
@@ -777,14 +802,24 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_put_var( ncid_recout, nc_proc_varid, values = rec_proc) ) 
 
         do irec=1,nrec
-            !write(6,*) 'Write name ', rec_names(irec), ' of receiver',irec
             call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = (/irec, 1/), &
                                       count = (/1, 40/), values = (rec_names(irec))) )
         end do
         write(6,*) '...done'
-        !call check( nf90_redef ( ncid_out))
-    end if ! (mynum == 0)
+   
+        ! Write out strain dump times
+        if (dump_wavefields) then
+            time = dble((/ (i, i = 1, nstrain) /))
+            time = time * t_0 / strain_samp
+            call check( nf90_put_var(ncid   = ncid_snapout, &
+                                     varid  = nc_snaptime_varid, &
+                                     values = time ) ) 
+        end if
     
+    end if ! (mynum == 0)
+   
+
+! Allocation of Dump buffer variables. Done on all procs
 90  format(' Allocated ', A20, ', uses ',F10.3,'MB')
     allocate(recdumpvar(nseismo,3,num_rec))
     recdumpvar = 0.0
