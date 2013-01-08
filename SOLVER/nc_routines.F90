@@ -337,25 +337,25 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
             
     !> Surface dumps 
     call check( nf90_put_var(ncid_surfout, nc_surfelem_disp_varid, &
-                start = (/isnap_loc-ndumps+1, 1, (nproc-1)*maxind+1/), &
+                start = (/isnap_loc-ndumps+1, 1, mynum*maxind+1/), &
                 count = (/ndumps, 3, maxind/), &
                 values = surfdumpvar_disp(:,:,:)) )
     dumpsize = dumpsize + 3 * maxind * ndumps
 
     call check( nf90_put_var(ncid_surfout, nc_surfelem_velo_varid, &
-                start = (/isnap_loc-ndumps+1, 1, (nproc-1)*maxind+1/), &
+                start = (/isnap_loc-ndumps+1, 1, mynum*maxind+1/), &
                 count = (/ndumps, 3, maxind/), &
                 values = surfdumpvar_velo(:,:,:)) )
     dumpsize = dumpsize + 3 * maxind * ndumps
 
     call check( nf90_put_var(ncid_surfout, nc_surfelem_strain_varid, &
-                start = (/isnap_loc-ndumps+1, 1, (nproc-1)*maxind+1/), &
+                start = (/isnap_loc-ndumps+1, 1, mynum*maxind+1/), &
                 count = (/ndumps, 6, maxind/), &
                 values = surfdumpvar_strain(:,:,:)) )
     dumpsize = dumpsize + 6 * maxind * ndumps
 
     call check( nf90_put_var(ncid_surfout, nc_surfelem_disp_src_varid, &
-                start = (/isnap_loc-ndumps+1, 1, (nproc-1)*maxind+1/), &
+                start = (/isnap_loc-ndumps+1, 1, mynum*maxind+1/), &
                 count = (/ndumps, 3, maxind/), &
                 values = surfdumpvar_srcdisp(:,:,:)) )
     dumpsize = dumpsize + 3 * maxind * ndumps
@@ -539,7 +539,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     use data_io,     ONLY: nseismo, nstrain, nseismo, ibeg, iend, dump_wavefields
     use data_io,     ONLY: datapath, lfdata, strain_samp
     use data_time,   ONLY: strain_it
-    use data_mesh,   ONLY: maxind, num_rec
+    use data_mesh,   ONLY: maxind, num_rec, discont
     use data_source, ONLY: src_type, t_0
 
     include 'mesh_params.h'
@@ -562,6 +562,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                             :: nc_recnam_varid, nc_surf_dimid
     integer                             :: nc_pt_dimid
     integer                             :: nc_mesh_s_varid, nc_mesh_z_varid   
+    integer                             :: nc_disc_dimid, nc_disc_varid
     if (mynum == 0) then
         write(6,*)
         write(6,*) '************************************************************************'
@@ -709,11 +710,26 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       name  = 'snapshots', &
                                       len   = nstrain, &
                                       dimid = nc_snap_dimid) )
+            call check( nf90_put_att(ncid   = ncid_snapout, &
+                                     varid  = NF90_GLOBAL, &
+                                     name   = 'nstrain', &
+                                     values = nstrain) )
             call check( nf90_def_dim( ncid  = ncid_snapout, &
                                       name  = 'gllpoints_all', &
                                       len   = npoints_global, &
                                       dimid = nc_pt_dimid) )
-
+            call check( nf90_put_att(ncid   = ncid_snapout, &
+                                     varid  = NF90_GLOBAL, &
+                                     name   = 'npoints', &
+                                     values = npoints_global) )
+            call check( nf90_def_dim( ncid  = ncid_snapout, &
+                                      name  = 'discontinuities', &
+                                      len   = ndisc, &
+                                      dimid = nc_disc_dimid) )
+            call check( nf90_put_att(ncid   = ncid_snapout, &
+                                     varid  = NF90_GLOBAL, &
+                                     name   = 'ndisc', &
+                                     values = ndisc) )
 
             call check( nf90_def_var( ncid   = ncid_snapout,  &
                                       name   ='mesh_S', &
@@ -737,6 +753,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       xtype  = NF90_DOUBLE, &
                                       dimids = nc_snap_dimid,&
                                       varid  = nc_snaptime_varid) )
+            
+            call check( nf90_def_var( ncid   = ncid_snapout, &
+                                      name   = 'disc_depths', &
+                                      xtype  = NF90_DOUBLE, &
+                                      dimids = nc_disc_dimid,&
+                                      varid  = nc_disc_varid) )
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
        
@@ -773,11 +795,19 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
             call check( nf90_def_dim( ncid_surfout, name="snapshots", len=nstrain, &
                                       dimid=nc_snap_dimid) )
+            call check( nf90_put_att(ncid   = ncid_surfout, &
+                                     name   = 'nstrain', &
+                                     varid  = NF90_GLOBAL, &
+                                     values = nstrain) )
             call check( nf90_def_dim( ncid_surfout, "straincomponents", len=6, &
                                       dimid=nc_strcomp_dimid) )
             write(6,110) "straincomponents", 6, nc_strcomp_dimid
             
             call check( nf90_def_dim( ncid_surfout, "surf_elems", maxind*nproc, nc_surf_dimid) )     
+            call check( nf90_put_att(ncid   = ncid_surfout, &
+                                     name   = 'nsurfelem', &
+                                     varid  = NF90_GLOBAL, &
+                                     values = maxind*nproc) )
             write(6,110) "surf_elems", maxind*nproc, nc_surf_dimid
 
             call check( nf90_def_var( ncid_surfout, "elem_theta", NF90_FLOAT, &
@@ -833,6 +863,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_put_var(ncid   = ncid_snapout, &
                                      varid  = nc_snaptime_varid, &
                                      values = time ) ) 
+            call check( nf90_put_var(ncid   = ncid_snapout, &
+                                     varid  = nc_disc_varid, &
+                                     values = discont) )
+                                     
         end if
     
     end if ! (mynum == 0)
