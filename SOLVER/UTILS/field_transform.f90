@@ -6,6 +6,7 @@ program field_transformation
     implicit none
 
     include 'fftw3.f03'
+    include 'netcdf.inc'
 
     integer                         :: nvar, ivar
     integer                         :: nsnap, ntimes, ngll, ngllread
@@ -19,6 +20,7 @@ program field_transformation
     character(len=16), allocatable  :: varnamelist(:)
     integer, dimension(9)           :: ncin_field_varid
     integer, dimension(9,2)         :: ncout_field_varid
+    integer                         :: ncin_snaptime_varid
 
     integer                         :: rank, istride, ostride, nomega, nextpow2
     integer(kind=8)                 :: plan_fftf
@@ -33,6 +35,7 @@ program field_transformation
 
     logical                         :: verbose = .true.
     logical                         :: dofft = .false.
+    logical                         :: output_exist = .true.
     integer                         :: nthreads = 2
     integer                         :: npointsperstep = 20000
                                     !< maybe replace this with cache size
@@ -72,7 +75,7 @@ program field_transformation
     endif
 
     ! open input netcdf file 
-    call check( nf90_open(path="../bli_l0ng/Data/axisem_output.nc4", & 
+    call check( nf90_open(path="./Data/axisem_output.nc4", & 
                           mode=NF90_NOWRITE, ncid=ncin_id) )
 
     ! get Snapshots group id
@@ -95,9 +98,6 @@ program field_transformation
         varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
                         'strain_dsup', 'strain_dzup', 'straintrace', &
                         'velo_s     ', 'velo_p     ', 'velo_z     '/)
-
-        print *, 'who cares about multipoles?'
-        stop
     end if
 
     ! get variable ids of the fields
@@ -136,11 +136,23 @@ program field_transformation
         end if
     end if
 
-    !! Create output file
-    if (verbose) &
-        print *, 'Creating output file'
-    nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
-    call check( nf90_create(path="ordered_output.nc4", cmode=nmode, ncid=ncout_id))
+
+    !! Check for output file
+    inquire(file="./ordered_output.nc4", exist=output_exist)
+
+    if (output_exist) then
+        if (verbose) &
+            print *, 'Opening output file'
+        nmode = NF90_WRITE 
+        call check( nf90_open(path="./ordered_output.nc4", mode=nmode, ncid=ncout_id))
+        call check( nf90_redef(ncid=ncout_id))
+    else
+        !! Create output file
+        if (verbose) &
+            print *, 'Creating output file'
+        nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
+        call check( nf90_create(path="./ordered_output.nc4", cmode=nmode, ncid=ncout_id))
+    end if
 
     if (dofft) then 
         ! create group for freqdomain fields
@@ -182,6 +194,12 @@ program field_transformation
     else
         ! create group for timedomain fields
         call check( nf90_def_grp(ncout_id, "Snapshots", ncout_fields_grpid) )
+        print *, 'Defined group "Snapshots"'
+
+        ! copy attributes
+        call check( nf90_copy_att( ncin_snap_grpid, NF90_GLOBAL, 'nstrain', &
+                                   ncout_fields_grpid, NF90_GLOBAL) )
+        print *, 'Copyied Attributes'
 
         ! create dimensions
         call check( nf90_def_dim(ncid=ncout_fields_grpid, name="gllpoints_all", &
@@ -189,6 +207,24 @@ program field_transformation
 
         call check( nf90_def_dim(ncid=ncout_fields_grpid, name="snapshots", len=nsnap, &
                                  dimid=ncout_snap_dimid) )
+
+        print *, 'Defined snapshots dimension'
+
+        ! copy variable
+        !call check( nf90_def_var(ncid=ncout_fields_grpid, &
+        !                         name='snapshot_times', &
+        !                         xtype=NF90_FLOAT, &
+        !                         dimids=(/ncout_snap_dimid/), &
+        !                         varid = ncout_snaptime_varid))
+
+        !call check( nf90_inq_varid(ncin_snap_grpid, 'snapshot_times', &
+        !                           ncin_snaptime_varid))
+                                
+
+        ! Having problems with that...
+        !call check( nf_copy_var(ncin_snap_grpid, ncin_snaptime_varid, &
+        !                          ncout_fields_grpid))
+
 
         ! create variables
         do ivar=1, nvar
@@ -348,9 +384,12 @@ contains
 subroutine check(status)
     implicit none
     integer, intent ( in) :: status !< Error code
+    integer, allocatable  :: test(:)
     if(status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
-        stop 2
+        test = test - 100
+        stop 0
+
     end if
 end subroutine
 !-----------------------------------------------------------------------------------------
@@ -381,5 +420,14 @@ subroutine truncate(dataIO, sigdigits)
 end subroutine
 !-----------------------------------------------------------------------------------------
 
-
+! integer function nf90_copy_att(ncid_in, varid_in, name, ncid_out, varid_out)
+!     include 'netcdf.inc'
+!     integer, intent(in)  :: ncid_in, varid_in
+!     character(len=*), intent(in) :: name
+!     integer, intent(in)  :: ncid_out, varid_out
+! 
+!     nf90_copy_att = nf_copy_att(ncid_in, varid_in, name, ncid_out, varid_out)
+! 
+! end function
+! 
 end program
