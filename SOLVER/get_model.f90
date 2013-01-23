@@ -2129,10 +2129,10 @@ end subroutine model_output
 !-----------------------------------------------------------------------------
 subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
 implicit none
-integer*4 :: i,t,elems
-real*4, dimension(1:elems*4), intent(in) :: x,y,z,u1
-integer*4, dimension(1:elems*5) :: cell
-integer*4, dimension(1:elems) :: cell_type
+real(4), dimension(1:elems*4), intent(in) :: x,y,z,u1
+integer  :: i,t,elems
+integer, dimension(1:elems*5) :: cell
+integer, dimension(1:elems) :: cell_type
 character (len=200) :: filename
 character (len=50) :: ss; !stream
 !points structure

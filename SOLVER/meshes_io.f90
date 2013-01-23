@@ -222,7 +222,7 @@ subroutine dump_xdmf_grid()
 use data_numbering
 
     integer              :: iel, ipol, jpol, ipol1, jpol1, i, j, ct, ipt, idest
-    real*4, allocatable  :: points(:,:)
+    real(4), allocatable :: points(:,:)
     integer, allocatable :: grid(:,:), mapping(:)
     logical, allocatable :: check(:), mask_tp_elem(:)
     character(len=120)   :: fname

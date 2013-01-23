@@ -1056,13 +1056,13 @@ end subroutine gauss_dd_t
 !=============================================================================
 subroutine heavis_t(nstf_t,stf_t)
 
-integer, intent(in) :: nstf_t
-double precision, intent(out) :: stf_t(nstf_t)
-integer :: nstep2
-complex*16, dimension(:), allocatable :: spectre
-integer :: j,i,istat
-double precision:: freq,wt,tmax,t1,t2
-complex*16 :: dphi
+integer, intent(in)                    :: nstf_t
+real(8), intent(out)                   :: stf_t(nstf_t)
+integer                                :: nstep2
+complex(16), dimension(:), allocatable :: spectre
+integer                                :: j,i,istat
+real(8)                                :: freq,wt,tmax,t1,t2
+complex(16)                            :: dphi
 !
 double precision :: f1h,f2h,f3h,f4h,timezero
 !
