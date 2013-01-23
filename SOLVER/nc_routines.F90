@@ -55,7 +55,7 @@ module nc_routines
     integer             :: npts_flu_global
 
     ! Stuff moved from data_io
-    integer             :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout
+    integer             :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout, ncid_meshout
     integer             :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
     integer             :: nc_times_dimid, nc_comp_dimid, nc_disp_varid
     integer             :: nc_strcomp_dimid
@@ -648,9 +648,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_def_grp(ncid_out, "Seismograms", ncid_recout) )
         call check( nf90_def_grp(ncid_out, "Snapshots", ncid_snapout) )
         call check( nf90_def_grp(ncid_out, "Surface", ncid_surfout) )
+        call check( nf90_def_grp(ncid_out, "Mesh", ncid_meshout) )
         write(6,*) '  Seismograms group has ID', ncid_recout
         write(6,*) '  Snapshots group has ID', ncid_snapout
         write(6,*) '  Surface group has ID', ncid_surfout
+        write(6,*) '  Mesh group has ID', ncid_meshout
         
         write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
 
@@ -706,7 +708,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file'
             write(6,*) '  awaiting', nstrain, ' snapshots'
 
-            call check( nf90_def_dim( ncid  = ncid_snapout, &
+            call check( nf90_def_dim( ncid  = ncid_out, &
                                       name  = 'snapshots', &
                                       len   = nstrain, &
                                       dimid = nc_snap_dimid) )
@@ -714,47 +716,49 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                      varid  = NF90_GLOBAL, &
                                      name   = 'nstrain', &
                                      values = nstrain) )
-            call check( nf90_def_dim( ncid  = ncid_snapout, &
+            
+            call check( nf90_def_dim( ncid  = ncid_out, &
                                       name  = 'gllpoints_all', &
                                       len   = npoints_global, &
                                       dimid = nc_pt_dimid) )
-            call check( nf90_put_att(ncid   = ncid_snapout, &
+            call check( nf90_put_att(ncid   = ncid_out, &
                                      varid  = NF90_GLOBAL, &
                                      name   = 'npoints', &
                                      values = npoints_global) )
-            call check( nf90_def_dim( ncid  = ncid_snapout, &
+
+            call check( nf90_def_var( ncid   = ncid_out, &
+                                      name   = 'snapshot_times', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_snap_dimid,&
+                                      varid  = nc_snaptime_varid) )
+
+            call check( nf90_def_dim( ncid  = ncid_meshout, &
                                       name  = 'discontinuities', &
                                       len   = ndisc, &
                                       dimid = nc_disc_dimid) )
-            call check( nf90_put_att(ncid   = ncid_snapout, &
+            call check( nf90_put_att(ncid   = ncid_meshout, &
                                      varid  = NF90_GLOBAL, &
                                      name   = 'ndisc', &
                                      values = ndisc) )
 
-            call check( nf90_def_var( ncid   = ncid_snapout,  &
+            call check( nf90_def_var( ncid   = ncid_meshout,  &
                                       name   ='mesh_S', &
                                       xtype  = NF90_FLOAT, &
                                       dimids = nc_pt_dimid,&
                                       varid  = nc_mesh_s_varid) )
-            call check( nf90_def_var( ncid   = ncid_snapout, &
+            call check( nf90_def_var( ncid   = ncid_meshout, &
                                       name   = 'mesh_Z', &
                                       xtype  = NF90_FLOAT, &
                                       dimids = nc_pt_dimid,&
                                       varid  = nc_mesh_z_varid) )
 
-            call check( nf90_def_var( ncid   = ncid_snapout, &
+            call check( nf90_def_var( ncid   = ncid_meshout, &
                                       name   = 'model_domain', &
                                       xtype  = NF90_BYTE, &
                                       dimids = nc_pt_dimid,&
                                       varid  = nc_elem_dom_varid) )
-
-            call check( nf90_def_var( ncid   = ncid_snapout, &
-                                      name   = 'snapshot_times', &
-                                      xtype  = NF90_DOUBLE, &
-                                      dimids = nc_snap_dimid,&
-                                      varid  = nc_snaptime_varid) )
             
-            call check( nf90_def_var( ncid   = ncid_snapout, &
+            call check( nf90_def_var( ncid   = ncid_meshout, &
                                       name   = 'disc_depths', &
                                       xtype  = NF90_DOUBLE, &
                                       dimids = nc_disc_dimid,&
@@ -793,8 +797,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
             ! Surface group in output file
             write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
-            call check( nf90_def_dim( ncid_surfout, name="snapshots", len=nstrain, &
-                                      dimid=nc_snap_dimid) )
+            !call check( nf90_def_dim( ncid_surfout, name="snapshots", len=nstrain, &
+            !                          dimid=nc_snap_dimid) )
             call check( nf90_put_att(ncid   = ncid_surfout, &
                                      name   = 'nstrain', &
                                      varid  = NF90_GLOBAL, &
@@ -860,7 +864,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         if (dump_wavefields) then
             time = dble((/ (i, i = 1, nstrain) /))
             time = time * t_0 / strain_samp
-            call check( nf90_put_var(ncid   = ncid_snapout, &
+            call check( nf90_put_var(ncid   = ncid_out, &
                                      varid  = nc_snaptime_varid, &
                                      values = time ) ) 
             call check( nf90_put_var(ncid   = ncid_snapout, &
@@ -1034,6 +1038,7 @@ subroutine nc_open_parallel
 
             call check( nf90_inq_grp_ncid(ncid_out, "Seismograms", ncid_recout) )
             call check( nf90_inq_grp_ncid(ncid_out, "Surface", ncid_surfout) )
+            call check( nf90_inq_grp_ncid(ncid_out, "Mesh", ncid_meshout) )
 
             call check( nf90_inq_varid( ncid_recout, "displacement", nc_disp_varid ) )
             
@@ -1064,13 +1069,13 @@ subroutine nc_open_parallel
                 call check( nf90_inq_varid( ncid_surfout, "disp_src", &
                                         nc_surfelem_disp_src_varid ) )
             
-                call check( nf90_inq_varid( ncid_snapout, "mesh_S", nc_mesh_s_varid ) )
-                call check( nf90_put_var(ncid_snapout, varid = nc_mesh_s_varid, &
+                call check( nf90_inq_varid( ncid_meshout, "mesh_S", nc_mesh_s_varid ) )
+                call check( nf90_put_var(ncid_meshout, varid = nc_mesh_s_varid, &
                                          values = scoord1d, &
                                          start  = (/mynum*npoints+1/), &
                                          count  = (/npoints/) ))
-                call check( nf90_inq_varid( ncid_snapout, "mesh_Z", nc_mesh_z_varid ) )
-                call check( nf90_put_var(ncid_snapout, varid = nc_mesh_z_varid, &
+                call check( nf90_inq_varid( ncid_meshout, "mesh_Z", nc_mesh_z_varid ) )
+                call check( nf90_put_var(ncid_meshout, varid = nc_mesh_z_varid, &
                                          values = zcoord1d, &
                                          start  = (/mynum*npoints+1/), &
                                          count  = (/npoints/) ))
