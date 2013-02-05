@@ -30,6 +30,9 @@ subroutine axisym_laplacian_solid(f,lap)
 ! Computes the axisymmetric laplacian of scalar field f in the solid region:
 ! lap = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
 !
+! MvD: I do not understand the nomenclature here, as IMHO this is NOT a
+!      laplacian (= divergence of the gradient), but rather the gradient itself
+!
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 use data_pointwise, ONLY: DzDeta_over_J_sol,DzDxi_over_J_sol
@@ -228,6 +231,9 @@ subroutine axisym_laplacian_fluid(f,lap)
 !
 ! Computes the axisymmetric laplacian of scalar field f in the fluid region:
 ! lap = \nabla {f}  = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
+!
+! MvD: I do not understand the nomenclature here, as IMHO this is NOT a
+!      laplacian (= divergence of the gradient), but rather the gradient itself
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
