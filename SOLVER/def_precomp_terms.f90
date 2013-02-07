@@ -1633,9 +1633,9 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
 
 ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
-     M0_w3(0:npol,1:nel_solid)=zero
-     M0_w1(0:npol,1:nel_solid)=zero
-     M0_w2(0:npol,1:nel_solid)=zero
+     M0_w1(0:npol,1:nel_solid) = zero
+     M0_w2(0:npol,1:nel_solid) = zero
+     M0_w3(0:npol,1:nel_solid) = zero
   endif
   
 ! ----------------
@@ -1758,9 +1758,9 @@ double precision :: lambdal, mul, xil, phil, etal
 
 ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
-     M0_w3(0:npol,1:nel_solid)=zero
-     M0_w1(0:npol,1:nel_solid)=zero
-     M0_w2(0:npol,1:nel_solid)=zero
+     M0_w1(0:npol,1:nel_solid) = zero
+     M0_w2(0:npol,1:nel_solid) = zero
+     M0_w3(0:npol,1:nel_solid) = zero
   endif
   
 ! ----------------
@@ -2006,6 +2006,7 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
           (lambda(ipol,jpol,ielsolid(ielem)) + &
           three * mu(ipol,jpol,ielsolid(ielem))) * &
           massmat_kwts2(ipol,jpol,ielsolid(ielem))
+     M_w2(ipol,jpol,ielem) = zero
      M_w3(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem)) * &
           massmat_kwts2(ipol,jpol,ielsolid(ielem))
 ! ----------------
@@ -2354,6 +2355,15 @@ include "mesh_params.h"
 
   integer          :: ipol
   double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  
+  if ( ielem==1 .and. jpol==0 ) then
+     M0_w1(0:npol,1:nel_solid) = zero
+     M0_w2(0:npol,1:nel_solid) = zero
+     M0_w3(0:npol,1:nel_solid) = zero
+     M0_w4(0:npol,1:nel_solid) = zero
+     M0_w5(0:npol,1:nel_solid) = zero
+     M0_w6(0:npol,1:nel_solid) = zero
+  endif
 
   do ipol=0,npol
      M11s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
@@ -2545,6 +2555,15 @@ double precision :: dsdxi, dzdeta, dzdxi, dsdeta
 double precision :: fa_ani_thetal, fa_ani_phil
 double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
 double precision :: lambdal, mul, xil, phil, etal
+  
+  if ( ielem==1 .and. jpol==0 ) then
+     M0_w1(0:npol,1:nel_solid) = zero
+     M0_w2(0:npol,1:nel_solid) = zero
+     M0_w3(0:npol,1:nel_solid) = zero
+     M0_w4(0:npol,1:nel_solid) = zero
+     M0_w5(0:npol,1:nel_solid) = zero
+     M0_w6(0:npol,1:nel_solid) = zero
+  endif
 
   do ipol = 0, npol
      fa_ani_thetal = fa_ani_theta(ipol,jpol,ielsolid(ielem))
