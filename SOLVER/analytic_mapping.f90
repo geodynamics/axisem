@@ -22,7 +22,7 @@
   public :: Ms_z_xi_s_eta,   Ms_z_xi_s_xi
   public :: Ms_z_eta_s_xi_k, Ms_z_eta_s_eta_k
   public :: Ms_z_xi_s_eta_k, Ms_z_xi_s_xi_k
-  !public :: M_s_xi, M_z_xi, M_z_eta, M_s_eta
+  
   public :: compute_partial_derivatives
 
   private
