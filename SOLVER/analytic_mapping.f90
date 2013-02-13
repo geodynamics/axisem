@@ -11,19 +11,19 @@
 
   implicit none
 
-  public :: jacobian_anal,alpha_anal,beta_anal
-  public :: gamma_anal,delta_anal,epsilon_anal,zeta_anal
-  public :: alphak_anal,betak_anal,gammak_anal
-  public :: deltak_anal,epsilonk_anal,zetak_anal
-  public :: jacobian_srf_anal, quadfunc_map_anal,grad_quadfunc_map_anal
-  public :: mgrad_pointwise_anal,mgrad_pointwisek_anal
-  public :: mapping_anal,s_over_oneplusxi_axis_anal
+  public :: jacobian_anal
+  public :: alpha_anal,  beta_anal,  gamma_anal,  delta_anal,  epsilon_anal,  zeta_anal
+  public :: alphak_anal, betak_anal, gammak_anal, deltak_anal, epsilonk_anal, zetak_anal
+  public :: jacobian_srf_anal,  quadfunc_map_anal, grad_quadfunc_map_anal
+  public :: mgrad_pointwise_anal, mgrad_pointwisek_anal
+  public :: mapping_anal, s_over_oneplusxi_axis_anal
 
-  public :: Ms_z_eta_s_xi,Ms_z_eta_s_eta
-  public :: Ms_z_xi_s_eta,Ms_z_xi_s_xi
-  public :: Ms_z_eta_s_xi_k,Ms_z_eta_s_eta_k
-  public :: Ms_z_xi_s_eta_k,Ms_z_xi_s_xi_k
-  public :: M_s_xi,M_z_xi,M_z_eta,M_s_eta,compute_partial_derivatives
+  public :: Ms_z_eta_s_xi,   Ms_z_eta_s_eta
+  public :: Ms_z_xi_s_eta,   Ms_z_xi_s_xi
+  public :: Ms_z_eta_s_xi_k, Ms_z_eta_s_eta_k
+  public :: Ms_z_xi_s_eta_k, Ms_z_xi_s_xi_k
+  !public :: M_s_xi, M_z_xi, M_z_eta, M_s_eta
+  public :: compute_partial_derivatives
 
   private
 
@@ -631,215 +631,6 @@ double precision function Ms_z_xi_s_xi(xil,etal,nodes_crd,ielem0)
 end function Ms_z_xi_s_xi
 !---------------------------------------------------------------------------
 
-
-!---------------------------------------------------------------------------
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!%C-TARJE:
-!% quantities for the terms with single 
-!% derivatives, i.e. of the form
-!% \int_{\Omega} w_y \partial_x{u_x} ) d\Omega
-!%END C-TARJE
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-!dk M_s_xi------------------------------------------------------
-double precision function M_s_xi(xil,etal,nodes_crd,ielem0)
-
-!% This routines returns the value of 
-!%
-!%    M_s_xi = 1 / J(xi,eta) * ( ds/dxi ) 
-!%
-!% a quantity that is needed in the calculation of the laplacian
-!% operator in the FIRST TERM OF us_over_s_0
-
-  integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
-
-  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
-                                   nodes_crd,ielem0)
-  inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
-  M_s_xi = inv_jacob*dsdxi
-
-end function M_s_xi
-!---------------------------------------------------------------
-
-!dk M_z_xi------------------------------------------------------
-double precision function M_z_xi(xil,etal,nodes_crd,ielem0)
-
-!% This routines returns the value of 
-!%
-!%    M_z_xi = - 1 / J(xi,eta) * ( dz/dxi ) 
-!%
-!% a quantity that is needed in the calculation of the laplacian
-!% operator in the SECOND TERM OF us_over_s_0
-
-  integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
-
-  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
-                                   nodes_crd,ielem0)
-  inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
-!  M_z_xi = -inv_jacob*dzdxi
-  M_z_xi = zero
-
-end function M_z_xi
-!---------------------------------------------------------------------------
-
-!dk M_z_eta------------------------------------------------------
-double precision function M_z_eta(xil,etal,nodes_crd,ielem0)
-
-!% This routines returns the value of 
-!%
-!%    M_z_xi = 1 / J(xi,eta) * ( dz/deta ) 
-!%
-!% a quantity that is needed in the calculation of the laplacian
-!% operator in the THIRD TERM OF us_over_s_0
-
-  integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
-
-  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
-                                   nodes_crd,ielem0)
-  inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
-  M_z_eta = inv_jacob*dzdeta
-
-end function M_z_eta
-!---------------------------------------------------------------------------
-
-!dk M_s_eta------------------------------------------------------
-double precision function M_s_eta(xil,etal,nodes_crd,ielem0)
-
-! This routines returns the value of 
-!
-!    M_s_eta = - 1 / J(xi,eta) * ( ds/deta ) 
-!
-! a quantity that is needed in the calculation of the laplacian
-! operator in the THIRD TERM OF us_over_s_0
-
-  integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
-
-  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
-                                   nodes_crd,ielem0)
-  inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
-  M_s_eta = -inv_jacob*dsdeta
-!  M_s_eta = zero
-
-end function M_s_eta
-!---------------------------------------------------------------------------
-
-
-!===========================================================================
-!%C-TARJE:
-!% THE FOLLOWING FOUR ROUTINES ARE FOR THE ELASTIC/POTENTIAL 
-!% ENERGY WHERE TERMS OF THE FORM \partial_x{u_x}*s NEED TO BE CALCULATED
-!%END C-TARJE
-!===========================================================================
-!---------------------------------------------------------------------------
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!%C-TARJE:
-!% quantities for the terms with single 
-!% derivatives, i.e. of the form
-!% \int_{\Omega} w_y \partial_x{u_x} ) d\Omega
-!%END C-TARJE
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-!dk Ms_s_xi------------------------------------------------------
-double precision function Ms_s_xi(xil,etal,nodes_crd,ielem0)
-
-!% This routines returns the value of 
-!%
-!%    Ms_s_xi = s / J(xi,eta) * ( ds/dxi ) 
-!%
-!% a quantity that is needed in the calculation of the laplacian
-!% operator in the FIRST TERM OF us_over_s_0
-
-  integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
-
-  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, & 
-                                   nodes_crd,ielem0)
-  inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
-  Ms_s_xi = inv_jacob*dsdxi*mapping_anal(xil,etal,nodes_crd,1,ielem0)
-
-end function Ms_s_xi
-!----------------------------------------------------------------
-
-!dk Ms_z_xi------------------------------------------------------
-double precision function Ms_z_xi(xil,etal,nodes_crd,ielem0)
-
-!% This routines returns the value of 
-!%
-!%    Ms_z_xi = s / J(xi,eta) * (- dz/dxi ) 
-!%
-!% a quantity that is needed in the calculation of the laplacian
-!% operator in the SECOND TERM OF us_over_s_0
-
-  integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
-
-  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
-                                   nodes_crd,ielem0)
-  inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
-  Ms_z_xi = -inv_jacob*dzdxi*mapping_anal(xil,etal,nodes_crd,1,ielem0)
-!  Ms_z_xi = zero
-
-end function Ms_z_xi
-!-----------------------------------------------------------------
-
-!dk Ms_z_eta------------------------------------------------------
-double precision function Ms_z_eta(xil,etal,nodes_crd,ielem0)
-
-!% This routines returns the value of 
-!%
-!%    Ms_z_eta = s / J(xi,eta) * ( dz/deta ) 
-!%
-!% a quantity that is needed in the calculation of the laplacian
-!% operator in the THIRD TERM OF us_over_s_0
-
-  integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
-
-  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
-                                   nodes_crd,ielem0)
-  inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
-  Ms_z_eta = inv_jacob*dzdeta*mapping_anal(xil,etal,nodes_crd,1,ielem0)
-
-end function Ms_z_eta
-!-----------------------------------------------------------------
-
-!dk Ms_s_eta------------------------------------------------------
-double precision function Ms_s_eta(xil,etal,nodes_crd,ielem0)
-
-! This routines returns the value of 
-!
-!    Ms_s_eta = - s / J(xi,eta) * ( ds/deta ) 
-!
-! a quantity that is needed in the calculation of the laplacian
-! operator in the THIRD TERM OF us_over_s_0
-
-  integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
-
-  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
-                                   nodes_crd,ielem0)
-  inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
-  Ms_s_eta = -inv_jacob*dsdeta*mapping_anal(xil,etal,nodes_crd,1,ielem0)
-!   Ms_s_eta = zero
-
-end function Ms_s_eta
-!---------------------------------------------------------------------------
-
-!***************************************************************************
-!% TARJE**********END NON-axial part of M_* definitions*********************
-!***************************************************************************
 
 !**************************************************************************
 !% TARJE**********BEGIN axial part of M_* definitions**********************
