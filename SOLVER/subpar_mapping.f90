@@ -9,13 +9,13 @@
 !
   implicit none 
 !
-  public :: jacobian_subpar,alpha_subpar,beta_subpar
-  public :: gamma_subpar,delta_subpar,epsilon_subpar,zeta_subpar
-  public :: alphak_subpar,betak_subpar,gammak_subpar
-  public :: deltak_subpar,epsilonk_subpar,zetak_subpar
-  public :: jacobian_srf_subpar, quadfunc_map_subpar,grad_quadfunc_map_subpar
-  public :: mgrad_pointwise_subpar,mgrad_pointwisek_subpar
-  public :: mapping_subpar,s_over_oneplusxi_axis_subpar
+  public :: jacobian_subpar, alpha_subpar, beta_subpar
+  public :: gamma_subpar, delta_subpar, epsilon_subpar, zeta_subpar
+  public :: alphak_subpar, betak_subpar, gammak_subpar
+  public :: deltak_subpar, epsilonk_subpar, zetak_subpar
+  public :: jacobian_srf_subpar,  quadfunc_map_subpar, grad_quadfunc_map_subpar
+  public :: mgrad_pointwise_subpar, mgrad_pointwisek_subpar
+  public :: mapping_subpar, s_over_oneplusxi_axis_subpar
   public :: compute_partial_d_subpar
   private
 

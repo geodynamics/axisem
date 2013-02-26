@@ -8,15 +8,16 @@
   use analytic_mapping
 
   implicit none
-  public :: jacobian,alpha,beta
-  public :: gamma1,delta,epsilon1,zeta
-  public :: alphak,betak,gammak
-  public :: deltak,epsilonk,zetak
-  public :: jacobian_srf, quadfunc_map,grad_quadfunc_map
-  public :: mgrad_pointwise,mgrad_pointwisek
-  public :: mapping,s_over_oneplusxi_axis
+  public :: jacobian
 
-  logical, parameter :: ana_map=.true. ! We employ analytical mapping here.
+  public :: alpha,  beta,  gamma1, delta,  epsilon1, zeta
+  public :: alphak, betak, gammak, deltak, epsilonk, zetak
+
+  public :: jacobian_srf,  quadfunc_map, grad_quadfunc_map
+  public :: mgrad_pointwise, mgrad_pointwisek
+  public :: mapping, s_over_oneplusxi_axis
+
+  logical, parameter :: ana_map = .true. ! We employ analytical mapping here.
 
   private 
 !

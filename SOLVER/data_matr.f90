@@ -60,7 +60,7 @@ include "mesh_params.h"
   real(kind=realkind), allocatable :: M0_w7(:,:), M0_w8(:,:), M0_w9(:,:), M0_w10(:,:)
 
   ! Fluid matrices
-  real(kind=realkind), dimension(0:npol,0:npol,nel_fluid) :: M1chi_fl,M2chi_fl
+  real(kind=realkind), dimension(0:npol,0:npol,nel_fluid) :: M1chi_fl, M2chi_fl
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid) :: M4chi_fl
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid) :: M_w_fl
   real(kind=realkind), dimension(0:npol,nel_fluid)        :: M0_w_fl

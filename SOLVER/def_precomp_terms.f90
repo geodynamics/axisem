@@ -2592,17 +2592,26 @@ double precision :: lambdal, mul, xil, phil, etal
     ! Test for the components that should be zero:
      if (do_mesh_tests) then
         if ( ielem==1 .and. jpol==0 .and. ipol==0 ) then
-           if (lpr) write(6,*) ' Test for the components of c_ijkl that should be zero in anisotropic case'
+           if (lpr) write(6,*) &
+               ' Test for the components of c_ijkl that should be zero in anisotropic case'
         endif
         Ctmp = zero
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 3, 1))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 1, 1, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 1, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 2, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 2, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 3, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 3, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 3, 3, 1))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 1, 1, 2))
         
         if (Ctmp > smallval_sngl) then
            write(6,*)procstrg,' ERROR: some stiffness term that should be zero '
