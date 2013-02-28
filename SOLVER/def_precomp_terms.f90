@@ -2733,7 +2733,8 @@ double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
 !
 ! returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
 ! i, j, k and l should be in [1,3]
-! MvD
+!
+! MvD [Anisotropy Notes, p. 13.4]
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -2775,7 +2776,8 @@ c_ijkl_ani = c_ijkl_ani &
            deltaf(j,k) * s(i) * s(l) + deltaf(j,l) * s(i) * s(k))
 
 c_ijkl_ani = c_ijkl_ani &
-    + ((one - two * eta_ani + phi_ani) * (lambda + two * mu) + (4. * eta_ani - 4.) * mu / xi_ani) &
+    + ((one - two * eta_ani + phi_ani) * (lambda + two * mu) &
+            + (4. * eta_ani - 4.) * mu / xi_ani) &
         * (s(i) * s(j) * s(k) * s(l))
 
 end function c_ijkl_ani
