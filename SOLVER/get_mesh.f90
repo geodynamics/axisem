@@ -34,14 +34,6 @@ subroutine read_db
 ! 
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-! MvD:
-! Possible Improvement: reading the mesh can maybe be faster, if reading single
-! numbers in loops is replace with reading whole matrices at once. This might
-! require changes in the write routines of the mesher as well.
-!
-! http://stackoverflow.com/questions/12567087/implied-do-vs-explicit-loop-with-io
-!
-
 use data_mesh
 use data_comm
 use data_proc
