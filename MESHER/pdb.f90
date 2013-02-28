@@ -2603,68 +2603,54 @@ integer :: lfdbname
 ! global number of control nodes (slightly differs for each processor!)
    write(10) nglobmeshp(iproc)
 
-   do iptcp = 1, nglobmeshp(iproc) 
-      write(10) iptcp, router*scpp(iptcp,iproc),router*zcpp(iptcp,iproc)
-   end do
+   write(10) router * scpp(:,iproc)
+   write(10) router * zcpp(:,iproc)
 
 !  Topology of control points
    do iel = 1, nel(iproc)
-    ielg = procel(iel,iproc)
-!   if (zgll(npol/2,npol/2,ielg)>= 0.) then ! NORTH
-! af
-    if (zcom(ielg)>= 0.) then ! NORTH
-       write(10) (lnodescp(iel,inode,iproc),inode=1,8)
-   else ! SOUTH
-       write(10) (lnodescp(iel,inode,iproc),inode=7,1,-1),lnodescp(iel,8,iproc)
-    endif
+      ielg = procel(iel,iproc)
+      if (zcom(ielg)>= 0.) then ! NORTH
+         write(10) (lnodescp(iel,inode,iproc),inode=1,8)
+      else ! SOUTH
+         write(10) (lnodescp(iel,inode,iproc),inode=7,1,-1),lnodescp(iel,8,iproc)
+      endif
    end do
 
 ! Number of global distinct points (slightly differs for each processor!)
     write(10) nglobp(iproc)
 
 !  Element types
-   do iel = 1, nel(iproc)
-    write(10) eltypep(iel,iproc),coarsingp(iel,iproc)
-   end do
+   write(10) eltypep(:,iproc)
+   write(10) coarsingp(:,iproc)
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Solid-Fluid distinction
    if (dump_mesh_info_screen) write(6,*)'PARALLEL DATABASE: writing solid/fluid domain info...',iproc
 
 ! mapping from sol/flu to global element numbers
-    do iel=1,nel_solid(iproc)
-       write(10) procel_solidp(iel,iproc)
-    enddo
-
-    do iel=1,nel_fluid(iproc)
-       write(10) procel_fluidp(iel,iproc)
-    enddo
+    write(10) procel_solidp(:,iproc)
+    write(10) procel_fluidp(:,iproc)
 
 ! Number of distinct points in solid (slightly differs for each processor!)
     write(10) nglobp_solid(iproc)
 
 !  slocal numbering 
     npointotp = nel_solid(iproc)*(npol+1)**2 
-    do iptp = 1, npointotp
-       write(10) igloc_solid(iptp,iproc)
-    end do
+    write(10) igloc_solid(1:npointotp,iproc)
 
 !  flocal numbering
     npointotp = nel_fluid(iproc)*(npol+1)**2 
-    do iptp = 1, npointotp
-       write(10) igloc_fluid(iptp,iproc)
-    end do
+    write(10) igloc_fluid(1:npointotp,iproc)
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Solid-Fluid boundary
    if (dump_mesh_info_screen) write(6,*)'PARALLEL DATABASE: writing solid/fluid boundary info...',iproc
-   write(10)have_bdry_elemp(iproc)
-   do iel=1,nbdry_el(iproc)
-      write(10)bdry_solid_elp(iel,iproc),bdry_fluid_elp(iel,iproc)
-   enddo
-   do iel=1,nbdry_el(iproc)
-      write(10)bdry_jpol_solidp(iel,iproc),bdry_jpol_fluidp(iel,iproc)
-   enddo
+   write(10) have_bdry_elemp(iproc)
+
+   write(10) bdry_solid_elp(1:nbdry_el(iproc),iproc)
+   write(10) bdry_fluid_elp(1:nbdry_el(iproc),iproc)
+   write(10) bdry_jpol_solidp(1:nbdry_el(iproc),iproc)
+   write(10) bdry_jpol_fluidp(1:nbdry_el(iproc),iproc)
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! General numerical input/output parameters
@@ -2698,15 +2684,9 @@ integer :: lfdbname
    write(10)have_axis(iproc)
    write(10)naxelp(iproc),naxel_solidp(iproc),naxel_fluidp(iproc)
 
-   do i=1,naxelp(iproc)
-      write(10)ax_elp(i,iproc)
-   enddo
-   do i=1,naxel_solidp(iproc)
-      write(10)ax_el_solidp(i,iproc)
-   enddo
-   do i=1,naxel_fluidp(iproc)
-      write(10)ax_el_fluidp(i,iproc)
-   enddo
+   write(10) ax_elp(1:naxelp(iproc),iproc)
+   write(10) ax_el_solidp(1:naxel_solidp(iproc),iproc)
+   write(10)ax_el_fluidp(1:naxel_fluidp(iproc),iproc)
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
    if (dump_mesh_info_screen) write(6,*)'PARALLEL DATABASE: writing communication info...',iproc
@@ -2900,13 +2880,12 @@ integer :: lfdbname
 
    allocate(crd_nodes(npoin,2))
 
-   do iptcp = 1, npoin 
-     read(10) ipt, crd_nodes(iptcp,1),crd_nodes(iptcp,2)
-   end do
+   read(10) crd_nodes(:,1)
+   read(10) crd_nodes(:,2)
 
    allocate(lnods(nelem,1:8))
    do iel = 1, nelem
-    read(10) (lnods(iel,inode), inode=1,8)
+      read(10) (lnods(iel,inode), inode=1,8)
    end do
 
 ! Number of global distinct points (slightly differs for each processor!)
@@ -2915,50 +2894,37 @@ integer :: lfdbname
 !  Element type
    allocate(eltype(nelem))
    allocate(coarsingtmp(nelem))
-   do iel = 1, nelem
-    read(10) eltype(iel),coarsingtmp(iel)
-   end do
+   read(10) eltype(:)
+   read(10) coarsingtmp(:)
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Solid-Fluid distinction
 
 !  number of elements for proc iproc
-!    read(10) tmpnel_solid,tmpnel_fluid
-   tmpnel_solid=nel_solid(iproc)
-   tmpnel_fluid=nel_fluid(iproc)
+   tmpnel_solid = nel_solid(iproc)
+   tmpnel_fluid = nel_fluid(iproc)
 
    if (dump_mesh_info_screen) write(6,*)'READ nel_solid:',tmpnel_solid
 
 ! mapping from sol/flu to global element numbers
     allocate(tmpprocel_solid(tmpnel_solid))
     allocate(tmpprocel_fluid(tmpnel_fluid))
-    do iel=1,tmpnel_solid
-       read(10) tmpprocel_solid(iel)
-    enddo
-    do iel=1,tmpnel_fluid
-       read(10) tmpprocel_fluid(iel)
-    enddo
+    read(10) tmpprocel_solid
+    read(10) tmpprocel_fluid
 
 ! Number of distinct points in solid (slightly differs for each processor!)
     read(10) tmpnglob_solid
    if (dump_mesh_info_screen) write(6,*)'READ nglob_solid:',tmpnglob_solid
 
-!  glocal number of points for proc iproc
-!    read(10) tmpnglobp_solid,tmpnglobp_fluid
-
+!  slocal numbering 
     npointotp = tmpnel_solid*(npol+1)**2 
     allocate(tmpigloc_solid(npointotp))
-!  slocal numbering 
-    do iptp = 1, npointotp
-     read(10) tmpigloc_solid(iptp)
-    end do    
+    read(10) tmpigloc_solid(1:npointotp)
 
+!  flocal numbering 
     npointotp = tmpnel_fluid*(npol+1)**2 
     allocate(tmpigloc_fluid(npointotp))
-!  flocal numbering 
-    do iptp = 1, npointotp
-     read(10) tmpigloc_fluid(iptp)
-    end do    
+    read(10) tmpigloc_fluid(1:npointotp)
 
 ! Assuming here that we don't need the solid & fluid 
 ! control node definitions, therefore left out
@@ -2970,15 +2936,13 @@ integer :: lfdbname
    read(10)tmphave_bdry_elem
    allocate(tmpbdry_solid_elp(tmpnbdry_el))
    allocate(tmpbdry_fluid_elp(tmpnbdry_el))
-   do iel=1,tmpnbdry_el
-      read(10)tmpbdry_solid_elp(iel),tmpbdry_fluid_elp(iel)
-   enddo
-
    allocate(tmpbdry_jpol_solidp(tmpnbdry_el))
    allocate(tmpbdry_jpol_fluidp(tmpnbdry_el))
-   do iel=1,tmpnbdry_el
-      read(10)tmpbdry_jpol_solidp(iel),tmpbdry_jpol_fluidp(iel)
-   enddo
+
+   read(10) tmpbdry_solid_elp(1:tmpnbdry_el)
+   read(10) tmpbdry_fluid_elp(1:tmpnbdry_el)
+   read(10) tmpbdry_jpol_solidp(1:tmpnbdry_el)
+   read(10) tmpbdry_jpol_fluidp(1:tmpnbdry_el)
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! General numerical input/output parameters
@@ -3025,15 +2989,10 @@ integer :: lfdbname
    allocate(tmpax_elp(tmpnaxelp))
    allocate(tmpax_el_solidp(tmpnaxel_solidp))
    allocate(tmpax_el_fluidp(tmpnaxel_fluidp))
-   do i=1,tmpnaxelp
-      read(10)tmpax_elp(i)
-   enddo
-   do i=1,tmpnaxel_solidp
-      read(10)tmpax_el_solidp(i)
-   enddo
-   do i=1,tmpnaxel_fluidp
-      read(10)tmpax_el_fluidp(i)
-   enddo
+
+   read(10)tmpax_elp(1:tmpnaxelp)
+   read(10)tmpax_el_solidp(1:tmpnaxel_solidp)
+   read(10)tmpax_el_fluidp(1:tmpnaxel_fluidp)
 
    read(10) tmpsizerecv_solid
    if (dump_mesh_info_screen) write(6,*)'READ: size solid recv:',tmpsizerecv_solid; call flush(6)

@@ -15,7 +15,7 @@ module background_models
 
   implicit none
   
-  public :: velocity, model_is_ani
+  public :: velocity, model_is_ani, model_is_anelastic
   private
   contains
 
@@ -84,6 +84,29 @@ logical function model_is_ani(bkgrdmodel2)
   end select
 
 end function model_is_ani
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+logical function model_is_anelastic(bkgrdmodel2)
+!
+! returns true if the model is radially anisotrpoic
+!
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+  character(len=100), intent(in) :: bkgrdmodel2
+
+  select case(trim(bkgrdmodel2))
+  case('prem_ani')
+    model_is_anelastic = .true.
+  case('prem_onecrust_ani')
+    model_is_anelastic = .true.
+  case('prem_light_ani')
+    model_is_anelastic = .true.
+  case default
+    model_is_anelastic = .false.
+  end select
+
+end function model_is_anelastic
 !=============================================================================
 
 !-----------------------------------------------------------------------------

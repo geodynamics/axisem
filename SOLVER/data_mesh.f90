@@ -89,7 +89,8 @@ public
    double precision            :: rmin,minh_ic,maxh_ic,maxh_icb
    logical                     :: make_homo
    double precision            :: vphomo,vshomo,rhohomo
-   logical                     :: ani_true ! anisotropic model?
+   logical                     :: ani_true  ! anisotropic model?
+   logical                     :: anel_true ! anelastic model?
 !--------------------------------------------------------------------------
 
 ! Receiver locations
