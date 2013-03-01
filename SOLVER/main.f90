@@ -62,42 +62,27 @@ program axisem
 
      ! Deallocate all the large arrays that are not needed in the time loop,
      ! specifically those from data_mesh_preloop and data_pointwise
-     if (lpr) then
-        write(6,*) 'MAIN: Deallocating arrays not needed in the time loop.....'
-        call flush(6)
-     endif
+     if (lpr) write(6,*) 'MAIN: Deallocating arrays not needed in the time loop.....'
      call deallocate_preloop_arrays
  
      if (use_netcdf) then
-        if (lpr) then
-            write(6,*) 'MAIN: Opening Netcdf file for parallel output.............'
-           call flush(6)
-        end if
+        if (lpr) write(6,*) 'MAIN: Opening Netcdf file for parallel output.............'
         call nc_open_parallel()
      endif
     
      call barrier ! Just making sure we're all ready to rupture...
      
-     if (lpr) then
-        write(6,*) 'MAIN: Starting wave propagation...........................'
-        call flush(6)
-     endif
+     if (lpr) write(6,*) 'MAIN: Starting wave propagation...........................'
      call time_loop ! time_evol_wave
   enddo
 
   if (use_netcdf) then
-     if (lpr) then
-        write(6,*) 'MAIN: Flush and close all netcdf files ...................'
-        call flush(6)
-     endif
+     if (lpr) write(6,*) 'MAIN: Flush and close all netcdf files ...................'
      call nc_end_output ! Dump receiver seismograms to finalize netcdf output 
   end if
   
   if (dump_xdmf) then
-     if (lpr) then
-        write(6,*)'MAIN: Finishing xdmf xml file...'
-        call flush(6)
-     endif
+     if (lpr) write(6,*)'MAIN: Finishing xdmf xml file...'
      call finish_xdmf_xml()
   endif
 
@@ -106,10 +91,8 @@ program axisem
   call pend ! commun
 
   write(6,*) procstrg, '=========PROGRAM axisem FINISHED============='
-  call flush(6)
 
   write(69,*) '=========PROGRAM axisem FINISHED============='
-  call flush(69)
 
 !=======================
 end program axisem
@@ -176,9 +159,11 @@ subroutine end_clock
 
   implicit none
 
-  if(mynum==0) write(6,*)
-  if(mynum==0) write(6,"(10x,'Summary of timing measurements:')")
-  if(mynum==0) write(6,*)
+  if(mynum==0) then
+     write(6,*)
+     write(6,"(10x,'Summary of timing measurements:')")
+     write(6,*)
+  endif
 
   call clocks_exit(mynum)
 

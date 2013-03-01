@@ -104,11 +104,11 @@ double precision :: buff,buff2
 
   buff = scal
   buff2 = scal
-  write(69,*)'ppmax1:',scal
+  !write(69,*)'ppmax1:',scal
   call MPI_ALLREDUCE(buff,buff2,1,MPI_DOUBLE_PRECISION,MPI_MAX, &
                      MPI_COMM_WORLD,IERROR)
   ppmax=buff2
-  write(69,*)'ppmax2:',buff2
+  !write(69,*)'ppmax2:',buff2
 
 end function ppmax
 !=============================================================================
