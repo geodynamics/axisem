@@ -142,7 +142,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     !                   Note that this version uses log-l2 norm!
     !
 
-    use progressbar_mod
+    !use progressbar_mod
 
     double precision, intent(in)            :: Q, f_min, f_max
     integer, intent(in)                     :: N, nfsamp, max_it
@@ -175,7 +175,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
 
     integer             :: j, it, last_it_print
 
-    type(progressbar)   :: bar
+    !type(progressbar)   :: bar
 
     ! set default values
     if (present(Tw)) Tw_loc = Tw
@@ -230,7 +230,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     last_it_print = -1
     do it=1, max_it
         ! progress bar
-        call bar%printbar(100 * it / max_it)
+        !call bar%printbar(100 * it / max_it)
         
         ! compute perturbed parameters (normal distributed? may gaussian be
         ! better?)
