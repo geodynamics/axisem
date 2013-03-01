@@ -510,6 +510,8 @@ def PyAxi(**kwargs):
                     '          Output format for seismograms and wavefields: binary, netcdf\n'
             inparam_solver_read[36] = input['force_aniso'] + \
                 "         force anisotropic model handling"
+            inparam_solver_read[37] = input['viscoelastic_attenuation'] + \
+                "         include viscoelastic attenuation"
             inparam_solver_open.close()
             inparam_solver_open = open('./inparam', 'w')
 
@@ -1046,7 +1048,10 @@ def PyAxi(**kwargs):
     print "Time for SOLVER: " + str(t2_solver - t1_solver)
     print "Time for POST  : " + str(t2_post - t1_post)
     print "Time for MISC  : " + str(t2_misc - t1_misc)
-    print "Time for TEST  : " + str(t2_test - t1_test)
+    if input['test'] != 'N':
+        print "Time for TEST  : " + str(t2_test - t1_test)
+    else:
+        print "Time for TEST  : NA"
     print "============================================================"
        
     
@@ -1130,6 +1135,7 @@ def read_input_file():
     input['receiver_type'] = config.get('solver', 'receiver_type')
     input['save_XDMF'] = config.get('solver', 'save_XDMF')
     input['force_aniso'] = config.get('solver', 'force_aniso')
+    input['viscoelastic_attenuation'] = config.get('solver', 'viscoelastic_attenuation')
 
     input['sourceparams_type'] = config.get('solver', 'sourceparams_type')
     input['sourceparams_MDQ'] = config.get('solver', 'sourceparams_MDQ')
