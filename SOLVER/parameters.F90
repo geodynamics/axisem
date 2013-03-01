@@ -57,48 +57,51 @@ subroutine readin_parameters
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-include 'mesh_params.h'
-character(len=100) :: junk
-integer :: i
+  include 'mesh_params.h'
+  character(len=100)  :: junk
+  integer             :: i
 
-  open(5,file='inparam',POSITION='REWIND')
-    read(5,*)junk
-    read(5,*)num_simul
-    read(5,*)junk
+  open(5, file='inparam', position='REWIND')
+    read(5,*) junk
+    read(5,*) num_simul
+    read(5,*) junk
 
-    read(5,*)seislength_t
-    read(5,*)enforced_dt
-    read(5,*)time_scheme
-    read(5,*)junk
+    read(5,*) seislength_t
+    read(5,*) enforced_dt
+    read(5,*) time_scheme
+    read(5,*) junk
 
-    read(5,*)enforced_period
-    read(5,*)src_file_type
-    read(5,*)rec_file_type
-    read(5,*)seis_dt
-    read(5,*)junk
+    read(5,*) enforced_period
+    read(5,*) src_file_type
+    read(5,*) rec_file_type
+    read(5,*) seis_dt
+    read(5,*) junk
 
-    read(5,10)datapath; datapath=trim(datapath)
-    read(5,10)infopath; infopath=trim(infopath)
-    read(5,*)dump_snaps_glob
-    read(5,*)dump_xdmf
-    read(5,*)snap_dt
-    read(5,*)junk
+    read(5,10) datapath
+    datapath = trim(datapath)
+    read(5,10) infopath
+    infopath = trim(infopath)
+    read(5,*) dump_snaps_glob
+    read(5,*) dump_xdmf
+    read(5,*) snap_dt
+    read(5,*) junk
 
-    read(5,*)dump_wavefields
-    read(5,*)strain_samp
-    read(5,*)src_dump_type
-    read(5,*)ibeg,iend
-    read(5,*)junk
+    read(5,*) dump_wavefields
+    read(5,*) strain_samp
+    read(5,*) src_dump_type
+    read(5,*) ibeg,iend
+    read(5,*) junk
 
-    read(5,*)dump_energy
-    read(5,*)make_homo
-    read(5,*)vphomo,vshomo,rhohomo
-    read(5,*)srcvic
-    read(5,*)add_hetero
-    read(5,*)do_mesh_tests
-    read(5,*)save_large_tests
-    read(5,*)output_format
-    read(5,*)force_ani
+    read(5,*) dump_energy
+    read(5,*) make_homo
+    read(5,*) vphomo,vshomo,rhohomo
+    read(5,*) srcvic
+    read(5,*) add_hetero
+    read(5,*) do_mesh_tests
+    read(5,*) save_large_tests
+    read(5,*) output_format
+    read(5,*) force_ani
+    read(5,*) do_anel
   close(5)
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.

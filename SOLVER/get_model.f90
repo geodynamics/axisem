@@ -20,7 +20,7 @@ contains
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !-----------------------------------------------------------------------------
-subroutine read_model(rho,lambda,mu)
+subroutine read_model(rho, lambda, mu, Q_mu, Q_kappa)
 !
 ! First define array ieldom that specifically appoints a respective domain 
 ! between discontinuities for each element (to avoid issues very close to 
@@ -64,14 +64,18 @@ subroutine read_model(rho,lambda,mu)
 !    
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use commun, ONLY : barrier
+use commun,             ONLY : barrier
+use nc_routines,        ONLY : nc_write_el_domains
+use data_mesh_preloop,  ONLY : ielsolid
 use lateral_heterogeneities
-use nc_routines, ONLY: nc_write_el_domains
 include 'mesh_params.h'
 
 
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rho
-double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda,mu
+double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
+
+real(kind=realkind), dimension(nel_solid), intent(out), optional :: Q_mu, Q_kappa
+
 double precision :: s,z,r,theta,r1,vptmp,vstmp,r2,r3,r4,th1,th2,th3,th4
 integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count,ij,jj
 logical :: foundit
@@ -273,6 +277,17 @@ do ipol=ibeg,iend
 !========================
   enddo ! nelem
 !========================
+    
+  ! Fill up Q arrays with values from the backgroundmodel
+  if (anel_true) then
+     do iel=1, nel_solid
+        iidom = ieldom(ielsolid(iel))
+        call compute_coordinates(s, z, r, theta, ielsolid(iel), npol/2 - 1, npol/2 - 1)
+        Q_mu(iel) = velocity(r, 'Qmu', iidom, modelstring, lfbkgrdmodel)
+        Q_kappa(iel) = velocity(r, 'Qka', iidom, modelstring, lfbkgrdmodel)
+     enddo
+  endif
+
   close(5454)
 write(6,*)mynum,'done with big mesh loop to define model'
  if (do_mesh_tests) close(60000+mynum)
@@ -284,7 +299,11 @@ if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
 
 ! TNM Oct 28: plot final velocity model in vtk
  write(6,*)mynum,'plotting vtks for the model properties....'
- call plot_model_vtk(rho,lambda,mu)
+  if (anel_true) then
+    call plot_model_vtk(rho, lambda, mu, Q_mu=Q_mu, Q_kappa=Q_kappa) 
+  else
+    call plot_model_vtk(rho, lambda, mu)
+  endif
 
 !@@@@@@@@@@@@@@@@@
 ! Some tests....
@@ -345,7 +364,7 @@ end subroutine read_model
 
 !-----------------------------------------------------------------------------
 subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
-                          fa_ani_theta, fa_ani_phi)
+                          fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
 !
 ! same as above, but for anisotropic models
 !    
@@ -363,6 +382,9 @@ double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rho
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
 double precision, dimension(0:npol,0:npol,nelem), intent(out) :: fa_ani_theta, fa_ani_phi
+
+real(kind=realkind), dimension(nel_solid), intent(out), optional :: Q_mu, Q_kappa
+
 double precision :: s,z,r,theta,r1,r2,r3,r4,th1,th2,th3,th4
 double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp
 integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count,ij,jj
@@ -516,6 +538,18 @@ character(len=100) :: modelstring
 !========================
   enddo ! nelem
 !========================
+
+  ! Fill up Q arrays with values from the backgroundmodel
+  if (anel_true) then
+     print *, '...filling up Q arrays'
+     do iel=1, nel_solid
+        iidom = ieldom(ielsolid(iel))
+        call compute_coordinates(s, z, r, theta, ielsolid(iel), npol/2 - 1, npol/2 - 1)
+        Q_mu(iel) = velocity(r, 'Qmu', iidom, modelstring, lfbkgrdmodel)
+        Q_kappa(iel) = velocity(r, 'Qka', iidom, modelstring, lfbkgrdmodel)
+     enddo
+  endif
+
   close(5454)
   write(6,*)mynum,'done with big mesh loop to define model'
   if (do_mesh_tests) close(60000+mynum)
@@ -529,7 +563,13 @@ character(len=100) :: modelstring
 ! plot final velocity model in vtk
   write(6,*)mynum,'plotting vtks for the model properties....'
 
-  call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+
+  if (anel_true) then
+     call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+                         fa_ani_phi, Q_mu, Q_kappa)
+  else
+     call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+  endif
 
 !@@@@@@@@@@@@@@@@@
 ! Some tests....
@@ -2013,6 +2053,10 @@ end subroutine compute_numerical_resolution
 
 !-----------------------------------------------------------------------------
 subroutine model_output(rho,lambda,mu)
+!
+! MvD 3/13: do we still need this routine? VTK seems to be replacing this
+! commenting the only call in def_precomp_terms.f90
+!
 
 include "mesh_params.h"
 
@@ -2196,39 +2240,53 @@ end subroutine write_VTK_bin_scal
 !-----------------------------------------------------------------------------
 
 !=============================================================================
-subroutine plot_model_vtk(rho,lambda,mu, xi_ani, phi_ani, eta_ani, &
-                          fa_ani_theta, fa_ani_phi)
+subroutine plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                          fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
+
+use data_mesh_preloop,  ONLY : ielsolid
 
 double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho 
-double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
+double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda, mu
 double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
                                         xi_ani, phi_ani, eta_ani
 double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
                                         fa_ani_theta, fa_ani_phi
 
+real(kind=realkind), dimension(nel_solid), intent(in), optional :: Q_mu, Q_kappa
+
 real, dimension(:), allocatable :: vp1,vs1,rho1
 real, dimension(:), allocatable :: vpv1,vsv1,eta1
 real, dimension(:), allocatable :: xi1,phi1
 real, dimension(:), allocatable :: fa_ani_theta1, fa_ani_phi1
+real, dimension(:), allocatable :: Q_mu1, Q_kappa1
 character(len=200) :: fname
 integer :: npts_vtk,ct,iel,i
 real, allocatable ::  x(:),y(:),z0(:)
-logical :: plot_ani
+logical :: plot_ani, plot_anel
 
 npts_vtk = nelem * 4
 
 allocate(vp1(npts_vtk),vs1(npts_vtk),rho1(npts_vtk))
 if (present(xi_ani) .and. present(phi_ani) .and.  present(eta_ani) &
     .and. present(fa_ani_theta) .and. present(fa_ani_phi))then
-    allocate(vpv1(npts_vtk),vsv1(npts_vtk),eta1(npts_vtk))
-    allocate(xi1(npts_vtk),phi1(npts_vtk))
+    allocate(vpv1(npts_vtk), vsv1(npts_vtk), eta1(npts_vtk))
+    allocate(xi1(npts_vtk), phi1(npts_vtk))
     allocate(fa_ani_theta1(npts_vtk), fa_ani_phi1(npts_vtk))
     plot_ani = .true.
 else
     plot_ani = .false.
 endif
 
-allocate(x(npts_vtk),y(npts_vtk),z0(npts_vtk))
+if (present(Q_mu) .and. present(Q_kappa))then
+    allocate(Q_mu1(npts_vtk), Q_kappa1(npts_vtk))
+    Q_mu1 = 0.
+    Q_kappa1 = 0.
+    plot_anel = .true.
+else
+    plot_anel = .false.
+endif
+
+allocate(x(npts_vtk), y(npts_vtk), z0(npts_vtk))
 
 z0 = 0.d0
 ct = 0
@@ -2302,6 +2360,22 @@ do iel=1, nelem
 
    ct = ct + 4
 enddo
+   
+   if (plot_anel) then
+      do iel=1, nel_solid
+         ct = ielsolid(iel) * 4 - 4
+         Q_mu1(ct+1) = Q_mu(iel)
+         Q_mu1(ct+2) = Q_mu(iel)
+         Q_mu1(ct+3) = Q_mu(iel)
+         Q_mu1(ct+4) = Q_mu(iel)
+         
+         Q_kappa1(ct+1) = Q_kappa(iel)
+         Q_kappa1(ct+2) = Q_kappa(iel)
+         Q_kappa1(ct+3) = Q_kappa(iel)
+         Q_kappa1(ct+4) = Q_kappa(iel)
+      enddo
+   endif
+
 
 if (plot_ani) then
    fname=trim(infopath(1:lfinfo)//'/model_vph_'//appmynum)
@@ -2345,6 +2419,15 @@ else
    fname=trim(infopath(1:lfinfo)//'/model_rho_'//appmynum)
    call write_VTK_bin_scal(x,y,z0,rho1,npts_vtk/4,fname)
    deallocate(vp1,vs1,rho1)
+endif
+
+if (plot_anel) then
+   fname=trim(infopath(1:lfinfo)//'/model_Qmu_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,Q_mu1,npts_vtk/4,fname)
+
+   fname=trim(infopath(1:lfinfo)//'/model_Qkappa_'//appmynum)
+   call write_VTK_bin_scal(x,y,z0,Q_kappa1,npts_vtk/4,fname)
+   deallocate(Q_mu1, Q_kappa1)
 endif
 
 end subroutine plot_model_vtk

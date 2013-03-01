@@ -142,15 +142,13 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     !                   Note that this version uses log-l2 norm!
     !
 
-    !use progressbar_mod
-
     double precision, intent(in)            :: Q, f_min, f_max
     integer, intent(in)                     :: N, nfsamp, max_it
 
     double precision, optional, intent(in)          :: Tw, Ty, d
-    !f2py double precision, optional, intent(in)    :: Tw=.1, Ty=.1, d=.9998
+    !f2py double precision, optional, intent(in)    :: Tw=.1, Ty=.1, d=.9999
     double precision                                :: Tw_loc = .1, Ty_loc = .1
-    double precision                                :: d_loc = .9998
+    double precision                                :: d_loc = .9999
 
     logical, optional, intent(in)           :: fixfreq, verbose, exact
     !f2py logical, optional, intent(in)     :: fixfreq = 0, verbose = 0
@@ -174,8 +172,6 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     double precision                :: chi, chi_test
 
     integer             :: j, it, last_it_print
-
-    !type(progressbar)   :: bar
 
     ! set default values
     if (present(Tw)) Tw_loc = Tw
@@ -229,11 +225,6 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     
     last_it_print = -1
     do it=1, max_it
-        ! progress bar
-        !call bar%printbar(100 * it / max_it)
-        
-        ! compute perturbed parameters (normal distributed? may gaussian be
-        ! better?)
         do j=1, N
             if (.not. fixfreq_loc) &
                 w_j_test(j) = w_j(j) * (1.0 + (0.5 - rand()) * Tw_loc)

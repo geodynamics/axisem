@@ -33,19 +33,22 @@ subroutine read_model_compute_terms
 ! Wrapper routine to contain globally defined large matrices that are not 
 ! used in the time loop to this module (e.g. rho, lambda, mu).
 !
+! Also fills up Q with values (which is used in the time loop)
+!
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use get_model
+  use get_model
+  
+  implicit none
+  include 'mesh_params.h'
+  
+  double precision, dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
+  double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
+  double precision, dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
 
-implicit none
-include 'mesh_params.h'
+  if(lpr) write(6,*) '  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::'
+  if(lpr) write(6,*) '  allocate elastic fields....'
 
-double precision, dimension(:,:,:),allocatable :: rho,lambda,mu,massmat_kwts2
-double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
-double precision, dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
-
-  if(lpr)write(6,*)'  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::'
-  if(lpr)write(6,*)'  allocate elastic fields....';call flush(6)
   allocate(rho(0:npol,0:npol,1:nelem),massmat_kwts2(0:npol,0:npol,1:nelem))
   allocate(lambda(0:npol,0:npol,1:nelem),mu(0:npol,0:npol,1:nelem))
   if (ani_true) then
@@ -55,17 +58,36 @@ double precision, dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
     allocate(fa_ani_theta(0:npol,0:npol,1:nelem))
     allocate(fa_ani_phi(0:npol,0:npol,1:nelem))
   endif
+  
+  if (anel_true) then
+    !allocate(Q_mu(0:npol,0:npol,1:nel_solid))
+    !allocate(Q_kappa(0:npol,0:npol,1:nel_solid))
+    allocate(Q_mu(1:nel_solid))
+    allocate(Q_kappa(1:nel_solid))
+  endif
 
 ! load velocity/density model  (velocities in m/s, density in kg/m^3 )
   if(lpr)write(6,*)'  define background model....';call flush(6)
 
   if (ani_true) then
     if(lpr)write(6,*)'  model is anisotropic....';call flush(6)
-    call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+    if (anel_true) then
+        if(lpr)write(6,*)'  ....and anelastic...';call flush(6)
+      call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+                          fa_ani_phi, Q_mu, Q_kappa)
+    else
+      call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+    endif
   else 
-    call read_model(rho,lambda,mu)
+    if (anel_true) then
+      call read_model(rho, lambda, mu, Q_mu, Q_kappa)
+    else
+      call read_model(rho, lambda, mu)
+    endif
   endif
-  call model_output(rho,lambda,mu)
+  
+
+  !call model_output(rho,lambda,mu)
 
   if(lpr)write(6,*)'  compute Lagrange interpolant derivatives...'
   call lagrange_derivs

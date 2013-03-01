@@ -23,7 +23,7 @@ include "mesh_params.h"
   real(kind=realkind), dimension(:,:,:), allocatable :: unassem_mass_lam_fluid 
 
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
-  !       Precomputed stiffness matrices
+  ! Precomputed stiffness matrices
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   ! Static solid matrices for all source types:
@@ -66,13 +66,20 @@ include "mesh_params.h"
   real(kind=realkind), dimension(0:npol,nel_fluid)        :: M0_w_fl
 
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
-  !       Precomputed solid-fluid boundary matrices
+  ! Precomputed solid-fluid boundary matrices
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! Solid-fluid boundary matrix
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr_fluid
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr_solid
   double precision, dimension(nel_bdry)                :: solflubdry_radius
+  
+  !++++++++++++++++++++++++++++++++++++++++++++++++++++
+  !	Attenuation
+  !++++++++++++++++++++++++++++++++++++++++++++++++++++
+  ! Q_mu and Q_kappa, assumed to be homogeneous within an element
+  real(kind=realkind), allocatable :: Q_mu(:), Q_kappa(:)
+  !real(kind=realkind), allocatable :: Q_mu(:,:,:), Q_kappa(:,:,:)
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

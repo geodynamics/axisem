@@ -37,6 +37,7 @@ public
   logical           :: srcvic,add_hetero,file_exists,use_netcdf 
   character(len=6)  :: output_format  !< netcdf or binary
   logical           :: force_ani
+  logical           :: do_anel
 
   
 ! indices to limit dumping to select contiguous range of GLL points:

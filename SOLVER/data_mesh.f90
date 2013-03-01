@@ -20,7 +20,7 @@ public
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 ! Misc definitions
-  integer                          :: nsize,npoint_solid3
+  integer                          :: nsize, npoint_solid3
   logical                          :: do_mesh_tests
 
 ! global numbering array for the solid and fluid assembly
@@ -40,23 +40,23 @@ public
 
 ! critical mesh parameters (spacing/velocity, characteristic lead time etc)
   double precision      :: pts_wavelngth
-  double precision      :: hmin_glob,hmax_glob
-  double precision      :: min_distance_dim,min_distance_nondim
+  double precision      :: hmin_glob, hmax_glob
+  double precision      :: min_distance_dim, min_distance_nondim
   double precision      :: char_time_max
   integer               :: char_time_max_globel
-  double precision      :: char_time_max_rad,char_time_max_theta
+  double precision      :: char_time_max_rad, char_time_max_theta
   double precision      :: char_time_min
   integer               :: char_time_min_globel
-  double precision      :: char_time_min_rad,char_time_min_theta
-  double precision      :: vpmin,vsmin,vpmax,vsmax
-  double precision      :: vpminr,vsminr,vpmaxr,vsmaxr
-  integer, dimension(3) :: vpminloc,vsminloc,vpmaxloc,vsmaxloc
+  double precision      :: char_time_min_rad, char_time_min_theta
+  double precision      :: vpmin, vsmin, vpmax, vsmax
+  double precision      :: vpminr, vsminr, vpmaxr, vsmaxr
+  integer, dimension(3) :: vpminloc, vsminloc, vpmaxloc, vsmaxloc
 
 !----------------------------------------------------------------------
 ! Axial elements
   logical               :: have_axis
-  integer               :: naxel,naxel_solid,naxel_fluid
-  integer,allocatable   :: ax_el(:),ax_el_solid(:),ax_el_fluid(:)
+  integer               :: naxel, naxel_solid, naxel_fluid
+  integer,allocatable   :: ax_el(:), ax_el_solid(:), ax_el_fluid(:)
   logical               :: axis_solid(nel_solid)
   logical               :: axis_fluid(nel_fluid)
 
@@ -82,28 +82,28 @@ public
 
 ! Background model--------------------------------------------------------
    character(len=100)          :: bkgrdmodel
-   logical                     :: resolve_inner_shear,have_fluid
+   logical                     :: resolve_inner_shear, have_fluid
    double precision            :: discont(ndisc)
    logical                     :: solid_domain(ndisc)
    integer                     :: idom_fluid(ndisc)
-   double precision            :: rmin,minh_ic,maxh_ic,maxh_icb
+   double precision            :: rmin, minh_ic, maxh_ic, maxh_icb
    logical                     :: make_homo
-   double precision            :: vphomo,vshomo,rhohomo
+   double precision            :: vphomo, vshomo, rhohomo
    logical                     :: ani_true  ! anisotropic model?
    logical                     :: anel_true ! anelastic model?
 !--------------------------------------------------------------------------
 
 ! Receiver locations
-  integer                      :: maxind,num_rec,num_surf_el,num_rec_tot
-  integer, allocatable         :: surfelem(:),jsurfel(:), surfcoord(:)
-  integer                      :: ielepi,ielantipode,ielequ
-  integer, allocatable         :: recfile_el(:,:),loc2globrec(:)
-  logical                      :: have_epi,have_equ,have_antipode
+  integer                      :: maxind, num_rec, num_surf_el, num_rec_tot
+  integer, allocatable         :: surfelem(:), jsurfel(:), surfcoord(:)
+  integer                      :: ielepi, ielantipode, ielequ
+  integer, allocatable         :: recfile_el(:,:), loc2globrec(:)
+  logical                      :: have_epi, have_equ, have_antipode
   real                         :: dtheta_rec
   
 ! CMB receivers (same as receivers, just above CMB instead)
   integer                      :: num_cmb
-  integer, allocatable         :: cmbfile_el(:,:),loc2globcmb(:)
+  integer, allocatable         :: cmbfile_el(:,:), loc2globcmb(:)
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   integer                      :: nelem_plot, npoint_plot

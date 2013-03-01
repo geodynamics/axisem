@@ -38,7 +38,7 @@ use data_mesh
 use data_comm
 use data_proc
 use data_time
-use data_io,            ONLY : force_ani
+use data_io,            ONLY : force_ani, do_anel
 use data_numbering,     ONLY : nglob, nglob_solid, igloc_solid, igloc_fluid
 use commun,             ONLY : barrier, psum, pmax, pmin
 use background_models,  ONLY : model_is_ani, model_is_anelastic
@@ -146,9 +146,9 @@ integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
    read(1000+mynum) bkgrdmodel(1:lfbkgrdmodel)
    bkgrdmodel=bkgrdmodel(1:lfbkgrdmodel)
 
-   read(1000+mynum) router,resolve_inner_shear,have_fluid
-   do idom=1,ndisc
-      read(1000+mynum) discont(idom),solid_domain(idom),idom_fluid(idom) 
+   read(1000+mynum) router, resolve_inner_shear, have_fluid
+   do idom=1, ndisc
+      read(1000+mynum) discont(idom), solid_domain(idom), idom_fluid(idom) 
    enddo
  
    if (force_ani) then
@@ -157,17 +157,27 @@ integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
       ani_true = model_is_ani(bkgrdmodel)
    endif
 
-   anel_true = model_is_anelastic(bkgrdmodel)
+   if (do_anel) then
+      if (model_is_anelastic(bkgrdmodel)) then
+         anel_true = .true.
+      else
+         print *, 'ERROR: viscoelastic attenuation set in inparam file, but'
+         print *, '       backgroundmodel ', bkgrdmodel, ' is elastic only.'
+         stop 2
+      endif
+   else 
+      anel_true = .false.
+   endif
   
-   read(1000+mynum)rmin,minh_ic,maxh_ic,maxh_icb
+   read(1000+mynum) rmin, minh_ic, maxh_ic, maxh_icb
    write(69,*)
-   write(69,*)'Background model============================================'
-   write(69,*)'  bkgrdmodel          = ', bkgrdmodel(1:lfbkgrdmodel)
-   write(69,*)'  router [m]          = ', router
-   write(69,*)'  resolve_inner_shear = ', resolve_inner_shear
-   write(69,*)'  have_fluid          = ', have_fluid
-   write(69,*)'  ani_true            = ', ani_true
-   write(69,*)'  anel_true           = ', anel_true
+   write(69,*) 'Background model============================================'
+   write(69,*) '  bkgrdmodel          = ', bkgrdmodel(1:lfbkgrdmodel)
+   write(69,*) '  router [m]          = ', router
+   write(69,*) '  resolve_inner_shear = ', resolve_inner_shear
+   write(69,*) '  have_fluid          = ', have_fluid
+   write(69,*) '  ani_true            = ', ani_true
+   write(69,*) '  anel_true           = ', anel_true
 
    if (lpr) then 
       write(6,*)  
@@ -187,8 +197,9 @@ integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
    write(69,*)'  min_distance_dim [m]: ', min_distance_dim
    write(69,*)'  min_distance_nondim : ', min_distance_nondim
 
-   hmin_glob=pmax(hmin_glob)
-   hmax_glob=pmax(hmax_glob)
+   hmin_glob = pmax(hmin_glob)
+   hmax_glob = pmax(hmax_glob)
+
    min_distance_dim=pmin(min_distance_dim)
    if (lpr) then
       write(6,*)
