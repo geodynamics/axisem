@@ -424,7 +424,6 @@ subroutine symplectic_time_loop
      do i = 1, nstages  ! substages 
 
         ! FLUID: update fluid potential
-        ! remove after testing:
         chi = chi + dchi * coefd(i)
 
         ! SOLID: update displacement
