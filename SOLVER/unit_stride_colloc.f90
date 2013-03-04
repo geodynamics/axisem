@@ -181,21 +181,6 @@ end subroutine collocate0_1d
 !==========================================================================
 
 !-------------------------------------------------------------------------
-subroutine collocate0_1d_existent(a,b,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(inout) :: a(1:n)
-real(kind=realkind), intent(in) :: b(1:n)
-integer :: i
-
-  do i = 1, n
-    a(i) = a(i) * b(i)
-  end do
-
-end subroutine collocate0_1d_existent
-!==========================================================================
-
-!-------------------------------------------------------------------------
 subroutine collocate0_neg1d_existent(a,b,n)
   
 integer, intent(in) :: n

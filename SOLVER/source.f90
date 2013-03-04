@@ -802,13 +802,6 @@ integer              :: ielem,ipol,jpol,count_src_procs
          call flush(6)     
      endif
 
-     if (.not. have_axis) then 
-        write(6,*)procstrg,'Problem: something wrong with processor'
-        write(6,*)'Have axis:',have_axis
-        write(6,*)'Have source:',have_src
-        stop
-     endif
-
      zsrc = zsrcout
 
 !- - - - - - - - - -

@@ -54,7 +54,6 @@ public
 
 !----------------------------------------------------------------------
 ! Axial elements
-  logical               :: have_axis
   integer               :: naxel, naxel_solid, naxel_fluid
   integer,allocatable   :: ax_el(:), ax_el_solid(:), ax_el_fluid(:)
   logical               :: axis_solid(nel_solid)

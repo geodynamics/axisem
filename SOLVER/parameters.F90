@@ -62,46 +62,46 @@ subroutine readin_parameters
   integer             :: i
 
   open(5, file='inparam', position='REWIND')
-    read(5,*) junk
-    read(5,*) num_simul
-    read(5,*) junk
+  read(5,*) junk
+  read(5,*) num_simul
+  read(5,*) junk
 
-    read(5,*) seislength_t
-    read(5,*) enforced_dt
-    read(5,*) time_scheme
-    read(5,*) junk
+  read(5,*) seislength_t
+  read(5,*) enforced_dt
+  read(5,*) time_scheme
+  read(5,*) junk
 
-    read(5,*) enforced_period
-    read(5,*) src_file_type
-    read(5,*) rec_file_type
-    read(5,*) seis_dt
-    read(5,*) junk
+  read(5,*) enforced_period
+  read(5,*) src_file_type
+  read(5,*) rec_file_type
+  read(5,*) seis_dt
+  read(5,*) junk
 
-    read(5,10) datapath
-    datapath = trim(datapath)
-    read(5,10) infopath
-    infopath = trim(infopath)
-    read(5,*) dump_snaps_glob
-    read(5,*) dump_xdmf
-    read(5,*) snap_dt
-    read(5,*) junk
+  read(5,10) datapath
+  datapath = trim(datapath)
+  read(5,10) infopath
+  infopath = trim(infopath)
+  read(5,*) dump_snaps_glob
+  read(5,*) dump_xdmf
+  read(5,*) snap_dt
+  read(5,*) junk
 
-    read(5,*) dump_wavefields
-    read(5,*) strain_samp
-    read(5,*) src_dump_type
-    read(5,*) ibeg,iend
-    read(5,*) junk
+  read(5,*) dump_wavefields
+  read(5,*) strain_samp
+  read(5,*) src_dump_type
+  read(5,*) ibeg,iend
+  read(5,*) junk
 
-    read(5,*) dump_energy
-    read(5,*) make_homo
-    read(5,*) vphomo,vshomo,rhohomo
-    read(5,*) srcvic
-    read(5,*) add_hetero
-    read(5,*) do_mesh_tests
-    read(5,*) save_large_tests
-    read(5,*) output_format
-    read(5,*) force_ani
-    read(5,*) do_anel
+  read(5,*) dump_energy
+  read(5,*) make_homo
+  read(5,*) vphomo,vshomo,rhohomo
+  read(5,*) srcvic
+  read(5,*) add_hetero
+  read(5,*) do_mesh_tests
+  read(5,*) save_large_tests
+  read(5,*) output_format
+  read(5,*) force_ani
+  read(5,*) do_anel
   close(5)
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.
@@ -149,13 +149,12 @@ subroutine readin_parameters
   if (lpr) then
      write(6,*)
      write(6,20)
-     write(6,21)datapath,infopath,num_simul, seislength_t,enforced_dt, &
-                enforced_period, &
-                trim(src_file_type),rec_file_type,correct_azi,sum_seis,sum_fields, &
-                rot_rec,time_scheme,seis_dt,save_large_tests, &
-                dump_energy,dump_snaps_glob,dump_snaps_solflu,dump_wavefields,&
-                dump_type,ibeg,iend,strain_samp,src_dump_type,make_homo,srcvic, &
-                add_hetero,do_mesh_tests,output_format
+     write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
+                 enforced_period, trim(src_file_type), rec_file_type, correct_azi, &
+                 sum_seis, sum_fields, rot_rec, time_scheme, seis_dt, save_large_tests,  &
+                 dump_energy, dump_snaps_glob, dump_snaps_solflu, dump_wavefields, &
+                 dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, srcvic,  &
+                 add_hetero, do_mesh_tests, output_format
 
 20 format(08x,&
        '///////////////////////////////////////////////////////////////',/&
@@ -242,7 +241,7 @@ subroutine readin_parameters
   write(6,*)'All potential error messages will appear here...'
   endif !lpr
 
-! Checking the consistency of some of the input parameters
+  ! Checking the consistency of some of the input parameters
   if ( mod(realkind,4)/=0 .or. realkind>8) then
      if (lpr) then
         write(6,*)
@@ -740,9 +739,8 @@ character(len=4) :: Mij_char(6)
 character(len=7) :: clogic
 
   write(69,*)'  writing out all relevant simulation parameters...'
-  call flush(69)
 
-  write(69,*)'  number of respective element types...'; call flush(69)
+  write(69,*)'  number of respective element types...'
 
   curvel=0; linel=0; seminoel=0; semisoel=0
   do iel=1,nelem
@@ -768,7 +766,7 @@ character(len=7) :: clogic
      if (eltype(ielfluid(iel))=='semiso') semisoel_fluid=semisoel_fluid+1
   enddo
 
-  write(69,*)'  grid spacing min/max...'; call flush(69)
+  write(69,*)'  grid spacing min/max...'
   do iel=1,nelem
      do ipol=0,npol-1
         do jpol=0,npol-1
@@ -782,22 +780,22 @@ character(len=7) :: clogic
      enddo
   enddo
 
-  write(69,*)'  calculating hmax...';call flush(69)
+  write(69,*)'  calculating hmax...'
   hmax=max(maxval(dis1),maxval(dis2))
-  write(69,*)'  hmaxstuff:',minval(dis1),minval(dis2),hmax;call flush(69)
+  write(69,*)'  hmaxstuff:',minval(dis1),minval(dis2),hmax
   hmaxglob=pmax(hmax)
-  write(69,*)'  hmaxglob:',hmaxglob;call flush(69)
+  write(69,*)'  hmaxglob:',hmaxglob
   hmaxloc1=maxloc(dis1)
   if (maxval(dis2)<maxval(dis1)) hmaxloc1=maxloc(dis2)
   call compute_coordinates(s,z,rmaxglob,thetamaxglob,hmaxloc1(3), &
        hmaxloc1(1)-1,hmaxloc1(2)-1)
-  write(69,*)' rmax,thetamax:',rmaxglob,thetamaxglob; call flush(69)
+  write(69,*)' rmax,thetamax:',rmaxglob,thetamaxglob
 
-  write(69,*)'  calculating hmin...';call flush(69)
+  write(69,*)'  calculating hmin...'
   hmin=min(minval(dis1),minval(dis2))
-  write(69,*)'  hminstuff:',minval(dis1),minval(dis2),hmin;call flush(69)
+  write(69,*)'  hminstuff:',minval(dis1),minval(dis2),hmin
   hminglob=pmin(hmin)
-  write(69,*)'  hminglob:',hminglob;call flush(6)
+  write(69,*)'  hminglob:',hminglob
 
   hminloc1=minloc(dis1)
   if (minval(dis2)<minval(dis1)) hminloc1=minloc(dis2)
@@ -807,7 +805,6 @@ character(len=7) :: clogic
 ! Checking potential issues with input parameter consistency
   if (lpr) write(6,*)
   if (lpr) write(6,*)'  checking input parameters for consistency...'
-  call flush(6)
   call check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
                        curvel_solid,linel_solid,seminoel_solid,semisoel_solid,&
                        curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid)
@@ -924,7 +921,8 @@ character(len=7) :: clogic
      write(6,19)'     Need fluid displ. :',need_fluid_displ
      write(6,*)
      write(6,*)':::::::::::::::: END SIMULATION PARAMETERS::::::::::::::::::::'
-     write(6,*); call flush(6)
+     write(6,*)
+     call flush(6)
 
 ! additionally write a header for the kernel software
      if (dump_wavefields) call create_kernel_header
@@ -1048,42 +1046,39 @@ character(len=7) :: clogic
   enddo
 
   write(69,*)
-  write(69,15)'My rank, total procs    :',mynum,nproc
+  write(69,15)'My rank, total procs    :', mynum,nproc
   write(69,17)'Min./max. s [m]         :', mysmin,mysmax
   write(69,17)'Min./max. z [m]         :', myzmin,myzmax
   write(69,17)'Min./max. r [m]         :', myrmin,myrmax
-  write(69,17)'Min./max. theta [deg]   :', mythetamin*180./pi, &
-       mythetamax*180./pi
-  write(69,13)'Have axis               ?',have_axis
-  if (have_axis) then 
-     write(69,10)'Axial total elems       :',naxel
-     write(69,10)'Axial solid elems       :',naxel_solid
-     write(69,10)'Axial fluid elems       :',naxel_fluid
-  endif
+  write(69,17)'Min./max. theta [deg]   :', mythetamin*180./pi, mythetamax*180./pi
 
-  write(69,13)'Have source             ?',have_src
+  write(69,10)'Axial total elems       :', naxel
+  write(69,10)'Axial solid elems       :', naxel_solid
+  write(69,10)'Axial fluid elems       :', naxel_fluid
+
+  write(69,13)'Have source             ?', have_src
   if (have_src) then
-     write(69,11)'Depth asked for      [m]:',src_depth
-     write(69,11)'Computed depth       [m]:',router- &
+     write(69,11)'Depth asked for      [m]:', src_depth
+     write(69,11)'Computed depth       [m]:', router - &
                                     zcoord(ipol_src,jpol_src,ielsolid(iel_src))
   endif
-  write(69,13)'Have boundary els       ?',have_bdry_elem
-  if (have_bdry_elem) then
-     write(69,10)'# boundary elements     :',nel_bdry
-  endif
+  write(69,13)'Have boundary els       ?', have_bdry_elem
+  if (have_bdry_elem) &
+     write(69,10)'# boundary elements     :', nel_bdry
+
   write(69,*)
   write(69,*)'Solid message passing_____________________________'
-  write(69,10)' # recv messages        :',sizerecv_solid
-  write(69,10)' Max. size recv messages:',sizemsgrecvmax_solid
-  write(69,10)' # sent messages        :',sizesend_solid
-  write(69,10)' Max. size sent messages:',sizemsgsendmax_solid
+  write(69,10)' # recv messages        :', sizerecv_solid
+  write(69,10)' Max. size recv messages:', sizemsgrecvmax_solid
+  write(69,10)' # sent messages        :', sizesend_solid
+  write(69,10)' Max. size sent messages:', sizemsgsendmax_solid
 
   if (have_fluid) then
      write(69,*)'Fluid message passing_____________________________'
-     write(69,10)' # recv messages        :',sizerecv_fluid
-     write(69,10)' Max. size recv messages:',sizemsgrecvmax_fluid
-     write(69,10)' # sent messages        :',sizesend_fluid
-     write(69,10)' Max. size sent messages:',sizemsgsendmax_fluid
+     write(69,10)' # recv messages        :', sizerecv_fluid
+     write(69,10)' Max. size recv messages:', sizemsgrecvmax_fluid
+     write(69,10)' # sent messages        :', sizesend_fluid
+     write(69,10)' Max. size sent messages:', sizemsgsendmax_fluid
   endif !have_fluid
 
   call flush(69)

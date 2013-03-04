@@ -229,37 +229,24 @@ integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
    write(69,*)
 
 ! Axial element arrays
-   read(1000+mynum) have_axis
    read(1000+mynum) naxel, naxel_solid, naxel_fluid
    write(69,*)
    write(69,*) 'Axial elements (glob,sol,flu): ', naxel, naxel_solid, naxel_fluid
 
    if (lpr) write(6,*)'  Axialogy================================================='
-   call barrier
 
+   call barrier
    do i=0, nproc-1
       call barrier
       if (mynum==i) then 
-         if (have_axis) then
-            write(6,11)procstrg,naxel,naxel_solid,naxel_fluid
-            write(69,*)'      number of total axial elements:',naxel
-            write(69,*)'      number of solid axial elements:',naxel_solid
-            write(69,*)'      number of fluid axial elements:',naxel_fluid
-            if (naxel == 0 .or. naxel_solid == 0 .and. naxel_fluid == 0) then 
-               write(6,*)'PROBLEM: Logically supposed to have the axis &
-                                  & but have no axial elements!'
-               stop
-            endif
-         else
-            write(6,*)'    WARNING!',procstrg,'does not touch the axis!'
-            write(6,*)'      number of total axial elements:',naxel
-            write(6,*)'      number of solid axial elements:',naxel_solid
-            write(6,*)'      number of fluid axial elements:',naxel_fluid
-            if (naxel > 0 .or. naxel_solid > 0 .or. naxel_fluid > 0) then 
-               write(6,*)'PROBLEM: Logically not supposed to have the axis &
-                                  & but have some axial elements!'
-               stop
-            endif
+         write(6,11)procstrg,naxel,naxel_solid,naxel_fluid
+         write(69,*)'      number of total axial elements:',naxel
+         write(69,*)'      number of solid axial elements:',naxel_solid
+         write(69,*)'      number of fluid axial elements:',naxel_fluid
+         if (naxel == 0 .or. naxel_solid == 0 .and. naxel_fluid == 0) then 
+            write(6,*)'PROBLEM: Logically supposed to have the axis &
+                               & but have no axial elements!'
+            stop
          endif
       endif
       call barrier

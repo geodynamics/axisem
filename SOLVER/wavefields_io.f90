@@ -603,13 +603,11 @@ subroutine dump_field_over_s_solid_1d(f, filename, appisnap)
 
   floc = f
 
-  if (have_axis) then 
-     call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
-     do iel=1, naxel_solid
-        inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-        floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
-     enddo
-  endif
+  call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
+  do iel=1, naxel_solid
+     inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+     floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
+  enddo
 
   if (have_src .and. src_dump_type == 'mask') then 
      call eradicate_src_elem_values(floc)
@@ -659,13 +657,11 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   floc = f
   gloc = g
 
-  if (have_axis) then 
-     call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
-     do iel=1, naxel_solid
-        inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-        floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
-     enddo
-  endif
+  call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
+  do iel=1, naxel_solid
+     inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+     floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
+  enddo
 
   ! construct masked f/s (e.g. Epp)
   if (have_src .and. src_dump_type == 'mask') then
@@ -728,13 +724,11 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
   floc = f
   gloc = g
   
-  if (have_axis) then 
-     call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
-     do iel=1,naxel_solid
-        inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-        floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
-     enddo
-  endif
+  call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
+  do iel=1,naxel_solid
+     inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+     floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
+  enddo
 
   gloc = ( inv_s_solid * floc + gloc ) * .5
 
@@ -783,13 +777,11 @@ subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
   floc = f
   gloc = g
 
-  if (have_axis) then 
-     call dsdf_fluid_allaxis(floc, dsdf) ! axial f/s
-     do iel=1,naxel_fluid
-        inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
-        floc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
-     enddo
-  endif
+  call dsdf_fluid_allaxis(floc, dsdf) ! axial f/s
+  do iel=1,naxel_fluid
+     inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
+     floc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
+  enddo
 
   glen = size(floc(ibeg:iend,ibeg:iend,:))
 
@@ -838,13 +830,11 @@ subroutine dump_half_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
   f2loc = f2
 
-  if (have_axis) then
-     call dsdf_fluid_allaxis(f2loc,dsdf) ! axial f/s
-     do iel=1, naxel_fluid
-        inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
-        f2loc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
-     enddo
-  endif
+  call dsdf_fluid_allaxis(f2loc,dsdf) ! axial f/s
+  do iel=1, naxel_fluid
+     inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
+     f2loc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
+  enddo
 
   glen = size(f1(ibeg:iend,ibeg:iend,:))
 
@@ -886,13 +876,11 @@ subroutine dump_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
   f2loc = f2
 
-  if (have_axis) then
-     call dsdf_fluid_allaxis(f2loc, dsdf) ! axial f/s
-     do iel=1,naxel_fluid
-        inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
-        f2loc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
-     enddo
-  endif
+  call dsdf_fluid_allaxis(f2loc, dsdf) ! axial f/s
+  do iel=1,naxel_fluid
+     inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
+     f2loc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
+  enddo
 
   glen = size(f1(ibeg:iend,ibeg:iend,:))
 
@@ -1077,16 +1065,14 @@ subroutine dump_velo_global(v,dchi)
     phicomp = inv_s_rho_fluid * dchi
 
     ! Take care of axial singularity for phi component of fluid velocity
-    !if (have_axis) then
-    !   do iel=1, naxel_fluid
-    !      phicomp(0,:,ax_el_fluid(iel)) = 0
-    !      ! MvD: I think this is wrong, because it ends up with (at the axes)
-    !      ! phicomp = dsdchi * inv_s_rho_fluid * dchi
-    !      ! where inv_s_rho_fluid takes the value uf inv_rho_fluid (l'hopital)
-    !      ! it does not cause problems, because up_fluid is zero for all sources
-    !      ! at the axes anyway
-    !   enddo
-    !endif
+    !do iel=1, naxel_fluid
+    !   phicomp(0,:,ax_el_fluid(iel)) = 0
+    !   ! MvD: I think this is wrong, because it ends up with (at the axes)
+    !   ! phicomp = dsdchi * inv_s_rho_fluid * dchi
+    !   ! where inv_s_rho_fluid takes the value uf inv_rho_fluid (l'hopital)
+    !   ! it does not cause problems, because up_fluid is zero for all sources
+    !   ! at the axes anyway
+    !enddo
 
     call define_io_appendix(appisnap,istrain)
     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &

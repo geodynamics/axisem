@@ -35,11 +35,11 @@ real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
 ! local variables for all elements
 real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
 real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
-real(kind=realkind), dimension(0:npol,0:npol) :: us,uz
+real(kind=realkind), dimension(0:npol,0:npol) :: us, uz
 real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l
-real(kind=realkind), dimension(0:npol,0:npol) :: m_1l,m_2l,m_3l,m_4l
-real(kind=realkind), dimension(0:npol,0:npol) :: m11sl,m21sl,m41sl,m12sl,m22sl
-real(kind=realkind), dimension(0:npol,0:npol) :: m32sl,m42sl,m11zl,m21zl,m41zl
+real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_2l, m_3l, m_4l
+real(kind=realkind), dimension(0:npol,0:npol) :: m11sl, m21sl, m41sl, m12sl, m22sl
+real(kind=realkind), dimension(0:npol,0:npol) :: m32sl, m42sl, m11zl, m21zl, m41zl
 
 ! local variables for axial elements
 real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l
@@ -47,13 +47,14 @@ real(kind=realkind), dimension(0:npol) :: m0s_xil
 
 integer :: ielem
 
-  glob_stiffness=zero
+  glob_stiffness = zero
   
   do ielem = 1, nel_solid
 
-     loc_stiffness_s=zero; loc_stiffness_z=zero
-     us(0:npol,0:npol)=u(0:npol,0:npol,ielem,1)
-     uz(0:npol,0:npol)=u(0:npol,0:npol,ielem,3)
+     loc_stiffness_s = zero
+     loc_stiffness_z = zero
+     us(0:npol,0:npol) = u(0:npol,0:npol,ielem,1)
+     uz(0:npol,0:npol) = u(0:npol,0:npol,ielem,3)
 
      m_1l(0:npol,0:npol) = M_1(:,:,ielem)
      m_2l(0:npol,0:npol) = M_2(:,:,ielem)

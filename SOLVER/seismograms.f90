@@ -3,20 +3,18 @@
 module seismograms
 !========================
 
-use global_parameters
-use data_io
-use data_mesh
-use data_proc
-use data_time
-
-implicit none
-
-public
+  use global_parameters
+  use data_io
+  use data_mesh
+  use data_proc
+  use data_time
+  
+  implicit none
+  
+  public
 
 contains
   
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 !-----------------------------------------------------------------------------
 subroutine prepare_seismograms
 
@@ -1342,27 +1340,26 @@ subroutine compute_surfelem_strain(u)
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_pointwise, ONLY: inv_rho_fluid,inv_s_rho_fluid,usz_fluid, inv_s_solid!,deviator
-use data_source, ONLY: src_type
-use pointwise_derivatives, ONLY: axisym_laplacian_fluid,axisym_laplacian_fluid_add
-use pointwise_derivatives, ONLY: axisym_laplacian_solid,axisym_laplacian_solid_add
-use unit_stride_colloc, ONLY: collocate0_1d_existent
-use nc_routines, ONLY   : nc_dump_surface
-
-include "mesh_params.h"
-real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
-
-real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,2)
-real(kind=realkind)             :: lap_flu(0:npol,0:npol,nel_fluid,2)
-real(kind=realkind)             :: dumpvar(maxind, 6)
-real(kind=realkind)             :: strain(0:npol,nel_solid,6)
-character(len=5)                :: appisnap
-
+  use data_pointwise,         ONLY: inv_rho_fluid, inv_s_rho_fluid, usz_fluid, inv_s_solid
+  use data_source,            ONLY: src_type
+  use pointwise_derivatives,  ONLY: axisym_laplacian_fluid, axisym_laplacian_fluid_add
+  use pointwise_derivatives,  ONLY: axisym_laplacian_solid, axisym_laplacian_solid_add
+  use nc_routines,            ONLY: nc_dump_surface
+  
+  include "mesh_params.h"
+  real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
+  
+  real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,2)
+  real(kind=realkind)             :: lap_flu(0:npol,0:npol,nel_fluid,2)
+  real(kind=realkind)             :: dumpvar(maxind, 6)
+  real(kind=realkind)             :: strain(0:npol,nel_solid,6)
+  character(len=5)                :: appisnap
 
 
-integer :: i,jj,j
 
-strain=0.
+  integer :: i, jj, j
+
+  strain = 0.
 
   if (src_type(1)=='dipole') then
     call axisym_laplacian_solid(u(:,:,:,1)+u(:,:,:,2),lap_sol)
@@ -1373,60 +1370,57 @@ strain=0.
 
   call axisym_laplacian_solid_add(u(:,:,:,3),lap_sol) ! 1:dsuz+dzus,2:dzuz+dsus
 
-! calculate entire E31 term: (dsuz+dzus)/2
-  strain(:,:,4) = lap_sol(npol/2,:,:,1)* real(.5,kind=realkind) ! ds uz
+  ! calculate entire E31 term: (dsuz+dzus)/2
+  strain(:,:,4) = lap_sol(npol/2,:,:,1) * real(.5,kind=realkind) ! ds uz
 
-! Components involving phi....................................................
-   if (src_type(1)=='monopole') then
-      strain(:,:,2) = inv_s_solid(npol/2,:,:)* u(npol/2,:,:,1) ! dp up
-      strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
+  ! Components involving phi....................................................
+  if (src_type(1)=='monopole') then
+     strain(:,:,2) = inv_s_solid(npol/2,:,:) * u(npol/2,:,:,1) ! dp up
+     strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
 
-! __________________________________________________________________________
+  elseif (src_type(1)=='dipole') then 
+     strain(:,:,2) = real(2.,kind=realkind) * inv_s_solid(npol/2,:,:) * u(npol/2,:,:,1) ! dp up
+     strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
 
-   elseif (src_type(1)=='dipole') then 
-      strain(:,:,2) = real(2.,kind=realkind)*inv_s_solid(npol/2,:,:)* u(npol/2,:,:,1) ! dp up
-      strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
+     call axisym_laplacian_solid(u(:,:,:,1)-u(:,:,:,2),lap_sol) !1:dsup,2:dzup
+     strain(:,:,5) = ( inv_s_solid(npol/2,:,:) * u(npol/2,:,:,2)  &
+                       + real(.5,kind=realkind) * lap_sol(npol/2,:,:,1) ) ! ds up
 
-      call axisym_laplacian_solid(u(:,:,:,1)-u(:,:,:,2),lap_sol) !1:dsup,2:dzup
-      strain(:,:,5) = ( inv_s_solid(npol/2,:,:) *u(npol/2,:,:,2)  + &
-                              real(.5,kind=realkind) * lap_sol(npol/2,:,:,1) ) ! ds up
+     strain(:,:,6) = real(.5,kind=realkind) * (inv_s_solid(npol/2,:,:) * u(npol/2,:,:,3)  &
+                                               + lap_sol(npol/2,:,:,2) ) ! dz up
 
-      strain(:,:,6) = real(.5,kind=realkind) *( inv_s_solid(npol/2,:,:) *u(npol/2,:,:,3)  + &
-                               lap_sol(npol/2,:,:,2) ) ! dz up
+  elseif (src_type(1)=='quadpole') then
+     strain(:,:,2) = inv_s_solid(npol/2,:,:) & ! dp up
+                          *  ( u(npol/2,:,:,1) - real(2.,kind=realkind) * u(npol/2,:,:,2))
+     strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
 
-! __________________________________________________________________________
-   elseif (src_type(1)=='quadpole') then
+     call axisym_laplacian_solid(u(:,:,:,2), lap_sol) ! 1: dsup, 2: dzup
 
-      strain(:,:,2) = inv_s_solid(npol/2,:,:)* &
-                             ( u(npol/2,:,:,1)-real(2.,kind=realkind)*u(npol/2,:,:,2)) ! dp up
-      strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
+     strain(:,:,5) = real(.5,kind=realkind) * ( inv_s_solid(npol/2,:,:) &
+                             * (real(2.,kind=realkind)* u(npol/2,:,:,1) - u(npol/2,:,:,2)) &
+                             + lap_sol(npol/2,:,:,1) ) ! ds up
 
-      call axisym_laplacian_solid(u(:,:,:,2),lap_sol) ! 1: dsup, 2: dzup
+     strain(:,:,6) = ( inv_s_solid(npol/2,:,:) *u(npol/2,:,:,3) &
+                             + real(.5,kind=realkind) *lap_sol(npol/2,:,:,2) ) ! dz up
 
-      strain(:,:,5) = real(.5,kind=realkind) * ( inv_s_solid(npol/2,:,:) * &
-                              (real(2.,kind=realkind)* u(npol/2,:,:,1) - u(npol/2,:,:,2))+ &
-                              lap_sol(npol/2,:,:,1) ) ! ds up
+  endif
 
-      strain(:,:,6) = ( inv_s_solid(npol/2,:,:) *u(npol/2,:,:,3)  + &
-                               real(.5,kind=realkind) *lap_sol(npol/2,:,:,2) ) ! dz up
-
-   endif
   if (use_netcdf) then
-      do i=1,maxind
-        dumpvar(i,:) = real(strain(j,surfelem(i),1:6))
+      do i=1, maxind
+         dumpvar(i,:) = real(strain(j,surfelem(i),1:6))
       enddo
       call nc_dump_surface(dumpvar(:,1:6), 'stra')
-      do i=1,maxind
+      do i=1, maxind
         dumpvar(i,1:3) = real(u(npol/2,j,surfelem(i),1:3))
       enddo
       call nc_dump_surface(dumpvar(:,1:3), 'srcd')
   end if
-  if (.not. use_netcdf) then
 
-      do i=1,maxind
-         do j=0,npol
-            write(60000000+i,20)(real(strain(j,surfelem(i),jj)),jj=1,6)
-            write(70000000+i,30)(real(u(npol/2,j,surfelem(i),jj)),jj=1,3)
+  if (.not. use_netcdf) then
+      do i=1, maxind
+         do j=0, npol
+            write(60000000+i,20) (real(strain(j,surfelem(i),jj)), jj=1,6)
+            write(70000000+i,30) (real(u(npol/2,j,surfelem(i),jj)), jj=1,3)
          enddo
       enddo
 
@@ -1436,10 +1430,6 @@ strain=0.
 
 end subroutine compute_surfelem_strain
 !=============================================================================
-
-
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !========================
 end module seismograms
