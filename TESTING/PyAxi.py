@@ -496,6 +496,8 @@ def PyAxi(**kwargs):
                 '           seismogram length [s]\n'
             inparam_solver_read[5] = input['time_step'] + \
                 "            time step [s]. Put to 0.0 to use mesher's suggestion (mesh_params.h)\n"
+            inparam_solver_read[6] = input['time_scheme'] + \
+                "            time scheme: newmark2,symplec4,ML_SO4m5,ML_SO6m7,KL_O8m17,SS_35o10\n"
             inparam_solver_read[10] = input['source_type'] + \
                 "        source file type: 'sourceparams','cmtsolut'\n"
             inparam_solver_read[11] = input['receiver_type'] + \
@@ -1131,6 +1133,7 @@ def read_input_file():
     input['no_simu'] = config.get('solver', 'no_simu')
     input['seis_length'] = config.get('solver', 'seis_length')
     input['time_step'] = config.get('solver', 'time_step')
+    input['time_scheme'] = config.get('solver', 'time_scheme')
     input['source_type'] = config.get('solver', 'source_type')
     input['receiver_type'] = config.get('solver', 'receiver_type')
     input['save_XDMF'] = config.get('solver', 'save_XDMF')
