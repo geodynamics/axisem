@@ -2,34 +2,35 @@
 module time_evol_wave
 !========================
 
-use global_parameters
-use data_proc  
-use data_mesh
-use data_source
-use data_time
-use seismograms
-use rotations 
+  use global_parameters
+  use data_proc  
+  use data_mesh
+  use data_source
+  use data_time
+  use seismograms
+  use rotations 
+  
+  implicit none
+  public :: prepare_waves, time_loop
+  private
 
-implicit none
-public :: prepare_waves, time_loop
-private
 contains
  
 !-----------------------------------------------------------------------------
 subroutine prepare_waves
-!
-! Contains all the preliminaries to propagate waves; such as the 
-! background model, the stiffness and mass terms, the source and receiver 
-! parameters, and preparations for I/O (dumping meshes, opening files).
-! 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Contains all the preliminaries to propagate waves; such as the 
+  ! background model, the stiffness and mass terms, the source and receiver 
+  ! parameters, and preparations for I/O (dumping meshes, opening files).
+  ! 
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
- use data_io
- use parameters
- use def_precomp_terms
- use source
- use clocks_mod
- use meshes_io
+  use data_io
+  use parameters
+  use def_precomp_terms
+  use source
+  use clocks_mod
+  use meshes_io
     
   character(len=120) :: fname
 
@@ -356,19 +357,19 @@ end subroutine sf_time_loop_newmark
 
 !-----------------------------------------------------------------------------
 subroutine symplectic_time_loop
-!
-! SOLVE coupled solid-fluid system of temporal ODEs:
-!   M*\dot{u}    = -K*u - B*\ddot{\chi} + F (solid)
-!   M*\ddot{chi} = -K*\chi - B*u (fluid)
-! using symplectic time integration schemes of 4th, 6th, 8th, 10th order 
-!
-! The time step can be chosen 1.5 times larger than in Newmark, resulting 
-! in CPU times about 2.5 times longer than Newmark, but considerably more 
-! accurate. Consult Ampuero & Nissen-Meyer (2007) for examples of when 
-! this choice might be more appropriate. Generally, for long propagation 
-! distances (say, > 100 wavelengths), it is worthwhile considering this.
-! 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! SOLVE coupled solid-fluid system of temporal ODEs:
+  !   M*\dot{u}    = -K*u - B*\ddot{\chi} + F (solid)
+  !   M*\ddot{chi} = -K*\chi - B*u (fluid)
+  ! using symplectic time integration schemes of 4th, 6th, 8th, 10th order 
+  !
+  ! The time step can be chosen 1.5 times larger than in Newmark, resulting 
+  ! in CPU times about 2.5 times longer than Newmark, but considerably more 
+  ! accurate. Consult Ampuero & Nissen-Meyer (2007) for examples of when 
+  ! this choice might be more appropriate. Generally, for long propagation 
+  ! distances (say, > 100 wavelengths), it is worthwhile considering this.
+  ! 
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use global_parameters
   use commun
@@ -418,7 +419,7 @@ subroutine symplectic_time_loop
      ! ::::::::::::::::::::::::: ACTUAL SYMPLECTIC SOLVER :::::::::::::::::::::::::
 
      ! compute external force/source time function at 4 time intervals coeff(1:4)
-     subdt = t-deltat+coeff
+     subdt = t - deltat + coeff
      call compute_stf_t(nstages,subdt,stf_symp)
 
      do i = 1, nstages  ! substages 
@@ -529,18 +530,18 @@ end subroutine symplectic_time_loop
 !-----------------------------------------------------------------------------
 subroutine symplectic_coefficients(coefd,coeff,coefv)
 
-use commun,         ONLY : barrier,pend
-
-double precision, allocatable, dimension(:), intent(out) :: coefd,coeff,coefv
-double precision, allocatable, dimension(:) :: g
-double precision :: zeta_symp,iota_symp,kappa_symp
-double precision :: rho,theta,nu,lambda
-integer :: Q,n,i
-real :: B,C
+  use commun,         ONLY : barrier,pend
+  
+  double precision, allocatable, dimension(:), intent(out) :: coefd,coeff,coefv
+  double precision, allocatable, dimension(:) :: g
+  double precision :: zeta_symp,iota_symp,kappa_symp
+  double precision :: rho,theta,nu,lambda
+  integer :: Q,n,i
+  real :: B,C
 
   select case (time_scheme)
      
-!444444444444444444444444444444444444444444444444444444444444444444444444444
+  !444444444444444444444444444444444444444444444444444444444444444444444444444
   case('symplec4') ! position extended Forest-Ruth like 
                    ! (Omelyan, Mryglod and Folk, 2002)
      nstages = 4
@@ -605,7 +606,7 @@ real :: B,C
      
      Q = 4; B=1.49e-05; C=3.035
 
-!6666666666666666666666666666666666666666666666666666666666666666666666666
+  !6666666666666666666666666666666666666666666666666666666666666666666666666
   case('ML_SO6m7') ! best order 6 so far!
                    ! other order 6 are not better than the best order 4
 
@@ -640,7 +641,7 @@ real :: B,C
 
      Q = 6; B=1.3e-06; C=3.067;
 
-!888888888888888888888888888888888888888888888888888888888888888888888888
+  !888888888888888888888888888888888888888888888888888888888888888888888888
   case('KL_O8m17') ! Kahan and Li (1997), improved on McLachlan (1995)
 
      n = 8;  nstages = 2*n+1
@@ -669,7 +670,7 @@ real :: B,C
      
      Q = 8; B=-100000.; C=3.; 
      
-!101010101010101010101010101010101010101010101010101010101010101010101010
+  !101010101010101010101010101010101010101010101010101010101010101010101010
   case('SS_35o10') ! Sofroniou and Spaletta (2004), best order 10
 
      n = 17; nstages = 2*n+1
@@ -740,107 +741,108 @@ end subroutine symplectic_coefficients
 !-----------------------------------------------------------------------------
 subroutine SS_scheme(n,a,b,g)
 
-! coefficients for symmetric compositions of symmetric methods
+  ! coefficients for symmetric compositions of symmetric methods
+  
+  integer, intent(in) :: n
+  double precision, intent(in)  :: g(n)
+  double precision, intent(out) :: a(nstages+1), b(nstages)
+  integer :: i
 
-integer, intent(in) :: n
-double precision, intent(in) :: g(n)
-double precision, intent(out) :: a(nstages+1),b(nstages)
-integer :: i
+  a(1) = g(1) / 2.d0
+  a(2:n) = (g(1:n-1) + g(2:n)) / 2.d0
+  a(n+1)= 1 / 2 - sum(a(1:n))
+  do i=n+2, 2*n+2
+     a(i) = a(2*n+3-i)
+  enddo
 
-    a(1) = g(1)/2.d0
-    a(2:n) = (g(1:n-1)+g(2:n))/2.d0
-    a(n+1)= 1/2 - sum(a(1:n))
-    do i=n+2,2*n+2
-       a(i) = a(2*n+3-i)
-    enddo
+  b(1:n) = g(1:n)
+  b(n+1)= 1. - 2.d0 * sum(g)
+  do i=n+2,2*n+1
+     b(i) = b(2*n+2-i)
+  enddo
 
-    b(1:n) = g(1:n)
-    b(n+1)= 1. - 2.d0*sum(g)
-    do i=n+2,2*n+1
-       b(i) = b(2*n+2-i)
-    enddo
-
-  end subroutine SS_scheme
+end subroutine SS_scheme
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
 subroutine runtime_info(iter,disp,chi)
- ! 
-! Print time step, time, min/max displacement and potential values
-! and stop the simulation if displacements blow up beyond acceptable...
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use commun, only : pend
-
-include 'mesh_params.h'
-
-integer, intent(in)             :: iter
-real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-real(kind=realkind), intent(in) :: chi(0:npol,0:npol,nel_fluid)
-integer                         :: iblow(4),check_disp,check_iter,time_stamp
-character(len=4)                :: appistamp
-
-  check_iter=100 ! printing time/percentage done every check_iter-th time step.
-  check_disp=200 ! printing min/max displ. every check_disp-th time step.
-  time_stamp=floor(real(niter)/100.) ! a file every time_stamp-th timestep.
+  ! 
+  ! Print time step, time, min/max displacement and potential values
+  ! and stop the simulation if displacements blow up beyond acceptable...
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-! Stdout time step/percentage announcements
+  use commun, only : pend
+  
+  include 'mesh_params.h'
+  
+  integer, intent(in)             :: iter
+  real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,nel_fluid)
+  integer                         :: iblow(4), check_disp, check_iter, time_stamp
+  character(len=4)                :: appistamp
+
+  check_iter = 100 ! printing time/percentage done every check_iter-th time step.
+  check_disp = 200 ! printing min/max displ. every check_disp-th time step.
+  time_stamp = floor(real(niter)/100.) ! a file every time_stamp-th timestep.
+  
+  ! Stdout time step/percentage announcements
   if (lpr .and. mod(iter,check_iter)==0 ) then
-     write(6,13)iter,t,real(iter)/real(niter)*100.
-     call flush(6) ! speed loss should be minimal, but output is delayed enormously otherwise.
+     write(6,13) iter, t, real(iter) / real(niter) * 100.
+     call flush(6)
 13   format('  time step:',i6,'; t=',f8.2,' s (',f5.1,'%)')
   endif
 
-! Time stamp to file
-  if (lpr .and. mod(iter,time_stamp)==0 ) then 
-     call define_io_appendix(appistamp,floor(real(iter)/real(time_stamp)))
-     open(unit=100,file='timestamp'//appistamp//'.txt')
-       write(100,13)iter,t,real(iter)/real(niter)*100.
+  ! Time stamp to file
+  if (lpr .and. mod(iter,time_stamp)==0) then 
+     call define_io_appendix(appistamp, floor(real(iter)/real(time_stamp)))
+     open(unit=100, file='timestamp'//appistamp//'.txt')
+     write(100,13) iter, t, real(iter) / real(niter) * 100.
      close(100)
   endif
 
-! Check on min/max. displacement/potential values globally
+  ! Check on min/max. displacement/potential values globally
   if ( mod(iter,check_disp)==0 ) then
      if (iter==check_disp) then
-       write(69,14)'time','absmax(us)','absmax(up)','absmax(uz)','absmax(chi)'
+        write(69,14) 'time', 'absmax(us)', 'absmax(up)', 'absmax(uz)', 'absmax(chi)'
      endif
-     write(69,15)t,maxval(abs(disp(:,:,:,1))),maxval(abs(disp(:,:,:,2))),&
-                  maxval(abs(disp(:,:,:,3))),maxval(abs(chi))
+     write(69,15) t, maxval(abs(disp(:,:,:,1))), maxval(abs(disp(:,:,:,2))), &
+                  maxval(abs(disp(:,:,:,3))), maxval(abs(chi))
   endif
 14 format(a7,4(a13))
 15 format(f7.1,4(1pe12.3))
 
-! Stop simulation if displacement exceeds source magnitude
-   if ( maxval(abs(disp(1,1,:,:))) > abs(magnitude) ) then
-      write(6,*)procstrg,'!!!!!!!!!!!!!!! DISPLACEMENTS BLEW UP !!!!!!!!!!!!!!!'
-      write(6,*)procstrg,'  Time step & time:', iter, t 
-      write(6,*)procstrg,'  Proc. num, displ value',mynum,maxval(abs(disp))
-      iblow(1:4)=maxloc(abs(disp))
-      write(6,*)procstrg,'iel,comp   :',iblow(3),iblow(4)
-      write(6,*)procstrg,'elem r, th :',mean_rad_colat_solid(iblow(3),1), &
+  ! Stop simulation if displacement exceeds source magnitude
+  if ( maxval(abs(disp(1,1,:,:))) > abs(magnitude) ) then
+     write(6,*) procstrg,'!!!!!!!!!!!!!!! DISPLACEMENTS BLEW UP !!!!!!!!!!!!!!!'
+     write(6,*) procstrg,'  Time step & time:', iter, t 
+     write(6,*) procstrg,'  Proc. num, displ value',mynum,maxval(abs(disp))
+     iblow(1:4) = maxloc(abs(disp))
+     write(6,*) procstrg,'iel,comp   :',iblow(3),iblow(4)
+     write(6,*) procstrg,'elem r, th :',mean_rad_colat_solid(iblow(3),1), &
                                        mean_rad_colat_solid(iblow(3),2)
-      write(6,*)procstrg,'ipol,jpol  :',iblow(1)-1,iblow(2)-1
-      write(6,*)procstrg,'axis       :',axis_solid(iblow(3))
-      write(6,*)procstrg,''
-      call pend; stop
-   endif
+     write(6,*) procstrg,'ipol,jpol  :',iblow(1)-1,iblow(2)-1
+     write(6,*) procstrg,'axis       :',axis_solid(iblow(3))
+     write(6,*) procstrg,''
+     call pend
+     stop
+  endif
 
 end subroutine runtime_info
 !=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine add_source(acc1,stf1)
-!
-! Add source term inside source elements only if source time function non-zero
-! and I have the source.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-include 'mesh_params.h'
-
-real(kind=realkind), intent(in)    :: stf1
-real(kind=realkind), intent(inout) :: acc1(0:npol,0:npol,nel_solid,3)
-integer             :: iel,i
+  !
+  ! Add source term inside source elements only if source time function non-zero
+  ! and I have the source.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind), intent(in)    :: stf1
+  real(kind=realkind), intent(inout) :: acc1(0:npol,0:npol,nel_solid,3)
+  integer             :: iel,i
 
   i=0
   if ( have_src .and. stf1 /= zero) then 
@@ -856,12 +858,12 @@ end subroutine add_source
 
 !-----------------------------------------------------------------------------
 subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
-!
-! Includes all output action done during the time loop such as
-! various receiver definitions, wavefield snapshots, velocity field & strain 
-! tensor for 3-D kernels, analytical radiation in a homogeneous model.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Includes all output action done during the time loop such as
+  ! various receiver definitions, wavefield snapshots, velocity field & strain 
+  ! tensor for 3-D kernels, analytical radiation in a homogeneous model.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_io
   !use analyt_homog_radiation, ONLY : src_vicinity
@@ -1022,22 +1024,22 @@ end subroutine dump_stuff
 
 !-----------------------------------------------------------------------------
 subroutine dump_velo_straintrace_cmb(u,velo)
-! 
-! This is for quick checks and singular computations of the bulk moduli kernels
-! hence only the trace of the strain tensor is needed and computed. 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-use data_source, ONLY: src_type
-use pointwise_derivatives, ONLY: axisym_laplacian_solid
-use data_pointwise, ONLY: inv_s_solid
-use pointwise_derivatives, ONLY: dsdf_solid_allaxis
-
-include 'mesh_params.h'
-
-real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
-real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
-real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,3)
-real(kind=realkind)            :: dsdf(0:npol,naxel_solid)
-integer                        :: iel
+  ! 
+  ! This is for quick checks and singular computations of the bulk moduli kernels
+  ! hence only the trace of the strain tensor is needed and computed. 
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  use data_source,              ONLY: src_type
+  use pointwise_derivatives,    ONLY: axisym_laplacian_solid
+  use data_pointwise,           ONLY: inv_s_solid
+  use pointwise_derivatives,    ONLY: dsdf_solid_allaxis
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(in)   :: velo(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind)               :: lap_sol(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
+  integer                           :: iel
 
   if (src_type(1)=='dipole') then
      call axisym_laplacian_solid(u(:,:,:,1)+u(:,:,:,2),lap_sol(:,:,:,1:2))
@@ -1063,7 +1065,7 @@ integer                        :: iel
   enddo
   lap_sol(:,:,:,2)=inv_s_solid*lap_sol(:,:,:,2)
 
-! Slightly dirty, but memory-cheaper: sum of 3 diag strain elements
+  ! Slightly dirty, but memory-cheaper: sum of 3 diag strain elements
   lap_sol(:,:,:,1)=lap_sol(:,:,:,1)+lap_sol(:,:,:,2)+lap_sol(:,:,:,3)
 
   call compute_recfile_cmb(velo,lap_sol(:,:,:,1))
