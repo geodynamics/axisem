@@ -325,14 +325,19 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
 
     if (src_type(1)=='monopole') then
         write(100, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_s_'//appmynum//'.dat', &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_z_'//appmynum//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                    'xdmf_snap_s_'//appmynum//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                    'xdmf_snap_z_'//appmynum//'.dat', &
                     npoint_plot, appisnap, appisnap
     else
         write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_s_'//appmynum//'.dat', &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_p_'//appmynum//'.dat', &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, 'xdmf_snap_z_'//appmynum//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                    'xdmf_snap_s_'//appmynum//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                    'xdmf_snap_p_'//appmynum//'.dat', &
+                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                    'xdmf_snap_z_'//appmynum//'.dat', &
                     npoint_plot, appisnap, appisnap, appisnap
     endif
 

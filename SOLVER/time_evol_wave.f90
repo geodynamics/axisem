@@ -34,14 +34,14 @@ subroutine prepare_waves
   character(len=120) :: fname
 
   if (lpr) then
-  write(6,*)''
-  write(6,*)'++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
-  if (have_fluid) then
-  write(6,*)'++++++++    SEISMIC WAVE PROPAGATION: SOLID-FLUID CASE  ++++++++'
-  else 
-  write(6,*)'+++++++++++  SEISMIC WAVE PROPAGATION: SOLID CASE  +++++++++++++'
-  endif
-  write(6,*)'++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+     write(6,*)''
+     write(6,*)'++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+     if (have_fluid) then
+        write(6,*)'++++++++    SEISMIC WAVE PROPAGATION: SOLID-FLUID CASE  ++++++++'
+     else 
+        write(6,*)'+++++++++++  SEISMIC WAVE PROPAGATION: SOLID CASE  +++++++++++++'
+     endif
+     write(6,*)'++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
   endif 
 
   ! read source parameters from sourceparams.dat
@@ -110,39 +110,41 @@ subroutine prepare_waves
   endif
 
   ! Various seismogram output preparations...
-     call prepare_seismograms
-     call open_hyp_epi_equ_anti
+  call prepare_seismograms
+  call open_hyp_epi_equ_anti
 
   ! allow for different types of receiver files
-     call prepare_from_recfile_seis
+  call prepare_from_recfile_seis
 
-  !  if (rec_file_type=='colatlon' .and.  &
-  !      (trim(bkgrdmodel(1:4))=='prem' .or. trim(bkgrdmodel(1:4))=='iasp')) &
-  !     call prepare_from_recfile_cmb
-
+  !if (rec_file_type=='colatlon' .and.  &
+  !    (trim(bkgrdmodel(1:4))=='prem' .or. trim(bkgrdmodel(1:4))=='iasp')) &
+  !   call prepare_from_recfile_cmb
 
   ! Need to reload old seismograms and add results
   if (isim>1 .and. sum_seis ) then  
      if (lpr) write(6,*)' Running multiple simulations and summing seismograms'
+     if (lpr) write(6,*)' ...implementation of multiple simulations not finished'
      stop
   endif
 
   ! Need to reload old seismograms and add results
   if (isim>1 .and. sum_fields) then    
      if (lpr) write(6,*)' Running multiple simulations and summing wavefields'
+     if (lpr) write(6,*)' ...implementation of multiple simulations not finished'
      stop
   endif
 
   ! Specific file format defined with Karin Sigloch: delivergf.dat
   if (src_file_type=='deliverg') then
-
+     ! MvD: what is supposed to happen here? 
+     stop
   endif
 
   ! write out seismic & numerical information on the simulation
   ! and run some tests on consistency of mesh/spacing/element types/messaging
   call write_parameters
 
-  write(6,*)procstrg,'done preparing waves.'; call flush(6)
+  write(6,*) procstrg, 'done preparing waves.'
 
 end subroutine prepare_waves
 !=============================================================================
@@ -150,7 +152,7 @@ end subroutine prepare_waves
 !-----------------------------------------------------------------------------
 subroutine time_loop
 
-  use clocks_mod
+  use clocks_mod, ONLY: tick
 
   iclockold = tick()
 
@@ -160,7 +162,7 @@ subroutine time_loop
      call symplectic_time_loop
   endif
 
-  iclockold = tick(id=idold,since=iclockold)
+  iclockold = tick(id=idold, since=iclockold)
  
 end subroutine time_loop
 !=============================================================================
@@ -172,27 +174,29 @@ end subroutine time_loop
 
 !-----------------------------------------------------------------------------
 subroutine sf_time_loop_newmark
-!
-! The conventional explicit, acceleration-driven Newmark scheme of 2nd order.
-! (e.g. Chaljub & Valette, 2004). The mass matrix is diagonal; we only store 
-! its pre-assembled inverse at the stage of the time loop.
-! Explicit axial masking follows Nissen-Meyer et al. 2007, GJI, 
-! "Spherical-earth Frechet sensitivity kernels" eqs. (80)-(82).
-! Note that the ordering (starting inside the fluid) is crucial such that no 
-! iterations for the boundary terms are necessary.
-! Also note that our definition of the fluid potential is different from 
-! Chaljub & Valette and the code SPECFEM by an inverse density factor.
-! This is the correct choice for our case of non-gravitating Earth models, 
-! but shall be altered once gravity is taken into account.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! The conventional explicit, acceleration-driven Newmark scheme of 2nd order.
+  ! (e.g. Chaljub & Valette, 2004). The mass matrix is diagonal; we only store 
+  ! its pre-assembled inverse at the stage of the time loop.
+  ! Explicit axial masking follows Nissen-Meyer et al. 2007, GJI, 
+  ! "Spherical-earth Frechet sensitivity kernels" eqs. (80)-(82).
+  ! Note that the ordering (starting inside the fluid) is crucial such that no 
+  ! iterations for the boundary terms are necessary.
+  ! Also note that our definition of the fluid potential is different from 
+  ! Chaljub & Valette and the code SPECFEM by an inverse density factor.
+  ! This is the correct choice for our case of non-gravitating Earth models, 
+  ! but shall be altered once gravity is taken into account.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-  use data_matr, ONLY: inv_mass_rho,inv_mass_fluid
   use commun
+  use global_parameters
   use apply_masks
   use stiffness
   use unit_stride_colloc
   use clocks_mod
+  use data_matr,            ONLY: inv_mass_rho,inv_mass_fluid
+  use attenuation,          ONLY: n_sls_attenuation
   
   include 'mesh_params.h'
   
@@ -200,6 +204,10 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: acc0, acc1
   
+  ! solid memory variables + gradient
+  real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
+  real(kind=realkind), allocatable :: grad_disp_t(:,:,:,:), grad_disp_tm1(:,:,:,:)
+
   ! Fluid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
@@ -214,6 +222,15 @@ subroutine sf_time_loop_newmark
      write(6,*)
   endif
 
+  if (anel_true) then
+     allocate(memory_var(0:npol,0:npol,nel_solid,6,n_sls_attenuation))
+     allocate(grad_disp_t(0:npol,0:npol,nel_solid,6))
+     allocate(grad_disp_tm1(0:npol,0:npol,nel_solid,6))
+     memory_var = zero
+     grad_disp_t = zero
+     grad_disp_tm1 = zero
+  endif
+
   ! INITIAL CONDITIONS
   disp = zero
   velo = zero 
@@ -224,7 +241,7 @@ subroutine sf_time_loop_newmark
   dchi = zero
   ddchi0 = zero
   ddchi1 = zero
-
+  
   t = zero
 
   if (lpr) write(6,*)'************ S T A R T I N G   T I M E   L O O P *************'
@@ -238,10 +255,10 @@ subroutine sf_time_loop_newmark
      ! ::::::::::::::::::::::::: ACTUAL NEWMARK SOLVER :::::::::::::::::::::::::
 
      ! FLUID: new fluid potential
-     call ustride_3sum(chi, deltat, dchi, half_dt_sq, ddchi0, npoint_fluid)
+     chi = chi +  deltat * dchi + half_dt_sq * ddchi0
 
      ! SOLID: new displacement
-     call ustride_3sum(disp, deltat, velo, half_dt_sq, acc0, npoint_solid3)
+     disp = disp + deltat * velo + half_dt_sq * acc0
 
      ! FLUID: Axial masking of \chi (dipole,quadrupole)
      if (src_type(1) .ne. 'monopole') & 
@@ -265,71 +282,62 @@ subroutine sf_time_loop_newmark
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ! FLUID: update 2nd derivative of potential
-     call ustride_neg_colloc(ddchi1, inv_mass_fluid, npoint_fluid)
+     ddchi1 = - inv_mass_fluid * ddchi1
 
      ! SOLID: For each source type, apply the following sequence respectively:
      !        1) masking of u 
      !        2) stiffness term K_s u
      !        3) solid-fluid bdry term (fluid potential) added to solid stiffness
      !        4) masking of w
+     ! MvD: masking of w?? you mean acc?
 
+     iclockstiff = tick()
      select case (src_type(1))
         case ('monopole')
            call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
-           
-           iclockstiff = tick()
            call glob_stiffness_mono(acc1, disp)
-           iclockstiff = tick(id=idstiff, since=iclockstiff)
-
            call bdry_copy2solid(acc1, ddchi1)
            call apply_axis_mask_onecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
 
         case ('dipole') 
-           call apply_axis_mask_twocomp(disp,nel_solid, ax_el_solid, naxel_solid)
-
-           iclockstiff = tick()
+           call apply_axis_mask_twocomp(disp, nel_solid, ax_el_solid, naxel_solid)
            call glob_stiffness_di(acc1,disp) 
-           iclockstiff = tick(id=idstiff, since=iclockstiff)
-
            call bdry_copy2solid(acc1,ddchi1)
-           call apply_axis_mask_twocomp(acc1,nel_solid, ax_el_solid,naxel_solid)
+           call apply_axis_mask_twocomp(acc1, nel_solid, ax_el_solid, naxel_solid)
 
         case ('quadpole') 
-           call apply_axis_mask_threecomp(disp,nel_solid, ax_el_solid,naxel_solid)
-
-           iclockstiff = tick()
+           call apply_axis_mask_threecomp(disp, nel_solid, ax_el_solid, naxel_solid)
            call glob_stiffness_quad(acc1,disp) 
-           iclockstiff = tick(id=idstiff, since=iclockstiff)
-
            call bdry_copy2solid(acc1,ddchi1)
-           call apply_axis_mask_threecomp(acc1,nel_solid, ax_el_solid,naxel_solid)
+           call apply_axis_mask_threecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
      end select
+     iclockstiff = tick(id=idstiff, since=iclockstiff)
 
      ! SOLID: 3-component stiffness term assembly ==> w^T K_s u
      iclockcomm = tick()
-     call comm2d(acc1,nel_solid,3,'solid') 
-     iclockcomm = tick(id=idcomm,since=iclockcomm)
+     call comm2d(acc1, nel_solid, 3, 'solid') 
+     iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ! SOLID: add source, only in source elements and for stf/=0
-     if (have_src) call add_source(acc1,stf(iter))
+     if (have_src) call add_source(acc1, stf(iter))
 
      ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
-     call ustride_neg_colloc(acc1(:,:,:,1),inv_mass_rho,npoint_solid)
+     acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
 
      if (src_type(1)/='monopole') &
-          call ustride_neg_colloc(acc1(:,:,:,2),inv_mass_rho,npoint_solid)
+          acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
 
      if (src_type(1)=='dipole') then
-        call ustride_neg_2colloc(acc1(:,:,:,3),inv_mass_rho,npoint_solid)
+        acc1(:,:,:,3) = - two * inv_mass_rho * acc1(:,:,:,3)
      else
-        call ustride_neg_colloc(acc1(:,:,:,3),inv_mass_rho,npoint_solid)
+        acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
      endif
 
      ! FLUID: new 1st derivative of potential
-     call ustride_sum_mult_sum(dchi,half_dt,ddchi0,ddchi1,npoint_fluid)
+     dchi = dchi + half_dt * (ddchi0 + ddchi1)
 
      ! SOLID: new velocity
-     call ustride_sum_mult_sum(velo,half_dt,acc0,acc1,npoint_solid3)
+     velo = velo + half_dt * (acc0 + acc1)
 
      ! update acceleration & 2nd deriv. of potential
      ddchi0 = ddchi1
@@ -338,9 +346,8 @@ subroutine sf_time_loop_newmark
      ! ::::::::::::::::::::::::: END FD SOLVER ::::::::::::::::::::::::::
 
      iclockdump = tick()
-     call dump_stuff(iter,disp,velo,chi,dchi,ddchi0)
-   
-     iclockdump = tick(id=iddump,since=iclockdump)
+     call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
+     iclockdump = tick(id=iddump, since=iclockdump)
 
   end do ! time loop
 
@@ -363,13 +370,14 @@ subroutine symplectic_time_loop
 ! 
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_matr, ONLY: inv_mass_rho,inv_mass_fluid
-  
+  use global_parameters
   use commun
   use apply_masks
   use stiffness
+  use clocks_mod
   use unit_stride_colloc
-  use source, ONLY : compute_stf_t
+  use source,       ONLY: compute_stf_t
+  use data_matr,    ONLY: inv_mass_rho,inv_mass_fluid
   
   include 'mesh_params.h'
   
@@ -416,17 +424,20 @@ subroutine symplectic_time_loop
      do i = 1, nstages  ! substages 
 
         ! FLUID: update fluid potential
-        call ustride_2sum(chi,dchi,coefd(i),npoint_fluid)
+        ! remove after testing:
+        chi = chi + dchi * coefd(i)
 
         ! SOLID: update displacement
-        call ustride_2sum(disp,velo,coefd(i),npoint_solid3)
+        disp = disp + velo * coefd(i)
 
         ! FLUID: Axial masking of \chi (dipole,quadrupole)
         if (src_type(1) .ne. 'monopole') & 
              call apply_axis_mask_scal(chi,nel_fluid,ax_el_fluid,naxel_fluid) 
 
         ! FLUID: stiffness term K_f
+        iclockstiff = tick()
         call glob_fluid_stiffness(ddchi,chi) 
+        iclockstiff = tick(id=idstiff, since=iclockstiff)
 
         ! FLUID: solid-fluid boundary term (solid displ.) added to fluid stiffness
         call bdry_copy2fluid(ddchi,disp)
@@ -436,70 +447,76 @@ subroutine symplectic_time_loop
              call apply_axis_mask_scal(ddchi,nel_fluid,ax_el_fluid,naxel_fluid)
 
         ! FLUID: stiffness term assembly
+        iclockcomm = tick()
         call comm2d(ddchi,nel_fluid,1,'fluid')
+        iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         ! FLUID: update 1st derivative of potential
-        call ustride_sumneg_colloc(dchi,coefv(i),inv_mass_fluid,ddchi, npoint_fluid)  
+        dchi = dchi - coefv(i) * inv_mass_fluid * ddchi
 
         ! SOLID: For each source type, apply the following sequence respectively:
         !        1) masking of u 
         !        2) stiffness term K_s u
         !        3) solid-fluid bdry term (fluid potential) added to solid stiffness
         !        4) masking of w
+        ! MvD: masking of w?? you mean acc?
 
         call collocate0_neg1d_existent(ddchi,inv_mass_fluid,npoint_fluid)
 
+        iclockstiff = tick()
         select case (src_type(1))
+           case ('monopole')
+              call apply_axis_mask_onecomp(disp,nel_solid, ax_el_solid,naxel_solid)
+              call glob_stiffness_mono(acc,disp)
+              call bdry_copy2solid(acc,ddchi)
+              call apply_axis_mask_onecomp(acc,nel_solid, ax_el_solid,naxel_solid)
 
-        case ('monopole')
-           call apply_axis_mask_onecomp(disp,nel_solid, ax_el_solid,naxel_solid)
-           call glob_stiffness_mono(acc,disp)
-           call bdry_copy2solid(acc,ddchi)
-           call apply_axis_mask_onecomp(acc,nel_solid, ax_el_solid,naxel_solid)
-        case ('dipole') 
-           call apply_axis_mask_twocomp(disp,nel_solid, ax_el_solid,naxel_solid)
-           call glob_stiffness_di(acc,disp) 
-           call bdry_copy2solid(acc,ddchi)
-           call apply_axis_mask_twocomp(acc,nel_solid, ax_el_solid,naxel_solid)
-        case ('quadpole') 
-           call apply_axis_mask_threecomp(disp,nel_solid, ax_el_solid,naxel_solid)
-           call glob_stiffness_quad(acc,disp) 
-           call bdry_copy2solid(acc,ddchi)
-           call apply_axis_mask_threecomp(acc,nel_solid, ax_el_solid,naxel_solid)
+           case ('dipole') 
+              call apply_axis_mask_twocomp(disp,nel_solid, ax_el_solid,naxel_solid)
+              call glob_stiffness_di(acc,disp) 
+              call bdry_copy2solid(acc,ddchi)
+              call apply_axis_mask_twocomp(acc,nel_solid, ax_el_solid,naxel_solid)
+
+           case ('quadpole') 
+              call apply_axis_mask_threecomp(disp,nel_solid, ax_el_solid,naxel_solid)
+              call glob_stiffness_quad(acc,disp) 
+              call bdry_copy2solid(acc,ddchi)
+              call apply_axis_mask_threecomp(acc,nel_solid, ax_el_solid,naxel_solid)
         end select
+        iclockstiff = tick(id=idstiff, since=iclockstiff)
 
         ! SOLID: stiffness term assembly ==> w^T K_s u
+        iclockcomm = tick()
         call comm2d(acc,nel_solid,3,'solid')
+        iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         ! SOLID: add source, only in source elements and for stf/=0
         if (have_src) call add_source(acc,real(stf_symp(i),kind=realkind))
 
         ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
-        call ustride_sum_neg_colloc_coefv(velo(:,:,:,1),acc(:,:,:,1),coefv(i),&
-                                          inv_mass_rho,npoint_solid)
+        velo(:,:,:,1) = velo(:,:,:,1) - acc(:,:,:,1) * coefv(i) * inv_mass_rho
 
         if (src_type(1)/='monopole') &
-             call ustride_sum_neg_colloc_coefv(velo(:,:,:,2),acc(:,:,:,2), &
-                                            coefv(i),inv_mass_rho,npoint_solid)
+           velo(:,:,:,2) = velo(:,:,:,2) - acc(:,:,:,2) * coefv(i) * inv_mass_rho
         if (src_type(1)=='dipole') then !factor 2 b/c inv_rho has 1/2 embedded
-           call ustride_sum_neg_2colloc_coefv(velo(:,:,:,3),acc(:,:,:,3), &
-                                            coefv(i),inv_mass_rho,npoint_solid)
+           velo(:,:,:,3) = velo(:,:,:,3) - two * acc(:,:,:,3) * coefv(i) * inv_mass_rho
         else
-           call ustride_sum_neg_colloc_coefv(velo(:,:,:,3),acc(:,:,:,3), &
-                                            coefv(i),inv_mass_rho,npoint_solid)
+           velo(:,:,:,3) = velo(:,:,:,3) - acc(:,:,:,3) * coefv(i) * inv_mass_rho
         endif
 
      enddo ! ... nstages substages
 
      ! FLUID: final potential
-     call ustride_2sum(chi,dchi,coefd(nstages+1),npoint_fluid)
+     chi = chi + dchi * coefd(nstages+1)
 
      ! SOLID: final displacement
-     call ustride_2sum(disp,velo,coefd(nstages+1),npoint_solid3)
+     disp = disp + velo * coefd(nstages+1)
 
      ! ::::::::::::::::::::::::: END SYMPLECTIC SOLVER ::::::::::::::::::::::::::
 
+     iclockdump = tick()
      call dump_stuff(iter,disp,velo,chi,dchi,ddchi)
+     iclockdump = tick(id=iddump, since=iclockdump)
 
   end do ! time loop
 
@@ -839,7 +856,7 @@ end subroutine add_source
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine dump_stuff(iter,disp,velo,chi,dchi,ddchi)
+subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
 !
 ! Includes all output action done during the time loop such as
 ! various receiver definitions, wavefield snapshots, velocity field & strain 
@@ -1111,14 +1128,14 @@ subroutine compute_strain(u,chi)
  
   ! s,z components, identical for all source types..........................
   if (src_type(1)=='dipole') then
-     call axisym_laplacian_solid(u(:,:,:,1) + u(:,:,:,2),lap_sol)
+     call axisym_laplacian_solid(u(:,:,:,1) + u(:,:,:,2), lap_sol)
   else
-     call axisym_laplacian_solid(u(:,:,:,1),lap_sol) ! 1: dsus, 2: dzus
+     call axisym_laplacian_solid(u(:,:,:,1), lap_sol) ! 1: dsus, 2: dzus
   endif
  
   call dump_field_1d(lap_sol(:,:,:,1), '/strain_dsus_sol',appisnap,nel_solid) 
  
-  call axisym_laplacian_solid_add(u(:,:,:,3),lap_sol) ! 1:dsuz+dzus,2:dzuz+dsus
+  call axisym_laplacian_solid_add(u(:,:,:,3), lap_sol) ! 1:dsuz+dzus,2:dzuz+dsus
  
   ! calculate entire E31 term: (dsuz+dzus)/2
   lap_sol(:,:,:,1) = lap_sol(:,:,:,1) / two_rk

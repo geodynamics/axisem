@@ -6,6 +6,7 @@ module attenuation
     public :: prepare_attenuation
     public :: y_j_attenuation
     public :: w_j_attenuation
+    public :: n_sls_attenuation
 
     double precision, allocatable   :: y_j_attenuation(:)
     double precision, allocatable   :: w_j_attenuation(:)

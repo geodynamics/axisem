@@ -38,7 +38,7 @@ subroutine read_model_compute_terms
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use get_model
-  use attenuation
+  use attenuation, ONLY: prepare_attenuation
   
   implicit none
   include 'mesh_params.h'
