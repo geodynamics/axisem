@@ -509,7 +509,7 @@ def PyAxi(**kwargs):
                 inparam_solver_read[35] = 'netcdf' + \
                     '          Output format for seismograms and wavefields: binary, netcdf\n'
             inparam_solver_read[36] = input['force_aniso'] + \
-                "         force anisotropic model handling"
+                "         force anisotropic model handling\n"
             inparam_solver_read[37] = input['viscoelastic_attenuation'] + \
                 "         include viscoelastic attenuation"
             inparam_solver_open.close()
