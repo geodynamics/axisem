@@ -1,21 +1,80 @@
-! Martin van Driel, 02/2013
-! Martin@vanDriel.de
-!
-! This program is free software; you can redistribute it and/or modify
-! it under the terms of the GNU General Public License as published by
-! the Free Software Foundation; either version 2 of the License, or
-! (at your option) any later version.
-!
-
 module attenuation
     implicit none
 
     private
-    public :: l2_error, q_linear_solid, fast_correct
-    public :: invert_linear_solids
+    public :: fast_correct
+    public :: prepare_attenuation
+    public :: y_j_attenuation
+    public :: w_j_attenuation
+
+    double precision, allocatable   :: y_j_attenuation(:)
+    double precision, allocatable   :: w_j_attenuation(:)
+    integer                         :: n_sls_attenuation
+    logical                         :: do_corr_lowq
 
 contains
 
+!-----------------------------------------------------------------------------------------
+subroutine prepare_attenuation()
+  !
+  ! read 'inparam_attenuation' file
+  !
+  use data_io,      only: infopath, lfinfo
+  use data_proc,    only: lpr
+  !use commun
+
+  double precision                  :: f_min, f_max
+  integer                           :: nfsamp, max_it, i
+  double precision                  :: Tw, Ty, d
+  logical                           :: fixfreq
+  double precision, allocatable     :: w_samp(:), q_fit(:), chil(:)
+
+  open(unit=164, file='inparam_attenuation')
+
+  read(164,*) n_sls_attenuation
+  read(164,*) f_min
+  read(164,*) f_max
+  read(164,*) do_corr_lowq
+  
+  read(164,*) nfsamp
+  read(164,*) max_it
+  read(164,*) Tw
+  read(164,*) Ty
+  read(164,*) d
+  read(164,*) fixfreq
+
+  close(unit=164)
+
+  allocate(w_samp(nfsamp))
+  allocate(q_fit(nfsamp))
+  allocate(chil(max_it))
+  
+  allocate(w_j_attenuation(n_sls_attenuation))
+  allocate(y_j_attenuation(n_sls_attenuation))
+  
+  call invert_linear_solids(1.d0, f_min, f_max, n_sls_attenuation, nfsamp, max_it, Tw, Ty, d, &
+                            fixfreq, .false., .false., 'maxwell', w_j_attenuation, &
+                            y_j_attenuation, w_samp, q_fit, chil)
+  
+  if (lpr) then
+      print *, '  ...writing fitted Q to file...'
+      open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='new')
+      write(165,*) (w_samp(i), q_fit(i), char(10), i=1,nfsamp)
+      close(unit=165)
+      
+      print *, '  ...writing convergence of chi to file...'
+      open(unit=166, file=infopath(1:lfinfo)//'/attenuation_convergence', status='new')
+      write(166,*) (chil(i), char(10), i=1,max_it)
+      close(unit=166)
+  endif
+
+  !call barrier()
+  !stop
+
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine q_linear_solid(y_j, w_j, w, exact, Qls)
     !
     ! compute Q after (Emmerich & Korn, inverse of eq 21)
@@ -47,7 +106,9 @@ subroutine q_linear_solid(y_j, w_j, w, exact, Qls)
 
     Qls = Qls / Qls_denom
 end subroutine
+!-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 subroutine fast_correct(y_j, yp_j)
     !
     ! computes a first order correction to the linearized coefficients:
@@ -70,7 +131,9 @@ subroutine fast_correct(y_j, yp_j)
     yp_j = y_j * dy_j
     
 end subroutine
+!-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 subroutine l2_error(Q, Qls, lognorm, lse)
     !
     ! returns l2 misfit between constant Q and fitted Q using standard linear solids
@@ -105,7 +168,9 @@ subroutine l2_error(Q, Qls, lognorm, lse)
     lse = lse / float(nfsamp)
     lse = dsqrt(lse)
 end subroutine
+!-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
                                  fixfreq, verbose, exact, mode, w_j, y_j, w, q_fit, chil)
     !
@@ -146,9 +211,9 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     integer, intent(in)                     :: N, nfsamp, max_it
 
     double precision, optional, intent(in)          :: Tw, Ty, d
-    !f2py double precision, optional, intent(in)    :: Tw=.1, Ty=.1, d=.9999
+    !f2py double precision, optional, intent(in)    :: Tw=.1, Ty=.1, d=.99995
     double precision                                :: Tw_loc = .1, Ty_loc = .1
-    double precision                                :: d_loc = .9999
+    double precision                                :: d_loc = .99995
 
     logical, optional, intent(in)           :: fixfreq, verbose, exact
     !f2py logical, optional, intent(in)     :: fixfreq = 0, verbose = 0
@@ -156,9 +221,9 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     logical                                 :: fixfreq_loc = .false., verbose_loc = .false.
     logical                                 :: exact_loc = .false.
     
-    character(len=10), optional, intent(in) :: mode
-    !f2py character(len=10), optional, intent(in) :: mode = 'maxwell'
-    character(len=10)                       :: mode_loc = 'maxwell'
+    character(len=7), optional, intent(in)  :: mode
+    !f2py character(len=7), optional, intent(in) :: mode = 'maxwell'
+    character(len=7)                        :: mode_loc = 'maxwell'
 
     double precision, intent(out)   :: w_j(N)
     double precision, intent(out)   :: y_j(N)
@@ -263,5 +328,6 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     endif
 
 end subroutine
+!-----------------------------------------------------------------------------------------
 
 end module

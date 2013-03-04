@@ -79,7 +79,6 @@ include "mesh_params.h"
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! Q_mu and Q_kappa, assumed to be homogeneous within an element
   real(kind=realkind), allocatable :: Q_mu(:), Q_kappa(:)
-  !real(kind=realkind), allocatable :: Q_mu(:,:,:), Q_kappa(:,:,:)
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

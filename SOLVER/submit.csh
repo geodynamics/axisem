@@ -35,6 +35,10 @@ if ( ! -f inparam_xdmf) then
   cp inparam_xdmf.TEMPLATE inparam_xdmf
 endif
 
+if ( ! -f inparam_attenuation) then 
+  cp inparam_attenuation.TEMPLATE inparam_attenuation
+endif
+
 # if the mesh has different npol (hence unrolled loops), copy unrolled_loops.f90
 set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
 if ( `diff unrolled_loops.f90 $meshdir/unrolled_loops.f90 | wc -l` != "0" ) then
@@ -279,6 +283,7 @@ foreach isrc (${num_src_arr})
         cp $homedir/inparam .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
+        cp $homedir/inparam_attenuation .
         cp $homedir/*.bm .
 
         cd $mainrundir

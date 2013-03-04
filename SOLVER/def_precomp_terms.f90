@@ -38,6 +38,7 @@ subroutine read_model_compute_terms
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use get_model
+  use attenuation
   
   implicit none
   include 'mesh_params.h'
@@ -60,8 +61,6 @@ subroutine read_model_compute_terms
   endif
   
   if (anel_true) then
-    !allocate(Q_mu(0:npol,0:npol,1:nel_solid))
-    !allocate(Q_kappa(0:npol,0:npol,1:nel_solid))
     allocate(Q_mu(1:nel_solid))
     allocate(Q_kappa(1:nel_solid))
   endif
@@ -86,8 +85,6 @@ subroutine read_model_compute_terms
     endif
   endif
   
-
-  !call model_output(rho,lambda,mu)
 
   if(lpr)write(6,*)'  compute Lagrange interpolant derivatives...'
   call lagrange_derivs
@@ -137,6 +134,11 @@ subroutine read_model_compute_terms
   deallocate(rho,massmat_kwts2)
 
   if (lpr) write(6,*)'  ...deallocated unnecessary elastic arrays'
+  
+  if (anel_true) then
+     if (lpr) write(6,*)'  preparing Q model'
+     call prepare_attenuation()
+  endif
 
   if(lpr)write(6,*)'  ::::::: END BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
   call flush(6)

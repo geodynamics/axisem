@@ -13,7 +13,7 @@ use utlity
 
 implicit none
 
-public :: read_model, read_model_ani, model_output
+public :: read_model, read_model_ani
 private
 contains
  
@@ -2051,123 +2051,6 @@ integer                                       :: icub,ncub,iirad,idisc,ncoars
 end subroutine compute_numerical_resolution
 !=============================================================================
 
-!-----------------------------------------------------------------------------
-subroutine model_output(rho,lambda,mu)
-!
-! MvD 3/13: do we still need this routine? VTK seems to be replacing this
-! commenting the only call in def_precomp_terms.f90
-!
-
-include "mesh_params.h"
-
-double precision, intent(in) :: rho(0:npol,0:npol,nelem)
-double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-double precision             :: s,z,r,theta,vp,vs,ro,pts_per_km
-integer                      :: iel,ipol,jpol,idom,iidom
-
-  if (save_large_tests) then
-     open(unit=5454,file=infopath(1:lfinfo)//&
-          '/backgroundmodel_solver.dat'//appmynum)
-     do iel=1,nelem
-        do ipol=0,npol
-           do jpol=0,npol
-              call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
-              write(5454,10)s,z,sqrt((lambda(ipol,jpol,iel)+ &
-                                      two*mu(ipol,jpol,iel))/&
-                   rho(ipol,jpol,iel)), & 
-                   sqrt(mu(ipol,jpol,iel)/rho(ipol,jpol,iel)),&
-                   rho(ipol,jpol,iel)
-           enddo
-        enddo
-     enddo
-     close(5454)
-  endif
-
-10 format(2(e15.7),3(e15.7))
-
-! output discontinuities to check if they are discretized correctly
-! (superimposed on model output)
-  open(unit=5454,file=infopath(1:lfinfo)//&
-                      '/discontinuities_solver.dat'//appmynum)
-  do idom=1,ndisc
-     write(5454,*)discont(idom)
-  enddo
-  close(5454)
-
-  open(unit=5454,file=infopath(1:lfinfo)//&
-                      '/vert_elem_edges_solver.dat'//appmynum)
-  do iel=1,nelem
-     call compute_coordinates(s,z,r,theta,iel,0,npol)
-! only need to output vertical profile, e.g. axis
-     if (s==zero .and. z>=zero) then
-        write(5454,12)r,sqrt((lambda(0,npol,iel)+ &
-             two*mu(0,npol,iel))/rho(0,npol,iel)), & 
-             sqrt(mu(0,npol,iel)/rho(0,npol,iel)),rho(0,npol,iel)
-
-        call compute_coordinates(s,z,r,theta,iel,0,0)
-        write(5454,12)r,sqrt((lambda(0,0,iel)+ &
-             two*mu(0,0,iel))/rho(0,0,iel)), & 
-             sqrt(mu(0,0,iel)/rho(0,0,iel)),rho(0,0,iel)
-     endif
-  enddo
-  close(5454)
-
-12 format(4(1pe12.4))
-
-! output radial model with km-scale resolution and points on discontinuities
-  if (do_mesh_tests .or. (dump_wavefields .and. mynum == 0)) then
-     pts_per_km = 2.
-   
-     if (lpr) write(6,13)pts_per_km
-13 format('     fine-scale radial model output; points per km:',f7.2)
-
-     open(unit=5454,file=infopath(1:lfinfo)//&
-          '/backgroundmodel_kmscale.dat'//appmynum)
-
-     write(5454,*) ceiling(router/1000.*pts_per_km)+1
-
-     do iel=1,ceiling(router/1000.*pts_per_km)+1
-        r = router-(real(iel)-1)*1000./pts_per_km
-        idom = 1000
-        do iidom=1,ndisc-1
-           if (r<=discont(iidom) .and. r> discont(iidom+1) ) then 
-              if (idom == 1000) then 
-                 idom=iidom
-              else
-                 write(6,*)procstrg,'PROBLEM in fine-scale model output!'
-                 write(6,*)procstrg,'Found multiple domains for radius=',r
-                 write(6,*)procstrg,'Domain 1:',idom
-                 write(6,*)procstrg,'Domain 2:',iidom
-                 stop
-              endif
-           endif
-        enddo
-        if (r <= discont(ndisc)) then 
-           if (idom == 1000) then 
-              idom=ndisc
-           else
-              write(6,*)procstrg,'PROBLEM in fine-scale model output!'
-              write(6,*)procstrg,'Found multiple domains for radius=',r
-              write(6,*)procstrg,'Domain 1:',idom
-              write(6,*)procstrg,'Domain 2:',ndisc
-              stop
-           endif
-        endif
-        if (idom==1000) then 
-           write(6,*)procstrg,'PROBLEM in fine-scale model output!'
-           write(6,*)procstrg,'Couldn"t find domain for radius=',r
-           stop
-        endif
-        vp = velocity(r,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
-        vs = velocity(r,'v_s',idom,bkgrdmodel,lfbkgrdmodel)
-        ro = velocity(r,'rho',idom,bkgrdmodel,lfbkgrdmodel)
-        write(5454,12)r,vp,vs,ro
-     enddo
-  endif
-end subroutine model_output
-!=============================================================================
-
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !-----------------------------------------------------------------------------
@@ -2279,6 +2162,7 @@ endif
 
 if (present(Q_mu) .and. present(Q_kappa))then
     allocate(Q_mu1(npts_vtk), Q_kappa1(npts_vtk))
+    ! initializing to zero, as for the outer core has no attenuation
     Q_mu1 = 0.
     Q_kappa1 = 0.
     plot_anel = .true.
@@ -2361,20 +2245,20 @@ do iel=1, nelem
    ct = ct + 4
 enddo
    
-   if (plot_anel) then
-      do iel=1, nel_solid
-         ct = ielsolid(iel) * 4 - 4
-         Q_mu1(ct+1) = Q_mu(iel)
-         Q_mu1(ct+2) = Q_mu(iel)
-         Q_mu1(ct+3) = Q_mu(iel)
-         Q_mu1(ct+4) = Q_mu(iel)
-         
-         Q_kappa1(ct+1) = Q_kappa(iel)
-         Q_kappa1(ct+2) = Q_kappa(iel)
-         Q_kappa1(ct+3) = Q_kappa(iel)
-         Q_kappa1(ct+4) = Q_kappa(iel)
-      enddo
-   endif
+if (plot_anel) then
+   do iel=1, nel_solid
+      ct = ielsolid(iel) * 4 - 4
+      Q_mu1(ct+1) = Q_mu(iel)
+      Q_mu1(ct+2) = Q_mu(iel)
+      Q_mu1(ct+3) = Q_mu(iel)
+      Q_mu1(ct+4) = Q_mu(iel)
+      
+      Q_kappa1(ct+1) = Q_kappa(iel)
+      Q_kappa1(ct+2) = Q_kappa(iel)
+      Q_kappa1(ct+3) = Q_kappa(iel)
+      Q_kappa1(ct+4) = Q_kappa(iel)
+   enddo
+endif
 
 
 if (plot_ani) then

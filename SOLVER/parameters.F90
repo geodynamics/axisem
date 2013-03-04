@@ -105,12 +105,12 @@ subroutine readin_parameters
   close(5)
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.
-  correct_azi=.false.
-  sum_seis=.false.
-  sum_fields=.false.
-  rot_rec='cyl'
-  dump_snaps_solflu=.false.
-  dump_type='fullfields'
+  correct_azi = .false.
+  sum_seis = .false.
+  sum_fields = .false.
+  rot_rec = 'cyl'
+  dump_snaps_solflu = .false.
+  dump_type = 'fullfields'
    
   ! netcdf format
   use_netcdf = .false.
@@ -123,23 +123,21 @@ subroutine readin_parameters
   endif
 #endif
 
+  vphomo = vphomo * 1.e3
+  vshomo = vshomo * 1.e3
+  rhohomo = rhohomo * 1.e3
 
-!af test
-  vphomo = vphomo*1.e3
-  vshomo = vshomo*1.e3
-  rhohomo = rhohomo*1.e3
-!
-  iend = npol-iend
+  iend = npol - iend
 
   if (src_dump_type=='anal') then
-     write(6,*)''
-     write(6,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-     write(6,*)''
-     write(6,*)'Analytical source wavefield dump not implemented YET!'
-     write(6,*)'          DOING NOTHING INSTEAD......................'
-     write(6,*)''
-     write(6,*)'!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-     write(6,*)''
+     write(6,*) ''
+     write(6,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+     write(6,*) ''
+     write(6,*) 'Analytical source wavefield dump not implemented YET!'
+     write(6,*) ''
+     write(6,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+     write(6,*) ''
+     stop 2
   endif
 
 10 format(a80)
