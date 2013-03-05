@@ -41,6 +41,10 @@ else
   else
     ######## SUBMIT LOCALLY #######
     nohup ./xmesh > OUTPUT &
+    # uncomment the following three lines to monitor memory usage of the mesher
+    #cd UTILS
+    #python monitor_memory.py > ../memory_output &
+    #cd ..
   endif
 endif
 
