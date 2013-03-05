@@ -13,8 +13,8 @@ use utlity
 
 implicit none
 
-public :: init_grid,mesh_tests,deallocate_preloop_arrays
-public :: massmatrix,massmatrix_dble
+public :: init_grid, mesh_tests, deallocate_preloop_arrays
+public :: massmatrix, massmatrix_dble
 private
 
 contains
@@ -92,13 +92,8 @@ integer :: iel,ipol,jpol,idest,ipt,icount,iicount,ipg,ip
 ! Initialize the solid global number array needed for the assembly
   allocate(gvec_solid(nglob_solid))
 
-
-! UPDATE Jan 16, 2009: For the kernel rotations, we need the inverse mapping
-!  call inverse_map_global_grid
-
 ! Initialize solid array that maps global numbers into elemental numbers for 
 ! processor boundaries
-!af 
 
   if (nproc>1) then
      if (sizesend_solid>0) then
@@ -168,65 +163,6 @@ integer :: iel,ipol,jpol,idest,ipt,icount,iicount,ipg,ip
 end subroutine init_grid
 !=============================================================================
 
-
-!!$!-----------------------------------------------------------------------------
-!!$subroutine inverse_map_global_grid
-!!$!
-!!$! Given s,z, what is the host element iel and xi,eta ?  
-!!$! Now how do we do that. Maybe a double loop over compute_coordinates?
-!!$! Giving it a try for now due to frozen lack of viable alternatives.
-!!$!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-!!$
-!!$use data_comm
-!!$use commun
-!!$use splib
-!!$
-!!$use data_mesh, ONLY: min_distance_dim
-!!$use data_mesh_preloop, ONLY: lnods,crd_nodes,axis
-!!$use data_spec, ONLY : xi,xi_k,eta
-!!$use geom_transf, ONLY: mapping
-!!$
-!!$include 'mesh_params.h'
-!!$
-!!$integer :: iel,ipol,jpol,idest,ipt,icount,iicount,ipg,ip
-!!$double precision :: s,z,r,theta
-!!$integer          :: ipt,inode
-!!$double precision :: nodes_crd(8,2)
-!!$
-!!$  do iel=1,nelem
-!!$     do inode = 1, 8
-!!$        ipt = lnods(ielem,inode)
-!!$        nodes_crd(inode,1) = crd_nodes(ipt,1)
-!!$        nodes_crd(inode,2) = crd_nodes(ipt,2)
-!!$     end do
-!!$     do jpol=0,npol
-!!$        do ipol=0,npol
-!!$! Fill global coordinate array
-!!$           if ( axis(ielem) ) then 
-!!$              s= mapping( xi_k(ipol),eta(jpol),nodes_crd,1,ielem)
-!!$              z= mapping( xi_k(ipol),eta(jpol),nodes_crd,2,ielem)
-!!$           else 
-!!$              s= mapping(eta(ipol),eta(jpol),nodes_crd,1,ielem)
-!!$              z= mapping(eta(ipol),eta(jpol),nodes_crd,2,ielem)
-!!$           end if
-!!$
-!!$
-!!$
-!!$
-!!$
-!!$
-!!$
-!!$           call compute_coordinates(s,z,r,th,iel,ipol,jpol)
-!!$        enddo
-!!$     enddo
-!!$  enddo
-!!$
-!!$
-!!$end subroutine inverse_mapping_global_grid
-!!$
-!!$
-!!$!=============================================================================
-
 !-----------------------------------------------------------------------------
 subroutine deallocate_preloop_arrays
 !
@@ -250,31 +186,26 @@ use data_pointwise
   if (allocated(ielfluid)) deallocate(ielfluid)
   if (allocated(spher_radii)) deallocate(spher_radii)
 
-! NEED TO CHECK THESE DEPENDENCIES IN DETAIL
-
 ! Deallocate redundant arrays if memory-efficient dumping strategy is applied
   if (.not. need_fluid_displ) then
-     if (lpr) write(6,*)'  deallocating pointwise fluid arrays...'; call flush(6)
+     if (lpr) write(6,*)'  deallocating pointwise fluid arrays...'
      deallocate(DsDeta_over_J_flu)
      deallocate(DzDeta_over_J_flu)
      deallocate(DsDxi_over_J_flu)
      deallocate(DzDxi_over_J_flu)
 
-     deallocate(inv_rho_fluid)  !!! CHECK
-     deallocate(inv_s_rho_fluid) !!! CHECK
-     deallocate(inv_s_fluid)  !!! CHECK
+     deallocate(inv_rho_fluid)
+     deallocate(inv_s_rho_fluid)
+     deallocate(inv_s_fluid)
+  endif
 
-
-! NEED TO UNCOMMENT THIS!!!!!!!!!! JUST FOR CMB TRACE[E] TEMPORARILYY!!!!!!!!!
-!     if (.not. dump_wavefields .or. dump_wavefields .and. &
-!          dump_type/='fullfields') then
-!        if (lpr) write(6,*)'  deallocating pointwise solid arrays...'
-!        deallocate(DsDeta_over_J_sol)
-!        deallocate(DzDeta_over_J_sol)
-!        deallocate(DsDxi_over_J_sol)
-!        deallocate(DzDxi_over_J_sol)
-!        deallocate(inv_s_solid)
-!     endif
+  if (.not. dump_wavefields .or. dump_type/='fullfields') then
+     if (lpr) write(6,*)'  deallocating pointwise solid arrays...'
+     deallocate(DsDeta_over_J_sol)
+     deallocate(DzDeta_over_J_sol)
+     deallocate(DsDxi_over_J_sol)
+     deallocate(DzDxi_over_J_sol)
+     deallocate(inv_s_solid)
   endif
 
   if (lpr) write(6,*)'  Done deallocating mesh arrays.'; call flush(6)
@@ -1615,6 +1546,7 @@ subroutine compute_valence
 
 use commun
 use meshes_io
+include "mesh_params.h"
 
 real(kind=realkind), dimension(:,:,:), allocatable :: val_solid
 real(kind=realkind), dimension(:,:,:), allocatable :: val_fluid
