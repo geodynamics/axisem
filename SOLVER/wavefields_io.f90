@@ -1,35 +1,33 @@
 !=========================
 module wavefields_io
 !=========================
-!
-! Contains all routines that dump entire wavefields during the time loop. 
-! Optimization of I/O therefore happens here and nowhere else.
-! The corresponding meshes are dumped in meshes_io.
-!
-use global_parameters
-use data_mesh
-use data_proc
-use data_io
-use nc_routines
-
-implicit none
-
-public 
+  !
+  ! Contains all routines that dump entire wavefields during the time loop. 
+  ! Optimization of I/O therefore happens here and nowhere else.
+  ! The corresponding meshes are dumped in meshes_io.
+  !
+  use global_parameters
+  use data_mesh
+  use data_proc
+  use data_io
+  use nc_routines
+  
+  implicit none
+  
+  public 
 
 contains
 
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 !-----------------------------------------------------------------------------
 subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
-!
-! Dumps the global displacement snapshots [m] in ASCII format
-! When reading the fluid wavefield, one needs to multiply all 
-! components with inv_rho_fluid and the phi component with one/scoord
-! as dumped by the corresponding routine dump_glob_grid!
-! Convention for order in the file: First the fluid, then the solid domain.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Dumps the global displacement snapshots [m] in ASCII format
+  ! When reading the fluid wavefield, one needs to multiply all 
+  ! components with inv_rho_fluid and the phi component with one/scoord
+  ! as dumped by the corresponding routine dump_glob_grid!
+  ! Convention for order in the file: First the fluid, then the solid domain.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_pointwise, ONLY : usz_fluid
   use data_source, ONLY : src_type
@@ -99,27 +97,20 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   enddo
   
   close(2500+mynum)
-  
-  
-  !  h_real=real(hmax/(period/(pts_wavelngth*real(npol))))
-  !  fname=trim(diagpath)//'/mesh_hmax'
-  !  call write_VTK_bin_scal(h_real,mesh2,neltot,fname)
-
 
 end subroutine glob_snapshot
 !=============================================================================
 
-
 !-----------------------------------------------------------------------------
 subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
-!
-! Dumps the global displacement snapshots [m] in ASCII format
-! When reading the fluid wavefield, one needs to multiply all 
-! components with inv_rho_fluid and the phi component with one/scoord
-! as dumped by the corresponding routine dump_glob_grid!
-! Convention for order in the file: First the fluid, then the solid domain.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Dumps the global displacement snapshots [m] in ASCII format
+  ! When reading the fluid wavefield, one needs to multiply all 
+  ! components with inv_rho_fluid and the phi component with one/scoord
+  ! as dumped by the corresponding routine dump_glob_grid!
+  ! Convention for order in the file: First the fluid, then the solid domain.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_pointwise, ONLY : usz_fluid
   use data_source, ONLY : src_type
@@ -176,21 +167,15 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
   enddo
   close(2500+mynum)
 
-  ! h_real=real(hmax/(period/(pts_wavelngth*real(npol))))
-  ! fname=trim(diagpath)//'/mesh_hmax'
-  ! call write_VTK_bin_scal(h_real,mesh2,neltot,fname)
-
-
 end subroutine glob_snapshot_midpoint
 !=============================================================================
 
-
 !-----------------------------------------------------------------------------
 subroutine glob_snapshot_xdmf(f_sol, chi)
-!
-! Dumps the global displacement snapshots in binary plus XDMF descriptor
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Dumps the global displacement snapshots in binary plus XDMF descriptor
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     use data_source, ONLY : src_type
     use data_pointwise, ONLY : inv_rho_fluid, inv_s_rho_fluid
@@ -451,14 +436,13 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
 end subroutine glob_snapshot_xdmf
 !=============================================================================
 
-
 !-----------------------------------------------------------------------------
 subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
-!
-! Dumps the displacement snapshots [m] in the solid region in ASCII format
-! Convention for order in the file: First the fluid, then the solid domain.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Dumps the displacement snapshots [m] in the solid region in ASCII format
+  ! Convention for order in the file: First the fluid, then the solid domain.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   include 'mesh_params.h'
   
@@ -483,7 +467,6 @@ subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
 
 end subroutine solid_snapshot
 !=============================================================================
-
 
 !-----------------------------------------------------------------------------
 subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
@@ -587,7 +570,6 @@ subroutine dump_field_1d(f, filename, appisnap, n)
 end subroutine dump_field_1d
 !=============================================================================
 
-
 !--------------------------------------------------------------------------
 subroutine dump_field_over_s_solid_1d(f, filename, appisnap)
 
@@ -637,11 +619,11 @@ end subroutine dump_field_over_s_solid_1d
 
 !--------------------------------------------------------------------------
 subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
-!
-! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
-! the solid, but additionally adds field g to the dump. This is convenient for the 
-! strain trace, where (dsus+dzuz) has been computed beforehand.
-!
+  !
+  ! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
+  ! the solid, but additionally adds field g to the dump. This is convenient for the 
+  ! strain trace, where (dsus+dzuz) has been computed beforehand.
+  !
   use data_proc, ONLY : appmynum
   use data_pointwise, ONLY: inv_s_solid
   use pointwise_derivatives, ONLY: dsdf_solid_allaxis
@@ -702,14 +684,13 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
 end subroutine dump_field_over_s_solid_and_add
 !=============================================================================
 
-
 !--------------------------------------------------------------------------
 subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
-!
-! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
-! the solid, but additionally adds field g to the dump. This is convenient for the 
-! strain trace, where (dsus+dzuz) has been computed beforehand.
-!
+  !
+  ! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
+  ! the solid, but additionally adds field g to the dump. This is convenient for the 
+  ! strain trace, where (dsus+dzuz) has been computed beforehand.
+  !
   use data_proc, ONLY : appmynum
   use data_pointwise, ONLY: inv_s_solid
   use pointwise_derivatives, ONLY: dsdf_solid_allaxis
@@ -755,14 +736,13 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
 end subroutine dump_half_field_over_s_solid_1d_add
 !=============================================================================
 
-
 !--------------------------------------------------------------------------
 subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
-!
-! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
-! the fluid, but additionally adds field g to the dump. This is convenient for the 
-! strain trace, where (dsus+dzuz) has been computed beforehand.
-!
+  !
+  ! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
+  ! the fluid, but additionally adds field g to the dump. This is convenient for the 
+  ! strain trace, where (dsus+dzuz) has been computed beforehand.
+  !
   use data_proc, ONLY : appmynum
   use data_pointwise, ONLY: inv_s_fluid!,deviator
   use pointwise_derivatives, ONLY: dsdf_fluid_allaxis
@@ -815,7 +795,6 @@ subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
 
 end subroutine dump_field_over_s_fluid_and_add
 !=============================================================================
-
 
 !--------------------------------------------------------------------------
 subroutine dump_half_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
@@ -909,7 +888,6 @@ subroutine dump_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 end subroutine dump_f1_f2_over_s_fluid
 !=============================================================================
 
-
 !--------------------------------------------------------------------------
 subroutine dump_disp(u, chi)
 
@@ -932,7 +910,7 @@ subroutine dump_disp(u, chi)
   end if
 
 
-! Dump solid displacement
+  ! Dump solid displacement
   glen = size(f(ibeg:iend,ibeg:iend,:,1))
 
      open(unit=75000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
@@ -946,7 +924,7 @@ subroutine dump_disp(u, chi)
      endif
      close(75000+mynum)
 
-! Dump fluid potential 
+  ! Dump fluid potential 
   if (have_fluid) then 
         open(unit=76000+mynum,file=datapath(1:lfdata)//'/chi_flu_'&
                                   //appmynum//'_'//appisnap//'.bindat',&
@@ -958,7 +936,6 @@ subroutine dump_disp(u, chi)
 
 end subroutine dump_disp
 !=============================================================================
-
 
 !--------------------------------------------------------------------------
 subroutine dump_velo_dchi(v, dchi)
@@ -1108,14 +1085,13 @@ subroutine dump_velo_global(v,dchi)
 end subroutine dump_velo_global
 !=============================================================================
 
-
 !-----------------------------------------------------------------------------
 subroutine eradicate_src_elem_vec_values(u)
-!
-! Deletes all entries to vector field u on ALL GLL points inside
-! elements that have a non-zero source term (i.e. including all 
-! assembled neighboring elements)
-! This is a preliminary test for the wavefield dumps.
+  !
+  ! Deletes all entries to vector field u on ALL GLL points inside
+  ! elements that have a non-zero source term (i.e. including all 
+  ! assembled neighboring elements)
+  ! This is a preliminary test for the wavefield dumps.
 
   use data_source, ONLY : nelsrc,ielsrc,have_src
   
@@ -1131,16 +1107,15 @@ subroutine eradicate_src_elem_vec_values(u)
   endif
 
 end subroutine eradicate_src_elem_vec_values
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
+!=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine eradicate_src_elem_values(u)
-!
-! Deletes all entries to scalar field u on ALL GLL points inside
-! elements that have a non-zero source term (i.e. including all 
-! assembled neighboring elements)
-! This is a preliminary test for the wavefield dumps.
+  !
+  ! Deletes all entries to scalar field u on ALL GLL points inside
+  ! elements that have a non-zero source term (i.e. including all 
+  ! assembled neighboring elements)
+  ! This is a preliminary test for the wavefield dumps.
 
   use data_source, ONLY : nelsrc,ielsrc,have_src
  
@@ -1150,13 +1125,13 @@ subroutine eradicate_src_elem_values(u)
   integer :: iel
   
   if (have_src) then
-  
      do iel=1,nelsrc
         u(0:npol,0:npol,ielsrc(iel)) = real(0.,kind=realkind)
      enddo
   endif
 
 end subroutine eradicate_src_elem_values
+!=============================================================================
 
 !================================
 end module wavefields_io

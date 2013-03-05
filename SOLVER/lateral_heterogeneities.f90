@@ -2,24 +2,24 @@
 module lateral_heterogeneities
 !========================
 
-use global_parameters
-use data_heterogeneous
-use data_io
-use data_proc
-use utlity, only :  compute_coordinates
-use data_source, only : rot_src
+  use global_parameters
+  use data_heterogeneous
+  use data_io
+  use data_proc
+  use utlity, only :  compute_coordinates
+  use data_source, only : rot_src
+  
+  implicit none
+  
+  public :: compute_heterogeneities
+  public :: write_VTK_bin_scal_pts
+  private
 
-implicit none
-
-public :: compute_heterogeneities
-private
 contains
 
 !----------------------------------------------------------------------------------------
 subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                    fa_ani_theta, fa_ani_phi, ieldom)
-    implicit none
-
     include 'mesh_params.h'
 
     integer :: ij
@@ -28,6 +28,7 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
     double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
            xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
     integer, dimension(nelem), intent(in), optional :: ieldom
+
     double precision, dimension(0:npol,0:npol,nelem) :: rhopost,lambdapost,mupost
     double precision, dimension(:,:,:), allocatable :: &
            xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
@@ -163,7 +164,7 @@ end subroutine compute_heterogeneities
 
 !-----------------------------------------------------------------------------------------
 subroutine read_param_hetero
-    implicit none
+
     integer :: ij, i
     character(len=100) :: junk
 
@@ -315,7 +316,6 @@ end subroutine read_param_hetero
 
 !-----------------------------------------------------------------------------------------
 subroutine rotate_hetero(r,th)
-    implicit none
 
     double precision,intent(inout) :: r,th
     double precision :: x_vec(3), x_vec_rot(3), r_r, arg1
@@ -337,17 +337,17 @@ end subroutine rotate_hetero
 
 
 !-----------------------------------------------------------------------------------------
-subroutine load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, eta_ani_post, &
-                    fa_ani_theta_post, fa_ani_phi_post, hetind, ieldom)
+subroutine load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, & 
+                    eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, hetind, ieldom)
 
-    use utlity, only: thetacoord, rcoord
-    use data_mesh, only: discont
-    implicit none
+    use utlity,     only: thetacoord, rcoord
+    use data_mesh,  only: discont
 
     double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
     double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambdapost, &
            xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
     integer, dimension(nelem), intent(in) :: ieldom
+
     double precision, dimension(1:3) :: fast_axis_np
     integer :: hetind
     double precision, allocatable :: fast_axis_src(:,:)
@@ -443,10 +443,8 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                            eta_ani_post, fa_ani_theta_post, fa_ani_phi_post)
     use kdtree2_module
 
-    implicit none
-
-    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho
-    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
+    double precision, dimension(0:npol,0:npol,nelem), intent(in)    :: rho
+    double precision, dimension(0:npol,0:npol,nelem), intent(in)    :: lambda,mu
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
                                                             lambdapost, mupost
 
@@ -456,28 +454,27 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                                                xi_ani_post, phi_ani_post, eta_ani_post
     double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
                                                fa_ani_theta_post, fa_ani_phi_post
-    integer :: hetind
-    double precision, allocatable, dimension(:) :: w
-    integer :: iel, ipol, jpol, i, j
-    integer :: num_het_pts
-    double precision :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
-    double precision :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
-    double precision :: fa_theta_tmp, fa_phi_tmp
-    double precision :: rmin, rmax, thetamin, thetamax
-    double precision, allocatable, dimension(:,:) :: szhet
-    double precision, allocatable :: rhet2(:), thhet2(:)
-    double precision, allocatable :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
-    double precision, allocatable :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
-                                     delta_vsv2(:), delta_eta2(:)
-    double precision, allocatable :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
-    double precision, allocatable :: fa_theta2(:), fa_phi2(:)
-    double precision, allocatable :: rho2(:), vp2(:), vs2(:)
 
-    type(kdtree2), pointer :: tree
+    integer                         :: hetind
+    double precision, allocatable   :: w(:)
+    integer                         :: iel, ipol, jpol, i, j
+    integer                         :: num_het_pts
+    double precision                :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
+    double precision                :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
+    double precision                :: fa_theta_tmp, fa_phi_tmp
+    double precision                :: rmin, rmax, thetamin, thetamax
+    double precision, allocatable   :: szhet(:,:)
+    double precision, allocatable   :: rhet2(:), thhet2(:)
+    double precision, allocatable   :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
+    double precision, allocatable   :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
+                                       delta_vsv2(:), delta_eta2(:)
+    double precision, allocatable   :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
+    double precision, allocatable   :: fa_theta2(:), fa_phi2(:)
+    double precision, allocatable   :: rho2(:), vp2(:), vs2(:)
+
+    type(kdtree2), pointer          :: tree
     
-
     write(6,*) mynum, 'reading discrete heterogeneity file...'
-
 
     if (.not. het_ani_discr(hetind) == 'iso') then
 
@@ -863,15 +860,14 @@ end subroutine load_het_discr
 subroutine inverse_distance_weighting(s0, z0, tree, w, hetind)
     use kdtree2_module
 
-    implicit none
+    double precision, intent(in)    :: s0, z0
+    type(kdtree2), pointer          :: tree
+    double precision, intent(out)   :: w(1:tree%n)
+    integer, intent(in)             :: hetind
 
-    type(kdtree2), pointer :: tree
-    integer, intent(in) :: hetind
-    double precision, intent(in) :: s0, z0
-    double precision, intent(out) :: w(1:tree%n)
-    double precision :: d2d
-    integer :: i, nfound
-    real(kdkind), dimension(2)   :: qv
+    double precision                :: d2d
+    integer                         :: i, nfound
+    real(kdkind), dimension(2)      :: qv
 
     type(kdtree2_result), allocatable :: results(:) 
 
@@ -923,26 +919,24 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
                                vpv2, vsv2, vph2, vsh2, eta2, fa_theta2, fa_phi2)
 
 
-    use background_models, only : velocity
-    use data_mesh, only : discont, bkgrdmodel
+    use background_models,  only : velocity
+    use data_mesh,          only : discont, bkgrdmodel
 
-    implicit none
+    integer, intent(in)                     :: hetind, num_het_pts
+    double precision, intent(in)            :: rhet2(:), thhet2(:)
+    double precision, intent(in), optional  :: delta_vp2(:), delta_vs2(:), delta_rho2(:)
+    double precision, intent(in), optional  :: delta_vpv2(:), delta_vsv2(:), &
+                                               delta_vph2(:), delta_vsh2(:), delta_eta2(:)
+    double precision, intent(in), optional  :: vpv2(:), vsv2(:), vph2(:), vsh2(:), eta2(:)
+    double precision, intent(in), optional  :: vp2(:), vs2(:), rho2(:)
+    double precision, intent(in), optional  :: fa_theta2(:), fa_phi2(:)
 
-    integer, intent(in) :: hetind, num_het_pts
-    double precision, intent(in) :: rhet2(:), thhet2(:)
-    double precision, intent(in), optional:: delta_vp2(:), delta_vs2(:), delta_rho2(:)
-    double precision, intent(in), optional:: delta_vpv2(:), delta_vsv2(:), &
-                                             delta_vph2(:), delta_vsh2(:), delta_eta2(:)
-    double precision, intent(in), optional:: vpv2(:), vsv2(:), vph2(:), vsh2(:), eta2(:)
-    double precision, intent(in), optional:: vp2(:), vs2(:), rho2(:)
-    double precision, intent(in), optional:: fa_theta2(:), fa_phi2(:)
-
-    integer :: j, idom
-    real, allocatable, dimension(:,:) :: meshtmp
-    real, allocatable, dimension(:) :: vptmp, vstmp, rhotmp
-    real, allocatable, dimension(:) :: vpvtmp, vsvtmp, vphtmp, vshtmp, etatmp
-    real, allocatable, dimension(:) :: fa_theta_tmp, fa_phi_tmp
-    character(len=200) :: fname
+    integer                             :: j, idom
+    real, allocatable, dimension(:,:)   :: meshtmp
+    real, allocatable, dimension(:)     :: vptmp, vstmp, rhotmp
+    real, allocatable, dimension(:)     :: vpvtmp, vsvtmp, vphtmp, vshtmp, etatmp
+    real, allocatable, dimension(:)     :: fa_theta_tmp, fa_phi_tmp
+    character(len=200)                  :: fname
 
     allocate(meshtmp(num_het_pts,2))
 
@@ -1099,16 +1093,15 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     use data_mesh, only : naxel, ax_el
     use utlity, only :  thetacoord, rcoord, zcoord
 
-    implicit none 
-
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
-    double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rhopost, lambdapost, mupost
-    integer :: hetind
-    real(kind=8) :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
-    real(kind=8) :: vptmp, vstmp, rhotmp, th, r
-    integer :: iel, ipol, jpol, icount, i
-    real(kind=8) :: rand
+    double precision, dimension(0:npol,0:npol,nelem), intent(out)   :: rhopost, &
+                                                                       lambdapost, mupost
+    integer         :: hetind
+    real(kind=8)    :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
+    real(kind=8)    :: vptmp, vstmp, rhotmp, th, r
+    integer         :: iel, ipol, jpol, icount, i
+    real(kind=8)    :: rand
     real(kind=8), allocatable :: r_rad(:), rand_rad(:), r_radtmp(:), rand_radtmp(:)
 
     
@@ -1305,15 +1298,16 @@ end subroutine load_random
 !-----------------------------------------------------------------------------------------
 subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
 
-! added by fanie for sharp discontinuites
+  ! added by fanie for sharp discontinuites
     use background_models, only : velocity
     use data_mesh, only : discont, bkgrdmodel
 
-    implicit none 
-
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
     double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
-    double precision, dimension(0:npol,0:npol,nelem) :: rhopost, lambdapost, mupost
+    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
+                                                                       lambdapost, mupost
+    integer, intent(in)                                             :: hetind
+
     double precision :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
     double precision :: vptmp, vstmp, rhotmp, s, z, r, th, gauss_val
     double precision :: r_center_gauss, th_center_gauss
@@ -1322,7 +1316,7 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
 
     ! start elastic property values
     double precision :: vpst, vsst, rhost
-    integer :: iel, ipol, jpol, icount, hetind, jj, ij, iel_count, idom
+    integer :: iel, ipol, jpol, icount, jj, ij, iel_count, idom
     logical :: foundit
     double precision :: r1, r2, r3, r4, th1, th2, th3, th4
     double precision :: rmin, rmax, thetamin, thetamax
@@ -1834,18 +1828,17 @@ end subroutine load_het_funct
 subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                   fa_ani_theta, fa_ani_phi)
     
-    implicit none
-
     double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
     double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
                                     xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
-    real, dimension(:), allocatable :: vp_all, vs_all, rho_all
-    real, dimension(:), allocatable :: vph_all, vsh_all, vpv_all, vsv_all, eta_all
-    real, dimension(:), allocatable :: xi_all, phi_all, fa_theta_all, fa_phi_all
-    real, dimension(:,:), allocatable :: mesh2
-    character(len=200) :: fname
-    double precision :: s, z, r, th
-    integer :: iel, ipol, jpol, icount
+
+    real, dimension(:), allocatable     :: vp_all, vs_all, rho_all
+    real, dimension(:), allocatable     :: vph_all, vsh_all, vpv_all, vsv_all, eta_all
+    real, dimension(:), allocatable     :: xi_all, phi_all, fa_theta_all, fa_phi_all
+    real, dimension(:,:), allocatable   :: mesh2
+    character(len=200)                  :: fname
+    double precision                    :: s, z, r, th
+    integer                             :: iel, ipol, jpol, icount
 
     write(6,*) 'plotting heterogeneous region in pointwise vtk'
 
@@ -1977,18 +1970,18 @@ end subroutine plot_hetero_region_vtk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine write_VTK_bin_scal_pts(u2,mesh1,rows,filename)
+subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename)
 
-   implicit none
-   integer :: i
-   integer, intent(in) :: rows
-   real, dimension(1:rows), intent(in) :: u2
-   real, dimension(1:rows) :: u1
-   real, dimension(1:rows,1:2), intent(in) :: mesh1
+   real, dimension(1:rows), intent(in)      :: u2
+   real, dimension(1:rows,1:2), intent(in)  :: mesh1
+   integer, intent(in)                      :: rows
+   character (len=200), intent(in)          :: filename
+
+   integer                      :: i
+   real, dimension(1:rows)      :: u1
    integer, dimension(1:rows*2) :: cell
-   integer, dimension(1:rows) :: cell_type
-   character (len=200) :: filename
-   character (len=50) :: ss !stream
+   integer, dimension(1:rows)   :: cell_type
+   character (len=50)           :: ss
     
    !points structure
    do i=2, rows*2, 2
@@ -2001,9 +1994,9 @@ subroutine write_VTK_bin_scal_pts(u2,mesh1,rows,filename)
    enddo
   
    u1 = real(u2)
-   do i=1, rows
-      if (abs(u1(i)) < 1.e-25) u1(i) = 0.0
-   enddo
+   !do i=1, rows
+   !   if (abs(u1(i)) < 1.e-25) u1(i) = 0.0
+   !enddo
   
    write(6,*)'computing vtk file ',trim(filename),' ...'
 
