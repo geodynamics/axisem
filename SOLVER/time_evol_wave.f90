@@ -31,6 +31,7 @@ subroutine prepare_waves
   use source
   use clocks_mod
   use meshes_io
+  use attenuation, only: dump_memory_vars
     
   character(len=120) :: fname
 
@@ -103,6 +104,9 @@ subroutine prepare_waves
      open(13102, file=trim(fname), access='stream', status='unknown', &
          convert='little_endian', position='append')
   endif
+
+  if (anel_true .and. dump_memory_vars) &
+     call prepare_mesh_memoryvar_vtk()
 
   if (dump_snaps_solflu) then
      if (lpr) write(6,*)'  dumping solid & fluid grids for snapshots...'
@@ -347,7 +351,11 @@ subroutine sf_time_loop_newmark
      ! ::::::::::::::::::::::::: END FD SOLVER ::::::::::::::::::::::::::
 
      iclockdump = tick()
-     call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
+     if (anel_true) then
+        call dump_stuff(iter, disp, velo, chi, dchi, ddchi0, memory_var)
+     else
+        call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
+     endif
      iclockdump = tick(id=iddump, since=iclockdump)
 
   end do ! time loop
@@ -857,7 +865,7 @@ end subroutine add_source
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
+subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   !
   ! Includes all output action done during the time loop such as
   ! various receiver definitions, wavefield snapshots, velocity field & strain 
@@ -866,8 +874,10 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_io
+  use data_mesh
   !use analyt_homog_radiation, ONLY : src_vicinity
   use wavefields_io
+  use attenuation,          ONLY: n_sls_attenuation, dump_memory_vars
   
   integer, intent(in)            :: iter
   real(kind=realkind),intent(in) :: disp(0:npol,0:npol,nel_solid,3)
@@ -875,6 +885,8 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
   real(kind=realkind),intent(in) :: chi(0:npol,0:npol,nel_fluid)
   real(kind=realkind),intent(in) :: dchi(0:npol,0:npol,nel_fluid)
   real(kind=realkind),intent(in) :: ddchi(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in), optional :: &
+        memvar(0:npol,0:npol,nel_solid,6,n_sls_attenuation)
   real(kind=realkind) :: time
   
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
@@ -938,6 +950,12 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
         endif
         call glob_snapshot_xdmf(disp, chi)
      endif
+  endif
+
+  if (anel_true .and. dump_memory_vars) then
+    if (mod(iter,snap_it)==0) then
+       call snapshot_memoryvar_vtk(memvar, iter)
+    endif
   endif
 
   if (dump_snaps_solflu) then
@@ -1108,7 +1126,6 @@ subroutine compute_strain(u,chi)
   use wavefields_io,            ONLY: dump_half_f1_f2_over_s_fluid
   use wavefields_io,            ONLY: dump_f1_f2_over_s_fluid
   use wavefields_io,            ONLY: dump_field_1d
-  use wavefields_io,            ONLY: dump_field_over_s_solid_1d
   use wavefields_io,            ONLY: dump_field_over_s_fluid_and_add
   
   include 'mesh_params.h'

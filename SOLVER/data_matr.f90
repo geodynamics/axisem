@@ -1,18 +1,16 @@
 !===================
 module data_matr
 !===================
-!
-! Global arrays (i.e. defined on each GLL point) that are
-! needed for the mass, stiffness and boundary terms of the 
-! temporal ODE. 
-
-use global_parameters
-
-implicit none
-public 
-include "mesh_params.h"
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  !
+  ! Global arrays (i.e. defined on each GLL point) that are
+  ! needed for the mass, stiffness and boundary terms of the 
+  ! temporal ODE. 
+  
+  use global_parameters
+  
+  implicit none
+  public 
+  include "mesh_params.h"
 
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   !	Mass matrix arrays
@@ -79,6 +77,7 @@ include "mesh_params.h"
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! Q_mu and Q_kappa, assumed to be homogeneous within an element
   real(kind=realkind), allocatable :: Q_mu(:), Q_kappa(:)
+  real(4), allocatable             :: points_solid(:,:,:,:)
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

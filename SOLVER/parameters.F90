@@ -347,6 +347,7 @@ end subroutine readin_parameters
 !-----------------------------------------------------------------------------
 subroutine compute_numerical_parameters
   !use nc_routines, only: nc_write_snaptimesteps
+  use attenuation, only: dump_memory_vars
   include "mesh_params.h"
 
   double precision :: s,z,r,theta,s_max,dshift
@@ -492,7 +493,7 @@ subroutine compute_numerical_parameters
 
   ! snapshot output, convert from interval given in seconds to 
   ! incremental time steps
-  if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
+  if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu .or. dump_memory_vars) then
      snap_it=floor(snap_dt/deltat)
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
      nsnap = floor(real(niter)/real(snap_it))

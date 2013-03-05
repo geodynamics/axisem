@@ -13,8 +13,24 @@ module wavefields_io
   use nc_routines
   
   implicit none
-  
-  public 
+
+  private
+
+  public :: dump_field_over_s_solid_and_add
+  public :: dump_field_over_s_fluid_and_add
+  public :: dump_half_field_over_s_solid_1d_add
+  public :: dump_half_f1_f2_over_s_fluid
+  public :: dump_f1_f2_over_s_fluid
+  public :: dump_field_1d
+  public :: solid_snapshot
+  public :: glob_snapshot_xdmf
+  public :: glob_snapshot_midpoint
+  public :: dump_velo_global
+  public :: dump_disp
+  public :: dump_velo_dchi
+  public :: fluid_snapshot
+  public :: nc_dump_strain
+  public :: snapshot_memoryvar_vtk
 
 contains
 
@@ -437,24 +453,46 @@ end subroutine glob_snapshot_xdmf
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!subroutine snapshot_memoryvar_vtk(memvar)
-!
-!  use data_source,    only: src_type
-!  use data_time,      only: t
-!  use attenuation,    only: n_sls_attenuation
-!  
-!  include 'mesh_params.h'
-!  
-!  real(kind=realkind), intent(in) :: memvar(0:npol,0:npol,nel_solid,6,n_sls_attenuation)
-!  
-!  call define_io_appendix(appisnap, isnap)
-!    
-!  do j=1, nel_solid
-!      meshtmp(j,1) = rhet2(j) * sin(thhet2(j))
-!      meshtmp(j,2) = rhet2(j) * cos(thhet2(j))
-!  enddo
-!
-!end subroutine snapshot_memoryvar_vtk
+subroutine snapshot_memoryvar_vtk(memvar, iter)
+
+  use data_source,    only: src_type
+  use data_time,      only: t 
+  use attenuation,    only: n_sls_attenuation
+  use data_matr,      only: points_solid
+  use lateral_heterogeneities, only: write_VTK_bin_scal_pts
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind), intent(in)   :: memvar(0:npol,0:npol,nel_solid,6,n_sls_attenuation)
+  integer, intent(in)               :: iter
+  
+  character(len=8)                  :: appisnap
+  character(len=2)                  :: nchar, lchar
+  character(len=200)                :: filename, varname
+  integer                           :: l, n
+  
+  write(appisnap, "(I0.8)"), iter
+  do l=1, 6
+     write(lchar, "(I0.2)"), l
+     do n=1, n_sls_attenuation
+        write(nchar, "(I0.2)"), n
+        filename = trim(infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appmynum&
+                        //'_'//appisnap)
+        varname = 'memvar_'//lchar//'_'//nchar
+
+        if (lpr) print *, trim(filename)
+        call write_VTK_bin_scal_pts(memvar(2,2,:,l,n), points_solid(2,2,:,:), nel_solid, &
+                                    filename, varname)
+        !call write_VTK_bin_scal_pts(&
+        !        reshape(memvar(:,:,:,l,n), (/(npol + 1)**2 * nel_solid/)), &
+        !        reshape(points_solid(:,:,:,:), (/(npol + 1)**2 * nel_solid, 2/)), &
+        !        (npol + 1)**2 * nel_solid, &
+        !        infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appisnap)
+     enddo
+  enddo
+    
+
+end subroutine snapshot_memoryvar_vtk
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -590,53 +628,6 @@ subroutine dump_field_1d(f, filename, appisnap, n)
 
 end subroutine dump_field_1d
 !=============================================================================
-
-!--------------------------------------------------------------------------
-subroutine dump_field_over_s_solid_1d(f, filename, appisnap)
-
-  use data_proc,             ONLY: appmynum
-  use data_pointwise,        ONLY: inv_s_solid
-  use pointwise_derivatives, ONLY: dsdf_solid_allaxis
-  use data_source,           ONLY: have_src, src_dump_type
-  
-  include 'mesh_params.h'
-  
-  real(kind=realkind),intent(in)  :: f(0:npol,0:npol,nel_solid)
-  character(len=16), intent(in)   :: filename
-  character(len=4), intent(in)    :: appisnap
-  real(kind=realkind)             :: dsdf(0:npol,naxel_solid)
-  integer                         :: iel, glen
-  real(kind=realkind)             :: floc(0:npol,0:npol,nel_solid)
-  real(kind=realkind),allocatable :: gloc(:,:,:)
-
-  floc = f
-
-  call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
-  do iel=1, naxel_solid
-     inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-     floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
-  enddo
-
-  if (have_src .and. src_dump_type == 'mask') then 
-     call eradicate_src_elem_values(floc)
-  end if
-  
-  allocate(gloc(ibeg:iend,ibeg:iend,nel_solid)) 
-  gloc = inv_s_solid(ibeg:iend,ibeg:iend,1:nel_solid) * floc(ibeg:iend,ibeg:iend,1:nel_solid)
-  glen = size(gloc)
-  if (use_netcdf) then
-     call nc_dump_field_solid(pack(gloc, .true.), filename(2:))
-  else
-     open(unit=35000+mynum, file=datapath(1:lfdata)//filename//'_'&
-                                 //appmynum//'_'//appisnap//'.bindat',&
-                                 FORM="UNFORMATTED",STATUS="REPLACE")
-     write(35000+mynum) gloc(ibeg:iend,ibeg:iend,:)
-     close(35000+mynum)
-  end if
-
-end subroutine dump_field_over_s_solid_1d
-!=============================================================================
-
 
 !--------------------------------------------------------------------------
 subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)

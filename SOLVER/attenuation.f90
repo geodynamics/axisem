@@ -7,11 +7,12 @@ module attenuation
     public :: y_j_attenuation
     public :: w_j_attenuation
     public :: n_sls_attenuation
+    public :: dump_memory_vars
 
     double precision, allocatable   :: y_j_attenuation(:)
     double precision, allocatable   :: w_j_attenuation(:)
     integer                         :: n_sls_attenuation
-    logical                         :: do_corr_lowq
+    logical                         :: do_corr_lowq, dump_memory_vars = .false.
 
 contains
 
@@ -43,6 +44,7 @@ subroutine prepare_attenuation()
   read(164,*) Ty
   read(164,*) d
   read(164,*) fixfreq
+  read(164,*) dump_memory_vars
 
   close(unit=164)
 

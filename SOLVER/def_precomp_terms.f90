@@ -107,16 +107,15 @@ subroutine read_model_compute_terms
     if (have_fluid) call test_pntwsdrvtvs_fluid
   endif
 
-
   if(lpr)write(6,*)'  define solid stiffness terms....';call flush(6)
   if (ani_true) then
-    call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+    call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
+                                   eta_ani, fa_ani_theta, fa_ani_phi)
     deallocate(lambda,mu,xi_ani,phi_ani,eta_ani, fa_ani_theta, fa_ani_phi)
   else
-    call def_solid_stiffness_terms(lambda,mu,massmat_kwts2)
+    call def_solid_stiffness_terms(lambda, mu, massmat_kwts2)
     deallocate(lambda,mu)
   endif
-
 
   if (have_fluid) then
      if(lpr)write(6,*)'  define fluid stiffness terms....';call flush(6)
@@ -125,9 +124,12 @@ subroutine read_model_compute_terms
      if(lpr)write(6,*)'  define solid-fluid boundary terms....';call flush(6)
      call def_solid_fluid_boundary_terms
   else
-     M_w_fl=zero; M0_w_fl=zero
-     M1chi_fl=zero; M2chi_fl=zero; M4chi_fl =zero    
-     bdry_matr=zero
+     M_w_fl = zero
+     M0_w_fl = zero
+     M1chi_fl = zero
+     M2chi_fl = zero
+     M4chi_fl = zero    
+     bdry_matr = zero
   endif
 
   if (lpr) write(6,*)'  ...defined all precomputed arrays';call flush(6)

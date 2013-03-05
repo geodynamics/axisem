@@ -1,178 +1,52 @@
 !=========================
 module meshes_io
 !=========================
-!
-! This module contains routines that compute and dump the respective meshes
-! underlying the actual wavefields to be dumped in the time loop
-! which is done in wavefields_io. This module needs pre-loop variables such
-! as mesh coordinates and is therefore cut off from the dumping module.
-!
-use global_parameters
-use data_mesh
-use data_mesh_preloop, ONLY : ielsolid,ielfluid
-use data_proc
-use data_io
-
-use utlity, ONLY : scoord, zcoord, rcoord, thetacoord
-
-implicit none
-
-public
+  !
+  ! This module contains routines that compute and dump the respective meshes
+  ! underlying the actual wavefields to be dumped in the time loop
+  ! which is done in wavefields_io. This module needs pre-loop variables such
+  ! as mesh coordinates and is therefore cut off from the dumping module.
+  !
+  use global_parameters
+  use data_mesh
+  use data_mesh_preloop, ONLY : ielsolid, ielfluid
+  use data_proc
+  use data_io
+  
+  use utlity, ONLY : scoord, zcoord, rcoord, thetacoord
+  
+  implicit none
+  
+  private
+  public :: fldout_cyl2
+  public :: finish_xdmf_xml
+  public :: dump_wavefields_mesh_1d
+  public :: dump_glob_grid_midpoint
+  public :: dump_xdmf_grid
+  public :: dump_solid_grid
+  public :: dump_fluid_grid
+  public :: prepare_mesh_memoryvar_vtk
 
 contains
 
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-!--------------------------------------------------------------------------
-subroutine dump_test
-
-use data_proc, ONLY : appmynum
-use utlity, only : rcoord
-include 'mesh_params.h'
-
-double precision :: f(0:npol,0:npol,1:nel_fluid)
-double precision :: g(0:npol,0:npol,1:nel_solid)
-integer :: ipol,jpol,iel
-
-if (lpr) write(6,*)'TEST:',nelem,nel_fluid,nel_solid
-
-  do iel=1,nel_fluid
-     do jpol=0,npol-1
-        do ipol=0,npol-1
-            f(ipol,jpol,iel) = &
-                   2.d0*dsin(8.d0*pi*rcoord(ipol,jpol,ielfluid(iel))/router)
-        enddo
-     enddo
-  enddo
-
-  open(unit=25000+mynum,file=datapath(1:lfdata)//'dump_testflu'//'_'&
-                             //appmynum//'.bindat',&
-                            FORM="UNFORMATTED",STATUS="NEW")
-  write(25000+mynum) f(ibeg:iend,ibeg:iend,:)
-
-  close(25000+mynum)
-
-  do iel=1,nel_solid
-     do jpol=0,npol-1
-        do ipol=0,npol-1
-            g(ipol,jpol,iel) = &
-                   2.d0*dsin(8.d0*pi*rcoord(ipol,jpol,ielsolid(iel))/router)
-        enddo
-     enddo
-  enddo
-  open(unit=25100+mynum,file=datapath(1:lfdata)//'dump_testsol'//'_'&
-                            //appmynum//'.bindat',&
-                            FORM="UNFORMATTED",STATUS="NEW")
-
-  write(25100+mynum) g(ibeg:iend,ibeg:iend,:)    
-
-  close(25100+mynum)
-
-stop
-
-end subroutine dump_test
-!=============================================================================
-
-
-!-----------------------------------------------------------------------------
-subroutine dump_glob_grid(ibeg,iend,jbeg,jend)
-!
-! Dumps the mesh (s,z) [m] in ASCII format as needed to visualize global 
-! snapshots, and additionally the constant factors preceding the displacement
-! in the fluid, namely rho^{-1} and (rho s)^{-1}.
-! When reading the fluid wavefield, one therefore needs to multiply all 
-! components with inv_rho_fluid and the phi component with one/scoord!
-! Convention for order in the file: First the fluid, then the solid domain.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use data_pointwise, ONLY : inv_rho_fluid
-
-include 'mesh_params.h'
-
-integer, intent(in) :: ibeg,iend,jbeg,jend 
-integer             :: iel,ipol,jpol
-
-  open(unit=25000+mynum,file=datapath(1:lfdata)//'/glob_grid_'&
-                             //appmynum//'.dat')
-
-  if (have_fluid) then 
-     open(unit=26000+mynum,file=datapath(1:lfdata)// &
-                                '/inv_rho_s_fluid_globsnaps_' &
-                                //appmynum//'.dat')
-     do iel=1,nel_fluid
-
-           if ( axis_fluid(iel)  ) then
-!       Axis s=0! write 1 instead of 1/s and then multiply
-!       with the correct factor dsdchi, obtained by L'Hospital's rule
-!       (see routine glob_snapshot in wavefields_io).
-                 write(26000+mynum,*)inv_rho_fluid(0,0,iel),one
-                 write(26000+mynum,*)inv_rho_fluid(npol,0,iel), &
-                                     one/scoord(npol,0,ielfluid(iel))
-                 write(26000+mynum,*)inv_rho_fluid(npol,npol,iel), &
-                                     one/scoord(npol,npol,ielfluid(iel))
-                 write(26000+mynum,*)inv_rho_fluid(0,npol,iel),one
-
-              else
-                 write(26000+mynum,*)inv_rho_fluid(0,0,iel), &
-                                     one/scoord(0,0,ielfluid(iel))
-                 write(26000+mynum,*)inv_rho_fluid(npol,0,iel), &
-                                     one/scoord(npol,0,ielfluid(iel))
-                 write(26000+mynum,*)inv_rho_fluid(npol,npol,iel), &
-                                     one/scoord(npol,npol,ielfluid(iel))
-                 write(26000+mynum,*)inv_rho_fluid(0,npol,iel), &
-                                     one/scoord(0,npol,ielfluid(iel))
-              endif
-
-              write(25000+mynum,*)scoord(0,0,ielfluid(iel)), &
-                                  zcoord(0,0,ielfluid(iel))
-              write(25000+mynum,*)scoord(npol,0,ielfluid(iel)), &
-                                  zcoord(npol,0,ielfluid(iel))
-              write(25000+mynum,*)scoord(npol,npol,ielfluid(iel)), &
-                                  zcoord(npol,npol,ielfluid(iel))
-             write(25000+mynum,*)scoord(0,npol,ielfluid(iel)), &
-                                  zcoord(0,npol,ielfluid(iel))
-
-     enddo
-     close(26000+mynum)
-  endif ! have_fluid
-
-  do iel=1,nel_solid
-
-           write(25000+mynum,*)scoord(0,0,ielsolid(iel)), &
-                               zcoord(0,0,ielsolid(iel))
-           write(25000+mynum,*)scoord(npol,0,ielsolid(iel)), &
-                               zcoord(npol,0,ielsolid(iel))
-           write(25000+mynum,*)scoord(npol,npol,ielsolid(iel)), &
-                               zcoord(npol,npol,ielsolid(iel))
-           write(25000+mynum,*)scoord(0,npol,ielsolid(iel)), &
-                               zcoord(0,npol,ielsolid(iel))
-  enddo
-  close(25000+mynum)
-
-end subroutine dump_glob_grid
-!=============================================================================
-
-
-
 !-----------------------------------------------------------------------------
 subroutine dump_glob_grid_midpoint(ibeg,iend,jbeg,jend)
-!
-! Dumps the mesh (s,z) [m] in ASCII format as needed to visualize global 
-! snapshots, and additionally the constant factors preceding the displacement
-! in the fluid, namely rho^{-1} and (rho s)^{-1}.
-! When reading the fluid wavefield, one therefore needs to multiply all 
-! components with inv_rho_fluid and the phi component with one/scoord!
-! Convention for order in the file: First the fluid, then the solid domain.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use data_pointwise, ONLY : inv_rho_fluid
-
-include 'mesh_params.h'
-
-integer, intent(in) :: ibeg,iend,jbeg,jend 
-integer             :: iel,ipol,jpol
+  !
+  ! Dumps the mesh (s,z) [m] in ASCII format as needed to visualize global 
+  ! snapshots, and additionally the constant factors preceding the displacement
+  ! in the fluid, namely rho^{-1} and (rho s)^{-1}.
+  ! When reading the fluid wavefield, one therefore needs to multiply all 
+  ! components with inv_rho_fluid and the phi component with one/scoord!
+  ! Convention for order in the file: First the fluid, then the solid domain.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  
+  use data_pointwise, ONLY : inv_rho_fluid
+  
+  include 'mesh_params.h'
+  
+  integer, intent(in) :: ibeg,iend,jbeg,jend 
+  integer             :: iel,ipol,jpol
 
   open(unit=25000+mynum,file=datapath(1:lfdata)//'/glob_grid_'&
                              //appmynum//'.dat')
@@ -569,6 +443,28 @@ end subroutine finish_xdmf_xml
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+subroutine prepare_mesh_memoryvar_vtk()
+
+  use data_matr, only: points_solid
+  include 'mesh_params.h'
+
+  integer :: iel, ipol,jpol
+  
+  allocate(points_solid(0:npol,0:npol,nel_solid,2))
+
+  do iel=1, nel_solid
+     do jpol=0, npol
+        do ipol=0, npol
+           points_solid(ipol,jpol,iel,1) = scoord(ipol,jpol,ielsolid(iel))
+           points_solid(ipol,jpol,iel,2) = zcoord(ipol,jpol,ielsolid(iel))
+        enddo
+     enddo
+  enddo
+
+end subroutine prepare_mesh_memoryvar_vtk
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 subroutine dump_solid_grid(ibeg,iend,jbeg,jend)
 !
 ! Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
@@ -860,8 +756,6 @@ real(kind=realkind)             :: fnr,afnr
 
 end subroutine fldout_cyl2
 !=============================================================================
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !================================
 end module meshes_io

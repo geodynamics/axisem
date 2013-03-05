@@ -1970,18 +1970,26 @@ end subroutine plot_hetero_region_vtk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename)
+subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename, varname)
 
-   real, dimension(1:rows), intent(in)      :: u2
-   real, dimension(1:rows,1:2), intent(in)  :: mesh1
-   integer, intent(in)                      :: rows
-   character (len=200), intent(in)          :: filename
+   real, dimension(1:rows), intent(in)          :: u2
+   real, dimension(1:rows,1:2), intent(in)      :: mesh1
+   integer, intent(in)                          :: rows
+   character (len=200), intent(in)              :: filename
+   character (len=200), intent(in), optional    :: varname
 
    integer                      :: i
    real, dimension(1:rows)      :: u1
    integer, dimension(1:rows*2) :: cell
    integer, dimension(1:rows)   :: cell_type
    character (len=50)           :: ss
+   character (len=200)          :: varname_loc
+
+   if (.not. present(varname)) then
+      varname_loc = filename
+   else
+      varname_loc = varname
+   endif
     
    !points structure
    do i=2, rows*2, 2
@@ -1994,11 +2002,8 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename)
    enddo
   
    u1 = real(u2)
-   !do i=1, rows
-   !   if (abs(u1(i)) < 1.e-25) u1(i) = 0.0
-   !enddo
   
-   write(6,*)'computing vtk file ',trim(filename),' ...'
+   if (lpr) print *, 'computing vtk file ', trim(filename),' ...'
 
    open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
         convert='big_endian')
@@ -2007,12 +2012,12 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename)
    write(100) 'mittico'//char(10)
    write(100) 'BINARY'//char(10)
    write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
-   write(ss,fmt='(A6,I10,A5)') 'POINTS',rows,'float'
+   write(ss, fmt='(A6,I10,A5)') 'POINTS', rows, 'float'
    write(100) ss//char(10)
 
    !points
-   do i=1,rows
-      write(100) mesh1(i,1),mesh1(i,2),0.0
+   do i=1, rows
+      write(100) mesh1(i,1), mesh1(i,2), 0.0
    enddo
    write(100) char(10)
 
@@ -2023,15 +2028,15 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename)
    write(100) char(10)
 
    !cell type
-   write(ss,fmt='(A10,2I10)') 'CELL_TYPES',rows
+   write(ss,fmt='(A10,2I10)') 'CELL_TYPES', rows
    write(100) char(10)//ss//char(10)
    write(100) cell_type
    write(100) char(10)
    
    !data
-   write(ss,fmt='(A10,I10)') 'CELL_DATA',rows
+   write(ss,fmt='(A10,I10)') 'CELL_DATA', rows
    write(100) char(10)//ss//char(10)
-   write(100) 'SCALARS '//trim(filename)//' float 1'//char(10)
+   write(100) 'SCALARS '//trim(varname_loc)//' float 1'//char(10)
    write(100) 'LOOKUP_TABLE default'//char(10) !color table?
    write(100) real(u1)
    close(100)
