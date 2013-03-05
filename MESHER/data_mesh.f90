@@ -19,7 +19,6 @@ double precision, dimension(:), allocatable :: scom,zcom,thetacom,rcom ! com = c
 integer, allocatable :: naxelp(:),naxel_solidp(:),naxel_fluidp(:)
 integer, allocatable :: ax_elp(:,:),ax_el_solidp(:,:),ax_el_fluidp(:,:)
 integer,allocatable :: axis(:,:),axis_solid(:,:),axis_fluid(:,:)
-logical, allocatable :: have_axis(:)
 
 ! Solid fluid distinction
 logical, dimension(:), allocatable :: fluid

@@ -2279,14 +2279,12 @@ allocate(dummyax_el_fluidp(maxval(nel_fluid),0:nproc-1))
 allocate(naxelp(0:nproc-1))
 allocate(naxel_solidp(0:nproc-1))
 allocate(naxel_fluidp(0:nproc-1))
-allocate(have_axis(0:nproc-1))
 allocate(axis(maxval(nel),0:nproc-1))
 allocate(axis_solid(maxval(nel_solid),0:nproc-1))
 allocate(axis_fluid(maxval(nel_fluid),0:nproc-1))
 
 axis=0; axis_solid=0; axis_fluid=0
 dummyax_elp=0; dummyax_el_solidp=0; dummyax_el_fluidp=0
-have_axis=.false.
 naxelp=0; naxel_fluidp=0; naxel_solidp=0;
 
 if (dump_mesh_info_screen) then 
@@ -2307,8 +2305,6 @@ do iproc=0,nproc-1
          dummyax_elp(naxelp(iproc),iproc)=iel
       endif
    enddo ! iel
-
-   if (naxelp(iproc)>0) have_axis(iproc)=.true.
 
 !slocal domain
    do iel=1,nel_solid(iproc)
@@ -2681,7 +2677,6 @@ integer :: lfdbname
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Axial element arrays
-   write(10)have_axis(iproc)
    write(10)naxelp(iproc),naxel_solidp(iproc),naxel_fluidp(iproc)
 
    write(10) ax_elp(1:naxelp(iproc),iproc)
@@ -2858,7 +2853,6 @@ integer :: lfdbname
    double precision :: tmpchar_time_min_rad,tmpchar_time_min_theta
 
 ! Axial element arrays
-   logical :: tmphave_axis
    integer :: tmpnaxelp,tmpnaxel_solidp,tmpnaxel_fluidp
    integer, allocatable :: tmpax_elp(:)
    integer, allocatable :: tmpax_el_solidp(:)
@@ -2983,7 +2977,6 @@ integer :: lfdbname
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! Axial element arrays
-   read(10)tmphave_axis
    read(10)tmpnaxelp,tmpnaxel_solidp,tmpnaxel_fluidp
 
    allocate(tmpax_elp(tmpnaxelp))
