@@ -196,7 +196,7 @@ subroutine sf_time_loop_newmark
   use stiffness
   use unit_stride_colloc
   use clocks_mod
-  use data_matr,            ONLY: inv_mass_rho,inv_mass_fluid
+  use data_matr,            ONLY: inv_mass_rho, inv_mass_fluid
   use attenuation,          ONLY: n_sls_attenuation
   
   include 'mesh_params.h'
@@ -213,7 +213,7 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
   
-  integer             :: iter
+  integer :: iter
 
   if (lpr) then
      write(6,*)

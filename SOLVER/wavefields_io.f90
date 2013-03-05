@@ -437,6 +437,27 @@ end subroutine glob_snapshot_xdmf
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!subroutine snapshot_memoryvar_vtk(memvar)
+!
+!  use data_source,    only: src_type
+!  use data_time,      only: t
+!  use attenuation,    only: n_sls_attenuation
+!  
+!  include 'mesh_params.h'
+!  
+!  real(kind=realkind), intent(in) :: memvar(0:npol,0:npol,nel_solid,6,n_sls_attenuation)
+!  
+!  call define_io_appendix(appisnap, isnap)
+!    
+!  do j=1, nel_solid
+!      meshtmp(j,1) = rhet2(j) * sin(thhet2(j))
+!      meshtmp(j,2) = rhet2(j) * cos(thhet2(j))
+!  enddo
+!
+!end subroutine snapshot_memoryvar_vtk
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
   !
   ! Dumps the displacement snapshots [m] in the solid region in ASCII format

@@ -268,8 +268,8 @@ integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
    allocate(ax_el(naxel),ax_el_solid(1:naxel_solid),ax_el_fluid(1:naxel_fluid))
 
    read(1000+mynum) ax_el(1:naxel)
-   read(1000+mynum)ax_el_solid(1:naxel_solid)
-   read(1000+mynum)ax_el_fluid(1:naxel_fluid)
+   read(1000+mynum) ax_el_solid(1:naxel_solid)
+   read(1000+mynum) ax_el_fluid(1:naxel_fluid)
 
 ! mask s-coordinate of axial elements identically to zero
    if (lpr) write(6,*)'  setting s coordinate identical to zero along axis...'

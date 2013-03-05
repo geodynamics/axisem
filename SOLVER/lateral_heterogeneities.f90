@@ -2017,7 +2017,7 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename)
    write(100) char(10)
 
    !cell topology
-   write(ss,fmt='(A5,2I10)') 'CELLS',rows,rows*2
+   write(ss,fmt='(A5,2I10)') 'CELLS', rows, rows*2
    write(100) char(10)//ss//char(10)
    write(100) cell
    write(100) char(10)
