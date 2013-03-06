@@ -481,13 +481,12 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
         varname = 'memvar_'//lchar//'_'//nchar
 
         if (lpr) print *, trim(filename)
-        call write_VTK_bin_scal_pts(memvar(2,2,:,l,n), points_solid(2,2,:,:), nel_solid, &
-                                    filename, varname)
-        !call write_VTK_bin_scal_pts(&
-        !        reshape(memvar(:,:,:,l,n), (/(npol + 1)**2 * nel_solid/)), &
-        !        reshape(points_solid(:,:,:,:), (/(npol + 1)**2 * nel_solid, 2/)), &
-        !        (npol + 1)**2 * nel_solid, &
-        !        infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appisnap)
+        !call write_VTK_bin_scal_pts(memvar(2,2,:,l,n), points_solid(2,2,:,:), nel_solid, &
+        !                            filename, varname)
+        call write_VTK_bin_scal_pts(&
+                reshape(memvar(:,:,:,l,n), (/(npol + 1)**2 * nel_solid/)), &
+                reshape(points_solid(:,:,:,:), (/(npol + 1)**2 * nel_solid, 2/)), &
+                (npol + 1)**2 * nel_solid, filename, varname)
      enddo
   enddo
     
