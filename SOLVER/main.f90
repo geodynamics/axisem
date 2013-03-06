@@ -107,7 +107,7 @@ subroutine start_clock
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_time, ONLY : idcomm, iddump, idmpi, idnbio, idold, idstiff
+  use data_time, ONLY : idcomm, iddump, idmpi, idnbio, idold, idstiff, idanelts, idanelst
   use data_proc, ONLY : lpr, mynum
   use clocks_mod, ONLY : clock_id, clocks_init
   
@@ -132,12 +132,14 @@ subroutine start_clock
   write(69,*)
 
   call clocks_init(mynum)
-  idold   = clock_id('Time loop routine')
-  idcomm  = clock_id('Assembly/MPI routines')
-  idmpi   = clock_id('Only MPI routine')
-  idstiff = clock_id('Solid stiffness routine')
-  iddump  = clock_id('Dump routine')
-  idnbio  = clock_id('Non Blocking IO red light')
+  idold    = clock_id('Time loop routine')
+  idcomm   = clock_id('Assembly/MPI routines')
+  idmpi    = clock_id('Only MPI routine')
+  idstiff  = clock_id('Solid stiffness routine')
+  idanelst = clock_id('Anelastic stiffness routine')
+  idanelts = clock_id('Anelastic time step routine')
+  iddump   = clock_id('Dump routine')
+  idnbio   = clock_id('Non Blocking IO red light')
 
   if (lpr) then 
      write(6,*)'::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'

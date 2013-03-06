@@ -463,7 +463,7 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
   
   include 'mesh_params.h'
   
-  real(kind=realkind), intent(in)   :: memvar(0:npol,0:npol,nel_solid,6,n_sls_attenuation)
+  real(kind=realkind), intent(in)   :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
   integer, intent(in)               :: iter
   
   character(len=8)                  :: appisnap
@@ -481,10 +481,10 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
         varname = 'memvar_'//lchar//'_'//nchar
 
         if (lpr) print *, trim(filename)
-        !call write_VTK_bin_scal_pts(memvar(2,2,:,l,n), points_solid(2,2,:,:), nel_solid, &
+        !call write_VTK_bin_scal_pts(memvar(2,2,l,n,:), points_solid(2,2,:,:), nel_solid, &
         !                            filename, varname)
         call write_VTK_bin_scal_pts(&
-                reshape(memvar(:,:,:,l,n), (/(npol + 1)**2 * nel_solid/)), &
+                reshape(memvar(:,:,l,n,:), (/(npol + 1)**2 * nel_solid/)), &
                 reshape(points_solid(:,:,:,:), (/(npol + 1)**2 * nel_solid, 2/)), &
                 (npol + 1)**2 * nel_solid, filename, varname)
      enddo

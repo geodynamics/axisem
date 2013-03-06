@@ -2,27 +2,63 @@ module attenuation
     implicit none
 
     private
-    public :: fast_correct
     public :: prepare_attenuation
     public :: y_j_attenuation
     public :: w_j_attenuation
     public :: n_sls_attenuation
     public :: dump_memory_vars
+    public :: time_step_memvars
 
     double precision, allocatable   :: y_j_attenuation(:)
-    double precision, allocatable   :: w_j_attenuation(:)
+    double precision, allocatable   :: w_j_attenuation(:), exp_w_j_deltat(:)
     integer                         :: n_sls_attenuation
     logical                         :: do_corr_lowq, dump_memory_vars = .false.
 
 contains
 
 !-----------------------------------------------------------------------------------------
+subroutine time_step_memvars(memvar)
+  !
+  ! analytical time integration of memory variables (linear interpolation for
+  ! the strain)
+  ! MvD, attenutation notes, p 13.2
+  !
+  use data_time,            only: deltat
+  use global_parameters,    only: realkind, half
+  use data_matr,            only: Q_mu, Q_kappa
+  include 'mesh_params.h'
+
+  real(kind=realkind), intent(inout) :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  
+  integer           :: iel, l, j, ipol, jpol
+  double precision  :: yp_j_mu(n_sls_attenuation)
+  double precision  :: yp_j_kappa(n_sls_attenuation)
+ 
+  do iel=1, nel_solid
+     if (do_corr_lowq) then
+        call fast_correct(y_j_attenuation / Q_mu, yp_j_mu)
+        call fast_correct(y_j_attenuation / Q_kappa, yp_j_kappa)
+     else
+        yp_j_mu = y_j_attenuation / Q_mu
+        yp_j_kappa = y_j_attenuation / Q_kappa
+     endif
+     do j=1, n_sls_attenuation
+        memvar(:,:,:,j,iel) = memvar(:,:,:,j,iel) * exp_w_j_deltat(j)
+     enddo
+  enddo
+
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine prepare_attenuation()
   !
   ! read 'inparam_attenuation' file
   !
-  use data_io,      only: infopath, lfinfo
-  use data_proc,    only: lpr
+  use data_io,              only: infopath, lfinfo
+  use data_proc,            only: lpr
+  use data_time,            only: deltat
+  use global_parameters,    only: pi
   !use commun
 
   double precision                  :: f_min, f_max
@@ -31,6 +67,7 @@ subroutine prepare_attenuation()
   logical                           :: fixfreq
   double precision, allocatable     :: w_samp(:), q_fit(:), chil(:)
 
+  if (lpr) print *, '  ...reading inparam_attanuation...'
   open(unit=164, file='inparam_attenuation')
 
   read(164,*) n_sls_attenuation
@@ -47,19 +84,28 @@ subroutine prepare_attenuation()
   read(164,*) dump_memory_vars
 
   close(unit=164)
-
+  
   allocate(w_samp(nfsamp))
   allocate(q_fit(nfsamp))
   allocate(chil(max_it))
   
   allocate(w_j_attenuation(n_sls_attenuation))
+  allocate(exp_w_j_deltat(n_sls_attenuation))
   allocate(y_j_attenuation(n_sls_attenuation))
   
-  call invert_linear_solids(1.d0, f_min, f_max, n_sls_attenuation, nfsamp, max_it, Tw, Ty, d, &
-                            fixfreq, .false., .false., 'maxwell', w_j_attenuation, &
+  if (lpr) print *, '  ...inverting for standard linear solid parameters...'
+
+  call invert_linear_solids(1.d0, f_min, f_max, n_sls_attenuation, nfsamp, max_it, Tw, &
+                            Ty, d, fixfreq, .false., .false., 'maxwell', w_j_attenuation, &
                             y_j_attenuation, w_samp, q_fit, chil)
   
+  exp_w_j_deltat = dexp(-w_j_attenuation * deltat)
+
   if (lpr) then
+      print *, '  ...log-l2 misfit: ', chil(max_it)
+      print *, '  ...frequencies  : ', w_j_attenuation / (2. * pi)
+      print *, '  ...exp-frequencies  : ', exp_w_j_deltat
+
       print *, '  ...writing fitted Q to file...'
       open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='new')
       write(165,*) (w_samp(i), q_fit(i), char(10), i=1,nfsamp)
@@ -70,9 +116,6 @@ subroutine prepare_attenuation()
       write(166,*) (chil(i), char(10), i=1,max_it)
       close(unit=166)
   endif
-
-  !call barrier()
-  !stop
 
 end subroutine
 !-----------------------------------------------------------------------------------------

@@ -201,7 +201,7 @@ subroutine sf_time_loop_newmark
   use unit_stride_colloc
   use clocks_mod
   use data_matr,            ONLY: inv_mass_rho, inv_mass_fluid
-  use attenuation,          ONLY: n_sls_attenuation
+  use attenuation,          ONLY: n_sls_attenuation, time_step_memvars
   
   include 'mesh_params.h'
   
@@ -228,10 +228,10 @@ subroutine sf_time_loop_newmark
   endif
 
   if (anel_true) then
-     allocate(memory_var(0:npol,0:npol,nel_solid,6,n_sls_attenuation))
-     allocate(grad_disp_t(0:npol,0:npol,nel_solid,6))
-     allocate(grad_disp_tm1(0:npol,0:npol,nel_solid,6))
-     memory_var = zero
+     allocate(memory_var(0:npol,0:npol,6,n_sls_attenuation,nel_solid))
+     allocate(grad_disp_t(0:npol,0:npol,6,nel_solid))
+     allocate(grad_disp_tm1(0:npol,0:npol,6,nel_solid))
+     memory_var = 1
      grad_disp_t = zero
      grad_disp_tm1 = zero
   endif
@@ -349,6 +349,15 @@ subroutine sf_time_loop_newmark
      acc0 = acc1
 
      ! ::::::::::::::::::::::::: END FD SOLVER ::::::::::::::::::::::::::
+     
+     ! memory variable time evolution with strain as source
+     if (anel_true) then
+        iclockanelts = tick()
+        call time_step_memvars(memory_var)
+        iclockanelts = tick(id=idanelts, since=iclockanelts)
+        iclockanelst = tick()
+        iclockanelst = tick(id=idanelst, since=iclockanelst)
+     endif
 
      iclockdump = tick()
      if (anel_true) then
@@ -886,7 +895,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   real(kind=realkind),intent(in) :: dchi(0:npol,0:npol,nel_fluid)
   real(kind=realkind),intent(in) :: ddchi(0:npol,0:npol,nel_fluid)
   real(kind=realkind),intent(in), optional :: &
-        memvar(0:npol,0:npol,nel_solid,6,n_sls_attenuation)
+        memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
   real(kind=realkind) :: time
   
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^

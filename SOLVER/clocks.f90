@@ -205,7 +205,7 @@ subroutine clocks_exit(flag)
 
     call system_clock(end_tick)
     cumul_time = (end_tick-start_tick)*tick_rate
-    write(6,"(32x,a)") '   calls        t_call       t_total t_frac'
+    write(6,"(32x,a)") '           calls        t_call       t_total t_frac'
     do i = 1, max_clocks
        if( clocks(i)%calls.NE.0 )then
            total_time = clocks(i)%ticks*tick_rate
