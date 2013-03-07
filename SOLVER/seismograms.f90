@@ -1197,47 +1197,18 @@ call nc_dump_rec(disp_rec)
 !deallocate(disp_surf)
 
 end subroutine nc_compute_recfile_seis_bare
+!=============================================================================
+
 
 !-----------------------------------------------------------------------------
-!af
-!!$subroutine compute_recfile_seis_binary(time,disp,velo)
-!!$
-!!$use data_source, ONLY : src_type
-!!$!use write_binary
-!!$
-!!$include "mesh_params.h"
-!!$
-!!$real(kind=realkind), intent(in) :: time
-!!$real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-!!$real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
-!!$
-!!$integer :: i
-!!$
-!!$do i=1,num_rec
-!!$  call dump_trace_3comp_dble(time,&
-!!$                        disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1),&
-!!$                        disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2),&
-!!$                        disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3),&
-!!$                        fname_rec_seis(i))
-!!$  call dump_trace_3comp_dble(time,&
-!!$                        velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1),&
-!!$                        velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2),&
-!!$                        velo(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3),&
-!!$                        fname_rec_velo(i))
-!!$enddo
-!!$
-!!$end subroutine compute_recfile_seis_binary
-!!$!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine compute_recfile_cmb(velo,lap_sol)
+subroutine compute_recfile_cmb(velo,grad_sol)
 
 use data_source, ONLY : src_type
 
 include "mesh_params.h"
 
 real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
-real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,1)
+real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,1)
 integer :: i
 
   if (src_type(1)=='monopole') then
@@ -1245,7 +1216,7 @@ integer :: i
      write(200000+i,*)velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1),&
                       velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),3)
 
-     write(250000+i,*)lap_sol(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1) 
+     write(250000+i,*)grad_sol(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1) 
   enddo
 
   else
@@ -1254,7 +1225,7 @@ integer :: i
                       velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),2),&
                       velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),3)  
 
-     write(250000+i,*)lap_sol(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1) 
+     write(250000+i,*)grad_sol(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1) 
 
      enddo
   endif
@@ -1349,8 +1320,7 @@ subroutine compute_surfelem_strain(u)
   include "mesh_params.h"
   real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
   
-  real(kind=realkind)             :: lap_sol(0:npol,0:npol,nel_solid,2)
-  real(kind=realkind)             :: lap_flu(0:npol,0:npol,nel_fluid,2)
+  real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
   real(kind=realkind)             :: dumpvar(maxind, 6)
   real(kind=realkind)             :: strain(0:npol,nel_solid,6)
   character(len=5)                :: appisnap
@@ -1362,46 +1332,46 @@ subroutine compute_surfelem_strain(u)
   strain = 0.
 
   if (src_type(1)=='dipole') then
-    call axisym_gradient_solid(u(:,:,:,1)+u(:,:,:,2),lap_sol)
+    call axisym_gradient_solid(u(:,:,:,1)+u(:,:,:,2),grad_sol)
   else
-    call axisym_gradient_solid(u(:,:,:,1),lap_sol) ! 1: dsus, 2: dzus
+    call axisym_gradient_solid(u(:,:,:,1),grad_sol) ! 1: dsus, 2: dzus
   endif
-  strain(:,:,1)  = lap_sol(npol/2,:,:,1) ! ds us
+  strain(:,:,1)  = grad_sol(npol/2,:,:,1) ! ds us
 
-  call axisym_gradient_solid_add(u(:,:,:,3),lap_sol) ! 1:dsuz+dzus,2:dzuz+dsus
+  call axisym_gradient_solid_add(u(:,:,:,3),grad_sol) ! 1:dsuz+dzus,2:dzuz+dsus
 
   ! calculate entire E31 term: (dsuz+dzus)/2
-  strain(:,:,4) = lap_sol(npol/2,:,:,1) * real(.5,kind=realkind) ! ds uz
+  strain(:,:,4) = grad_sol(npol/2,:,:,1) * real(.5,kind=realkind) ! ds uz
 
   ! Components involving phi....................................................
   if (src_type(1)=='monopole') then
      strain(:,:,2) = inv_s_solid(npol/2,:,:) * u(npol/2,:,:,1) ! dp up
-     strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
+     strain(:,:,3) = grad_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
 
   elseif (src_type(1)=='dipole') then 
      strain(:,:,2) = real(2.,kind=realkind) * inv_s_solid(npol/2,:,:) * u(npol/2,:,:,1) ! dp up
-     strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
+     strain(:,:,3) = grad_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
 
-     call axisym_gradient_solid(u(:,:,:,1)-u(:,:,:,2),lap_sol) !1:dsup,2:dzup
+     call axisym_gradient_solid(u(:,:,:,1)-u(:,:,:,2),grad_sol) !1:dsup,2:dzup
      strain(:,:,5) = ( inv_s_solid(npol/2,:,:) * u(npol/2,:,:,2)  &
-                       + real(.5,kind=realkind) * lap_sol(npol/2,:,:,1) ) ! ds up
+                       + real(.5,kind=realkind) * grad_sol(npol/2,:,:,1) ) ! ds up
 
      strain(:,:,6) = real(.5,kind=realkind) * (inv_s_solid(npol/2,:,:) * u(npol/2,:,:,3)  &
-                                               + lap_sol(npol/2,:,:,2) ) ! dz up
+                                               + grad_sol(npol/2,:,:,2) ) ! dz up
 
   elseif (src_type(1)=='quadpole') then
      strain(:,:,2) = inv_s_solid(npol/2,:,:) & ! dp up
                           *  ( u(npol/2,:,:,1) - real(2.,kind=realkind) * u(npol/2,:,:,2))
-     strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
+     strain(:,:,3) = grad_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
 
-     call axisym_gradient_solid(u(:,:,:,2), lap_sol) ! 1: dsup, 2: dzup
+     call axisym_gradient_solid(u(:,:,:,2), grad_sol) ! 1: dsup, 2: dzup
 
      strain(:,:,5) = real(.5,kind=realkind) * ( inv_s_solid(npol/2,:,:) &
                              * (real(2.,kind=realkind)* u(npol/2,:,:,1) - u(npol/2,:,:,2)) &
-                             + lap_sol(npol/2,:,:,1) ) ! ds up
+                             + grad_sol(npol/2,:,:,1) ) ! ds up
 
      strain(:,:,6) = ( inv_s_solid(npol/2,:,:) *u(npol/2,:,:,3) &
-                             + real(.5,kind=realkind) *lap_sol(npol/2,:,:,2) ) ! dz up
+                             + real(.5,kind=realkind) *grad_sol(npol/2,:,:,2) ) ! dz up
 
   endif
 
