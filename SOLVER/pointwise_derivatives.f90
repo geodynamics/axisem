@@ -258,8 +258,8 @@ subroutine axisym_gradient_fluid(f,grad)
     call mxm(f(:,:,iel),G2,mxm2)
     call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf,nsize)
     call collocate2_sum_1d(dsdeta,mxm1,dsdxi,mxm2,dzdf,nsize)
-    grad(:,:,iel,1)=dsdf
-    grad(:,:,iel,2)=dzdf
+    grad(:,:,iel,1) = dsdf
+    grad(:,:,iel,2) = dzdf
  enddo
 
 end subroutine axisym_gradient_fluid
