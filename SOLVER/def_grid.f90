@@ -199,13 +199,16 @@ use data_pointwise
      deallocate(inv_s_fluid)
   endif
 
+  ! These terms are needed to compute the gradient!
   if (.not. dump_wavefields .or. dump_type/='fullfields') then
-     if (lpr) write(6,*)'  deallocating pointwise solid arrays...'
-     deallocate(DsDeta_over_J_sol)
-     deallocate(DzDeta_over_J_sol)
-     deallocate(DsDxi_over_J_sol)
-     deallocate(DzDxi_over_J_sol)
-     deallocate(inv_s_solid)
+     if (.not. anel_true) then
+        if (lpr) write(6,*)'  deallocating pointwise solid arrays...'
+        deallocate(DsDeta_over_J_sol)
+        deallocate(DzDeta_over_J_sol)
+        deallocate(DsDxi_over_J_sol)
+        deallocate(DzDxi_over_J_sol)
+        deallocate(inv_s_solid)
+     endif
   endif
 
   if (lpr) write(6,*)'  Done deallocating mesh arrays.'; call flush(6)

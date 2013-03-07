@@ -14,10 +14,10 @@ USE data_spec
 
 IMPLICIT NONE
 
-PUBLIC :: axisym_laplacian_solid,axisym_laplacian_solid_add
-PUBLIC :: axisym_laplacian_fluid,axisym_laplacian_fluid_add
-PUBLIC :: dsdf_elem_solid,dzdf_elem_solid
-PUBLIC :: dsdf_fluid_axis,dsdf_fluid_allaxis,dsdf_solid_allaxis
+PUBLIC :: axisym_laplacian_solid, axisym_laplacian_solid_add
+PUBLIC :: axisym_laplacian_fluid, axisym_laplacian_fluid_add
+PUBLIC :: dsdf_elem_solid, dzdf_elem_solid
+PUBLIC :: dsdf_fluid_axis, dsdf_fluid_allaxis, dsdf_solid_allaxis
 
 PRIVATE
 CONTAINS
@@ -35,8 +35,8 @@ subroutine axisym_laplacian_solid(f,lap)
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_pointwise, ONLY: DzDeta_over_J_sol,DzDxi_over_J_sol
-use data_pointwise, ONLY: DsDeta_over_J_sol,DsDxi_over_J_sol
+use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
+use data_pointwise, ONLY: DsDeta_over_J_sol, DsDxi_over_J_sol
 use unrolled_loops
 use unit_stride_colloc
 

@@ -111,15 +111,21 @@ subroutine read_model_compute_terms
   if (ani_true) then
     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
                                    eta_ani, fa_ani_theta, fa_ani_phi)
-    deallocate(lambda,mu,xi_ani,phi_ani,eta_ani, fa_ani_theta, fa_ani_phi)
+    deallocate(xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
   else
     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2)
-    deallocate(lambda,mu)
   endif
+  
+  if (anel_true) then
+     if (lpr) write(6,*)'  preparing Q model'
+     call prepare_attenuation(lambda, mu)
+  endif
+    
+  deallocate(lambda,mu)
 
   if (have_fluid) then
      if(lpr)write(6,*)'  define fluid stiffness terms....';call flush(6)
-     call def_fluid_stiffness_terms(rho,massmat_kwts2)
+     call def_fluid_stiffness_terms(rho, massmat_kwts2)
 
      if(lpr)write(6,*)'  define solid-fluid boundary terms....';call flush(6)
      call def_solid_fluid_boundary_terms
@@ -137,11 +143,6 @@ subroutine read_model_compute_terms
 
   if (lpr) write(6,*)'  ...deallocated unnecessary elastic arrays'
   
-  if (anel_true) then
-     if (lpr) write(6,*)'  preparing Q model'
-     call prepare_attenuation()
-  endif
-
   if(lpr)write(6,*)'  ::::::: END BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
   call flush(6)
 

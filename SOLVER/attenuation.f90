@@ -1,49 +1,63 @@
 module attenuation
+    use global_parameters,    only: realkind
     implicit none
+    include 'mesh_params.h'
 
     private
     public :: prepare_attenuation
-    public :: y_j_attenuation
-    public :: w_j_attenuation
     public :: n_sls_attenuation
     public :: dump_memory_vars
     public :: time_step_memvars
+    public :: memvar_src_t, memvar_src_tm1
 
     double precision, allocatable   :: y_j_attenuation(:)
     double precision, allocatable   :: w_j_attenuation(:), exp_w_j_deltat(:)
+    double precision, allocatable   :: ts_fac_t(:), ts_fac_tm1(:)
     integer                         :: n_sls_attenuation
     logical                         :: do_corr_lowq, dump_memory_vars = .false.
+    real(kind=realkind)             :: memvar_src_t(0:npol,0:npol,6,nel_solid)
+    real(kind=realkind)             :: memvar_src_tm1(0:npol,0:npol,6,nel_solid)
 
 contains
 
 !-----------------------------------------------------------------------------------------
-subroutine time_step_memvars(memvar)
+subroutine time_step_memvars(memvar, disp)
   !
   ! analytical time integration of memory variables (linear interpolation for
   ! the strain)
   ! MvD, attenutation notes, p 13.2
   !
   use data_time,            only: deltat
-  use global_parameters,    only: realkind, half
   use data_matr,            only: Q_mu, Q_kappa
   include 'mesh_params.h'
 
-  real(kind=realkind), intent(inout) :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
-  integer           :: iel, l, j, ipol, jpol
-  double precision  :: yp_j_mu(n_sls_attenuation)
-  double precision  :: yp_j_kappa(n_sls_attenuation)
+  integer               :: iel, l, j, ipol, jpol
+  double precision      :: yp_j_mu(n_sls_attenuation)
+  double precision      :: yp_j_kappa(n_sls_attenuation)
+  real(kind=realkind)   :: trace_grad_disp(0:npol,0:npol)
+  real(kind=realkind)   :: grad_disp(0:npol,0:npol,6)
+  real(kind=realkind)   :: source
  
   do iel=1, nel_solid
      if (do_corr_lowq) then
-        call fast_correct(y_j_attenuation / Q_mu, yp_j_mu)
-        call fast_correct(y_j_attenuation / Q_kappa, yp_j_kappa)
+        call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
+        call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
      else
-        yp_j_mu = y_j_attenuation / Q_mu
-        yp_j_kappa = y_j_attenuation / Q_kappa
+        yp_j_mu = y_j_attenuation / Q_mu(iel)
+        yp_j_kappa = y_j_attenuation / Q_kappa(iel)
      endif
+
+     trace_grad_disp(:,:) = sum(grad_disp(:,:,1:3), dim=3)
+
+
      do j=1, n_sls_attenuation
         memvar(:,:,:,j,iel) = memvar(:,:,:,j,iel) * exp_w_j_deltat(j)
+
+        !memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) + ts_fac_tm1(j) 
+        !memvar(:,:,:,j,iel) = memvar(:,:,:,j,iel) + ts_fac_t(j) * grad_disp_t(:,:,:,iel)
      enddo
   enddo
 
@@ -51,21 +65,29 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine prepare_attenuation()
+subroutine prepare_attenuation(lambda, mu)
   !
-  ! read 'inparam_attenuation' file
+  ! read 'inparam_attenuation' file and compute precomputable terms
   !
   use data_io,              only: infopath, lfinfo
   use data_proc,            only: lpr
   use data_time,            only: deltat
   use global_parameters,    only: pi
-  !use commun
+  use data_matr,            only: Q_mu, Q_kappa, mu_r, kappa_r
+  use data_mesh_preloop,    only: ielsolid
+  
+
+  include 'mesh_params.h'
+
+  double precision, intent(in)      ::lambda(0:npol,0:npol,1:nelem), mu(0:npol,0:npol,1:nelem)
 
   double precision                  :: f_min, f_max
-  integer                           :: nfsamp, max_it, i
+  integer                           :: nfsamp, max_it, i, iel
   double precision                  :: Tw, Ty, d
   logical                           :: fixfreq
   double precision, allocatable     :: w_samp(:), q_fit(:), chil(:)
+  double precision                  :: yp_j_mu(n_sls_attenuation)
+  double precision                  :: yp_j_kappa(n_sls_attenuation)
 
   if (lpr) print *, '  ...reading inparam_attanuation...'
   open(unit=164, file='inparam_attenuation')
@@ -93,13 +115,20 @@ subroutine prepare_attenuation()
   allocate(exp_w_j_deltat(n_sls_attenuation))
   allocate(y_j_attenuation(n_sls_attenuation))
   
+  allocate(ts_fac_t(n_sls_attenuation))
+  allocate(ts_fac_tm1(n_sls_attenuation))
+  
   if (lpr) print *, '  ...inverting for standard linear solid parameters...'
 
   call invert_linear_solids(1.d0, f_min, f_max, n_sls_attenuation, nfsamp, max_it, Tw, &
                             Ty, d, fixfreq, .false., .false., 'maxwell', w_j_attenuation, &
                             y_j_attenuation, w_samp, q_fit, chil)
   
+  ! prefactors for the exact time stepping (att nodes p 13.3)
   exp_w_j_deltat = dexp(-w_j_attenuation * deltat)
+  ts_fac_tm1 = ((1 - exp_w_j_deltat) / (w_j_attenuation * deltat) - exp_w_j_deltat) &
+                / w_j_attenuation
+  ts_fac_t = ((exp_w_j_deltat - 1) / (w_j_attenuation * deltat) + 1) / w_j_attenuation
 
   if (lpr) then
       print *, '  ...log-l2 misfit: ', chil(max_it)
@@ -116,6 +145,27 @@ subroutine prepare_attenuation()
       write(166,*) (chil(i), char(10), i=1,max_it)
       close(unit=166)
   endif
+
+
+  if (lpr) print *, '  ...calculating relaxed moduli...'
+
+  allocate(mu_r(0:npol,0:npol,nel_solid))
+  allocate(kappa_r(0:npol,0:npol,nel_solid))
+
+  do iel=1, nel_solid
+     if (do_corr_lowq) then
+        call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
+        call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
+     else
+        yp_j_mu = y_j_attenuation / Q_mu(iel)
+        yp_j_kappa = y_j_attenuation / Q_kappa(iel)
+     endif
+     mu_r(:,:,iel) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
+     kappa_r(:,:,iel) =  (lambda(:,:,ielsolid(iel)) &
+                            - 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
+                            / (1.d0 + sum(yp_j_kappa))
+  enddo
+
 
 end subroutine
 !-----------------------------------------------------------------------------------------

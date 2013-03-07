@@ -78,8 +78,7 @@ module data_matr
   ! Q_mu and Q_kappa, assumed to be homogeneous within an element
   real(kind=realkind), allocatable :: Q_mu(:), Q_kappa(:)
   real(4), allocatable             :: points_solid(:,:,:,:)
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  real(kind=realkind), allocatable :: mu_r(:,:,:), kappa_r(:,:,:)
 
 !=====================
 end module data_matr

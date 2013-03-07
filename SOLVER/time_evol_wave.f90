@@ -211,7 +211,6 @@ subroutine sf_time_loop_newmark
   
   ! solid memory variables + gradient
   real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
-  real(kind=realkind), allocatable :: grad_disp_t(:,:,:,:), grad_disp_tm1(:,:,:,:)
 
   ! Fluid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
@@ -229,11 +228,7 @@ subroutine sf_time_loop_newmark
 
   if (anel_true) then
      allocate(memory_var(0:npol,0:npol,6,n_sls_attenuation,nel_solid))
-     allocate(grad_disp_t(0:npol,0:npol,6,nel_solid))
-     allocate(grad_disp_tm1(0:npol,0:npol,6,nel_solid))
      memory_var = 1
-     grad_disp_t = zero
-     grad_disp_tm1 = zero
   endif
 
   ! INITIAL CONDITIONS
@@ -353,10 +348,8 @@ subroutine sf_time_loop_newmark
      ! memory variable time evolution with strain as source
      if (anel_true) then
         iclockanelts = tick()
-        call time_step_memvars(memory_var)
+        call time_step_memvars(memory_var, disp)
         iclockanelts = tick(id=idanelts, since=iclockanelts)
-        iclockanelst = tick()
-        iclockanelst = tick(id=idanelst, since=iclockanelst)
      endif
 
      iclockdump = tick()
@@ -962,7 +955,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   endif
 
   if (anel_true .and. dump_memory_vars) then
-    if (mod(iter,snap_it)==0) then
+    if (mod(iter,snap_it)==0 .or. iter==1) then
        call snapshot_memoryvar_vtk(memvar, iter)
     endif
   endif
