@@ -14,8 +14,8 @@ USE data_spec
 
 IMPLICIT NONE
 
-PUBLIC :: axisym_laplacian_solid, axisym_laplacian_solid_add
-PUBLIC :: axisym_laplacian_fluid, axisym_laplacian_fluid_add
+PUBLIC :: axisym_gradient_solid, axisym_gradient_solid_add
+PUBLIC :: axisym_gradient_fluid, axisym_gradient_fluid_add
 PUBLIC :: dsdf_elem_solid, dzdf_elem_solid
 PUBLIC :: dsdf_fluid_axis, dsdf_fluid_allaxis, dsdf_solid_allaxis
 
@@ -25,13 +25,10 @@ CONTAINS
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !----------------------------------------------------------------------------
-subroutine axisym_laplacian_solid(f,lap)
+subroutine axisym_gradient_solid(f,grad)
 !
-! Computes the axisymmetric laplacian of scalar field f in the solid region:
-! lap = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
-!
-! MvD: I do not understand the nomenclature here, as IMHO this is NOT a
-!      laplacian (= divergence of the gradient), but rather the gradient itself
+! Computes the axisymmetric gradient of scalar field f in the solid region:
+! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -43,7 +40,7 @@ use unit_stride_colloc
 include 'mesh_params.h'
 
 REAL(kind=realkind),INTENT(in)               :: f(0:npol,0:npol,nel_solid)
-REAL(kind=realkind),intent(out)              :: lap(0:npol,0:npol,nel_solid,2)
+REAL(kind=realkind),intent(out)              :: grad(0:npol,0:npol,nel_solid,2)
 INTEGER                                      :: iel
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: mxm1,mxm2,dsdf,dzdf
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: dsdxi,dzdxi,dsdeta,dzdeta
@@ -63,18 +60,18 @@ REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: dsdxi,dzdxi,dsdeta,dzdeta
     call mxm(f(:,:,iel),G2,mxm2)
     call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf,nsize)
     call collocate2_sum_1d(dsdeta,mxm1,dsdxi,mxm2,dzdf,nsize)
-    lap(:,:,iel,1)=dsdf
-    lap(:,:,iel,2)=dzdf
+    grad(:,:,iel,1)=dsdf
+    grad(:,:,iel,2)=dzdf
  enddo
 
-end subroutine axisym_laplacian_solid
+end subroutine axisym_gradient_solid
 !=============================================================================
 
 !----------------------------------------------------------------------------
-subroutine axisym_laplacian_solid_add(f,lap)
+subroutine axisym_gradient_solid_add(f,grad)
 !
-! Computes the axisymmetric laplacian of scalar field f in the solid region:
-! lap = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
+! Computes the axisymmetric gradient of scalar field f in the solid region:
+! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
 ! This routine takes a previously calculated derivative and adds it
 ! to the result computed here in a permuted fashion.
 ! This saves the strain dump output two global fields, as the strain 
@@ -91,11 +88,11 @@ use unit_stride_colloc
 include 'mesh_params.h'
 
 REAL(kind=realkind),INTENT(in)               :: f(0:npol,0:npol,nel_solid)
-REAL(kind=realkind),intent(inout)            :: lap(0:npol,0:npol,nel_solid,2)
+REAL(kind=realkind),intent(inout)            :: grad(0:npol,0:npol,nel_solid,2)
 INTEGER                                      :: iel
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: mxm1,mxm2,dsdf,dzdf
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: dsdxi,dzdxi,dsdeta,dzdeta
-REAL(kind=realkind),DIMENSION(0:npol,0:npol,2) :: lap_old
+REAL(kind=realkind),DIMENSION(0:npol,0:npol,2) :: grad_old
 
   do iel = 1, nel_solid
 
@@ -113,15 +110,15 @@ REAL(kind=realkind),DIMENSION(0:npol,0:npol,2) :: lap_old
     call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf,nsize)
     call collocate2_sum_1d(dsdeta,mxm1,dsdxi,mxm2,dzdf,nsize)
 
-    lap_old(0:npol,0:npol,1) = lap(0:npol,0:npol,iel,2)
-    lap_old(0:npol,0:npol,2) = lap(0:npol,0:npol,iel,1)
+    grad_old(0:npol,0:npol,1) = grad(0:npol,0:npol,iel,2)
+    grad_old(0:npol,0:npol,2) = grad(0:npol,0:npol,iel,1)
 
-    lap(0:npol,0:npol,iel,1) = lap_old(0:npol,0:npol,1) + dsdf(0:npol,0:npol)
-    lap(0:npol,0:npol,iel,2) = lap_old(0:npol,0:npol,2) + dzdf(0:npol,0:npol)
+    grad(0:npol,0:npol,iel,1) = grad_old(0:npol,0:npol,1) + dsdf(0:npol,0:npol)
+    grad(0:npol,0:npol,iel,2) = grad_old(0:npol,0:npol,2) + dzdf(0:npol,0:npol)
 
  enddo
 
-end subroutine axisym_laplacian_solid_add
+end subroutine axisym_gradient_solid_add
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -227,13 +224,10 @@ end subroutine dsdf_solid_allaxis
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine axisym_laplacian_fluid(f,lap)
+subroutine axisym_gradient_fluid(f,grad)
 !
-! Computes the axisymmetric laplacian of scalar field f in the fluid region:
-! lap = \nabla {f}  = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
-!
-! MvD: I do not understand the nomenclature here, as IMHO this is NOT a
-!      laplacian (= divergence of the gradient), but rather the gradient itself
+! Computes the axisymmetric gradient of scalar field f in the fluid region:
+! grad = \nabla {f}  = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
@@ -245,7 +239,7 @@ use unit_stride_colloc
 include 'mesh_params.h'
 
 REAL(kind=realkind),INTENT(in)               :: f(0:npol,0:npol,nel_fluid)
-REAL(kind=realkind),intent(out)              :: lap(0:npol,0:npol,nel_fluid,2)
+REAL(kind=realkind),intent(out)              :: grad(0:npol,0:npol,nel_fluid,2)
 INTEGER                                      :: iel
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: mxm1,mxm2,dsdf,dzdf
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: dsdxi,dzdxi,dsdeta,dzdeta
@@ -265,18 +259,18 @@ REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: dsdxi,dzdxi,dsdeta,dzdeta
     call mxm(f(:,:,iel),G2,mxm2)
     call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf,nsize)
     call collocate2_sum_1d(dsdeta,mxm1,dsdxi,mxm2,dzdf,nsize)
-    lap(:,:,iel,1)=dsdf
-    lap(:,:,iel,2)=dzdf
+    grad(:,:,iel,1)=dsdf
+    grad(:,:,iel,2)=dzdf
  enddo
 
-end subroutine axisym_laplacian_fluid
+end subroutine axisym_gradient_fluid
 !=============================================================================
 
 !----------------------------------------------------------------------------
-subroutine axisym_laplacian_fluid_add(f,lap)
+subroutine axisym_gradient_fluid_add(f,grad)
 !
-! Computes the axisymmetric laplacian of scalar field f in the fluid region:
-! lap = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
+! Computes the axisymmetric gradient of scalar field f in the fluid region:
+! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
 ! This routine takes a previously calculated derivative and adds it
 ! to the result computed here in a permuted fashion.
 ! This saves the strain dump output two global fields, as the strain 
@@ -293,11 +287,11 @@ use unit_stride_colloc
 include 'mesh_params.h'
 
 REAL(kind=realkind),INTENT(in)               :: f(0:npol,0:npol,nel_fluid)
-REAL(kind=realkind),intent(inout)            :: lap(0:npol,0:npol,nel_fluid,2)
+REAL(kind=realkind),intent(inout)            :: grad(0:npol,0:npol,nel_fluid,2)
 INTEGER                                      :: iel
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: mxm1,mxm2,dsdf,dzdf
 REAL(kind=realkind),DIMENSION(0:npol,0:npol) :: dsdxi,dzdxi,dsdeta,dzdeta
-REAL(kind=realkind),DIMENSION(0:npol,0:npol,2) :: lap_old
+REAL(kind=realkind),DIMENSION(0:npol,0:npol,2) :: grad_old
 
   do iel = 1, nel_fluid
 
@@ -315,15 +309,15 @@ REAL(kind=realkind),DIMENSION(0:npol,0:npol,2) :: lap_old
     call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf,nsize)
     call collocate2_sum_1d(dsdeta,mxm1,dsdxi,mxm2,dzdf,nsize)
 
-    lap_old(0:npol,0:npol,1) = lap(0:npol,0:npol,iel,2)
-    lap_old(0:npol,0:npol,2) = lap(0:npol,0:npol,iel,1)
+    grad_old(0:npol,0:npol,1) = grad(0:npol,0:npol,iel,2)
+    grad_old(0:npol,0:npol,2) = grad(0:npol,0:npol,iel,1)
 
-    lap(0:npol,0:npol,iel,1) = lap_old(0:npol,0:npol,1) + dsdf(0:npol,0:npol)
-    lap(0:npol,0:npol,iel,2) = lap_old(0:npol,0:npol,2) + dzdf(0:npol,0:npol)
+    grad(0:npol,0:npol,iel,1) = grad_old(0:npol,0:npol,1) + dsdf(0:npol,0:npol)
+    grad(0:npol,0:npol,iel,2) = grad_old(0:npol,0:npol,2) + dzdf(0:npol,0:npol)
 
  enddo
 
-end subroutine axisym_laplacian_fluid_add
+end subroutine axisym_gradient_fluid_add
 !=============================================================================
 
 

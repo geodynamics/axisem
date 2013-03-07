@@ -450,7 +450,7 @@ character(len=16)               :: fmt1
      enddo
   enddo
 
-  call axisym_laplacian_solid(tmpsolfield,tmpsolfieldcomp(:,:,:,1:2))
+  call axisym_gradient_solid(tmpsolfield,tmpsolfieldcomp(:,:,:,1:2))
 
   meandiff=zero
 
@@ -597,7 +597,7 @@ character(len=16)               :: fmt1
      enddo
   enddo
 
-  call axisym_laplacian_fluid(tmpflufield,tmpflufieldcomp(:,:,:,1:2))
+  call axisym_gradient_fluid(tmpflufield,tmpflufieldcomp(:,:,:,1:2))
 
   meandiff=zero
 

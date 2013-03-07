@@ -1342,8 +1342,8 @@ subroutine compute_surfelem_strain(u)
 
   use data_pointwise,         ONLY: inv_rho_fluid, inv_s_rho_fluid, usz_fluid, inv_s_solid
   use data_source,            ONLY: src_type
-  use pointwise_derivatives,  ONLY: axisym_laplacian_fluid, axisym_laplacian_fluid_add
-  use pointwise_derivatives,  ONLY: axisym_laplacian_solid, axisym_laplacian_solid_add
+  use pointwise_derivatives,  ONLY: axisym_gradient_fluid, axisym_gradient_fluid_add
+  use pointwise_derivatives,  ONLY: axisym_gradient_solid, axisym_gradient_solid_add
   use nc_routines,            ONLY: nc_dump_surface
   
   include "mesh_params.h"
@@ -1362,13 +1362,13 @@ subroutine compute_surfelem_strain(u)
   strain = 0.
 
   if (src_type(1)=='dipole') then
-    call axisym_laplacian_solid(u(:,:,:,1)+u(:,:,:,2),lap_sol)
+    call axisym_gradient_solid(u(:,:,:,1)+u(:,:,:,2),lap_sol)
   else
-    call axisym_laplacian_solid(u(:,:,:,1),lap_sol) ! 1: dsus, 2: dzus
+    call axisym_gradient_solid(u(:,:,:,1),lap_sol) ! 1: dsus, 2: dzus
   endif
   strain(:,:,1)  = lap_sol(npol/2,:,:,1) ! ds us
 
-  call axisym_laplacian_solid_add(u(:,:,:,3),lap_sol) ! 1:dsuz+dzus,2:dzuz+dsus
+  call axisym_gradient_solid_add(u(:,:,:,3),lap_sol) ! 1:dsuz+dzus,2:dzuz+dsus
 
   ! calculate entire E31 term: (dsuz+dzus)/2
   strain(:,:,4) = lap_sol(npol/2,:,:,1) * real(.5,kind=realkind) ! ds uz
@@ -1382,7 +1382,7 @@ subroutine compute_surfelem_strain(u)
      strain(:,:,2) = real(2.,kind=realkind) * inv_s_solid(npol/2,:,:) * u(npol/2,:,:,1) ! dp up
      strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
 
-     call axisym_laplacian_solid(u(:,:,:,1)-u(:,:,:,2),lap_sol) !1:dsup,2:dzup
+     call axisym_gradient_solid(u(:,:,:,1)-u(:,:,:,2),lap_sol) !1:dsup,2:dzup
      strain(:,:,5) = ( inv_s_solid(npol/2,:,:) * u(npol/2,:,:,2)  &
                        + real(.5,kind=realkind) * lap_sol(npol/2,:,:,1) ) ! ds up
 
@@ -1394,7 +1394,7 @@ subroutine compute_surfelem_strain(u)
                           *  ( u(npol/2,:,:,1) - real(2.,kind=realkind) * u(npol/2,:,:,2))
      strain(:,:,3) = lap_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
 
-     call axisym_laplacian_solid(u(:,:,:,2), lap_sol) ! 1: dsup, 2: dzup
+     call axisym_gradient_solid(u(:,:,:,2), lap_sol) ! 1: dsup, 2: dzup
 
      strain(:,:,5) = real(.5,kind=realkind) * ( inv_s_solid(npol/2,:,:) &
                              * (real(2.,kind=realkind)* u(npol/2,:,:,1) - u(npol/2,:,:,2)) &

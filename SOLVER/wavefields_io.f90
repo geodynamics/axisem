@@ -47,7 +47,7 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
 
   use data_pointwise, ONLY : usz_fluid
   use data_source, ONLY : src_type
-  use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+  use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
   
   include 'mesh_params.h'
   
@@ -71,7 +71,7 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
                             //appmynum//'_'//appisnap//'.dat')
   
   if (have_fluid) then
-     call axisym_laplacian_fluid(chi, usz_fluid)
+     call axisym_gradient_fluid(chi, usz_fluid)
      do iel=1, nel_fluid
   
         if (axis_fluid(iel)) then
@@ -130,7 +130,7 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
 
   use data_pointwise, ONLY : usz_fluid
   use data_source, ONLY : src_type
-  use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+  use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
   
   include 'mesh_params.h'
   
@@ -154,7 +154,7 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
        FORM="UNFORMATTED",STATUS="REPLACE")
 
   if (have_fluid) then
-     call axisym_laplacian_fluid(chi, usz_fluid)
+     call axisym_gradient_fluid(chi, usz_fluid)
      do iel=1, nel_fluid
         do jpol=0, npol, npol/2
            do ipol=0, npol, npol/2
@@ -195,7 +195,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
 
     use data_source, ONLY : src_type
     use data_pointwise, ONLY : inv_rho_fluid, inv_s_rho_fluid
-    use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+    use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
     use data_time, only : t
     
     include 'mesh_params.h'
@@ -220,7 +220,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     call define_io_appendix(appisnap, isnap)
  
     if (have_fluid) then
-       call axisym_laplacian_fluid(chi, usz_fl)
+       call axisym_gradient_fluid(chi, usz_fl)
        usz_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
        usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
 
@@ -531,7 +531,7 @@ subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
 
   use data_pointwise, ONLY : usz_fluid
   use data_source, ONLY : src_type
-  use pointwise_derivatives, ONLY: axisym_laplacian_fluid, dsdf_fluid_axis
+  use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
   
   include 'mesh_params.h'
   
@@ -548,7 +548,7 @@ subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
   if (src_type(1) == 'dipole')   prefac = one
   if (src_type(1) == 'quadpole') prefac = two
 
-  call axisym_laplacian_fluid(chi, usz_fluid)
+  call axisym_gradient_fluid(chi, usz_fluid)
 
   call define_io_appendix(appisnap, isnap)
 
@@ -1002,7 +1002,7 @@ subroutine dump_velo_global(v,dchi)
 
   use data_pointwise, ONLY: inv_rho_fluid,inv_s_rho_fluid,usz_fluid
   use data_source, ONLY : src_type,src_dump_type
-  use pointwise_derivatives, ONLY: axisym_laplacian_fluid,dsdf_fluid_allaxis
+  use pointwise_derivatives, ONLY: axisym_gradient_fluid,dsdf_fluid_allaxis
   use unit_stride_colloc, ONLY : collocate0_1d
   
   include 'mesh_params.h'
@@ -1051,7 +1051,7 @@ subroutine dump_velo_global(v,dchi)
 
   if (have_fluid) then 
      ! compute velocity vector inside fluid
-    call axisym_laplacian_fluid(dchi, usz_fluid)
+    call axisym_gradient_fluid(dchi, usz_fluid)
 
     ! phi component needs special care: m/(s rho) dchi
     !call collocate0_1d(inv_s_rho_fluid, dchi, phicomp, npoint_fluid)
