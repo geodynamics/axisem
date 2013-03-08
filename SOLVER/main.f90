@@ -2,7 +2,6 @@
 program axisem 
 !===================
 
-
   use data_proc,      ONLY : nproc, mynum, appnproc, appmynum, lpr, procstrg
   use data_io,        ONLY : dump_xdmf, use_netcdf
   use nc_routines,    ONLY : nc_end_output, nc_open_parallel 
@@ -17,17 +16,13 @@ program axisem
   
   implicit none
 
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  call set_ftz() ! ftz.c, set flush to zero
 
-  call set_ftz() ! set flush to zero
-
-  call pinit
+  call pinit ! commun
   call define_io_appendix(appmynum,mynum)
   call define_io_appendix(appnproc,nproc)
-  call open_local_param_file ! open file for processor-specific screen output 
+  call open_local_param_file ! parameters, open file for processor-specific screen output 
   call start_clock !clocks
-
-  !call test_mpi
 
   if (lpr) write(6,*) 'MAIN: Reading parameters..................................'
   call readin_parameters ! parameters
@@ -65,7 +60,7 @@ program axisem
      ! Deallocate all the large arrays that are not needed in the time loop,
      ! specifically those from data_mesh_preloop and data_pointwise
      if (lpr) write(6,*) 'MAIN: Deallocating arrays not needed in the time loop.....'
-     call deallocate_preloop_arrays
+     call deallocate_preloop_arrays ! def_grid
  
      if (use_netcdf) then
         if (lpr) write(6,*) 'MAIN: Opening Netcdf file for parallel output.............'
@@ -85,7 +80,7 @@ program axisem
   
   if (dump_xdmf) then
      if (lpr) write(6,*)'MAIN: Finishing xdmf xml file...'
-     call finish_xdmf_xml()
+     call finish_xdmf_xml() ! meshes_io
   endif
 
   call end_clock ! clocks
@@ -100,14 +95,13 @@ program axisem
 end program axisem
 !=======================
 
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !-----------------------------------------------------------------------------
 subroutine start_clock
-!
-! Driver routine to start the timing, using the clocks_mod module.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Driver routine to start the timing, using the clocks_mod module.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_time, ONLY : idcomm, iddump, idmpi, idnbio, idold, idstiff, idanelts, idanelst
   use data_proc, ONLY : lpr, mynum
@@ -153,10 +147,10 @@ end subroutine start_clock
 
 !-----------------------------------------------------------------------------
 subroutine end_clock 
-!
-! Wapper routine to end timing and display clock informations.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Wapper routine to end timing and display clock informations.
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use clocks_mod, ONLY : clocks_exit
   use data_proc,  ONLY : mynum
@@ -177,12 +171,12 @@ end subroutine end_clock
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-  subroutine define_io_appendix(app,iproc)
-!
-! Defines the 4 digit character string appended to any 
-! data or io file related to process myid. 
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+subroutine define_io_appendix(app,iproc)
+  !
+  ! Defines the 4 digit character string appended to any 
+  ! data or io file related to process myid. 
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   implicit none
   integer, intent(in)           :: iproc
@@ -208,88 +202,3 @@ end subroutine define_io_appendix
 !
 !end subroutine flush
 !=============================================================================
-
-
-!-----------------------------------------------------------------------------
-subroutine test_mpi
-
-  use commun
-  use data_proc
-  use global_parameters
-  
-  implicit none
-  integer               :: i, j
-  double precision      :: t, t2, u, u2, sdble, sdble2
-  real(kind=realkind)   :: s, s2
-  
-  i = 1
-  j = 2
-  s = two * dble(mynum + 1.)
-  sdble = two * dble(mynum + 1.)
-  t = dble(nproc - mynum)
-  u = dble(two * nproc - mynum)
-  call barrier
-  call flush(6)
-  
-  if (lpr) write(6,*)
-  if (lpr) write(6,*)' Testing MPI min,max,sum,broadcast routines....'
-  call flush(6)
-  call barrier
-  if (lpr) write(6,*)
-  call barrier
-  if (lpr) write(6,*)'Testing PSUM:'
-  call barrier
-  write(6,*) procstrg, 's=', s
-  call flush(6)
-  s2 = psum(s)
-  call barrier
-  write(6,*) procstrg, 'sum s=', s2
-  call flush(6)
-  call barrier
-  if (lpr) write(6,*)
-  
-  call barrier
-  if (lpr) write(6,*) 'Testing PBROADCAST:'
-  call barrier
-  write(6,*) procstrg, 'broadcast s=', sdble
-  call flush(6)
-  sdble2 = sdble
-  call broadcast_dble(sdble2, 0)
-  call barrier
-  write(6,*) procstrg, 'broadcasted s(0)=', sdble2
-  call flush(6)
-  call barrier
-  if (lpr) write(6,*)
-  
-  call barrier
-  if (lpr) write(6,*) 'Testing PMIN:'
-  call barrier
-  write(6,*) procstrg, 't=', t
-  call flush(6)
-  t2 = pmin(t)
-  call barrier
-  write(6,*) procstrg, 'min t=', t2
-  call flush(6)
-  call barrier
-  if (lpr) write(6,*)
-  
-  call barrier
-  if (lpr) write(6,*) 'Testing PMAX:'
-  call barrier
-  write(6,*) procstrg, 'u=', u
-  call flush(6)
-  u2 = pmax(u)
-  call barrier
-  write(6,*) procstrg, 'max u=', u2
-  call flush(6)
-  call barrier
-  if (lpr) write(6,*)
-  call barrier
-  if (lpr) write(6,*)' ...MPI test successful.'
-  
-  !stop
-
-end subroutine test_mpi
-!=============================================================================
-
-

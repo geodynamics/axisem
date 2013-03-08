@@ -1192,7 +1192,9 @@ subroutine compute_strain(u, chi)
                                           appisnap) 
  
      call axisym_gradient_solid(u(:,:,:,1) - u(:,:,:,2),grad_sol) !1:dsup,2:dzup
- 
+
+     ! MvD: E12 and E23 have a minus sign not existent in the gradient, no idea
+     !      whether that is on purpose!
      call dump_half_field_over_s_solid_1d_add(two_rk * u(:,:,:,2), &
                                               grad_sol(:,:,:,1), &
                                               '/strain_dsup_sol', appisnap) !E12
@@ -1207,6 +1209,8 @@ subroutine compute_strain(u, chi)
   
      call axisym_gradient_solid(u(:,:,:,2), grad_sol) ! 1: dsup, 2: dzup
  
+     ! MvD: E12 and E23 have a minus sign not existent in the gradient, no idea
+     !      whether that is on purpose!
      call dump_half_field_over_s_solid_1d_add(two_rk * u(:,:,:,1) - u(:,:,:,2), &
                                               grad_sol(:,:,:,1), &
                                               '/strain_dsup_sol', appisnap) !E12
