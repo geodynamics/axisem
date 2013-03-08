@@ -232,6 +232,25 @@ subroutine sf_time_loop_newmark
   endif
 
   ! INITIAL CONDITIONS
+  ! initializiation with a small number prevents performance loss (~factor 3) due to
+  ! denormal floats in the onset of the p-wave (going from zero to some finite value)
+  ! alternatively, compilerflags -ffast-math (gfortran) or -ftz (ifort) might
+  ! give the same speedup, but seem to be unstable on some systems
+  ! another alternative:
+  ! http://software.intel.com/en-us/articles/how-to-avoid-performance-penalties-for-gradual-underflow-behavior
+  ! some more reading:
+  ! http://stackoverflow.com/questions/9314534/why-does-changing-0-1f-to-0-slow-down-performance-by-10x
+
+  !disp = 1.d-30
+  !velo = 1.d-30
+  !acc0 = 1.d-30
+  !acc1 = 1.d-30
+  !
+  !chi = 1.d-30
+  !dchi = 1.d-30
+  !ddchi0 = 1.d-30
+  !ddchi1 = 1.d-30
+
   disp = zero
   velo = zero 
   acc0 = zero
@@ -1157,7 +1176,7 @@ subroutine compute_strain(u, chi)
  
   ! calculate entire E31 term: (dsuz+dzus)/2
   grad_sol(:,:,:,1) = grad_sol(:,:,:,1) / two_rk
-  call dump_field_1d(grad_sol(:,:,:,1), '/strain_dsuz_sol', appisnap,nel_solid)
+  call dump_field_1d(grad_sol(:,:,:,1), '/strain_dsuz_sol', appisnap, nel_solid)
  
   ! Components involving phi....................................................
   if (src_type(1) == 'monopole') then

@@ -19,6 +19,8 @@ program axisem
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+  call set_ftz() ! set flush to zero
+
   call pinit
   call define_io_appendix(appmynum,mynum)
   call define_io_appendix(appnproc,nproc)
