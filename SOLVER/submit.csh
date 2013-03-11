@@ -88,7 +88,7 @@ endif
 
 # Run make to see whether the code has to be rebuilt and if so, do it.
 # If 'make' returns an Error (something >0), then exit.
-if ( { make all } == 0 ) then
+if ( { make all -j 5 } == 0 ) then
   echo "Compilation failed, please check the errors."
   exit
 endif

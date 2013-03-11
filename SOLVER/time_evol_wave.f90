@@ -228,7 +228,7 @@ subroutine sf_time_loop_newmark
 
   if (anel_true) then
      allocate(memory_var(0:npol,0:npol,6,n_sls_attenuation,nel_solid))
-     memory_var = 1
+     memory_var = 0
   endif
 
   ! INITIAL CONDITIONS

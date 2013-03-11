@@ -2003,7 +2003,7 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename, varname)
   
    u1 = real(u2)
   
-   if (lpr) print *, 'computing vtk file ', trim(filename),' ...'
+   !if (lpr) print *, 'computing vtk file ', trim(filename),' ...'
 
    open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
         convert='big_endian')
@@ -2040,7 +2040,7 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename, varname)
    write(100) 'LOOKUP_TABLE default'//char(10) !color table?
    write(100) real(u1)
    close(100)
-   write(6,*)'...saved ',trim(filename)//'.vtk'
+   !write(6,*)'...saved ',trim(filename)//'.vtk'
 
 end subroutine write_VTK_bin_scal_pts
 !-----------------------------------------------------------------------------

@@ -480,7 +480,7 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
                         //'_'//appisnap)
         varname = 'memvar_'//lchar//'_'//nchar
 
-        if (lpr) print *, trim(filename)
+        !if (lpr) print *, trim(filename)
         !call write_VTK_bin_scal_pts(memvar(2,2,l,n,:), points_solid(2,2,:,:), nel_solid, &
         !                            filename, varname)
         call write_VTK_bin_scal_pts(&
@@ -604,7 +604,7 @@ subroutine dump_field_1d(f, filename, appisnap, n)
   f1len = (iend-ibeg+1)**2 * n
   allocate(f1(f1len))
 
-  f1 = pack(floc(ibeg:iend,ibeg:iend,1:n),.true.)
+  f1 = pack(floc(ibeg:iend,ibeg:iend,1:n), .true.)
   
   if (use_netcdf) then
       if (n==nel_solid) then
