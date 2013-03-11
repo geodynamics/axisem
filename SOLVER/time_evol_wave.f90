@@ -1117,22 +1117,13 @@ subroutine compute_strain(u, chi)
   !
   ! Compute the full, global strain tensor on-the-fly. Each of 6 (monopole: 4)
   ! components is stored separately for solid and fluid domains respectively.
-  ! For computational reasons, the E(13) = 1/2 (dsduz + dzdus) term is stored in
-  ! two separate files dsduz and dzdus. Note the prefactor 1/2 for postprocessing!
+  ! The dipole case is transfered to the (s,phi,z) system here.
   !
-  ! NOTES FOR THE DIPOLE: 
-  ! - The dipole case is transfered to the (s,phi,z) system here.
-  ! - In the E12 element, we only dump dsdup since u-/s is already dumped in E22.
-  !   When reading the strain tensor, one needs to therefore add the following:
-  !  E12(true) = 1/2 ( E12(dumped) + E22(dumped) )
-  !
-  ! UPDATE Jan 14/2009: Now dumping the entire strain trace and E12, 
-  ! i.e. no 1/2 necessary! Now dumping strain trace Ekk, E11-dkuk/3,E33-dkuk/3,
-  ! kE13,E23,E12 based on new gradient routine with in/out.
-  ! That way, we do not store any additional arrays but minimze the amount of 
-  ! computations necessary in the kernel calculation. Also this has the advantage
+  ! Dumping Ekk, E11, E22, E13, -E23, and -E12, this has the advantage
   ! that if only lambda/bulk sound speed are of interest, then only a 
-  ! scalar Ekk needs to be loaded.
+  ! scalar Ekk needs to be loaded. Be aware that diuj in the variable names does
+  ! NOT stand for partial derivatives, but rather the ij component of the
+  ! strain.
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
