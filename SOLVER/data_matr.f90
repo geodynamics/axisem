@@ -80,6 +80,11 @@ module data_matr
   real(4), allocatable             :: points_solid(:,:,:,:)
   real(kind=realkind), allocatable :: mu_r(:,:,:), kappa_r(:,:,:)
 
+  ! Anelastic precomputable matrices 
+  real(kind=realkind), allocatable :: Y(:,:,:)
+  real(kind=realkind), allocatable :: V_s_eta(:,:,:), V_s_xi(:,:,:)
+  real(kind=realkind), allocatable :: V_z_eta(:,:,:), V_z_xi(:,:,:)
+
 !=====================
 end module data_matr
 !=====================

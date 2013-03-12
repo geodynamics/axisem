@@ -1368,6 +1368,15 @@ double precision, allocatable :: non_diag_fact(:,:)
 
   end select
 
+! Allocate Global Anelastic Stiffness Arrays
+  if (anel_true) then
+     allocate(Y(0:npol,0:npol,nel_solid))
+     allocate(V_s_eta(0:npol,0:npol,nel_solid))
+     allocate(V_s_xi(0:npol,0:npol,nel_solid))
+     allocate(V_z_eta(0:npol,0:npol,nel_solid))
+     allocate(V_z_xi(0:npol,0:npol,nel_solid))
+  endif
+
 
 !-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
 ! NON DIAG FAC------------- --<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
@@ -1397,12 +1406,22 @@ double precision, allocatable :: non_diag_fact(:,:)
   do ielem=1,nel_solid
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-     alpha_wt_k(:,:) = zero; beta_wt_k(:,:)  = zero; gamma_wt_k(:,:) = zero
-     delta_wt_k(:,:) = zero; epsil_wt_k(:,:) = zero; zeta_wt_k(:,:)  = zero
-     Ms_z_eta_s_xi_wt_k(:,:) = zero; Ms_z_eta_s_eta_wt_k(:,:) = zero
-     Ms_z_xi_s_eta_wt_k(:,:) = zero; Ms_z_xi_s_xi_wt_k(:,:) = zero
-     M_s_xi_wt_k(:,:) = zero; M_z_xi_wt_k(:,:) = zero
-     M_z_eta_wt_k(:,:) = zero; M_s_eta_wt_k(:,:) = zero
+     alpha_wt_k(:,:) = zero
+     beta_wt_k(:,:)  = zero
+     gamma_wt_k(:,:) = zero
+     delta_wt_k(:,:) = zero
+     epsil_wt_k(:,:) = zero
+     zeta_wt_k(:,:)  = zero
+
+     Ms_z_eta_s_xi_wt_k(:,:) = zero
+     Ms_z_eta_s_eta_wt_k(:,:) = zero
+     Ms_z_xi_s_eta_wt_k(:,:) = zero
+     Ms_z_xi_s_xi_wt_k(:,:) = zero
+
+     M_s_xi_wt_k(:,:) = zero
+     M_z_xi_wt_k(:,:) = zero
+     M_z_eta_wt_k(:,:) = zero
+     M_s_eta_wt_k(:,:) = zero
 
      do inode = 1, 8
         call compute_coordinates_mesh(local_crd_nodes(inode,1),&
@@ -1451,6 +1470,25 @@ double precision, allocatable :: non_diag_fact(:,:)
               M_z_xi_wt_k(ipol,jpol)  = -dzdxi*wt(ipol)*wt(jpol)
               M_z_eta_wt_k(ipol,jpol) =  dzdeta*wt(ipol)*wt(jpol)
               M_s_eta_wt_k(ipol,jpol) = -dsdeta*wt(ipol)*wt(jpol)
+
+              if (anel_true) then
+                 Y(ipol,jpol,ielem) = wt(ipol) * wt(jpol) &
+                    * jacobian(eta(ipol), eta(jpol), local_crd_nodes, ielsolid(ielem))
+                 
+                 V_s_eta(ipol,jpol,ielem) &
+                    = mapping(eta(ipol), eta(jpol), local_crd_nodes,1,ielsolid(ielem)) &
+                        * M_s_eta_wt_k(ipol,jpol) 
+                 V_s_xi(ipol,jpol,ielem) &
+                    = mapping(eta(ipol), eta(jpol), local_crd_nodes,1,ielsolid(ielem)) &
+                        * M_s_xi_wt_k(ipol,jpol) 
+                 V_z_eta(ipol,jpol,ielem) &
+                    = mapping(eta(ipol), eta(jpol), local_crd_nodes,1,ielsolid(ielem)) &
+                        * M_z_eta_wt_k(ipol,jpol) 
+                 V_z_xi(ipol,jpol,ielem) &
+                    = mapping(eta(ipol), eta(jpol), local_crd_nodes,1,ielsolid(ielem)) &
+                        * M_z_xi_wt_k(ipol,jpol) 
+
+              endif
            enddo
         enddo
 
@@ -1500,6 +1538,7 @@ double precision, allocatable :: non_diag_fact(:,:)
                  eta(jpol),local_crd_nodes,ielsolid(ielem))&
                  *s_over_oneplusxi_axis(xi_k(ipol),eta(jpol), &
                  local_crd_nodes,ielsolid(ielem))*wt_axial_k(ipol)*wt(jpol) 
+              
 
               if (ipol>0) then
                  call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta, &
@@ -1512,11 +1551,40 @@ double precision, allocatable :: non_diag_fact(:,:)
                       *wt(jpol)/(one+xi_k(ipol))
                  M_s_eta_wt_k(ipol,jpol) = -dsdeta*wt_axial_k(ipol) &
                       *wt(jpol)/(one+xi_k(ipol))
+
+                 if (anel_true) then
+                    Y(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) / (1 + xi_k(ipol))&
+                       * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(ielem))
+                 
+                    V_s_eta(ipol,jpol,ielem) &
+                       = mapping(eta(ipol), eta(jpol), local_crd_nodes,1,ielsolid(ielem)) &
+                           * M_s_eta_wt_k(ipol,jpol) 
+                    V_s_xi(ipol,jpol,ielem) &
+                       = mapping(eta(ipol), eta(jpol), local_crd_nodes,1,ielsolid(ielem)) &
+                           * M_s_xi_wt_k(ipol,jpol) 
+                    V_z_eta(ipol,jpol,ielem) &
+                       = mapping(eta(ipol), eta(jpol), local_crd_nodes,1,ielsolid(ielem)) &
+                           * M_z_eta_wt_k(ipol,jpol) 
+                    V_z_xi(ipol,jpol,ielem) &
+                       = mapping(eta(ipol), eta(jpol), local_crd_nodes,1,ielsolid(ielem)) &
+                           * M_z_xi_wt_k(ipol,jpol) 
+                 endif
               else
                  M_s_xi_wt_k(ipol,jpol) = zero
                  M_z_xi_wt_k(ipol,jpol) = zero
                  M_z_eta_wt_k(ipol,jpol) = zero
                  M_s_eta_wt_k(ipol,jpol) = zero
+                 
+                 if (anel_true) then
+                    Y(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) &
+                       * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(ielem))
+
+                    V_s_eta(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi &
+                                                * (-dsdeta)
+                    V_s_xi(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * dsdxi
+                    V_z_eta(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * dzdeta
+                    V_z_xi(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * (-dzdxi)
+                 endif
               endif
            enddo
         enddo

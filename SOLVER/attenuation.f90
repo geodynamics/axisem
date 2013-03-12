@@ -101,6 +101,7 @@ subroutine time_step_memvars(memvar, disp)
      enddo
      ! save srcs for next iteration
      src_dev_tm1_glob(:,:,:,iel) = src_dev_t(:,:,:)
+     src_tr_tm1_glob(:,:,iel) = src_tr_t(:,:)
   enddo
   
 end subroutine
@@ -138,7 +139,7 @@ subroutine compute_strain(u, grad_u)
  
   call axisym_gradient_solid_add(u(:,:,:,3), grad_buff) ! 1:dsuz+dzus, 2:dzuz
 
-  grad_u(:,:,:,5) = grad_buff(:,:,:,1)  ! dsuz + dzus (incl faktor of 2 from voigt notation)
+  grad_u(:,:,:,5) = grad_buff(:,:,:,1)  ! dsuz + dzus (factor of 2 from voigt notation)
   grad_u(:,:,:,3) = grad_buff(:,:,:,2)  ! dzuz
  
  
