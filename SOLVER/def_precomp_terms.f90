@@ -1375,6 +1375,24 @@ double precision, allocatable :: non_diag_fact(:,:)
      allocate(V_s_xi(0:npol,0:npol,nel_solid))
      allocate(V_z_eta(0:npol,0:npol,nel_solid))
      allocate(V_z_xi(0:npol,0:npol,nel_solid))
+
+     allocate(Y0(0:npol,nel_solid))
+     allocate(V0_s_eta(0:npol,nel_solid))
+     allocate(V0_s_xi(0:npol,nel_solid))
+     allocate(V0_z_eta(0:npol,nel_solid))
+     allocate(V0_z_xi(0:npol,nel_solid))
+     
+     Y = 0
+     V_s_eta = 0
+     V_s_xi = 0
+     V_z_eta = 0
+     V_z_xi = 0
+
+     Y0 = 0
+     V0_s_eta = 0
+     V0_s_xi = 0
+     V0_z_eta = 0
+     V0_z_xi = 0
   endif
 
 
@@ -1576,14 +1594,19 @@ double precision, allocatable :: non_diag_fact(:,:)
                  M_s_eta_wt_k(ipol,jpol) = zero
                  
                  if (anel_true) then
-                    Y(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) &
+                    Y(ipol,jpol,ielem) = 0
+                    V_s_eta(ipol,jpol,ielem) = 0
+                    V_s_xi(ipol,jpol,ielem) = 0
+                    V_z_eta(ipol,jpol,ielem) = 0
+                    V_z_xi(ipol,jpol,ielem) = 0
+
+                    Y0(jpol,ielem) = wt_axial(ipol) * wt(jpol) &
                        * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(ielem))
 
-                    V_s_eta(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi &
-                                                * (-dsdeta)
-                    V_s_xi(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * dsdxi
-                    V_z_eta(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * dzdeta
-                    V_z_xi(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * (-dzdxi)
+                    V0_s_eta(jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * (-dsdeta)
+                    V0_s_xi(jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * dsdxi
+                    V0_z_eta(jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * dzdeta
+                    V0_z_xi(jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * (-dzdxi)
                  endif
               endif
            enddo

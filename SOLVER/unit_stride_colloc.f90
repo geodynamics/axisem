@@ -532,7 +532,7 @@ integer :: i
                                                                     
   do i = 1, n
     s1(i) =  a1(i) + a2(i)
-    s2(i) = b1(i) + b2(i) 
+    s2(i) =  b1(i) + b2(i) 
   end do                                         
 
 end subroutine sum2_2_1d

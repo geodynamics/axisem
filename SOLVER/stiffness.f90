@@ -2,50 +2,139 @@
 module stiffness
 !====================
 
-use global_parameters
-use data_matr
-use data_mesh, ONLY: axis_solid, axis_fluid, nsize, ani_true
-use data_spec
-use data_source
-
-use unrolled_loops
-use unit_stride_colloc
-
-implicit none
-
-public :: glob_stiffness_mono, glob_stiffness_di, glob_stiffness_quad
-public :: glob_fluid_stiffness
-private
+  use global_parameters
+  use data_matr
+  use data_mesh, ONLY: axis_solid, axis_fluid, nsize, ani_true
+  use data_spec
+  use data_source
+  
+  use unrolled_loops
+  use unit_stride_colloc
+  
+  implicit none
+  
+  public :: glob_stiffness_mono, glob_stiffness_di, glob_stiffness_quad
+  public :: glob_anel_stiffness_mono
+  public :: glob_fluid_stiffness
+  private
 
 contains
 
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+!-----------------------------------------------------------------------------
+subroutine glob_anel_stiffness_mono(glob_stiffness, R)
+
+  use attenuation, ONLY: n_sls_attenuation
+  include "mesh_params.h"
+  
+  ! I/O global arrays
+  real(kind=realkind), intent(inout)    :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
+  real(kind=realkind), intent(in)       :: R(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
+  
+  real(kind=realkind), dimension(0:npol,0:npol) :: r1, r2, r3, r5
+
+  real(kind=realkind), dimension(0:npol,0:npol) :: yl
+  real(kind=realkind), dimension(0:npol,0:npol) :: v_s_etal, v_s_xil
+  real(kind=realkind), dimension(0:npol,0:npol) :: v_z_etal, v_z_xil
+
+  real(kind=realkind), dimension(0:npol) :: y0l
+  real(kind=realkind), dimension(0:npol) :: v0_s_etal, v0_s_xil
+  real(kind=realkind), dimension(0:npol) :: v0_z_etal, v0_z_xil
+  
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1s, S2s
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1z, S2z
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4
+  
+  integer :: ielem, j
+
+  do ielem = 1, nel_solid
+
+     loc_stiffness_s = zero
+     loc_stiffness_z = zero
+
+     yl(:,:) = Y(:,:,ielem)
+     v_s_etal(:,:) = V_s_eta(:,:,ielem)
+     v_s_xil(:,:)  = V_s_xi(:,:,ielem)
+     v_z_etal(:,:) = V_z_eta(:,:,ielem)
+     v_z_xil(:,:)  = V_z_xi(:,:,ielem)
+
+     do j=1, n_sls_attenuation
+        r1(:,:) = R(:,:,1,j,ielem)
+        r2(:,:) = R(:,:,2,j,ielem)
+        r3(:,:) = R(:,:,3,j,ielem)
+        r5(:,:) = R(:,:,4,j,ielem)
+
+        !S1s = v_z_etal * r1 + v_s_etal * r5
+        call collocate2_sum_1d(v_z_etal, r1, v_s_etal, r5, S1s, nsize)
+        !S2s = v_z_xil  * r1 + v_s_xil  * r5
+        call collocate2_sum_1d(v_z_xil, r1, v_s_xil, r5, S2s, nsize)
+        
+        !S1z = v_z_etal * r5 + v_s_etal * r3
+        call collocate2_sum_1d(v_z_etal, r5, v_s_etal, r3, S1z, nsize)
+        !S2z = v_z_xil  * r5 + v_s_xil  * r3
+        call collocate2_sum_1d(v_z_xil, r5, v_s_xil, r3, S2z, nsize)
+
+        call mxm(G2,  S1s, X1)
+        call mxm(S2s, G2T, X2)
+        call mxm(G2,  S1z, X3)
+        call mxm(S2z, G2T, X4)
+
+        !loc_stiffness_s = loc_stiffness_s + X1 + X2 + yl * r2
+        !loc_stiffness_z = loc_stiffness_s + X3 + X4
+
+        call sum2_3_1d(X3, X4, loc_stiffness_z, X1, X2, yl * r2, loc_stiffness_s, nsize)
+
+     enddo
+
+     if (axis_solid(ielem)) then
+        y0l(:) = Y0(:,ielem)
+        v0_s_etal(:) = V0_s_eta(:,ielem)
+        v0_s_xil(:)  = V0_s_xi(:,ielem)
+        v0_z_etal(:) = V0_z_eta(:,ielem)
+        v0_z_xil(:)  = V0_z_xi(:,ielem)
+        ! extra axis terms go here
+     endif
+     
+
+     ! subtracting (!) from the global stiffness
+     glob_stiffness(0:npol,0:npol,ielem,1) = &
+            glob_stiffness(0:npol,0:npol,ielem,1) - loc_stiffness_s
+     glob_stiffness(0:npol,0:npol,ielem,3) = &
+            glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
+
+  enddo
+
+end subroutine glob_anel_stiffness_mono
+!=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_mono(glob_stiffness,u)
 
-use global_parameters
-include "mesh_params.h"
-!use data_monopole
-
-! I/O global arrays
-real(kind=realkind), intent(in)  :: u(0:npol,0:npol,nel_solid,1:3)
-real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
-
-! local variables for all elements
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
-real(kind=realkind), dimension(0:npol,0:npol) :: us, uz
-real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l
-real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_2l, m_3l, m_4l
-real(kind=realkind), dimension(0:npol,0:npol) :: m11sl, m21sl, m41sl, m12sl, m22sl
-real(kind=realkind), dimension(0:npol,0:npol) :: m32sl, m42sl, m11zl, m21zl, m41zl
-
-! local variables for axial elements
-real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l
-real(kind=realkind), dimension(0:npol) :: m0s_xil
-
-integer :: ielem
+  use global_parameters
+  include "mesh_params.h"
+  
+  ! I/O global arrays
+  real(kind=realkind), intent(in)  :: u(0:npol,0:npol,nel_solid,1:3)
+  real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
+  real(kind=realkind), dimension(0:npol,0:npol) :: us, uz
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_2l, m_3l, m_4l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m11sl, m21sl, m41sl, m12sl, m22sl
+  real(kind=realkind), dimension(0:npol,0:npol) :: m32sl, m42sl, m11zl, m21zl, m41zl
+  
+  ! local variables for axial elements
+  real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l
+  real(kind=realkind), dimension(0:npol) :: m0s_xil
+  
+  integer :: ielem
 
   glob_stiffness = zero
   
@@ -108,42 +197,44 @@ end subroutine glob_stiffness_mono
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_di(glob_stiffness,u)
 
-use global_parameters
-include "mesh_params.h"
-!use data_dipole
+  use global_parameters
+  include "mesh_params.h"
+  !use data_dipole
+  
+  ! I/O for global arrays
+  real(kind=realkind),intent(in)  :: u(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind),intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,3)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_1
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_2
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_3
+  real(kind=realkind), dimension(0:npol,0:npol) :: u1,u2,u3
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l, m_w2l, m_w3l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_6l, m_2l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_5l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_4l, m_8l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_3l, m_7l
+  
+  real(kind=realkind), dimension(0:npol,0:npol) :: m11sl, m21sl, m41sl
+  real(kind=realkind), dimension(0:npol,0:npol) :: m12sl, m22sl, m42sl
+  real(kind=realkind), dimension(0:npol,0:npol) :: m13sl, m23sl, m33sl, m43sl
+  
+  real(kind=realkind), dimension(0:npol,0:npol) :: m11zl, m21zl, m41zl
+  
+  ! local variables for axial elements
+  real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l
+  real(kind=realkind), dimension(0:npol) :: m0_w6l, m0_w7l, m0_w8l, m0_w9l, m0_w10l
+  
+  integer :: ielem
 
-! I/O for global arrays
-real(kind=realkind),intent(in)  :: u(0:npol,0:npol,nel_solid,3)
-real(kind=realkind),intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,3)
-
-! local variables for all elements
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_1
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_2
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_3
-real(kind=realkind), dimension(0:npol,0:npol) :: u1,u2,u3
-real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l, m_w2l, m_w3l
-real(kind=realkind), dimension(0:npol,0:npol) :: m_6l, m_2l
-real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_5l
-real(kind=realkind), dimension(0:npol,0:npol) :: m_4l, m_8l
-real(kind=realkind), dimension(0:npol,0:npol) :: m_3l, m_7l
-
-real(kind=realkind), dimension(0:npol,0:npol) :: m11sl, m21sl, m41sl
-real(kind=realkind), dimension(0:npol,0:npol) :: m12sl, m22sl, m42sl
-real(kind=realkind), dimension(0:npol,0:npol) :: m13sl, m23sl, m33sl, m43sl
-
-real(kind=realkind), dimension(0:npol,0:npol) :: m11zl, m21zl, m41zl
-
-! local variables for axial elements
-real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l
-real(kind=realkind), dimension(0:npol) :: m0_w6l, m0_w7l, m0_w8l, m0_w9l, m0_w10l
-
-integer :: ielem
-
-  glob_stiffness=zero
+  glob_stiffness = zero
 
   do ielem = 1, nel_solid
 
-     loc_stiffness_1=zero; loc_stiffness_2=zero; loc_stiffness_3=zero;
+     loc_stiffness_1 = zero
+     loc_stiffness_2 = zero
+     loc_stiffness_3 = zero
      u1(0:npol,0:npol) = u(0:npol,0:npol,ielem,1)
      u2(0:npol,0:npol) = u(0:npol,0:npol,ielem,2)
      u3(0:npol,0:npol) = u(0:npol,0:npol,ielem,3)
@@ -217,42 +308,42 @@ end subroutine glob_stiffness_di
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_quad(glob_stiffness,u)
 
-use global_parameters
-include "mesh_params.h"
-!use data_quadrupole
+  use global_parameters
+  include "mesh_params.h"
+  !use data_quadrupole
+  
+  ! I/O for global arrays
+  real(kind=realkind), intent(in)  :: u(0:npol,0:npol,nel_solid,1:3)
+  real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_phi
+  real(kind=realkind), dimension(0:npol,0:npol) :: us,uz,uphi
+  
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_2l, m_3l, m_4l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_5l, m_6l, m_7l, m_8l
+  
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l, m_w2l, m_w3l, m_w4l, m_w5l
+  
+  real(kind=realkind), dimension(0:npol,0:npol) :: m11sl,m21sl,m41sl,m12sl,m22sl
+  real(kind=realkind), dimension(0:npol,0:npol) :: m32sl,m42sl,m11zl,m21zl,m41zl
+  real(kind=realkind), dimension(0:npol,0:npol) :: m1phil,m2phil,m4phil
+  
+  ! local variables for axial elements
+  real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l
+  real(kind=realkind), dimension(0:npol) :: m0_w4l, m0_w5l, m0_w6l
+  
+  integer :: ielem
 
-! I/O for global arrays
-real(kind=realkind), intent(in)  :: u(0:npol,0:npol,nel_solid,1:3)
-real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
-
-! local variables for all elements
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_phi
-real(kind=realkind), dimension(0:npol,0:npol) :: us,uz,uphi
-
-real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_2l, m_3l, m_4l
-real(kind=realkind), dimension(0:npol,0:npol) :: m_5l, m_6l, m_7l, m_8l
-
-real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l, m_w2l, m_w3l, m_w4l, m_w5l
-
-real(kind=realkind), dimension(0:npol,0:npol) :: m11sl,m21sl,m41sl,m12sl,m22sl
-real(kind=realkind), dimension(0:npol,0:npol) :: m32sl,m42sl,m11zl,m21zl,m41zl
-real(kind=realkind), dimension(0:npol,0:npol) :: m1phil,m2phil,m4phil
-
-! local variables for axial elements
-real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l
-real(kind=realkind), dimension(0:npol) :: m0_w4l, m0_w5l, m0_w6l
-
-integer :: ielem
-
-  glob_stiffness=zero
+  glob_stiffness = zero
   
   do ielem = 1, nel_solid
 
-     loc_stiffness_s=zero
-     loc_stiffness_phi=zero
-     loc_stiffness_z=zero
+     loc_stiffness_s = zero
+     loc_stiffness_phi = zero
+     loc_stiffness_z = zero
      us(0:npol,0:npol)   = u(0:npol,0:npol,ielem,1)
      uphi(0:npol,0:npol) = u(0:npol,0:npol,ielem,2)
      uz(0:npol,0:npol)   = u(0:npol,0:npol,ielem,3)
@@ -325,30 +416,30 @@ end subroutine glob_stiffness_quad
 !-----------------------------------------------------------------------------
 subroutine glob_fluid_stiffness(glob_stiffness_fl,chi)
 
-include "mesh_params.h"
+  include "mesh_params.h"
+  
+  ! I/O for global arrays
+  real(kind=realkind), intent(in)  :: chi(0:npol,0:npol,nel_fluid)
+  real(kind=realkind), intent(out) :: glob_stiffness_fl(0:npol,0:npol,nel_fluid)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:npol,0:npol) :: chi_l,loc_stiffness
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_w_fl_l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m1chil,m2chil,m4chil
+  
+  ! local variables for axial elements
+  real(kind=realkind), dimension(0:npol) :: m0_w_fl_l
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol) :: V1
+  
+  integer :: ielem
 
-! I/O for global arrays
-real(kind=realkind), intent(in)  :: chi(0:npol,0:npol,nel_fluid)
-real(kind=realkind), intent(out) :: glob_stiffness_fl(0:npol,0:npol,nel_fluid)
-
-! local variables for all elements
-real(kind=realkind), dimension(0:npol,0:npol) :: chi_l,loc_stiffness
-real(kind=realkind), dimension(0:npol,0:npol) :: m_w_fl_l
-real(kind=realkind), dimension(0:npol,0:npol) :: m1chil,m2chil,m4chil
-
-! local variables for axial elements
-real(kind=realkind), dimension(0:npol) :: m0_w_fl_l
-
-! work arrays
-real(kind=realkind), dimension(0:npol) :: V1
-
-integer :: ielem
-
-  glob_stiffness_fl=zero
+  glob_stiffness_fl = zero
   
   do ielem = 1, nel_fluid
 
-     loc_stiffness=zero
+     loc_stiffness = zero
      chi_l(0:npol,0:npol)=chi(0:npol,0:npol,ielem)
      m1chil(0:npol,0:npol)=M1chi_fl(:,:,ielem)
      m2chil(0:npol,0:npol)=M2chi_fl(:,:,ielem)
@@ -389,72 +480,78 @@ subroutine stiffness_mono_non_ax(us,uz,m_w1,m_1,m_2,m_3,m_4, &
                                  m11s,m21s,m41s,m12s,m22s, &
                                  m32s,m42s,m11z,m21z,m41z, &
                                  loc_stiffness_s,loc_stiffness_z)
-include "mesh_params.h"
+  include "mesh_params.h"
+  
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! displacement (s and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz
+  
+  ! precomputed matrices containing weights, mapping, elastic parameters
+  ! precomputed matrix for W_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1 
+  
+  ! precomputed matrices for W_s^d, D_x^y
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_1, m_2, m_3, m_4
+  
+  ! precomputed matrices for D_xy^xy
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11s,m21s,m41s 
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m12s,m22s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m32s,m42s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11z,m21z,m41z
+  
+  ! result: local (elemental) stiffness term (s and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_z
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s1  
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4      ! MxM arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1s, S2s, S1z, S2z  ! Sum arrays
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! displacement (s and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz
+  loc_stiffness_s = zero
+  loc_stiffness_s1 = zero
+  loc_stiffness_z = zero
+  S1s = zero
+  S2s = zero
+  S1z = zero
+  S2z = zero
+  X1 = zero
+  X2 = zero
+  X3 = zero
+  X4 = zero
 
-! precomputed matrices containing weights, mapping, elastic parameters
-! precomputed matrix for W_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1 
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! First MxM
+  call mxm(G2T, us, X1)
+  call mxm(G2T, uz, X2)
+  call mxm(us, G2, X3)
+  call mxm(uz, G2, X4)
 
-! precomputed matrices for W_s^d, D_x^y
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_1, m_2, m_3, m_4
+  ! Collocations and sums of W_x^d terms
+  call collocate4_sum_1d(m_4, X4, m_2, X3, m_1, X1, m_3, X2, S1s, nsize)
 
-! precomputed matrices for D_xy^xy
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11s,m21s,m41s 
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m12s,m22s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m32s,m42s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11z,m21z,m41z
+  !++++++++++++++++++MONOPOLE SOURCE+++++++++++++++++++++++++++++++++++++++++
+  ! Collocation of W_s term and sum to s-comp (specific to monopole case)
+  call collocate_sum_1d(us, m_w1, S1s, loc_stiffness_s1, nsize)
 
-! result: local (elemental) stiffness term (s and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_z
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! Collocations and sums of D terms
 
-! work arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s1  
-real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2,X3,X4      ! MxM arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1z,S2z  ! Sum arrays
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  call collocate5_sum_1d(m11s, X3, m21s, X1, m12s, X4, m22s, X2, m_1, us, S1s, nsize)
+  call collocate5_sum_1d(m11s, X1, m41s, X3, m32s, X2, m42s, X4, m_2, us, S2s, nsize)
+  call collocate5_sum_1d(m11z, X4, m21z, X2, m32s, X3, m22s, X1, m_3, us, S1z, nsize)
+  call collocate5_sum_1d(m11z, X2, m41z, X4, m12s, X1, m42s, X3, m_4, us, S2z, nsize)
 
-  loc_stiffness_s=zero
-  loc_stiffness_s1=zero
-  loc_stiffness_z=zero
-  S1s=zero;S2s=zero;S1z=zero;S2z=zero
-  X1=zero;X2=zero;X3=zero;X4=zero
+  !Second MxM
+  call mxm(G2, S1s, X1)
+  call mxm(S2s, G2T, X2)
+  call mxm(G2, S1z, X3)
+  call mxm(S2z, G2T, X4)
 
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! First MxM
-  call mxm(G2T,us,X1)
-  call mxm(G2T,uz,X2)
-  call mxm(us,G2,X3)
-  call mxm(uz,G2,X4)
-
-! Collocations and sums of W_x^d terms
-  call collocate4_sum_1d(m_4,X4,m_2,X3,m_1,X1,m_3,X2,S1s,nsize)
-
-!++++++++++++++++++MONOPOLE SOURCE+++++++++++++++++++++++++++++++++++++++++
-! Collocation of W_s term and sum to s-comp (specific to monopole case)
-  call collocate_sum_1d(us,m_w1,S1s,loc_stiffness_s1,nsize)
-
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! Collocations and sums of D terms
-
-  call collocate5_sum_1d(m11s,X3,m21s,X1,m12s,X4,m22s,X2,m_1,us,S1s,nsize)
-  call collocate5_sum_1d(m11s,X1,m41s,X3,m32s,X2,m42s,X4,m_2,us,S2s,nsize)
-  call collocate5_sum_1d(m11z,X4,m21z,X2,m32s,X3,m22s,X1,m_3,us,S1z,nsize)
-  call collocate5_sum_1d(m11z,X2,m41z,X4,m12s,X1,m42s,X3,m_4,us,S2z,nsize)
-
-!Second MxM
-  call mxm(G2,S1s,X1)
-  call mxm(S2s,G2T,X2)
-  call mxm(G2,S1z,X3)
-  call mxm(S2z,G2T,X4)
-
-! Final Sum
-  call sum2_3_1d(X3,X4,loc_stiffness_z,loc_stiffness_s1,X1,X2, &
-                 loc_stiffness_s,nsize)
+  ! Final Sum
+  call sum2_3_1d(X3, X4, loc_stiffness_z, loc_stiffness_s1, X1, X2, &
+                 loc_stiffness_s, nsize)
 
 end subroutine stiffness_mono_non_ax
 !=============================================================================
@@ -466,37 +563,37 @@ subroutine stiffness_mono_ax(us,uz,m_w1,m_1,m_2,m_3,m_4, &
                              m32s,m42s,m11z,m21z,m41z,&
                              loc_stiffness_s,loc_stiffness_z)
 
-include "mesh_params.h"
-
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! displacement (s and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz
-
-! precomputed matrices containing weights, mapping, elastic parameters
-! precomputed matrices for W_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1 
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1, m0_w2
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_4
-
-! precomputed matrices for W_s^d, D_x^y
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_1, m_2, m_3, m_4   
-
-! precomputed matrices for D_xy^xy
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11s,m21s,m41s 
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m12s,m22s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m32s,m42s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11z,m21z,m41z
-
-! result: local (elemental) stiffness term (s and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_z
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s1
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z1
-
-! work arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2,X3,X4     ! MxM arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1z,S2z ! Sum arrays
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  include "mesh_params.h"
+  
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! displacement (s and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz
+  
+  ! precomputed matrices containing weights, mapping, elastic parameters
+  ! precomputed matrices for W_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1 
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1, m0_w2
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_4
+  
+  ! precomputed matrices for W_s^d, D_x^y
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_1, m_2, m_3, m_4   
+  
+  ! precomputed matrices for D_xy^xy
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11s,m21s,m41s 
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m12s,m22s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m32s,m42s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11z,m21z,m41z
+  
+  ! result: local (elemental) stiffness term (s and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_z
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s1
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z1
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2,X3,X4     ! MxM arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1z,S2z ! Sum arrays
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   loc_stiffness_s = zero
   loc_stiffness_z = zero
@@ -511,39 +608,39 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1z,S2z ! Sum arrays
   S1z = zero
   S2z = zero
  
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! First MxM
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! First MxM
   call mxm(G1T,us,X1)
   call mxm(G1T,uz,X2)
   call mxm(us,G2,X3)
   call mxm(uz,G2,X4)
 
-! Collocations and sums of W_x^d terms
+  ! Collocations and sums of W_x^d terms
   call collocate4_sum_1d(m_4,X4,m_2,X3,m_1,X1,m_3,X2,S1s,nsize)
 
-!++++++++++++++++++MONOPOLE SOURCE+++++++++++++++++++++++++++++++++++++++++
-! Collocation of W_s term and sum to s-comp (specific to monopole case)
+  !++++++++++++++++++MONOPOLE SOURCE+++++++++++++++++++++++++++++++++++++++++
+  ! Collocation of W_s term and sum to s-comp (specific to monopole case)
   call collocate_sum_1d(us,m_w1,S1s,loc_stiffness_s,nsize)
 
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! Collocations and sums of D terms
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! Collocations and sums of D terms
   call collocate5_sum_1d(m11s,X3,m21s,X1,m12s,X4,m22s,X2,m_1,us,S1s,nsize)
   call collocate5_sum_1d(m11s,X1,m41s,X3,m32s,X2,m42s,X4,m_2,us,S2s,nsize)
   call collocate5_sum_1d(m11z,X4,m21z,X2,m32s,X3,m22s,X1,m_3,us,S1z,nsize)
   call collocate5_sum_1d(m11z,X2,m41z,X4,m12s,X1,m42s,X3,m_4,us,S2z,nsize)
 
-!Second MxM
+  !Second MxM
   call mxm(G1,S1s,X1)
   call mxm(S2s,G2T,X2)
   call mxm(G1,S1z,X3)
   call mxm(S2z,G2T,X4)
 
-! Sum
+  ! Sum
   call sum2_3_1d(X3,X4,loc_stiffness_z1,loc_stiffness_s, &
                  X1,X2,loc_stiffness_s1,nsize)
 
-!++++++++++++++++++MONOPOLE SOURCE+++++++++++++++++++++++++++++++++++++++++
-! additional terms for the axial elements
+  !++++++++++++++++++MONOPOLE SOURCE+++++++++++++++++++++++++++++++++++++++++
+  ! additional terms for the axial elements
   if (ani_true) then
      call additional_mono_ax_ani(m0_w1, m0_w2, m0_4,us,uz,X1,X2)
   else
@@ -551,7 +648,7 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1z,S2z ! Sum arrays
   endif
                           
  
-! Final Sum::::::::::::::::::::::::::::::::::::::::
+  ! Final Sum::::::::::::::::::::::::::::::::::::::::
   call sum2_2_1d(X1,loc_stiffness_s1,loc_stiffness_s,X2, &
                  loc_stiffness_z1,loc_stiffness_z,nsize)
 
@@ -561,34 +658,34 @@ end subroutine stiffness_mono_ax
 !-----------------------------------------------------------------------------
 subroutine additional_mono_ax(m0_w,m0s_xi,us,uz,S1s,S1z)
                        
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! I/O
-include "mesh_params.h"
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! I/O
+  include "mesh_params.h"
   real(kind=realkind), dimension(0:npol), intent(in) :: m0_w
   real(kind=realkind), dimension(0:npol), intent(in) :: m0s_xi
   real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz
   real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1s,S1z
 
-! work arrays
+  ! work arrays
   real(kind=realkind), dimension(0:npol) :: V1,V2
   real(kind=realkind), dimension(0:npol) :: uz0
 
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   V1=zero;V2=zero;S1s=zero;S1z=zero
   uz0 = uz(0,:)
 
-! VxM
+  ! VxM
   call vxm(G0,us,V1)
   call vxm(uz0,G2,V2)
 
-! Collocations for s-component
+  ! Collocations for s-component
   call collocate2_sum_tensor_1d(m0_w,V1,m0s_xi,V2,G0,S1s,npol)
 
-! Collocation for z-component 
+  ! Collocation for z-component 
   call collocate0_1d(m0s_xi,V1,V2,npol)
 
-! Final VxM D_z^z for z-component
+  ! Final VxM D_z^z for z-component
   call vxm(V2,G2T,V1)
   S1z(0,:)=V1
 
@@ -598,19 +695,19 @@ end subroutine additional_mono_ax
 !-----------------------------------------------------------------------------
 subroutine additional_mono_ax_ani(m0_w1, m0_w2, m0_4, us, uz, S1s, S1z)
                        
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! I/O
-include "mesh_params.h"
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! I/O
+  include "mesh_params.h"
   real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1, m0_w2
   real(kind=realkind), dimension(0:npol), intent(in) :: m0_4
   real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us, uz
   real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1s, S1z
 
-! work arrays
+  ! work arrays
   real(kind=realkind), dimension(0:npol) :: V1, V2, V3
   real(kind=realkind), dimension(0:npol) :: uz0
 
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   V1 = zero
   V2 = zero
@@ -619,19 +716,19 @@ include "mesh_params.h"
   S1z = zero
   uz0 = uz(0,:)
 
-! VxM
+  ! VxM
   call vxm(G0,us,V1)
   call vxm(uz0,G2,V2)
   call vxm(G0,uz,V3)
 
-! Collocations for s-component
+  ! Collocations for s-component
   call collocate3_sum_tensor_1d(m0_w1, V1, m0_4, V2, m0_w2, V3, G0, S1s, npol)
 
-! Collocation for z-component 
+  ! Collocation for z-component 
   call collocate_tensor_1d(m0_w2, V1, G0, S1z, npol)
   call collocate0_1d(m0_4, V1, V2, npol)
 
-! Final VxM D_z^z for z-component
+  ! Final VxM D_z^z for z-component
   call vxm(V2,G2T,V1)
 
   S1z(0,:) = S1z(0,:) + V1
@@ -649,40 +746,40 @@ subroutine stiffness_di_non_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l
         m_4l, m_8l, m_3l, m_7l, m11sl, m21sl, m41sl, m12sl, m22sl, m42sl, m13sl, &
         m23sl, m33sl, m43sl, m11zl, m21zl, m41zl, loc_stiffness_1, &
         loc_stiffness_2, loc_stiffness_3)
-include "mesh_params.h"
-
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! displacement (+, - and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: u1, u2, u3
-
-! precomputed matrices containing weights, mapping, elastic parameters
-! precomputed matrices for W_x
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1l, m_w2l, m_w3l
-
-! precomputed matrices for W_x^d, D_x^y
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_2l, m_6l
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_1l, m_5l
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_4l, m_8l
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_3l, m_7l
-
-! precomputed matrices for D_xy^xy: + and - components
-real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m11sl, m21sl, m41sl
-real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m12sl, m22sl, m42sl
-real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m13sl, m23sl, m33sl, m43sl
-
-! precomputed matrices for D_xy^xy: z component
-real(kind=realkind), dimension(0:npol,0:npol) :: m11zl, m21zl, m41zl
-
-! result: local (elemental) stiffness term (+, - and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_1
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_2
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_3
-
-! work arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s2, loc_stiffness_s3
-real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4, X5, X6, X7, X8 ! MxM 
-real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! Sum
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  include "mesh_params.h"
+  
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! displacement (+, - and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: u1, u2, u3
+  
+  ! precomputed matrices containing weights, mapping, elastic parameters
+  ! precomputed matrices for W_x
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1l, m_w2l, m_w3l
+  
+  ! precomputed matrices for W_x^d, D_x^y
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_2l, m_6l
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_1l, m_5l
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_4l, m_8l
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_3l, m_7l
+  
+  ! precomputed matrices for D_xy^xy: + and - components
+  real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m11sl, m21sl, m41sl
+  real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m12sl, m22sl, m42sl
+  real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m13sl, m23sl, m33sl, m43sl
+  
+  ! precomputed matrices for D_xy^xy: z component
+  real(kind=realkind), dimension(0:npol,0:npol) :: m11zl, m21zl, m41zl
+  
+  ! result: local (elemental) stiffness term (+, - and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_1
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_2
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_3
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s2, loc_stiffness_s3
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4, X5, X6, X7, X8 ! MxM 
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! Sum
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   loc_stiffness_1 = zero
   loc_stiffness_2 = zero
@@ -704,7 +801,7 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! 
   X7 = zero
   X8 = zero
 
-! First MxM
+  ! First MxM
   call mxm(G2T, u1, X1)
   call mxm(G2T, u2, X2)
   call mxm(G2T, u3, X3)
@@ -712,21 +809,21 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! 
   call mxm(u2, G2, X5)
   call mxm(u3, G2, X6)
 
-! Sum for the z-component
+  ! Sum for the z-component
   call sum2_2_1d(X1, X2, X7, X4, X5, X8, nsize)
 
-! Collocations and sums of W_x and W_x^d terms
+  ! Collocations and sums of W_x and W_x^d terms
 
-! - component
+  ! - component
   call collocate8_sum_1d(m_8l, X6, m_7l, X3, m_1l, X1, &
                          m_5l, X2, m_2l, X4, m_6l, X5, &
                          m_w1l, u2, m_w2l, u3, loc_stiffness_s2, nsize)
 
-! z component
+  ! z component
   call collocate6z_sum_1d(m_4l, X4, m_4l, X5, m_3l, X1, &
                           m_3l, X2, m_w2l, u2, m_w3l, u3, loc_stiffness_s3, nsize)
 
-! Collocations and sums of D terms
+  ! Collocations and sums of D terms
   call collocate28s_sum_1d(m11sl, m21sl, m41sl, m12sl, m22sl, m42sl, &
                           m13sl, m23sl, m33sl, m43sl,&
                           X1, X2, X3, X4, X5, X6, u2, u3, &
@@ -739,14 +836,14 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! 
   call collocate5_sum_1d(m13sl, X7, m43sl, X8, m11zl, X3, m41zl, X6, &
                          m_8l, u2, S2z, nsize)
 
- X1 = zero
- X2 = zero
- X3 = zero
- X4 = zero
- X5 = zero
- X6 = zero
+  X1 = zero
+  X2 = zero
+  X3 = zero
+  X4 = zero
+  X5 = zero
+  X6 = zero
 
-!Second MxM
+  !Second MxM
   call mxm(G2, S1p, X1)
   call mxm(S2p, G2T, X2)
   call mxm(G2, S1m, X3)
@@ -768,44 +865,46 @@ subroutine stiffness_di_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l, m_
         m0_w5l, m0_w6l, m0_w7l, m0_w8l, m0_w9l, m0_w10l, loc_stiffness_1, &
         loc_stiffness_2, loc_stiffness_3)
 
-include "mesh_params.h"
-
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! displacement (+, - and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: u1, u2, u3
-
-! precomputed matrices containing weights, mapping, elastic parameters
-! precomputed matrices for W_x
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1l, m_w2l, m_w3l
-
-! precomputed matrices for W_x^d, D_x^y
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_2l, m_6l
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_1l, m_5l
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_4l, m_8l
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_3l, m_7l
-
-! precomputed matrices for D_xy^xy: + and - components
-real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m11sl, m21sl, m41sl
-real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m12sl, m22sl, m42sl
-real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m13sl, m23sl, m33sl, m43sl
-
-! precomputed matrices for D_xy^xy: z component
-real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m11zl, m21zl, m41zl
-
-! result: local (elemental) stiffness term (+, - and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_1
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_2
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_3
-
-! local variables for axial elements
-real(kind=realkind), dimension(0:npol),intent(in) :: m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l
-real(kind=realkind), dimension(0:npol),intent(in) :: m0_w6l, m0_w7l, m0_w8l, m0_w9l, m0_w10l
-
-! work arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s2, loc_stiffness_s3 
-real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4, X5, X6, X7, X8 ! MxM 
-real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! Sum
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  include "mesh_params.h"
+  
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! displacement (+, - and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: u1, u2, u3
+  
+  ! precomputed matrices containing weights, mapping, elastic parameters
+  ! precomputed matrices for W_x
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1l, m_w2l, m_w3l
+  
+  ! precomputed matrices for W_x^d, D_x^y
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_2l, m_6l
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_1l, m_5l
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_4l, m_8l
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m_3l, m_7l
+  
+  ! precomputed matrices for D_xy^xy: + and - components
+  real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m11sl, m21sl, m41sl
+  real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m12sl, m22sl, m42sl
+  real(kind=realkind),dimension(0:npol,0:npol),intent(in):: m13sl, m23sl, m33sl, m43sl
+  
+  ! precomputed matrices for D_xy^xy: z component
+  real(kind=realkind), dimension(0:npol,0:npol),intent(in) :: m11zl, m21zl, m41zl
+  
+  ! result: local (elemental) stiffness term (+, - and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_1
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_2
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_3
+  
+  ! local variables for axial elements
+  real(kind=realkind), dimension(0:npol),intent(in) :: m0_w1l, m0_w2l, m0_w3l
+  real(kind=realkind), dimension(0:npol),intent(in) :: m0_w4l, m0_w5l
+  real(kind=realkind), dimension(0:npol),intent(in) :: m0_w6l, m0_w7l, m0_w8l
+  real(kind=realkind), dimension(0:npol),intent(in) :: m0_w9l, m0_w10l
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s2, loc_stiffness_s3 
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4, X5, X6, X7, X8 ! MxM 
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! Sum
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   loc_stiffness_1 = zero
   loc_stiffness_2 = zero
@@ -827,7 +926,7 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! 
   X7 = zero
   X8 = zero
 
-! First MxM
+  ! First MxM
   call mxm(G1T, u1, X1)
   call mxm(G1T, u2, X2)
   call mxm(G1T, u3, X3)
@@ -835,40 +934,40 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! 
   call mxm(u2, G2, X5)
   call mxm(u3, G2, X6)
 
-! Sum for the z-component
+  ! Sum for the z-component
   call sum2_2_1d(X1, X2, X7, X4, X5, X8, nsize)
 
-! Collocations and sums of W_x and W_x^d terms
-! - component
+  ! Collocations and sums of W_x and W_x^d terms
+  ! - component
   call collocate8_sum_1d(m_8l, X6, m_7l, X3, m_1l, X1, &
                          m_5l, X2, m_2l, X4, m_6l, X5, &
                          m_w1l, u2, m_w2l, u3, loc_stiffness_s2, nsize)
-! z component
+  ! z component
   call collocate6z_sum_1d(m_4l, X4, m_4l, X5, m_3l, X1, &
                           m_3l, X2, m_w2l, u2, m_w3l, u3, loc_stiffness_s3, nsize)
 
-! Collocations and sums of D terms
-! + and - component
+  ! Collocations and sums of D terms
+  ! + and - component
   call collocate28s_sum_1d(m11sl, m21sl, m41sl, m12sl, m22sl, m42sl, &
                           m13sl, m23sl, m33sl, m43sl,&
                           X1, X2, X3, X4, X5, X6, U2, U3, &
                           m_1l, m_3l, m_5l, &
                           m_2l, m_4l, m_6l,&
                           S1p, S2p, S1m, S2m, nsize)
-! z component
+  ! z component
   call collocate5_sum_1d(m33sl, X8, m23sl, X7, m11zl, X6, m21zl, X3, &
                          m_7l, u2, S1z, nsize)
   call collocate5_sum_1d(m13sl, X7, m43sl, X8, m11zl, X3, m41zl, X6, &
                          m_8l, u2, S2z, nsize)
 
-X1 = zero
-X2 = zero
-X3 = zero
-X4 = zero
-X5 = zero
-X6 = zero
+  X1 = zero
+  X2 = zero
+  X3 = zero
+  X4 = zero
+  X5 = zero
+  X6 = zero
 
-! Second MxM
+  ! Second MxM
   call mxm(G1, S1p, X1)
   call mxm(S2p, G2T, X2)
   call mxm(G1, S1m, X3)
@@ -876,11 +975,11 @@ X6 = zero
   call mxm(G1, S1z, X5)
   call mxm(S2z, G2T, X6)
 
-S1p = zero
-S1m = zero
-S1z = zero
+  S1p = zero
+  S1m = zero
+  S1z = zero
 
-! Additional terms for the axial elements
+  ! Additional terms for the axial elements
   if (ani_true) then
     call additional_di_ax_ani(m0_w1l, m0_w2l, m0_w3l, m0_w3l, m0_w4l, m0_w5l, &
                               m0_w7l, m0_w8l, m0_w9l, m0_w10l,&
@@ -904,17 +1003,17 @@ subroutine additional_di_ax(m0_w1l, m0_w2l, m0_w7l, m0_w8l, m0_w9l, &
                             u1, u2, u3, S1p, S1m, S1z)
 include "mesh_params.h"
 
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w7l, m0_w8l
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w9l
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: u1, u2, u3
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1p, S1m, S1z
-
-! work arrays  
-real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4, V5
-real(kind=realkind), dimension(0:npol) :: u10, u20
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w7l, m0_w8l
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w9l
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: u1, u2, u3
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1p, S1m, S1z
+  
+  ! work arrays  
+  real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4, V5
+  real(kind=realkind), dimension(0:npol) :: u10, u20
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   V1 = zero
   V2 = zero
@@ -928,26 +1027,26 @@ real(kind=realkind), dimension(0:npol) :: u10, u20
   u10 = u1(0,:)
   u20 = u2(0,:)
 
-! VxM
+  ! VxM
   call vxm(G0, u1, V1)
   call vxm(G0, u2, V2)
   call vxm(G0, u3, V3)
-!
+
   call vxm(u10, G2, V4)
   call vxm(u20, G2, V5)
 
-! Collocations
+  ! Collocations
 
-! + comp
+  ! + comp
   call collocate_tensor_1d(m0_w1l, V2, G0, S1p, npol)
 
-! - comp
+  ! - comp
   call collocate3_sum_tensor_1d(m0_w1l, V1, m0_w2l, V5, m0_w9l, V2, G0, S1m, npol)
 
-! z comp
+  ! z comp
   call collocate2_sum_tensor_1d(m0_w7l, V3, m0_w8l, V4, G0, S1z, npol)
 
-! Final VxM D_z^z in + component
+  ! Final VxM D_z^z in + component
   call collocate02_sum_1d(m0_w2l, V2, m0_w8l, V3, V4, npol) 
   call vxm(V4, G2T, V1)
   call add_to_axis_2d(V1, S1p, npol)
@@ -960,21 +1059,21 @@ end subroutine additional_di_ax
 subroutine additional_di_ax_ani(m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l, &
                                 m0_w6l, m0_w7l, m0_w8l, m0_w9l, m0_w10l, &
                                 u1, u2, u3, S1p, S1m, S1z)
-include "mesh_params.h"
-
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w3l, m0_w5l
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w4l, m0_w6l
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w7l, m0_w8l
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w9l, m0_w10l
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: u1, u2, u3
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1p, S1m, S1z
-
-! work arrays  
-real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4, V5
-real(kind=realkind), dimension(0:npol) :: u10, u20
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  include "mesh_params.h"
+  
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w3l, m0_w5l
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w4l, m0_w6l
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w7l, m0_w8l
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w9l, m0_w10l
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: u1, u2, u3
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1p, S1m, S1z
+  
+  ! work arrays  
+  real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4, V5
+  real(kind=realkind), dimension(0:npol) :: u10, u20
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   V1 = zero
   V2 = zero
@@ -988,28 +1087,28 @@ real(kind=realkind), dimension(0:npol) :: u10, u20
   u10 = u1(0,:)
   u20 = u2(0,:)
 
-! VxM
+  ! VxM
   call vxm(G0, u1, V1)
   call vxm(G0, u2, V2)
   call vxm(G0, u3, V3)
-!
+
   call vxm(u10, G2, V4)
   call vxm(u20, G2, V5)
 
-! Collocations
+  ! Collocations
 
-! + comp
+  ! + comp
   call collocate2_sum_tensor_1d(m0_w1l, V2, m0_w3l, V3, G0, S1p, npol)
 
-! - comp
+  ! - comp
   call collocate5_sum_tensor_1d(m0_w1l, V1, m0_w2l, V5, m0_w6l, V4, &
                                 m0_w9l, V2, m0_w10l, V3, G0, S1m, npol)
 
-! z comp
+  ! z comp
   call collocate5_sum_tensor_1d(m0_w3l, V1, m0_w4l, V4, m0_w7l, V3, &
                                 m0_w8l, V4, m0_w10l, V2, G0, S1z, npol)
 
-! Final VxM D_z^z in + component
+  ! Final VxM D_z^z in + component
   call collocate02p_sum_1d(m0_w2l, m0_w6l, V2, m0_w4l, m0_w8l, V3, V4, npol) 
 
   call vxm(V4, G2T, V1)
@@ -1033,34 +1132,34 @@ subroutine stiffness_quad_non_ax(us, uphi, uz,  &
 
 include "mesh_params.h"
 
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! displacement (s, phi and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz,uphi
-
-! precomputed matrices containing weights, mapping, elastic parameters
-! precomputed matrix for W_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1l, m_w2l, m_w3l
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w4l, m_w5l
-
-! precomputed matrices for W_s^d, D_x^y
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_1l, m_2l, m_3l, m_4l
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_5l, m_6l, m_7l, m_8l
-
-! precomputed matrices for D_xy^xy
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11sl,m21sl,m41sl 
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m12sl,m22sl,m32sl,m42sl
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11zl,m21zl,m41zl
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m1phil,m2phil,m4phil
-
-! result: local (elemental) stiffness term (s, phi and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_phi
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_z
-
-! work arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2,X3,X4,X5,X6 ! MxM arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! Sum
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! displacement (s, phi and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz,uphi
+  
+  ! precomputed matrices containing weights, mapping, elastic parameters
+  ! precomputed matrix for W_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w1l, m_w2l, m_w3l
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w4l, m_w5l
+  
+  ! precomputed matrices for W_s^d, D_x^y
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_1l, m_2l, m_3l, m_4l
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_5l, m_6l, m_7l, m_8l
+  
+  ! precomputed matrices for D_xy^xy
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11sl,m21sl,m41sl 
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m12sl,m22sl,m32sl,m42sl
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11zl,m21zl,m41zl
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m1phil,m2phil,m4phil
+  
+  ! result: local (elemental) stiffness term (s, phi and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_phi
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_z
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2,X3,X4,X5,X6 ! MxM arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! Sum
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   loc_stiffness_s = zero
   loc_stiffness_phi = zero
@@ -1080,8 +1179,8 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! S
   X5 = zero
   X6 = zero
 
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! First MxM
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! First MxM
   call mxm(G2T, us, X1)
   call mxm(G2T, uphi, X2)
   call mxm(G2T, uz, X3)
@@ -1089,37 +1188,37 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! S
   call mxm(uphi, G2, X5)
   call mxm(uz, G2, X6)
 
-! Collocations and sums of W terms: s and phi components
+  ! Collocations and sums of W terms: s and phi components
   call collocate12s_sum_1d(m_2l, X4, m_1l, X1, m_6l, X5, &
                            m_5l, X2, m_4l, X6, m_3l, X3, &
                            m_w1l, m_w2l, m_w3l, m_w4l, us, uphi, uz, &
                            loc_stiffness_s, loc_stiffness_phi, nsize)
 
-! Collocations and sums of W terms: z component
+  ! Collocations and sums of W terms: z component
   call collocate5z_sum_1d(m_8l, X5, m_7l, X2, m_w3l, m_w5l, us, uphi, uz, &
                          loc_stiffness_z, nsize)
 
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! Collocations and sums of D terms
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! Collocations and sums of D terms
 
-! s component
+  ! s component
   call collocate6s_sum_1d(m11sl, X4, m21sl, X1, m12sl, X6, m22sl, X3, &
                           m_1l, us, uphi, S1s, nsize)
   call collocate6s_sum_1d(m11sl, X1, m41sl, X4, m32sl, X3, m42sl, X6, &
                           m_2l, us, uphi, S2s, nsize)
-! z component
+  ! z component
   call collocate6s_sum_1d(m11zl, X6, m21zl, X3, m32sl, X4, m22sl, X1, &
                           m_3l, us, uphi, S1z, nsize)
   call collocate6s_sum_1d(m11zl, X3, m41zl, X6, m12sl, X1, m42sl, X4, &
                           m_4l, us, uphi, S2z, nsize)
 
-! phi component
+  ! phi component
   call collocate5ss_sum_1d(m1phil, X5, m2phil, X2, m_5l, us, &
                            m_5l, uphi, m_7l, uz, S1phi, nsize)
   call collocate5ss_sum_1d(m1phil, X2, m4phil, X5, m_6l, us, &
                            m_6l, uphi, m_8l, uz, S2phi, nsize)
 
-!Second MxM
+  !Second MxM
   call mxm(G2, S1s, X1)
   call mxm(S2s, G2T, X2)
   call mxm(G2, S1phi, X3)
@@ -1127,7 +1226,7 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! S
   call mxm(G2, S1z, X5)
   call mxm(S2z, G2T, X6)
 
-! Final Sum
+  ! Final Sum
   call sum3s_3_1d(X1, X2, loc_stiffness_s, X3, X4, loc_stiffness_phi, X5, X6, &
                  loc_stiffness_z, nsize)
 
@@ -1145,38 +1244,38 @@ subroutine stiffness_quad_ax(us, uphi, uz,  &
 
 include "mesh_params.h"
 
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! displacement (s, phi and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz,uphi
-
-! precomputed matrices containing weights, mapping, elastic parameters
-! precomputed matrix for W_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in)  :: m_w1l, m_w2l, m_w3l
-real(kind=realkind), dimension(0:npol,0:npol), intent(in)  :: m_w4l, m_w5l
-
-! precomputed matrices for W_s^d, D_x^y
-real(kind=realkind), dimension(0:npol,0:npol), intent(in)  :: m_1l, m_2l, m_3l, m_4l
-real(kind=realkind), dimension(0:npol,0:npol), intent(in)  :: m_5l, m_6l, m_7l, m_8l
-
-! precomputed matrices for D_xy^xy
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11sl,m21sl,m41sl
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m12sl,m22sl,m32sl,m42sl
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11zl,m21zl,m41zl
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m1phil,m2phil,m4phil
-
-! axial terms
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l, m0_w3l
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w4l, m0_w5l, m0_w6l
-
-! result: local (elemental) stiffness term (s, phi and z components)
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_phi
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_z
-
-! work arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2,X3,X4,X5,X6 ! MxM arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! Sum
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! displacement (s, phi and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uz,uphi
+  
+  ! precomputed matrices containing weights, mapping, elastic parameters
+  ! precomputed matrix for W_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in)  :: m_w1l, m_w2l, m_w3l
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in)  :: m_w4l, m_w5l
+  
+  ! precomputed matrices for W_s^d, D_x^y
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in)  :: m_1l, m_2l, m_3l, m_4l
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in)  :: m_5l, m_6l, m_7l, m_8l
+  
+  ! precomputed matrices for D_xy^xy
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11sl,m21sl,m41sl
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m12sl,m22sl,m32sl,m42sl
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m11zl,m21zl,m41zl
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m1phil,m2phil,m4phil
+  
+  ! axial terms
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l, m0_w3l
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w4l, m0_w5l, m0_w6l
+  
+  ! result: local (elemental) stiffness term (s, phi and z components)
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_phi
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness_z
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2,X3,X4,X5,X6 ! MxM arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! Sum
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   loc_stiffness_s = zero
   loc_stiffness_phi = zero
@@ -1196,8 +1295,8 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! S
   X5 = zero
   X6 = zero
 
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! First MxM
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! First MxM
   call mxm(G1T, us, X1)
   call mxm(G1T, uphi, X2)
   call mxm(G1T, uz, X3)
@@ -1205,37 +1304,37 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! S
   call mxm(uphi, G2, X5)
   call mxm(uz, G2, X6)
 
-! Collocations and sums of W terms: s and phi components
+  ! Collocations and sums of W terms: s and phi components
   call collocate12s_sum_1d(m_2l, X4, m_1l, X1, m_6l, X5, &
                            m_5l, X2, m_4l, X6, m_3l, X3, &
                            m_w1l, m_w2l, m_w3l, m_w4l, us, uphi, uz, &
                            loc_stiffness_s, loc_stiffness_phi, nsize)
 
-! Collocations and sums of W terms: z component
+  ! Collocations and sums of W terms: z component
   call collocate5z_sum_1d(m_8l, X5, m_7l, X2, m_w3l, m_w5l, us, uphi, uz, &
                          loc_stiffness_z, nsize)
 
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! Collocations and sums of D terms
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! Collocations and sums of D terms
 
-! s component
+  ! s component
   call collocate6s_sum_1d(m11sl, X4, m21sl, X1, m12sl, X6, m22sl, X3, &
                           m_1l, us, uphi, S1s, nsize)
   call collocate6s_sum_1d(m11sl, X1, m41sl, X4, m32sl, X3, m42sl, X6, &
                           m_2l, us, uphi, S2s, nsize)
-! z component
+  ! z component
   call collocate6s_sum_1d(m11zl, X6, m21zl, X3, m32sl, X4, m22sl, X1, &
                           m_3l, us, uphi, S1z, nsize)
   call collocate6s_sum_1d(m11zl, X3, m41zl, X6, m12sl, X1, m42sl, X4, &
                           m_4l, us, uphi, S2z, nsize)
 
-! phi component
+  ! phi component
   call collocate5ss_sum_1d(m1phil, X5, m2phil, X2, m_5l, us, &
                            m_5l, uphi, m_7l, uz, S1phi, nsize)
   call collocate5ss_sum_1d(m1phil, X2, m4phil, X5, m_6l, us, &
                            m_6l, uphi, m_8l, uz, S2phi, nsize)
 
-!Second MxM
+  !Second MxM
   call mxm(G1, S1s, X1)
   call mxm(S2s, G2T, X2)
   call mxm(G1, S1phi, X3)
@@ -1251,7 +1350,7 @@ real(kind=realkind), dimension(0:npol,0:npol) :: S1s,S2s,S1phi,S2phi,S1z,S2z ! S
                             us, uphi, uz, S1s, S1phi, S1z)
   endif
 
-! Final Sum
+  ! Final Sum
   call sum4_3_1d(X1, X2, S1s, loc_stiffness_s, X3, X4, S1phi, loc_stiffness_phi, X5,  &
                  X6, S1z, loc_stiffness_z, nsize)
 
@@ -1264,19 +1363,19 @@ subroutine additional_quad_ax(m0_z_eta_2l_w_l_6ml, m0_z_eta_3m_w_4l_9ml, &
                               m0_w_4mul, m0_z_eta_2lm_min_w_2l_6ml,  &
                               us, uphi, uz, S1s, S1phi, S1z)
 
-include "mesh_params.h"
-
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_2l_w_l_6ml
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_3m_w_4l_9ml
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w_4mul
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_2lm_min_w_2l_6ml
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uphi,uz
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1s,S1phi,S1z
-
-! work arrays  
-real(kind=realkind), dimension(0:npol) :: V1,V2,V3
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  include "mesh_params.h"
+  
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_2l_w_l_6ml
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_3m_w_4l_9ml
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w_4mul
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_z_eta_2lm_min_w_2l_6ml
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us,uphi,uz
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1s,S1phi,S1z
+  
+  ! work arrays  
+  real(kind=realkind), dimension(0:npol) :: V1,V2,V3
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   V1 = zero
   V2 = zero
@@ -1285,22 +1384,22 @@ real(kind=realkind), dimension(0:npol) :: V1,V2,V3
   S1phi = zero
   S1z = zero
 
-! VxM
+  ! VxM
   call vxm(G0, us, V1)
   call vxm(G0, uphi, V2)
   call vxm(G0, uz, V3)
 
-! Collocations, Sums, Tensorization
+  ! Collocations, Sums, Tensorization
 
-! s comp
+  ! s comp
   call collocate2_sum_tensor_1d(m0_z_eta_2l_w_l_6ml, V1, &
                                 m0_z_eta_2lm_min_w_2l_6ml, V2, G0, S1s, npol)
                                 
-! phi comp
+  ! phi comp
   call collocate2_sum_tensor_1d(m0_z_eta_2lm_min_w_2l_6ml, V1,  &
                                 m0_z_eta_3m_w_4l_9ml, V2, G0, S1phi, npol)
                                 
-! z comp
+  ! z comp
   call collocate_tensor_1d(m0_w_4mul, V3, G0, S1z, npol)
 
 end subroutine additional_quad_ax
@@ -1313,15 +1412,15 @@ subroutine additional_quad_ax_ani(m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l, m0_w6l
 
 include "mesh_params.h"
 
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l, m0_w3l
-real(kind=realkind), dimension(0:npol), intent(in) :: m0_w4l, m0_w5l, m0_w6l
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us, uphi, uz
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1s, S1phi, S1z
-
-! work arrays  
-real(kind=realkind), dimension(0:npol) :: V1,V2,V3
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w1l, m0_w2l, m0_w3l
+  real(kind=realkind), dimension(0:npol), intent(in) :: m0_w4l, m0_w5l, m0_w6l
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: us, uphi, uz
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: S1s, S1phi, S1z
+  
+  ! work arrays  
+  real(kind=realkind), dimension(0:npol) :: V1,V2,V3
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   V1 = zero
   V2 = zero
@@ -1330,20 +1429,20 @@ real(kind=realkind), dimension(0:npol) :: V1,V2,V3
   S1phi = zero
   S1z = zero
 
-! VxM
+  ! VxM
   call vxm(G0, us, V1)
   call vxm(G0, uphi, V2)
   call vxm(G0, uz, V3)
 
-! Collocations, Sums, Tensorization
+  ! Collocations, Sums, Tensorization
 
-! s comp
+  ! s comp
   call collocate3_sum_tensor_1d(m0_w1l, V1, m0_w2l, V2, m0_w3l, V3, G0, S1s, npol)
                                 
-! phi comp
+  ! phi comp
   call collocate3_sum_tensor_1d(m0_w2l, V1, m0_w4l, V2, m0_w5l, V3, G0, S1phi, npol)
                                 
-! z comp
+  ! z comp
   call collocate3_sum_tensor_1d(m0_w3l, V1, m0_w5l, V2, m0_w6l, V3, G0, S1z, npol)
 
 end subroutine additional_quad_ax_ani
@@ -1357,40 +1456,40 @@ end subroutine additional_quad_ax_ani
 !-----------------------------------------------------------------------------
 subroutine fluid_stiffness_joint_part(chi,m1chil,m2chil,m4chil,loc_stiffness)
            
-include "mesh_params.h"
-
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! pressure scalar potential
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: chi
-
-! precomputed matrices for D_xy^xy
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m1chil,m2chil,m4chil
-
-! result: local (elemental) scalar stiffness term
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness
-
-! work arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2  ! MxM arrays
-real(kind=realkind), dimension(0:npol,0:npol) :: S1,S2  ! Sum
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  include "mesh_params.h"
+  
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! pressure scalar potential
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: chi
+  
+  ! precomputed matrices for D_xy^xy
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m1chil,m2chil,m4chil
+  
+  ! result: local (elemental) scalar stiffness term
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2  ! MxM arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1,S2  ! Sum
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   loc_stiffness=zero
   S1=zero;S2=zero;S1=zero;X1=zero;X2=zero
 
-!++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-! First MxM
+  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
+  ! First MxM
   call mxm(G2T,chi,X1)
   call mxm(chi,G2,X2)
 
-! Collocations and sums of D terms
+  ! Collocations and sums of D terms
   call collocate2_sum_1d(m1chil,X2,m2chil,X1,S1,nsize)
   call collocate2_sum_1d(m1chil,X1,m4chil,X2,S2,nsize)
 
-!Second MxM
+  !Second MxM
   call mxm(G2,S1,X1)
   call mxm(S2,G2T,X2)
   
-! Final Sum
+  ! Final Sum
   call sum_1d(X1,X2,loc_stiffness,nsize)
 
 end subroutine fluid_stiffness_joint_part
@@ -1399,23 +1498,23 @@ end subroutine fluid_stiffness_joint_part
 !-----------------------------------------------------------------------------
 subroutine fluid_stiffness_add_multi(chi,m_w_fl_l,loc_stiffness)
 
-include "mesh_params.h"
-
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-! pressure scalar potential
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: chi
-
-! precomputed matrices containing weights, mapping, elastic parameters
-! precomputed matrix for W_s
-real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w_fl_l
-
-! result: local (elemental) scalar stiffness term
-real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness
-!ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  include "mesh_params.h"
+  
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
+  ! pressure scalar potential
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: chi
+  
+  ! precomputed matrices containing weights, mapping, elastic parameters
+  ! precomputed matrix for W_s
+  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w_fl_l
+  
+  ! result: local (elemental) scalar stiffness term
+  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness
+  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
   loc_stiffness=zero
 
-! dipole and quadrupole cases: collocation of W
+  ! dipole and quadrupole cases: collocation of W
   call collocate0_1d(m_w_fl_l,chi,loc_stiffness,nsize)
 
 end subroutine fluid_stiffness_add_multi

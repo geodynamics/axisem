@@ -82,8 +82,11 @@ module data_matr
 
   ! Anelastic precomputable matrices 
   real(kind=realkind), allocatable :: Y(:,:,:)
+  real(kind=realkind), allocatable :: Y0(:,:)
   real(kind=realkind), allocatable :: V_s_eta(:,:,:), V_s_xi(:,:,:)
   real(kind=realkind), allocatable :: V_z_eta(:,:,:), V_z_xi(:,:,:)
+  real(kind=realkind), allocatable :: V0_s_eta(:,:), V0_s_xi(:,:)
+  real(kind=realkind), allocatable :: V0_z_eta(:,:), V0_z_xi(:,:)
 
 !=====================
 end module data_matr

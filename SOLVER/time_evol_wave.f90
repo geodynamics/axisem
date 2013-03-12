@@ -315,6 +315,11 @@ subroutine sf_time_loop_newmark
         case ('monopole')
            call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
            call glob_stiffness_mono(acc1, disp)
+           if (anel_true) then
+              iclockanelst = tick()
+              call glob_anel_stiffness_mono(acc1, memory_var)
+              iclockanelst = tick(id=idanelst, since=iclockanelst)
+           endif
            call bdry_copy2solid(acc1, ddchi1)
            call apply_axis_mask_onecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
 
@@ -347,6 +352,7 @@ subroutine sf_time_loop_newmark
           acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
 
      if (src_type(1)=='dipole') then
+        ! for the factor 2 compare eq 32 in TNM (2006)
         acc1(:,:,:,3) = - two * inv_mass_rho * acc1(:,:,:,3)
      else
         acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
