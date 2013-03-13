@@ -19,7 +19,7 @@ else
   rm -rf Diags/*
 endif
 
-if ( { make all } == 0 ) then
+if ( { make -j 5 all } == 0 ) then
   echo "Compilation failed, please check the errors."
   exit
 endif
