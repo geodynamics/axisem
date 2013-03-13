@@ -153,15 +153,11 @@ subroutine glob_stiffness_mono(glob_stiffness,u)
   ! local variables for axial elements
   real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l
   
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s1
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s2
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z1
-  
   ! work arrays
   real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4     ! MxM arrays
   real(kind=realkind), dimension(0:npol,0:npol) :: S1s, S2s, S1z, S2z ! Sum arrays
   
-  real(kind=realkind), dimension(0:npol) :: V1, V2, V3
+  real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4
   real(kind=realkind), dimension(0:npol) :: uz0
   
   integer :: ielem
@@ -202,16 +198,10 @@ subroutine glob_stiffness_mono(glob_stiffness,u)
      call mxm(us, G2, X3)
      call mxm(uz, G2, X4)
 
-     !call collocate4_sum_1d(m_4l, X4, m_2l, X3, m_1l, X1, m_3l, X2, S1s, nsize)
-     S1s = m_4l * X4 + m_2l * X3 + m_1l * X1 + m_3l * X2
+     ! lower order terms in s
+     loc_stiffness_s = m_4l * X4 + m_2l * X3 + m_1l * X1 + m_3l * X2 + us * m_w1l
 
-     !call collocate_sum_1d(us, m_w1l, S1s, loc_stiffness_s2, nsize)
-     loc_stiffness_s2 = us * m_w1l + S1s
-
-     !call collocate5_sum_1d(m11sl, X3, m21sl, X1, m12sl, X4, m22sl, X2, m_1l, us, S1s, nsize)
-     !call collocate5_sum_1d(m11sl, X1, m41sl, X3, m32sl, X2, m42sl, X4, m_2l, us, S2s, nsize)
-     !call collocate5_sum_1d(m11zl, X4, m21zl, X2, m32sl, X3, m22sl, X1, m_3l, us, S1z, nsize)
-     !call collocate5_sum_1d(m11zl, X2, m41zl, X4, m12sl, X1, m42sl, X3, m_4l, us, S2z, nsize)
+     ! higher order terms + lower order terms with D_xi mxm ()
      S1s = m11sl * X3 + m21sl * X1 + m12sl * X4 + m22sl * X2 + m_1l * us
      S2s = m11sl * X1 + m41sl * X3 + m32sl * X2 + m42sl * X4 + m_2l * us
      S1z = m11zl * X4 + m21zl * X2 + m32sl * X3 + m22sl * X1 + m_3l * us
@@ -228,53 +218,39 @@ subroutine glob_stiffness_mono(glob_stiffness,u)
         call mxm(G1, S1z, X3)
      endif
 
-     !call sum2_3_1d(X3, X4, loc_stiffness_z, loc_stiffness_s2, X1, X2, loc_stiffness_s, nsize)
+     loc_stiffness_s = loc_stiffness_s + X1 + X2
      loc_stiffness_z = X3 + X4 
-     loc_stiffness_s = loc_stiffness_s2 + X1 + X2
 
+     ! additional axis terms
      if (axis_solid(ielem) ) then
-        ! additional axis terms
         m0_w1l(0:npol) = M0_w1(0:npol,ielem)
         m0_w2l(0:npol) = M0_w2(0:npol,ielem)
         m0_w3l(0:npol) = M0_w3(0:npol,ielem)
         
-        loc_stiffness_s1 = loc_stiffness_s
-        loc_stiffness_z1 = loc_stiffness_z
-
         uz0 = uz(0,:)
+        X2(0,:) = 0
+
         call vxm(G0, us, V1)
         call vxm(uz0, G2, V2)
 
+        V4 = m0_w1l * V1 + m0_w3l * V2
+
         if (ani_true) then
+           ! additional anisotropic terms
            call vxm(G0, uz, V3)
 
-           ! Collocations for s-component
-           !call collocate3_sum_tensor_1d(m0_w1l, V1, m0_w3l, V2, m0_w2l, V3, G0, X1, npol)
-           X1 = outerprod(G0, m0_w1l * V1 + m0_w3l * V2 + m0_w2l * V3)
-
-           ! Collocation for z-component 
-           !call collocate_tensor_1d(m0_w2l, V1, G0, X2, npol)
+           V4 = V4 + m0_w2l * V3
            X2 = outerprod(G0, m0_w2l * V1)
-        else
-           ! Collocations for s-component
-           !call collocate2_sum_tensor_1d(m0_w1l, V1, m0_w3l, V2, G0, X1, npol)
-           X1 = outerprod(G0, m0_w1l * V1 + m0_w3l * V2)
-
-           X2(0,:) = 0
         endif
-
-        !call collocate0_1d(m0_w3l, V1, V2, npol)
+           
         V2 = m0_w3l * V1
 
-        ! Final VxM D_z^z for z-component
         call vxm(V2, G2T, V1)
 
         X2(0,:) = X2(0,:) + V1
                                 
-        !call sum2_2_1d(X1, loc_stiffness_s1, loc_stiffness_s, X2, &
-        !               loc_stiffness_z1, loc_stiffness_z, nsize)
-        loc_stiffness_s = X1 + loc_stiffness_s1
-        loc_stiffness_z = X2 + loc_stiffness_z1
+        loc_stiffness_s = loc_stiffness_s + outerprod(G0, V4)
+        loc_stiffness_z = X2 + loc_stiffness_z
 
      endif
 

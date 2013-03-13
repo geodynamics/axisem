@@ -60,23 +60,6 @@ end subroutine collocate0_neg1d_existent
 !==========================================================================
 
 !-------------------------------------------------------------------------
-subroutine collocate_sum_1d(a,b,c,s,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a(n),b(n),c(n)
-real(kind=realkind), intent(out) :: s(n)
-real(kind=realkind) :: temp
-integer :: i
-                                                                    
-  do i = 1, n
-    temp = a(i) * b(i)
-    s(i) = c(i) + temp
-  end do 
-
-end subroutine collocate_sum_1d
-!==========================================================================
-
-!-------------------------------------------------------------------------
 subroutine collocate_sum_existent_1d(a,b,s,n)
   
 integer, intent(in) :: n
@@ -152,29 +135,6 @@ integer :: i
   end do 
 
 end subroutine collocate2_sum_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine collocate4_sum_1d(a1,b1,a2,b2,a3,b3,a4,b4,s,n)
-
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n),b1(n),a2(n),b2(n)
-real(kind=realkind), intent(in) :: a3(n),b3(n),a4(n),b4(n)
-real(kind=realkind) :: c1,c2,c3,c4
-real(kind=realkind), intent(out) :: s(n)
-integer :: i
-
-  s = zero
-                                                                   
-  do i = 1, n
-    c1 = a1(i) * b1(i)
-    c2 = a2(i) * b2(i)
-    c3 = a3(i) * b3(i)
-    c4 = a4(i) * b4(i)
-    s(i) = c1 + c2 + c3 + c4
-  end do 
-
-end subroutine collocate4_sum_1d
 !==========================================================================
 
 !--------------------------------------------------------------------------
@@ -539,22 +499,6 @@ end subroutine sum2_2_1d
 !==========================================================================
 
 !--------------------------------------------------------------------------
-subroutine sum2_3_1d(a1,a2,s1,b1,b2,b3,s2,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n),a2(n),b1(n),b2(n),b3(n)
-real(kind=realkind), intent(out) :: s1(n),s2(n)
-integer :: i
-                                                                    
-  do i = 1, n
-    s1(i) = a1(i) + a2(i)
-    s2(i) = b1(i) + b2(i) + b3(i)    
-  end do                                         
-                   
-end subroutine sum2_3_1d
-!=========================================================================
-
-!--------------------------------------------------------------------------
 subroutine sum2s_3_3_1d(a1,a2,s1,b1,b2,b3,s2,c1,c2,c3,s3,n)
 
 integer, intent(in) :: n
@@ -589,7 +533,6 @@ integer :: i
                    
 end subroutine sum3s_4_4_1d
 !=========================================================================
-
 
 !--------------------------------------------------------------------------
 subroutine sum2s_1d(a1,s1,n)
