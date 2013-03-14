@@ -48,7 +48,6 @@ function f_over_s_solid(f)
      f_over_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
   enddo
 
-
 end function
 !-----------------------------------------------------------------------------------------
 
@@ -123,8 +122,8 @@ subroutine axisym_gradient_solid(f,grad)
         call mxm(G2T,f(:,:,iel),mxm1) ! non-axial elements
      endif 
      call mxm(f(:,:,iel),G2,mxm2)
-     call collocate2_sum_1d(dzdeta, mxm1, dzdxi, mxm2, dsdf, nsize)
-     call collocate2_sum_1d(dsdeta, mxm1, dsdxi, mxm2, dzdf, nsize)
+     dsdf = dzdeta * mxm1 + dzdxi * mxm2
+     dzdf = dsdeta * mxm1 + dsdxi * mxm2
 
      grad(:,:,iel,1) = dsdf
      grad(:,:,iel,2) = dzdf
@@ -173,8 +172,8 @@ subroutine axisym_gradient_solid_add(f,grad)
        call mxm(G2T,f(:,:,iel),mxm1) ! non-axial elements
     endif 
     call mxm(f(:,:,iel),G2,mxm2)
-    call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf,nsize)
-    call collocate2_sum_1d(dsdeta,mxm1,dsdxi,mxm2,dzdf,nsize)
+    dsdf = dzdeta * mxm1 + dzdxi * mxm2
+    dzdf = dsdeta * mxm1 + dsdxi * mxm2
 
     grad_old(0:npol,0:npol,1) = grad(0:npol,0:npol,iel,2)
     grad_old(0:npol,0:npol,2) = grad(0:npol,0:npol,iel,1)
@@ -217,7 +216,7 @@ subroutine dsdf_elem_solid(dsdf,f,iel)
   endif
   call mxm(f,G2,mxm2)
 
-  call collocate2_sum_1d(dzdeta, mxm1, dzdxi, mxm2, dsdf, nsize)
+  dsdf = dzdeta * mxm1 + dzdxi * mxm2
 
 end subroutine dsdf_elem_solid
 !=============================================================================
@@ -251,7 +250,7 @@ subroutine dzdf_elem_solid(dzdf,f,iel)
      call mxm(G2T, f, mxm1) ! non-axial elements
   endif
   call mxm(f, G2, mxm2)
-  call collocate2_sum_1d(dsdeta, mxm1, dsdxi, mxm2, dzdf, nsize)
+  dzdf = dsdeta * mxm1 + dsdxi * mxm2
 
 end subroutine dzdf_elem_solid
 !=============================================================================
@@ -282,7 +281,7 @@ subroutine dsdf_solid_allaxis(f,dsdf)
     dzdxi  = DzDxi_over_J_sol(:,:,iel)
     call mxm(G1T, f(:,:,iel), mxm1) 
     call mxm(f(:,:,iel), G2, mxm2)
-    call collocate2_sum_1d(dzdeta, mxm1, dzdxi, mxm2, dsdf_el, nsize)
+    dsdf_el = dzdeta * mxm1 + dzdxi * mxm2
     dsdf(:,ielem) = dsdf_el(0,:)
   enddo
 
@@ -323,8 +322,8 @@ subroutine axisym_gradient_fluid(f,grad)
        call mxm(G2T,f(:,:,iel),mxm1) ! non-axial elements
     endif 
     call mxm(f(:,:,iel),G2,mxm2)
-    call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf,nsize)
-    call collocate2_sum_1d(dsdeta,mxm1,dsdxi,mxm2,dzdf,nsize)
+    dsdf = dzdeta * mxm1 + dzdxi * mxm2
+    dzdf = dsdeta * mxm1 + dsdxi * mxm2
     grad(:,:,iel,1) = dsdf
     grad(:,:,iel,2) = dzdf
  enddo
@@ -372,8 +371,8 @@ subroutine axisym_gradient_fluid_add(f,grad)
        call mxm(G2T,f(:,:,iel),mxm1) ! non-axial elements
     endif 
     call mxm(f(:,:,iel),G2,mxm2)
-    call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf,nsize)
-    call collocate2_sum_1d(dsdeta,mxm1,dsdxi,mxm2,dzdf,nsize)
+    dsdf = dzdeta * mxm1 + dzdxi * mxm2
+    dzdf = dsdeta * mxm1 + dsdxi * mxm2
 
     grad_old(0:npol,0:npol,1) = grad(0:npol,0:npol,iel,2)
     grad_old(0:npol,0:npol,2) = grad(0:npol,0:npol,iel,1)
@@ -387,7 +386,7 @@ end subroutine axisym_gradient_fluid_add
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine dsdf_fluid_axis(f,iel,jpol,dsdf)
+subroutine dsdf_fluid_axis(f, iel, jpol, dsdf)
   !
   ! Computes the pointwise derivative of scalar f in the s-direction 
   ! within the fluid region, ONLY AT THE AXIS (needed for fluid displacement)
@@ -395,24 +394,24 @@ subroutine dsdf_fluid_axis(f,iel,jpol,dsdf)
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-  use data_pointwise, ONLY: DzDeta_over_J_flu,DzDxi_over_J_flu
+  use data_pointwise, ONLY: DzDeta_over_J_flu, DzDxi_over_J_flu
   use unrolled_loops
   use unit_stride_colloc
   
   include 'mesh_params.h'
   
-  integer,intent(in)                           :: iel,jpol
+  integer,intent(in)                           :: iel, jpol
   real(kind=realkind),intent(in)               :: f(0:npol,0:npol)
   real(kind=realkind),intent(out)              :: dsdf
-  real(kind=realkind),dimension(0:npol,0:npol) :: mxm1,mxm2
-  real(kind=realkind),dimension(0:npol,0:npol) :: dzdxi,dzdeta,dsdf_el
+  real(kind=realkind),dimension(0:npol,0:npol) :: mxm1, mxm2
+  real(kind=realkind),dimension(0:npol,0:npol) :: dzdxi, dzdeta, dsdf_el
 
   dzdeta = DzDeta_over_J_flu(:,:,iel)
   dzdxi  = DzDxi_over_J_flu(:,:,iel)
-  call mxm(G1T,f,mxm1)
-  call mxm(f,G2,mxm2)
-  call collocate2_sum_1d(dzdeta,mxm1,dzdxi,mxm2,dsdf_el,nsize)
-  dsdf=dsdf_el(0,jpol)
+  call mxm(G1T, f, mxm1)
+  call mxm(f, G2, mxm2)
+  dsdf_el = dzdeta * mxm1 + dzdxi * mxm2
+  dsdf = dsdf_el(0,jpol)
 
 end subroutine dsdf_fluid_axis
 !=============================================================================
@@ -444,7 +443,7 @@ subroutine dsdf_fluid_allaxis(f,dsdf)
     dzdxi  = DzDxi_over_J_flu(:,:,iel)
     call mxm(G1T, f(:,:,iel), mxm1) 
     call mxm(f(:,:,iel), G2, mxm2)
-    call collocate2_sum_1d(dzdeta, mxm1, dzdxi, mxm2, dsdf_el, nsize)
+    dsdf_el = dzdeta * mxm1 + dzdxi * mxm2
     dsdf(:,ielem) = dsdf_el(0,:)
   enddo
 
