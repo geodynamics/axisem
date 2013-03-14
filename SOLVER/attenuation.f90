@@ -1,21 +1,21 @@
 module attenuation
-    use global_parameters,    only: realkind
-    implicit none
-    include 'mesh_params.h'
+  use global_parameters,    only: realkind, third
+  implicit none
+  include 'mesh_params.h'
 
-    private
-    public :: prepare_attenuation
-    public :: n_sls_attenuation
-    public :: dump_memory_vars
-    public :: time_step_memvars
+  private
+  public :: prepare_attenuation
+  public :: n_sls_attenuation
+  public :: dump_memory_vars
+  public :: time_step_memvars
 
-    double precision, allocatable   :: y_j_attenuation(:)
-    double precision, allocatable   :: w_j_attenuation(:), exp_w_j_deltat(:)
-    double precision, allocatable   :: ts_fac_t(:), ts_fac_tm1(:)
-    integer                         :: n_sls_attenuation
-    logical                         :: do_corr_lowq, dump_memory_vars = .false.
-    real(kind=realkind)             :: src_dev_tm1_glob(0:npol,0:npol,6,nel_solid)  
-    real(kind=realkind)             :: src_tr_tm1_glob(0:npol,0:npol,nel_solid)  
+  double precision, allocatable   :: y_j_attenuation(:)
+  double precision, allocatable   :: w_j_attenuation(:), exp_w_j_deltat(:)
+  double precision, allocatable   :: ts_fac_t(:), ts_fac_tm1(:)
+  integer                         :: n_sls_attenuation
+  logical                         :: do_corr_lowq, dump_memory_vars = .false.
+  real(kind=realkind)             :: src_dev_tm1_glob(0:npol,0:npol,6,nel_solid)  
+  real(kind=realkind)             :: src_tr_tm1_glob(0:npol,0:npol,nel_solid)  
 
 contains
 
@@ -43,6 +43,9 @@ subroutine time_step_memvars(memvar, disp)
   real(kind=realkind)   :: src_tr_tm1(0:npol,0:npol)
   real(kind=realkind)   :: src_dev_t(0:npol,0:npol,6)
   real(kind=realkind)   :: src_dev_tm1(0:npol,0:npol,6)
+  
+  real(kind=realkind)   :: src_tr_buf(0:npol,0:npol)
+  real(kind=realkind)   :: src_dev_buf(0:npol,0:npol,6)
 
   ! compute global strain of current time step
   call compute_strain(disp, grad_t)
@@ -63,9 +66,9 @@ subroutine time_step_memvars(memvar, disp)
 
      ! compute new source terms (excluding the weighting)
      src_tr_t(:,:) = kappa_r(:,:,iel) * trace_grad_t(:,:)
-     src_dev_t(:,:,1) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,1)  - trace_grad_t(:,:) / 3)
-     src_dev_t(:,:,2) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,2)  - trace_grad_t(:,:) / 3)
-     src_dev_t(:,:,3) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,3)  - trace_grad_t(:,:) / 3)
+     src_dev_t(:,:,1) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,1)  - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,2) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,2)  - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,3) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,3)  - trace_grad_t(:,:) * third)
      src_dev_t(:,:,5) = mu_r(:,:,iel) * grad_t(:,:,iel,5)
      
      ! load old source terms
@@ -75,28 +78,39 @@ subroutine time_step_memvars(memvar, disp)
      do j=1, n_sls_attenuation
         ! do the timestep
         memvar(:,:,:,j,iel) = memvar(:,:,:,j,iel) * exp_w_j_deltat(j)
+        
+        src_tr_buf(:,:) = ts_fac_t(j)   * yp_j_kappa(j) * src_tr_t(:,:) &
+                        + ts_fac_tm1(j) * yp_j_kappa(j) * src_tr_tm1(:,:)
 
-        memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) &
-            + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
-                             +  yp_j_mu(j) * src_dev_t(:,:,1)) &
-            + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
-                               +  yp_j_mu(j) * src_dev_tm1(:,:,1))
+        src_dev_buf(:,:,:) = ts_fac_t(j) * yp_j_mu(j) * src_dev_t(:,:,:) &
+                           + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(:,:,:)
+        
+        memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) + src_tr_buf(:,:) + src_dev_buf(:,:,1)
+        memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) + src_tr_buf(:,:) + src_dev_buf(:,:,2)
+        memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) + src_tr_buf(:,:) + src_dev_buf(:,:,3)
+        memvar(:,:,5,j,iel) = memvar(:,:,5,j,iel) + src_dev_buf(:,:,5)
 
-        memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) &
-            + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
-                             +  yp_j_mu(j) * src_dev_t(:,:,2)) &
-            + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
-                               +  yp_j_mu(j) * src_dev_tm1(:,:,2))
+        !memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) &
+        !    + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
+        !                     +  yp_j_mu(j) * src_dev_t(:,:,1)) &
+        !    + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
+        !                       +  yp_j_mu(j) * src_dev_tm1(:,:,1))
 
-        memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) &
-            + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
-                             +  yp_j_mu(j) * src_dev_t(:,:,3)) &
-            + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
-                               +  yp_j_mu(j) * src_dev_tm1(:,:,3))
+        !memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) &
+        !    + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
+        !                     +  yp_j_mu(j) * src_dev_t(:,:,2)) &
+        !    + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
+        !                       +  yp_j_mu(j) * src_dev_tm1(:,:,2))
 
-        memvar(:,:,5,j,iel) = memvar(:,:,5,j,iel) &
-            + ts_fac_t(j) * yp_j_mu(j) * src_dev_t(:,:,5) &
-            + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(:,:,5)
+        !memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) &
+        !    + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
+        !                     +  yp_j_mu(j) * src_dev_t(:,:,3)) &
+        !    + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
+        !                       +  yp_j_mu(j) * src_dev_tm1(:,:,3))
+
+        !memvar(:,:,5,j,iel) = memvar(:,:,5,j,iel) &
+        !    + ts_fac_t(j) * yp_j_mu(j) * src_dev_t(:,:,5) &
+        !    + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(:,:,5)
 
      enddo
      ! save srcs for next iteration
@@ -116,68 +130,40 @@ subroutine compute_strain(u, grad_u)
   use data_source,              ONLY: src_type
   use pointwise_derivatives,    ONLY: axisym_gradient_solid_add
   use pointwise_derivatives,    ONLY: axisym_gradient_solid
+  use pointwise_derivatives,    ONLY: axisym_dsdf_solid
+  use pointwise_derivatives,    ONLY: f_over_s_solid
   
   include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: u(0:npol,0:npol,nel_solid,3)
   real(kind=realkind), intent(out)  :: grad_u(0:npol,0:npol,nel_solid,6)
   
-  real(kind=realkind)             :: grad_buff(0:npol,0:npol,nel_solid,2)
+  real(kind=realkind)               :: grad_buff1(0:npol,0:npol,nel_solid,2)
+  real(kind=realkind)               :: grad_buff2(0:npol,0:npol,nel_solid,2)
   
   grad_u(:,:,:,:) = 0
   
   ! s,z components, identical for all source types..........................
   if (src_type(1)=='dipole') then
-     call axisym_gradient_solid(u(:,:,:,1) + u(:,:,:,2), grad_buff)
+     call axisym_gradient_solid(u(:,:,:,1) + u(:,:,:,2), grad_buff1)
   else
-     call axisym_gradient_solid(u(:,:,:,1), grad_buff) ! 1: dsus, 2: dzus
+     call axisym_gradient_solid(u(:,:,:,1), grad_buff1) ! 1: dsus, 2: dzus
   endif
 
-  grad_u(:,:,:,1) = grad_buff(:,:,:,1)  ! dsus
+  call axisym_gradient_solid(u(:,:,:,3), grad_buff2) ! 1:dsuz, 2:dzuz
+  
+  grad_u(:,:,:,1) = grad_buff1(:,:,:,1)  ! dsus
+  grad_u(:,:,:,3) = grad_buff2(:,:,:,2)  ! dzuz
 
-  grad_buff(:,:,:,1) = 0
- 
-  call axisym_gradient_solid_add(u(:,:,:,3), grad_buff) ! 1:dsuz+dzus, 2:dzuz
-
-  grad_u(:,:,:,5) = grad_buff(:,:,:,1)  ! dsuz + dzus (factor of 2 from voigt notation)
-  grad_u(:,:,:,3) = grad_buff(:,:,:,2)  ! dzuz
- 
+  grad_u(:,:,:,5) = grad_buff1(:,:,:,1) + grad_buff2(:,:,:,1) ! dsuz + dzus (factor of 2 
+                                                              ! from voigt notation)
  
   ! Components involving phi....................................................
   ! hardcode monopole for a start
 
-  call field_over_s_solid(u(:,:,:,1), grad_u(:,:,:,2)) ! us / s
+  grad_u(:,:,:,2) = f_over_s_solid(u(:,:,:,1)) ! us / s
 
- 
 end subroutine compute_strain
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-subroutine field_over_s_solid(f, f_over_s)
-  !
-  ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
-  !
-  use data_pointwise,           ONLY: inv_s_solid
-  use pointwise_derivatives,    ONLY: dsdf_solid_allaxis
-  use data_mesh,                ONLY: naxel_solid, ax_el_solid
-  
-  real(kind=realkind),intent(in)      :: f(0:npol,0:npol,nel_solid)
-  real(kind=realkind),intent(out)     :: f_over_s(0:npol,0:npol,nel_solid)
-  real(kind=realkind)                 :: dsdf(0:npol,naxel_solid)
-  integer                             :: iel
-  
-  f_over_s = f
-
-  call dsdf_solid_allaxis(f_over_s, dsdf) ! axial f/s
-  do iel=1, naxel_solid
-     inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-     f_over_s(0,:,ax_el_solid(iel)) = 1 ! otherwise this  would result in df/ds * f below
-  enddo
-
-  ! construct sum of f/s and g (e.g. straintrace)
-  f_over_s = inv_s_solid * f_over_s
-
-end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------

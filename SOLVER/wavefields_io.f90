@@ -657,8 +657,8 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
 
   call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
   do iel=1, naxel_solid
-     inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-     floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
+     !inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+     floc(0,:,ax_el_solid(iel)) = dsdf(:,iel) 
   enddo
 
   ! construct masked f/s (e.g. Epp)
@@ -668,12 +668,13 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   endif
 
   ! construct sum of f/s and g (e.g. straintrace)
-  gloc = inv_s_solid * floc + gloc
+  floc = inv_s_solid * floc
+  gloc = floc + gloc
 
   glen = size(gloc(ibeg:iend,ibeg:iend,:))
   allocate(gloc1d(glen))
   if (use_netcdf) then
-      gloc1d = pack(inv_s_solid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:), .true.)
+      gloc1d = pack(floc(ibeg:iend,ibeg:iend,:), .true.)
       call nc_dump_field_solid(gloc1d, filename1(2:))
       gloc1d = pack(gloc(ibeg:iend,ibeg:iend,:), .true.)
       call nc_dump_field_solid(gloc1d, filename2(2:))
@@ -681,7 +682,7 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
      open(unit=39000+mynum, file=datapath(1:lfdata)//filename1//'_'&
                                //appmynum//'_'//appisnap//'.bindat',&
                                FORM="UNFORMATTED",STATUS="REPLACE")
-     write(39000+mynum) inv_s_solid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:)
+     write(39000+mynum) floc(ibeg:iend,ibeg:iend,:)
      close(39000+mynum)
 
      open(unit=35000+mynum, file=datapath(1:lfdata)//filename2//'_'&
@@ -723,11 +724,11 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
   
   call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
   do iel=1,naxel_solid
-     inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-     floc(0,:,ax_el_solid(iel)) = one ! otherwise this  would result in df/ds * f below
+     !inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+     floc(0,:,ax_el_solid(iel)) = dsdf(:,iel)
   enddo
 
-  gloc = ( inv_s_solid * floc + gloc ) * .5
+  gloc = (inv_s_solid * floc + gloc) * .5
 
   if (have_src .and. src_dump_type == 'mask') &
        call eradicate_src_elem_values(gloc)
