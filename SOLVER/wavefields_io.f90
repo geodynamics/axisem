@@ -649,7 +649,7 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   character(len=4), intent(in)        :: appisnap
   real(kind=realkind)                 :: dsdf(0:npol,naxel_solid)
   real(kind=realkind), allocatable    :: gloc1d(:)
-  integer                             :: iel, glen
+  integer                             :: iel
   
   gloc = g
   floc = f_over_s_solid(f)
@@ -662,13 +662,9 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
 
   gloc = floc + gloc
 
-  glen = size(gloc(ibeg:iend,ibeg:iend,:))
-  allocate(gloc1d(glen))
   if (use_netcdf) then
-      gloc1d = pack(floc(ibeg:iend,ibeg:iend,:), .true.)
-      call nc_dump_field_solid(gloc1d, filename1(2:))
-      gloc1d = pack(gloc(ibeg:iend,ibeg:iend,:), .true.)
-      call nc_dump_field_solid(gloc1d, filename2(2:))
+      call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), filename1(2:))
+      call nc_dump_field_solid(pack(gloc(ibeg:iend,ibeg:iend,:), .true.), filename2(2:))
   else
      open(unit=39000+mynum, file=datapath(1:lfdata)//filename1//'_'&
                                //appmynum//'_'//appisnap//'.bindat',&
@@ -707,14 +703,12 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
   character(len=16), intent(in)     :: filename
   character(len=4), intent(in)      :: appisnap
   real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
-  integer                           :: iel, glen
+  integer                           :: iel
 
   gloc = (f_over_s_solid(floc) + g) * .5
 
   if (have_src .and. src_dump_type == 'mask') &
        call eradicate_src_elem_values(gloc)
-
-  glen = size(gloc(ibeg:iend,ibeg:iend,:))
 
   if (use_netcdf) then
       call nc_dump_field_solid(pack(gloc(ibeg:iend,ibeg:iend,:), .true.), filename(2:))
@@ -750,7 +744,7 @@ subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
   character(len=16), intent(in)     :: filename1,filename2
   character(len=4), intent(in)      :: appisnap
   real(kind=realkind)               :: dsdf(0:npol,naxel_fluid)
-  integer                           :: iel, glen
+  integer                           :: iel
 
   floc = f
   gloc = g
@@ -760,8 +754,6 @@ subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
      inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
      floc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
   enddo
-
-  glen = size(floc(ibeg:iend,ibeg:iend,:))
 
   if (use_netcdf) then
     call nc_dump_field_fluid(inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:), &
@@ -803,7 +795,7 @@ subroutine dump_half_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
   character(len=16), intent(in)  :: filename
   character(len=4), intent(in)   :: appisnap
   real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
-  integer                        :: iel, glen
+  integer                        :: iel
 
   f2loc = f2
 
@@ -812,8 +804,6 @@ subroutine dump_half_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
      inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
      f2loc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
   enddo
-
-  glen = size(f1(ibeg:iend,ibeg:iend,:))
 
   if (use_netcdf) then
      call nc_dump_field_fluid(0.5 * ( f1(ibeg:iend,ibeg:iend,:) + &
@@ -849,7 +839,7 @@ subroutine dump_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
   character(len=16), intent(in)  :: filename
   character(len=4), intent(in)   :: appisnap
   real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
-  integer                        :: iel,glen
+  integer                        :: iel
 
   f2loc = f2
 
@@ -858,8 +848,6 @@ subroutine dump_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
      inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
      f2loc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
   enddo
-
-  glen = size(f1(ibeg:iend,ibeg:iend,:))
 
   if (use_netcdf) then
      call nc_dump_field_fluid((f1(ibeg:iend,ibeg:iend,:) + &
@@ -890,7 +878,7 @@ subroutine dump_disp(u, chi)
   
   real(kind=realkind),intent(in) :: u(0:npol,0:npol,nel_solid,3)
   real(kind=realkind),intent(in) :: chi(0:npol,0:npol,nel_fluid)
-  integer                        :: i, glen
+  integer                        :: i
   character(len=4)               :: appisnap
   real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
 
@@ -902,20 +890,17 @@ subroutine dump_disp(u, chi)
     call eradicate_src_elem_vec_values(f)
   end if
 
-
   ! Dump solid displacement
-  glen = size(f(ibeg:iend,ibeg:iend,:,1))
+  open(unit=75000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
+                            //appmynum//'_'//appisnap//'.bindat',&
+                            FORM="UNFORMATTED",STATUS="REPLACE")
 
-     open(unit=75000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
-                               //appmynum//'_'//appisnap//'.bindat',&
-                               FORM="UNFORMATTED",STATUS="REPLACE")
-
-     if (src_type(1)/='monopole') then
-        write(75000+mynum) (f(ibeg:iend,ibeg:iend,:,i),i=1,3)
-     else
-        write(75000+mynum) f(ibeg:iend,ibeg:iend,:,1:3:2)
-     endif
-     close(75000+mynum)
+  if (src_type(1)/='monopole') then
+     write(75000+mynum) (f(ibeg:iend,ibeg:iend,:,i),i=1,3)
+  else
+     write(75000+mynum) f(ibeg:iend,ibeg:iend,:,1:3:2)
+  endif
+  close(75000+mynum)
 
   ! Dump fluid potential 
   if (have_fluid) then 
@@ -939,7 +924,7 @@ subroutine dump_velo_dchi(v, dchi)
   
   real(kind=realkind),intent(in) :: v(0:npol,0:npol,nel_solid,3)
   real(kind=realkind),intent(in) :: dchi(0:npol,0:npol,nel_fluid)
-  integer                        :: i, glen
+  integer                        :: i
   character(len=4)               :: appisnap
   real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
 
@@ -951,8 +936,6 @@ subroutine dump_velo_dchi(v, dchi)
        call eradicate_src_elem_vec_values(f)
   end if
   
-  glen = size(f(ibeg:iend,ibeg:iend,:,1))
-
   ! Dump solid velocity vector
      open(unit=85000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
@@ -993,7 +976,7 @@ subroutine dump_velo_global(v,dchi)
   real(kind=realkind),intent(in) :: dchi(:,:,:)
   
   real(kind=realkind)            :: phicomp(0:npol,0:npol,nel_fluid)
-  integer                        :: i,iel,glen
+  integer                        :: i, iel
   character(len=4)               :: appisnap
   real(kind=realkind)            :: dsdchi(0:npol,naxel_fluid)
   real(kind=realkind)            :: f(0:npol,0:npol,1:nel_solid,3)
@@ -1007,8 +990,6 @@ subroutine dump_velo_global(v,dchi)
   if (src_dump_type == 'mask') then
      call eradicate_src_elem_vec_values(f)
   end if
-
-  glen = size(f(ibeg:iend,ibeg:iend,:,1))
 
   if (use_netcdf) then
      if (src_type(1)/='monopole') then
@@ -1055,8 +1036,6 @@ subroutine dump_velo_global(v,dchi)
     fflu(ibeg:iend,ibeg:iend,:,2) = phicomp(ibeg:iend,ibeg:iend,:)
     fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
                                     usz_fluid(ibeg:iend,ibeg:iend,:,2)      
-
-    glen = size(fflu(ibeg:iend,ibeg:iend,:,1))
 
     ! dump velocity vector inside fluid
     if (use_netcdf) then

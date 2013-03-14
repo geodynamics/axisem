@@ -263,7 +263,7 @@ subroutine dsdf_solid_allaxis(f,dsdf)
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-  use data_pointwise, ONLY: DzDeta_over_J_sol,DzDxi_over_J_sol
+  use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
   use unrolled_loops
   use unit_stride_colloc
   
