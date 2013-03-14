@@ -1075,8 +1075,7 @@ subroutine dump_velo_straintrace_cmb(u,velo)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   use data_source,              ONLY: src_type
   use pointwise_derivatives,    ONLY: axisym_gradient_solid
-  use data_pointwise,           ONLY: inv_s_solid
-  use pointwise_derivatives,    ONLY: dsdf_solid_allaxis
+  use pointwise_derivatives,    ONLY: f_over_s_solid
   
   include 'mesh_params.h'
   
@@ -1104,14 +1103,7 @@ subroutine dump_velo_straintrace_cmb(u,velo)
 
   endif
 
-  call dsdf_solid_allaxis(grad_sol(:,:,:,2), dsdf) ! axial f/s
-  do iel=1, naxel_solid
-     ! MvD: I think this was wrong before (without testing)
-     !      now avoiding to write into inv_s_solid
-     !inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-     grad_sol(0,:,ax_el_solid(iel),2) = dsdf(:,iel)
-  enddo
-  grad_sol(:,:,:,2) = inv_s_solid * grad_sol(:,:,:,2)
+  grad_sol(:,:,:,2) = f_over_s_solid(grad_sol(:,:,:,2))
 
   ! Slightly dirty, but memory-cheaper: sum of 3 diag strain elements
   grad_sol(:,:,:,1) = grad_sol(:,:,:,1) + grad_sol(:,:,:,2) + grad_sol(:,:,:,3)

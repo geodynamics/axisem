@@ -1309,6 +1309,13 @@ subroutine compute_surfelem_strain(u)
 ! Save one displacement and velocity trace for each element on the surface 
 ! which are both needed for kernels (du and v0 inside the cross-correlation)
 !
+! MvD: - computes strain in the whole earth, but dumps it only at the surface
+!      - another example copy&paste code -> should go into a proper function
+!      - cannot give the correct result at the axis, i.e. at the antipode and
+!        the epicenter (where 1/s needs treatment with l'hopital)
+!      - what is j? never initatlized....
+!      - sign errors in components 23 and 12 of the strain
+!
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_pointwise,         ONLY: inv_rho_fluid, inv_s_rho_fluid, usz_fluid, inv_s_solid
@@ -1325,9 +1332,13 @@ subroutine compute_surfelem_strain(u)
   real(kind=realkind)             :: strain(0:npol,nel_solid,6)
   character(len=5)                :: appisnap
 
-
-
   integer :: i, jj, j
+
+  print *, "You should seriously consider rewriting compute_surfelem_strain()"
+  print *, "in seismograms.f90, I am pretty sure it is buggy"
+  print *, "If you do not believe me, just go ahead and comment out the stop in"
+  print *, "   seismograms.f90:1340"
+  stop
 
   strain = 0.
 
