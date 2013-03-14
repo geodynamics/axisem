@@ -404,9 +404,11 @@ double precision :: local_crd_nodes(8,2)
 
 8 format(a25,2(1pe14.4))
 
+
+! MvD: I BET this will cause confusion somewhere else!!!
 ! Prefactor for quadrupole phi-comp of fluid displacement
   if (src_type(1)=='monopole') inv_s_rho_fluid = zero
-  if (src_type(1)=='quadpole') inv_s_rho_fluid = two*inv_s_rho_fluid
+  if (src_type(1)=='quadpole') inv_s_rho_fluid = two * inv_s_rho_fluid
 
 end subroutine compute_pointwisederiv_matrices
 !--------------------------------------------------------------------------

@@ -224,6 +224,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
        usz_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
        usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
 
+       ! MvD: I BET this is wrong, compare def_precomp_terms.f90:408 :D
        up_fl(:,:,:) = prefac * chi * inv_s_rho_fluid
        ! (n.b. up_fl is zero at the axes for all source types, prefac = 0 for
        ! monopole and chi > 0 for dipole and quadrupole EQ 73-77 in TNM 2007)
@@ -583,8 +584,8 @@ end subroutine fluid_snapshot
 !--------------------------------------------------------------------------
 subroutine dump_field_1d(f, filename, appisnap, n)
 
-  use data_proc, ONLY : appmynum
-  use data_source, ONLY : have_src,src_dump_type
+  use data_proc,    ONLY : appmynum
+  use data_source,  ONLY : have_src, src_dump_type
   
   include 'mesh_params.h'
   
@@ -593,24 +594,17 @@ subroutine dump_field_1d(f, filename, appisnap, n)
   real(kind=realkind)                 :: floc(0:npol,0:npol,1:n)
   character(len=16), intent(in)       :: filename
   character(len=4), intent(in)        :: appisnap
-  real(kind=realkind), allocatable    :: f1(:)
-  integer                             :: f1len
 
   floc = f
 
   if (have_src .and. src_dump_type == 'mask' .and. n==nel_solid) &
        call eradicate_src_elem_values(floc)
 
-  f1len = (iend-ibeg+1)**2 * n
-  allocate(f1(f1len))
-
-  f1 = pack(floc(ibeg:iend,ibeg:iend,1:n), .true.)
-  
   if (use_netcdf) then
       if (n==nel_solid) then
-          call nc_dump_field_solid(f1, filename(2:))
+          call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,1:n), .true.), filename(2:))
       elseif (n==nel_fluid) then
-          call nc_dump_field_fluid(f1, filename(2:))
+          call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,1:n), .true.), filename(2:))
       else
           write(6,*) 'Neither solid nor fluid. What''s wrong here?'
           stop 2
@@ -619,11 +613,9 @@ subroutine dump_field_1d(f, filename, appisnap, n)
      open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
                                  FORM="UNFORMATTED",STATUS="UNKNOWN",POSITION="REWIND")
-     write(25000+mynum) f1
+     write(25000+mynum) pack(floc(ibeg:iend,ibeg:iend,1:n), .true.)
      close(25000+mynum)
   end if
-
-  deallocate(f1)
 
 end subroutine dump_field_1d
 !=============================================================================
@@ -635,9 +627,9 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   ! the solid, but additionally adds field g to the dump. This is convenient for the 
   ! strain trace, where (dsus+dzuz) has been computed beforehand.
   !
-  use data_proc,                ONLY : appmynum
+  use data_proc,                ONLY: appmynum
   use pointwise_derivatives,    ONLY: f_over_s_solid
-  use data_source,              ONLY : have_src, src_dump_type
+  use data_source,              ONLY: have_src, src_dump_type
   
   include 'mesh_params.h'
   
@@ -647,8 +639,6 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   real(kind=realkind)                 :: gloc(0:npol,0:npol,nel_solid)
   character(len=16), intent(in)       :: filename1, filename2
   character(len=4), intent(in)        :: appisnap
-  real(kind=realkind)                 :: dsdf(0:npol,naxel_solid)
-  real(kind=realkind), allocatable    :: gloc1d(:)
   integer                             :: iel
   
   gloc = g
@@ -684,7 +674,7 @@ end subroutine dump_field_over_s_solid_and_add
 !=============================================================================
 
 !--------------------------------------------------------------------------
-subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
+subroutine dump_half_field_over_s_solid_1d_add(f, g, filename, appisnap)
   !
   ! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
   ! the solid, but additionally adds field g to the dump. This is convenient for the 
@@ -702,7 +692,6 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
   real(kind=realkind)               :: gloc(0:npol,0:npol,nel_solid)
   character(len=16), intent(in)     :: filename
   character(len=4), intent(in)      :: appisnap
-  real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
   integer                           :: iel
 
   gloc = (f_over_s_solid(floc) + g) * .5
@@ -904,12 +893,12 @@ subroutine dump_disp(u, chi)
 
   ! Dump fluid potential 
   if (have_fluid) then 
-        open(unit=76000+mynum,file=datapath(1:lfdata)//'/chi_flu_'&
-                                  //appmynum//'_'//appisnap//'.bindat',&
-                                  FORM="UNFORMATTED",STATUS="REPLACE")
+     open(unit=76000+mynum,file=datapath(1:lfdata)//'/chi_flu_'&
+                               //appmynum//'_'//appisnap//'.bindat',&
+                               FORM="UNFORMATTED",STATUS="REPLACE")
   
-        write(76000+mynum)chi
-        close(76000+mynum)
+     write(76000+mynum)chi
+     close(76000+mynum)
   endif 
 
 end subroutine dump_disp
@@ -937,27 +926,26 @@ subroutine dump_velo_dchi(v, dchi)
   end if
   
   ! Dump solid velocity vector
-     open(unit=85000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
-                                //appmynum//'_'//appisnap//'.bindat',&
-                                FORM="UNFORMATTED",STATUS="REPLACE")
+  open(unit=85000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
+                             //appmynum//'_'//appisnap//'.bindat',&
+                             FORM="UNFORMATTED",STATUS="REPLACE")
 
-     if (src_type(1)/='monopole') then 
-        write(85000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
-     else
-        write(85000+mynum) f(ibeg:iend,ibeg:iend,:,1), f(ibeg:iend,ibeg:iend,:,3)
-     endif
-     close(85000+mynum)
+  if (src_type(1)/='monopole') then 
+     write(85000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
+  else
+     write(85000+mynum) f(ibeg:iend,ibeg:iend,:,1), f(ibeg:iend,ibeg:iend,:,3)
+  endif
+  close(85000+mynum)
 
   ! Dump fluid potential 1st derivative
   if (have_fluid) then 
-        open(unit=86000+mynum,file=datapath(1:lfdata)//'/dchi_flu_'&
-                                   //appmynum//'_'//appisnap//'.bindat',&
-                                   FORM="UNFORMATTED",STATUS="REPLACE")
+     open(unit=86000+mynum,file=datapath(1:lfdata)//'/dchi_flu_'&
+                                //appmynum//'_'//appisnap//'.bindat',&
+                                FORM="UNFORMATTED",STATUS="REPLACE")
   
-        write(86000+mynum) dchi
-        close(86000+mynum)
+     write(86000+mynum) dchi
+     close(86000+mynum)
   endif
-
 
 end subroutine dump_velo_dchi
 !=============================================================================
@@ -965,10 +953,10 @@ end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------
 subroutine dump_velo_global(v,dchi)
 
-  use data_pointwise, ONLY: inv_rho_fluid,inv_s_rho_fluid,usz_fluid
-  use data_source, ONLY : src_type,src_dump_type
-  use pointwise_derivatives, ONLY: axisym_gradient_fluid,dsdf_fluid_allaxis
-  use unit_stride_colloc, ONLY : collocate0_1d
+  use data_pointwise,           ONLY: inv_rho_fluid, inv_s_rho_fluid, usz_fluid
+  use data_source,              ONLY: src_type, src_dump_type
+  use pointwise_derivatives,    ONLY: axisym_gradient_fluid, dsdf_fluid_allaxis
+  use unit_stride_colloc,       ONLY: collocate0_1d
   
   include 'mesh_params.h'
   
@@ -1017,18 +1005,7 @@ subroutine dump_velo_global(v,dchi)
     call axisym_gradient_fluid(dchi, usz_fluid)
 
     ! phi component needs special care: m/(s rho) dchi
-    !call collocate0_1d(inv_s_rho_fluid, dchi, phicomp, npoint_fluid)
     phicomp = inv_s_rho_fluid * dchi
-
-    ! Take care of axial singularity for phi component of fluid velocity
-    !do iel=1, naxel_fluid
-    !   phicomp(0,:,ax_el_fluid(iel)) = 0
-    !   ! MvD: I think this is wrong, because it ends up with (at the axes)
-    !   ! phicomp = dsdchi * inv_s_rho_fluid * dchi
-    !   ! where inv_s_rho_fluid takes the value uf inv_rho_fluid (l'hopital)
-    !   ! it does not cause problems, because up_fluid is zero for all sources
-    !   ! at the axes anyway
-    !enddo
 
     call define_io_appendix(appisnap,istrain)
     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
