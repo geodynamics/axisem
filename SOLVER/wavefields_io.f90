@@ -635,10 +635,9 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   ! the solid, but additionally adds field g to the dump. This is convenient for the 
   ! strain trace, where (dsus+dzuz) has been computed beforehand.
   !
-  use data_proc, ONLY : appmynum
-  use data_pointwise, ONLY: inv_s_solid
-  use pointwise_derivatives, ONLY: dsdf_solid_allaxis
-  use data_source, ONLY : have_src, src_dump_type
+  use data_proc,                ONLY : appmynum
+  use pointwise_derivatives,    ONLY: f_over_s_solid
+  use data_source,              ONLY : have_src, src_dump_type
   
   include 'mesh_params.h'
   
@@ -652,14 +651,8 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
   real(kind=realkind), allocatable    :: gloc1d(:)
   integer                             :: iel, glen
   
-  floc = f
   gloc = g
-
-  call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
-  do iel=1, naxel_solid
-     !inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-     floc(0,:,ax_el_solid(iel)) = dsdf(:,iel) 
-  enddo
+  floc = f_over_s_solid(f)
 
   ! construct masked f/s (e.g. Epp)
   if (have_src .and. src_dump_type == 'mask') then
@@ -667,8 +660,6 @@ subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
        call eradicate_src_elem_values(gloc)
   endif
 
-  ! construct sum of f/s and g (e.g. straintrace)
-  floc = inv_s_solid * floc
   gloc = floc + gloc
 
   glen = size(gloc(ibeg:iend,ibeg:iend,:))
@@ -703,10 +694,9 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
   ! the solid, but additionally adds field g to the dump. This is convenient for the 
   ! strain trace, where (dsus+dzuz) has been computed beforehand.
   !
-  use data_proc, ONLY : appmynum
-  use data_pointwise, ONLY: inv_s_solid
-  use pointwise_derivatives, ONLY: dsdf_solid_allaxis
-  use data_source, ONLY : have_src,src_dump_type
+  use data_proc,                ONLY: appmynum
+  use pointwise_derivatives,    ONLY: f_over_s_solid
+  use data_source,              ONLY: have_src, src_dump_type
   
   include 'mesh_params.h'
   
@@ -719,16 +709,7 @@ subroutine dump_half_field_over_s_solid_1d_add(f,g,filename,appisnap)
   real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
   integer                           :: iel, glen
 
-  floc = f
-  gloc = g
-  
-  call dsdf_solid_allaxis(floc, dsdf) ! axial f/s
-  do iel=1,naxel_solid
-     !inv_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-     floc(0,:,ax_el_solid(iel)) = dsdf(:,iel)
-  enddo
-
-  gloc = (inv_s_solid * floc + gloc) * .5
+  gloc = (f_over_s_solid(floc) + g) * .5
 
   if (have_src .and. src_dump_type == 'mask') &
        call eradicate_src_elem_values(gloc)
