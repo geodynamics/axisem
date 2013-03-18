@@ -1135,8 +1135,6 @@ subroutine compute_strain(u, chi)
   use pointwise_derivatives,    ONLY: axisym_gradient_solid_add
   use pointwise_derivatives,    ONLY: axisym_gradient_solid
   use pointwise_derivatives,    ONLY: f_over_s_solid
-  !use wavefields_io,            ONLY: dump_field_over_s_solid_and_add
-  !use wavefields_io,            ONLY: dump_half_field_over_s_solid_1d_add
   use wavefields_io,            ONLY: dump_half_f1_f2_over_s_fluid
   use wavefields_io,            ONLY: dump_f1_f2_over_s_fluid
   use wavefields_io,            ONLY: dump_field_1d
@@ -1173,20 +1171,12 @@ subroutine compute_strain(u, chi)
  
   ! Components involving phi....................................................
   if (src_type(1) == 'monopole') then
-     !call dump_field_over_s_solid_and_add(u(:,:,:,1), & !Epp,Eii
-     !                                     grad_sol(:,:,:,2), &
-     !                                     '/strain_dpup_sol', '/straintrace_sol', &
-     !                                     appisnap)
      call dump_field_1d(f_over_s_solid(u(:,:,:,1)), '/strain_dpup_sol', appisnap, &
                         nel_solid)
      call dump_field_1d(f_over_s_solid(u(:,:,:,1)) + grad_sol(:,:,:,2), &
                         '/straintrace_sol', appisnap, nel_solid)
  
   elseif (src_type(1) == 'dipole') then 
-     !call dump_field_over_s_solid_and_add(two_rk * u(:,:,:,2), & !Epp,Eii
-     !                                     grad_sol(:,:,:,2), &
-     !                                     '/strain_dpup_sol', '/straintrace_sol', &
-     !                                     appisnap) 
      call dump_field_1d(two_rk * f_over_s_solid(u(:,:,:,1)), '/strain_dpup_sol', &
                         appisnap, nel_solid)
      call dump_field_1d(two_rk * f_over_s_solid(u(:,:,:,1)) + grad_sol(:,:,:,2), &
@@ -1196,21 +1186,13 @@ subroutine compute_strain(u, chi)
 
      ! MvD: E12 and E23 have a minus sign not existent in the gradient, no idea
      !      whether that is on purpose!
-     !call dump_half_field_over_s_solid_1d_add(two_rk * u(:,:,:,2), &
-     !                                         grad_sol(:,:,:,1), &
-     !                                         '/strain_dsup_sol', appisnap) !E12
      call dump_field_1d(f_over_s_solid(u(:,:,:,2)) + grad_sol(:,:,:,1) / two_rk, &
                         '/strain_dsup_sol', appisnap, nel_solid) !E12
  
-     !call dump_half_field_over_s_solid_1d_add(u(:,:,:,3), grad_sol(:,:,:,2), &
-     !                                         '/strain_dzup_sol', appisnap) !E23
      call dump_field_1d((f_over_s_solid(u(:,:,:,3)) +  grad_sol(:,:,:,2)) / two_rk, &
                         '/strain_dzup_sol', appisnap, nel_solid) !E23
  
   elseif (src_type(1) == 'quadpole') then
-     !call dump_field_over_s_solid_and_add(u(:,:,:,1) - two_rk * u(:,:,:,2), & !Epp,Eii
-     !                                     grad_sol(:,:,:,2),'/strain_dpup_sol', &
-     !                                     '/straintrace_sol', appisnap) 
      call dump_field_1d(f_over_s_solid(u(:,:,:,1) - two_rk * u(:,:,:,2)), & !Epp
                         '/strain_dpup_sol', appisnap, nel_solid) 
      call dump_field_1d(f_over_s_solid(u(:,:,:,1) - two_rk * u(:,:,:,2)) &
@@ -1221,15 +1203,10 @@ subroutine compute_strain(u, chi)
  
      ! MvD: E12 and E23 have a minus sign not existent in the gradient, no idea
      !      whether that is on purpose!
-     !call dump_half_field_over_s_solid_1d_add(two_rk * u(:,:,:,1) - u(:,:,:,2), &
-     !                                         grad_sol(:,:,:,1), &
-     !                                         '/strain_dsup_sol', appisnap) !E12
      call dump_field_1d(f_over_s_solid(u(:,:,:,1) - u(:,:,:,2) / two_rk) &
                             + grad_sol(:,:,:,1) / two_rk, &
                         '/strain_dsup_sol', appisnap, nel_solid) !E12
   
-     !call dump_half_field_over_s_solid_1d_add(two_rk * u(:,:,:,3), grad_sol(:,:,:,2), &
-     !                                         '/strain_dzup_sol',appisnap) !E23
      call dump_field_1d(f_over_s_solid(u(:,:,:,3)) + grad_sol(:,:,:,2) / two_rk, &
                         '/strain_dzup_sol',appisnap, nel_solid) !E23
   endif
