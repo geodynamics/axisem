@@ -16,9 +16,9 @@ module wavefields_io
 
   private
 
-  public :: dump_field_over_s_solid_and_add
+  !public :: dump_field_over_s_solid_and_add
   public :: dump_field_over_s_fluid_and_add
-  public :: dump_half_field_over_s_solid_1d_add
+  !public :: dump_half_field_over_s_solid_1d_add
   public :: dump_half_f1_f2_over_s_fluid
   public :: dump_f1_f2_over_s_fluid
   public :: dump_field_1d
@@ -621,95 +621,95 @@ end subroutine dump_field_1d
 !=============================================================================
 
 !--------------------------------------------------------------------------
-subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
-  !
-  ! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
-  ! the solid, but additionally adds field g to the dump. This is convenient for the 
-  ! strain trace, where (dsus+dzuz) has been computed beforehand.
-  !
-  use data_proc,                ONLY: appmynum
-  use pointwise_derivatives,    ONLY: f_over_s_solid
-  use data_source,              ONLY: have_src, src_dump_type
-  
-  include 'mesh_params.h'
-  
-  real(kind=realkind),intent(in)      :: f(0:npol,0:npol,nel_solid)
-  real(kind=realkind),intent(in)      :: g(0:npol,0:npol,nel_solid)
-  real(kind=realkind)                 :: floc(0:npol,0:npol,nel_solid)
-  real(kind=realkind)                 :: gloc(0:npol,0:npol,nel_solid)
-  character(len=16), intent(in)       :: filename1, filename2
-  character(len=4), intent(in)        :: appisnap
-  integer                             :: iel
-  
-  gloc = g
-  floc = f_over_s_solid(f)
-
-  ! construct masked f/s (e.g. Epp)
-  if (have_src .and. src_dump_type == 'mask') then
-       call eradicate_src_elem_values(floc)
-       call eradicate_src_elem_values(gloc)
-  endif
-
-  gloc = floc + gloc
-
-  if (use_netcdf) then
-      call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), filename1(2:))
-      call nc_dump_field_solid(pack(gloc(ibeg:iend,ibeg:iend,:), .true.), filename2(2:))
-  else
-     open(unit=39000+mynum, file=datapath(1:lfdata)//filename1//'_'&
-                               //appmynum//'_'//appisnap//'.bindat',&
-                               FORM="UNFORMATTED",STATUS="REPLACE")
-     write(39000+mynum) floc(ibeg:iend,ibeg:iend,:)
-     close(39000+mynum)
-
-     open(unit=35000+mynum, file=datapath(1:lfdata)//filename2//'_'&
-                               //appmynum//'_'//appisnap//'.bindat',&
-                               FORM="UNFORMATTED",STATUS="REPLACE")
-     write(35000+mynum) gloc(ibeg:iend,ibeg:iend,:)
-     close(35000+mynum)
-
-  end if
-
-end subroutine dump_field_over_s_solid_and_add
+!subroutine dump_field_over_s_solid_and_add(f, g, filename1, filename2, appisnap)
+!  !
+!  ! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
+!  ! the solid, but additionally adds field g to the dump. This is convenient for the 
+!  ! strain trace, where (dsus+dzuz) has been computed beforehand.
+!  !
+!  use data_proc,                ONLY: appmynum
+!  use pointwise_derivatives,    ONLY: f_over_s_solid
+!  use data_source,              ONLY: have_src, src_dump_type
+!  
+!  include 'mesh_params.h'
+!  
+!  real(kind=realkind),intent(in)      :: f(0:npol,0:npol,nel_solid)
+!  real(kind=realkind),intent(in)      :: g(0:npol,0:npol,nel_solid)
+!  real(kind=realkind)                 :: floc(0:npol,0:npol,nel_solid)
+!  real(kind=realkind)                 :: gloc(0:npol,0:npol,nel_solid)
+!  character(len=16), intent(in)       :: filename1, filename2
+!  character(len=4), intent(in)        :: appisnap
+!  integer                             :: iel
+!  
+!  gloc = g
+!  floc = f_over_s_solid(f)
+!
+!  ! construct masked f/s (e.g. Epp)
+!  if (have_src .and. src_dump_type == 'mask') then
+!       call eradicate_src_elem_values(floc)
+!       call eradicate_src_elem_values(gloc)
+!  endif
+!
+!  gloc = floc + gloc
+!
+!  if (use_netcdf) then
+!      call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), filename1(2:))
+!      call nc_dump_field_solid(pack(gloc(ibeg:iend,ibeg:iend,:), .true.), filename2(2:))
+!  else
+!     open(unit=39000+mynum, file=datapath(1:lfdata)//filename1//'_'&
+!                               //appmynum//'_'//appisnap//'.bindat',&
+!                               FORM="UNFORMATTED",STATUS="REPLACE")
+!     write(39000+mynum) floc(ibeg:iend,ibeg:iend,:)
+!     close(39000+mynum)
+!
+!     open(unit=35000+mynum, file=datapath(1:lfdata)//filename2//'_'&
+!                               //appmynum//'_'//appisnap//'.bindat',&
+!                               FORM="UNFORMATTED",STATUS="REPLACE")
+!     write(35000+mynum) gloc(ibeg:iend,ibeg:iend,:)
+!     close(35000+mynum)
+!
+!  end if
+!
+!end subroutine dump_field_over_s_solid_and_add
 !=============================================================================
 
 !--------------------------------------------------------------------------
-subroutine dump_half_field_over_s_solid_1d_add(f, g, filename, appisnap)
-  !
-  ! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
-  ! the solid, but additionally adds field g to the dump. This is convenient for the 
-  ! strain trace, where (dsus+dzuz) has been computed beforehand.
-  !
-  use data_proc,                ONLY: appmynum
-  use pointwise_derivatives,    ONLY: f_over_s_solid
-  use data_source,              ONLY: have_src, src_dump_type
-  
-  include 'mesh_params.h'
-  
-  real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_solid)
-  real(kind=realkind),intent(in)    :: g(0:npol,0:npol,nel_solid)
-  real(kind=realkind)               :: floc(0:npol,0:npol,nel_solid)
-  real(kind=realkind)               :: gloc(0:npol,0:npol,nel_solid)
-  character(len=16), intent(in)     :: filename
-  character(len=4), intent(in)      :: appisnap
-  integer                           :: iel
-
-  gloc = (f_over_s_solid(floc) + g) * .5
-
-  if (have_src .and. src_dump_type == 'mask') &
-       call eradicate_src_elem_values(gloc)
-
-  if (use_netcdf) then
-      call nc_dump_field_solid(pack(gloc(ibeg:iend,ibeg:iend,:), .true.), filename(2:))
-  else
-      open(unit=35000+mynum,file=datapath(1:lfdata)//filename//'_'&
-                                 //appmynum//'_'//appisnap//'.bindat',&
-                                 FORM="UNFORMATTED",STATUS="REPLACE")
-      write(35000+mynum) gloc(ibeg:iend,ibeg:iend,:)
-      close(35000+mynum)
-  end if
-
-end subroutine dump_half_field_over_s_solid_1d_add
+!subroutine dump_half_field_over_s_solid_1d_add(f, g, filename, appisnap)
+!  !
+!  ! This routine acts like dump_field_over_s_solid_1d, calculating the term f/s in
+!  ! the solid, but additionally adds field g to the dump. This is convenient for the 
+!  ! strain trace, where (dsus+dzuz) has been computed beforehand.
+!  !
+!  use data_proc,                ONLY: appmynum
+!  use pointwise_derivatives,    ONLY: f_over_s_solid
+!  use data_source,              ONLY: have_src, src_dump_type
+!  
+!  include 'mesh_params.h'
+!  
+!  real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_solid)
+!  real(kind=realkind),intent(in)    :: g(0:npol,0:npol,nel_solid)
+!  real(kind=realkind)               :: floc(0:npol,0:npol,nel_solid)
+!  real(kind=realkind)               :: gloc(0:npol,0:npol,nel_solid)
+!  character(len=16), intent(in)     :: filename
+!  character(len=4), intent(in)      :: appisnap
+!  integer                           :: iel
+!
+!  gloc = (f_over_s_solid(floc) + g) * .5
+!
+!  if (have_src .and. src_dump_type == 'mask') &
+!       call eradicate_src_elem_values(gloc)
+!
+!  if (use_netcdf) then
+!      call nc_dump_field_solid(pack(gloc(ibeg:iend,ibeg:iend,:), .true.), filename(2:))
+!  else
+!      open(unit=35000+mynum,file=datapath(1:lfdata)//filename//'_'&
+!                                 //appmynum//'_'//appisnap//'.bindat',&
+!                                 FORM="UNFORMATTED",STATUS="REPLACE")
+!      write(35000+mynum) gloc(ibeg:iend,ibeg:iend,:)
+!      close(35000+mynum)
+!  end if
+!
+!end subroutine dump_half_field_over_s_solid_1d_add
 !=============================================================================
 
 !--------------------------------------------------------------------------
@@ -719,51 +719,48 @@ subroutine dump_field_over_s_fluid_and_add(f,g,filename1,filename2,appisnap)
   ! the fluid, but additionally adds field g to the dump. This is convenient for the 
   ! strain trace, where (dsus+dzuz) has been computed beforehand.
   !
-  use data_proc, ONLY : appmynum
-  use data_pointwise, ONLY: inv_s_fluid!,deviator
-  use pointwise_derivatives, ONLY: dsdf_fluid_allaxis
-  use data_source, ONLY : src_dump_type
+  use data_proc,                ONLY: appmynum
+  use data_pointwise,           ONLY: inv_s_fluid
+  use pointwise_derivatives,    ONLY: dsdf_fluid_allaxis
+  use data_source,              ONLY: src_dump_type
   
   include 'mesh_params.h'
   
   real(kind=realkind),intent(in)    :: f(0:npol,0:npol,nel_fluid)
   real(kind=realkind),intent(in)    :: g(0:npol,0:npol,nel_fluid)
   real(kind=realkind)               :: floc(0:npol,0:npol,nel_fluid)
-  real(kind=realkind)               :: gloc(0:npol,0:npol,nel_fluid)
   character(len=16), intent(in)     :: filename1,filename2
   character(len=4), intent(in)      :: appisnap
   real(kind=realkind)               :: dsdf(0:npol,naxel_fluid)
   integer                           :: iel
 
   floc = f
-  gloc = g
 
   call dsdf_fluid_allaxis(floc, dsdf) ! axial f/s
   do iel=1,naxel_fluid
-     inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
-     floc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
+     floc(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
   enddo
 
   if (use_netcdf) then
-    call nc_dump_field_fluid(inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:), &
-                          filename1(2:))
-    call nc_dump_field_fluid(inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:) +  &
-                          gloc(ibeg:iend,ibeg:iend,:), filename2(2:))
+    call nc_dump_field_fluid(inv_s_fluid(ibeg:iend,ibeg:iend,:) &
+                             * floc(ibeg:iend,ibeg:iend,:), filename1(2:))
+    call nc_dump_field_fluid(inv_s_fluid(ibeg:iend,ibeg:iend,:) &
+                             * floc(ibeg:iend,ibeg:iend,:) + g(ibeg:iend,ibeg:iend,:), &
+                             filename2(2:))
   else
     ! f/s (e.g. Epp)
     open(unit=39000+mynum,file=datapath(1:lfdata)//filename1//'_'&
                               //appmynum//'_'//appisnap//'.bindat',&
                               FORM="UNFORMATTED",STATUS="REPLACE")
-    write(39000+mynum) inv_s_fluid(ibeg:iend,ibeg:iend,:) * &
-                       floc(ibeg:iend,ibeg:iend,:)
+    write(39000+mynum) inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:)
     close(39000+mynum)
 
     ! sum of f/s and g (e.g. straintrace)
     open(unit=35000+mynum,file=datapath(1:lfdata)//filename2//'_'&
                               //appmynum//'_'//appisnap//'.bindat',&
                               FORM="UNFORMATTED",STATUS="REPLACE")
-    write(35000+mynum) inv_s_fluid(ibeg:iend,ibeg:iend,:)* &
-                       floc(ibeg:iend,ibeg:iend,:) + gloc(ibeg:iend,ibeg:iend,:)
+    write(35000+mynum) inv_s_fluid(ibeg:iend,ibeg:iend,:) * floc(ibeg:iend,ibeg:iend,:) &
+                        + g(ibeg:iend,ibeg:iend,:)
     close(35000+mynum)
   end if 
 
@@ -773,9 +770,9 @@ end subroutine dump_field_over_s_fluid_and_add
 !--------------------------------------------------------------------------
 subroutine dump_half_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
-  use data_proc, ONLY : appmynum
-  use data_pointwise, ONLY: inv_s_fluid
-  use pointwise_derivatives, ONLY : dsdf_fluid_allaxis
+  use data_proc,                ONLY: appmynum
+  use data_pointwise,           ONLY: inv_s_fluid
+  use pointwise_derivatives,    ONLY: dsdf_fluid_allaxis
   include 'mesh_params.h'
   
   real(kind=realkind),intent(in) :: f1(0:npol,0:npol,nel_fluid)
@@ -790,8 +787,7 @@ subroutine dump_half_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
   call dsdf_fluid_allaxis(f2loc,dsdf) ! axial f/s
   do iel=1, naxel_fluid
-     inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
-     f2loc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
+     f2loc(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
   enddo
 
   if (use_netcdf) then
@@ -834,15 +830,14 @@ subroutine dump_f1_f2_over_s_fluid(f1,f2,filename,appisnap)
 
   call dsdf_fluid_allaxis(f2loc, dsdf) ! axial f/s
   do iel=1,naxel_fluid
-     inv_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
-     f2loc(0,:,ax_el_fluid(iel)) = one ! otherwise this would result in df/ds * f below
+     f2loc(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
   enddo
 
   if (use_netcdf) then
      call nc_dump_field_fluid((f1(ibeg:iend,ibeg:iend,:) + &
-                            inv_s_fluid(ibeg:iend,ibeg:iend,:) * &
-                            f2loc(ibeg:iend,ibeg:iend,:)), &
-                           filename(2:))
+                               inv_s_fluid(ibeg:iend,ibeg:iend,:) * &
+                               f2loc(ibeg:iend,ibeg:iend,:)), &
+                               filename(2:))
   else
       open(unit=65000+mynum,file=datapath(1:lfdata)//filename//'_'&
            //appmynum//'_'//appisnap//'.bindat',&
