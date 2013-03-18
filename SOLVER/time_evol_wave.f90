@@ -1135,10 +1135,11 @@ subroutine compute_strain(u, chi)
   use pointwise_derivatives,    ONLY: axisym_gradient_solid_add
   use pointwise_derivatives,    ONLY: axisym_gradient_solid
   use pointwise_derivatives,    ONLY: f_over_s_solid
-  use wavefields_io,            ONLY: dump_half_f1_f2_over_s_fluid
-  use wavefields_io,            ONLY: dump_f1_f2_over_s_fluid
+  use pointwise_derivatives,    ONLY: f_over_s_fluid
+  !use wavefields_io,            ONLY: dump_half_f1_f2_over_s_fluid
+  !use wavefields_io,            ONLY: dump_f1_f2_over_s_fluid
   use wavefields_io,            ONLY: dump_field_1d
-  use wavefields_io,            ONLY: dump_field_over_s_fluid_and_add
+  !use wavefields_io,            ONLY: dump_field_over_s_fluid_and_add
   
   include 'mesh_params.h'
   
@@ -1230,7 +1231,7 @@ subroutine compute_strain(u, chi)
      call dump_field_1d(grad_flu(:,:,:,1), '/strain_dsus_flu', appisnap, nel_fluid) ! E11
  
      ! gradient of z component added to s-comp gradient for strain trace and E13
-     call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)  !1:dsuz+dzus,2:dzuz+dsus
+     call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)  !1:dsuz+dzus, 2:dzuz+dsus
  
      ! calculate entire E31 term: (dsuz+dzus)/2
      grad_flu(:,:,:,1) = grad_flu(:,:,:,1) / two_rk
@@ -1240,42 +1241,71 @@ subroutine compute_strain(u, chi)
  
      if (src_type(1) == 'monopole') then
         ! Calculate us/s and straintrace
-        call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1), grad_flu(:,:,:,2), & !Epp,Eii
-                                             '/strain_dpup_flu', '/straintrace_flu', &
-                                             appisnap) 
+        !call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1), grad_flu(:,:,:,2), & !Epp,Eii
+        !                                     '/strain_dpup_flu', '/straintrace_flu', &
+        !                                     appisnap) 
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1)), '/strain_dpup_flu', appisnap, &
+                           nel_fluid) 
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1)) + grad_flu(:,:,:,2), &
+                           '/straintrace_flu', appisnap, nel_fluid) 
  
      elseif (src_type(1) == 'dipole') then
-        call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi, &
-                                             grad_flu(:,:,:,2), '/strain_dpup_flu', &
-                                             '/straintrace_flu', appisnap)  !Epp,Eii
+        !call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi, &
+        !                                     grad_flu(:,:,:,2), '/strain_dpup_flu', &
+        !                                     '/straintrace_flu', appisnap)  !Epp,Eii
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi), &
+                           '/strain_dpup_flu', appisnap, nel_fluid)  !Epp
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi) &
+                            + grad_flu(:,:,:,2), &
+                            '/straintrace_flu', appisnap, nel_fluid)  !Eii
  
         ! gradient of phi component
         call axisym_gradient_fluid(inv_s_rho_fluid * chi,grad_flu)   ! dsup, dzup
  
-        call dump_half_f1_f2_over_s_fluid(grad_flu(:,:,:,1), &
-                                          usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi, &
-                                          '/strain_dsup_flu', appisnap)   ! E12
+        !call dump_half_f1_f2_over_s_fluid(grad_flu(:,:,:,1), &
+        !                                  usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi, &
+        !                                  '/strain_dsup_flu', appisnap)   ! E12
+        call dump_field_1d((grad_flu(:,:,:,1) &
+                            + f_over_s_fluid(usz_fluid(:,:,:,1) &
+                                - inv_s_rho_fluid * chi)) / two_rk, &
+                           '/strain_dsup_flu', appisnap, nel_fluid)   ! E12
  
-        call dump_half_f1_f2_over_s_fluid(grad_flu(:,:,:,2), usz_fluid(:,:,:,2), &
-                                          '/strain_dzup_flu', appisnap)  ! E23
+        !call dump_half_f1_f2_over_s_fluid(grad_flu(:,:,:,2), usz_fluid(:,:,:,2), &
+        !                                  '/strain_dzup_flu', appisnap)  ! E23
+        call dump_field_1d((grad_flu(:,:,:,2) + f_over_s_fluid(usz_fluid(:,:,:,2))) / two_rk, &
+                            '/strain_dzup_flu', appisnap, nel_fluid)  ! E23
  
      elseif (src_type(1) == 'quadpole') then
-        call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1) - &
-                                             two_rk * inv_s_rho_fluid * chi, &  !Epp,Eii
-                                             grad_flu(:,:,:,2), & 
-                                             '/strain_dpup_flu', '/straintrace_flu', &
-                                             appisnap) 
+        !call dump_field_over_s_fluid_and_add(usz_fluid(:,:,:,1) - &
+        !                                     two_rk * inv_s_rho_fluid * chi, &  !Epp,Eii
+        !                                     grad_flu(:,:,:,2), & 
+        !                                     '/strain_dpup_flu', '/straintrace_flu', &
+        !                                     appisnap) 
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) &
+                                           - two_rk * inv_s_rho_fluid * chi), &  !Epp
+                           '/strain_dpup_flu', appisnap, nel_fluid) 
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1)&
+                                           - two_rk * inv_s_rho_fluid * chi) &  !Eii
+                            + grad_flu(:,:,:,2), & 
+                           '/straintrace_flu', appisnap, nel_fluid) 
  
         ! gradient of phi component
         call axisym_gradient_fluid(inv_s_rho_fluid * chi,grad_flu)   ! dsup, dzup
  
-        call dump_f1_f2_over_s_fluid(grad_flu(:,:,:,1), &
-                                     usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi, &
-                                     '/strain_dsup_flu', appisnap)   !E12
+        !call dump_f1_f2_over_s_fluid(grad_flu(:,:,:,1), &
+        !                             usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi, &
+        !                             '/strain_dsup_flu', appisnap)   !E12
+        call dump_field_1d((grad_flu(:,:,:,1) &
+                             + f_over_s_fluid(usz_fluid(:,:,:,1) &
+                                - inv_s_rho_fluid * chi)), &
+                           '/strain_dsup_flu', appisnap, nel_fluid)   !E12
                                          
  
-        call dump_half_f1_f2_over_s_fluid(grad_flu(:,:,:,2), two_rk * usz_fluid(:,:,:,2), &
-                                           '/strain_dzup_flu', appisnap)   !E23
+        !call dump_half_f1_f2_over_s_fluid(grad_flu(:,:,:,2), two_rk * usz_fluid(:,:,:,2), &
+        !                                   '/strain_dzup_flu', appisnap)   !E23
+        call dump_field_1d(grad_flu(:,:,:,2) / two_rk &
+                            + f_over_s_fluid(usz_fluid(:,:,:,2)), &
+                           '/strain_dzup_flu', appisnap, nel_fluid)   !E23
      endif   !src_type
  
   endif   ! have_fluid

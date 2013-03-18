@@ -18,7 +18,9 @@ MODULE pointwise_derivatives
   public :: axisym_gradient_fluid, axisym_gradient_fluid_add
   public :: dsdf_elem_solid, dzdf_elem_solid
   public :: dsdf_fluid_axis, dsdf_fluid_allaxis, dsdf_solid_allaxis
-  public :: axisym_dsdf_solid, f_over_s_solid
+  public :: axisym_dsdf_solid
+  public :: f_over_s_solid
+  public :: f_over_s_fluid
   
   private
 
@@ -46,6 +48,33 @@ function f_over_s_solid(f)
   call dsdf_solid_allaxis(f, dsdf) ! axial f/s
   do iel=1, naxel_solid
      f_over_s_solid(0,:,ax_el_solid(iel)) = dsdf(:,iel)
+  enddo
+
+end function
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+function f_over_s_fluid(f)
+  !
+  ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
+  !
+  use data_pointwise,           ONLY: inv_s_fluid
+  use data_mesh,                ONLY: naxel_fluid, ax_el_fluid
+
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: f(0:npol,0:npol,nel_fluid)
+  real(kind=realkind)            :: f_over_s_fluid(0:npol,0:npol,nel_fluid)
+  real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
+  integer                        :: iel
+  
+  ! in the bulk:
+  f_over_s_fluid = inv_s_fluid * f
+
+  ! at the axis:
+  call dsdf_fluid_allaxis(f, dsdf) ! axial f/s
+  do iel=1, naxel_fluid
+     f_over_s_fluid(0,:,ax_el_fluid(iel)) = dsdf(:,iel)
   enddo
 
 end function
