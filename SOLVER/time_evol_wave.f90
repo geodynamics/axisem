@@ -1146,6 +1146,7 @@ subroutine compute_strain(u, chi)
   real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
   real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,nel_fluid,2)
+  real(kind=realkind)             :: up_fluid(0:npol,0:npol,nel_fluid)
   real(kind=realkind)             :: grad_flu(0:npol,0:npol,nel_fluid,2)
   character(len=5)                :: appisnap
   real(kind=realkind), parameter  :: two_rk = real(2, kind=realkind)
@@ -1241,38 +1242,40 @@ subroutine compute_strain(u, chi)
                            '/straintrace_flu', appisnap, nel_fluid) ! Ekk
  
      elseif (src_type(1) == 'dipole') then
-        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi), &
+        up_fluid = inv_s_rho_fluid * chi
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid), &
                            '/strain_dpup_flu', appisnap, nel_fluid)  !E22
-        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) - inv_s_rho_fluid * chi) &
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid) &
                             + grad_flu(:,:,:,2), &
                             '/straintrace_flu', appisnap, nel_fluid)  !Ekk
  
         ! gradient of phi component
-        call axisym_gradient_fluid(inv_s_rho_fluid * chi, grad_flu)   ! 1:dsup, 2:dzup
+        call axisym_gradient_fluid(up_fluid, grad_flu)   ! 1:dsup, 2:dzup
  
         call dump_field_1d((- grad_flu(:,:,:,1) &
                             - f_over_s_fluid(usz_fluid(:,:,:,1) &
-                                - inv_s_rho_fluid * chi)) / two_rk, &
+                                - up_fluid)) / two_rk, &
                            '/strain_dsup_flu', appisnap, nel_fluid)   ! E12
  
         call dump_field_1d(- (grad_flu(:,:,:,2) - f_over_s_fluid(usz_fluid(:,:,:,2))) &
                             / two_rk, '/strain_dzup_flu', appisnap, nel_fluid)  ! E23
  
      elseif (src_type(1) == 'quadpole') then
+        up_fluid = inv_s_rho_fluid * chi ! carefull, atm inv_s_rho_fluid
+                                         ! contains the prefactor for quadpole
         call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) &
-                                           - two_rk * inv_s_rho_fluid * chi), &  !E22
+                                           - two_rk * up_fluid), &  !E22
                            '/strain_dpup_flu', appisnap, nel_fluid) 
         call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1)&
-                                           - two_rk * inv_s_rho_fluid * chi) &  !Ekk
+                                           - two_rk * up_fluid) &  !Ekk
                             + grad_flu(:,:,:,2), & 
                            '/straintrace_flu', appisnap, nel_fluid) 
  
         ! gradient of phi component
-        call axisym_gradient_fluid(inv_s_rho_fluid * chi,grad_flu)   ! 1:dsup, 2:dzup
+        call axisym_gradient_fluid(up_fluid, grad_flu)   ! 1:dsup, 2:dzup
  
         call dump_field_1d((- grad_flu(:,:,:,1) &
-                             - f_over_s_fluid(usz_fluid(:,:,:,1) &
-                                - inv_s_rho_fluid * chi)), &
+                             - f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid)), &
                            '/strain_dsup_flu', appisnap, nel_fluid)   !E12
                                          
  
