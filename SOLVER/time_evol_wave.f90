@@ -1179,7 +1179,7 @@ subroutine compute_strain(u, chi)
                         nel_solid) !Ekk
  
   elseif (src_type(1) == 'dipole') then 
-     buff_solid = two_rk * f_over_s_solid(u(:,:,:,1))
+     buff_solid = two_rk * f_over_s_solid(u(:,:,:,2))
      call dump_field_1d(buff_solid, '/strain_dpup_sol', appisnap, nel_solid)
      call dump_field_1d(buff_solid + grad_sol(:,:,:,2), '/straintrace_sol', appisnap, &
                         nel_solid)
