@@ -1146,6 +1146,7 @@ subroutine compute_strain(u, chi)
   real(kind=realkind), intent(in) :: chi(0:npol,0:npol,nel_fluid)
   
   real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
+  real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
   real(kind=realkind)             :: grad_flu(0:npol,0:npol,nel_fluid,2)
   character(len=5)                :: appisnap
   real(kind=realkind), parameter  :: two_rk = real(2, kind=realkind)
@@ -1171,16 +1172,16 @@ subroutine compute_strain(u, chi)
  
   ! Components involving phi....................................................
   if (src_type(1) == 'monopole') then
-     call dump_field_1d(f_over_s_solid(u(:,:,:,1)), '/strain_dpup_sol', appisnap, &
-                        nel_solid)
-     call dump_field_1d(f_over_s_solid(u(:,:,:,1)) + grad_sol(:,:,:,2), &
-                        '/straintrace_sol', appisnap, nel_solid)
+     buff_solid = f_over_s_solid(u(:,:,:,1))
+     call dump_field_1d(buff_solid, '/strain_dpup_sol', appisnap, nel_solid) !Epp
+     call dump_field_1d(buff_solid + grad_sol(:,:,:,2), '/straintrace_sol', appisnap, &
+                        nel_solid) !Ekk
  
   elseif (src_type(1) == 'dipole') then 
-     call dump_field_1d(two_rk * f_over_s_solid(u(:,:,:,1)), '/strain_dpup_sol', &
-                        appisnap, nel_solid)
-     call dump_field_1d(two_rk * f_over_s_solid(u(:,:,:,1)) + grad_sol(:,:,:,2), &
-                        '/straintrace_sol', appisnap, nel_solid)
+     buff_solid = two_rk * f_over_s_solid(u(:,:,:,1))
+     call dump_field_1d(buff_solid, '/strain_dpup_sol', appisnap, nel_solid)
+     call dump_field_1d(buff_solid + grad_sol(:,:,:,2), '/straintrace_sol', appisnap, &
+                        nel_solid)
  
      call axisym_gradient_solid(u(:,:,:,1) - u(:,:,:,2), grad_sol) !1:dsup,2:dzup
 
@@ -1193,10 +1194,9 @@ subroutine compute_strain(u, chi)
                         '/strain_dzup_sol', appisnap, nel_solid) !E23
  
   elseif (src_type(1) == 'quadpole') then
-     call dump_field_1d(f_over_s_solid(u(:,:,:,1) - two_rk * u(:,:,:,2)), & !Epp
-                        '/strain_dpup_sol', appisnap, nel_solid) 
-     call dump_field_1d(f_over_s_solid(u(:,:,:,1) - two_rk * u(:,:,:,2)) &
-                            + grad_sol(:,:,:,2), & !Epp
+     buff_solid = f_over_s_solid(u(:,:,:,1) - two_rk * u(:,:,:,2))
+     call dump_field_1d(buff_solid, '/strain_dpup_sol', appisnap, nel_solid) !Epp
+     call dump_field_1d(buff_solid + grad_sol(:,:,:,2), & !Ekk
                         '/straintrace_sol', appisnap, nel_solid) 
   
      call axisym_gradient_solid(u(:,:,:,2), grad_sol) ! 1: dsup, 2: dzup
