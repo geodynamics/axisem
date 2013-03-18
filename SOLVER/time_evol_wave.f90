@@ -1120,7 +1120,7 @@ subroutine compute_strain(u, chi)
   ! components is stored separately for solid and fluid domains respectively.
   ! The dipole case is transfered to the (s,phi,z) system here.
   !
-  ! Dumping Ekk, E11, E22, E13, -E23, and -E12, this has the advantage
+  ! Dumping Ekk, E11, E22, E13, E23, and E12, this has the advantage
   ! that if only lambda/bulk sound speed are of interest, then only a 
   ! scalar Ekk needs to be loaded. Be aware that diuj in the variable names does
   ! NOT stand for partial derivatives, but rather the ij component of the
@@ -1183,12 +1183,10 @@ subroutine compute_strain(u, chi)
  
      call axisym_gradient_solid(u(:,:,:,1) - u(:,:,:,2), grad_sol) !1:dsup,2:dzup
 
-     ! MvD: E12 and E23 have a minus sign not existent in the gradient, no idea
-     !      whether that is on purpose!
-     call dump_field_1d(f_over_s_solid(u(:,:,:,2)) + grad_sol(:,:,:,1) / two_rk, &
+     call dump_field_1d(- f_over_s_solid(u(:,:,:,2)) - grad_sol(:,:,:,1) / two_rk, &
                         '/strain_dsup_sol', appisnap, nel_solid) !E12
  
-     call dump_field_1d((f_over_s_solid(u(:,:,:,3)) +  grad_sol(:,:,:,2)) / two_rk, &
+     call dump_field_1d(- (f_over_s_solid(u(:,:,:,3)) +  grad_sol(:,:,:,2)) / two_rk, &
                         '/strain_dzup_sol', appisnap, nel_solid) !E23
  
   elseif (src_type(1) == 'quadpole') then
@@ -1199,13 +1197,11 @@ subroutine compute_strain(u, chi)
   
      call axisym_gradient_solid(u(:,:,:,2), grad_sol) ! 1: dsup, 2: dzup
  
-     ! MvD: E12 and E23 have a minus sign not existent in the gradient, no idea
-     !      whether that is on purpose!
-     call dump_field_1d(f_over_s_solid(u(:,:,:,1) - u(:,:,:,2) / two_rk) &
-                            + grad_sol(:,:,:,1) / two_rk, &
+     call dump_field_1d(- f_over_s_solid(u(:,:,:,1) + u(:,:,:,2) / two_rk) &
+                            - grad_sol(:,:,:,1) / two_rk, &
                         '/strain_dsup_sol', appisnap, nel_solid) !E12
   
-     call dump_field_1d(f_over_s_solid(u(:,:,:,3)) + grad_sol(:,:,:,2) / two_rk, &
+     call dump_field_1d(- f_over_s_solid(u(:,:,:,3)) - grad_sol(:,:,:,2) / two_rk, &
                         '/strain_dzup_sol',appisnap, nel_solid) !E23
   endif
  
@@ -1253,13 +1249,13 @@ subroutine compute_strain(u, chi)
         ! gradient of phi component
         call axisym_gradient_fluid(inv_s_rho_fluid * chi,grad_flu)   ! 1:dsup, 2:dzup
  
-        call dump_field_1d((grad_flu(:,:,:,1) &
-                            + f_over_s_fluid(usz_fluid(:,:,:,1) &
+        call dump_field_1d((- grad_flu(:,:,:,1) &
+                            - f_over_s_fluid(usz_fluid(:,:,:,1) &
                                 - inv_s_rho_fluid * chi)) / two_rk, &
                            '/strain_dsup_flu', appisnap, nel_fluid)   ! E12
  
-        call dump_field_1d((grad_flu(:,:,:,2) + f_over_s_fluid(usz_fluid(:,:,:,2))) / two_rk, &
-                            '/strain_dzup_flu', appisnap, nel_fluid)  ! E23
+        call dump_field_1d(- (grad_flu(:,:,:,2) - f_over_s_fluid(usz_fluid(:,:,:,2))) &
+                            / two_rk, '/strain_dzup_flu', appisnap, nel_fluid)  ! E23
  
      elseif (src_type(1) == 'quadpole') then
         call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) &
@@ -1273,14 +1269,14 @@ subroutine compute_strain(u, chi)
         ! gradient of phi component
         call axisym_gradient_fluid(inv_s_rho_fluid * chi,grad_flu)   ! 1:dsup, 2:dzup
  
-        call dump_field_1d((grad_flu(:,:,:,1) &
-                             + f_over_s_fluid(usz_fluid(:,:,:,1) &
+        call dump_field_1d((- grad_flu(:,:,:,1) &
+                             - f_over_s_fluid(usz_fluid(:,:,:,1) &
                                 - inv_s_rho_fluid * chi)), &
                            '/strain_dsup_flu', appisnap, nel_fluid)   !E12
                                          
  
-        call dump_field_1d(grad_flu(:,:,:,2) / two_rk &
-                            + f_over_s_fluid(usz_fluid(:,:,:,2)), &
+        call dump_field_1d(- grad_flu(:,:,:,2) / two_rk &
+                            - f_over_s_fluid(usz_fluid(:,:,:,2)), &
                            '/strain_dzup_flu', appisnap, nel_fluid)   !E23
      endif   !src_type
  
