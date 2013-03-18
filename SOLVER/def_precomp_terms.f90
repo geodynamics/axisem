@@ -264,7 +264,6 @@ double precision :: local_crd_nodes(8,2)
   allocate(DzDeta_over_J_flu(0:npol,0:npol,1:nel_fluid))
   allocate(DsDxi_over_J_flu(0:npol,0:npol,1:nel_fluid))
   allocate(DzDxi_over_J_flu(0:npol,0:npol,1:nel_fluid))
-  allocate(usz_fluid(0:npol,0:npol,1:nel_fluid,2))
   allocate(inv_s_fluid(0:npol,0:npol,1:nel_fluid))
   allocate(inv_s_rho_fluid(0:npol,0:npol,1:nel_fluid))
 

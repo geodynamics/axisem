@@ -40,7 +40,6 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_pointwise, ONLY : usz_fluid
   use data_source, ONLY : src_type
   use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
   
@@ -49,6 +48,7 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   integer, intent(in)             :: ibeg, iend, jbeg, jend
   real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
   real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
   character(len=4)                :: appisnap
   integer                         :: iel, ipol, jpol, iidim
   real(kind=realkind)             :: dsdchi, prefac
@@ -123,7 +123,6 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_pointwise, ONLY : usz_fluid
   use data_source, ONLY : src_type
   use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
   
@@ -132,6 +131,7 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
   integer, intent(in)             :: ibeg, iend, jbeg, jend
   real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
   real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
   character(len=4)                :: appisnap
   integer                         :: iel, ipol, jpol, iidim
   real(kind=realkind)             :: dsdchi, prefac
@@ -525,7 +525,6 @@ end subroutine solid_snapshot
 !-----------------------------------------------------------------------------
 subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
 
-  use data_pointwise, ONLY : usz_fluid
   use data_source, ONLY : src_type
   use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
   
@@ -533,6 +532,7 @@ subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
   
   integer, intent(in)             :: ibeg, iend, jbeg, jend
   real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
   character(len=4)                :: appisnap
   integer                         :: iel, ipol, jpol
   real(kind=realkind)             :: dsdchi, prefac
@@ -710,7 +710,7 @@ end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------
 subroutine dump_velo_global(v,dchi)
 
-  use data_pointwise,           ONLY: inv_rho_fluid, inv_s_rho_fluid, usz_fluid
+  use data_pointwise,           ONLY: inv_rho_fluid, inv_s_rho_fluid
   use data_source,              ONLY: src_type, src_dump_type
   use pointwise_derivatives,    ONLY: axisym_gradient_fluid, dsdf_fluid_allaxis
   use unit_stride_colloc,       ONLY: collocate0_1d
@@ -726,6 +726,7 @@ subroutine dump_velo_global(v,dchi)
   real(kind=realkind)            :: dsdchi(0:npol,naxel_fluid)
   real(kind=realkind)            :: f(0:npol,0:npol,1:nel_solid,3)
   real(kind=realkind)            :: fflu(0:npol,0:npol,1:nel_fluid,3)
+  real(kind=realkind)            :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
 
   call define_io_appendix(appisnap,istrain)
 

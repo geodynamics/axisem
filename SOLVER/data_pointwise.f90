@@ -23,13 +23,6 @@ include "mesh_params.h"
 
 ! (s rho)^-1 in fluid - only for phi comp. of fluid displacement
   real(kind=realkind), allocatable :: inv_s_rho_fluid(:,:,:)
-
-! (s,z) components of fluid potential
-  real(kind=realkind), allocatable :: usz_fluid(:,:,:,:)
-
-  real(kind=realkind), allocatable :: deviator(:,:,:,:)
-
-
   real(kind=realkind), allocatable :: inv_s_fluid(:,:,:)
 
 ! (s)^-1 in solid - needed for the strain tensor, if computed on-the-fly

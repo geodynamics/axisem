@@ -1318,9 +1318,8 @@ subroutine compute_surfelem_strain(u)
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_pointwise,         ONLY: inv_rho_fluid, inv_s_rho_fluid, usz_fluid, inv_s_solid
+  use data_pointwise,         ONLY: inv_s_solid
   use data_source,            ONLY: src_type
-  use pointwise_derivatives,  ONLY: axisym_gradient_fluid, axisym_gradient_fluid_add
   use pointwise_derivatives,  ONLY: axisym_gradient_solid, axisym_gradient_solid_add
   use nc_routines,            ONLY: nc_dump_surface
   

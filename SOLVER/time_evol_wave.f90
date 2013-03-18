@@ -1128,7 +1128,7 @@ subroutine compute_strain(u, chi)
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_pointwise,           ONLY: inv_rho_fluid, inv_s_rho_fluid, usz_fluid
+  use data_pointwise,           ONLY: inv_rho_fluid, inv_s_rho_fluid
   use data_source,              ONLY: src_type
   use pointwise_derivatives,    ONLY: axisym_gradient_fluid_add
   use pointwise_derivatives,    ONLY: axisym_gradient_fluid
@@ -1145,6 +1145,7 @@ subroutine compute_strain(u, chi)
   
   real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
   real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
+  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,nel_fluid,2)
   real(kind=realkind)             :: grad_flu(0:npol,0:npol,nel_fluid,2)
   character(len=5)                :: appisnap
   real(kind=realkind), parameter  :: two_rk = real(2, kind=realkind)
@@ -1247,7 +1248,7 @@ subroutine compute_strain(u, chi)
                             '/straintrace_flu', appisnap, nel_fluid)  !Ekk
  
         ! gradient of phi component
-        call axisym_gradient_fluid(inv_s_rho_fluid * chi,grad_flu)   ! 1:dsup, 2:dzup
+        call axisym_gradient_fluid(inv_s_rho_fluid * chi, grad_flu)   ! 1:dsup, 2:dzup
  
         call dump_field_1d((- grad_flu(:,:,:,1) &
                             - f_over_s_fluid(usz_fluid(:,:,:,1) &
