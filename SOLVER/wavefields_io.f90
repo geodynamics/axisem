@@ -192,7 +192,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     use data_source, ONLY : src_type
-    use data_pointwise, ONLY : inv_rho_fluid, inv_s_rho_fluid
+    use data_pointwise, ONLY : inv_rho_fluid, prefac_inv_s_rho_fluid
     use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
     use data_time, only : t
     
@@ -212,10 +212,6 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     
     allocate(u(1:3,1:npoint_plot))
 
-    if (src_type(1) == 'monopole') prefac = 0.
-    if (src_type(1) == 'dipole')   prefac = 1.
-    if (src_type(1) == 'quadpole') prefac = 2.
-
     ! convert +- to sp in case of monopole
     if (src_type(1) == 'dipole') then
        f_sol_spz(:,:,:,1) = f_sol(:,:,:,1) + f_sol(:,:,:,2)
@@ -232,8 +228,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
        usz_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
        usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
 
-       ! MvD: I BET this is wrong, compare def_precomp_terms.f90:408 :D
-       up_fl(:,:,:) = prefac * chi * inv_s_rho_fluid
+       up_fl(:,:,:) = chi * prefac_inv_s_rho_fluid
        ! (n.b. up_fl is zero at the axes for all source types, prefac = 0 for
        ! monopole and chi -> 0 for dipole and quadrupole EQ 73-77 in TNM 2007)
 
@@ -722,7 +717,7 @@ end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------------------
 subroutine dump_velo_global(v,dchi)
 
-  use data_pointwise,           ONLY: inv_rho_fluid, inv_s_rho_fluid
+  use data_pointwise,           ONLY: inv_rho_fluid, prefac_inv_s_rho_fluid
   use data_source,              ONLY: src_type, src_dump_type
   use pointwise_derivatives,    ONLY: axisym_gradient_fluid, dsdf_fluid_allaxis
   use unit_stride_colloc,       ONLY: collocate0_1d
@@ -775,7 +770,7 @@ subroutine dump_velo_global(v,dchi)
     call axisym_gradient_fluid(dchi, usz_fluid)
 
     ! phi component needs special care: m/(s rho) dchi
-    phicomp = inv_s_rho_fluid * dchi
+    phicomp = prefac_inv_s_rho_fluid * dchi
 
     call define_io_appendix(appisnap,istrain)
     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &

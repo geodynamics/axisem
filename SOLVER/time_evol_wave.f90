@@ -1128,7 +1128,7 @@ subroutine compute_strain(u, chi)
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_pointwise,           ONLY: inv_rho_fluid, inv_s_rho_fluid
+  use data_pointwise,           ONLY: inv_rho_fluid, prefac_inv_s_rho_fluid
   use data_source,              ONLY: src_type
   use pointwise_derivatives,    ONLY: axisym_gradient_fluid_add
   use pointwise_derivatives,    ONLY: axisym_gradient_fluid
@@ -1242,7 +1242,7 @@ subroutine compute_strain(u, chi)
                            '/straintrace_flu', appisnap, nel_fluid) ! Ekk
  
      elseif (src_type(1) == 'dipole') then
-        up_fluid = inv_s_rho_fluid * chi
+        up_fluid = prefac_inv_s_rho_fluid * chi
         call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid), &
                            '/strain_dpup_flu', appisnap, nel_fluid)  !E22
         call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid) &
@@ -1261,8 +1261,7 @@ subroutine compute_strain(u, chi)
                             / two_rk, '/strain_dzup_flu', appisnap, nel_fluid)  ! E23
  
      elseif (src_type(1) == 'quadpole') then
-        up_fluid = inv_s_rho_fluid * chi ! carefull, atm inv_s_rho_fluid
-                                         ! contains the prefactor for quadpole
+        up_fluid = prefac_inv_s_rho_fluid * chi
         call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1) &
                                            - two_rk * up_fluid), &  !E22
                            '/strain_dpup_flu', appisnap, nel_fluid) 
