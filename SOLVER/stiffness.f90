@@ -228,7 +228,7 @@ subroutine glob_stiffness_mono(glob_stiffness,u)
         m0_w3l(0:npol) = M0_w3(0:npol,ielem)
         
         uz0 = uz(0,:)
-        X2(0,:) = 0
+        X2 = 0
 
         call vxm(G0, us, V1)
         call vxm(uz0, G2, V2)
