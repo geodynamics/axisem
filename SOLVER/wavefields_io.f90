@@ -29,7 +29,7 @@ module wavefields_io
 
 contains
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   !
   ! Dumps the global displacement snapshots [m] in ASCII format
@@ -71,7 +71,8 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   
         if (axis_fluid(iel)) then
            call dsdf_fluid_axis(chi(:,:,iel), iel, 0, dsdchi)
-           write(2500+mynum,*) usz_fluid(0,0,iel,1), prefac * dsdchi * chi(0,0,iel), &
+           write(2500+mynum,*) usz_fluid(0,0,iel,1), &
+                               prefac * dsdchi * chi(0,0,iel), &
                                usz_fluid(0,0,iel,2)
         else
            write(2500+mynum,*) usz_fluid(0,0,iel,1), &
@@ -89,7 +90,8 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   
         if ( axis_fluid(iel)) then
            call dsdf_fluid_axis(chi(:,:,iel), iel, npol, dsdchi)
-           write(2500+mynum,*) usz_fluid(0,npol,iel,1), prefac * dsdchi * chi(0,npol,iel), &
+           write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
+                               prefac * dsdchi * chi(0,npol,iel), &
                                usz_fluid(0,npol,iel,2)
         else
            write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
@@ -110,9 +112,9 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   close(2500+mynum)
 
 end subroutine glob_snapshot
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
   !
   ! Dumps the global displacement snapshots [m] in ASCII format
@@ -145,8 +147,9 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
 
   call define_io_appendix(appisnap, isnap)
 
-  open(unit=2500+mynum, file=datapath(1:lfdata)//'/snap_'//appmynum//'_'//appisnap//'.dat', &
-       FORM="UNFORMATTED",STATUS="REPLACE")
+  open(unit=2500+mynum, &
+       file=datapath(1:lfdata)//'/snap_'//appmynum//'_'//appisnap//'.dat', &
+       FORM="UNFORMATTED", STATUS="REPLACE")
 
   if (have_fluid) then
      call axisym_gradient_fluid(chi, usz_fluid)
@@ -179,9 +182,9 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
   close(2500+mynum)
 
 end subroutine glob_snapshot_midpoint
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine glob_snapshot_xdmf(f_sol, chi)
   !
   ! Dumps the global displacement snapshots in binary plus XDMF descriptor
@@ -200,7 +203,8 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     character(len=4)                :: appisnap
     integer                         :: iel, iidim, ct, ipol, jpol, ipol1, jpol1, i, j
     real(kind=realkind)             :: dsdchi, prefac
-    real(4), allocatable            :: u(:,:), u_new(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
+    real(4), allocatable            :: u(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
+    real(kind=realkind)             :: f_sol_spz(0:npol,0:npol,1:nel_solid,3)
     character(len=120)              :: fname
 
     allocate(usz_fl(0:npol,0:npol,1:nel_fluid,2))
@@ -211,6 +215,15 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     if (src_type(1) == 'monopole') prefac = 0.
     if (src_type(1) == 'dipole')   prefac = 1.
     if (src_type(1) == 'quadpole') prefac = 2.
+
+    ! convert +- to sp in case of monopole
+    if (src_type(1) == 'dipole') then
+       f_sol_spz(:,:,:,1) = f_sol(:,:,:,1) + f_sol(:,:,:,2)
+       f_sol_spz(:,:,:,2) = f_sol(:,:,:,1) - f_sol(:,:,:,2)
+       f_sol_spz(:,:,:,3) = f_sol(:,:,:,3)
+    else
+       f_sol_spz = f_sol
+    endif
  
     call define_io_appendix(appisnap, isnap)
  
@@ -222,7 +235,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
        ! MvD: I BET this is wrong, compare def_precomp_terms.f90:408 :D
        up_fl(:,:,:) = prefac * chi * inv_s_rho_fluid
        ! (n.b. up_fl is zero at the axes for all source types, prefac = 0 for
-       ! monopole and chi > 0 for dipole and quadrupole EQ 73-77 in TNM 2007)
+       ! monopole and chi -> 0 for dipole and quadrupole EQ 73-77 in TNM 2007)
 
        do iel=1, nel_fluid
            do i=1, i_n_xdmf - 1
@@ -278,41 +291,38 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     
                 if (plotting_mask(i,j,iel + nel_fluid)) then
                     ct = mapping_ijel_iplot(i,j,iel + nel_fluid)
-                    u(1, ct) = f_sol(ipol,jpol,iel,1)
-                    u(2, ct) = f_sol(ipol,jpol,iel,2)
-                    u(3, ct) = f_sol(ipol,jpol,iel,3)
+                    u(1, ct) = f_sol_spz(ipol,jpol,iel,1)
+                    u(2, ct) = f_sol_spz(ipol,jpol,iel,2)
+                    u(3, ct) = f_sol_spz(ipol,jpol,iel,3)
                 endif
                 
                 if (plotting_mask(i+1,j,iel + nel_fluid)) then
                     ct = mapping_ijel_iplot(i+1,j,iel + nel_fluid)
-                    u(1, ct) = f_sol(ipol1,jpol,iel,1)
-                    u(2, ct) = f_sol(ipol1,jpol,iel,2)
-                    u(3, ct) = f_sol(ipol1,jpol,iel,3)
+                    u(1, ct) = f_sol_spz(ipol1,jpol,iel,1)
+                    u(2, ct) = f_sol_spz(ipol1,jpol,iel,2)
+                    u(3, ct) = f_sol_spz(ipol1,jpol,iel,3)
                 endif
                 
                 if (plotting_mask(i+1,j+1,iel + nel_fluid)) then
                     ct = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid)
-                    u(1, ct) = f_sol(ipol1,jpol1,iel,1)
-                    u(2, ct) = f_sol(ipol1,jpol1,iel,2)
-                    u(3, ct) = f_sol(ipol1,jpol1,iel,3)
+                    u(1, ct) = f_sol_spz(ipol1,jpol1,iel,1)
+                    u(2, ct) = f_sol_spz(ipol1,jpol1,iel,2)
+                    u(3, ct) = f_sol_spz(ipol1,jpol1,iel,3)
                 endif
                 
                 if (plotting_mask(i,j+1,iel + nel_fluid)) then
                     ct = mapping_ijel_iplot(i,j+1,iel + nel_fluid)
-                    u(1, ct) = f_sol(ipol,jpol1,iel,1)
-                    u(2, ct) = f_sol(ipol,jpol1,iel,2)
-                    u(3, ct) = f_sol(ipol,jpol1,iel,3)
+                    u(1, ct) = f_sol_spz(ipol,jpol1,iel,1)
+                    u(2, ct) = f_sol_spz(ipol,jpol1,iel,2)
+                    u(3, ct) = f_sol_spz(ipol,jpol1,iel,3)
                 endif
             enddo
         enddo
     enddo
     
     write(13100) u(1,:)
-
-    if (.not. src_type(1)=='monopole') then
-        write(13101) u(2,:)
-    endif
-
+    if (src_type(1) /= 'monopole') &
+       write(13101) u(2,:)
     write(13102) u(3,:)
 
     deallocate(u)
@@ -446,9 +456,9 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     close(100)
 
 end subroutine glob_snapshot_xdmf
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine snapshot_memoryvar_vtk(memvar, iter)
 
   use data_source,    only: src_type
@@ -472,13 +482,13 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
      write(lchar, "(I0.2)"), l
      do n=1, n_sls_attenuation
         write(nchar, "(I0.2)"), n
-        filename = trim(infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appmynum&
+        filename = trim(infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appmynum &
                         //'_'//appisnap)
         varname = 'memvar_'//lchar//'_'//nchar
 
         !if (lpr) print *, trim(filename)
-        !call write_VTK_bin_scal_pts(memvar(2,2,l,n,:), points_solid(2,2,:,:), nel_solid, &
-        !                            filename, varname)
+        !call write_VTK_bin_scal_pts(memvar(2,2,l,n,:), points_solid(2,2,:,:), &
+        !                            nel_solid, filename, varname)
         call write_VTK_bin_scal_pts(&
                 reshape(memvar(:,:,l,n,:), (/(npol + 1)**2 * nel_solid/)), &
                 reshape(points_solid(:,:,:,:), (/(npol + 1)**2 * nel_solid, 2/)), &
@@ -488,9 +498,9 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
     
 
 end subroutine snapshot_memoryvar_vtk
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
   !
   ! Dumps the displacement snapshots [m] in the solid region in ASCII format
@@ -520,9 +530,9 @@ subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
   close(3500+mynum)
 
 end subroutine solid_snapshot
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
 
   use data_source, ONLY : src_type
@@ -574,9 +584,9 @@ subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
   close(4500+mynum)
 
 end subroutine fluid_snapshot
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine dump_field_1d(f, filename, appisnap, n)
 
   use data_proc,    ONLY : appmynum
@@ -597,25 +607,27 @@ subroutine dump_field_1d(f, filename, appisnap, n)
 
   if (use_netcdf) then
       if (n==nel_solid) then
-          call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,1:n), .true.), filename(2:))
+          call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,1:n), .true.), &
+                                   filename(2:))
       elseif (n==nel_fluid) then
-          call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,1:n), .true.), filename(2:))
+          call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,1:n), .true.), &
+                                   filename(2:))
       else
           write(6,*) 'Neither solid nor fluid. What''s wrong here?'
           stop 2
       end if
   else
-     open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_'&
-                                 //appmynum//'_'//appisnap//'.bindat',&
-                                 FORM="UNFORMATTED",STATUS="UNKNOWN",POSITION="REWIND")
+     open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_' &
+                                 //appmynum//'_'//appisnap//'.bindat', &
+          FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
      write(25000+mynum) pack(floc(ibeg:iend,ibeg:iend,1:n), .true.)
      close(25000+mynum)
   end if
 
 end subroutine dump_field_1d
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine dump_disp(u, chi)
 
   use data_source, ONLY : src_type,src_dump_type
@@ -659,9 +671,9 @@ subroutine dump_disp(u, chi)
   endif 
 
 end subroutine dump_disp
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine dump_velo_dchi(v, dchi)
 
   use data_source, ONLY : src_type, src_dump_type
@@ -705,9 +717,9 @@ subroutine dump_velo_dchi(v, dchi)
   endif
 
 end subroutine dump_velo_dchi
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine dump_velo_global(v,dchi)
 
   use data_pointwise,           ONLY: inv_rho_fluid, inv_s_rho_fluid
@@ -790,9 +802,9 @@ subroutine dump_velo_global(v,dchi)
   endif ! have_fluid
 
 end subroutine dump_velo_global
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine eradicate_src_elem_vec_values(u)
   !
   ! Deletes all entries to vector field u on ALL GLL points inside
@@ -814,9 +826,9 @@ subroutine eradicate_src_elem_vec_values(u)
   endif
 
 end subroutine eradicate_src_elem_vec_values
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine eradicate_src_elem_values(u)
   !
   ! Deletes all entries to scalar field u on ALL GLL points inside
@@ -838,7 +850,7 @@ subroutine eradicate_src_elem_values(u)
   endif
 
 end subroutine eradicate_src_elem_values
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
 !================================
 end module wavefields_io

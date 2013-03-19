@@ -1236,8 +1236,8 @@ subroutine compute_strain(u, chi)
  
      if (src_type(1) == 'monopole') then
         ! Calculate us/s and straintrace
-        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1)), '/strain_dpup_flu', appisnap, &
-                           nel_fluid) ! E22
+        call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1)), '/strain_dpup_flu', &
+                           appisnap, nel_fluid) ! E22
         call dump_field_1d(f_over_s_fluid(usz_fluid(:,:,:,1)) + grad_flu(:,:,:,2), &
                            '/straintrace_flu', appisnap, nel_fluid) ! Ekk
  
