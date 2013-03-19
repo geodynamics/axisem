@@ -252,12 +252,12 @@ subroutine compute_pointwisederiv_matrices
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_pointwise
-use data_io, ONLY : dump_type,need_fluid_displ
+  use data_pointwise
+  include 'mesh_params.h'
 
-INTEGER          :: iel,inode,ipol,jpol
-DOUBLE PRECISION :: dsdxi,dzdxi,dsdeta,dzdeta
-double precision :: local_crd_nodes(8,2)
+  integer          :: iel,inode,ipol,jpol
+  double precision :: dsdxi,dzdxi,dsdeta,dzdeta
+  double precision :: local_crd_nodes(8,2)
 
 ! fluid pointwise derivatives     
   allocate(DsDeta_over_J_flu(0:npol,0:npol,1:nel_fluid))
@@ -722,7 +722,7 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
 ! 
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_io, ONLY : need_fluid_displ,dump_energy
+use data_io, ONLY : need_fluid_displ, dump_energy
 use commun, only : comm2d
 use data_pointwise, ONLY: inv_rho_fluid
 

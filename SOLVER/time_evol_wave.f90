@@ -1220,13 +1220,13 @@ subroutine compute_strain(u, chi)
      usz_fluid(:,:,:,2) = usz_fluid(:,:,:,2) * inv_rho_fluid
   
      ! gradient of s component
-     call axisym_gradient_fluid(usz_fluid(:,:,:,1), grad_flu)   ! dsus, dzus
+     call axisym_gradient_fluid(usz_fluid(:,:,:,1), grad_flu)   ! 1:dsus, 2:dzus
  
-     ! save E11
      call dump_field_1d(grad_flu(:,:,:,1), '/strain_dsus_flu', appisnap, nel_fluid) ! E11
  
      ! gradient of z component added to s-comp gradient for strain trace and E13
-     call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)  !1:dsuz+dzus, 2:dzuz+dsus
+     call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)   !1:dsuz+dzus 
+                                                                    !2:dzuz+dsus
  
      ! calculate entire E31 term: (dsuz+dzus)/2
      grad_flu(:,:,:,1) = grad_flu(:,:,:,1) / two_rk
