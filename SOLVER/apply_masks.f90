@@ -2,7 +2,7 @@
   module apply_masks 
 !=====================
 
-  use global_parameters
+  use global_parameters, only: zero, realkind
 
   implicit none
 

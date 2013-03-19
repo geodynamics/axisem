@@ -234,10 +234,13 @@ subroutine sf_time_loop_newmark
   ! INITIAL CONDITIONS
   ! initializiation with a small number prevents performance loss (~factor 3) due to
   ! denormal floats in the onset of the p-wave (going from zero to some finite value)
+  !
   ! alternatively, compilerflags -ffast-math (gfortran) or -ftz (ifort) might
   ! give the same speedup, but seem to be unstable on some systems
-  ! another alternative:
+  !
+  ! another alternative (IMPLEMENTED NOW, see ftz.c, called in main.f90):
   ! http://software.intel.com/en-us/articles/how-to-avoid-performance-penalties-for-gradual-underflow-behavior
+  !
   ! some more reading:
   ! http://stackoverflow.com/questions/9314534/why-does-changing-0-1f-to-0-slow-down-performance-by-10x
 
