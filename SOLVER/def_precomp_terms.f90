@@ -38,7 +38,8 @@ subroutine read_model_compute_terms
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use get_model
-  use attenuation, ONLY: prepare_attenuation
+  use attenuation,  ONLY: prepare_attenuation
+  use commun,       ONLY: barrier
   
   implicit none
   include 'mesh_params.h'
@@ -119,12 +120,17 @@ subroutine read_model_compute_terms
   if (anel_true) then
      if (lpr) write(6,*)'  preparing Q model'
      call prepare_attenuation(lambda, mu)
+     if (lpr) write(6,*)'  done preparing Q model';call flush(6)
   endif
+     
+  if (lpr) write(6,*)'  deallocating lambda + mu';call flush(6)
     
   deallocate(lambda,mu)
+  
+  if (lpr) write(6,*)'  done deallocating lambda + mu';call flush(6)
 
   if (have_fluid) then
-     if(lpr)write(6,*)'  define fluid stiffness terms....';call flush(6)
+     if(lpr) write(6,*)'  define fluid stiffness terms....';call flush(6)
      call def_fluid_stiffness_terms(rho, massmat_kwts2)
 
      if(lpr)write(6,*)'  define solid-fluid boundary terms....';call flush(6)

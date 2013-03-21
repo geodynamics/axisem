@@ -33,7 +33,7 @@ subroutine time_step_memvars(memvar, disp)
   real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
   real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
-  integer               :: iel, l, j, ipol, jpol
+  integer               :: iel, j, ipol, jpol
   double precision      :: yp_j_mu(n_sls_attenuation)
   double precision      :: yp_j_kappa(n_sls_attenuation)
   real(kind=realkind)   :: grad_t(0:npol,0:npol,nel_solid,6)
@@ -62,13 +62,13 @@ subroutine time_step_memvars(memvar, disp)
 
      trace_grad_t(:,:) = sum(grad_t(:,:,iel,1:3), dim=3)
 
-     ! analytical time stepping, monople/isotropic hardcoded
+     ! analytical time stepping, monopole/isotropic hardcoded
 
      ! compute new source terms (excluding the weighting)
      src_tr_t(:,:) = kappa_r(:,:,iel) * trace_grad_t(:,:)
-     src_dev_t(:,:,1) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,1)  - trace_grad_t(:,:) * third)
-     src_dev_t(:,:,2) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,2)  - trace_grad_t(:,:) * third)
-     src_dev_t(:,:,3) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,3)  - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,1) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,1) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,2) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,2) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,3) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,3) - trace_grad_t(:,:) * third)
      src_dev_t(:,:,5) = mu_r(:,:,iel) * grad_t(:,:,iel,5)
      
      ! load old source terms
@@ -77,45 +77,43 @@ subroutine time_step_memvars(memvar, disp)
      
      do j=1, n_sls_attenuation
         ! do the timestep
-        memvar(:,:,:,j,iel) = memvar(:,:,:,j,iel) * exp_w_j_deltat(j)
-        
-        src_tr_buf(:,:) = ts_fac_t(j)   * yp_j_kappa(j) * src_tr_t(:,:) &
-                        + ts_fac_tm1(j) * yp_j_kappa(j) * src_tr_tm1(:,:)
+        do ipol=0, npol
+           do jpol=0, npol
+              src_tr_buf(jpol,ipol) = ts_fac_t(j) * yp_j_kappa(j) * src_tr_t(jpol,ipol) &
+                              + ts_fac_tm1(j) * yp_j_kappa(j) * src_tr_tm1(jpol,ipol)
 
-        src_dev_buf(:,:,:) = ts_fac_t(j) * yp_j_mu(j) * src_dev_t(:,:,:) &
-                           + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(:,:,:)
-        
-        memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) + src_tr_buf(:,:) + src_dev_buf(:,:,1)
-        memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) + src_tr_buf(:,:) + src_dev_buf(:,:,2)
-        memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) + src_tr_buf(:,:) + src_dev_buf(:,:,3)
-        memvar(:,:,5,j,iel) = memvar(:,:,5,j,iel) + src_dev_buf(:,:,5)
+              src_dev_buf(jpol,ipol,1:3) = &
+                          ts_fac_t(j) * yp_j_mu(j) * src_dev_t(jpol,ipol,1:3) &
+                              + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(jpol,ipol,1:3)
+              src_dev_buf(jpol,ipol,5) = &
+                          ts_fac_t(j) * yp_j_mu(j) * src_dev_t(jpol,ipol,5) &
+                              + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(jpol,ipol,5)
+              
+              memvar(jpol,ipol,1,j,iel) = exp_w_j_deltat(j) * memvar(jpol,ipol,1,j,iel) &
+                              + src_dev_buf(jpol,ipol,1) + src_tr_buf(jpol,ipol)
+              memvar(jpol,ipol,2,j,iel) = exp_w_j_deltat(j) * memvar(jpol,ipol,2,j,iel) &
+                              + src_dev_buf(jpol,ipol,2) + src_tr_buf(jpol,ipol)
+              memvar(jpol,ipol,3,j,iel) = exp_w_j_deltat(j) * memvar(jpol,ipol,3,j,iel) &
+                              + src_dev_buf(jpol,ipol,3) + src_tr_buf(jpol,ipol)
+              memvar(jpol,ipol,5,j,iel) = exp_w_j_deltat(j) * memvar(jpol,ipol,5,j,iel) &
+                              + src_dev_buf(jpol,ipol,5)
+           enddo
+        enddo
 
-        !memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) &
-        !    + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
-        !                     +  yp_j_mu(j) * src_dev_t(:,:,1)) &
-        !    + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
-        !                       +  yp_j_mu(j) * src_dev_tm1(:,:,1))
+        !old version without explicit loops (~15% slower)
+        !memvar(:,:,:,j,iel) = memvar(:,:,:,j,iel) * exp_w_j_deltat(j)
 
-        !memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) &
-        !    + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
-        !                     +  yp_j_mu(j) * src_dev_t(:,:,2)) &
-        !    + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
-        !                       +  yp_j_mu(j) * src_dev_tm1(:,:,2))
-
-        !memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) &
-        !    + ts_fac_t(j) * (yp_j_kappa(j) * src_tr_t(:,:) &
-        !                     +  yp_j_mu(j) * src_dev_t(:,:,3)) &
-        !    + ts_fac_tm1(j) * (yp_j_kappa(j) * src_tr_tm1(:,:) &
-        !                       +  yp_j_mu(j) * src_dev_tm1(:,:,3))
-
-        !memvar(:,:,5,j,iel) = memvar(:,:,5,j,iel) &
-        !    + ts_fac_t(j) * yp_j_mu(j) * src_dev_t(:,:,5) &
-        !    + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(:,:,5)
-
+        !memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) + src_tr_buf(:,:)
+        !memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) + src_tr_buf(:,:)
+        !memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) + src_tr_buf(:,:)
+        !memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) + src_dev_buf(:,:,1)
+        !memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) + src_dev_buf(:,:,2)
+        !memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) + src_dev_buf(:,:,3)
+        !memvar(:,:,5,j,iel) = memvar(:,:,5,j,iel) + src_dev_buf(:,:,5)
      enddo
      ! save srcs for next iteration
-     src_dev_tm1_glob(:,:,:,iel) = src_dev_t(:,:,:)
      src_tr_tm1_glob(:,:,iel) = src_tr_t(:,:)
+     src_dev_tm1_glob(:,:,:,iel) = src_dev_t(:,:,:)
   enddo
   
 end subroutine
@@ -155,7 +153,7 @@ subroutine compute_strain(u, grad_u)
   grad_u(:,:,:,1) = grad_buff1(:,:,:,1)  ! dsus
   grad_u(:,:,:,3) = grad_buff2(:,:,:,2)  ! dzuz
 
-  grad_u(:,:,:,5) = grad_buff1(:,:,:,1) + grad_buff2(:,:,:,1) ! dsuz + dzus (factor of 2 
+  grad_u(:,:,:,5) = grad_buff1(:,:,:,2) + grad_buff2(:,:,:,1) ! dsuz + dzus (factor of 2 
                                                               ! from voigt notation)
  
   ! Components involving phi....................................................
@@ -188,8 +186,8 @@ subroutine prepare_attenuation(lambda, mu)
   double precision                  :: Tw, Ty, d
   logical                           :: fixfreq
   double precision, allocatable     :: w_samp(:), q_fit(:), chil(:)
-  double precision                  :: yp_j_mu(n_sls_attenuation)
-  double precision                  :: yp_j_kappa(n_sls_attenuation)
+  double precision, allocatable     :: yp_j_mu(:)
+  double precision, allocatable     :: yp_j_kappa(:)
 
   if (lpr) print *, '  ...reading inparam_attanuation...'
   open(unit=164, file='inparam_attenuation')
@@ -217,6 +215,9 @@ subroutine prepare_attenuation(lambda, mu)
   allocate(exp_w_j_deltat(n_sls_attenuation))
   allocate(y_j_attenuation(n_sls_attenuation))
   
+  allocate(yp_j_mu(n_sls_attenuation))
+  allocate(yp_j_kappa(n_sls_attenuation))
+  
   allocate(ts_fac_t(n_sls_attenuation))
   allocate(ts_fac_tm1(n_sls_attenuation))
   
@@ -225,6 +226,7 @@ subroutine prepare_attenuation(lambda, mu)
   call invert_linear_solids(1.d0, f_min, f_max, n_sls_attenuation, nfsamp, max_it, Tw, &
                             Ty, d, fixfreq, .false., .false., 'maxwell', w_j_attenuation, &
                             y_j_attenuation, w_samp, q_fit, chil)
+  if (lpr) print *, '  ...done'
   
   ! prefactors for the exact time stepping (att nodes p 13.3)
   exp_w_j_deltat = dexp(-w_j_attenuation * deltat)
@@ -258,15 +260,16 @@ subroutine prepare_attenuation(lambda, mu)
         call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
         call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
      else
-        yp_j_mu = y_j_attenuation / Q_mu(iel)
-        yp_j_kappa = y_j_attenuation / Q_kappa(iel)
+       yp_j_mu = y_j_attenuation / Q_mu(iel)
+       yp_j_kappa = y_j_attenuation / Q_kappa(iel)
      endif
      mu_r(:,:,iel) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
      kappa_r(:,:,iel) =  (lambda(:,:,ielsolid(iel)) &
                             + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
                             / (1.d0 + sum(yp_j_kappa))
   enddo
-
+  
+  if (lpr) print *, '  ...DONE'
 
 end subroutine
 !-----------------------------------------------------------------------------------------
@@ -403,6 +406,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     ! chil:           error as a function of iteration to check convergence,
     !                   Note that this version uses log-l2 norm!
     !
+    use data_proc,            only: lpr, mynum
 
     double precision, intent(in)            :: Q, f_min, f_max
     integer, intent(in)                     :: N, nfsamp, max_it
@@ -445,6 +449,8 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     if (present(exact)) exact_loc = exact
     
     if (present(mode)) mode_loc = mode
+
+    if (.not. lpr) verbose_loc = .false.
     
     if ((mode_loc .ne. 'maxwell') .and. (mode_loc .ne. 'zener')) then
         print *, "ERROR: mode should be either 'maxwell' or 'zener'"

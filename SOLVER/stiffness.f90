@@ -100,7 +100,6 @@ subroutine glob_anel_stiffness_mono(glob_stiffness, R)
      loc_stiffness_s = X1 + X2 + yl * r2
      loc_stiffness_z = X3 + X4
 
-
      if (axis_solid(ielem)) then
         y0l(:) = Y0(:,ielem)
         v0_s_etal(:) = V0_s_eta(:,ielem)
