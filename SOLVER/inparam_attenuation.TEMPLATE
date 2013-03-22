@@ -1,6 +1,7 @@
 3               number of standard linear solids
-0.01            minimum frequency in attenuation band
-1.00            maximum frequency in attenuation band (may be replaced with fmax of the simulation at some point)
+0.001           minimum frequency in attenuation band [Hz]
+0.1             maximum frequency in attenuation band [Hz](may be replaced with fmax of the simulation at some point)
+1.              reference frequency of the background model [Hz]
 .true.          use correction of the coefficients for small values of Q
 100             number of frequencies at which the exact Q is sampled in the minimization
 100000          maximum number of iteration in the simulated annealing
@@ -8,4 +9,4 @@
 0.1             starting 'temperature' for the amplitude coefficients
 0.99995         'temperature' decay rate
 .false.         fix the frequencies log spaced in the attenuation band
-.true.          dump memory vars to vtk (not optimized, only meant for testing)
+.false.         dump memory vars to vtk (not optimized, only meant for testing)

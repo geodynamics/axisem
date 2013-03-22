@@ -108,6 +108,14 @@ subroutine read_model_compute_terms
     if (have_fluid) call test_pntwsdrvtvs_fluid
   endif
 
+  if (anel_true) then
+     if (lpr) write(6,*)'  preparing Q model'
+     ! this needs to be done before def_solid_stiffness_terms, as it calculates
+     ! the unrelaxed moduli from the ones at reference frequency
+     call prepare_attenuation(lambda, mu)
+     if (lpr) write(6,*)'  done preparing Q model';call flush(6)
+  endif
+     
   if(lpr)write(6,*)'  define solid stiffness terms....';call flush(6)
   if (ani_true) then
     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
@@ -117,12 +125,6 @@ subroutine read_model_compute_terms
     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2)
   endif
   
-  if (anel_true) then
-     if (lpr) write(6,*)'  preparing Q model'
-     call prepare_attenuation(lambda, mu)
-     if (lpr) write(6,*)'  done preparing Q model';call flush(6)
-  endif
-     
   if (lpr) write(6,*)'  deallocating lambda + mu';call flush(6)
     
   deallocate(lambda,mu)

@@ -46,18 +46,34 @@ subroutine time_step_memvars(memvar, disp)
   
   real(kind=realkind)   :: src_tr_buf(0:npol,0:npol)
   real(kind=realkind)   :: src_dev_buf(0:npol,0:npol,6)
+  
+  real(kind=realkind)   :: Q_mu_last, Q_kappa_last
+
+  Q_mu_last = -1
+  Q_kappa_last = -1
 
   ! compute global strain of current time step
   call compute_strain(disp, grad_t)
 
   do iel=1, nel_solid
-     ! compute local coefficients y_j for kappa and mu
-     if (do_corr_lowq) then
-        call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
-        call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
-     else
-        yp_j_mu = y_j_attenuation / Q_mu(iel)
-        yp_j_kappa = y_j_attenuation / Q_kappa(iel)
+     ! compute local coefficients y_j for kappa and mu (only if different from
+     ! previous element)
+     if (Q_mu(iel) /= Q_mu_last) then
+        Q_mu_last = Q_mu(iel)
+        if (do_corr_lowq) then
+           call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
+        else
+           yp_j_mu = y_j_attenuation / Q_mu(iel)
+        endif
+     endif
+
+     if (Q_kappa(iel) /= Q_kappa_last) then
+        Q_kappa_last = Q_kappa(iel)
+        if (do_corr_lowq) then
+           call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
+        else
+           yp_j_kappa = y_j_attenuation / Q_kappa(iel)
+        endif
      endif
 
      trace_grad_t(:,:) = sum(grad_t(:,:,iel,1:3), dim=3)
@@ -179,9 +195,17 @@ subroutine prepare_attenuation(lambda, mu)
 
   include 'mesh_params.h'
 
-  double precision, intent(in)      ::lambda(0:npol,0:npol,1:nelem), mu(0:npol,0:npol,1:nelem)
+  double precision, intent(inout)   :: lambda(0:npol,0:npol,1:nelem)
+  double precision, intent(inout)   :: mu(0:npol,0:npol,1:nelem)
 
-  double precision                  :: f_min, f_max
+  double precision                  :: mu_w1(0:npol,0:npol)
+  double precision                  :: kappa_w1(0:npol,0:npol)
+  double precision                  :: mu_u(0:npol,0:npol)
+  double precision                  :: kappa_u(0:npol,0:npol)
+  
+  double precision                  :: kappa_fac, mu_fac
+
+  double precision                  :: f_min, f_max, w_1, w_0
   integer                           :: nfsamp, max_it, i, iel
   double precision                  :: Tw, Ty, d
   logical                           :: fixfreq
@@ -195,6 +219,7 @@ subroutine prepare_attenuation(lambda, mu)
   read(164,*) n_sls_attenuation
   read(164,*) f_min
   read(164,*) f_max
+  read(164,*) w_0
   read(164,*) do_corr_lowq
   
   read(164,*) nfsamp
@@ -207,6 +232,12 @@ subroutine prepare_attenuation(lambda, mu)
 
   close(unit=164)
   
+  w_0 = w_0 * (2 * pi)
+  if (lpr) print *, '       w_0 = ', w_0
+  
+  w_1 = dsqrt(f_min * f_max) * (2 * pi)
+  if (lpr) print *, '       w_1 = ', w_1
+
   allocate(w_samp(nfsamp))
   allocate(q_fit(nfsamp))
   allocate(chil(max_it))
@@ -263,10 +294,36 @@ subroutine prepare_attenuation(lambda, mu)
        yp_j_mu = y_j_attenuation / Q_mu(iel)
        yp_j_kappa = y_j_attenuation / Q_kappa(iel)
      endif
-     mu_r(:,:,iel) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
-     kappa_r(:,:,iel) =  (lambda(:,:,ielsolid(iel)) &
-                            + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
-                            / (1.d0 + sum(yp_j_kappa))
+
+     ! XXX: this block needs testing!!!
+     mu_fac = 1.d0
+     do i=1, n_sls_attenuation
+        mu_fac = mu_fac + yp_j_mu(i) * w_1**2 / (w_1**2 + w_j_attenuation(i)**2)
+     enddo
+
+     ! compute relaxed moduli
+     mu_w1(:,:) =  mu(:,:,ielsolid(iel)) * (1 + 2. / (pi * Q_mu(iel)) * log(w_1 / w_0))
+     mu_r(:,:,iel) =  mu_w1 / mu_fac
+
+     kappa_fac = 1.d0
+     do i=1, n_sls_attenuation
+        kappa_fac = kappa_fac + yp_j_kappa(i) * w_1**2 / (w_1**2 + w_j_attenuation(i)**2)
+     enddo
+
+     kappa_w1(:,:) =  (lambda(:,:,ielsolid(iel)) + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
+                         * (1 + 2. / (pi * Q_kappa(iel)) * log(w_1 / w_0))
+     kappa_r(:,:,iel) =  kappa_w1 / kappa_fac
+     
+     ! compute unrelaxed moduli
+     mu(:,:,ielsolid(iel)) = mu_r(:,:,iel) * (1.d0 + sum(yp_j_mu))
+     lambda(:,:,ielsolid(iel)) = kappa_r(:,:,iel) * (1.d0 + sum(yp_j_kappa)) &
+                                    - 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))
+
+     ! old version: assuming background model is instantaneous velocities
+     !mu_r(:,:,iel) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
+     !kappa_r(:,:,iel) =  (lambda(:,:,ielsolid(iel)) &
+     !                       + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
+     !                       / (1.d0 + sum(yp_j_kappa))
   enddo
   
   if (lpr) print *, '  ...DONE'
