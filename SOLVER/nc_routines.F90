@@ -123,25 +123,6 @@ subroutine nc_write_el_domains(idom)
 end subroutine
 
 !-----------------------------------------------------------------------------------------
-!subroutine nc_write_snaptimesteps(nstrain, t_0, strain_samp, strain_it)
-!    integer, intent(in)      :: nstrain, strain_it
-!    real(8), intent(in)      :: t_0, strain_samp
-!#ifdef unc
-!    real(8), dimension(nstrain) :: time
-!    integer                  :: i
-!    !write(2900+mynum,*)real(ielem)*t_0/real(strain_samp),ielem*strain_it
-!    time = dble((/ (i, i = 1, nstrain) /))
-!    time = time * t_0 / strain_samp
-!    call check( nf90_put_var(ncid   = ncid_snapout, &
-!                             varid  = nc_snaptime_varid, &
-!                             values = time, &
-!                             start  = (/1/) ) ) 
-!                             
-!#endif
-!end subroutine
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
 !> Routine to dump the wavefield variables for the Kerner. Collects input in
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
 subroutine nc_dump_field_solid(f, varname)
