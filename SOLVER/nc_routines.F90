@@ -347,15 +347,6 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
         mynum, real(dumpsize) * realkind / 1048576., tack-tick 
     call flush(6)
 
-    ! MvD: do we need this initalization?
-    ! SCS: Not really, probably. But does it hurt?
-    !oneddumpvar_flu = 0.0
-    !oneddumpvar_sol = 0.0 
-    surfdumpvar_disp = 0.0
-    surfdumpvar_velo = 0.0
-    surfdumpvar_strain = 0.0
-    surfdumpvar_srcdisp = 0.0
-
 #endif
 end subroutine nc_dump_strain_to_disk
 !-----------------------------------------------------------------------------------------
