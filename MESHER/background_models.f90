@@ -102,6 +102,10 @@ logical function model_is_anelastic(bkgrdmodel2)
     model_is_anelastic = .true.
   case('prem_light_ani')
     model_is_anelastic = .true.
+  case('prem_light')
+    model_is_anelastic = .true.
+  case('prem')
+    model_is_anelastic = .true.
   case default
     model_is_anelastic = .false.
   end select
@@ -206,6 +210,7 @@ double precision function prem_sub(r0, param, idom)
   integer, intent(in)          :: idom
   double precision             :: r,x_prem
   double precision             :: ro_prem,vp_prem,vs_prem
+  double precision             :: Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -216,46 +221,68 @@ double precision function prem_sub(r0, param, idom)
      ro_prem = 2.6
      vp_prem = 5.8
      vs_prem = 3.2
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==2)then
      ro_prem = 2.9                       ! lower crustal layer
      vp_prem = 6.8
      vs_prem = 3.9
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==3)then
      ro_prem = 2.691  + 0.6924 * x_prem             ! upper mantle
      vp_prem = 4.1875 + 3.9382 * x_prem
      vs_prem = 2.1519 + 2.3481 * x_prem
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==4)then
      ro_prem=  7.1089 -  3.8045 * x_prem
      vp_prem= 20.3926 - 12.2569 * x_prem
      vs_prem=  8.9496 -  4.4597 * x_prem
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==5)then
      ro_prem = 11.2494 -  8.0298 * x_prem
      vp_prem = 39.7027 - 32.6166 * x_prem
      vs_prem = 22.3512 - 18.5856 * x_prem
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==6)then
      ro_prem =  5.3197 - 1.4836 * x_prem
      vp_prem = 19.0957 - 9.8672 * x_prem
      vs_prem =  9.9839 - 4.9324 * x_prem
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==7)then   !lower mantle
      ro_prem =  7.9565 -  6.4761 * x_prem + 5.5283 * x_prem**2 - 3.0807 * x_prem**3
      vp_prem = 29.2766 - 23.6027 * x_prem + 5.5242 * x_prem**2 - 2.5514 * x_prem**3
      vs_prem = 22.3459 - 17.2473 * x_prem - 2.0834 * x_prem**2 + 0.9783 * x_prem**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==8)then
      ro_prem =  7.9565 -  6.4761 * x_prem +  5.5283 * x_prem**2 -  3.0807 * x_prem**3
      vp_prem = 24.9520 - 40.4673 * x_prem + 51.4832 * x_prem**2 - 26.6419 * x_prem**3
      vs_prem = 11.1671 - 13.7818 * x_prem + 17.4575 * x_prem**2 -  9.2777 * x_prem**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==9)then
      ro_prem =  7.9565 - 6.4761 * x_prem + 5.5283 * x_prem**2 - 3.0807 * x_prem**3
      vp_prem = 15.3891 - 5.3181 * x_prem + 5.5242 * x_prem**2 - 2.5514 * x_prem**3
      vs_prem =  6.9254 + 1.4672 * x_prem - 2.0834 * x_prem**2 + 0.9783 * x_prem**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==10)then  ! outer core
      ro_prem = 12.5815 - 1.2638 * x_prem - 3.6426 * x_prem**2 -  5.5281  * x_prem**3
      vp_prem = 11.0487 - 4.0362 * x_prem + 4.8023 * x_prem**2 - 13.5732  * x_prem**3
      vs_prem = 0.0
+     Qmu = 0.0
+     Qkappa = 57827.0
   elseif(idom==11)then                        ! inner core
      ro_prem = 13.0885 - 8.8381 * x_prem**2
      vp_prem = 11.2622 - 6.3640 * x_prem**2
      vs_prem =  3.6678 - 4.4475 * x_prem**2
+     Qmu = 84.6
+     Qkappa = 1327.7
   endif
 
   if (param=='rho') then
@@ -274,6 +301,10 @@ double precision function prem_sub(r0, param, idom)
      prem_sub = vs_prem * 1000.
   elseif (param=='eta') then
      prem_sub = 1.
+  elseif (param=='Qmu') then
+     prem_sub = Qmu
+  elseif (param=='Qka') then
+     prem_sub = Qkappa
   else
      write(6,*)'ERROR IN PREM_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
@@ -735,6 +766,7 @@ double precision function prem_light_sub(r0, param, idom)
   integer, intent(in)          :: idom
   double precision             :: r, x_prem
   double precision             :: ro_prem, vp_prem, vs_prem
+  double precision             :: Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -745,38 +777,56 @@ double precision function prem_light_sub(r0, param, idom)
      ro_prem = 2.691  + 0.6924 * x_prem             ! upper mantle
      vp_prem = 4.1875 + 3.9382 * x_prem
      vs_prem = 2.1519 + 2.3481 * x_prem
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==2)then
      ro_prem =  7.1089 -  3.8045 * x_prem
      vp_prem = 20.3926 - 12.2569 * x_prem
      vs_prem =  8.9496 -  4.4597 * x_prem
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==3)then
      ro_prem = 11.2494 -  8.0298 * x_prem
      vp_prem = 39.7027 - 32.6166 * x_prem
      vs_prem = 22.3512 - 18.5856 * x_prem
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==4)then
      ro_prem =  5.3197 - 1.4836 * x_prem
      vp_prem = 19.0957 - 9.8672 * x_prem
      vs_prem =  9.9839 - 4.9324 * x_prem
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==5)then   !lower mantle
      ro_prem =  7.9565-  6.4761 * x_prem + 5.5283 * x_prem**2 - 3.0807 * x_prem**3
      vp_prem = 29.2766- 23.6027 * x_prem + 5.5242 * x_prem**2 - 2.5514 * x_prem**3
      vs_prem = 22.3459- 17.2473 * x_prem - 2.0834 * x_prem**2 + 0.9783 * x_prem**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==6)then
      ro_prem =  7.9565 -  6.4761 * x_prem +  5.5283 * x_prem**2 -  3.0807 * x_prem**3
      vp_prem = 24.9520 - 40.4673 * x_prem + 51.4832 * x_prem**2 - 26.6419 * x_prem**3
      vs_prem = 11.1671 - 13.7818 * x_prem + 17.4575 * x_prem**2 -  9.2777 * x_prem**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==7)then
      ro_prem =  7.9565 - 6.4761 * x_prem + 5.5283 * x_prem**2 - 3.0807 * x_prem**3
      vp_prem = 15.3891 - 5.3181 * x_prem + 5.5242 * x_prem**2 - 2.5514 * x_prem**3
      vs_prem =  6.9254 + 1.4672 * x_prem - 2.0834 * x_prem**2 + 0.9783 * x_prem**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==8)then  ! outer core
      ro_prem = 12.5815 - 1.2638 * x_prem - 3.6426 * x_prem**2 -  5.5281 * x_prem**3
      vp_prem = 11.0487 - 4.0362 * x_prem + 4.8023 * x_prem**2 - 13.5732 * x_prem**3
      vs_prem = 0.0
+     Qmu = 0.0
+     Qkappa = 57827.0
   elseif(idom==9)then                        ! inner core
      ro_prem = 13.0885 - 8.8381 * x_prem**2
      vp_prem = 11.2622 - 6.3640 * x_prem**2
      vs_prem =  3.6678 - 4.4475 * x_prem**2
+     Qmu = 84.6
+     Qkappa = 1327.7
   endif
 
   if (param=='rho') then
@@ -795,6 +845,10 @@ double precision function prem_light_sub(r0, param, idom)
      prem_light_sub = vs_prem * 1000.
   elseif (param=='eta') then
      prem_light_sub = 1.
+  elseif (param=='Qmu') then
+     prem_light_sub = Qmu
+  elseif (param=='Qka') then
+     prem_light_sub = Qkappa
   else
      write(6,*)'ERROR IN PREM_LIGHT_SUB FUNCTION:', param, 'NOT AN OPTION'
      stop
@@ -1160,6 +1214,7 @@ double precision function arbitr_sub(param, idom, bkgrdmodel2)
   character(len=100), intent(in)  :: bkgrdmodel2
   character(len=3), intent(in)    :: param !rho, vs,vp
   double precision, allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
+  double precision, allocatable, dimension(:) :: qmutmp, qkappatmp
   integer                         :: ndisctmp, i, ndisctmp2
   logical                         :: bkgrdmodelfile_exists
 
@@ -1177,9 +1232,11 @@ double precision function arbitr_sub(param, idom, bkgrdmodel2)
       allocate(vptmp(1:ndisctmp2))
       allocate(vstmp(1:ndisctmp2))
       allocate(rhotmp(1:ndisctmp2))
+      allocate(qmutmp(1:ndisctmp2))
+      allocate(qkappatmp(1:ndisctmp2))
 
       do i=1, ndisctmp
-          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i)
+          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i), qkappatmp(i), qmutmp(i)
       enddo
       close(77)
 
@@ -1190,14 +1247,27 @@ double precision function arbitr_sub(param, idom, bkgrdmodel2)
           rhotmp(2) = rhotmp(1)
       end if
   
-      if (param=='rho') arbitr_sub = rhotmp(idom)
-      if (param=='v_p') arbitr_sub = vptmp(idom)
-      if (param=='v_s') arbitr_sub = vstmp(idom)
-      if (param=='vpv') arbitr_sub = vptmp(idom)
-      if (param=='vsv') arbitr_sub = vstmp(idom)
-      if (param=='vph') arbitr_sub = vptmp(idom)
-      if (param=='vsh') arbitr_sub = vstmp(idom)
-      if (param=='eta') arbitr_sub = 1.
+      if (param=='rho') then 
+        arbitr_sub = rhotmp(idom)
+      elseif (param=='v_p') then
+        arbitr_sub = vptmp(idom)
+      elseif (param=='v_s') then
+        arbitr_sub = vstmp(idom)
+      elseif (param=='vpv') then 
+        arbitr_sub = vptmp(idom)
+      elseif (param=='vsv') then 
+        arbitr_sub = vstmp(idom)
+      elseif (param=='vph') then 
+        arbitr_sub = vptmp(idom)
+      elseif (param=='vsh') then 
+        arbitr_sub = vstmp(idom)
+      elseif (param=='eta') then 
+        arbitr_sub = 1.
+      elseif (param=='Qmu') then
+        arbitr_sub = qmutmp(idom)
+      elseif (param=='Qka') then
+        arbitr_sub = qkappatmp(idom)
+      endif
       deallocate(disconttmp, vstmp, vptmp, rhotmp)
   else 
       write(6,*)'Background model file ', &

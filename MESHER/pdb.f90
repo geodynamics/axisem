@@ -1918,7 +1918,7 @@ if (have_fluid) then
 
 end if ! have_fluid
   
-  deallocate(flob2floc)
+  if (allocated(flob2floc)) deallocate(flob2floc)
 
 
 
