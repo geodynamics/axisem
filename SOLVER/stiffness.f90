@@ -92,9 +92,15 @@ subroutine glob_anel_stiffness_mono(glob_stiffness, R)
      S1z = v_z_etal * r5 + v_s_etal * r3
      S2z = v_z_xil  * r5 + v_s_xil  * r3
 
-     call mxm(G2,  S1s, X1)
+     if ( .not. axis_solid(ielem) ) then
+        call mxm(G2,  S1s, X1)
+        call mxm(G2,  S1z, X3)
+     else
+        call mxm(G1,  S1s, X1)
+        call mxm(G1,  S1z, X3)
+     endif
+
      call mxm(S2s, G2T, X2)
-     call mxm(G2,  S1z, X3)
      call mxm(S2z, G2T, X4)
 
      loc_stiffness_s = X1 + X2 + yl * r2

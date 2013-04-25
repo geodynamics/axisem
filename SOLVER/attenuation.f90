@@ -27,7 +27,10 @@ subroutine time_step_memvars(memvar, disp)
   ! MvD, attenutation notes, p 13.2
   !
   use data_time,            only: deltat
-  use data_matr,            only: Q_mu, Q_kappa, mu_r, kappa_r
+  use data_matr,            only: Q_mu, Q_kappa
+  !use data_matr,            only: mu_r, kappa_r
+  use data_matr,            only: delta_mu, delta_kappa
+  use data_mesh,            only: axis_solid
   include 'mesh_params.h'
 
   real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
@@ -36,6 +39,8 @@ subroutine time_step_memvars(memvar, disp)
   integer               :: iel, j, ipol, jpol
   double precision      :: yp_j_mu(n_sls_attenuation)
   double precision      :: yp_j_kappa(n_sls_attenuation)
+  double precision      :: a_j_mu(n_sls_attenuation)
+  double precision      :: a_j_kappa(n_sls_attenuation)
   real(kind=realkind)   :: grad_t(0:npol,0:npol,nel_solid,6)
   real(kind=realkind)   :: trace_grad_t(0:npol,0:npol)
   real(kind=realkind)   :: trace_grad_tm1(0:npol,0:npol)
@@ -53,7 +58,7 @@ subroutine time_step_memvars(memvar, disp)
   Q_kappa_last = -1
 
   ! compute global strain of current time step
-  call compute_strain(disp, grad_t)
+  call compute_strain_att(disp, grad_t)
 
   do iel=1, nel_solid
      ! compute local coefficients y_j for kappa and mu (only if different from
@@ -65,6 +70,7 @@ subroutine time_step_memvars(memvar, disp)
         else
            yp_j_mu = y_j_attenuation / Q_mu(iel)
         endif
+        a_j_mu = yp_j_mu / sum(yp_j_mu)
      endif
 
      if (Q_kappa(iel) /= Q_kappa_last) then
@@ -74,6 +80,7 @@ subroutine time_step_memvars(memvar, disp)
         else
            yp_j_kappa = y_j_attenuation / Q_kappa(iel)
         endif
+        a_j_kappa = yp_j_mu / sum(yp_j_kappa)
      endif
 
      trace_grad_t(:,:) = sum(grad_t(:,:,iel,1:3), dim=3)
@@ -81,52 +88,43 @@ subroutine time_step_memvars(memvar, disp)
      ! analytical time stepping, monopole/isotropic hardcoded
 
      ! compute new source terms (excluding the weighting)
-     src_tr_t(:,:) = kappa_r(:,:,iel) * trace_grad_t(:,:)
-     src_dev_t(:,:,1) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,1) - trace_grad_t(:,:) * third)
-     src_dev_t(:,:,2) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,2) - trace_grad_t(:,:) * third)
-     src_dev_t(:,:,3) = mu_r(:,:,iel) * 2 * (grad_t(:,:,iel,3) - trace_grad_t(:,:) * third)
-     src_dev_t(:,:,5) = mu_r(:,:,iel) * grad_t(:,:,iel,5)
-     
+     src_tr_t(:,:) = delta_kappa(:,:,iel) * trace_grad_t(:,:)
+     src_dev_t(:,:,1) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,iel,1) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,2) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,iel,2) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,3) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,iel,3) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,5) = delta_mu(:,:,iel) * grad_t(:,:,iel,5)
+
+
      ! load old source terms
      src_tr_tm1(:,:) = src_tr_tm1_glob(:,:,iel)
      src_dev_tm1(:,:,:) = src_dev_tm1_glob(:,:,:,iel)
      
      do j=1, n_sls_attenuation
         ! do the timestep
-        do ipol=0, npol
-           do jpol=0, npol
-              src_tr_buf(jpol,ipol) = ts_fac_t(j) * yp_j_kappa(j) * src_tr_t(jpol,ipol) &
-                              + ts_fac_tm1(j) * yp_j_kappa(j) * src_tr_tm1(jpol,ipol)
+        do jpol=0, npol
+           do ipol=0, npol
+              src_tr_buf(ipol,jpol) = ts_fac_t(j) * a_j_kappa(j) * src_tr_t(ipol,jpol) &
+                              + ts_fac_tm1(j) * a_j_kappa(j) * src_tr_tm1(ipol,jpol)
 
-              src_dev_buf(jpol,ipol,1:3) = &
-                          ts_fac_t(j) * yp_j_mu(j) * src_dev_t(jpol,ipol,1:3) &
-                              + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(jpol,ipol,1:3)
-              src_dev_buf(jpol,ipol,5) = &
-                          ts_fac_t(j) * yp_j_mu(j) * src_dev_t(jpol,ipol,5) &
-                              + ts_fac_tm1(j) * yp_j_mu(j) * src_dev_tm1(jpol,ipol,5)
+              src_dev_buf(ipol,jpol,1:3) = &
+                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,1:3) &
+                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,1:3)
+              src_dev_buf(ipol,jpol,5) = &
+                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,5) &
+                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,5)
               
-              memvar(jpol,ipol,1,j,iel) = exp_w_j_deltat(j) * memvar(jpol,ipol,1,j,iel) &
-                              + src_dev_buf(jpol,ipol,1) + src_tr_buf(jpol,ipol)
-              memvar(jpol,ipol,2,j,iel) = exp_w_j_deltat(j) * memvar(jpol,ipol,2,j,iel) &
-                              + src_dev_buf(jpol,ipol,2) + src_tr_buf(jpol,ipol)
-              memvar(jpol,ipol,3,j,iel) = exp_w_j_deltat(j) * memvar(jpol,ipol,3,j,iel) &
-                              + src_dev_buf(jpol,ipol,3) + src_tr_buf(jpol,ipol)
-              memvar(jpol,ipol,5,j,iel) = exp_w_j_deltat(j) * memvar(jpol,ipol,5,j,iel) &
-                              + src_dev_buf(jpol,ipol,5)
+              memvar(ipol,jpol,1,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,1,j,iel) &
+                              + src_dev_buf(ipol,jpol,1) + src_tr_buf(ipol,jpol)
+              memvar(ipol,jpol,2,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,2,j,iel) &
+                              + src_dev_buf(ipol,jpol,2) + src_tr_buf(ipol,jpol)
+              memvar(ipol,jpol,3,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,3,j,iel) &
+                              + src_dev_buf(ipol,jpol,3) + src_tr_buf(ipol,jpol)
+              memvar(ipol,jpol,5,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,5,j,iel) &
+                              + src_dev_buf(ipol,jpol,5)
            enddo
         enddo
-
-        !old version without explicit loops (~15% slower)
-        !memvar(:,:,:,j,iel) = memvar(:,:,:,j,iel) * exp_w_j_deltat(j)
-
-        !memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) + src_tr_buf(:,:)
-        !memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) + src_tr_buf(:,:)
-        !memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) + src_tr_buf(:,:)
-        !memvar(:,:,1,j,iel) = memvar(:,:,1,j,iel) + src_dev_buf(:,:,1)
-        !memvar(:,:,2,j,iel) = memvar(:,:,2,j,iel) + src_dev_buf(:,:,2)
-        !memvar(:,:,3,j,iel) = memvar(:,:,3,j,iel) + src_dev_buf(:,:,3)
-        !memvar(:,:,5,j,iel) = memvar(:,:,5,j,iel) + src_dev_buf(:,:,5)
      enddo
+
      ! save srcs for next iteration
      src_tr_tm1_glob(:,:,iel) = src_tr_t(:,:)
      src_dev_tm1_glob(:,:,:,iel) = src_dev_t(:,:,:)
@@ -136,15 +134,58 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_strain(u, grad_u)
+subroutine compute_strain_el(u, grad_u,iel)
   !
   ! compute strain in Voigt notation 
   ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
   !  
   use data_source,              ONLY: src_type
-  use pointwise_derivatives,    ONLY: axisym_gradient_solid_add
+  use pointwise_derivatives,    ONLY: axisym_gradient_solid_el
+  use pointwise_derivatives,    ONLY: f_over_s_solid_el
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,3)
+  real(kind=realkind), intent(out)  :: grad_u(0:npol,0:npol,6)
+  integer, intent(in)               :: iel
+  
+  real(kind=realkind)               :: grad_buff1(0:npol,0:npol,2)
+  real(kind=realkind)               :: grad_buff2(0:npol,0:npol,2)
+  
+  grad_u(:,:,:) = 0
+  
+  ! s,z components, identical for all source types..........................
+  if (src_type(1)=='dipole') then
+     call axisym_gradient_solid_el(u(:,:,1) + u(:,:,2), grad_buff1, iel)
+  else
+     call axisym_gradient_solid_el(u(:,:,1), grad_buff1, iel) ! 1: dsus, 2: dzus
+  endif 
+
+  call axisym_gradient_solid_el(u(:,:,3), grad_buff2, iel) ! 1:dsuz, 2:dzuz
+  
+  grad_u(:,:,1) = grad_buff1(:,:,1)  ! dsus
+  grad_u(:,:,3) = grad_buff2(:,:,2)  ! dzuz
+
+  grad_u(:,:,5) = grad_buff1(:,:,2) + grad_buff2(:,:,1) ! dsuz + dzus (factor of 2 
+                                                              ! from voigt notation)
+ 
+  ! Components involving phi....................................................
+  ! hardcode monopole for a start
+
+  grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1), iel) ! us / s
+
+end subroutine compute_strain_el
+
+!-----------------------------------------------------------------------------------------
+subroutine compute_strain_att(u, grad_u)
+  !
+  ! compute strain in Voigt notation 
+  ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
+  !  
+  use data_source,              ONLY: src_type
+  !use pointwise_derivatives,    ONLY: axisym_gradient_solid_add
   use pointwise_derivatives,    ONLY: axisym_gradient_solid
-  use pointwise_derivatives,    ONLY: axisym_dsdf_solid
+  !use pointwise_derivatives,    ONLY: axisym_dsdf_solid
   use pointwise_derivatives,    ONLY: f_over_s_solid
   
   include 'mesh_params.h'
@@ -177,7 +218,7 @@ subroutine compute_strain(u, grad_u)
 
   grad_u(:,:,:,2) = f_over_s_solid(u(:,:,:,1)) ! us / s
 
-end subroutine compute_strain
+end subroutine compute_strain_att
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
@@ -189,8 +230,17 @@ subroutine prepare_attenuation(lambda, mu)
   use data_proc,            only: lpr
   use data_time,            only: deltat
   use global_parameters,    only: pi
-  use data_matr,            only: Q_mu, Q_kappa, mu_r, kappa_r
+  use data_matr,            only: Q_mu, Q_kappa
+  !use data_matr,            only: mu_r, kappa_r
+  use data_matr,            only: delta_mu, delta_kappa
   use data_mesh_preloop,    only: ielsolid
+  use get_mesh,             only: compute_coordinates_mesh
+  use data_mesh,            only: axis_solid
+  use data_spec,            only: eta, xi_k, wt, wt_axial_k
+  use geom_transf,          only: jacobian
+  use utlity,               only: scoord
+  use analytic_mapping,     only: compute_partial_derivatives
+  use data_source,          only: nelsrc, ielsrc
   
 
   include 'mesh_params.h'
@@ -199,19 +249,30 @@ subroutine prepare_attenuation(lambda, mu)
   double precision, intent(inout)   :: mu(0:npol,0:npol,1:nelem)
 
   double precision                  :: mu_w1(0:npol,0:npol)
+  double precision                  :: mu_r(0:npol,0:npol)
+  double precision                  :: kappa_r(0:npol,0:npol)
+
+  double precision                  :: delta_mu_0(0:npol,0:npol)
   double precision                  :: kappa_w1(0:npol,0:npol)
+  double precision                  :: delta_kappa_0(0:npol,0:npol)
   double precision                  :: mu_u(0:npol,0:npol)
   double precision                  :: kappa_u(0:npol,0:npol)
   
   double precision                  :: kappa_fac, mu_fac
 
   double precision                  :: f_min, f_max, w_1, w_0
-  integer                           :: nfsamp, max_it, i, iel
+  integer                           :: nfsamp, max_it, i, iel, j
   double precision                  :: Tw, Ty, d
   logical                           :: fixfreq
   double precision, allocatable     :: w_samp(:), q_fit(:), chil(:)
   double precision, allocatable     :: yp_j_mu(:)
   double precision, allocatable     :: yp_j_kappa(:)
+  
+  double precision                  :: local_crd_nodes(8,2)
+  double precision                  :: gamma_w_l(0:npol,0:npol)
+  integer                           :: inode, ipol, jpol
+  double precision                  :: dsdxi, dzdxi, dsdeta, dzdeta
+  double precision                  :: weights_cg(0:npol,0:npol)
 
   if (lpr) print *, '  ...reading inparam_attanuation...'
   open(unit=164, file='inparam_attenuation')
@@ -238,19 +299,26 @@ subroutine prepare_attenuation(lambda, mu)
   w_1 = dsqrt(f_min * f_max) * (2 * pi)
   if (lpr) print *, '       w_1 = ', w_1
 
+  if (f_min > f_max) then
+     print *, "ERROR: minimum frequency larger then maximum frequency"
+     print *, "       in inparam_attenuation:2-3"
+     stop 2
+  endif
+
   allocate(w_samp(nfsamp))
   allocate(q_fit(nfsamp))
   allocate(chil(max_it))
   
-  allocate(w_j_attenuation(n_sls_attenuation))
-  allocate(exp_w_j_deltat(n_sls_attenuation))
-  allocate(y_j_attenuation(n_sls_attenuation))
+  allocate(w_j_attenuation(1:n_sls_attenuation))
+  allocate(exp_w_j_deltat(1:n_sls_attenuation))
+  allocate(y_j_attenuation(1:n_sls_attenuation))
   
-  allocate(yp_j_mu(n_sls_attenuation))
-  allocate(yp_j_kappa(n_sls_attenuation))
+  allocate(yp_j_mu(1:n_sls_attenuation))
+  allocate(yp_j_kappa(1:n_sls_attenuation))
   
-  allocate(ts_fac_t(n_sls_attenuation))
-  allocate(ts_fac_tm1(n_sls_attenuation))
+  allocate(ts_fac_t(1:n_sls_attenuation))
+  allocate(ts_fac_tm1(1:n_sls_attenuation))
+  
   
   if (lpr) print *, '  ...inverting for standard linear solid parameters...'
 
@@ -260,14 +328,20 @@ subroutine prepare_attenuation(lambda, mu)
   if (lpr) print *, '  ...done'
   
   ! prefactors for the exact time stepping (att nodes p 13.3)
-  exp_w_j_deltat = dexp(-w_j_attenuation * deltat)
-  ts_fac_tm1 = ((1 - exp_w_j_deltat) / (w_j_attenuation * deltat) - exp_w_j_deltat)
-  ts_fac_t = ((exp_w_j_deltat - 1) / (w_j_attenuation * deltat) + 1)
+  do j=1, n_sls_attenuation
+     exp_w_j_deltat(j) = dexp(-w_j_attenuation(j) * deltat)
+     ts_fac_tm1(j) = ((1 - exp_w_j_deltat(j)) / (w_j_attenuation(j) * deltat) &
+                      - exp_w_j_deltat(j))
+     ts_fac_t(j) = ((exp_w_j_deltat(j) - 1) / (w_j_attenuation(j) * deltat) + 1)
+  enddo
 
   if (lpr) then
-      print *, '  ...log-l2 misfit: ', chil(max_it)
-      print *, '  ...frequencies  : ', w_j_attenuation / (2. * pi)
+      print *, '  ...log-l2 misfit    : ', chil(max_it)
+      print *, '  ...frequencies      : ', w_j_attenuation / (2. * pi)
+      print *, '  ...coefficients y_j : ', y_j_attenuation
       print *, '  ...exp-frequencies  : ', exp_w_j_deltat
+      print *, '  ...ts_fac_t         : ', ts_fac_t
+      print *, '  ...ts_fac_tm1       : ', ts_fac_tm1
 
       print *, '  ...writing fitted Q to file...'
       open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='new')
@@ -283,10 +357,167 @@ subroutine prepare_attenuation(lambda, mu)
 
   if (lpr) print *, '  ...calculating relaxed moduli...'
 
-  allocate(mu_r(0:npol,0:npol,nel_solid))
-  allocate(kappa_r(0:npol,0:npol,nel_solid))
+  !allocate(mu_r(0:npol,0:npol,nel_solid))
+  !allocate(kappa_r(0:npol,0:npol,nel_solid))
+  allocate(delta_mu(0:npol,0:npol,nel_solid))
+  allocate(delta_kappa(0:npol,0:npol,nel_solid))
+  
+  if (lpr) open(unit=1717, file=infopath(1:lfinfo)//'/weights', status='new')
 
   do iel=1, nel_solid
+     !weighting for coarse grained memory vars (hard coded for polynomial order 4)
+
+     do inode = 1, 8
+        call compute_coordinates_mesh(local_crd_nodes(inode,1), &
+                                      local_crd_nodes(inode,2), ielsolid(iel), inode)
+     end do
+
+     if (.not. axis_solid(iel)) then ! non-axial elements
+
+        do ipol=0, npol
+           do jpol=0, npol
+              gamma_w_l(ipol, jpol) = wt(ipol) * wt(jpol) &
+                    * jacobian(eta(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
+                    * scoord(ipol,jpol,ielsolid(iel))
+           enddo
+        enddo
+     else
+        do ipol=1, npol
+           do jpol=0, npol
+              gamma_w_l(ipol, jpol) = wt_axial_k(ipol) * wt(jpol) / (1 + xi_k(ipol)) &
+                    * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
+                    * scoord(ipol,jpol,ielsolid(iel))
+           enddo
+        enddo
+        
+        ! axis terms
+        ipol = 0
+        do jpol=0, npol
+           call compute_partial_derivatives(dsdxi, dzdxi, dsdeta, dzdeta, &
+                   xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel))
+           gamma_w_l(ipol, jpol) = wt_axial_k(ipol) * wt(jpol) &
+                    * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
+                    * dsdxi
+           !gamma_w_l(ipol, jpol) = 0
+        enddo
+     endif
+     
+     weights_cg(:,:) = 1
+        
+     !if (.not. axis_solid(iel)) then
+        weights_cg(:,:) = 0
+        !! 4 points
+        weights_cg(1,1) = (   gamma_w_l(0,0) + gamma_w_l(0,1) &
+                            + gamma_w_l(1,0) + gamma_w_l(1,1) &
+                            + 0.5 * (  gamma_w_l(0,2) + gamma_w_l(1,2) &
+                                     + gamma_w_l(2,0) + gamma_w_l(2,1)) &
+                            + 0.25 * gamma_w_l(2,2) ) &
+                          / gamma_w_l(1,1)
+        
+        weights_cg(1,3) = (   gamma_w_l(0,3) + gamma_w_l(0,4) &
+                            + gamma_w_l(1,3) + gamma_w_l(1,4) &
+                            + 0.5 * (  gamma_w_l(0,2) + gamma_w_l(1,2) &
+                                     + gamma_w_l(2,3) + gamma_w_l(2,4)) &
+                            + 0.25 * gamma_w_l(2,2) ) &
+                          / gamma_w_l(1,3)
+        
+        weights_cg(3,1) = (   gamma_w_l(3,0) + gamma_w_l(3,1) &
+                            + gamma_w_l(4,0) + gamma_w_l(4,1) &
+                            + 0.5 * (  gamma_w_l(2,0) + gamma_w_l(2,1) &
+                                     + gamma_w_l(3,2) + gamma_w_l(4,2)) &
+                            + 0.25 * gamma_w_l(2,2) ) &
+                          / gamma_w_l(3,1)
+        
+        weights_cg(3,3) = (   gamma_w_l(3,3) + gamma_w_l(3,4) &
+                            + gamma_w_l(4,3) + gamma_w_l(4,4) &
+                            + 0.5 * (  gamma_w_l(2,3) + gamma_w_l(2,4) &
+                                     + gamma_w_l(3,2) + gamma_w_l(4,2)) &
+                            + 0.25 * gamma_w_l(2,2) ) &
+                          / gamma_w_l(3,3)
+        if (lpr) write(1717,*) weights_cg(1,1), weights_cg(1,3), & 
+                               weights_cg(3,1), weights_cg(3,3)
+
+        ! 5 points
+        !weights_cg(1,1) = (   gamma_w_l(0,0) + gamma_w_l(0,1) &
+        !                    + gamma_w_l(1,0) + gamma_w_l(1,1) &
+        !                    + 0.5 * (  gamma_w_l(0,2) + gamma_w_l(1,2) &
+        !                             + gamma_w_l(2,0) + gamma_w_l(2,1)) )&
+        !                  / gamma_w_l(1,1)
+        !
+        !weights_cg(1,3) = (   gamma_w_l(0,3) + gamma_w_l(0,4) &
+        !                    + gamma_w_l(1,3) + gamma_w_l(1,4) &
+        !                    + 0.5 * (  gamma_w_l(0,2) + gamma_w_l(1,2) &
+        !                             + gamma_w_l(2,3) + gamma_w_l(2,4)) )&
+        !                  / gamma_w_l(1,3)
+        !
+        !weights_cg(3,1) = (   gamma_w_l(3,0) + gamma_w_l(3,1) &
+        !                    + gamma_w_l(4,0) + gamma_w_l(4,1) &
+        !                    + 0.5 * (  gamma_w_l(2,0) + gamma_w_l(2,1) &
+        !                             + gamma_w_l(3,2) + gamma_w_l(4,2)) )&
+        !                  / gamma_w_l(3,1)
+        !
+        !weights_cg(3,3) = (   gamma_w_l(3,3) + gamma_w_l(3,4) &
+        !                    + gamma_w_l(4,3) + gamma_w_l(4,4) &
+        !                    + 0.5 * (  gamma_w_l(2,3) + gamma_w_l(2,4) &
+        !                             + gamma_w_l(3,2) + gamma_w_l(4,2)) )&
+        !                  / gamma_w_l(3,3)
+        !weights_cg(2,2) = 1
+        !if (lpr) write(1717,*) weights_cg(1,1), weights_cg(1,3), & 
+        !                       weights_cg(3,1), weights_cg(3,3), weights_cg(2,2)
+        
+        ! 9 points
+        !weights_cg(1,1) = (   gamma_w_l(0,0) + gamma_w_l(0,1) &
+        !                    + gamma_w_l(1,0) + gamma_w_l(1,1) )&
+        !                  / gamma_w_l(1,1)
+
+        !weights_cg(1,2) = (   gamma_w_l(0,2) + gamma_w_l(1,2) )&
+        !                  / gamma_w_l(1,2)
+
+        !weights_cg(1,3) = (   gamma_w_l(0,3) + gamma_w_l(0,4) &
+        !                    + gamma_w_l(1,3) + gamma_w_l(1,4) )&
+        !                  / gamma_w_l(1,3)
+
+        !weights_cg(2,1) = (   gamma_w_l(2,0) + gamma_w_l(2,1) )&
+        !                  / gamma_w_l(2,1)
+
+        !weights_cg(2,2) = 1
+
+        !weights_cg(2,3) = (   gamma_w_l(2,3) + gamma_w_l(2,4) )&
+        !                  / gamma_w_l(2,3)
+
+        !weights_cg(3,1) = (   gamma_w_l(3,0) + gamma_w_l(3,1) &
+        !                    + gamma_w_l(4,0) + gamma_w_l(4,1) )&
+        !                  / gamma_w_l(3,1)
+
+        !weights_cg(3,2) = (   gamma_w_l(3,2) + gamma_w_l(4,2) )&
+        !                  / gamma_w_l(3,2)
+
+        !weights_cg(3,3) = (   gamma_w_l(3,3) + gamma_w_l(3,4) &
+        !                    + gamma_w_l(4,3) + gamma_w_l(4,4) )&
+        !                  / gamma_w_l(3,3)
+        
+     !endif
+
+     !if (axis_solid(iel)) then
+     !   weights_cg(:,:) = 1
+
+     !   Q_mu(iel) = 1e9
+     !   Q_kappa(iel) = 1e9
+
+     !   !weights_cg(0,:) = 0
+     !   !weights_cg(:,1) = (gamma_w_l(:,0) + gamma_w_l(:,1) + 0.5 * gamma_w_l(:,2)) &
+     !   !                        / gamma_w_l(:,1)
+     !   !weights_cg(:,3) = (gamma_w_l(:,4) + gamma_w_l(:,3) + 0.5 * gamma_w_l(:,2)) &
+     !   !                        / gamma_w_l(:,3)
+     !   !weights_cg(1,:) = (gamma_w_l(0,:) + gamma_w_l(1,:) + 0.5 * gamma_w_l(2,:)) &
+     !   !                        / gamma_w_l(1,:)
+     !   !weights_cg(3,:) = (gamma_w_l(4,:) + gamma_w_l(3,:) + 0.5 * gamma_w_l(2,:)) &
+     !   !                        / gamma_w_l(3,:)
+     !   if (lpr) write(1717,*) weights_cg(1,:)
+     !   if (lpr) write(1717,*) weights_cg(3,:)
+     !endif
+
+     
      if (do_corr_lowq) then
         call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
         call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
@@ -295,36 +526,69 @@ subroutine prepare_attenuation(lambda, mu)
        yp_j_kappa = y_j_attenuation / Q_kappa(iel)
      endif
 
-     ! XXX: this block needs testing!!!
-     mu_fac = 1.d0
+     !---------------------------------------------------
+     !!coarse grain version
+     mu_fac = 0
      do i=1, n_sls_attenuation
-        mu_fac = mu_fac + yp_j_mu(i) * w_1**2 / (w_1**2 + w_j_attenuation(i)**2)
+        mu_fac = mu_fac + yp_j_mu(i) * w_j_attenuation(i)**2 &
+                            / (w_1**2 + w_j_attenuation(i)**2)
      enddo
+     mu_fac = mu_fac / sum(yp_j_mu)
 
-     ! compute relaxed moduli
+     kappa_fac = 0
+     do i=1, n_sls_attenuation
+        kappa_fac = kappa_fac + yp_j_kappa(i) * w_j_attenuation(i)**2 &
+                            / (w_1**2 + w_j_attenuation(i)**2)
+     enddo
+     kappa_fac = kappa_fac / sum(yp_j_kappa)
+
+     ! compute moduli at central frequency w_1
      mu_w1(:,:) =  mu(:,:,ielsolid(iel)) * (1 + 2. / (pi * Q_mu(iel)) * log(w_1 / w_0))
-     mu_r(:,:,iel) =  mu_w1 / mu_fac
-
-     kappa_fac = 1.d0
-     do i=1, n_sls_attenuation
-        kappa_fac = kappa_fac + yp_j_kappa(i) * w_1**2 / (w_1**2 + w_j_attenuation(i)**2)
-     enddo
-
      kappa_w1(:,:) =  (lambda(:,:,ielsolid(iel)) + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
                          * (1 + 2. / (pi * Q_kappa(iel)) * log(w_1 / w_0))
-     kappa_r(:,:,iel) =  kappa_w1 / kappa_fac
+
+     ! delta moduli
+     delta_mu_0(:,:) = mu_w1(:,:) / (1.d0 / sum(yp_j_mu) + 1 - mu_fac)
+     delta_kappa_0(:,:) = kappa_w1(:,:) / (1.d0 / sum(yp_j_kappa) + 1 - kappa_fac)
      
      ! compute unrelaxed moduli
-     mu(:,:,ielsolid(iel)) = mu_r(:,:,iel) * (1.d0 + sum(yp_j_mu))
-     lambda(:,:,ielsolid(iel)) = kappa_r(:,:,iel) * (1.d0 + sum(yp_j_kappa)) &
+     mu(:,:,ielsolid(iel)) = mu_w1(:,:) + weights_cg(:,:) * delta_mu_0(:,:) * mu_fac
+     lambda(:,:,ielsolid(iel)) = kappa_w1(:,:) &
+                                    + weights_cg(:,:) * delta_kappa_0(:,:) * kappa_fac &
                                     - 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))
+     
+     ! weighted delta moduli
+     delta_mu(:,:,iel) = weights_cg(:,:) * delta_mu_0(:,:)
+     delta_kappa(:,:,iel) = weights_cg(:,:) * delta_kappa_0(:,:)
+     !---------------------------------------------------
 
+
+     !---------------------------------------------------
      ! old version: assuming background model is instantaneous velocities
      !mu_r(:,:,iel) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
      !kappa_r(:,:,iel) =  (lambda(:,:,ielsolid(iel)) &
      !                       + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
      !                       / (1.d0 + sum(yp_j_kappa))
+     !---------------------------------------------------
+     
+     
+     !---------------------------------------------------
+     ! testing simple version: assuming background model is instantaneous velocities
+     !mu_r(:,:) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
+     !kappa_r(:,:) =  (lambda(:,:,ielsolid(iel)) + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
+     !                       / (1.d0 + sum(yp_j_kappa))
+
+     !delta_mu(:,:,iel) = mu(:,:,ielsolid(iel)) - mu_r(:,:)
+     !delta_kappa(:,:,iel) = (lambda(:,:,ielsolid(iel)) &
+     !                         + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) - kappa_r(:,:)
+
+     !delta_mu(:,:,iel) = delta_mu(:,:,iel) * weights_cg
+     !delta_kappa(:,:,iel) = delta_kappa(:,:,iel) * weights_cg
+     !---------------------------------------------------
+
   enddo
+
+  if (lpr) close(unit=1717)
   
   if (lpr) print *, '  ...DONE'
 
@@ -516,11 +780,16 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
 
 
     ! Set the starting test frequencies equally spaced in log frequency
-    expo = (log10(f_max) - log10(f_min)) / (N - 1.d0)
-    do j=1, N
-        ! pi = 4 * atan(1)
-        w_j_test(j) = datan(1.d0) * 8.d0 * 10**(log10(f_min) + (j - 1) * expo)
-    end do
+    if (N > 1) then
+        expo = (log10(f_max) - log10(f_min)) / (N - 1.d0)
+        do j=1, N
+            ! pi = 4 * atan(1)
+            w_j_test(j) = datan(1.d0) * 8.d0 * 10**(log10(f_min) + (j - 1) * expo)
+        end do 
+    else
+        w_j_test(1) = (f_max * f_min)**.5 * 8 * datan(1.d0)
+    endif
+
 
     if (verbose_loc) print *, w_j_test
     

@@ -129,7 +129,7 @@ subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh_preloop,    ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi, xi_k, eta
+  use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
   double precision :: s,z,r,theta
@@ -175,7 +175,7 @@ double precision function scoord(ipol,jpol,ielem)
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh_preloop,    ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY : xi, xi_k, eta
+  use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
   integer          :: ielem,ipol,jpol,ipt,inode
@@ -210,7 +210,7 @@ double precision function zcoord(ipol,jpol,ielem)
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh_preloop,    ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY : xi, xi_k, eta
+  use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
   integer          :: ielem,ipol,jpol,ipt,inode
@@ -245,7 +245,7 @@ double precision function rcoord(ipol,jpol,ielem)
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh_preloop,    ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY : xi, xi_k, eta
+  use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
   integer          :: ielem,ipol,jpol,ipt,inode
@@ -281,10 +281,10 @@ double precision function thetacoord(ipol,jpol,ielem)
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-  use data_mesh, ONLY: min_distance_dim
-  use data_mesh_preloop, ONLY: lnods,crd_nodes,axis
-  use data_spec, ONLY : xi,xi_k,eta
-  use geom_transf, ONLY: mapping
+  use data_mesh,            ONLY: min_distance_dim
+  use data_mesh_preloop,    ONLY: lnods, crd_nodes,axis
+  use data_spec,            ONLY: xi_k, eta
+  use geom_transf,          ONLY: mapping
   
   integer          :: ielem,ipol,jpol,ipt,inode
   double precision :: nodes_crd(8,2),s,z

@@ -15,16 +15,46 @@ MODULE pointwise_derivatives
   implicit none
   
   public :: axisym_gradient_solid, axisym_gradient_solid_add
+  public :: axisym_gradient_solid_el
   public :: axisym_gradient_fluid, axisym_gradient_fluid_add
   public :: dsdf_elem_solid, dzdf_elem_solid
   public :: dsdf_fluid_axis, dsdf_fluid_allaxis, dsdf_solid_allaxis
   public :: axisym_dsdf_solid
   public :: f_over_s_solid
+  public :: f_over_s_solid_el
   public :: f_over_s_fluid
   
   private
 
 contains
+
+!-----------------------------------------------------------------------------------------
+function f_over_s_solid_el(f, iel)
+  !
+  ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
+  !
+  use data_pointwise,           ONLY: inv_s_solid
+  use data_mesh,                ONLY: naxel_solid, ax_el_solid
+
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: f(0:npol,0:npol)
+  integer,intent(in)             :: iel
+  real(kind=realkind)            :: f_over_s_solid_el(0:npol,0:npol)
+  real(kind=realkind)            :: dsdf(0:npol,0:npol)
+  
+  ! in the bulk:
+  f_over_s_solid_el = inv_s_solid(:,:,iel) * f
+
+  ! at the axis:
+  if (axis_solid(iel)) then
+     ! TODO: Optimize this computing the derivative only for i=0
+     call dsdf_elem_solid(dsdf,f,iel)
+     f_over_s_solid_el(0,:) = dsdf(0,:)
+  endif
+
+end function
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 function f_over_s_solid(f)
@@ -115,6 +145,48 @@ subroutine axisym_dsdf_solid(f, dsdf)
   enddo
 
 end subroutine
+!=============================================================================
+
+!----------------------------------------------------------------------------
+subroutine axisym_gradient_solid_el(f,grad,iel)
+  !
+  ! Computes the axisymmetric gradient of scalar field f in the solid region:
+  ! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  
+  use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
+  use data_pointwise, ONLY: DsDeta_over_J_sol, DsDxi_over_J_sol
+  use unrolled_loops
+  use unit_stride_colloc
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in)               :: f(0:npol,0:npol)
+  real(kind=realkind),intent(out)              :: grad(0:npol,0:npol,2)
+  integer,intent(in)                           :: iel
+  real(kind=realkind),dimension(0:npol,0:npol) :: mxm1,mxm2,dsdf,dzdf
+  real(kind=realkind),dimension(0:npol,0:npol) :: dsdxi,dzdxi,dsdeta,dzdeta
+
+
+  dzdeta = DzDeta_over_J_sol(:,:,iel)
+  dzdxi  = DzDxi_over_J_sol(:,:,iel)
+  dsdeta = DsDeta_over_J_sol(:,:,iel)
+  dsdxi  = DsDxi_over_J_sol(:,:,iel)
+
+  if (axis_solid(iel)) then 
+     call mxm(G1T,f(:,:),mxm1) ! axial elements
+  else 
+     call mxm(G2T,f(:,:),mxm1) ! non-axial elements
+  endif 
+  call mxm(f(:,:),G2,mxm2)
+  dsdf = dzdeta * mxm1 + dzdxi * mxm2
+  dzdf = dsdeta * mxm1 + dsdxi * mxm2
+
+  grad(:,:,1) = dsdf
+  grad(:,:,2) = dzdf
+
+end subroutine axisym_gradient_solid_el
 !=============================================================================
 
 !----------------------------------------------------------------------------
