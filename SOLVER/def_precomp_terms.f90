@@ -85,7 +85,6 @@ subroutine read_model_compute_terms
       call read_model(rho, lambda, mu)
     endif
   endif
-  
 
   if(lpr)write(6,*)'  compute Lagrange interpolant derivatives...'
   call lagrange_derivs
@@ -1376,7 +1375,7 @@ double precision, allocatable :: non_diag_fact(:,:)
 
   end select
 
-! Allocate Global Anelastic Stiffness Arrays
+  ! Allocate Global Anelastic Stiffness Arrays
   if (anel_true) then
      allocate(Y(0:npol,0:npol,nel_solid))
      allocate(V_s_eta(0:npol,0:npol,nel_solid))
@@ -1492,10 +1491,10 @@ double precision, allocatable :: non_diag_fact(:,:)
               Ms_z_xi_s_xi_wt_k(ipol,jpol) = Ms_z_xi_s_xi(eta(ipol),&
                    eta(jpol),local_crd_nodes,ielsolid(ielem)) &
                    *wt(ipol)*wt(jpol)
-              M_s_xi_wt_k(ipol,jpol)  =  dsdxi*wt(ipol)*wt(jpol)
-              M_z_xi_wt_k(ipol,jpol)  = -dzdxi*wt(ipol)*wt(jpol)
-              M_z_eta_wt_k(ipol,jpol) =  dzdeta*wt(ipol)*wt(jpol)
-              M_s_eta_wt_k(ipol,jpol) = -dsdeta*wt(ipol)*wt(jpol)
+              M_s_xi_wt_k(ipol,jpol)  =  dsdxi * wt(ipol) * wt(jpol)
+              M_z_xi_wt_k(ipol,jpol)  = -dzdxi * wt(ipol) * wt(jpol)
+              M_z_eta_wt_k(ipol,jpol) =  dzdeta * wt(ipol) * wt(jpol)
+              M_s_eta_wt_k(ipol,jpol) = -dsdeta * wt(ipol) * wt(jpol)
 
               if (anel_true) then
                  Y(ipol,jpol,ielem) = wt(ipol) * wt(jpol) &
@@ -1579,7 +1578,7 @@ double precision, allocatable :: non_diag_fact(:,:)
                       *wt(jpol)/(one+xi_k(ipol))
 
                  if (anel_true) then
-                    Y(ipol,jpol,ielem) = wt_axial(ipol) * wt(jpol) / (1 + xi_k(ipol))&
+                    Y(ipol,jpol,ielem) = wt_axial_k(ipol) * wt(jpol) / (1 + xi_k(ipol))&
                        * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(ielem))
                  
                     V_s_eta(ipol,jpol,ielem) &
@@ -1608,13 +1607,13 @@ double precision, allocatable :: non_diag_fact(:,:)
                     V_z_eta(ipol,jpol,ielem) = 0
                     V_z_xi(ipol,jpol,ielem) = 0
 
-                    Y0(jpol,ielem) = wt_axial(ipol) * wt(jpol) &
+                    Y0(jpol,ielem) = wt_axial_k(ipol) * wt(jpol) &
                        * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(ielem))
 
-                    V0_s_eta(jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * (-dsdeta)
-                    V0_s_xi(jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * dsdxi
-                    V0_z_eta(jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * dzdeta
-                    V0_z_xi(jpol,ielem) = wt_axial(ipol) * wt(jpol) * dsdxi * (-dzdxi)
+                    V0_s_eta(jpol,ielem) = wt_axial_k(ipol) * wt(jpol) * dsdxi * (-dsdeta)
+                    V0_s_xi(jpol,ielem) = wt_axial_k(ipol) * wt(jpol) * dsdxi * dsdxi
+                    V0_z_eta(jpol,ielem) = wt_axial_k(ipol) * wt(jpol) * dsdxi * dzdeta
+                    V0_z_xi(jpol,ielem) = wt_axial_k(ipol) * wt(jpol) * dsdxi * (-dzdxi)
                  endif
               endif
            enddo
