@@ -3271,8 +3271,11 @@ write(101,*)'  use global_parameters'
 write(101,*)
 write(101,*)'  implicit none'
 write(101,*)
-write(101,*)'  public :: mxm,vxm'
+write(101,*)'  public :: mxm, vxm'
+write(101,*)'  public :: npol_unrolled_loops'
 write(101,*)'  private'
+write(101,*)
+write(101,*)'  integer, parameter :: npol_unrolled_loops = ', npol
 write(101,*)
 write(101,*)'  contains' 
 write(101,*)
@@ -3286,13 +3289,13 @@ write(101,9)  npol,npol,npol,npol
 write(101,10) npol,npol
 write(101,*)'  integer i,j'
 write(101,*)
-write(101,6) npol
-write(101,61)
-write(101,62)
-write(101,63) npol
-write(101,64)
-write(101,65)
-write(101,*)
+!write(101,6) npol
+!write(101,61)
+!write(101,62)
+!write(101,63) npol
+!write(101,64)
+!write(101,65)
+!write(101,*)
 write(101,7) npol
 write(101,8) npol
 write(101,*)'      c(i,j) = & '
@@ -3317,13 +3320,13 @@ write(101,16) npol,npol,npol
 write(101,17) npol
 write(101,*)'  integer j'
 write(101,*)
-write(101,6) npol
-write(101,61)
-write(101,62)
-write(101,63) npol
-write(101,64)
-write(101,65)
-write(101,*)
+!write(101,6) npol
+!write(101,61)
+!write(101,62)
+!write(101,63) npol
+!write(101,64)
+!write(101,65)
+!write(101,*)
 write(101,7) npol
 write(101,*)'      c(j) = & '
 do ipol=0,npol-1
