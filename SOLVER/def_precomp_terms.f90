@@ -260,6 +260,7 @@ subroutine compute_pointwisederiv_matrices
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_pointwise
+  use attenuation, only: att_coarse_grained
   include 'mesh_params.h'
 
   integer          :: iel,inode,ipol,jpol
@@ -330,6 +331,33 @@ subroutine compute_pointwisederiv_matrices
     enddo
     endif !axis
   enddo
+  
+  if (att_coarse_grained) then
+     allocate(DsDeta_over_J_sol_cg4(1:4,1:nel_solid))
+     allocate(DzDeta_over_J_sol_cg4(1:4,1:nel_solid))
+     allocate(DsDxi_over_J_sol_cg4(1:4,1:nel_solid))
+     allocate(DzDxi_over_J_sol_cg4(1:4,1:nel_solid))
+
+     DzDeta_over_J_sol_cg4(1,:) = DzDeta_over_J_sol(1,1,:)
+     DzDeta_over_J_sol_cg4(2,:) = DzDeta_over_J_sol(1,3,:)
+     DzDeta_over_J_sol_cg4(3,:) = DzDeta_over_J_sol(3,1,:)
+     DzDeta_over_J_sol_cg4(4,:) = DzDeta_over_J_sol(3,3,:)
+
+     DzDxi_over_J_sol_cg4(1,:) = DzDxi_over_J_sol(1,1,:)
+     DzDxi_over_J_sol_cg4(2,:) = DzDxi_over_J_sol(1,3,:)
+     DzDxi_over_J_sol_cg4(3,:) = DzDxi_over_J_sol(3,1,:)
+     DzDxi_over_J_sol_cg4(4,:) = DzDxi_over_J_sol(3,3,:)
+
+     DsDeta_over_J_sol_cg4(1,:) = DsDeta_over_J_sol(1,1,:)
+     DsDeta_over_J_sol_cg4(2,:) = DsDeta_over_J_sol(1,3,:)
+     DsDeta_over_J_sol_cg4(3,:) = DsDeta_over_J_sol(3,1,:)
+     DsDeta_over_J_sol_cg4(4,:) = DsDeta_over_J_sol(3,3,:)
+
+     DsDxi_over_J_sol_cg4(1,:) = DsDxi_over_J_sol(1,1,:)
+     DsDxi_over_J_sol_cg4(2,:) = DsDxi_over_J_sol(1,3,:)
+     DsDxi_over_J_sol_cg4(3,:) = DsDxi_over_J_sol(3,1,:)
+     DsDxi_over_J_sol_cg4(4,:) = DsDxi_over_J_sol(3,3,:)
+  endif
  
   write(69,*)'Pointwise derivative precomputed terms in solid:'
   write(69,8)'  min/max DsDeta/J [1/m]:',minval(DsDeta_over_J_sol), &
@@ -1298,6 +1326,7 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+use attenuation, only: att_coarse_grained
 implicit none
 include "mesh_params.h"
 
@@ -1382,7 +1411,7 @@ double precision, allocatable :: non_diag_fact(:,:)
      allocate(V_s_xi(0:npol,0:npol,nel_solid))
      allocate(V_z_eta(0:npol,0:npol,nel_solid))
      allocate(V_z_xi(0:npol,0:npol,nel_solid))
-
+     
      allocate(Y0(0:npol,nel_solid))
      allocate(V0_s_eta(0:npol,nel_solid))
      allocate(V0_s_xi(0:npol,nel_solid))
@@ -1394,7 +1423,7 @@ double precision, allocatable :: non_diag_fact(:,:)
      V_s_xi = 0
      V_z_eta = 0
      V_z_xi = 0
-
+     
      Y0 = 0
      V0_s_eta = 0
      V0_s_xi = 0
@@ -1702,6 +1731,52 @@ double precision, allocatable :: non_diag_fact(:,:)
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   enddo ! solid elements
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  if (anel_true .and. att_coarse_grained) then
+     allocate(Y_cg4(1:4,nel_solid))
+     allocate(V_s_eta_cg4(1:4,nel_solid))
+     allocate(V_s_xi_cg4(1:4,nel_solid))
+     allocate(V_z_eta_cg4(1:4,nel_solid))
+     allocate(V_z_xi_cg4(1:4,nel_solid))
+
+     Y_cg4(1,:) = Y(1,1,:)
+     Y_cg4(2,:) = Y(1,3,:)
+     Y_cg4(3,:) = Y(3,1,:)
+     Y_cg4(4,:) = Y(3,3,:)
+
+     V_s_eta_cg4(1,:) = V_s_eta(1,1,:)
+     V_s_eta_cg4(2,:) = V_s_eta(1,3,:)
+     V_s_eta_cg4(3,:) = V_s_eta(3,1,:)
+     V_s_eta_cg4(4,:) = V_s_eta(3,3,:)
+
+     V_s_xi_cg4(1,:)  = V_s_xi(1,1,:)
+     V_s_xi_cg4(2,:)  = V_s_xi(1,3,:)
+     V_s_xi_cg4(3,:)  = V_s_xi(3,1,:)
+     V_s_xi_cg4(4,:)  = V_s_xi(3,3,:)
+
+     V_z_eta_cg4(1,:) = V_z_eta(1,1,:)
+     V_z_eta_cg4(2,:) = V_z_eta(1,3,:)
+     V_z_eta_cg4(3,:) = V_z_eta(3,1,:)
+     V_z_eta_cg4(4,:) = V_z_eta(3,3,:)
+
+     V_z_xi_cg4(1,:)  = V_z_xi(1,1,:)
+     V_z_xi_cg4(2,:)  = V_z_xi(1,3,:)
+     V_z_xi_cg4(3,:)  = V_z_xi(3,1,:)
+     V_z_xi_cg4(4,:)  = V_z_xi(3,3,:)
+
+     deallocate(Y)
+     deallocate(V_s_eta)
+     deallocate(V_s_xi)
+     deallocate(V_z_eta)
+     deallocate(V_z_xi)
+     
+     deallocate(Y0)
+     deallocate(V0_s_eta)
+     deallocate(V0_s_xi)
+     deallocate(V0_z_eta)
+     deallocate(V0_z_xi)
+
+  endif
 
   write(69,*)' '
   write(69,*)'Min/max M11s [kg/s^2]:', minval(M11s),maxval(M11s)

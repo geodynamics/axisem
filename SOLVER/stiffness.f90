@@ -15,6 +15,7 @@ module stiffness
   
   public :: glob_stiffness_mono, glob_stiffness_di, glob_stiffness_quad
   public :: glob_anel_stiffness_mono
+  public :: glob_anel_stiffness_mono_cg4
   public :: glob_fluid_stiffness
   private
 
@@ -30,6 +31,148 @@ function outerprod(a,b)
   outerprod = spread(a, dim=2, ncopies=size(b)) * spread(b, dim=1, ncopies=size(a))
 end function outerprod
 !-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
+
+  use attenuation, ONLY: n_sls_attenuation
+  include "mesh_params.h"
+  
+  ! I/O global arrays
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
+  real(kind=realkind), intent(in)    :: R(1:4,6,n_sls_attenuation,nel_solid)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
+  
+  real(kind=realkind), dimension(1:4) :: r1, r2, r3, r5
+
+  real(kind=realkind), dimension(1:4) :: yl
+  real(kind=realkind), dimension(1:4) :: v_s_etal, v_s_xil
+  real(kind=realkind), dimension(1:4) :: v_z_etal, v_z_xil
+
+  real(kind=realkind), dimension(1:4) :: S1s, S2s
+  real(kind=realkind), dimension(1:4) :: S1z, S2z
+  real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4
+  
+  real(kind=realkind), dimension(0:npol) :: y0l
+  real(kind=realkind), dimension(0:npol) :: v0_s_etal, v0_s_xil
+  real(kind=realkind), dimension(0:npol) :: v0_z_etal, v0_z_xil
+  real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4
+  
+  integer :: ielem, j
+
+  do ielem = 1, nel_solid
+
+     loc_stiffness_s = 0
+     loc_stiffness_z = 0
+
+     yl(:) = Y_cg4(:,ielem)
+     v_s_etal(:) = V_s_eta_cg4(:,ielem)
+     v_s_xil(:)  = V_s_xi_cg4(:,ielem)
+     v_z_etal(:) = V_z_eta_cg4(:,ielem)
+     v_z_xil(:)  = V_z_xi_cg4(:,ielem)
+
+     r1(:) = 0
+     r2(:) = 0
+     r3(:) = 0
+     r5(:) = 0
+
+     ! sum memory variables first, then compute stiffness terms of the sum
+     do j=1, n_sls_attenuation
+        r1(:) = r1(:) + R(:,1,j,ielem)
+        r2(:) = r2(:) + R(:,2,j,ielem)
+        r3(:) = r3(:) + R(:,3,j,ielem)
+        r5(:) = r5(:) + R(:,5,j,ielem)
+     enddo
+
+     S1s = v_z_etal * r1 + v_s_etal * r5
+     S2s = v_z_xil  * r1 + v_s_xil  * r5
+     
+     S1z = v_z_etal * r5 + v_s_etal * r3
+     S2z = v_z_xil  * r5 + v_s_xil  * r3
+
+     if ( .not. axis_solid(ielem) ) then
+        call mxm_cg4_sparse_b(G2,  S1s, X1)
+        call mxm_cg4_sparse_b(G2,  S1z, X3)
+     else
+        call mxm_cg4_sparse_b(G1,  S1s, X1)
+        call mxm_cg4_sparse_b(G1,  S1z, X3)
+     endif
+
+     call mxm_cg4_sparse_a(S2s, G2T, X2)
+     call mxm_cg4_sparse_a(S2z, G2T, X4)
+
+     loc_stiffness_s = X1 + X2 
+     loc_stiffness_s(1,1) = loc_stiffness_s(1,1) + yl(1) * r2(1)
+     loc_stiffness_s(1,3) = loc_stiffness_s(1,3) + yl(2) * r2(2)
+     loc_stiffness_s(3,1) = loc_stiffness_s(3,1) + yl(3) * r2(3)
+     loc_stiffness_s(3,3) = loc_stiffness_s(3,3) + yl(4) * r2(4)
+
+     loc_stiffness_z = X3 + X4
+
+     ! subtracting (!) from the global stiffness
+     glob_stiffness(0:npol,0:npol,ielem,1) = &
+            glob_stiffness(0:npol,0:npol,ielem,1) - loc_stiffness_s
+     glob_stiffness(0:npol,0:npol,ielem,3) = &
+            glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
+  enddo
+
+end subroutine glob_anel_stiffness_mono_cg4
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine mxm_cg4_sparse_a(a,b,c)
+   ! mxm for sparse a as found for coarse grained memory variables cg4
+
+   include "mesh_params.h" 
+
+   real(kind=realkind), intent(in)  :: a(1:4), b(0:4,0:4)
+   real(kind=realkind), intent(out) :: c(0:4,0:4)
+   integer j
+
+   ! c ist sparse, so initialization does matter
+   c = 0
+
+   do j = 0, 4
+     c(1,j) = & 
+        + a(1) * b(1,j) &
+        + a(2) * b(3,j) 
+
+     c(3,j) = & 
+        + a(3) * b(1,j) &
+        + a(4) * b(3,j) 
+   end do
+
+end subroutine mxm_cg4_sparse_a
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine mxm_cg4_sparse_b(a,b,c)
+   ! mxm for sparse b as found for coarse grained memory variables cg4
+
+   include "mesh_params.h" 
+
+   real(kind=realkind), intent(in)  :: a(0:4,0:4), b(1:4)
+   real(kind=realkind), intent(out) :: c(0:4,0:4)
+   integer i
+
+   ! c ist sparse, so initialization does matter
+   c = 0
+
+   do i = 0, 4
+     c(i,1) = & 
+        + a(i,1) * b(1) &
+        + a(i,3) * b(3) 
+
+     c(i,3) = & 
+        + a(i,1) * b(2) &
+        + a(i,3) * b(4) 
+   end do
+
+end subroutine mxm_cg4_sparse_b
+!=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine glob_anel_stiffness_mono(glob_stiffness, R)

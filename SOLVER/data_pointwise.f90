@@ -33,6 +33,11 @@
   real(kind=realkind), allocatable :: DsDxi_over_J_sol(:,:,:)
   real(kind=realkind), allocatable :: DzDxi_over_J_sol(:,:,:)
 
+  real(kind=realkind), allocatable :: DsDeta_over_J_sol_cg4(:,:)
+  real(kind=realkind), allocatable :: DzDeta_over_J_sol_cg4(:,:)
+  real(kind=realkind), allocatable :: DsDxi_over_J_sol_cg4(:,:)
+  real(kind=realkind), allocatable :: DzDxi_over_J_sol_cg4(:,:)
+
   ! Fluid region only
   real(kind=realkind), allocatable :: DsDeta_over_J_flu(:,:,:)
   real(kind=realkind), allocatable :: DzDeta_over_J_flu(:,:,:)

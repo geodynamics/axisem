@@ -16,17 +16,45 @@ MODULE pointwise_derivatives
   
   public :: axisym_gradient_solid, axisym_gradient_solid_add
   public :: axisym_gradient_solid_el
+  public :: axisym_gradient_solid_el_cg4
   public :: axisym_gradient_fluid, axisym_gradient_fluid_add
   public :: dsdf_elem_solid, dzdf_elem_solid
   public :: dsdf_fluid_axis, dsdf_fluid_allaxis, dsdf_solid_allaxis
   public :: axisym_dsdf_solid
   public :: f_over_s_solid
   public :: f_over_s_solid_el
+  public :: f_over_s_solid_el_cg4
   public :: f_over_s_fluid
   
   private
 
 contains
+
+!-----------------------------------------------------------------------------------------
+function f_over_s_solid_el_cg4(f, iel)
+  !
+  ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
+  !
+  use data_pointwise,           ONLY: inv_s_solid
+  use data_mesh,                ONLY: naxel_solid, ax_el_solid
+
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in) :: f(0:npol,0:npol)
+  integer,intent(in)             :: iel
+  real(kind=realkind)            :: f_over_s_solid_el_cg4(1:4)
+  real(kind=realkind)            :: dsdf(0:npol,0:npol)
+  
+  ! in the bulk:
+  f_over_s_solid_el_cg4(1) = inv_s_solid(1,1,iel) * f(1,1)
+  f_over_s_solid_el_cg4(2) = inv_s_solid(1,3,iel) * f(1,3)
+  f_over_s_solid_el_cg4(3) = inv_s_solid(3,1,iel) * f(3,1)
+  f_over_s_solid_el_cg4(4) = inv_s_solid(3,3,iel) * f(3,3)
+
+  ! there is no axis (s=0)
+
+end function
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 function f_over_s_solid_el(f, iel)
@@ -148,6 +176,110 @@ end subroutine
 !=============================================================================
 
 !----------------------------------------------------------------------------
+subroutine axisym_gradient_solid_el_cg4(f,grad,iel)
+  !
+  ! Computes the axisymmetric gradient of scalar field f in the solid region:
+  ! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  
+  !use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
+  !use data_pointwise, ONLY: DsDeta_over_J_sol, DsDxi_over_J_sol
+  use data_pointwise, ONLY: DzDeta_over_J_sol_cg4, DzDxi_over_J_sol_cg4
+  use data_pointwise, ONLY: DsDeta_over_J_sol_cg4, DsDxi_over_J_sol_cg4
+  use unrolled_loops
+  use unit_stride_colloc
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in)        :: f(0:npol,0:npol)
+  real(kind=realkind),intent(out)       :: grad(1:4,2)
+  integer,intent(in)                    :: iel
+  real(kind=realkind),dimension(1:4)    :: mxm1, mxm2
+  real(kind=realkind),dimension(1:4)    :: dsdxi, dzdxi, dsdeta, dzdeta
+
+  ! less memory
+  !dzdeta(1) = DzDeta_over_J_sol(1,1,iel)
+  !dzdeta(2) = DzDeta_over_J_sol(1,3,iel)
+  !dzdeta(3) = DzDeta_over_J_sol(3,1,iel)
+  !dzdeta(4) = DzDeta_over_J_sol(3,3,iel)
+
+  !dzdxi(1) = DzDxi_over_J_sol(1,1,iel)
+  !dzdxi(2) = DzDxi_over_J_sol(1,3,iel)
+  !dzdxi(3) = DzDxi_over_J_sol(3,1,iel)
+  !dzdxi(4) = DzDxi_over_J_sol(3,3,iel)
+
+  !dsdeta(1) = DsDeta_over_J_sol(1,1,iel)
+  !dsdeta(2) = DsDeta_over_J_sol(1,3,iel)
+  !dsdeta(3) = DsDeta_over_J_sol(3,1,iel)
+  !dsdeta(4) = DsDeta_over_J_sol(3,3,iel)
+
+  !dsdxi(1) = DsDxi_over_J_sol(1,1,iel)
+  !dsdxi(2) = DsDxi_over_J_sol(1,3,iel)
+  !dsdxi(3) = DsDxi_over_J_sol(3,1,iel)
+  !dsdxi(4) = DsDxi_over_J_sol(3,3,iel)
+  
+  ! 10% faster
+  dzdeta(:) = DzDeta_over_J_sol_cg4(:,iel)
+  dzdxi(:)  =  DzDxi_over_J_sol_cg4(:,iel)
+  dsdeta(:) = DsDeta_over_J_sol_cg4(:,iel)
+  dsdxi(:)  =  DsDxi_over_J_sol_cg4(:,iel)
+
+  if (axis_solid(iel)) then 
+     call mxm_cg4_sparse_c(G1T,f(:,:), mxm1) ! axial elements
+  else 
+     call mxm_cg4_sparse_c(G2T,f(:,:), mxm1) ! non-axial elements
+  endif 
+
+  call mxm_cg4_sparse_c(f(:,:), G2, mxm2)
+
+  grad(:,1) = dzdeta * mxm1 + dzdxi * mxm2 ! dsdf
+  grad(:,2) = dsdeta * mxm1 + dsdxi * mxm2 ! dzdf
+
+end subroutine axisym_gradient_solid_el_cg4
+!=============================================================================
+ 
+!-------------------------------------------------------------
+subroutine mxm_cg4_sparse_c(a,b,c)
+
+  include "mesh_params.h" 
+
+  real(kind=realkind), intent(in)  :: a(0:4,0:4), b(0:4,0:4)
+  real(kind=realkind), intent(out) :: c(1:4)
+  integer i,j
+
+  c(1) = & 
+     + a(1,0) * b(0,1) &
+     + a(1,1) * b(1,1) &
+     + a(1,2) * b(2,1) &
+     + a(1,3) * b(3,1) &
+     + a(1,4) * b(4,1)
+
+  c(2) = & 
+     + a(1,0) * b(0,3) &
+     + a(1,1) * b(1,3) &
+     + a(1,2) * b(2,3) &
+     + a(1,3) * b(3,3) &
+     + a(1,4) * b(4,3)
+
+  c(3) = & 
+     + a(3,0) * b(0,1) &
+     + a(3,1) * b(1,1) &
+     + a(3,2) * b(2,1) &
+     + a(3,3) * b(3,1) &
+     + a(3,4) * b(4,1)
+
+  c(4) = & 
+     + a(3,0) * b(0,3) &
+     + a(3,1) * b(1,3) &
+     + a(3,2) * b(2,3) &
+     + a(3,3) * b(3,3) &
+     + a(3,4) * b(4,3)
+
+end subroutine mxm_cg4_sparse_c
+!=============================================================================
+
+!----------------------------------------------------------------------------
 subroutine axisym_gradient_solid_el(f,grad,iel)
   !
   ! Computes the axisymmetric gradient of scalar field f in the solid region:
@@ -165,8 +297,8 @@ subroutine axisym_gradient_solid_el(f,grad,iel)
   real(kind=realkind),intent(in)               :: f(0:npol,0:npol)
   real(kind=realkind),intent(out)              :: grad(0:npol,0:npol,2)
   integer,intent(in)                           :: iel
-  real(kind=realkind),dimension(0:npol,0:npol) :: mxm1,mxm2,dsdf,dzdf
-  real(kind=realkind),dimension(0:npol,0:npol) :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=realkind),dimension(0:npol,0:npol) :: mxm1, mxm2, dsdf, dzdf
+  real(kind=realkind),dimension(0:npol,0:npol) :: dsdxi, dzdxi, dsdeta, dzdeta
 
 
   dzdeta = DzDeta_over_J_sol(:,:,iel)
@@ -179,6 +311,7 @@ subroutine axisym_gradient_solid_el(f,grad,iel)
   else 
      call mxm(G2T,f(:,:),mxm1) ! non-axial elements
   endif 
+
   call mxm(f(:,:),G2,mxm2)
   dsdf = dzdeta * mxm1 + dzdxi * mxm2
   dzdf = dsdeta * mxm1 + dsdxi * mxm2

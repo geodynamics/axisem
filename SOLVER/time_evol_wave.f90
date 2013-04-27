@@ -154,6 +154,103 @@ subroutine prepare_waves
 end subroutine prepare_waves
 !=============================================================================
 
+!!-----------------------------------------------------------------------------
+!subroutine plane_wave_initial_conditions(disp, velo)
+!  ! TESTING routine to initialize a plane wave along the equator
+!
+!  use utlity,   only: zcoord, scoord
+!  use data_mesh_preloop,    only: ielsolid
+!  include 'mesh_params.h'
+!  
+!  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3), intent(inout) :: disp, velo
+!  integer           :: iel, ipol, jpol
+!  double precision  :: a, c, vp, vs, period
+!
+!  a = 1e-6
+!  vp = 10e3
+!  vs = 5.77e3
+!  period = 10.
+!  !c = vs * period /2.
+!  c = vp * period / 2.
+!
+!
+!  do iel=1, nel_solid
+!     do ipol=0, npol
+!        do jpol=0, npol
+!           ! P-wave
+!           disp(ipol,jpol,iel,3) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
+!           velo(ipol,jpol,iel,3) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
+!                        * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vp
+!           ! S-wave
+!           !disp(ipol,jpol,iel,1) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
+!           !velo(ipol,jpol,iel,1) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
+!           !             * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vs 
+!        enddo
+!     enddo
+!  enddo
+!
+!end subroutine plane_wave_initial_conditions
+!!=============================================================================
+!
+!!-----------------------------------------------------------------------------
+!subroutine find_dump_points(dumppoint_ids)
+!  ! TESTING routine finding two  points to dump the wavefield
+!
+!  use utlity,   only: zcoord, scoord
+!  use data_mesh_preloop,    only: ielsolid
+!  include 'mesh_params.h'
+!  
+!  integer, intent(out)  :: dumppoint_ids(3,2)
+!  integer               :: iel, ipol, jpol
+!  double precision      :: mindist1, mindist2, s1, s2, z1, z2
+!
+!  s1 = 1e5
+!  s2 = 1e5
+!
+!  z1 = 1.e6
+!  !z2 = z1 + 50e3 !phase
+!  z2 = 1.5e6 ! Q
+!
+!  mindist1 = 1e18
+!  mindist2 = 1e18
+!
+!
+!  do iel=1, nel_solid
+!     do ipol=0, npol
+!        do jpol=0, npol
+!           if ((zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
+!                 +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2 < mindist1) then
+!              dumppoint_ids(1,1) = ielsolid(iel)
+!              dumppoint_ids(2,1) = ipol
+!              dumppoint_ids(3,1) = jpol
+!              mindist1 = (zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
+!                            +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2
+!           endif
+!
+!           if ((zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
+!                 +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2 < mindist2) then
+!              dumppoint_ids(1,2) = ielsolid(iel)
+!              dumppoint_ids(2,2) = ipol
+!              dumppoint_ids(3,2) = jpol
+!              mindist2 = (zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
+!                            +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2
+!           endif
+!        enddo
+!     enddo
+!  enddo
+!
+!  print *, "TESTING PLANE WAVE"
+!  print *, "mindist1 = ", dsqrt(mindist1)
+!  print *, "mindist2 = ", dsqrt(mindist2)
+!  print *, "s1 = ", scoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
+!  print *, "z1 = ", zcoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
+!  print *, "s2 = ", scoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
+!  print *, "z2 = ", zcoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
+!  print *, dumppoint_ids
+!
+!end subroutine find_dump_points
+!!=============================================================================
+
 !-----------------------------------------------------------------------------
 subroutine time_loop
 
@@ -201,7 +298,10 @@ subroutine sf_time_loop_newmark
   use unit_stride_colloc
   use clocks_mod
   use data_matr,            ONLY: inv_mass_rho, inv_mass_fluid
-  use attenuation,          ONLY: n_sls_attenuation, time_step_memvars
+  use attenuation,          ONLY: time_step_memvars
+  use attenuation,          ONLY: time_step_memvars_cg4
+  use attenuation,          ONLY: n_sls_attenuation
+  use attenuation,          ONLY: att_coarse_grained
   
   include 'mesh_params.h'
   
@@ -211,10 +311,14 @@ subroutine sf_time_loop_newmark
   
   ! solid memory variables + gradient
   real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
+  real(kind=realkind), allocatable :: memory_var_cg4(:,:,:,:)
 
   ! Fluid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
+
+  integer   :: dumppoint_ids(3,2)
+  integer   :: myunit
   
   integer :: iter
 
@@ -227,8 +331,13 @@ subroutine sf_time_loop_newmark
   endif
 
   if (anel_true) then
-     allocate(memory_var(0:npol,0:npol,6,n_sls_attenuation,nel_solid))
-     memory_var = 0
+     if (att_coarse_grained) then
+        allocate(memory_var_cg4(1:4,6,n_sls_attenuation,nel_solid))
+        memory_var_cg4 = 0
+     else
+        allocate(memory_var(0:npol,0:npol,6,n_sls_attenuation,nel_solid))
+        memory_var = 0
+     endif
   endif
 
   ! INITIAL CONDITIONS
@@ -266,10 +375,25 @@ subroutine sf_time_loop_newmark
   
   t = zero
 
+  ! FOR TESTING: PLANE WAVE INITIAL CONDITIONS
+  !call find_dump_points(dumppoint_ids)
+  !call plane_wave_initial_conditions(disp, velo)
+
+  !myunit = 72728
+  !open(unit=myunit, file='Info/dispersion.dat')
+
+
   if (lpr) write(6,*)'************ S T A R T I N G   T I M E   L O O P *************'
   write(69,*)'************ S T A R T I N G   T I M E   L O O P *************'
 
   do iter = 1, niter
+    
+     ! TESTING plane wave: dump fields at the two points found by
+     ! find_dump_points
+     !write(myunit,*) t, disp(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1), 3), &
+     !                   disp(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2), 3), &
+     !                   velo(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1), 3), &
+     !                   velo(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2), 3)
 
      t = t + deltat
      call runtime_info(iter,disp,chi)
@@ -320,7 +444,11 @@ subroutine sf_time_loop_newmark
            call glob_stiffness_mono(acc1, disp)
            if (anel_true) then
               iclockanelst = tick()
-              call glob_anel_stiffness_mono(acc1, memory_var)
+              if (att_coarse_grained) then
+                 call glob_anel_stiffness_mono_cg4(acc1, memory_var_cg4)
+              else
+                 call glob_anel_stiffness_mono(acc1, memory_var)
+              endif
               iclockanelst = tick(id=idanelst, since=iclockanelst)
            endif
            call bdry_copy2solid(acc1, ddchi1)
@@ -376,19 +504,29 @@ subroutine sf_time_loop_newmark
      ! memory variable time evolution with strain as source
      if (anel_true) then
         iclockanelts = tick()
-        call time_step_memvars(memory_var, disp)
+        if (att_coarse_grained) then
+           call time_step_memvars_cg4(memory_var_cg4, disp)
+        else
+           call time_step_memvars(memory_var, disp)
+        endif
         iclockanelts = tick(id=idanelts, since=iclockanelts)
      endif
 
      iclockdump = tick()
      if (anel_true) then
-        call dump_stuff(iter, disp, velo, chi, dchi, ddchi0, memory_var)
+        if (att_coarse_grained) then ! (memvar dump not implemented for cg)
+           call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
+        else
+           call dump_stuff(iter, disp, velo, chi, dchi, ddchi0, memory_var)
+        endif
      else
         call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
      endif
      iclockdump = tick(id=iddump, since=iclockdump)
 
   end do ! time loop
+  
+  !close(myunit)
 
 end subroutine sf_time_loop_newmark
 !=============================================================================
@@ -869,7 +1007,7 @@ end subroutine runtime_info
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine add_source(acc1,stf1)
+subroutine add_source(acc1, stf1)
   !
   ! Add source term inside source elements only if source time function non-zero
   ! and I have the source.
@@ -887,7 +1025,7 @@ subroutine add_source(acc1,stf1)
      do iel=1, nelsrc
         i=i+1
         acc1(:,:,ielsrc(iel),:) = acc1(:,:,ielsrc(iel),:) - & 
-             source_term_el(:,:,i,:)*stf1
+             source_term_el(:,:,i,:) * stf1
      enddo
   endif
 
@@ -1027,7 +1165,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
 
   if (dump_wavefields) then
 
-    if (mod(iter,strain_it)==0) then
+    if (mod(iter,strain_it)==0 .or. iter==0) then
 
      ! dump displacement and velocity in each surface element
      !! for netcdf people set .true. in inparam to use it instead of the standard

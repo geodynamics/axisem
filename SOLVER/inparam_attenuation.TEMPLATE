@@ -9,4 +9,5 @@
 0.1             starting 'temperature' for the amplitude coefficients
 0.99995         'temperature' decay rate
 .false.         fix the frequencies log spaced in the attenuation band
-.false.         dump memory vars to vtk (not optimized, only meant for testing)
+.false.         dump memory vars to vtk (not optimized, only meant for testing, not with cg)
+.true.          use coarse grained memory variables (ONLY for npol = 4)

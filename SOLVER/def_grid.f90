@@ -178,10 +178,11 @@ subroutine deallocate_preloop_arrays
 use data_pointwise
 
   if (lpr) write(6,*)'  deallocating large mesh arrays...'; call flush(6)
+  ! TESTING: comment next 4 lines to use with plane wave initial condition
   deallocate(lnods)
   deallocate(crd_nodes)
   deallocate(eltype,coarsing,north,axis)
-
+  
   if (allocated(ielsolid)) deallocate(ielsolid)
   if (allocated(ielfluid)) deallocate(ielfluid)
   if (allocated(spher_radii)) deallocate(spher_radii)

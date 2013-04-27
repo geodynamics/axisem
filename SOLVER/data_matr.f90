@@ -78,14 +78,20 @@ module data_matr
   ! Q_mu and Q_kappa, assumed to be homogeneous within an element
   real(kind=realkind), allocatable :: Q_mu(:), Q_kappa(:)
   real(4), allocatable             :: points_solid(:,:,:,:) ! for memory variable output
-  !real(kind=realkind), allocatable :: mu_r(:,:,:), kappa_r(:,:,:)
   real(kind=realkind), allocatable :: delta_mu(:,:,:), delta_kappa(:,:,:)
+  real(kind=realkind), allocatable :: delta_mu_cg4(:,:), delta_kappa_cg4(:,:)
 
   ! Anelastic precomputable matrices 
   real(kind=realkind), allocatable :: Y(:,:,:)
+  real(kind=realkind), allocatable :: Y_cg4(:,:)
   real(kind=realkind), allocatable :: Y0(:,:)
+
   real(kind=realkind), allocatable :: V_s_eta(:,:,:), V_s_xi(:,:,:)
   real(kind=realkind), allocatable :: V_z_eta(:,:,:), V_z_xi(:,:,:)
+
+  real(kind=realkind), allocatable :: V_s_eta_cg4(:,:), V_s_xi_cg4(:,:)
+  real(kind=realkind), allocatable :: V_z_eta_cg4(:,:), V_z_xi_cg4(:,:)
+
   real(kind=realkind), allocatable :: V0_s_eta(:,:), V0_s_xi(:,:)
   real(kind=realkind), allocatable :: V0_z_eta(:,:), V0_z_xi(:,:)
 

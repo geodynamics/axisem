@@ -8,16 +8,132 @@ module attenuation
   public :: n_sls_attenuation
   public :: dump_memory_vars
   public :: time_step_memvars
+  public :: time_step_memvars_cg4
+  public :: att_coarse_grained
 
   double precision, allocatable   :: y_j_attenuation(:)
   double precision, allocatable   :: w_j_attenuation(:), exp_w_j_deltat(:)
   double precision, allocatable   :: ts_fac_t(:), ts_fac_tm1(:)
   integer                         :: n_sls_attenuation
   logical                         :: do_corr_lowq, dump_memory_vars = .false.
-  real(kind=realkind)             :: src_dev_tm1_glob(0:npol,0:npol,6,nel_solid)  
-  real(kind=realkind)             :: src_tr_tm1_glob(0:npol,0:npol,nel_solid)  
+  logical                         :: att_coarse_grained = .true.
 
+  real(kind=realkind), allocatable :: src_dev_tm1_glob(:,:,:,:)
+  real(kind=realkind), allocatable :: src_tr_tm1_glob(:,:,:)
+
+  real(kind=realkind), allocatable :: src_dev_tm1_glob_cg4(:,:,:)
+  real(kind=realkind), allocatable :: src_tr_tm1_glob_cg4(:,:)
+  
 contains
+
+!-----------------------------------------------------------------------------------------
+subroutine time_step_memvars_cg4(memvar, disp)
+  !
+  ! analytical time integration of memory variables (linear interpolation for
+  ! the strain), coarse grained version with 4 memory variable per element
+  ! MvD, attenutation notes, p 13.2
+  !
+  use data_time,            only: deltat
+  use data_matr,            only: Q_mu, Q_kappa
+  use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
+  use data_mesh,            only: axis_solid
+  include 'mesh_params.h'
+
+  real(kind=realkind), intent(inout)    :: memvar(1:4,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
+  
+  integer               :: iel, j, i
+  double precision      :: yp_j_mu(n_sls_attenuation)
+  double precision      :: yp_j_kappa(n_sls_attenuation)
+  double precision      :: a_j_mu(n_sls_attenuation)
+  double precision      :: a_j_kappa(n_sls_attenuation)
+  
+  real(kind=realkind)   :: grad_t_cg4(1:4,6)
+
+  real(kind=realkind)   :: trace_grad_t(1:4)
+  real(kind=realkind)   :: trace_grad_tm1(1:4)
+
+  real(kind=realkind)   :: src_tr_t(1:4)
+  real(kind=realkind)   :: src_tr_tm1(1:4)
+  real(kind=realkind)   :: src_dev_t(1:4,6)
+  real(kind=realkind)   :: src_dev_tm1(1:4,6)
+  
+  real(kind=realkind)   :: src_tr_buf(1:4)
+  real(kind=realkind)   :: src_dev_buf(1:4,6)
+
+  real(kind=realkind)   :: Q_mu_last, Q_kappa_last
+
+  Q_mu_last = -1
+  Q_kappa_last = -1
+
+  do iel=1, nel_solid
+     ! compute the strain
+     call compute_strain_att_el_cg4(disp(:,:,iel,:), grad_t_cg4, iel)
+     
+     ! compute local coefficients y_j for kappa and mu (only if different from
+     ! previous element)
+     if (Q_mu(iel) /= Q_mu_last) then
+        Q_mu_last = Q_mu(iel)
+        if (do_corr_lowq) then
+           call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
+        else
+           yp_j_mu = y_j_attenuation / Q_mu(iel)
+        endif
+        a_j_mu = yp_j_mu / sum(yp_j_mu)
+     endif
+
+     if (Q_kappa(iel) /= Q_kappa_last) then
+        Q_kappa_last = Q_kappa(iel)
+        if (do_corr_lowq) then
+           call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
+        else
+           yp_j_kappa = y_j_attenuation / Q_kappa(iel)
+        endif
+        a_j_kappa = yp_j_mu / sum(yp_j_kappa)
+     endif
+     
+     trace_grad_t(:) = sum(grad_t_cg4(:,:), dim=2)
+
+     ! analytical time stepping, monopole/isotropic hardcoded
+
+     ! compute new source terms (excluding the weighting)
+     src_tr_t(:) = delta_kappa_cg4(:,iel) * trace_grad_t(:)
+     src_dev_t(:,1) = delta_mu_cg4(:,iel) * 2 * (grad_t_cg4(:,1) - trace_grad_t(:) * third)
+     src_dev_t(:,2) = delta_mu_cg4(:,iel) * 2 * (grad_t_cg4(:,2) - trace_grad_t(:) * third)
+     src_dev_t(:,3) = delta_mu_cg4(:,iel) * 2 * (grad_t_cg4(:,3) - trace_grad_t(:) * third)
+     src_dev_t(:,5) = delta_mu_cg4(:,iel) * grad_t_cg4(:,5)
+     
+     ! load old source terms
+     src_tr_tm1(:) = src_tr_tm1_glob_cg4(:,iel)
+     src_dev_tm1(:,:) = src_dev_tm1_glob_cg4(:,:,iel)
+     
+     do j=1, n_sls_attenuation
+        ! do the timestep
+        src_tr_buf(:) = ts_fac_t(j) * a_j_kappa(j) * src_tr_t(:) &
+                        + ts_fac_tm1(j) * a_j_kappa(j) * src_tr_tm1(:)
+
+        src_dev_buf(:,1:3) = ts_fac_t(j)   * a_j_mu(j) * src_dev_t(:,1:3) &
+                           + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,1:3)
+        src_dev_buf(:,5) = ts_fac_t(j)   * a_j_mu(j) * src_dev_t(:,5) &
+                         + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,5)
+        
+        memvar(:,1,j,iel) = exp_w_j_deltat(j) * memvar(:,1,j,iel) &
+                        + src_dev_buf(:,1) + src_tr_buf(:)
+        memvar(:,2,j,iel) = exp_w_j_deltat(j) * memvar(:,2,j,iel) &
+                        + src_dev_buf(:,2) + src_tr_buf(:)
+        memvar(:,3,j,iel) = exp_w_j_deltat(j) * memvar(:,3,j,iel) &
+                        + src_dev_buf(:,3) + src_tr_buf(:)
+        memvar(:,5,j,iel) = exp_w_j_deltat(j) * memvar(:,5,j,iel) &
+                        + src_dev_buf(:,5)
+     enddo
+     
+     ! save srcs for next iteration
+     src_tr_tm1_glob_cg4(:,iel) = src_tr_t(:)
+     src_dev_tm1_glob_cg4(:,:,iel) = src_dev_t(:,:)
+  enddo
+  
+end subroutine
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 subroutine time_step_memvars(memvar, disp)
@@ -28,7 +144,6 @@ subroutine time_step_memvars(memvar, disp)
   !
   use data_time,            only: deltat
   use data_matr,            only: Q_mu, Q_kappa
-  !use data_matr,            only: mu_r, kappa_r
   use data_matr,            only: delta_mu, delta_kappa
   use data_mesh,            only: axis_solid
   include 'mesh_params.h'
@@ -41,7 +156,9 @@ subroutine time_step_memvars(memvar, disp)
   double precision      :: yp_j_kappa(n_sls_attenuation)
   double precision      :: a_j_mu(n_sls_attenuation)
   double precision      :: a_j_kappa(n_sls_attenuation)
-  real(kind=realkind)   :: grad_t(0:npol,0:npol,nel_solid,6)
+
+  real(kind=realkind)   :: grad_t(0:npol,0:npol,6)
+
   real(kind=realkind)   :: trace_grad_t(0:npol,0:npol)
   real(kind=realkind)   :: trace_grad_tm1(0:npol,0:npol)
   real(kind=realkind)   :: src_tr_t(0:npol,0:npol)
@@ -57,10 +174,9 @@ subroutine time_step_memvars(memvar, disp)
   Q_mu_last = -1
   Q_kappa_last = -1
 
-  ! compute global strain of current time step
-  call compute_strain_att(disp, grad_t)
-
   do iel=1, nel_solid
+     call compute_strain_att_el(disp(:,:,iel,:), grad_t, iel)
+
      ! compute local coefficients y_j for kappa and mu (only if different from
      ! previous element)
      if (Q_mu(iel) /= Q_mu_last) then
@@ -83,17 +199,16 @@ subroutine time_step_memvars(memvar, disp)
         a_j_kappa = yp_j_mu / sum(yp_j_kappa)
      endif
 
-     trace_grad_t(:,:) = sum(grad_t(:,:,iel,1:3), dim=3)
+     trace_grad_t(:,:) = sum(grad_t(:,:,1:3), dim=3)
 
      ! analytical time stepping, monopole/isotropic hardcoded
 
      ! compute new source terms (excluding the weighting)
      src_tr_t(:,:) = delta_kappa(:,:,iel) * trace_grad_t(:,:)
-     src_dev_t(:,:,1) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,iel,1) - trace_grad_t(:,:) * third)
-     src_dev_t(:,:,2) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,iel,2) - trace_grad_t(:,:) * third)
-     src_dev_t(:,:,3) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,iel,3) - trace_grad_t(:,:) * third)
-     src_dev_t(:,:,5) = delta_mu(:,:,iel) * grad_t(:,:,iel,5)
-
+     src_dev_t(:,:,1) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,1) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,2) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,2) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,3) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,3) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,5) = delta_mu(:,:,iel) * grad_t(:,:,5)
 
      ! load old source terms
      src_tr_tm1(:,:) = src_tr_tm1_glob(:,:,iel)
@@ -134,9 +249,54 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_strain_el(u, grad_u,iel)
+subroutine compute_strain_att_el_cg4(u, grad_u, iel)
   !
-  ! compute strain in Voigt notation 
+  ! compute strain in Voigt notation for a single element
+  ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
+  ! coarse grained version, so only computed at gll points (1,1), (1,3), (3,1) and (3,3)
+  !  
+  use data_source,              ONLY: src_type
+  use pointwise_derivatives,    ONLY: axisym_gradient_solid_el_cg4
+  use pointwise_derivatives,    ONLY: f_over_s_solid_el_cg4
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,3)
+  real(kind=realkind), intent(out)  :: grad_u(1:4,6)
+  integer, intent(in)               :: iel
+  
+  real(kind=realkind)               :: grad_buff1(1:4,2)
+  real(kind=realkind)               :: grad_buff2(1:4,2)
+  
+  grad_u(:,:) = 0
+  
+  ! s,z components, identical for all source types..........................
+  if (src_type(1)=='dipole') then
+     call axisym_gradient_solid_el_cg4(u(:,:,1) + u(:,:,2), grad_buff1, iel)
+  else
+     call axisym_gradient_solid_el_cg4(u(:,:,1), grad_buff1, iel) ! 1: dsus, 2: dzus
+  endif 
+
+  call axisym_gradient_solid_el_cg4(u(:,:,3), grad_buff2, iel) ! 1:dsuz, 2:dzuz
+  
+  grad_u(:,1) = grad_buff1(:,1)  ! dsus
+  grad_u(:,3) = grad_buff2(:,2)  ! dzuz
+
+  grad_u(:,5) = grad_buff1(:,2) + grad_buff2(:,1) ! dsuz + dzus (factor of 2 
+                                                              ! from voigt notation)
+ 
+  ! Components involving phi....................................................
+  ! hardcode monopole for a start
+
+  grad_u(:,2) = f_over_s_solid_el_cg4(u(:,:,1), iel) ! us / s
+
+end subroutine compute_strain_att_el_cg4
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine compute_strain_att_el(u, grad_u, iel)
+  !
+  ! compute strain in Voigt notation for a single element
   ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
   !  
   use data_source,              ONLY: src_type
@@ -174,51 +334,7 @@ subroutine compute_strain_el(u, grad_u,iel)
 
   grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1), iel) ! us / s
 
-end subroutine compute_strain_el
-
-!-----------------------------------------------------------------------------------------
-subroutine compute_strain_att(u, grad_u)
-  !
-  ! compute strain in Voigt notation 
-  ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
-  !  
-  use data_source,              ONLY: src_type
-  !use pointwise_derivatives,    ONLY: axisym_gradient_solid_add
-  use pointwise_derivatives,    ONLY: axisym_gradient_solid
-  !use pointwise_derivatives,    ONLY: axisym_dsdf_solid
-  use pointwise_derivatives,    ONLY: f_over_s_solid
-  
-  include 'mesh_params.h'
-  
-  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind), intent(out)  :: grad_u(0:npol,0:npol,nel_solid,6)
-  
-  real(kind=realkind)               :: grad_buff1(0:npol,0:npol,nel_solid,2)
-  real(kind=realkind)               :: grad_buff2(0:npol,0:npol,nel_solid,2)
-  
-  grad_u(:,:,:,:) = 0
-  
-  ! s,z components, identical for all source types..........................
-  if (src_type(1)=='dipole') then
-     call axisym_gradient_solid(u(:,:,:,1) + u(:,:,:,2), grad_buff1)
-  else
-     call axisym_gradient_solid(u(:,:,:,1), grad_buff1) ! 1: dsus, 2: dzus
-  endif
-
-  call axisym_gradient_solid(u(:,:,:,3), grad_buff2) ! 1:dsuz, 2:dzuz
-  
-  grad_u(:,:,:,1) = grad_buff1(:,:,:,1)  ! dsus
-  grad_u(:,:,:,3) = grad_buff2(:,:,:,2)  ! dzuz
-
-  grad_u(:,:,:,5) = grad_buff1(:,:,:,2) + grad_buff2(:,:,:,1) ! dsuz + dzus (factor of 2 
-                                                              ! from voigt notation)
- 
-  ! Components involving phi....................................................
-  ! hardcode monopole for a start
-
-  grad_u(:,:,:,2) = f_over_s_solid(u(:,:,:,1)) ! us / s
-
-end subroutine compute_strain_att
+end subroutine compute_strain_att_el
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
@@ -231,8 +347,8 @@ subroutine prepare_attenuation(lambda, mu)
   use data_time,            only: deltat
   use global_parameters,    only: pi
   use data_matr,            only: Q_mu, Q_kappa
-  !use data_matr,            only: mu_r, kappa_r
   use data_matr,            only: delta_mu, delta_kappa
+  use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
   use data_mesh_preloop,    only: ielsolid
   use get_mesh,             only: compute_coordinates_mesh
   use data_mesh,            only: axis_solid
@@ -290,6 +406,7 @@ subroutine prepare_attenuation(lambda, mu)
   read(164,*) d
   read(164,*) fixfreq
   read(164,*) dump_memory_vars
+  read(164,*) att_coarse_grained
 
   close(unit=164)
   
@@ -342,6 +459,7 @@ subroutine prepare_attenuation(lambda, mu)
       print *, '  ...exp-frequencies  : ', exp_w_j_deltat
       print *, '  ...ts_fac_t         : ', ts_fac_t
       print *, '  ...ts_fac_tm1       : ', ts_fac_tm1
+      print *, '  ...coarse grained   : ', att_coarse_grained
 
       print *, '  ...writing fitted Q to file...'
       open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='new')
@@ -357,56 +475,70 @@ subroutine prepare_attenuation(lambda, mu)
 
   if (lpr) print *, '  ...calculating relaxed moduli...'
 
-  !allocate(mu_r(0:npol,0:npol,nel_solid))
-  !allocate(kappa_r(0:npol,0:npol,nel_solid))
-  allocate(delta_mu(0:npol,0:npol,nel_solid))
-  allocate(delta_kappa(0:npol,0:npol,nel_solid))
+  if (att_coarse_grained) then
+
+     if ( npol /=  4 ) then
+        write(6,*) "ERROR: coarse grained memvar only implemented for npol = 4, but is ", npol
+        stop 2
+     endif
+
+     allocate(delta_mu_cg4(1:4,nel_solid))
+     allocate(delta_kappa_cg4(1:4,nel_solid))
+     allocate(src_dev_tm1_glob_cg4(1:4,6,nel_solid))
+     allocate(src_tr_tm1_glob_cg4(1:4,nel_solid))
+     src_dev_tm1_glob_cg4 = 0
+     src_tr_tm1_glob_cg4 = 0
+  else
+     allocate(delta_mu(0:npol,0:npol,nel_solid))
+     allocate(delta_kappa(0:npol,0:npol,nel_solid))
+     allocate(src_dev_tm1_glob(0:npol,0:npol,6,nel_solid))
+     allocate(src_tr_tm1_glob(0:npol,0:npol,nel_solid))
+     src_dev_tm1_glob = 0
+     src_tr_tm1_glob = 0
+  endif
+     
   
-  if (lpr) open(unit=1717, file=infopath(1:lfinfo)//'/weights', status='new')
+  !if (lpr) open(unit=1717, file=infopath(1:lfinfo)//'/weights', status='new')
 
   do iel=1, nel_solid
-     !weighting for coarse grained memory vars (hard coded for polynomial order 4)
 
-     do inode = 1, 8
-        call compute_coordinates_mesh(local_crd_nodes(inode,1), &
-                                      local_crd_nodes(inode,2), ielsolid(iel), inode)
-     end do
+     if (att_coarse_grained) then
+        !weighting for coarse grained memory vars (hard coded for polynomial order 4)
 
-     if (.not. axis_solid(iel)) then ! non-axial elements
+        do inode = 1, 8
+           call compute_coordinates_mesh(local_crd_nodes(inode,1), &
+                                         local_crd_nodes(inode,2), ielsolid(iel), inode)
+        end do
 
-        do ipol=0, npol
-           do jpol=0, npol
-              gamma_w_l(ipol, jpol) = wt(ipol) * wt(jpol) &
-                    * jacobian(eta(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
-                    * scoord(ipol,jpol,ielsolid(iel))
+        if (.not. axis_solid(iel)) then ! non-axial elements
+           do ipol=0, npol
+              do jpol=0, npol
+                 gamma_w_l(ipol, jpol) = wt(ipol) * wt(jpol) &
+                       * jacobian(eta(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
+                       * scoord(ipol,jpol,ielsolid(iel))
+              enddo
            enddo
-        enddo
-     else
-        do ipol=1, npol
-           do jpol=0, npol
-              gamma_w_l(ipol, jpol) = wt_axial_k(ipol) * wt(jpol) / (1 + xi_k(ipol)) &
-                    * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
-                    * scoord(ipol,jpol,ielsolid(iel))
+        else   ! axial elements
+           do ipol=1, npol
+              do jpol=0, npol
+                 gamma_w_l(ipol, jpol) = wt_axial_k(ipol) * wt(jpol) / (1 + xi_k(ipol)) &
+                       * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
+                       * scoord(ipol,jpol,ielsolid(iel))
+              enddo
            enddo
-        enddo
+           ! extra axis terms
+           ipol = 0
+           do jpol=0, npol
+              call compute_partial_derivatives(dsdxi, dzdxi, dsdeta, dzdeta, &
+                      xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel))
+              gamma_w_l(ipol, jpol) = wt_axial_k(ipol) * wt(jpol) &
+                       * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
+                       * dsdxi
+           enddo
+        endif
         
-        ! axis terms
-        ipol = 0
-        do jpol=0, npol
-           call compute_partial_derivatives(dsdxi, dzdxi, dsdeta, dzdeta, &
-                   xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel))
-           gamma_w_l(ipol, jpol) = wt_axial_k(ipol) * wt(jpol) &
-                    * jacobian(xi_k(ipol), eta(jpol), local_crd_nodes, ielsolid(iel)) &
-                    * dsdxi
-           !gamma_w_l(ipol, jpol) = 0
-        enddo
-     endif
-     
-     weights_cg(:,:) = 1
-        
-     !if (.not. axis_solid(iel)) then
         weights_cg(:,:) = 0
-        !! 4 points
+        !! cg with 4 points out of 25
         weights_cg(1,1) = (   gamma_w_l(0,0) + gamma_w_l(0,1) &
                             + gamma_w_l(1,0) + gamma_w_l(1,1) &
                             + 0.5 * (  gamma_w_l(0,2) + gamma_w_l(1,2) &
@@ -434,8 +566,8 @@ subroutine prepare_attenuation(lambda, mu)
                                      + gamma_w_l(3,2) + gamma_w_l(4,2)) &
                             + 0.25 * gamma_w_l(2,2) ) &
                           / gamma_w_l(3,3)
-        if (lpr) write(1717,*) weights_cg(1,1), weights_cg(1,3), & 
-                               weights_cg(3,1), weights_cg(3,3)
+        !if (lpr) write(1717,*) weights_cg(1,1), weights_cg(1,3), & 
+        !                       weights_cg(3,1), weights_cg(3,3)
 
         ! 5 points
         !weights_cg(1,1) = (   gamma_w_l(0,0) + gamma_w_l(0,1) &
@@ -495,28 +627,8 @@ subroutine prepare_attenuation(lambda, mu)
         !weights_cg(3,3) = (   gamma_w_l(3,3) + gamma_w_l(3,4) &
         !                    + gamma_w_l(4,3) + gamma_w_l(4,4) )&
         !                  / gamma_w_l(3,3)
-        
-     !endif
 
-     !if (axis_solid(iel)) then
-     !   weights_cg(:,:) = 1
-
-     !   Q_mu(iel) = 1e9
-     !   Q_kappa(iel) = 1e9
-
-     !   !weights_cg(0,:) = 0
-     !   !weights_cg(:,1) = (gamma_w_l(:,0) + gamma_w_l(:,1) + 0.5 * gamma_w_l(:,2)) &
-     !   !                        / gamma_w_l(:,1)
-     !   !weights_cg(:,3) = (gamma_w_l(:,4) + gamma_w_l(:,3) + 0.5 * gamma_w_l(:,2)) &
-     !   !                        / gamma_w_l(:,3)
-     !   !weights_cg(1,:) = (gamma_w_l(0,:) + gamma_w_l(1,:) + 0.5 * gamma_w_l(2,:)) &
-     !   !                        / gamma_w_l(1,:)
-     !   !weights_cg(3,:) = (gamma_w_l(4,:) + gamma_w_l(3,:) + 0.5 * gamma_w_l(2,:)) &
-     !   !                        / gamma_w_l(3,:)
-     !   if (lpr) write(1717,*) weights_cg(1,:)
-     !   if (lpr) write(1717,*) weights_cg(3,:)
-     !endif
-
+     endif ! att_coarse_grained
      
      if (do_corr_lowq) then
         call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
@@ -526,8 +638,6 @@ subroutine prepare_attenuation(lambda, mu)
        yp_j_kappa = y_j_attenuation / Q_kappa(iel)
      endif
 
-     !---------------------------------------------------
-     !!coarse grain version
      mu_fac = 0
      do i=1, n_sls_attenuation
         mu_fac = mu_fac + yp_j_mu(i) * w_j_attenuation(i)**2 &
@@ -551,27 +661,35 @@ subroutine prepare_attenuation(lambda, mu)
      delta_mu_0(:,:) = mu_w1(:,:) / (1.d0 / sum(yp_j_mu) + 1 - mu_fac)
      delta_kappa_0(:,:) = kappa_w1(:,:) / (1.d0 / sum(yp_j_kappa) + 1 - kappa_fac)
      
-     ! compute unrelaxed moduli
-     mu(:,:,ielsolid(iel)) = mu_w1(:,:) + weights_cg(:,:) * delta_mu_0(:,:) * mu_fac
-     lambda(:,:,ielsolid(iel)) = kappa_w1(:,:) &
-                                    + weights_cg(:,:) * delta_kappa_0(:,:) * kappa_fac &
-                                    - 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))
-     
-     ! weighted delta moduli
-     delta_mu(:,:,iel) = weights_cg(:,:) * delta_mu_0(:,:)
-     delta_kappa(:,:,iel) = weights_cg(:,:) * delta_kappa_0(:,:)
-     !---------------------------------------------------
+     if (att_coarse_grained) then
+        ! compute unrelaxed moduli
+        mu(:,:,ielsolid(iel)) = mu_w1(:,:) + weights_cg(:,:) * delta_mu_0(:,:) * mu_fac
+        lambda(:,:,ielsolid(iel)) = kappa_w1(:,:) &
+                                       + weights_cg(:,:) * delta_kappa_0(:,:) * kappa_fac &
+                                       - 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))
+        
+        ! weighted delta moduli
+        delta_mu_cg4(1,iel) = weights_cg(1,1) * delta_mu_0(1,1)
+        delta_mu_cg4(2,iel) = weights_cg(1,3) * delta_mu_0(1,3)
+        delta_mu_cg4(3,iel) = weights_cg(3,1) * delta_mu_0(3,1)
+        delta_mu_cg4(4,iel) = weights_cg(3,3) * delta_mu_0(3,3)
 
+        delta_kappa_cg4(1,iel) = weights_cg(1,1) * delta_kappa_0(1,1)
+        delta_kappa_cg4(2,iel) = weights_cg(1,3) * delta_kappa_0(1,3)
+        delta_kappa_cg4(3,iel) = weights_cg(3,1) * delta_kappa_0(3,1)
+        delta_kappa_cg4(4,iel) = weights_cg(3,3) * delta_kappa_0(3,3)
+     else
+        ! compute unrelaxed moduli
+        mu(:,:,ielsolid(iel)) = mu_w1(:,:) + delta_mu_0(:,:) * mu_fac
+        lambda(:,:,ielsolid(iel)) = kappa_w1(:,:) &
+                                       + delta_kappa_0(:,:) * kappa_fac &
+                                       - 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))
+        
+        ! weighted delta moduli
+        delta_mu(:,:,iel) = delta_mu_0(:,:)
+        delta_kappa(:,:,iel) = delta_kappa_0(:,:)
+     endif
 
-     !---------------------------------------------------
-     ! old version: assuming background model is instantaneous velocities
-     !mu_r(:,:,iel) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
-     !kappa_r(:,:,iel) =  (lambda(:,:,ielsolid(iel)) &
-     !                       + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
-     !                       / (1.d0 + sum(yp_j_kappa))
-     !---------------------------------------------------
-     
-     
      !---------------------------------------------------
      ! testing simple version: assuming background model is instantaneous velocities
      !mu_r(:,:) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
@@ -588,7 +706,7 @@ subroutine prepare_attenuation(lambda, mu)
 
   enddo
 
-  if (lpr) close(unit=1717)
+  !if (lpr) close(unit=1717)
   
   if (lpr) print *, '  ...DONE'
 
