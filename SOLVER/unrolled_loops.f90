@@ -9,8 +9,11 @@
 
    implicit none
 
-   public :: mxm,vxm
+   public :: mxm, vxm
+   public :: npol_unrolled_loops
    private
+
+   integer, parameter :: npol_unrolled_loops =            4
 
    contains
 
@@ -23,13 +26,6 @@
    real(kind=realkind), intent(in)  :: a(0: 4,0: 4),b(0: 4,0: 4)
    real(kind=realkind), intent(out) :: c(0: 4,0: 4)
    integer i,j
-
-   if ( npol /=  4 ) then
-      write(6,*)"Problem: unrolled_loops.f90 has different" 
-      write(6,*)"         polynomial order than mesh_params.h:" 
-      write(6,*)"         4",npol
-      stop
-   endif
 
    do j = 0, 4
      do i = 0, 4
@@ -55,13 +51,6 @@
    real(kind=realkind), intent(in)  :: a(0: 4),b(0: 4,0: 4)
    real(kind=realkind), intent(out) :: c(0: 4)
    integer j
-
-   if ( npol /=  4 ) then
-      write(6,*)"Problem: unrolled_loops.f90 has different" 
-      write(6,*)"         polynomial order than mesh_params.h:" 
-      write(6,*)"         4",npol
-      stop
-   endif
 
    do j = 0, 4
        c(j) = & 
