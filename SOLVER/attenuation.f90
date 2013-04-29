@@ -30,7 +30,7 @@ contains
 subroutine time_step_memvars_cg4(memvar, disp)
   !
   ! analytical time integration of memory variables (linear interpolation for
-  ! the strain), coarse grained version with 4 memory variable per element
+  ! the strain), coarse grained version
   ! MvD, attenutation notes, p 13.2
   !
   use data_time,            only: deltat
@@ -42,17 +42,15 @@ subroutine time_step_memvars_cg4(memvar, disp)
   real(kind=realkind), intent(inout)    :: memvar(1:4,6,n_sls_attenuation,nel_solid)
   real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
-  integer               :: iel, j, i
+  integer               :: iel, j
   double precision      :: yp_j_mu(n_sls_attenuation)
   double precision      :: yp_j_kappa(n_sls_attenuation)
   double precision      :: a_j_mu(n_sls_attenuation)
   double precision      :: a_j_kappa(n_sls_attenuation)
-  
+
   real(kind=realkind)   :: grad_t_cg4(1:4,6)
 
   real(kind=realkind)   :: trace_grad_t(1:4)
-  real(kind=realkind)   :: trace_grad_tm1(1:4)
-
   real(kind=realkind)   :: src_tr_t(1:4)
   real(kind=realkind)   :: src_tr_tm1(1:4)
   real(kind=realkind)   :: src_dev_t(1:4,6)
@@ -60,16 +58,15 @@ subroutine time_step_memvars_cg4(memvar, disp)
   
   real(kind=realkind)   :: src_tr_buf(1:4)
   real(kind=realkind)   :: src_dev_buf(1:4,6)
-
+  
   real(kind=realkind)   :: Q_mu_last, Q_kappa_last
 
   Q_mu_last = -1
   Q_kappa_last = -1
 
   do iel=1, nel_solid
-     ! compute the strain
      call compute_strain_att_el_cg4(disp(:,:,iel,:), grad_t_cg4, iel)
-     
+
      ! compute local coefficients y_j for kappa and mu (only if different from
      ! previous element)
      if (Q_mu(iel) /= Q_mu_last) then
@@ -91,31 +88,37 @@ subroutine time_step_memvars_cg4(memvar, disp)
         endif
         a_j_kappa = yp_j_mu / sum(yp_j_kappa)
      endif
-     
-     trace_grad_t(:) = sum(grad_t_cg4(:,:), dim=2)
+
+     trace_grad_t(:) = sum(grad_t_cg4(:,1:3), dim=2)
 
      ! analytical time stepping, monopole/isotropic hardcoded
 
      ! compute new source terms (excluding the weighting)
+     src_tr_t(:) = 0
+     src_dev_t(:,:) = 0
+
      src_tr_t(:) = delta_kappa_cg4(:,iel) * trace_grad_t(:)
+
      src_dev_t(:,1) = delta_mu_cg4(:,iel) * 2 * (grad_t_cg4(:,1) - trace_grad_t(:) * third)
      src_dev_t(:,2) = delta_mu_cg4(:,iel) * 2 * (grad_t_cg4(:,2) - trace_grad_t(:) * third)
      src_dev_t(:,3) = delta_mu_cg4(:,iel) * 2 * (grad_t_cg4(:,3) - trace_grad_t(:) * third)
      src_dev_t(:,5) = delta_mu_cg4(:,iel) * grad_t_cg4(:,5)
-     
+
      ! load old source terms
      src_tr_tm1(:) = src_tr_tm1_glob_cg4(:,iel)
      src_dev_tm1(:,:) = src_dev_tm1_glob_cg4(:,:,iel)
-     
+
      do j=1, n_sls_attenuation
         ! do the timestep
         src_tr_buf(:) = ts_fac_t(j) * a_j_kappa(j) * src_tr_t(:) &
                         + ts_fac_tm1(j) * a_j_kappa(j) * src_tr_tm1(:)
 
-        src_dev_buf(:,1:3) = ts_fac_t(j)   * a_j_mu(j) * src_dev_t(:,1:3) &
-                           + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,1:3)
-        src_dev_buf(:,5) = ts_fac_t(j)   * a_j_mu(j) * src_dev_t(:,5) &
-                         + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,5)
+        src_dev_buf(:,1:3) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,1:3) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,1:3)
+        src_dev_buf(:,5) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,5) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,5)
         
         memvar(:,1,j,iel) = exp_w_j_deltat(j) * memvar(:,1,j,iel) &
                         + src_dev_buf(:,1) + src_tr_buf(:)
@@ -125,11 +128,13 @@ subroutine time_step_memvars_cg4(memvar, disp)
                         + src_dev_buf(:,3) + src_tr_buf(:)
         memvar(:,5,j,iel) = exp_w_j_deltat(j) * memvar(:,5,j,iel) &
                         + src_dev_buf(:,5)
+        
      enddo
-     
+
      ! save srcs for next iteration
      src_tr_tm1_glob_cg4(:,iel) = src_tr_t(:)
      src_dev_tm1_glob_cg4(:,:,iel) = src_dev_t(:,:)
+
   enddo
   
 end subroutine
@@ -160,7 +165,6 @@ subroutine time_step_memvars(memvar, disp)
   real(kind=realkind)   :: grad_t(0:npol,0:npol,6)
 
   real(kind=realkind)   :: trace_grad_t(0:npol,0:npol)
-  real(kind=realkind)   :: trace_grad_tm1(0:npol,0:npol)
   real(kind=realkind)   :: src_tr_t(0:npol,0:npol)
   real(kind=realkind)   :: src_tr_tm1(0:npol,0:npol)
   real(kind=realkind)   :: src_dev_t(0:npol,0:npol,6)
@@ -357,7 +361,8 @@ subroutine prepare_attenuation(lambda, mu)
   use utlity,               only: scoord
   use analytic_mapping,     only: compute_partial_derivatives
   use data_source,          only: nelsrc, ielsrc
-  
+  use data_pointwise!,       only: DsDeta_over_J_sol_cg4, DzDeta_over_J_sol_cg4, DsDxi_over_J_sol_cg4, DzDxi_over_J_sol_cg4
+
 
   include 'mesh_params.h'
 
@@ -681,11 +686,10 @@ subroutine prepare_attenuation(lambda, mu)
      else
         ! compute unrelaxed moduli
         mu(:,:,ielsolid(iel)) = mu_w1(:,:) + delta_mu_0(:,:) * mu_fac
-        lambda(:,:,ielsolid(iel)) = kappa_w1(:,:) &
-                                       + delta_kappa_0(:,:) * kappa_fac &
+        lambda(:,:,ielsolid(iel)) = kappa_w1(:,:) + delta_kappa_0(:,:) * kappa_fac &
                                        - 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))
         
-        ! weighted delta moduli
+        ! delta moduli
         delta_mu(:,:,iel) = delta_mu_0(:,:)
         delta_kappa(:,:,iel) = delta_kappa_0(:,:)
      endif
@@ -707,6 +711,33 @@ subroutine prepare_attenuation(lambda, mu)
   enddo
 
   !if (lpr) close(unit=1717)
+  
+  if (att_coarse_grained) then
+     allocate(DsDeta_over_J_sol_cg4(1:4,1:nel_solid))
+     allocate(DzDeta_over_J_sol_cg4(1:4,1:nel_solid))
+     allocate(DsDxi_over_J_sol_cg4(1:4,1:nel_solid))
+     allocate(DzDxi_over_J_sol_cg4(1:4,1:nel_solid))
+
+     DzDeta_over_J_sol_cg4(1,:) = DzDeta_over_J_sol(1,1,:)
+     DzDeta_over_J_sol_cg4(2,:) = DzDeta_over_J_sol(1,3,:)
+     DzDeta_over_J_sol_cg4(3,:) = DzDeta_over_J_sol(3,1,:)
+     DzDeta_over_J_sol_cg4(4,:) = DzDeta_over_J_sol(3,3,:)
+
+     DzDxi_over_J_sol_cg4(1,:) = DzDxi_over_J_sol(1,1,:)
+     DzDxi_over_J_sol_cg4(2,:) = DzDxi_over_J_sol(1,3,:)
+     DzDxi_over_J_sol_cg4(3,:) = DzDxi_over_J_sol(3,1,:)
+     DzDxi_over_J_sol_cg4(4,:) = DzDxi_over_J_sol(3,3,:)
+
+     DsDeta_over_J_sol_cg4(1,:) = DsDeta_over_J_sol(1,1,:)
+     DsDeta_over_J_sol_cg4(2,:) = DsDeta_over_J_sol(1,3,:)
+     DsDeta_over_J_sol_cg4(3,:) = DsDeta_over_J_sol(3,1,:)
+     DsDeta_over_J_sol_cg4(4,:) = DsDeta_over_J_sol(3,3,:)
+
+     DsDxi_over_J_sol_cg4(1,:) = DsDxi_over_J_sol(1,1,:)
+     DsDxi_over_J_sol_cg4(2,:) = DsDxi_over_J_sol(1,3,:)
+     DsDxi_over_J_sol_cg4(3,:) = DsDxi_over_J_sol(3,1,:)
+     DsDxi_over_J_sol_cg4(4,:) = DsDxi_over_J_sol(3,3,:)
+  endif
   
   if (lpr) print *, '  ...DONE'
 

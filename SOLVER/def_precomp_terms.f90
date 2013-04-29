@@ -260,7 +260,6 @@ subroutine compute_pointwisederiv_matrices
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_pointwise
-  use attenuation, only: att_coarse_grained
   include 'mesh_params.h'
 
   integer          :: iel,inode,ipol,jpol
@@ -332,33 +331,6 @@ subroutine compute_pointwisederiv_matrices
     endif !axis
   enddo
   
-  if (att_coarse_grained) then
-     allocate(DsDeta_over_J_sol_cg4(1:4,1:nel_solid))
-     allocate(DzDeta_over_J_sol_cg4(1:4,1:nel_solid))
-     allocate(DsDxi_over_J_sol_cg4(1:4,1:nel_solid))
-     allocate(DzDxi_over_J_sol_cg4(1:4,1:nel_solid))
-
-     DzDeta_over_J_sol_cg4(1,:) = DzDeta_over_J_sol(1,1,:)
-     DzDeta_over_J_sol_cg4(2,:) = DzDeta_over_J_sol(1,3,:)
-     DzDeta_over_J_sol_cg4(3,:) = DzDeta_over_J_sol(3,1,:)
-     DzDeta_over_J_sol_cg4(4,:) = DzDeta_over_J_sol(3,3,:)
-
-     DzDxi_over_J_sol_cg4(1,:) = DzDxi_over_J_sol(1,1,:)
-     DzDxi_over_J_sol_cg4(2,:) = DzDxi_over_J_sol(1,3,:)
-     DzDxi_over_J_sol_cg4(3,:) = DzDxi_over_J_sol(3,1,:)
-     DzDxi_over_J_sol_cg4(4,:) = DzDxi_over_J_sol(3,3,:)
-
-     DsDeta_over_J_sol_cg4(1,:) = DsDeta_over_J_sol(1,1,:)
-     DsDeta_over_J_sol_cg4(2,:) = DsDeta_over_J_sol(1,3,:)
-     DsDeta_over_J_sol_cg4(3,:) = DsDeta_over_J_sol(3,1,:)
-     DsDeta_over_J_sol_cg4(4,:) = DsDeta_over_J_sol(3,3,:)
-
-     DsDxi_over_J_sol_cg4(1,:) = DsDxi_over_J_sol(1,1,:)
-     DsDxi_over_J_sol_cg4(2,:) = DsDxi_over_J_sol(1,3,:)
-     DsDxi_over_J_sol_cg4(3,:) = DsDxi_over_J_sol(3,1,:)
-     DsDxi_over_J_sol_cg4(4,:) = DsDxi_over_J_sol(3,3,:)
-  endif
- 
   write(69,*)'Pointwise derivative precomputed terms in solid:'
   write(69,8)'  min/max DsDeta/J [1/m]:',minval(DsDeta_over_J_sol), &
        maxval(DsDeta_over_J_sol)
