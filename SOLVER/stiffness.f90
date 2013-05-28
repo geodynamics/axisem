@@ -731,26 +731,6 @@ subroutine stiffness_di_non_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l
   real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! Sum
   !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-  loc_stiffness_1 = zero
-  loc_stiffness_2 = zero
-  loc_stiffness_3 = zero
-
-  S1p = zero
-  S2p = zero
-  S1m = zero
-  S2m = zero
-  S1z = zero
-  S2z = zero
-  
-  X1 = zero
-  X2 = zero
-  X3 = zero
-  X4 = zero
-  X5 = zero
-  X6 = zero
-  X7 = zero
-  X8 = zero
-
   ! First MxM
   call mxm(G2T, u1, X1)
   call mxm(G2T, u2, X2)
@@ -760,18 +740,18 @@ subroutine stiffness_di_non_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l
   call mxm(u3, G2, X6)
 
   ! Sum for the z-component
-  call sum2_2_1d(X1, X2, X7, X4, X5, X8, nsize)
+  X7 = X1 + X2
+  X8 = X4 + X5 
 
   ! Collocations and sums of W_x and W_x^d terms
 
   ! - component
-  call collocate8_sum_1d(m_8l, X6, m_7l, X3, m_1l, X1, &
-                         m_5l, X2, m_2l, X4, m_6l, X5, &
-                         m_w1l, u2, m_w2l, u3, loc_stiffness_s2, nsize)
+  loc_stiffness_s2 = m_8l * X6 + m_7l * X3 + m_1l  * X1 + m_5l  * X2 &
+                   + m_2l * X4 + m_6l * X5 + m_w1l * u2 + m_w2l * u3
 
   ! z component
-  call collocate6z_sum_1d(m_4l, X4, m_4l, X5, m_3l, X1, &
-                          m_3l, X2, m_w2l, u2, m_w3l, u3, loc_stiffness_s3, nsize)
+  loc_stiffness_s3 = m_4l  * X4 - m_4l  * X5 + m_3l * X1 - m_3l * X2 &
+                   + m_w2l * u2 + m_w3l * u3
 
   ! Collocations and sums of D terms
   call collocate28s_sum_1d(m11sl, m21sl, m41sl, m12sl, m22sl, m42sl, &
@@ -781,17 +761,8 @@ subroutine stiffness_di_non_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l
                           m_2l, m_4l, m_6l, &
                           S1p, S2p, S1m, S2m, nsize)
 
-  call collocate5_sum_1d(m33sl, X8, m23sl, X7, m11zl, X6, m21zl, X3, &
-                         m_7l, u2, S1z, nsize)
-  call collocate5_sum_1d(m13sl, X7, m43sl, X8, m11zl, X3, m41zl, X6, &
-                         m_8l, u2, S2z, nsize)
-
-  X1 = zero
-  X2 = zero
-  X3 = zero
-  X4 = zero
-  X5 = zero
-  X6 = zero
+  S1z = m33sl * X8 + m23sl * X7 + m11zl * X6 + m21zl * X3 + m_7l * u2
+  S2z = m13sl * X7 + m43sl * X8 + m11zl * X3 + m41zl * X6 + m_8l * u2
 
   !Second MxM
   call mxm(G2, S1p, X1)
@@ -801,9 +772,9 @@ subroutine stiffness_di_non_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l
   call mxm(G2, S1z, X5)
   call mxm(S2z, G2T, X6)
 
-  call sum2s_3_3_1d(X1, X2, loc_stiffness_1, X3, X4, loc_stiffness_s2, &
-                   loc_stiffness_2, X5, X6, loc_stiffness_s3, &
-                   loc_stiffness_3, nsize)
+  loc_stiffness_1 = X1 + X2
+  loc_stiffness_2 = X3 + X4 + loc_stiffness_s2
+  loc_stiffness_3 = X5 + X6 + loc_stiffness_s3
 
 end subroutine stiffness_di_non_ax
 !=============================================================================
@@ -856,26 +827,6 @@ subroutine stiffness_di_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l, m_
   real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! Sum
   !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-  loc_stiffness_1 = zero
-  loc_stiffness_2 = zero
-  loc_stiffness_3 = zero
-
-  S1p = zero
-  S2p = zero
-  S1m = zero
-  S2m = zero
-  S1z = zero
-  S2z = zero
-
-  X1 = zero
-  X2 = zero
-  X3 = zero
-  X4 = zero
-  X5 = zero
-  X6 = zero
-  X7 = zero
-  X8 = zero
-
   ! First MxM
   call mxm(G1T, u1, X1)
   call mxm(G1T, u2, X2)
@@ -885,16 +836,16 @@ subroutine stiffness_di_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l, m_
   call mxm(u3, G2, X6)
 
   ! Sum for the z-component
-  call sum2_2_1d(X1, X2, X7, X4, X5, X8, nsize)
+  X7 = X1 + X2
+  X8 = X4 + X5 
 
   ! Collocations and sums of W_x and W_x^d terms
   ! - component
-  call collocate8_sum_1d(m_8l, X6, m_7l, X3, m_1l, X1, &
-                         m_5l, X2, m_2l, X4, m_6l, X5, &
-                         m_w1l, u2, m_w2l, u3, loc_stiffness_s2, nsize)
+  loc_stiffness_s2 = m_8l * X6 + m_7l * X3 + m_1l  * X1 + m_5l  * X2 &
+                   + m_2l * X4 + m_6l * X5 + m_w1l * u2 + m_w2l * u3
   ! z component
-  call collocate6z_sum_1d(m_4l, X4, m_4l, X5, m_3l, X1, &
-                          m_3l, X2, m_w2l, u2, m_w3l, u3, loc_stiffness_s3, nsize)
+  loc_stiffness_s3 = m_4l  * X4 - m_4l  * X5 + m_3l * X1 - m_3l * X2 &
+                   + m_w2l * u2 + m_w3l * u3
 
   ! Collocations and sums of D terms
   ! + and - component
@@ -905,17 +856,8 @@ subroutine stiffness_di_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l, m_
                           m_2l, m_4l, m_6l,&
                           S1p, S2p, S1m, S2m, nsize)
   ! z component
-  call collocate5_sum_1d(m33sl, X8, m23sl, X7, m11zl, X6, m21zl, X3, &
-                         m_7l, u2, S1z, nsize)
-  call collocate5_sum_1d(m13sl, X7, m43sl, X8, m11zl, X3, m41zl, X6, &
-                         m_8l, u2, S2z, nsize)
-
-  X1 = zero
-  X2 = zero
-  X3 = zero
-  X4 = zero
-  X5 = zero
-  X6 = zero
+  S1z = m33sl * X8 + m23sl * X7 + m11zl * X6 + m21zl * X3 + m_7l * u2
+  S2z = m13sl * X7 + m43sl * X8 + m11zl * X3 + m41zl * X6 + m_8l * u2
 
   ! Second MxM
   call mxm(G1, S1p, X1)
@@ -924,10 +866,6 @@ subroutine stiffness_di_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l, m_
   call mxm(S2m, G2T, X4)
   call mxm(G1, S1z, X5)
   call mxm(S2z, G2T, X6)
-
-  S1p = zero
-  S1m = zero
-  S1z = zero
 
   ! Additional terms for the axial elements
   if (ani_true) then
@@ -939,10 +877,9 @@ subroutine stiffness_di_ax(u1, u2, u3, m_w1l, m_w2l, m_w3l, m_2l, m_6l, m_1l, m_
                           u1, u2, u3, S1p, S1m, S1z)
   endif
   
-
-  call sum3s_4_4_1d(X1, X2, S1p, loc_stiffness_1, X3, X4, S1m, loc_stiffness_s2, &
-                   loc_stiffness_2, X5, X6, S1z, loc_stiffness_s3, &
-                   loc_stiffness_3, nsize)
+  loc_stiffness_1 = X1 + X2 + S1p
+  loc_stiffness_2 = X3 + X4 + S1m + loc_stiffness_s2 
+  loc_stiffness_3 = X5 + X6 + S1z + loc_stiffness_s3
 
 end subroutine stiffness_di_ax
 !=============================================================================
