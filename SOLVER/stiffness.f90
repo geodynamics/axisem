@@ -902,15 +902,6 @@ include "mesh_params.h"
   real(kind=realkind), dimension(0:npol) :: u10, u20
   !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-  V1 = zero
-  V2 = zero
-  V3 = zero
-  V4 = zero
-
-  S1p = zero
-  S1m = zero
-  S1z = zero
-
   u10 = u1(0,:)
   u20 = u2(0,:)
 
@@ -924,19 +915,25 @@ include "mesh_params.h"
 
   ! Collocations
 
+  ! replacements not yet tested here!!!
   ! + comp
   call collocate_tensor_1d(m0_w1l, V2, G0, S1p, npol)
+  !S1p = outerprod(G0, m0_w1l * V2)
 
   ! - comp
   call collocate3_sum_tensor_1d(m0_w1l, V1, m0_w2l, V5, m0_w9l, V2, G0, S1m, npol)
+  !S1m = outerprod(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w9l * V2)
 
   ! z comp
   call collocate2_sum_tensor_1d(m0_w7l, V3, m0_w8l, V4, G0, S1z, npol)
+  !S1z = outerprod(G0, m0_w7l * V3 + m0_w8l * V4)
 
   ! Final VxM D_z^z in + component
   call collocate02_sum_1d(m0_w2l, V2, m0_w8l, V3, V4, npol) 
+  !V4 = m0_w2l * V2 + m0_w8l * V3
+
   call vxm(V4, G2T, V1)
-  call add_to_axis_2d(V1, S1p, npol)
+  S1p(0,:) = S1p(0,:) + V1
 
 end subroutine additional_di_ax
 !=============================================================================
@@ -962,15 +959,6 @@ subroutine additional_di_ax_ani(m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l, &
   real(kind=realkind), dimension(0:npol) :: u10, u20
   !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-  V1 = zero
-  V2 = zero
-  V3 = zero
-  V4 = zero
-
-  S1p = zero
-  S1m = zero
-  S1z = zero
-
   u10 = u1(0,:)
   u20 = u2(0,:)
 
@@ -985,21 +973,23 @@ subroutine additional_di_ax_ani(m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l, &
   ! Collocations
 
   ! + comp
-  call collocate2_sum_tensor_1d(m0_w1l, V2, m0_w3l, V3, G0, S1p, npol)
+  S1p = outerprod(G0, m0_w1l * V2 + m0_w3l * V3)
 
   ! - comp
-  call collocate5_sum_tensor_1d(m0_w1l, V1, m0_w2l, V5, m0_w6l, V4, &
-                                m0_w9l, V2, m0_w10l, V3, G0, S1m, npol)
+  S1m = outerprod(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w6l  * V4 &
+                                  + m0_w9l * V2 + m0_w10l * V3)
 
   ! z comp
-  call collocate5_sum_tensor_1d(m0_w3l, V1, m0_w4l, V4, m0_w7l, V3, &
-                                m0_w8l, V4, m0_w10l, V2, G0, S1z, npol)
+  S1z = outerprod(G0, m0_w3l * V1 + m0_w4l * V4 + m0_w7l  * V3 &
+                                  + m0_w8l * V4 + m0_w10l * V2)
 
   ! Final VxM D_z^z in + component
   call collocate02p_sum_1d(m0_w2l, m0_w6l, V2, m0_w4l, m0_w8l, V3, V4, npol) 
 
   call vxm(V4, G2T, V1)
-  call add_to_axis_2d(V1, S1p, npol)
+  
+  !call add_to_axis_2d(V1, S1p, npol)
+  S1p(0,:) = S1p(0,:) + V1
 
 end subroutine additional_di_ax_ani
 !=============================================================================

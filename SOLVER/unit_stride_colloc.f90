@@ -368,34 +368,6 @@ end subroutine collocate3_sum_tensor_1d
 !==========================================================================
 
 !--------------------------------------------------------------------------
-subroutine collocate5_sum_tensor_1d(a1,b1,a2,b2,a3,b3,a4,b4,a5,b5,d,s,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(0:n),b1(0:n),a2(0:n),b2(0:n)
-real(kind=realkind), intent(in) :: a3(0:n),b3(0:n),a4(0:n),b4(0:n)
-real(kind=realkind), intent(in) :: a5(0:n),b5(0:n),d(0:n)
-real(kind=realkind) :: c1,c2,c3,c4,c5,tmp
-real(kind=realkind), intent(out) :: s(0:n,0:n)
-integer :: i,j
-
-  s = zero
-                                                                  
-  do i = 0, n
-     c1 = a1(i) * b1(i)
-     c2 = a2(i) * b2(i)
-     c3 = a3(i) * b3(i)
-     c4 = a4(i) * b4(i)
-     c5 = a5(i) * b5(i)
-     tmp = c1 + c2 + c3 + c4 + c5
-     do j = 0, n
-        s(j,i) = tmp * d(j)
-     enddo
-  end do
-
-end subroutine collocate5_sum_tensor_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
 subroutine sum_1d(a,b,s,n)
   
 integer, intent(in) :: n
@@ -464,21 +436,6 @@ integer :: i
   end do
 
 end subroutine sum4_3_1d
-!=========================================================================
-
-!--------------------------------------------------------------------------
-subroutine add_to_axis_2d(a,b,n)
-
-integer, intent(in) :: n
-real(kind=realkind), dimension(0:n), intent(in) :: a
-real(kind=realkind), dimension(0:n,0:n), intent(inout) :: b
-integer :: j
-
-  do j = 0, n
-    b(0,j) = b(0,j) + a(j)
-  enddo
-
-end subroutine add_to_axis_2d
 !=========================================================================
 
 !========================
