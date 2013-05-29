@@ -1,21 +1,6 @@
 !========================
  module unit_stride_colloc
 !========================
-!
-! Generic routines for the essential number crunching necessary for the time 
-! loop and stiffness term, using unit-stride cache access, i.e. rearranging 
-! any input array into a 1-D array and doing arithmetic operations upon that 
-! 1-D loop. Most routines are specific to their single calling sequence 
-! and contain various multiplicative factors of two, minus signs etc...
-! Note that this module does not use any globally known quantities
-! other than global_parameters (and is therefore transferable).
-!
-! :::::::::: CODE OPTIMIZATION ::::::::::::
-! If any further runtime CPU & cache usage optimization is necessary, it is 
-! most likely within this module and unrolled_loops as the calling modules 
-! (basically time_evol_wave and stiffness) are for the most part just wrappers 
-! to these routines (except for the global-to-elemental array copying in 
-! stiffness which may be optimized differently).
 
 use global_parameters
 
@@ -23,140 +8,19 @@ implicit none
 public
 contains
 
-!XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-!       C O L L O C A T I O N   S U M   T E N S O R I Z A T I O N 
-!XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-! Routines used for the stiffness matrices
-!XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
 !-------------------------------------------------------------------------
-subroutine collocate0_1d(a,b,c,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a(0:n),b(0:n)
-real(kind=realkind), intent(out) :: c(0:n)
-integer :: i
-                                                                    
-  do i = 0, n
-    c(i) = a(i) * b(i)
-  end do 
-
-end subroutine collocate0_1d
-!==========================================================================
-
-!-------------------------------------------------------------------------
-subroutine collocate0_neg1d_existent(a,b,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(inout) :: a(1:n)
-real(kind=realkind), intent(in) :: b(1:n)
-integer :: i
-
-  do i = 1, n
-    a(i) = -a(i) * b(i)
-  end do
-
-end subroutine collocate0_neg1d_existent
-!==========================================================================
-
-!-------------------------------------------------------------------------
-subroutine collocate_sum_existent_1d(a,b,s,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a(n),b(n)
-real(kind=realkind), intent(inout) :: s(n)
-real(kind=realkind) :: temp,temp2
-integer :: i
-                                                                    
-  do i = 1, n
-    temp = a(i) * b(i)
-    temp2 = s(i)
-    s(i) = temp + temp2
-  end do 
-
-end subroutine collocate_sum_existent_1d
-!==========================================================================
-
-!-------------------------------------------------------------------------
-subroutine collocate02_sum_1d(a1,b1,a2,b2,s,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(0:n),b1(0:n),a2(0:n),b2(0:n)
-real(kind=realkind) :: c1,c2
-real(kind=realkind), intent(out) :: s(0:n)
-integer :: i
-
-  s = zero
-                                                                   
-  do i = 0, n
-    c1 = a1(i) * b1(i)
-    c2 = a2(i) * b2(i)
-    s(i) = c1 + c2
-  end do 
-
-end subroutine collocate02_sum_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine collocate02p_sum_1d(a11,a12,b1,a21,a22,b2,s,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a11(0:n),a12(0:n),b1(0:n),a21(0:n),a22(0:n),b2(0:n)
-real(kind=realkind) :: c1,c2
-real(kind=realkind), intent(out) :: s(0:n)
-integer :: i
-
-  s = zero
-                                                                   
-  do i = 0, n
-    c1 = (a11(i) + a12(i)) * b1(i)
-    c2 = (a21(i) + a22(i)) * b2(i)
-    s(i) = c1 + c2
-  end do 
-
-end subroutine collocate02p_sum_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine collocate2_sum_1d(a1,b1,a2,b2,s,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n),b1(n),a2(n),b2(n)
-real(kind=realkind) :: c1,c2
-real(kind=realkind), intent(out) :: s(n)
-integer :: i
-
-  s = zero
-                                                                   
-  do i = 1, n
-    c1 = a1(i) * b1(i)
-    c2 = a2(i) * b2(i)
-    s(i) = c1 + c2
-  end do 
-
-end subroutine collocate2_sum_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-!subroutine collocate5ss_sum_1d(a1,b1,a2,b2,a3,b3,a4,b4,a5,b5,s,n)
-!          
+!subroutine collocate0_1d(a,b,c,n)
+!  
 !integer, intent(in) :: n
-!real(kind=realkind), intent(in) :: a1(n),b1(n),a2(n),b2(n)
-!real(kind=realkind), intent(in) :: a3(n),b3(n),a4(n),b4(n),a5(n),b5(n)
-!real(kind=realkind), intent(out) :: s(n)
-!real(kind=realkind) :: c1,c2,c3,c4,c5
+!real(kind=realkind), intent(in) :: a(0:n),b(0:n)
+!real(kind=realkind), intent(out) :: c(0:n)
 !integer :: i
-!
-!  do i = 1, n
-!    c1 = a1(i) * b1(i)
-!    c2 = a2(i) * b2(i)
-!    c3 = a3(i) * b3(i)
-!    c4 = a4(i) * b4(i)
-!    c5 = a5(i) * b5(i)
-!    s(i) = c1 + c2 + two * c3 - c4 + two * c5
+!                                                                    
+!  do i = 0, n
+!    c(i) = a(i) * b(i)
 !  end do 
 !
-!end subroutine collocate5ss_sum_1d
+!end subroutine collocate0_1d
 !==========================================================================
 
 !--------------------------------------------------------------------------
@@ -257,99 +121,6 @@ integer :: i
 
 end subroutine collocate28s_sum_1d
 !==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine collocate_tensor_1d(a1,b1,d,s,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(0:n),b1(0:n),d(0:n)
-real(kind=realkind) :: c1
-real(kind=realkind), intent(out) :: s(0:n,0:n)
-integer :: i,j
-
-  s = zero
-                                                                  
-  do i = 0, n
-     c1 = a1(i) * b1(i)
-     do j = 0, n
-        s(j,i) = c1 * d(j)
-     enddo
-  end do
-
-end subroutine collocate_tensor_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-!subroutine collocate2_sum_tensor_1d(a1,b1,a2,b2,d,s,n)
-!
-!integer, intent(in) :: n
-!real(kind=realkind), intent(in) :: a1(0:n),b1(0:n),a2(0:n),b2(0:n),d(0:n)
-!real(kind=realkind) :: c1,c2,tmp
-!real(kind=realkind), intent(out) :: s(0:n,0:n)
-!integer :: i,j
-!                                             
-!  do i = 0, n
-!     c1 = a1(i) * b1(i)
-!     c2 = a2(i) * b2(i)
-!     tmp = c1 + c2
-!     do j = 0, n
-!        s(j,i) = tmp * d(j)
-!     enddo
-!  end do
-!
-!end subroutine collocate2_sum_tensor_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine sum_1d(a,b,s,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a(n),b(n)
-real(kind=realkind), intent(out) :: s(n)
-integer :: i
-                                                                    
-  do i = 1, n
-    s(i) =  a(i) + b(i)
-  end do                                         
-                   
-end subroutine sum_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine sum2s_1d(a1,s1,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n)
-real(kind=realkind), intent(inout) :: s1(n)
-real(kind=realkind) :: tmp1(n)
-integer :: i
-  
-  tmp1=s1
-                                                                    
-  do i = 1, n
-    s1(i) = tmp1(i) + a1(i) 
-  end do                                         
-                   
-end subroutine sum2s_1d
-!=========================================================================
-
-!--------------------------------------------------------------------------
-subroutine sum4_3_1d(a1,a2,a3,s1,b1,b2,b3,s2,c1,c2,c3,s3,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n),a2(n),a3(n),b1(n),b2(n),b3(n)
-real(kind=realkind), intent(in) :: c1(n),c2(n),c3(n)
-real(kind=realkind), intent(inout) :: s1(n),s2(n),s3(n)
-integer :: i
-
-  do i = 1, n
-    s1(i) = s1(i) + a1(i) + a2(i) + a3(i)
-    s2(i) = s2(i) + b1(i) + b2(i) + b3(i)
-    s3(i) = s3(i) + c1(i) + c2(i) + c3(i)
-  end do
-
-end subroutine sum4_3_1d
-!=========================================================================
 
 !========================
 end module unit_stride_colloc

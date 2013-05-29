@@ -720,7 +720,6 @@ subroutine dump_velo_global(v,dchi)
   use data_pointwise,           ONLY: inv_rho_fluid, prefac_inv_s_rho_fluid
   use data_source,              ONLY: src_type, src_dump_type
   use pointwise_derivatives,    ONLY: axisym_gradient_fluid, dsdf_fluid_allaxis
-  use unit_stride_colloc,       ONLY: collocate0_1d
   
   include 'mesh_params.h'
   

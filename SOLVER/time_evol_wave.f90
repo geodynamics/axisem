@@ -154,102 +154,102 @@ subroutine prepare_waves
 end subroutine prepare_waves
 !=============================================================================
 
-!!-----------------------------------------------------------------------------
-!subroutine plane_wave_initial_conditions(disp, velo)
-!  ! TESTING routine to initialize a plane wave along the equator
-!
-!  use utlity,   only: zcoord, scoord
-!  use data_mesh_preloop,    only: ielsolid
-!  include 'mesh_params.h'
-!  
-!  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3), intent(inout) :: disp, velo
-!  integer           :: iel, ipol, jpol
-!  double precision  :: a, c, vp, vs, period
-!
-!  a = 1e-6
-!  vp = 10e3
-!  vs = 5.77e3
-!  period = 10.
-!  !c = vs * period /2.
-!  c = vp * period / 2.
-!
-!
-!  do iel=1, nel_solid
-!     do ipol=0, npol
-!        do jpol=0, npol
-!           ! P-wave
-!           disp(ipol,jpol,iel,3) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
-!           velo(ipol,jpol,iel,3) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
-!                        * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vp
-!           ! S-wave
-!           !disp(ipol,jpol,iel,1) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
-!           !velo(ipol,jpol,iel,1) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
-!           !             * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vs 
-!        enddo
-!     enddo
-!  enddo
-!
-!end subroutine plane_wave_initial_conditions
-!!=============================================================================
-!
-!!-----------------------------------------------------------------------------
-!subroutine find_dump_points(dumppoint_ids)
-!  ! TESTING routine finding two  points to dump the wavefield
-!
-!  use utlity,   only: zcoord, scoord
-!  use data_mesh_preloop,    only: ielsolid
-!  include 'mesh_params.h'
-!  
-!  integer, intent(out)  :: dumppoint_ids(3,2)
-!  integer               :: iel, ipol, jpol
-!  double precision      :: mindist1, mindist2, s1, s2, z1, z2
-!
-!  s1 = 1e5
-!  s2 = 1e5
-!
-!  z1 = 1.e6
-!  !z2 = z1 + 50e3 !phase
-!  z2 = 1.5e6 ! Q
-!
-!  mindist1 = 1e18
-!  mindist2 = 1e18
-!
-!
-!  do iel=1, nel_solid
-!     do ipol=0, npol
-!        do jpol=0, npol
-!           if ((zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
-!                 +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2 < mindist1) then
-!              dumppoint_ids(1,1) = ielsolid(iel)
-!              dumppoint_ids(2,1) = ipol
-!              dumppoint_ids(3,1) = jpol
-!              mindist1 = (zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
-!                            +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2
-!           endif
-!
-!           if ((zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
-!                 +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2 < mindist2) then
-!              dumppoint_ids(1,2) = ielsolid(iel)
-!              dumppoint_ids(2,2) = ipol
-!              dumppoint_ids(3,2) = jpol
-!              mindist2 = (zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
-!                            +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2
-!           endif
-!        enddo
-!     enddo
-!  enddo
-!
-!  print *, "TESTING PLANE WAVE"
-!  print *, "mindist1 = ", dsqrt(mindist1)
-!  print *, "mindist2 = ", dsqrt(mindist2)
-!  print *, "s1 = ", scoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
-!  print *, "z1 = ", zcoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
-!  print *, "s2 = ", scoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
-!  print *, "z2 = ", zcoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
-!  print *, dumppoint_ids
-!
-!end subroutine find_dump_points
-!!=============================================================================
+!-----------------------------------------------------------------------------
+subroutine plane_wave_initial_conditions(disp, velo)
+  ! TESTING routine to initialize a plane wave along the equator
+
+  use utlity,   only: zcoord, scoord
+  use data_mesh_preloop,    only: ielsolid
+  include 'mesh_params.h'
+  
+  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3), intent(inout) :: disp, velo
+  integer           :: iel, ipol, jpol
+  double precision  :: a, c, vp, vs, period
+
+  a = 1e-6
+  vp = 10e3
+  vs = 5.77e3
+  period = 10.
+  !c = vs * period /2.
+  c = vp * period / 2.
+
+
+  do iel=1, nel_solid
+     do ipol=0, npol
+        do jpol=0, npol
+           ! P-wave
+           disp(ipol,jpol,iel,3) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
+           velo(ipol,jpol,iel,3) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
+                        * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vp
+           ! S-wave
+           !disp(ipol,jpol,iel,1) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
+           !velo(ipol,jpol,iel,1) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
+           !             * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vs 
+        enddo
+     enddo
+  enddo
+
+end subroutine plane_wave_initial_conditions
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine find_dump_points(dumppoint_ids)
+  ! TESTING routine finding two  points to dump the wavefield
+
+  use utlity,   only: zcoord, scoord
+  use data_mesh_preloop,    only: ielsolid
+  include 'mesh_params.h'
+  
+  integer, intent(out)  :: dumppoint_ids(3,2)
+  integer               :: iel, ipol, jpol
+  double precision      :: mindist1, mindist2, s1, s2, z1, z2
+
+  s1 = 1e5
+  s2 = 1e5
+
+  z1 = 1.e6
+  !z2 = z1 + 50e3 !phase
+  z2 = 1.5e6 ! Q
+
+  mindist1 = 1e18
+  mindist2 = 1e18
+
+
+  do iel=1, nel_solid
+     do ipol=0, npol
+        do jpol=0, npol
+           if ((zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
+                 +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2 < mindist1) then
+              dumppoint_ids(1,1) = ielsolid(iel)
+              dumppoint_ids(2,1) = ipol
+              dumppoint_ids(3,1) = jpol
+              mindist1 = (zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
+                            +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2
+           endif
+
+           if ((zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
+                 +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2 < mindist2) then
+              dumppoint_ids(1,2) = ielsolid(iel)
+              dumppoint_ids(2,2) = ipol
+              dumppoint_ids(3,2) = jpol
+              mindist2 = (zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
+                            +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2
+           endif
+        enddo
+     enddo
+  enddo
+
+  print *, "TESTING PLANE WAVE"
+  print *, "mindist1 = ", dsqrt(mindist1)
+  print *, "mindist2 = ", dsqrt(mindist2)
+  print *, "s1 = ", scoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
+  print *, "z1 = ", zcoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
+  print *, "s2 = ", scoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
+  print *, "z2 = ", zcoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
+  print *, dumppoint_ids
+
+end subroutine find_dump_points
+!=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine time_loop
@@ -474,6 +474,7 @@ subroutine sf_time_loop_newmark
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ! SOLID: add source, only in source elements and for stf/=0
+     ! TESTING plane wave
      if (have_src) call add_source(acc1, stf(iter))
 
      ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
@@ -637,7 +638,7 @@ subroutine symplectic_time_loop
         !        4) masking of w
         ! MvD: masking of w?? you mean acc?
 
-        call collocate0_neg1d_existent(ddchi,inv_mass_fluid,npoint_fluid)
+        ddchi = - ddchi * inv_mass_fluid
 
         iclockstiff = tick()
         select case (src_type(1))

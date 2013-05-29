@@ -837,15 +837,17 @@ subroutine glob_fluid_stiffness(glob_stiffness_fl,chi)
      ! dipole and quadrupole cases: additional 2nd order term
      if (src_type(1) .ne. 'monopole') then
 
-        m_w_fl_l(0:npol,0:npol)=M_w_fl(:,:,ielem)
-        ! collocate and add this to previous term
+        m_w_fl_l(0:npol,0:npol) = M_w_fl(:,:,ielem)
 
-        call collocate_sum_existent_1d(m_w_fl_l,chi_l,loc_stiffness,nsize)
+        loc_stiffness = loc_stiffness + m_w_fl_l * chi_l 
+
         if ( axis_fluid(ielem) ) then
            m0_w_fl_l(0:npol)=M0_w_fl(0:npol,ielem)
            call vxm(G0,chi_l,V1)
-           call collocate_tensor_1d(m0_w_fl_l,V1,G0,chi_l,npol) !chi_l as dummy 
-           call sum2s_1d(chi_l,loc_stiffness,nsize) ! sum, add to existent
+           
+           chi_l = outerprod(G0, m0_w_fl_l * V1) !chi_l as dummy 
+
+           loc_stiffness = loc_stiffness + chi_l
         endif
 
      endif
@@ -882,24 +884,21 @@ subroutine fluid_stiffness_joint_part(chi,m1chil,m2chil,m4chil,loc_stiffness)
   real(kind=realkind), dimension(0:npol,0:npol) :: S1,S2  ! Sum
   !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-  loc_stiffness=zero
-  S1=zero;S2=zero;S1=zero;X1=zero;X2=zero
-
   !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
   ! First MxM
-  call mxm(G2T,chi,X1)
-  call mxm(chi,G2,X2)
+  call mxm(G2T, chi, X1)
+  call mxm(chi, G2, X2)
 
   ! Collocations and sums of D terms
-  call collocate2_sum_1d(m1chil,X2,m2chil,X1,S1,nsize)
-  call collocate2_sum_1d(m1chil,X1,m4chil,X2,S2,nsize)
+  S1 = m1chil * X2 + m2chil * X1
+  S2 = m1chil * X1 + m4chil * X2
 
   !Second MxM
-  call mxm(G2,S1,X1)
-  call mxm(S2,G2T,X2)
+  call mxm(G2, S1, X1)
+  call mxm(S2, G2T, X2)
   
   ! Final Sum
-  call sum_1d(X1,X2,loc_stiffness,nsize)
+  loc_stiffness = X1 + X2
 
 end subroutine fluid_stiffness_joint_part
 !=============================================================================
@@ -921,10 +920,9 @@ subroutine fluid_stiffness_add_multi(chi,m_w_fl_l,loc_stiffness)
   real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness
   !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
 
-  loc_stiffness=zero
-
   ! dipole and quadrupole cases: collocation of W
-  call collocate0_1d(m_w_fl_l,chi,loc_stiffness,nsize)
+  !call collocate0_1d(m_w_fl_l,chi,loc_stiffness,nsize)
+  loc_stiffness = m_w_fl_l * chi
 
 end subroutine fluid_stiffness_add_multi
 !=============================================================================
