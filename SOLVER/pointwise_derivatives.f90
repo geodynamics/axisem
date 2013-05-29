@@ -188,7 +188,6 @@ subroutine axisym_gradient_solid_el_cg4(f,grad,iel)
   use data_pointwise, ONLY: DzDeta_over_J_sol_cg4, DzDxi_over_J_sol_cg4
   use data_pointwise, ONLY: DsDeta_over_J_sol_cg4, DsDxi_over_J_sol_cg4
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -290,7 +289,6 @@ subroutine axisym_gradient_solid_el(f,grad,iel)
   use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
   use data_pointwise, ONLY: DsDeta_over_J_sol, DsDxi_over_J_sol
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -333,7 +331,6 @@ subroutine axisym_gradient_solid(f,grad)
   use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
   use data_pointwise, ONLY: DsDeta_over_J_sol, DsDxi_over_J_sol
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -382,7 +379,6 @@ subroutine axisym_gradient_solid_add(f,grad)
   use data_pointwise, ONLY: DzDeta_over_J_sol,DzDxi_over_J_sol
   use data_pointwise, ONLY: DsDeta_over_J_sol,DsDxi_over_J_sol
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -430,7 +426,6 @@ subroutine dsdf_elem_solid(dsdf,f,iel)
   
   use data_pointwise, ONLY: DzDeta_over_J_sol,DzDxi_over_J_sol
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -465,7 +460,6 @@ subroutine dzdf_elem_solid(dzdf,f,iel)
   
   use data_pointwise, ONLY: DsDeta_over_J_sol,DsDxi_over_J_sol
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -499,7 +493,6 @@ subroutine dsdf_solid_allaxis(f,dsdf)
   
   use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -533,7 +526,6 @@ subroutine axisym_gradient_fluid(f,grad)
   use data_pointwise, ONLY: DzDeta_over_J_flu,DzDxi_over_J_flu
   use data_pointwise, ONLY: DsDeta_over_J_flu,DsDxi_over_J_flu
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -581,7 +573,6 @@ subroutine axisym_gradient_fluid_add(f,grad)
   use data_pointwise, ONLY: DzDeta_over_J_flu,DzDxi_over_J_flu
   use data_pointwise, ONLY: DsDeta_over_J_flu,DsDxi_over_J_flu
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -630,7 +621,6 @@ subroutine dsdf_fluid_axis(f, iel, jpol, dsdf)
   
   use data_pointwise, ONLY: DzDeta_over_J_flu, DzDxi_over_J_flu
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   
@@ -661,7 +651,6 @@ subroutine dsdf_fluid_allaxis(f,dsdf)
   
   use data_pointwise, ONLY: DzDeta_over_J_flu, DzDxi_over_J_flu
   use unrolled_loops
-  use unit_stride_colloc
   
   include 'mesh_params.h'
   

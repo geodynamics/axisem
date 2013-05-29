@@ -9,7 +9,6 @@ module stiffness
   use data_source
   
   use unrolled_loops
-  use unit_stride_colloc
   
   implicit none
   
@@ -20,7 +19,6 @@ module stiffness
   private
 
 contains
-
 
 !-----------------------------------------------------------------------------
 function outerprod(a,b) 
@@ -447,6 +445,8 @@ subroutine glob_stiffness_di(glob_stiffness,u)
   real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4, X5, X6, X7, X8 ! MxM 
   real(kind=realkind), dimension(0:npol,0:npol) :: S1p, S1m, S2p, S2m, S1z, S2z ! Sum
   
+  real(kind=realkind), dimension(0:npol,0:npol) :: c1, c2, c3
+  
   real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4, V5
   real(kind=realkind), dimension(0:npol) :: u10, u20
   
@@ -518,20 +518,27 @@ subroutine glob_stiffness_di(glob_stiffness,u)
      loc_stiffness_s3 = m_4l  * X4 - m_4l  * X5 + m_3l * X1 - m_3l * X2 &
                       + m_w2l * u2 + m_w3l * u3
         
-     ! Collocations and sums of D terms
-     ! + and - component
-     call collocate28s_sum_1d(m11sl, m21sl, m41sl, m12sl, m22sl, m42sl, &
-                             m13sl, m23sl, m33sl, m43sl,&
-                             X1, X2, X3, X4, X5, X6, u2, u3, &
-                             m_1l, m_3l, m_5l, &
-                             m_2l, m_4l, m_6l,&
-                             S1p, S2p, S1m, S2m, nsize)
-        
+     ! + and -
+     ! buffering reused terms
+     c1 = m13sl * X6
+     c2 = m23sl * X3
+     c3 = m_3l * u3
+     
+     s1p = c1 + c2 + c3 + m11sl * X4 + m21sl * X1 + m12sl * X5 + m22sl * X2 + m_1l * u2
+     s1m = c1 + c2 - c3 + m11sl * X5 + m21sl * X2 + m12sl * X4 + m22sl * X1 + m_5l * u2
+     
+     c1 = m33sl * X3
+     c2 = m43sl * X6
+     c3 = m_4l * u3
+
+     s2p = c1 + c2 + c3 + m11sl * X1 + m41sl * X4 + m12sl * X2 + m42sl * X5 + m_2l * u2
+     s2m = c1 + c2 - c3 + m11sl * X2 + m41sl * X5 + m12sl * X1 + m42sl * X4 + m_6l * u2
+
      ! z component
      S1z = m33sl * X8 + m23sl * X7 + m11zl * X6 + m21zl * X3 + m_7l * u2
      S2z = m13sl * X7 + m43sl * X8 + m11zl * X3 + m41zl * X6 + m_8l * u2
 
-    ! Second MxM
+     ! Second MxM
      if ( .not. axis_solid(ielem) ) then
         call mxm(G2, S1p, X1)
         call mxm(G2, S1m, X3)
@@ -646,6 +653,8 @@ subroutine glob_stiffness_quad(glob_stiffness,u)
   real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4, X5, X6 ! MxM arrays
   real(kind=realkind), dimension(0:npol,0:npol) :: S1s, S2s, S1phi, S2phi, S1z, S2z ! Sum
   
+  real(kind=realkind), dimension(0:npol,0:npol) :: c1, c2, c3, c4, c5, c6
+  
   real(kind=realkind), dimension(0:npol) :: V1, V2, V3
   
   integer :: ielem
@@ -704,10 +713,18 @@ subroutine glob_stiffness_quad(glob_stiffness,u)
      call mxm(uz, G2, X6)
      
      ! s and phi components
-     call collocate12s_sum_1d(m_2l, X4, m_1l, X1, m_6l, X5, &
-                              m_5l, X2, m_4l, X6, m_3l, X3, &
-                              m_w1l, m_w2l, m_w3l, m_w4l, us, uphi, uz, &
-                              loc_stiffness_s, loc_stiffness_phi, nsize)
+     ! buffering terms that occure in both components
+     c1 = m_2l * X4
+     c2 = m_1l * X1
+     c3 = m_6l * X5
+     c4 = m_5l * X2
+     c5 = m_4l * X6
+     c6 = m_3l * X3
+
+     loc_stiffness_s = c1 + c2 + 2 * (c3 + c4) + c5 + c6 &
+                        + m_w1l * us + m_w2l * uphi + 2 * m_w3l * uz
+     loc_stiffness_phi = -2 * (c1 + c2 + c5 + c6) - (c3 + c4) &
+                            + m_w2l * us +  m_w4l * uphi - m_w3l * uz
 
      ! z component
      loc_stiffness_z = 2 * (m_8l * X5 + m_7l * X2) + m_w3l * (2 * us - uphi) + m_w5l * uz
@@ -721,9 +738,6 @@ subroutine glob_stiffness_quad(glob_stiffness,u)
      S2z = m11zl * X3 + m41zl * X6 + m12sl * X1 + m42sl * X4 + m_4l * (us - 2 * uphi)
 
      ! phi component
-     ! note for revision 428:
-     ! changed order of multiplication and subtraction might cause numerically
-     ! different results:
      S1phi = m1phil * X5 + m2phil * X2 + m_5l * (2 * us - uphi) + 2 * m_7l * uz
      S2phi = m1phil * X2 + m4phil * X5 + m_6l * (2 * us - uphi) + 2 * m_8l * uz
 

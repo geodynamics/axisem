@@ -193,62 +193,62 @@ end subroutine plane_wave_initial_conditions
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine find_dump_points(dumppoint_ids)
-  ! TESTING routine finding two  points to dump the wavefield
-
-  use utlity,   only: zcoord, scoord
-  use data_mesh_preloop,    only: ielsolid
-  include 'mesh_params.h'
-  
-  integer, intent(out)  :: dumppoint_ids(3,2)
-  integer               :: iel, ipol, jpol
-  double precision      :: mindist1, mindist2, s1, s2, z1, z2
-
-  s1 = 1e5
-  s2 = 1e5
-
-  z1 = 1.e6
-  !z2 = z1 + 50e3 !phase
-  z2 = 1.5e6 ! Q
-
-  mindist1 = 1e18
-  mindist2 = 1e18
-
-
-  do iel=1, nel_solid
-     do ipol=0, npol
-        do jpol=0, npol
-           if ((zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
-                 +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2 < mindist1) then
-              dumppoint_ids(1,1) = ielsolid(iel)
-              dumppoint_ids(2,1) = ipol
-              dumppoint_ids(3,1) = jpol
-              mindist1 = (zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
-                            +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2
-           endif
-
-           if ((zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
-                 +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2 < mindist2) then
-              dumppoint_ids(1,2) = ielsolid(iel)
-              dumppoint_ids(2,2) = ipol
-              dumppoint_ids(3,2) = jpol
-              mindist2 = (zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
-                            +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2
-           endif
-        enddo
-     enddo
-  enddo
-
-  print *, "TESTING PLANE WAVE"
-  print *, "mindist1 = ", dsqrt(mindist1)
-  print *, "mindist2 = ", dsqrt(mindist2)
-  print *, "s1 = ", scoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
-  print *, "z1 = ", zcoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
-  print *, "s2 = ", scoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
-  print *, "z2 = ", zcoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
-  print *, dumppoint_ids
-
-end subroutine find_dump_points
+!subroutine find_dump_points(dumppoint_ids)
+!  ! TESTING routine finding two  points to dump the wavefield
+!
+!  use utlity,   only: zcoord, scoord
+!  use data_mesh_preloop,    only: ielsolid
+!  include 'mesh_params.h'
+!  
+!  integer, intent(out)  :: dumppoint_ids(3,2)
+!  integer               :: iel, ipol, jpol
+!  double precision      :: mindist1, mindist2, s1, s2, z1, z2
+!
+!  s1 = 1e5
+!  s2 = 1e5
+!
+!  z1 = 1.e6
+!  !z2 = z1 + 50e3 !phase
+!  z2 = 1.5e6 ! Q
+!
+!  mindist1 = 1e18
+!  mindist2 = 1e18
+!
+!
+!  do iel=1, nel_solid
+!     do ipol=0, npol
+!        do jpol=0, npol
+!           if ((zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
+!                 +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2 < mindist1) then
+!              dumppoint_ids(1,1) = ielsolid(iel)
+!              dumppoint_ids(2,1) = ipol
+!              dumppoint_ids(3,1) = jpol
+!              mindist1 = (zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
+!                            +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2
+!           endif
+!
+!           if ((zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
+!                 +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2 < mindist2) then
+!              dumppoint_ids(1,2) = ielsolid(iel)
+!              dumppoint_ids(2,2) = ipol
+!              dumppoint_ids(3,2) = jpol
+!              mindist2 = (zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
+!                            +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2
+!           endif
+!        enddo
+!     enddo
+!  enddo
+!
+!  print *, "TESTING PLANE WAVE"
+!  print *, "mindist1 = ", dsqrt(mindist1)
+!  print *, "mindist2 = ", dsqrt(mindist2)
+!  print *, "s1 = ", scoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
+!  print *, "z1 = ", zcoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
+!  print *, "s2 = ", scoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
+!  print *, "z2 = ", zcoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
+!  print *, dumppoint_ids
+!
+!end subroutine find_dump_points
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -295,7 +295,6 @@ subroutine sf_time_loop_newmark
   use global_parameters
   use apply_masks
   use stiffness
-  use unit_stride_colloc
   use clocks_mod
   use data_matr,            ONLY: inv_mass_rho, inv_mass_fluid
   use attenuation,          ONLY: time_step_memvars
@@ -553,7 +552,6 @@ subroutine symplectic_time_loop
   use apply_masks
   use stiffness
   use clocks_mod
-  use unit_stride_colloc
   use source,       ONLY: compute_stf_t
   use data_matr,    ONLY: inv_mass_rho,inv_mass_fluid
   
