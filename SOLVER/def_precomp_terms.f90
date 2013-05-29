@@ -2445,7 +2445,6 @@ double precision :: lambdal, mul, xil, phil, etal
         M0_w3(jpol,ielem) = C46 * non_diag_fact(jpol,ielem)
         M0_w4(jpol,ielem) = C46 * dzdxi * wt_axial_k(0) * wt(jpol)
         
-        M0_w5(jpol,ielem) = (C25 + C46) * two * non_diag_fact(jpol,ielem)
         M0_w6(jpol,ielem) = (C25 + C46) * two * dsdxi * wt_axial_k(0) * wt(jpol)
 
         M0_w7(jpol,ielem) = C44 * non_diag_fact(jpol,ielem)
