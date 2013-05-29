@@ -800,7 +800,7 @@ end subroutine glob_stiffness_quad
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine glob_fluid_stiffness(glob_stiffness_fl,chi)
+subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
 
   include "mesh_params.h"
   
@@ -809,14 +809,17 @@ subroutine glob_fluid_stiffness(glob_stiffness_fl,chi)
   real(kind=realkind), intent(out) :: glob_stiffness_fl(0:npol,0:npol,nel_fluid)
   
   ! local variables for all elements
-  real(kind=realkind), dimension(0:npol,0:npol) :: chi_l,loc_stiffness
+  real(kind=realkind), dimension(0:npol,0:npol) :: chi_l, loc_stiffness
   real(kind=realkind), dimension(0:npol,0:npol) :: m_w_fl_l
-  real(kind=realkind), dimension(0:npol,0:npol) :: m1chil,m2chil,m4chil
+  real(kind=realkind), dimension(0:npol,0:npol) :: m1chil, m2chil, m4chil
   
   ! local variables for axial elements
   real(kind=realkind), dimension(0:npol) :: m0_w_fl_l
   
   ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2  ! MxM arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1, S2  ! Sum
+  
   real(kind=realkind), dimension(0:npol) :: V1
   
   integer :: ielem
@@ -826,13 +829,25 @@ subroutine glob_fluid_stiffness(glob_stiffness_fl,chi)
   do ielem = 1, nel_fluid
 
      loc_stiffness = zero
-     chi_l(0:npol,0:npol)=chi(0:npol,0:npol,ielem)
-     m1chil(0:npol,0:npol)=M1chi_fl(:,:,ielem)
-     m2chil(0:npol,0:npol)=M2chi_fl(:,:,ielem)
-     m4chil(0:npol,0:npol)=M4chi_fl(:,:,ielem)
+     chi_l(0:npol,0:npol) = chi(0:npol,0:npol,ielem)
+     m1chil(0:npol,0:npol) = M1chi_fl(:,:,ielem)
+     m2chil(0:npol,0:npol) = M2chi_fl(:,:,ielem)
+     m4chil(0:npol,0:npol) = M4chi_fl(:,:,ielem)
 
-     call fluid_stiffness_joint_part(chi_l,m1chil,m2chil,m4chil, &
-          loc_stiffness)
+     ! First MxM
+     call mxm(G2T, chi_l, X1)
+     call mxm(chi_l, G2, X2)
+
+     ! Collocations and sums of D terms
+     S1 = m1chil * X2 + m2chil * X1
+     S2 = m1chil * X1 + m4chil * X2
+
+     !Second MxM
+     call mxm(G2, S1, X1)
+     call mxm(S2, G2T, X2)
+     
+     ! Final Sum
+     loc_stiffness = X1 + X2
 
      ! dipole and quadrupole cases: additional 2nd order term
      if (src_type(1) .ne. 'monopole') then
@@ -842,7 +857,7 @@ subroutine glob_fluid_stiffness(glob_stiffness_fl,chi)
         loc_stiffness = loc_stiffness + m_w_fl_l * chi_l 
 
         if ( axis_fluid(ielem) ) then
-           m0_w_fl_l(0:npol)=M0_w_fl(0:npol,ielem)
+           m0_w_fl_l(0:npol) = M0_w_fl(0:npol,ielem)
            call vxm(G0,chi_l,V1)
            
            chi_l = outerprod(G0, m0_w_fl_l * V1) !chi_l as dummy 
@@ -858,76 +873,6 @@ subroutine glob_fluid_stiffness(glob_stiffness_fl,chi)
 
 end subroutine glob_fluid_stiffness
 !=============================================================================
-
-
-!"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-!      F L U I D   E L E M E N T A L   S T I F F N E S S   T E R M S 
-!"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-!-----------------------------------------------------------------------------
-subroutine fluid_stiffness_joint_part(chi,m1chil,m2chil,m4chil,loc_stiffness)
-           
-  include "mesh_params.h"
-  
-  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-  ! pressure scalar potential
-  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: chi
-  
-  ! precomputed matrices for D_xy^xy
-  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m1chil,m2chil,m4chil
-  
-  ! result: local (elemental) scalar stiffness term
-  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness
-  
-  ! work arrays
-  real(kind=realkind), dimension(0:npol,0:npol) :: X1,X2  ! MxM arrays
-  real(kind=realkind), dimension(0:npol,0:npol) :: S1,S2  ! Sum
-  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-
-  !++++++++++++++++++COMMON TO ALL SOURCES+++++++++++++++++++++++++++++++++++
-  ! First MxM
-  call mxm(G2T, chi, X1)
-  call mxm(chi, G2, X2)
-
-  ! Collocations and sums of D terms
-  S1 = m1chil * X2 + m2chil * X1
-  S2 = m1chil * X1 + m4chil * X2
-
-  !Second MxM
-  call mxm(G2, S1, X1)
-  call mxm(S2, G2T, X2)
-  
-  ! Final Sum
-  loc_stiffness = X1 + X2
-
-end subroutine fluid_stiffness_joint_part
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine fluid_stiffness_add_multi(chi,m_w_fl_l,loc_stiffness)
-
-  include "mesh_params.h"
-  
-  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-  ! pressure scalar potential
-  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: chi
-  
-  ! precomputed matrices containing weights, mapping, elastic parameters
-  ! precomputed matrix for W_s
-  real(kind=realkind), dimension(0:npol,0:npol), intent(in) :: m_w_fl_l
-  
-  ! result: local (elemental) scalar stiffness term
-  real(kind=realkind), dimension(0:npol,0:npol), intent(out) :: loc_stiffness
-  !ooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo
-
-  ! dipole and quadrupole cases: collocation of W
-  !call collocate0_1d(m_w_fl_l,chi,loc_stiffness,nsize)
-  loc_stiffness = m_w_fl_l * chi
-
-end subroutine fluid_stiffness_add_multi
-!=============================================================================
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !====================
 end module stiffness

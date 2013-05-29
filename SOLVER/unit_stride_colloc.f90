@@ -8,21 +8,6 @@ implicit none
 public
 contains
 
-!-------------------------------------------------------------------------
-!subroutine collocate0_1d(a,b,c,n)
-!  
-!integer, intent(in) :: n
-!real(kind=realkind), intent(in) :: a(0:n),b(0:n)
-!real(kind=realkind), intent(out) :: c(0:n)
-!integer :: i
-!                                                                    
-!  do i = 0, n
-!    c(i) = a(i) * b(i)
-!  end do 
-!
-!end subroutine collocate0_1d
-!==========================================================================
-
 !--------------------------------------------------------------------------
 subroutine  collocate12s_sum_1d(a1,b1,a2,b2,a3,b3,a4,b4,a5,b5,a6,b6, &
                                a7,a8,a9,a10,b7,b8,b9,s1,s2,n)
