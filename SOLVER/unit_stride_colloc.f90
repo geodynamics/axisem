@@ -138,70 +138,25 @@ end subroutine collocate2_sum_1d
 !==========================================================================
 
 !--------------------------------------------------------------------------
-subroutine collocate5ss_sum_1d(a1,b1,a2,b2,a3,b3,a4,b4,a5,b5,s,n)
-          
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n),b1(n),a2(n),b2(n)
-real(kind=realkind), intent(in) :: a3(n),b3(n),a4(n),b4(n),a5(n),b5(n)
-real(kind=realkind), intent(out) :: s(n)
-real(kind=realkind) :: c1,c2,c3,c4,c5
-integer :: i
-
-  do i = 1, n
-    c1 = a1(i) * b1(i)
-    c2 = a2(i) * b2(i)
-    c3 = a3(i) * b3(i)
-    c4 = a4(i) * b4(i)
-    c5 = a5(i) * b5(i)
-    s(i) = c1 + c2 + two * c3 - c4 + two * c5
-  end do 
-
-end subroutine collocate5ss_sum_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine collocate5z_sum_1d(a1,b1,a2,b2,a3,a4,b3,b4,b5,s,n)
-          
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n),b1(n),a2(n),b2(n)
-real(kind=realkind), intent(in) :: a3(n),b3(n),a4(n),b4(n),b5(n)
-real(kind=realkind), intent(out) :: s(n)
-real(kind=realkind) :: c1,c2,c3,c4,c5
-integer :: i
-
-  do i = 1, n
-    c1 = a1(i) * b1(i)
-    c2 = a2(i) * b2(i)
-    c3 = a3(i) * b3(i)
-    c4 = a3(i) * b4(i)
-    c5 = a4(i) * b5(i)
-    s(i) = two * (c1 + c2 + c3) - c4 + c5
-  end do 
-
-end subroutine collocate5z_sum_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine collocate6s_sum_1d(a1,b1,a2,b2,a3,b3,a4,b4,a5,b5,b6,s,n)
-          
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n),b1(n),a2(n),b2(n)
-real(kind=realkind), intent(in) :: a3(n),b3(n),a4(n),b4(n),a5(n),b5(n)
-real(kind=realkind), intent(in) :: b6(n)
-real(kind=realkind), intent(out) :: s(n)
-real(kind=realkind) :: c1,c2,c3,c4,c5!,c6
-integer :: i
-           
-  do i = 1, n
-    c1 = a1(i) * b1(i)
-    c2 = a2(i) * b2(i)
-    c3 = a3(i) * b3(i)
-    c4 = a4(i) * b4(i)
-    c5 = a5(i) * (b5(i) - two * b6(i))
-    s(i) = c1 + c2 + c3 + c4 + c5
-  end do 
-
-end subroutine collocate6s_sum_1d
+!subroutine collocate5ss_sum_1d(a1,b1,a2,b2,a3,b3,a4,b4,a5,b5,s,n)
+!          
+!integer, intent(in) :: n
+!real(kind=realkind), intent(in) :: a1(n),b1(n),a2(n),b2(n)
+!real(kind=realkind), intent(in) :: a3(n),b3(n),a4(n),b4(n),a5(n),b5(n)
+!real(kind=realkind), intent(out) :: s(n)
+!real(kind=realkind) :: c1,c2,c3,c4,c5
+!integer :: i
+!
+!  do i = 1, n
+!    c1 = a1(i) * b1(i)
+!    c2 = a2(i) * b2(i)
+!    c3 = a3(i) * b3(i)
+!    c4 = a4(i) * b4(i)
+!    c5 = a5(i) * b5(i)
+!    s(i) = c1 + c2 + two * c3 - c4 + two * c5
+!  end do 
+!
+!end subroutine collocate5ss_sum_1d
 !==========================================================================
 
 !--------------------------------------------------------------------------
@@ -325,46 +280,24 @@ end subroutine collocate_tensor_1d
 !==========================================================================
 
 !--------------------------------------------------------------------------
-subroutine collocate2_sum_tensor_1d(a1,b1,a2,b2,d,s,n)
-
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(0:n),b1(0:n),a2(0:n),b2(0:n),d(0:n)
-real(kind=realkind) :: c1,c2,tmp
-real(kind=realkind), intent(out) :: s(0:n,0:n)
-integer :: i,j
-                                             
-  do i = 0, n
-     c1 = a1(i) * b1(i)
-     c2 = a2(i) * b2(i)
-     tmp = c1 + c2
-     do j = 0, n
-        s(j,i) = tmp * d(j)
-     enddo
-  end do
-
-end subroutine collocate2_sum_tensor_1d
-!==========================================================================
-
-!--------------------------------------------------------------------------
-subroutine collocate3_sum_tensor_1d(a1,b1,a2,b2,a3,b3,d,s,n)
-
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(0:n),b1(0:n),a2(0:n),b2(0:n),a3(0:n),b3(0:n),d(0:n)
-real(kind=realkind) :: c1,c2,c3,tmp
-real(kind=realkind), intent(out) :: s(0:n,0:n)
-integer :: i,j
-                                             
-  do i = 0, n
-     c1 = a1(i) * b1(i)
-     c2 = a2(i) * b2(i)
-     c3 = a3(i) * b3(i)
-     tmp = c1 + c2 + c3
-     do j = 0, n
-        s(j,i) = tmp * d(j)
-     enddo
-  end do
-
-end subroutine collocate3_sum_tensor_1d
+!subroutine collocate2_sum_tensor_1d(a1,b1,a2,b2,d,s,n)
+!
+!integer, intent(in) :: n
+!real(kind=realkind), intent(in) :: a1(0:n),b1(0:n),a2(0:n),b2(0:n),d(0:n)
+!real(kind=realkind) :: c1,c2,tmp
+!real(kind=realkind), intent(out) :: s(0:n,0:n)
+!integer :: i,j
+!                                             
+!  do i = 0, n
+!     c1 = a1(i) * b1(i)
+!     c2 = a2(i) * b2(i)
+!     tmp = c1 + c2
+!     do j = 0, n
+!        s(j,i) = tmp * d(j)
+!     enddo
+!  end do
+!
+!end subroutine collocate2_sum_tensor_1d
 !==========================================================================
 
 !--------------------------------------------------------------------------
@@ -398,26 +331,6 @@ integer :: i
   end do                                         
                    
 end subroutine sum2s_1d
-!=========================================================================
-
-!--------------------------------------------------------------------------
-subroutine sum3s_3_1d(a1,a2,s1,b1,b2,s2,c1,c2,s3,n)
-  
-integer, intent(in) :: n
-real(kind=realkind), intent(in) :: a1(n),a2(n),b1(n),b2(n),c1(n),c2(n)
-real(kind=realkind), intent(inout) :: s1(n),s2(n),s3(n)
-real(kind=realkind) :: tmp1(n),tmp2(n),tmp3(n)
-integer :: i
-  
-  tmp1=s1; tmp2=s2; tmp3=s3
-                                                                    
-  do i = 1, n
-    s1(i) = tmp1(i) + a1(i) + a2(i)
-    s2(i) = tmp2(i) + b1(i) + b2(i)      
-    s3(i) = tmp3(i) + c1(i) + c2(i)      
-  end do                                         
-                   
-end subroutine sum3s_3_1d
 !=========================================================================
 
 !--------------------------------------------------------------------------
