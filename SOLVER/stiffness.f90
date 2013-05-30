@@ -58,7 +58,6 @@ subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
   real(kind=realkind), dimension(0:npol) :: y0l
   real(kind=realkind), dimension(0:npol) :: v0_s_etal, v0_s_xil
   real(kind=realkind), dimension(0:npol) :: v0_z_etal, v0_z_xil
-  real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4
   
   integer :: ielem, j
 
@@ -960,7 +959,7 @@ subroutine glob_anel_stiffness_quad(glob_stiffness, R)
   real(kind=realkind), dimension(0:npol) :: y0l
   real(kind=realkind), dimension(0:npol) :: v0_s_etal, v0_s_xil
   real(kind=realkind), dimension(0:npol) :: v0_z_etal, v0_z_xil
-  real(kind=realkind), dimension(0:npol) :: V1, V2, V3
+  real(kind=realkind), dimension(0:npol) :: V1
   
   integer :: ielem, j
 
@@ -1033,7 +1032,7 @@ subroutine glob_anel_stiffness_quad(glob_stiffness, R)
 
         ! z - component
         V1 = v0_s_etal * r3(0,:)
-        loc_stiffness_z = loc_stiffness_z + outerprod(G0, V2)
+        loc_stiffness_z = loc_stiffness_z + outerprod(G0, V1)
      endif
 
      ! subtracting (!) from the global stiffness
