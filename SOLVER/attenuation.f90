@@ -37,6 +37,7 @@ subroutine time_step_memvars_cg4(memvar, disp)
   use data_matr,            only: Q_mu, Q_kappa
   use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
   use data_mesh,            only: axis_solid
+  use data_source,          only: src_type
   include 'mesh_params.h'
 
   real(kind=realkind), intent(inout)    :: memvar(1:4,6,n_sls_attenuation,nel_solid)
@@ -103,6 +104,11 @@ subroutine time_step_memvars_cg4(memvar, disp)
      src_dev_t(:,2) = delta_mu_cg4(:,iel) * 2 * (grad_t_cg4(:,2) - trace_grad_t(:) * third)
      src_dev_t(:,3) = delta_mu_cg4(:,iel) * 2 * (grad_t_cg4(:,3) - trace_grad_t(:) * third)
      src_dev_t(:,5) = delta_mu_cg4(:,iel) * grad_t_cg4(:,5)
+     
+     if (src_type(1) .ne. 'monopole') then
+        src_dev_t(:,4) = delta_mu_cg4(:,iel) * grad_t_cg4(:,4)
+        src_dev_t(:,6) = delta_mu_cg4(:,iel) * grad_t_cg4(:,6)
+     endif
 
      ! load old source terms
      src_tr_tm1(:) = src_tr_tm1_glob_cg4(:,iel)
@@ -129,6 +135,19 @@ subroutine time_step_memvars_cg4(memvar, disp)
         memvar(:,5,j,iel) = exp_w_j_deltat(j) * memvar(:,5,j,iel) &
                         + src_dev_buf(:,5)
         
+        if (src_type(1) .ne. 'monopole') then
+           src_dev_buf(:,4) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,4) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,4)
+           src_dev_buf(:,6) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,6) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,6)
+        
+           memvar(:,4,j,iel) = exp_w_j_deltat(j) * memvar(:,4,j,iel) &
+                        + src_dev_buf(:,4)
+           memvar(:,6,j,iel) = exp_w_j_deltat(j) * memvar(:,6,j,iel) &
+                        + src_dev_buf(:,6)
+        endif
      enddo
 
      ! save srcs for next iteration
@@ -151,6 +170,7 @@ subroutine time_step_memvars(memvar, disp)
   use data_matr,            only: Q_mu, Q_kappa
   use data_matr,            only: delta_mu, delta_kappa
   use data_mesh,            only: axis_solid
+  use data_source,          only: src_type
   include 'mesh_params.h'
 
   real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
@@ -207,12 +227,17 @@ subroutine time_step_memvars(memvar, disp)
 
      ! analytical time stepping, monopole/isotropic hardcoded
 
-     ! compute new source terms (excluding the weighting)
+     ! compute new source terms
      src_tr_t(:,:) = delta_kappa(:,:,iel) * trace_grad_t(:,:)
      src_dev_t(:,:,1) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,1) - trace_grad_t(:,:) * third)
      src_dev_t(:,:,2) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,2) - trace_grad_t(:,:) * third)
      src_dev_t(:,:,3) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,3) - trace_grad_t(:,:) * third)
      src_dev_t(:,:,5) = delta_mu(:,:,iel) * grad_t(:,:,5)
+  
+     if (src_type(1) .ne. 'monopole') then
+        src_dev_t(:,:,4) = delta_mu(:,:,iel) * grad_t(:,:,4)
+        src_dev_t(:,:,6) = delta_mu(:,:,iel) * grad_t(:,:,6)
+     endif
 
      ! load old source terms
      src_tr_tm1(:,:) = src_tr_tm1_glob(:,:,iel)
@@ -240,6 +265,24 @@ subroutine time_step_memvars(memvar, disp)
                               + src_dev_buf(ipol,jpol,3) + src_tr_buf(ipol,jpol)
               memvar(ipol,jpol,5,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,5,j,iel) &
                               + src_dev_buf(ipol,jpol,5)
+
+              ! maybe a bit uggly with the if inside the loop, but keeping it
+              ! for now
+              if (src_type(1) .ne. 'monopole') then
+
+                 src_dev_buf(ipol,jpol,4) = &
+                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,4) &
+                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,4)
+                 src_dev_buf(ipol,jpol,6) = &
+                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,6) &
+                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,6)
+
+                 memvar(ipol,jpol,4,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,4,j,iel) &
+                              + src_dev_buf(ipol,jpol,4)
+                 memvar(ipol,jpol,6,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,6,j,iel) &
+                              + src_dev_buf(ipol,jpol,6)
+
+              endif
            enddo
         enddo
      enddo
@@ -259,9 +302,9 @@ subroutine compute_strain_att_el_cg4(u, grad_u, iel)
   ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
   ! coarse grained version, so only computed at gll points (1,1), (1,3), (3,1) and (3,3)
   !  
-  use data_source,              ONLY: src_type
-  use pointwise_derivatives,    ONLY: axisym_gradient_solid_el_cg4
-  use pointwise_derivatives,    ONLY: f_over_s_solid_el_cg4
+  use data_source,              only: src_type
+  use pointwise_derivatives,    only: axisym_gradient_solid_el_cg4
+  use pointwise_derivatives,    only: f_over_s_solid_el_cg4
   
   include 'mesh_params.h'
   
@@ -331,9 +374,9 @@ subroutine compute_strain_att_el(u, grad_u, iel)
   ! compute strain in Voigt notation for a single element
   ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
   !  
-  use data_source,              ONLY: src_type
-  use pointwise_derivatives,    ONLY: axisym_gradient_solid_el
-  use pointwise_derivatives,    ONLY: f_over_s_solid_el
+  use data_source,              only: src_type
+  use pointwise_derivatives,    only: axisym_gradient_solid_el
+  use pointwise_derivatives,    only: f_over_s_solid_el
   
   include 'mesh_params.h'
   
@@ -364,7 +407,6 @@ subroutine compute_strain_att_el(u, grad_u, iel)
   grad_u(:,:,5) = grad_buff1(:,:,2) + grad_buff2(:,:,1) 
  
   ! Components involving phi....................................................
-  ! hardcode monopole for a start
 
   if (src_type(1)=='monopole') then
      ! us / s
