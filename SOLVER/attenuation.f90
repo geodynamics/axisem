@@ -278,21 +278,49 @@ subroutine compute_strain_att_el_cg4(u, grad_u, iel)
   if (src_type(1)=='dipole') then
      call axisym_gradient_solid_el_cg4(u(:,:,1) + u(:,:,2), grad_buff1, iel)
   else
-     call axisym_gradient_solid_el_cg4(u(:,:,1), grad_buff1, iel) ! 1: dsus, 2: dzus
+     ! 1: dsus, 2: dzus
+     call axisym_gradient_solid_el_cg4(u(:,:,1), grad_buff1, iel) 
   endif 
 
-  call axisym_gradient_solid_el_cg4(u(:,:,3), grad_buff2, iel) ! 1:dsuz, 2:dzuz
+  ! 1:dsuz, 2:dzuz
+  call axisym_gradient_solid_el_cg4(u(:,:,3), grad_buff2, iel) 
   
   grad_u(:,1) = grad_buff1(:,1)  ! dsus
   grad_u(:,3) = grad_buff2(:,2)  ! dzuz
 
-  grad_u(:,5) = grad_buff1(:,2) + grad_buff2(:,1) ! dsuz + dzus (factor of 2 
-                                                              ! from voigt notation)
+  ! dsuz + dzus (factor of 2 from voigt notation)
+  grad_u(:,5) = grad_buff1(:,2) + grad_buff2(:,1) 
  
   ! Components involving phi....................................................
-  ! hardcode monopole for a start
 
-  grad_u(:,2) = f_over_s_solid_el_cg4(u(:,:,1), iel) ! us / s
+  if (src_type(1)=='monopole') then
+     ! us / s
+     grad_u(:,2) = f_over_s_solid_el_cg4(u(:,:,1), iel) 
+
+  elseif (src_type(1)=='dipole') then
+     ! 2 u- / s
+     grad_u(:,2) = 2 * f_over_s_solid_el_cg4(u(:,:,2), iel) 
+
+     ! 1:dsup, 2:dzup
+     call axisym_gradient_solid_el_cg4(u(:,:,1) - u(:,:,2), grad_buff1, iel) 
+    
+     ! -uz/s - dzup
+     grad_u(:,4) = - f_over_s_solid_el_cg4(u(:,:,3), iel) - grad_buff1(:,2)
+     ! -2 u-/s - dsup
+     grad_u(:,6) = - grad_u(:,2) - grad_buff1(:,1)
+
+  elseif (src_type(1)=='quadpole') then
+     ! (us - 2 up) / s
+     grad_u(:,2) = f_over_s_solid_el_cg4(u(:,:,1) - 2 * u(:,:,2), iel) 
+     
+     ! 1:dsup, 2:dzup
+     call axisym_gradient_solid_el_cg4(u(:,:,2), grad_buff1, iel) 
+
+     ! -2 uz/s - dzup
+     grad_u(:,4) = - 2 * f_over_s_solid_el_cg4(u(:,:,3), iel) - grad_buff1(:,2)
+     ! (up - 2 us) /s - dsup
+     grad_u(:,6) = f_over_s_solid_el_cg4(u(:,:,2) - 2 * u(:,:,1), iel) - grad_buff1(:,1)
+  endif
 
 end subroutine compute_strain_att_el_cg4
 !-----------------------------------------------------------------------------------------
@@ -322,21 +350,50 @@ subroutine compute_strain_att_el(u, grad_u, iel)
   if (src_type(1)=='dipole') then
      call axisym_gradient_solid_el(u(:,:,1) + u(:,:,2), grad_buff1, iel)
   else
-     call axisym_gradient_solid_el(u(:,:,1), grad_buff1, iel) ! 1: dsus, 2: dzus
+     ! 1: dsus, 2: dzus
+     call axisym_gradient_solid_el(u(:,:,1), grad_buff1, iel)
   endif 
 
-  call axisym_gradient_solid_el(u(:,:,3), grad_buff2, iel) ! 1:dsuz, 2:dzuz
+  ! 1:dsuz, 2:dzuz
+  call axisym_gradient_solid_el(u(:,:,3), grad_buff2, iel) 
   
   grad_u(:,:,1) = grad_buff1(:,:,1)  ! dsus
   grad_u(:,:,3) = grad_buff2(:,:,2)  ! dzuz
 
-  grad_u(:,:,5) = grad_buff1(:,:,2) + grad_buff2(:,:,1) ! dsuz + dzus (factor of 2 
-                                                              ! from voigt notation)
+  ! dsuz + dzus (factor of 2 from voigt notation)
+  grad_u(:,:,5) = grad_buff1(:,:,2) + grad_buff2(:,:,1) 
  
   ! Components involving phi....................................................
   ! hardcode monopole for a start
 
-  grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1), iel) ! us / s
+  if (src_type(1)=='monopole') then
+     ! us / s
+     grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1), iel) 
+
+  elseif (src_type(1)=='dipole') then
+     ! 2 u- / s
+     grad_u(:,:,2) = 2 * f_over_s_solid_el(u(:,:,2), iel) 
+     
+     ! 1:dsup, 2:dzup
+     call axisym_gradient_solid_el(u(:,:,1) - u(:,:,2), grad_buff1, iel) 
+     ! -uz/s - dzup
+     grad_u(:,:,4) = - f_over_s_solid_el(u(:,:,3), iel) - grad_buff1(:,:,2)
+     ! -2 u-/s - dsup
+     grad_u(:,:,6) = - grad_u(:,:,2) - grad_buff1(:,:,1)
+
+  elseif (src_type(1)=='quadpole') then
+     ! (us - 2 up) / s
+     grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1) - 2 * u(:,:,2), iel) 
+     
+     ! 1:dsup, 2:dzup
+     call axisym_gradient_solid_el(u(:,:,2), grad_buff1, iel) 
+
+     ! -2 uz/s - dzup
+     grad_u(:,:,4) = - 2 * f_over_s_solid_el(u(:,:,3), iel) - grad_buff1(:,:,2)  
+     ! (up - 2 us) /s - dsup
+     grad_u(:,:,6) = f_over_s_solid_el(u(:,:,2) - 2 * u(:,:,1), iel) - grad_buff1(:,:,1)
+
+  endif
 
 end subroutine compute_strain_att_el
 !-----------------------------------------------------------------------------------------
@@ -449,7 +506,7 @@ subroutine prepare_attenuation(lambda, mu)
                             y_j_attenuation, w_samp, q_fit, chil)
   if (lpr) print *, '  ...done'
   
-  ! prefactors for the exact time stepping (att nodes p 13.3)
+  ! prefactors for the exact time stepping (att notes p 13.3)
   do j=1, n_sls_attenuation
      exp_w_j_deltat(j) = dexp(-w_j_attenuation(j) * deltat)
      ts_fac_tm1(j) = ((1 - exp_w_j_deltat(j)) / (w_j_attenuation(j) * deltat) &
