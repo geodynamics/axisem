@@ -13,7 +13,7 @@ module stiffness
   implicit none
   
   public :: glob_stiffness_mono, glob_stiffness_di, glob_stiffness_quad
-  public :: glob_anel_stiffness_mono
+  public :: glob_anel_stiffness_mono, glob_anel_stiffness_di, glob_anel_stiffness_quad
   public :: glob_anel_stiffness_mono_cg4
   public :: glob_fluid_stiffness
   private

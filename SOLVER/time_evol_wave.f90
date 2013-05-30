@@ -455,13 +455,33 @@ subroutine sf_time_loop_newmark
 
         case ('dipole') 
            call apply_axis_mask_twocomp(disp, nel_solid, ax_el_solid, naxel_solid)
-           call glob_stiffness_di(acc1,disp) 
+           call glob_stiffness_di(acc1, disp) 
+           if (anel_true) then
+              iclockanelst = tick()
+              if (att_coarse_grained) then
+                 print *, 'cg with dipole not yet implemented'
+                 stop 2
+              else
+                 call glob_anel_stiffness_di(acc1, memory_var)
+              endif
+              iclockanelst = tick(id=idanelst, since=iclockanelst)
+           endif
            call bdry_copy2solid(acc1,ddchi1)
            call apply_axis_mask_twocomp(acc1, nel_solid, ax_el_solid, naxel_solid)
 
         case ('quadpole') 
            call apply_axis_mask_threecomp(disp, nel_solid, ax_el_solid, naxel_solid)
-           call glob_stiffness_quad(acc1,disp) 
+           call glob_stiffness_quad(acc1, disp) 
+           if (anel_true) then
+              iclockanelst = tick()
+              if (att_coarse_grained) then
+                 print *, 'cg with quadpole not yet implemented'
+                 stop 2
+              else
+                 call glob_anel_stiffness_quad(acc1, memory_var)
+              endif
+              iclockanelst = tick(id=idanelst, since=iclockanelst)
+           endif
            call bdry_copy2solid(acc1,ddchi1)
            call apply_axis_mask_threecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
      end select
