@@ -474,8 +474,7 @@ subroutine sf_time_loop_newmark
            if (anel_true) then
               iclockanelst = tick()
               if (att_coarse_grained) then
-                 print *, 'cg with quadpole not yet implemented'
-                 stop 2
+                 call glob_anel_stiffness_quad_cg4(acc1, memory_var_cg4)
               else
                  call glob_anel_stiffness_quad(acc1, memory_var)
               endif
