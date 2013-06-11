@@ -87,7 +87,7 @@ subroutine time_step_memvars_cg4(memvar, disp)
         else
            yp_j_kappa = y_j_attenuation / Q_kappa(iel)
         endif
-        a_j_kappa = yp_j_mu / sum(yp_j_kappa)
+        a_j_kappa = yp_j_kappa / sum(yp_j_kappa)
      endif
 
      trace_grad_t(:) = sum(grad_t_cg4(:,1:3), dim=2)
@@ -220,7 +220,7 @@ subroutine time_step_memvars(memvar, disp)
         else
            yp_j_kappa = y_j_attenuation / Q_kappa(iel)
         endif
-        a_j_kappa = yp_j_mu / sum(yp_j_kappa)
+        a_j_kappa = yp_j_kappa / sum(yp_j_kappa)
      endif
 
      trace_grad_t(:,:) = sum(grad_t(:,:,1:3), dim=3)
