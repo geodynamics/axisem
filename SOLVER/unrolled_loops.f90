@@ -6,6 +6,7 @@
  ! for polynomial order  4
 
    use global_parameters
+   use data_proc, only: mynum
 
    implicit none
 
@@ -23,18 +24,20 @@
 
    include "mesh_params.h" 
 
-   real(kind=realkind), intent(in)  :: a(0: 4,0: 4),b(0: 4,0: 4)
-   real(kind=realkind), intent(out) :: c(0: 4,0: 4)
+
+   real(kind=realkind), intent(in)  :: a(0: npol,0: npol),b(0: npol,0: npol)
+   real(kind=realkind), intent(out) :: c(0: npol,0: npol)
    integer i,j
 
-   do j = 0, 4
-     do i = 0, 4
-       c(i,j) = & 
-          + a(i, 0) * b( 0,j) &
-          + a(i, 1) * b( 1,j) &
-          + a(i, 2) * b( 2,j) &
-          + a(i, 3) * b( 3,j) &
-          + a(i, 4) * b( 4,j)
+   do j = 0, npol
+     do i = 0, npol
+        c(i,j) = sum(a(i,:) * b(:,j))
+   !    c(i,j) = & 
+   !       + a(i, 0) * b( 0,j) &
+   !       + a(i, 1) * b( 1,j) &
+   !       + a(i, 2) * b( 2,j) &
+   !       + a(i, 3) * b( 3,j) &
+   !       + a(i, 4) * b( 4,j)
      end do
    end do 
    return
@@ -48,19 +51,20 @@
 
    include "mesh_params.h" 
 
-   real(kind=realkind), intent(in)  :: a(0: 4),b(0: 4,0: 4)
-   real(kind=realkind), intent(out) :: c(0: 4)
+   real(kind=realkind), intent(in)  :: a(0: npol),b(0: npol,0: npol)
+   real(kind=realkind), intent(out) :: c(0: npol)
    integer j
 
-   do j = 0, 4
-       c(j) = & 
-          + a( 0) * b( 0,j) &
-          + a( 1) * b( 1,j) &
-          + a( 2) * b( 2,j) &
-          + a( 3) * b( 3,j) &
-          + a( 4) * b( 4,j)
+   do j = 0, npol
+       c(j) = sum(a * b(:,j))
+   !    c(j) = & 
+   !       + a( 0) * b( 0,j) &
+   !       + a( 1) * b( 1,j) &
+   !       + a( 2) * b( 2,j) &
+   !       + a( 3) * b( 3,j) &
+   !       + a( 4) * b( 4,j)
    end do 
-   return
+   !return
 
  end subroutine vxm
  !-------------------------------------------------------------
