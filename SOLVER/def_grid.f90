@@ -1280,14 +1280,17 @@ real(kind=realkind), dimension(:,:,:), allocatable :: mass_solid,mass_fluid
   allocate(mass_solid(0:npol,0:npol,1:nel_solid))
   allocate(mass_fluid(0:npol,0:npol,1:nel_fluid))
 
-  if (bkgrdmodel(1:4)=='prem') then 
-     router_fluid=3480000.d0 ! CMB
-     rinner_fluid=1221500.d0 ! ICB
-  elseif (bkgrdmodel(1:4)=='iasp') then
-     router_fluid=3482000.d0 ! CMB
-     rinner_fluid=1217000.d0 ! ICB
+  if (bkgrdmodel(1:4) == 'prem') then 
+     router_fluid = 3480000.d0 ! CMB
+     rinner_fluid = 1221500.d0 ! ICB
+  elseif (bkgrdmodel(1:5) == 'ak135') then
+     router_fluid = 3479500.d0 ! CMB
+     rinner_fluid = 1217500.d0 ! ICB
+  elseif (bkgrdmodel(1:4) == 'iasp') then
+     router_fluid = 3482000.d0 ! CMB
+     rinner_fluid = 1217000.d0 ! ICB
   elseif (bkgrdmodel(1:4)=='homo') then 
-     rinner_fluid= 3000.d0
+     rinner_fluid = 3000.d0
      router_fluid = rinner_fluid
   else
      write(6,*)'  !!WARNING!! Do not know the fluid for model',bkgrdmodel
