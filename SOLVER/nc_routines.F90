@@ -571,6 +571,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                 cmode=nmode, ncid=ncid_out) )
         write(6,*) 'Netcdf file with ID ', ncid_out, ' produced.'
     end if
+
+
     if (dump_wavefields) then
         if (src_type(1) == 'monopole') then
             nvar = 12
@@ -635,9 +637,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         call check( nf90_def_dim(ncid_recout, "receivers", nrec, nc_rec_dimid) )
         write(6,110) "receivers", nrec, nc_rec_dimid
-
-        !call check( nf90_def_dim( ncid_recout, "processors", nproc, nc_recproc_dimid) )
-        !write(6,110) "processors", nproc, nc_recproc_dimid
 
         call check( nf90_def_dim(ncid_out, "components", 3, nc_comp_dimid) )
         write(6,110) "components", 3, nc_comp_dimid
@@ -743,29 +742,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                          dimids = (/nc_pt_dimid, nc_snap_dimid/),&
                                          varid = nc_field_varid(ivar), &
                                          chunksizes = (/npoints_global, 1/) ))
-                !if (deflate) then
-                !    call check( nf90_def_var_deflate(ncid=ncid_snapout, &
-                !                                     varid=nc_field_varid(ivar), &
-                !                                     shuffle=1, deflate=1, &
-                !                                     deflate_level=deflate_level) )
-                !end if
                 call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
                                               no_fill=1, fill=0) )
                 write(6,"('Netcdf variable ', A16,' with ID ', I3, ' and length', &
                         & I8, ' produced.')") &
                           trim(nc_varnamelist(ivar)), nc_field_varid(ivar), npoints_global
             end do
-
-!            do ivar=nvar/2+1, nvar
-!                call check( nf90_def_var(ncid=ncid_snapout, name=trim(varnamelist(ivar)), &
-!                                         xtype = NF90_FLOAT, &
-!                                         dimids = (/nc_pt_flu_dimid, nc_snap_dimid/),&
-!                                         varid = nc_field_varid(ivar), &
-!                                         chunksizes = (/npts_flu_global, 1/) ))
-!
-!                call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
-!                                              no_fill=1, fill=0) )
-!            end do
 
             ! Surface group in output file
             write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
@@ -813,7 +795,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       nc_surfelem_disp_src_varid) )
             call check( nf90_put_att( ncid_surfout, nc_surfelem_velo_varid, 'units', &
                                       'meters') )
-        end if    
+        end if
+
         
         write(6,*) 'NetCDF variables defined'
         write(6,*)
@@ -896,50 +879,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     
 #endif
 end subroutine nc_define_outputfile
-!-----------------------------------------------------------------------------------------
-
-
-!-----------------------------------------------------------------------------------------
-!!> Processor 0 opens output file so that nc_define_outputfile can define 
-!!! the dimensions and variables in it.
-!subroutine nc_create_outputfile
-!#ifdef unc
-!
-!    !use data_io
-!    !integer  :: nmode
-!    integer  :: iproc
-!
-!    call barrier
-!    dumpstepsnap = int(dumpbuffersize / nproc) * nproc ! Will later be reduced to nstrain, if this is smaller
-!                                                       ! than value given here
-!    if (lpr) write(6,*) '  Dumping NetCDF file to disk every', dumpstepsnap, ' snaps'
-!
-!    call barrier ! for nicer output only
-!
-!    outputplan = mynum * (dumpstepsnap / nproc)
-!
-!    allocate(dumpposition(0:dumpstepsnap-1))
-!    dumpposition = .false.
-!    do iproc=0, nproc-1
-!        dumpposition(iproc*(dumpstepsnap/nproc)) = .true.
-!        if (iproc.eq.mynum) then
-!            write(6,"('Proc ', I4, ' will dump at position ', I4)") mynum, outputplan
-!        end if
-!        call flush(6)
-!        call barrier ! for nicer output only
-!    end do
-!
-!
-!
-!    if (mynum == 0) then
-!        write (6,*) 'Preparing netcdf file' ! for ', nproc, ' processors'
-!        nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
-!        call check( nf90_create(path=datapath(1:lfdata)//"/axisem_output.nc4", &
-!                                cmode=nmode, ncid=ncid_out) )
-!        write(6,*) 'Netcdf file with ID ', ncid_out, ' produced.'
-!    end if
-!#endif
-!end subroutine
 !-----------------------------------------------------------------------------------------
 
 
