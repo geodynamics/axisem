@@ -18,8 +18,7 @@ subroutine create_pdb
   ! Wrapper routine to define everything in the parallel global and solid/fluid!
   ! worlds and dump the database for each processor. 
   ! Additionally creating the header mesh_params.h containing all major mesh 
-  ! sizes for the solver and the solver routine unrolled_loops.f90 that depends 
-  ! on the polynomial order given in the mesher.
+  ! sizes for the solver 
   ! Whenever DATABASE occurs as a comment below, those parameters will be saved 
   ! into the solver database.
   ! 
@@ -87,9 +86,6 @@ subroutine create_pdb
 
   write(6,*) ' create static header mesh_params.h ....';call flush(6) 
   call create_static_header
-
-  write(6,*) ' create solver routine unrolled_loops.f90 ....';call flush(6) 
-  call create_unrolled_loop_routines
 
 end subroutine create_pdb
 !------------------------------------------------------------------------
@@ -3245,131 +3241,6 @@ integer :: lfdbname
 
   end subroutine create_static_header
 !------------------------------------------------------------------------
-
-!dk create_unrolled_loop_routines----------------------------------------------
-subroutine create_unrolled_loop_routines
-
-    character(len=8) :: mydate
-    character(len=10) :: mytime
-    integer :: ipol
-
-! Creates the unrolled-loop routines for the solver that specifically 
-! depend upon the polynomial order npol
-    
-call date_and_time(mydate,mytime)
-
-open(unit=101,file='unrolled_loops.f90')
-write(101,*)'!========================'
-write(101,*)'module unrolled_loops'
-write(101,*)'!========================'
-write(101,*)
-write(101,*)'! This module has been created by the mesher'
-write(101,5) npol
-!write(101,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
-write(101,*)
-write(101,*)'  use global_parameters'
-write(101,*)
-write(101,*)'  implicit none'
-write(101,*)
-write(101,*)'  public :: mxm, vxm'
-write(101,*)'  public :: npol_unrolled_loops'
-write(101,*)'  private'
-write(101,*)
-write(101,*)'  integer, parameter :: npol_unrolled_loops = ', npol
-write(101,*)
-write(101,*)'  contains' 
-write(101,*)
-write(101,*)'!============================================================'
-write(101,*)
-write(101,*)'subroutine mxm(a,b,c)'
-write(101,*)
-write(101,*)'  include "mesh_params.h" '
-write(101,*)
-write(101,9)  npol,npol,npol,npol
-write(101,10) npol,npol
-write(101,*)'  integer i,j'
-write(101,*)
-!write(101,6) npol
-!write(101,61)
-!write(101,62)
-!write(101,63) npol
-!write(101,64)
-!write(101,65)
-!write(101,*)
-write(101,7) npol
-write(101,8) npol
-write(101,*)'      c(i,j) = & '
-do ipol=0,npol-1
-   write(101,12)ipol,ipol
-enddo
-write(101,13)npol,npol
-write(101,*)'    end do'
-write(101,*)'  end do '
-write(101,*)'  return'
-write(101,*)
-write(101,*)'end subroutine mxm'
-write(101,*)'!-------------------------------------------------------------'
-write(101,*)
-write(101,*)
-write(101,*)'!-------------------------------------------------------------'
-write(101,*)'subroutine vxm(a,b,c)'
-write(101,*)
-write(101,*)'  include "mesh_params.h" '
-write(101,*)
-write(101,16) npol,npol,npol
-write(101,17) npol
-write(101,*)'  integer j'
-write(101,*)
-!write(101,6) npol
-!write(101,61)
-!write(101,62)
-!write(101,63) npol
-!write(101,64)
-!write(101,65)
-!write(101,*)
-write(101,7) npol
-write(101,*)'      c(j) = & '
-do ipol=0,npol-1
-   write(101,14)ipol,ipol
-enddo
-write(101,15)npol,npol
-write(101,*)'  end do '
-write(101,*)'  return'
-write(101,*)
-write(101,*)'end subroutine vxm'
-write(101,*)'!-------------------------------------------------------------'
-write(101,*)
-write(101,*)'!========================'
-write(101,*)'end module unrolled_loops'
-write(101,*)'!========================'
-close(101)
-
-write(6,*)'wrote module unrolled_loops into unrolled_loops.f90'
-
-5   format(' ! for polynomial order ',i2)
-6   format('   if ( npol /= ',i2,' ) then')
-61  format('      write(6,*)"Problem: unrolled_loops.f90 has different" ')
-62  format('      write(6,*)"         polynomial order than mesh_params.h:" ')
-63  format('      write(6,*)"        ',i2,'",npol')
-64  format('      stop')
-65  format('   endif')
-7   format('   do j = 0,',i2)
-8   format('     do i = 0,',i2)
-9   format('   real(kind=realkind), intent(in)  :: a(0:',i2, &
-           ',0:',i2,'),b(0:',i2,',0:',i2,')')
-10  format('   real(kind=realkind), intent(out) :: c(0:',i2,',0:',i2,')')
-11  format(' ! on ', A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
-12  format('          + a(i,',i2,') * b(',i2,',j) &')
-13  format('          + a(i,',i2,') * b(',i2,',j)')
-14  format('          + a(',i2,') * b(',i2,',j) &')
-15  format('          + a(',i2,') * b(',i2,',j)')
-16  format('   real(kind=realkind), intent(in)  :: a(0:',i2, &
-           '),b(0:',i2,',0:',i2,')')
-17  format('   real(kind=realkind), intent(out) :: c(0:',i2,')')
-
-end subroutine create_unrolled_loop_routines
-!------------------------------------------------------------------------
-
 
 !dk define_io_appendix---------------------------------------------------
   subroutine define_io_appendix(app,iproc)

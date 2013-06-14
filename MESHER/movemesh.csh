@@ -36,7 +36,6 @@ mv meshdb.dat0* $meshpath
 mv mesh_params.h* $meshpath
 mv OUTPUT $meshpath
 cp -p inparam_mesh $meshpath
-mv unrolled_loops.f90 $meshpath
 cp -p background_models.f90 $meshpath
 mkdir $meshpath/Code
 cp -p *.f90 $meshpath/Code
