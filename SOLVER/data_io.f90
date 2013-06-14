@@ -26,10 +26,10 @@ public
   double precision  :: strain_samp
   integer           :: iseismo  !< current seismogram sample
   integer           :: istrain  !< current kernel wavefield sample
-  integer           :: isnap    !< current wavefield sample (for plotting)
+  integer           :: isnap    !< current wavefield sample for movies
   integer           :: nseismo  !< Number of seismogram samples
   integer           :: nstrain  !< Number of wavefield dumps for kernels
-  integer           :: nsnap    !< Number of wavefield snapshots
+  integer           :: nsnap    !< Number of wavefield snapshots for movies
   character(len=12) :: dump_type
   character(len=8)  :: rec_file_type
   logical           :: sum_seis, sum_fields

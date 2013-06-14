@@ -150,7 +150,7 @@ double precision, dimension(0:npol,0:npol,nelem) :: stmp,ztmp,v_p,v_s
   close(65)
 10 format(i9,1pe11.3,i3,2(1pe11.3))
   
-  if (use_netcdf) then
+  if (use_netcdf.and.dump_wavefields) then
      if (mynum.eq.0) call nc_write_el_domains(ieldom)
   end if
 

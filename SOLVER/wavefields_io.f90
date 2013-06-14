@@ -195,6 +195,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     use data_pointwise, ONLY : inv_rho_fluid, prefac_inv_s_rho_fluid
     use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
     use data_time, only : t
+    use nc_routines, only: nc_dump_snapshot
     
     include 'mesh_params.h'
     
@@ -314,11 +315,15 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
             enddo
         enddo
     enddo
-    
-    write(13100) u(1,:)
-    if (src_type(1) /= 'monopole') &
-       write(13101) u(2,:)
-    write(13102) u(3,:)
+   
+    if (use_netcdf) then
+        call nc_dump_snapshot(u)
+    else
+        write(13100) u(1,:)
+        if (src_type(1) /= 'monopole') &
+           write(13101) u(2,:)
+        write(13102) u(3,:)
+    end if
 
     deallocate(u)
     

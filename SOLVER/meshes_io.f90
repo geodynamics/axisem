@@ -92,7 +92,7 @@ end subroutine dump_glob_grid_midpoint
 
 !-----------------------------------------------------------------------------
 subroutine dump_xdmf_grid()
-
+use nc_routines,      only: nc_dump_snap_points, nc_dump_snap_grid
 use data_numbering
 
     integer              :: iel, ipol, jpol, ipol1, jpol1, i, j, ct, ipt, idest
@@ -317,11 +317,15 @@ use data_numbering
     
     if (lpr) write(6,*) '   .... finished construction of mapping for xdmf plotting'
 
-    fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
-    open(100, file=trim(fname), access='stream', status='replace', &
-        convert='little_endian')
-    write(100) points
-    close(100)
+    if (use_netcdf) then
+        call nc_dump_snap_points(points)
+    else
+        fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
+        open(100, file=trim(fname), access='stream', status='replace', &
+            convert='little_endian')
+        write(100) points
+        close(100)
+    end if
 
     deallocate(points)
 
@@ -359,11 +363,15 @@ use data_numbering
     
     if (lpr) write(6,*) '   .... writing grid + header of xdmf to file'
     
-    fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
-    open(100, file=trim(fname), access='stream', status='replace', &
-        convert='little_endian')
-    write(100) grid
-    close(100)
+    if (use_netcdf) then
+        call nc_dump_snap_grid(grid)
+    else
+        fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
+        open(100, file=trim(fname), access='stream', status='replace', &
+            convert='little_endian')
+        write(100) grid
+        close(100)
+    end if
     
     fname = datapath(1:lfdata) // '/xdmf_meshonly_' // appmynum // '.xdmf'
     open(100, file=trim(fname))

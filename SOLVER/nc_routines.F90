@@ -70,6 +70,12 @@ module nc_routines
     character(len=12), allocatable  :: nc_varnamelist(:)
     integer             :: nvar = -1
 
+    !! Variables for dumping of wavefields for plotting purposes
+    integer             :: nc_snap_disp_varid
+    integer             :: nc_snap_point_varid, nc_snap_grid_varid
+    integer             :: ncid_out_snap
+
+
     !! @todo These parameters should move to a input file soon
     !> How many snaps should be buffered in RAM?
     integer             :: dumpbuffersize = 256
@@ -86,6 +92,8 @@ module nc_routines
     public              :: nc_define_outputfile, nc_open_parallel, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
     public              :: nc_write_el_domains
+    public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
+    public              :: nc_make_snapfile
 contains
 
 
@@ -96,8 +104,7 @@ subroutine check(status)
 #ifdef unc
     if (status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
-        print *, 1/(mynum) 
-        stop 2
+        call abort()
     end if
 #endif
 end subroutine check  
@@ -1006,20 +1013,120 @@ end subroutine nc_open_parallel
 !! receiver seismograms.
 subroutine nc_end_output
 #ifdef unc
-    integer        :: iproc
+    use data_io, only: dump_xdmf
+    integer         :: iproc
 
     call barrier
     do iproc=0, nproc-1
         if (iproc == mynum) then
             write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
             call nc_dump_rec_to_disk()
+            if (dump_xdmf) then
+                call check(nf90_close(ncid_out_snap))
+            end if
         end if
+        
         call barrier
     end do
     !call check( nf90_close(ncid_out) )
 
 #endif
-end subroutine
+end subroutine nc_end_output
 !-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_make_snapfile
+
+    use data_mesh, only: npoint_plot
+    use data_proc, only: appmynum
+    use data_io,   only: datapath, lfdata, nsnap
+#ifdef unc
+    integer              :: nmode, nc_snappoint_dimid, nc_snapdim_dimid
+    integer              :: nc_snaptime_dimid, nc_snapconnec_dimid
+    character(len=120)   :: fname
+
+    fname = datapath(1:lfdata) // '/xdmf_netcdf_' // appmynum // '.nc'
+    nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
+    call check(nf90_create(path=fname, cmode=nmode, ncid=ncid_out_snap) )
+
+    call check(nf90_def_dim(ncid_out_snap, 'points', npoint_plot, nc_snappoint_dimid) )
+    call check(nf90_def_dim(ncid_out_snap, 'dimensions', 3 , nc_snapdim_dimid) )
+    call check(nf90_def_dim(ncid_out_snap, 'connections', 4 , nc_snapconnec_dimid) )
+    call check(nf90_def_dim(ncid_out_snap, 'timesteps', nsnap , nc_snaptime_dimid) )
+
+    call check(nf90_def_var(ncid   = ncid_out_snap, & 
+                            name   = 'displacement',  &
+                            xtype  = NF90_FLOAT,     &
+                            dimids = [nc_snapdim_dimid, nc_snappoint_dimid, &
+                                      nc_snaptime_dimid], & 
+                            varid  = nc_snap_disp_varid) )
+
+    call check(nf90_def_var(ncid   = ncid_out_snap, & 
+                            name   = 'points',  &
+                            xtype  = NF90_FLOAT,     &
+                            dimids = [nc_snappoint_dimid], & 
+                            varid  = nc_snap_point_varid) )
+
+    call check(nf90_def_var(ncid   = ncid_out_snap, & 
+                            name   = 'grid',  &
+                            xtype  = NF90_INT,     &
+                            dimids = [nc_snappoint_dimid, nc_snapconnec_dimid], & 
+                            varid  = nc_snap_grid_varid) )
+
+    call check(nf90_enddef(ncid    = ncid_out_snap))
+
+
+
+#endif
+end subroutine nc_make_snapfile
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_snapshot(u)
+    use data_mesh, only: npoint_plot
+    use data_io, only:   isnap, nsnap
+    real, dimension(:,:), intent(in)       :: u
+#ifdef unc
+    call check(nf90_put_var(ncid   = ncid_out_snap, &
+                            varid  = nc_snap_disp_varid, &
+                            start  = [1, 1, isnap], &
+                            count  = [3, npoint_plot, 1], &
+                            values = u) )
+
+
+
+#endif
+end subroutine nc_dump_snapshot
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_snap_points(points)
+    use data_mesh, only: npoint_plot
+    real, dimension(:,:), intent(in)       :: points
+#ifdef unc
+    call check(nf90_put_var(ncid   = ncid_out_snap, &
+                            varid  = nc_snap_point_varid, &
+                            count  = [npoint_plot], &
+                            values = points) )
+#endif
+end subroutine nc_dump_snap_points
+!-----------------------------------------------------------------------------------------
+
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_snap_grid(grid)
+    use data_mesh, only: npoint_plot
+    integer, dimension(:,:), intent(in)       :: grid 
+#ifdef unc
+    call check(nf90_put_var(ncid   = ncid_out_snap, &
+                            varid  = nc_snap_grid_varid, &
+                            count  = [npoint_plot, 4], &
+                            values = grid) )
+#endif
+end subroutine nc_dump_snap_grid
+!-----------------------------------------------------------------------------------------
+
 
 end module nc_routines

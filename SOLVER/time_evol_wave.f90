@@ -32,6 +32,7 @@ subroutine prepare_waves
   use clocks_mod
   use meshes_io
   use attenuation, only: dump_memory_vars
+  use nc_routines, only: nc_make_snapfile
     
   character(len=120) :: fname
 
@@ -88,21 +89,26 @@ subroutine prepare_waves
 
   if (dump_xdmf) then
      if (lpr) write(6,*)'  dumping mesh for xdmf snapshots...'
-     call dump_xdmf_grid()
+     
+     if (use_netcdf) then
+         call nc_make_snapfile
 
-     fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'.dat'
-     open(13100, file=trim(fname), access='stream', status='unknown', &
-         convert='little_endian', position='append')
-
-     if (.not. src_type(1)=='monopole') then
-         fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'.dat'
-         open(13101, file=trim(fname), access='stream', status='unknown', &
+     else
+         fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'.dat'
+         open(13100, file=trim(fname), access='stream', status='unknown', &
              convert='little_endian', position='append')
-     endif
 
-     fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'.dat'
-     open(13102, file=trim(fname), access='stream', status='unknown', &
-         convert='little_endian', position='append')
+         if (.not. src_type(1)=='monopole') then
+             fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'.dat'
+             open(13101, file=trim(fname), access='stream', status='unknown', &
+                 convert='little_endian', position='append')
+         endif
+
+         fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'.dat'
+         open(13102, file=trim(fname), access='stream', status='unknown', &
+             convert='little_endian', position='append')
+     end if
+     call dump_xdmf_grid()
   endif
 
   if (anel_true .and. dump_memory_vars) &
@@ -1127,7 +1133,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   
   if (dump_xdmf) then
     if (mod(iter,snap_it)==0) then
-        isnap=isnap+1
+        if (.not.(dump_snaps_glob)) isnap=isnap+1
         if (lpr) then
            write(6,*)
            write(6,*)'Writing global xdmf snap to file:',isnap
