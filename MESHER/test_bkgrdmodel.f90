@@ -161,12 +161,13 @@ subroutine bkgrdmodel_testing
            s1 = sgll(ipol,jpol,iel)
            z1 = zgll(ipol,jpol,iel) 
   
+           r = dsqrt(s1**2 + z1**2)
+
            if (s1<1.d-5 .and. z1>=0.d0) then 
               if (bkgrdmodel=='solar') then 
                     velo = v_p(ipol,jpol,iel)
   
               else 
-                 r = dsqrt(s1**2 + z1**2)
                  !r=dble(int(r*1.d10))*1.d-10 ! TNM: ADDED BACK IN JAN 2011... NOT SURE IF NECESSARY !!!!!
   
                  if ( solid_domain(region(iel)) ) then 
@@ -305,8 +306,8 @@ subroutine bkgrdmodel_testing
         mesh2(iel,1) = real(s1)
         mesh2(iel,2) = real(z1)
      endif
-  
-     ct = ct+4
+
+     ct = ct + 4
   
      !=======================================
   

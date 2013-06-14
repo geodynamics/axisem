@@ -1115,16 +1115,7 @@ double precision function iasp91_sub(r0, param, idom)
      vp = 8.78541 - 0.74953  * x
      vs = 6.706231- 2.248585 * x
      rho = 3.3713 + (3.3198 - 3.3713) * (x - x1) / (x2 - x1)
-     ! MvD: seems like we arrive here sometimes with radii from inner core, so likely
-     !      called with wrong idom
-     ! Backtrace for this error:
-     !    + function __background_models_MOD_iasp91_sub (0x40FF49)
-     !    + function __background_models_MOD_velocity (0x4177CE)
-     !    + function __test_bkgrdmodel_MOD_bkgrdmodel_testing (0x4BC894)
-     !    + in the main program
-     !        from file main.f90
-     ! points towards an error in values of region(iel)
-     ! which is filled up in mesh_info.f90:assign_region()
+     ! MvD: keeping this test for old bug [18]
      if(rho < 3.319 .or. rho > 3.372) then 
         write(6,*) R120 / 1000., RMOHO / 1000.
         write(6,*) r0 / 1000.
@@ -1135,6 +1126,7 @@ double precision function iasp91_sub(r0, param, idom)
         write(6,*) (x - x1) / (x2 - x1)
         write(6,*) 'incorrect density computed for IASP91', rho
         write(6,*) 'known bug, use other velocity model for now'
+        call abort()
         stop 2
      endif
   elseif(idom==4)then ! R220 < r <= R120
