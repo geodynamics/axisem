@@ -319,12 +319,12 @@ subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
   include "mesh_params.h"
   
   ! I/O global arrays
-  real(kind=realkind), intent(inout) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:4,0:4,nel_solid,1:3)
   real(kind=realkind), intent(in)    :: R(1:4,6,n_sls_attenuation,nel_solid)
   
   ! local variables for all elements
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_z
   
   real(kind=realkind), dimension(1:4) :: r1, r2, r3, r5
 
@@ -336,9 +336,9 @@ subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
   real(kind=realkind), dimension(1:4) :: S1z, S2z
   real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4
   
-  real(kind=realkind), dimension(0:npol) :: y0l
-  real(kind=realkind), dimension(0:npol) :: v0_s_etal, v0_s_xil
-  real(kind=realkind), dimension(0:npol) :: v0_z_etal, v0_z_xil
+  real(kind=realkind), dimension(0:4) :: y0l
+  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
+  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
   
   integer :: ielem, j
 
@@ -389,10 +389,10 @@ subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
      loc_stiffness_z = X3 + X4
 
      ! subtracting (!) from the global stiffness
-     glob_stiffness(0:npol,0:npol,ielem,1) = &
-            glob_stiffness(0:npol,0:npol,ielem,1) - loc_stiffness_s
-     glob_stiffness(0:npol,0:npol,ielem,3) = &
-            glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
+     glob_stiffness(0:4,0:4,ielem,1) = &
+            glob_stiffness(0:4,0:4,ielem,1) - loc_stiffness_s
+     glob_stiffness(0:4,0:4,ielem,3) = &
+            glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
   enddo
 
 end subroutine glob_anel_stiffness_mono_cg4
@@ -739,13 +739,13 @@ subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
   include "mesh_params.h"
   
   ! I/O global arrays
-  real(kind=realkind), intent(inout) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:4,0:4,nel_solid,1:3)
   real(kind=realkind), intent(in)    :: R(1:4,6,n_sls_attenuation,nel_solid)
   
   ! local variables for all elements
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_p
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_m
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_p
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_m
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_z
   
   real(kind=realkind), dimension(1:4) :: r1, r2, r3, r4, r5, r6
 
@@ -758,9 +758,9 @@ subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
   real(kind=realkind), dimension(1:4) :: S1z, S2z
   real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4, X5, X6
   
-  real(kind=realkind), dimension(0:npol) :: y0l
-  real(kind=realkind), dimension(0:npol) :: v0_s_etal, v0_s_xil
-  real(kind=realkind), dimension(0:npol) :: v0_z_etal, v0_z_xil
+  real(kind=realkind), dimension(0:4) :: y0l
+  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
+  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
   
   integer :: ielem, j
 
@@ -827,12 +827,12 @@ subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
      loc_stiffness_z(3,3) = loc_stiffness_z(3,3) - yl(4) * r4(4)
 
      ! subtracting (!) from the global stiffness
-     glob_stiffness(0:npol,0:npol,ielem,1) = &
-            glob_stiffness(0:npol,0:npol,ielem,1) - loc_stiffness_p
-     glob_stiffness(0:npol,0:npol,ielem,2) = &
-            glob_stiffness(0:npol,0:npol,ielem,2) - loc_stiffness_m
-     glob_stiffness(0:npol,0:npol,ielem,3) = &
-            glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
+     glob_stiffness(0:4,0:4,ielem,1) = &
+            glob_stiffness(0:4,0:4,ielem,1) - loc_stiffness_p
+     glob_stiffness(0:4,0:4,ielem,2) = &
+            glob_stiffness(0:4,0:4,ielem,2) - loc_stiffness_m
+     glob_stiffness(0:4,0:4,ielem,3) = &
+            glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
   enddo
 
 end subroutine glob_anel_stiffness_di_cg4
@@ -1154,13 +1154,13 @@ subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
   include "mesh_params.h"
   
   ! I/O global arrays
-  real(kind=realkind), intent(inout) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:4,0:4,nel_solid,1:3)
   real(kind=realkind), intent(in)    :: R(1:4,6,n_sls_attenuation,nel_solid)
   
   ! local variables for all elements
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_p
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_p
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_z
   
   real(kind=realkind), dimension(1:4) :: r1, r2, r3, r4, r5, r6
 
@@ -1173,9 +1173,9 @@ subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
   real(kind=realkind), dimension(1:4) :: S1z, S2z
   real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4, X5, X6
   
-  real(kind=realkind), dimension(0:npol) :: y0l
-  real(kind=realkind), dimension(0:npol) :: v0_s_etal, v0_s_xil
-  real(kind=realkind), dimension(0:npol) :: v0_z_etal, v0_z_xil
+  real(kind=realkind), dimension(0:4) :: y0l
+  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
+  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
   
   integer :: ielem, j
 
@@ -1246,12 +1246,12 @@ subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
      loc_stiffness_z(3,3) = loc_stiffness_z(3,3) - yl(4) * r4(4)
 
      ! subtracting (!) from the global stiffness
-     glob_stiffness(0:npol,0:npol,ielem,1) = &
-            glob_stiffness(0:npol,0:npol,ielem,1) - loc_stiffness_s
-     glob_stiffness(0:npol,0:npol,ielem,2) = &
-            glob_stiffness(0:npol,0:npol,ielem,2) - loc_stiffness_p
-     glob_stiffness(0:npol,0:npol,ielem,3) = &
-            glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
+     glob_stiffness(0:4,0:4,ielem,1) = &
+            glob_stiffness(0:4,0:4,ielem,1) - loc_stiffness_s
+     glob_stiffness(0:4,0:4,ielem,2) = &
+            glob_stiffness(0:4,0:4,ielem,2) - loc_stiffness_p
+     glob_stiffness(0:4,0:4,ielem,3) = &
+            glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
   enddo
 
 end subroutine glob_anel_stiffness_quad_cg4
