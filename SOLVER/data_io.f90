@@ -32,7 +32,7 @@ public
   integer           :: nsnap    !< Number of wavefield snapshots
   character(len=12) :: dump_type
   character(len=8)  :: rec_file_type
-  logical           :: correct_azi,sum_seis,sum_fields
+  logical           :: sum_seis, sum_fields
   character(len=3)  :: rot_rec
   logical           :: srcvic,add_hetero,file_exists,use_netcdf 
   character(len=6)  :: output_format  !< netcdf or binary

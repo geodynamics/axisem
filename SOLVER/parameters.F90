@@ -105,7 +105,6 @@ subroutine readin_parameters
   close(5)
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.
-  correct_azi = .false.
   sum_seis = .false.
   sum_fields = .false.
   rot_rec = 'cyl'
@@ -150,7 +149,7 @@ subroutine readin_parameters
      write(6,*)
      write(6,20)
      write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
-                 enforced_period, trim(src_file_type), rec_file_type, correct_azi, &
+                 enforced_period, trim(src_file_type), rec_file_type, &
                  sum_seis, sum_fields, rot_rec, time_scheme, seis_dt, save_large_tests,  &
                  dump_energy, dump_snaps_glob, dump_snaps_solflu, dump_wavefields, &
                  dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, srcvic,  &
@@ -214,7 +213,6 @@ subroutine readin_parameters
    12x,'Enforced source period [s]:     ',f7.3,/                        &
    12x,'Source file type:               ',a,/                        &
    12x,'Receiver file type:             ',a8,/                        &
-   12x,'Correct azimuth?                ',l2,/                          &
    12x,'Sum seismograms?                ',l2,/                          &
    12x,'Sum wavefields?                 ',l2,/                          &
    12x,'Receivers coordinates                 ',a3,/                          &
@@ -891,7 +889,6 @@ character(len=7) :: clogic
      write(6,11)'     Dom. period    [s]:',t_0
      write(6,*)'  Receiver information___________________________________'
      write(6,12)'     Receiver file type',rec_file_type
-     write(6,19)'     Rotate to azimuth:',correct_azi
      write(6,19)'     Sum seismograms  :',sum_seis
      write(6,12)'     Components in:',rot_rec
      write(6,*)'  General numerical parameters_________________________'
@@ -945,7 +942,6 @@ character(len=7) :: clogic
      write(55,22)num_rec_tot,'number of receivers'
      write(55,22)nseismo,'length of seismogram [time samples]'
      write(55,21)real(deltat)*real(seis_it),'seismogram sampling [s]'
-     write(55,24)correct_azi,'compute seismograms at correct azimuth?'
      if (dump_wavefields) then
         write(55,22) nstrain,'number of strain dumps'
         write(55,21)real(period)/real(strain_samp),'strain dump sampling rate [s]'
@@ -999,8 +995,6 @@ character(len=7) :: clogic
     call nc_write_att_int(num_rec_tot,'number of receivers')
     call nc_write_att_int(nseismo,'length of seismogram  in time samples')
     call nc_write_att_real(real(deltat)*real(seis_it),'seismogram sampling in sec')
-    write(clogic,*) correct_azi
-    call nc_write_att_char(clogic,'compute seismograms at correct azimuth?')
     if (dump_wavefields) then
        call nc_write_att_int(nstrain,'number of strain dumps')
        call nc_write_att_real(real(period)/real(strain_samp),'strain dump sampling rate in sec')

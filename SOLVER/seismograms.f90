@@ -418,15 +418,6 @@ integer ierror
     num_rec_tot = num_rec_glob ! to be known later/globally
 
 ! check on consistency of receiver coordinates
-    if (maxval(recfile_readph)<smallval .and. correct_azi) then 
-       if (lpr) write(6,*)'  WARNING: receivers have zero azimuth but you wish to rotate them..'
-!!$    elseif (maxval(recfile_readph)>smallval .and. .not. correct_azi) then 
-!!$       if (lpr) write(6,*)'  WARNING: receivers have non-zero azimuth but you chose to ignore it...'
-!!$       if (rot_src .and. lpr) then
-!!$          write(6,*)'  WARNING: even worse, the receivers will be rotated due to a non-axial source location'
-!!$          write(6,*)'                        ... and zero azimuth will then even affect the epicentral distance! Bad!'
-!!$       endif
-    endif
 
     if (minval(recfile_readph) < 0.d0) then 
        if (lpr) write(6,*)' ERROR: We do not allow negative receiver longitudes....'
@@ -681,47 +672,6 @@ endif
 ! no phi component for monopole
 if (src_type(1)=='monopole')  recfac(:,3) = 0.d0
 
-! multiply seismogram with the correct azimuthal factor
-if (correct_azi) then 
-
-   if (src_type(2)=='mxz' .or. src_type(2)=='xforce') then 
-   if (lpr) write(6,*) &
-            '  Calculating prefactors for correct azimuth for',src_type(2)
-      recfac(:,1) =  cos(recfile_ph_loc)*recfac(:,1)
-      recfac(:,2) =  cos(recfile_ph_loc)*recfac(:,2)
-      recfac(:,3) = -sin(recfile_ph_loc)*recfac(:,3)
-      recfac(:,4) =  cos(recfile_ph_loc)*recfac(:,4)
-      recfac(:,5) =  cos(recfile_ph_loc)*recfac(:,5)
-
-   elseif (src_type(2)=='myz' .or. src_type(2)=='yforce') then 
-   if (lpr) write(6,*) &
-            '  Calculating prefactors for correct azimuth for',src_type(2)
-      recfac(:,1) =  sin(recfile_ph_loc)*recfac(:,1)
-      recfac(:,2) =  sin(recfile_ph_loc)*recfac(:,2)
-      recfac(:,3) =  cos(recfile_ph_loc)*recfac(:,3)
-      recfac(:,4) =  sin(recfile_ph_loc)*recfac(:,4)
-      recfac(:,5) =  sin(recfile_ph_loc)*recfac(:,5)
-      
-   elseif (src_type(2)=='mxx_m_myy') then 
-   if (lpr) write(6,*) &
-            '  Calculating prefactors for correct azimuth for',src_type(2)
-      recfac(:,1) =  cos(2.d0*recfile_ph_loc)*recfac(:,1)
-      recfac(:,2) =  cos(2.d0*recfile_ph_loc)*recfac(:,2)
-      recfac(:,3) = -sin(2.d0*recfile_ph_loc)*recfac(:,3)
-      recfac(:,4) =  cos(2.d0*recfile_ph_loc)*recfac(:,4)
-      recfac(:,5) =  cos(2.d0*recfile_ph_loc)*recfac(:,5)
-      
-   elseif (src_type(2)=='mxy') then 
-   if (lpr) write(6,*) &
-            '  Calculating prefactors for correct azimuth for',src_type(2)
-      recfac(:,1) =  sin(2.d0*recfile_ph_loc)*recfac(:,1)
-      recfac(:,2) =  sin(2.d0*recfile_ph_loc)*recfac(:,2)
-      recfac(:,3) =  cos(2.d0*recfile_ph_loc)*recfac(:,3)
-      recfac(:,4) =  sin(2.d0*recfile_ph_loc)*recfac(:,4)
-      recfac(:,5) =  sin(2.d0*recfile_ph_loc)*recfac(:,5)
-   endif
-
-endif 
 
 open(300+mynum,file=infopath(1:lfinfo)//'/receiver_recfac_'//appmynum//'.dat')
 do i=1,num_rec
