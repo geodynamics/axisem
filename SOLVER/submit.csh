@@ -39,13 +39,6 @@ if ( ! -f inparam_attenuation) then
   cp inparam_attenuation.TEMPLATE inparam_attenuation
 endif
 
-## if the mesh has different npol (hence unrolled loops), copy unrolled_loops.f90
-#set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
-#if ( `diff unrolled_loops.f90 $meshdir/unrolled_loops.f90 | wc -l` != "0" ) then
-#  echo 'copying unrolled_loops.f90 from ' $meshdir
-#  cp $meshdir/unrolled_loops.f90 .
-#endif
-
 # if the mesh has different background_models.f90, copy over
 set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
 if ( `diff background_models.f90 $meshdir/background_models.f90 | wc -l` != "0" ) then
