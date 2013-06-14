@@ -2,9 +2,9 @@
 module stiffness
 !====================
 
-  use global_parameters
+  use global_parameters, only: realkind
   use data_matr
-  use data_mesh, ONLY: axis_solid, axis_fluid, nsize, ani_true
+  use data_mesh,         only: axis_solid, axis_fluid, nsize, ani_true
   use data_spec
   use data_source
   
@@ -21,10 +21,10 @@ module stiffness
 
 contains
 
-
 !-----------------------------------------------------------------------------
 function outerprod(a,b) 
   ! outer product (dyadic) from numerical recipes
+  
   real(kind=realkind), dimension(:), intent(in)     :: a, b
   real(kind=realkind), dimension(size(a),size(b))   :: outerprod
 
@@ -35,8 +35,6 @@ end function outerprod
 !-----------------------------------------------------------------------------
 subroutine mxm_cg4_sparse_a(a,b,c)
    ! mxm for sparse a as found for coarse grained memory variables cg4
-
-   include "mesh_params.h" 
 
    real(kind=realkind), intent(in)  :: a(1:4), b(0:4,0:4)
    real(kind=realkind), intent(out) :: c(0:4,0:4)
@@ -62,8 +60,6 @@ end subroutine mxm_cg4_sparse_a
 subroutine mxm_cg4_sparse_b(a,b,c)
    ! mxm for sparse b as found for coarse grained memory variables cg4
 
-   include "mesh_params.h" 
-
    real(kind=realkind), intent(in)  :: a(0:4,0:4), b(1:4)
    real(kind=realkind), intent(out) :: c(0:4,0:4)
    integer i
@@ -87,7 +83,6 @@ end subroutine mxm_cg4_sparse_b
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_mono(glob_stiffness,u)
 
-  use global_parameters
   include "mesh_params.h"
   
   ! I/O global arrays
@@ -406,7 +401,6 @@ end subroutine glob_anel_stiffness_mono_cg4
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_di(glob_stiffness,u)
 
-  use global_parameters
   include "mesh_params.h"
   !use data_dipole
   
@@ -847,7 +841,6 @@ end subroutine glob_anel_stiffness_di_cg4
 !-----------------------------------------------------------------------------
 subroutine glob_stiffness_quad(glob_stiffness,u)
 
-  use global_parameters
   include "mesh_params.h"
   
   ! I/O for global arrays

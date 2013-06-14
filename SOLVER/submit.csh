@@ -47,6 +47,7 @@ endif
 #endif
 
 # if the mesh has different background_models.f90, copy over
+set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
 if ( `diff background_models.f90 $meshdir/background_models.f90 | wc -l` != "0" ) then
   echo 'copying background_models.f90 from ' $meshdir
   cp $meshdir/background_models.f90 .

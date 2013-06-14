@@ -57,8 +57,6 @@ subroutine readin_parameters
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use unrolled_loops, only: npol_unrolled_loops
-
   include 'mesh_params.h'
   character(len=100)  :: junk
   integer             :: i
@@ -322,13 +320,6 @@ subroutine readin_parameters
      endif
   endif
   write(6,*)
-
-  if (npol .ne. npol_unrolled_loops) then
-     write(6,*) 'ERROR: npol in unrolled loops does not match!'
-     write(6,*) '       npol (mesh_params.h) = ', npol
-     write(6,*) '       npol_unrolled_loops  = ', npol_unrolled_loops
-     stop 2
-  endif
 
   endif !mynum
 
