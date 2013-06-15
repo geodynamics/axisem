@@ -560,7 +560,8 @@ enddo
      read(99,*)nrec(isim)
      read(99,*)nt_seis(isim)
      read(99,*)dt_seis(isim)
-     read(99,*)correct_azi(isim)
+     !read(99,*)correct_azi(isim)
+     correct_azi(isim) = .false.
      read(99,*)nt_strain(isim)
      read(99,*)dt_strain(isim)
      read(99,*)nt_snap(isim)
