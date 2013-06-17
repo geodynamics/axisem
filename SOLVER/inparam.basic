@@ -3,12 +3,12 @@
 # Choose simulation type, allowed options:
 # single: Simulation of one basic source. Set sourceparams.dat for the
 #         exact type
-# forces: Vertical force, needs two parallel simulations (and twice the
+# force:  Vertical force, needs two parallel simulations (and twice the
 #         number of CPUs). Set vertforce.dat for the exact source type
 # moment: Full moment tensor, needs four parallel simulations. Set
 #         CMTSOLUTION for the source mechanism.
 
-SIMULATION_TYPE   single
+SIMULATION_TYPE   moment
 
 #### SIMULATION PARAMETERS ####
 # Choose desired seismogram length and sampling rate in seconds
@@ -16,6 +16,16 @@ SIMULATION_TYPE   single
 
 SEISMOGRAM_LENGTH  1800.
 SAMPLING_RATE       1.0
+
+# Receiver file type, allowed options:
+# colatlon: Colatitude and Longitude for each station.
+# stations: SPECFEM-style stations file with latitude, longitude
+#           and station name
+# database: One station at each GLL point, arbitrary station locations 
+#           can be reconstructed from this.
+RECFILE_TYPE      colatlon
+
+
 
 # Choose desired simulation time step
 # set to 0.0 for mesher's suggestion
@@ -26,7 +36,7 @@ TIME_STEP           0.1
 # Choose Mesh (local subdirname in SOLVER/MESHES directory)
 # N.B. The mesh controls the velocity model and the number of CPUs
 
-MESHNAME            AK135_4CPUs
+MESHNAME            PREM_1CPU
 
 # Use lateral heterogeneities (aka 2.5D model).
 # The model has to be described in inparam_hetero
@@ -46,4 +56,7 @@ SNAPSHOT_DT          20.
 # VTK:    Paraview vtk format: Filesize may be huge
 # XDMF:   NetCDF binary with XDMF descriptor. Needs NetCDF version
 
-SNAPSHOT_FORMAT     XDMF
+SNAPSHOT_FORMAT     true
+
+# Use NetCDF for heavy output
+USE_NETCDF          false

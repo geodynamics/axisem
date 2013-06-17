@@ -1,108 +1,61 @@
-!========================
+!> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
+!! compute other parameters for the simulation;
+!! write out summaries of all relevant simulation settings.
 module parameters
-!========================
-!
-! Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
-! compute other parameters for the simulation;
-! write out summaries of all relevant simulation settings.
-!
 
-use global_parameters
-use data_mesh 
-use data_mesh_preloop 
-use data_proc
-use data_time 
-use data_source
-use data_io
-use utlity
-use commun
-
-implicit none
-
-public :: open_local_param_file, readin_parameters
-public :: compute_numerical_parameters, write_parameters
-private
+    use global_parameters
+    use data_mesh 
+    use data_mesh_preloop 
+    use data_proc
+    use data_time 
+    use data_source
+    use data_io
+    use utlity
+    use commun
+    
+    implicit none
+    
+    public :: open_local_param_file, readin_parameters
+    public :: compute_numerical_parameters, write_parameters
+    private
 
 contains
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !-----------------------------------------------------------------------------
 subroutine open_local_param_file
 
-  open(unit=69,file='output_proc'//appmynum//'.dat')
-  write(69,*)
-  write(69,*)'********** This is the OUTPUT for ',procstrg,&
-             '***********************'
-  write(69,*)
-  write(69,*)' CONTAINS all information on the mesh, background model,'
-  write(69,*)' source, receivers, precomputed matrices, and various tests '
-  write(69,*)' such as surface areas, volume, valence, discontinuities,'
-  write(69,*)' resolution test, axial masking, solid-fluid boundary copying,'
-  write(69,*)' Lagrange interpolants, integration weights, message-passing.'
-  write(69,*)
-  write(69,*)'****************************************************************'
-  write(69,*)
+    open(unit=69,file='output_proc'//appmynum//'.dat')
+    write(69,*)
+    write(69,*)'********** This is the OUTPUT for ',procstrg,&
+               '***********************'
+    write(69,*)
+    write(69,*)' CONTAINS all information on the mesh, background model,'
+    write(69,*)' source, receivers, precomputed matrices, and various tests '
+    write(69,*)' such as surface areas, volume, valence, discontinuities,'
+    write(69,*)' resolution test, axial masking, solid-fluid boundary copying,'
+    write(69,*)' Lagrange interpolants, integration weights, message-passing.'
+    write(69,*)
+    write(69,*)'****************************************************************'
+    write(69,*)
 
 end subroutine open_local_param_file
 !=============================================================================
 
 
 !-----------------------------------------------------------------------------
+!> Routine that reads in simulation parameters that are relevant at the 
+!! stage of the solver, i.e. number of time steps, integration scheme, 
+!! data paths, specification of wavefield dumping etc.
 subroutine readin_parameters
-!
-! Routine that reads in simulation parameters that are relevant at the 
-! stage of the solver, i.e. number of time steps, integration scheme, 
-! data paths, specification of wavefield dumping etc.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   include 'mesh_params.h'
   character(len=100)  :: junk
   integer             :: i
 
-  open(5, file='inparam', position='REWIND')
-  read(5,*) junk
-  read(5,*) num_simul
-  read(5,*) junk
+  call read_inparam_basic
+  
+  call read_inparam_advanced
 
-  read(5,*) seislength_t
-  read(5,*) enforced_dt
-  read(5,*) time_scheme
-  read(5,*) junk
-
-  read(5,*) enforced_period
-  read(5,*) src_file_type
-  read(5,*) rec_file_type
-  read(5,*) seis_dt
-  read(5,*) junk
-
-  read(5,10) datapath
-  datapath = trim(datapath)
-  read(5,10) infopath
-  infopath = trim(infopath)
-  read(5,*) dump_snaps_glob
-  read(5,*) dump_xdmf
-  read(5,*) snap_dt
-  read(5,*) junk
-
-  read(5,*) dump_wavefields
-  read(5,*) strain_samp
-  read(5,*) src_dump_type
-  read(5,*) ibeg,iend
-  read(5,*) junk
-
-  read(5,*) dump_energy
-  read(5,*) make_homo
-  read(5,*) vphomo,vshomo,rhohomo
-  read(5,*) srcvic
-  read(5,*) add_hetero
-  read(5,*) do_mesh_tests
-  read(5,*) save_large_tests
-  read(5,*) output_format
-  read(5,*) force_ani
-  read(5,*) do_anel
-  close(5)
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.
   sum_seis = .false.
@@ -110,39 +63,16 @@ subroutine readin_parameters
   rot_rec = 'cyl'
   dump_snaps_solflu = .false.
   dump_type = 'fullfields'
+  num_simul = 1
    
   ! netcdf format
-  use_netcdf = .false.
-  if (output_format=='netcdf') use_netcdf=.true.
+  output_format = 'binary'
+  if (use_netcdf) output_format='netcdf'
   
-#ifndef unc
-  if (use_netcdf) then
-     write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
-     stop 2
-  endif
-#endif
 
-  vphomo = vphomo * 1.e3
-  vshomo = vshomo * 1.e3
-  rhohomo = rhohomo * 1.e3
 
-  iend = npol - iend
+!10 format(a80)
 
-  if (src_dump_type=='anal') then
-     write(6,*) ''
-     write(6,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-     write(6,*) ''
-     write(6,*) 'Analytical source wavefield dump not implemented YET!'
-     write(6,*) ''
-     write(6,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-     write(6,*) ''
-     stop 2
-  endif
-
-10 format(a80)
-
-  lfdata = index(datapath,' ')-1
-  lfinfo = index(infopath,' ')-1
 
   call barrier
   if (lpr) then
@@ -239,7 +169,209 @@ subroutine readin_parameters
   write(6,*)'All potential error messages will appear here...'
   endif !lpr
 
-  ! Checking the consistency of some of the input parameters
+  call check_basic_parameters
+
+! Need to decide here since this boolean is needed in def_precomp_terms
+  need_fluid_displ = .false.
+  if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
+       dump_wavefields .and. dump_type=='fullfields') then
+! Need to add this for each new type of wavefield dumping method that 
+! requires the fluid displacement/velocities
+     need_fluid_displ = .true.
+  endif
+
+! define general small value
+
+  if (realkind==4) then
+      smallval=smallval_sngl
+  elseif (realkind==8) then
+      smallval=smallval_dble
+  endif
+  if (lpr) write(6,*)'  small value is:',smallval
+
+end subroutine readin_parameters
+!=============================================================================
+
+subroutine read_inparam_basic
+    integer             :: iinparam_basic=500, ioerr, nval
+    character(len=256)  :: line
+    character(len=256)  :: keyword, keyvalue
+    character(len=16)   :: simtype
+
+    keyword = ' '
+    keyvalue = ' '
+    print *, 'Reading inparam_basic'
+    open(unit=iinparam_basic, file='inparam.basic', status='old', action='read',  iostat=ioerr)
+    if (ioerr.ne.0) stop 'Check input file ''inparam_basic''! Is it still there?' 
+ 
+    do
+        read(iinparam_basic,fmt='(a256)',iostat=ioerr) line
+        if (ioerr.lt.0) exit
+        if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
+        read(line,*) keyword, keyvalue 
+    
+        parameter_to_read : select case(trim(keyword))
+        
+        case('SIMULATION_TYPE') 
+            read(keyvalue, *) simtype
+            select case(trim(simtype))
+            case('single')
+                src_file_type = 'sourceparams'
+            case('forces')
+                print *, 'FIXME: Forces needs to be checked!'
+                stop 2
+            case('moment')
+                src_file_type = 'cmtsolut'
+            case default
+                if(lpr) then
+                    print *, 'SIMULATION_TYPE in inparam_basic has invalid value ', simtype
+                end if
+                stop 2
+            end select
+
+!        case('SOURCE_TYPE')
+!            read(keyvalue, *) src_file_type
+
+        case('RECFILE_TYPE')
+            rec_file_type = keyvalue
+
+        case('SEISMOGRAM_LENGTH')
+            read(keyvalue, *) seislength_t
+
+        case('SAMPLING_RATE')
+            read(keyvalue, *) enforced_dt
+
+        case('TIME_STEP')
+            read(keyvalue, *) enforced_period
+
+        case('MESHNAME')
+
+
+        case('LAT_HETEROGENEITY')
+            read(keyvalue, *) add_hetero
+
+        case('SNAPSHOTS')
+            read(keyvalue, *) dump_snaps_glob
+
+        case('SNAPSHOT_DT')
+            read(keyvalue, *) snap_dt
+
+        case('SNAPSHOT_FORMAT')
+            read(keyvalue, *) dump_xdmf 
+
+        case('VERBOSITY')
+            read(keyvalue, *) verbose
+
+        case('USE_NETCDF')
+            read(keyvalue, *) use_netcdf
+
+
+        end select parameter_to_read
+
+    end do
+    print *, 'done'
+
+    
+end subroutine
+
+subroutine read_inparam_advanced
+    include 'mesh_params.h'
+
+    integer     :: iinparam_advanced=500, ioerr, nval
+    character(len=256)                   :: line
+    character(len=256) :: keyword, keyvalue
+
+    keyword = ' '
+    keyvalue = ' '
+    print *, 'Reading inparam_advanced'
+    open(unit=iinparam_advanced, file='inparam.advanced', status='old', action='read',  iostat=ioerr)
+    if (ioerr.ne.0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
+ 
+    do
+        read(iinparam_advanced,fmt='(a256)',iostat=ioerr) line
+        if (ioerr.lt.0) exit
+        if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
+        read(line,*) keyword, keyvalue 
+    
+        parameter_to_read : select case(trim(keyword))
+        case('TIME_SCHEME')
+            read(keyvalue,*) time_scheme
+
+        case('DATA_DIR')
+            datapath = keyvalue
+            lfdata = index(datapath,' ')-1
+
+        case('INFO_DIR')
+            infopath = keyvalue
+            lfinfo = index(infopath,' ')-1
+
+        case('MESH_TEST')
+            read(keyvalue,*) do_mesh_tests
+
+        case('KERNEL_WAVEFIELDS')
+            read(keyvalue,*) dump_wavefields
+
+        case('KERNEL_SPP')
+            read(keyvalue,*) strain_samp
+
+        case('KERNEL_SOURCE')
+            read(keyvalue,*) src_dump_type
+
+        case('KERNEL_IBEG')
+            read(keyvalue,*) ibeg
+
+        case('KERNEL_IEND')
+            read(keyvalue,*) iend
+            iend = npol - iend
+
+        case('SAVE_ENERGY')
+            read(keyvalue,*) dump_energy
+
+        case('HOMO_MODEL')
+            read(keyvalue,*) make_homo
+
+        case('HOMO_VP')
+            read(keyvalue,*) vphomo 
+            vphomo = vphomo * 1.e3
+
+        case('HOMO_VS')
+            read(keyvalue,*) vshomo 
+            vshomo = vshomo * 1.e3
+
+        case('HOMO_RHO')
+            read(keyvalue,*) rhohomo 
+            rhohomo = rhohomo * 1.e3
+
+        case('FORCE_ANISO')
+            read(keyvalue,*) force_ani
+
+        end select parameter_to_read
+
+    end do
+end subroutine
+
+!-----------------------------------------------------------------------------
+!> Checking the consistency of some of the input parameters
+subroutine check_basic_parameters
+
+#ifndef unc
+    if (use_netcdf) then
+       write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
+       stop 2
+    endif
+#endif
+
+  if (src_dump_type=='anal') then
+     write(6,*) ''
+     write(6,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+     write(6,*) ''
+     write(6,*) 'Analytical source wavefield dump not implemented YET!'
+     write(6,*) ''
+     write(6,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
+     write(6,*) ''
+     stop 2
+  endif
+
   if ( mod(realkind,4)/=0 .or. realkind>8) then
      if (lpr) then
         write(6,*)
@@ -278,73 +410,54 @@ subroutine readin_parameters
 14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
 
   if (lpr) then
-  if (dump_snaps_glob .and. dump_snaps_solflu) then 
-     write(6,*)''
-     write(6,*)" NOT dumping the same snapshots twice (global AND solid/fluid)"
-     write(6,*)'...hence reverting to dumping global snaps only. Sorry.'
-     dump_snaps_solflu=.false.
-  endif
+      if (dump_snaps_glob .and. dump_snaps_solflu) then 
+         write(6,*)''
+         write(6,*)" NOT dumping the same snapshots twice (global AND solid/fluid)"
+         write(6,*)'...hence reverting to dumping global snaps only. Sorry.'
+         dump_snaps_solflu=.false.
+      endif
 
-  if (srcvic) then 
-     if (.not. make_homo ) then 
-     if (lpr) then
-     write(6,*)
-     write(6,7)'0000000000000000 WARNING ABOUT PERFORMANCE 0000000000000000000'
-     write(6,7)'00                                                          00'
-     write(6,7)'00    Computing analyt. radiation for heterogeneous model?  00'
-     write(6,7)'00         ...kinda silly, therefore turning it off...      00'
-     write(6,7)'00                                                          00'
-     write(6,7)'00000000000000000000000000000000000000000000000000000000000000'
-     endif
-     srcvic=.false.
-     endif
-  endif
+      if (srcvic) then 
+         if (.not. make_homo ) then 
+         if (lpr) then
+         write(6,*)
+         write(6,7)'0000000000000000 WARNING ABOUT PERFORMANCE 0000000000000000000'
+         write(6,7)'00                                                          00'
+         write(6,7)'00    Computing analyt. radiation for heterogeneous model?  00'
+         write(6,7)'00         ...kinda silly, therefore turning it off...      00'
+         write(6,7)'00                                                          00'
+         write(6,7)'00000000000000000000000000000000000000000000000000000000000000'
+         endif
+         srcvic=.false.
+         endif
+      endif
 
-7 format(04x,a62)
+7     format(04x,a62)
 
-  if (realkind==4) then       
-     if (lpr) then
-     write(6,7)
-     write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
-     write(6,7)'444   Running the solver time loop with SINGLE PRECISION   444'
-     write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
-     endif
-  elseif (realkind==8) then       
-     if (lpr) then
-     write(6,7)
-     write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
-     write(6,7)'888   Running the solver time loop with DOUBLE PRECISION   888'
-     write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
-     endif
-  endif
-  write(6,*)
+      if (realkind==4) then       
+         if (lpr) then
+         write(6,7)
+         write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
+         write(6,7)'444   Running the solver time loop with SINGLE PRECISION   444'
+         write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
+         endif
+      elseif (realkind==8) then       
+         if (lpr) then
+         write(6,7)
+         write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
+         write(6,7)'888   Running the solver time loop with DOUBLE PRECISION   888'
+         write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
+         endif
+      endif
+      write(6,*)
 
-  endif !mynum
+  endif !lpr
 
-! Need to decide here since this boolean is needed in def_precomp_terms
-  need_fluid_displ = .false.
-  if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
-       dump_wavefields .and. dump_type=='fullfields') then
-! Need to add this for each new type of wavefield dumping method that 
-! requires the fluid displacement/velocities
-     need_fluid_displ = .true.
-  endif
-
-! define general small value
-
-if (realkind==4) then
-    smallval=smallval_sngl
-elseif (realkind==8) then
-   smallval=smallval_dble
-endif
-if (lpr) write(6,*)'  small value is:',smallval
-
-end subroutine readin_parameters
+end subroutine check_basic_parameters
 !=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine compute_numerical_parameters
-  !use nc_routines, only: nc_write_snaptimesteps
   use attenuation, only: dump_memory_vars
   include "mesh_params.h"
 
@@ -715,447 +828,454 @@ end subroutine compute_numerical_parameters
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Writes out relevant simulation parameters, to simulation.info and the NetCDF
+!! Output file.
 subroutine write_parameters
 
-use data_comm
-use nc_routines
-use data_numbering, ONLY : nglob,nglob_solid
+    use data_comm
+    use nc_routines
+    use data_numbering, ONLY : nglob,nglob_solid
+    
+    include 'mesh_params.h'
 
-include 'mesh_params.h'
+    integer          :: iel,curvel,linel,seminoel,semisoel,num_rec_glob
+    integer          :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
+    integer          :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid
+    integer          :: ipol,jpol,hmaxloc1(3),hminloc1(3),i,j
+    integer          :: maxprocssend_solid,maxprocsrecv_solid 
+    integer          :: maxprocssend_fluid,maxprocsrecv_fluid,nsim1
+    double precision :: dis1(0:npol-1,0:npol-1,nelem),dis2(0:npol-1,0:npol-1,nelem)
+    double precision :: s,z,r,theta,rminglob,thetaminglob,rmaxglob,thetamaxglob
+    double precision :: mysmin,myzmin,mysmax,myzmax
+    double precision :: myrmin,mythetamin,myrmax,mythetamax
+    double precision :: hmax,hmaxglob,hmin,hminglob
+    character(len=4) :: Mij_char(6)
+    character(len=7) :: clogic
 
-integer          :: iel,curvel,linel,seminoel,semisoel,num_rec_glob
-integer          :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
-integer          :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid
-integer          :: ipol,jpol,hmaxloc1(3),hminloc1(3),i,j
-integer          :: maxprocssend_solid,maxprocsrecv_solid 
-integer          :: maxprocssend_fluid,maxprocsrecv_fluid,nsim1
-double precision :: dis1(0:npol-1,0:npol-1,nelem),dis2(0:npol-1,0:npol-1,nelem)
-double precision :: s,z,r,theta,rminglob,thetaminglob,rmaxglob,thetamaxglob
-double precision :: mysmin,myzmin,mysmax,myzmax
-double precision :: myrmin,mythetamin,myrmax,mythetamax
-double precision :: hmax,hmaxglob,hmin,hminglob
-character(len=4) :: Mij_char(6)
-character(len=7) :: clogic
+    write(69,*)'  writing out all relevant simulation parameters...'
 
-  write(69,*)'  writing out all relevant simulation parameters...'
+    write(69,*)'  number of respective element types...'
 
-  write(69,*)'  number of respective element types...'
+    curvel=0; linel=0; seminoel=0; semisoel=0
+    do iel=1,nelem
+       if (eltype(iel)=='curved') curvel=curvel+1
+       if (eltype(iel)=='linear') linel=linel+1
+       if (eltype(iel)=='semino') seminoel=seminoel+1
+       if (eltype(iel)=='semiso') semisoel=semisoel+1
+    enddo
 
-  curvel=0; linel=0; seminoel=0; semisoel=0
-  do iel=1,nelem
-     if (eltype(iel)=='curved') curvel=curvel+1
-     if (eltype(iel)=='linear') linel=linel+1
-     if (eltype(iel)=='semino') seminoel=seminoel+1
-     if (eltype(iel)=='semiso') semisoel=semisoel+1
-  enddo
+    curvel_solid=0; linel_solid=0; seminoel_solid=0; semisoel_solid=0
+    do iel=1,nel_solid
+       if (eltype(ielsolid(iel))=='curved') curvel_solid=curvel_solid+1
+       if (eltype(ielsolid(iel))=='linear') linel_solid=linel_solid+1
+       if (eltype(ielsolid(iel))=='semino') seminoel_solid=seminoel_solid+1
+       if (eltype(ielsolid(iel))=='semiso') semisoel_solid=semisoel_solid+1
+    enddo
 
-  curvel_solid=0; linel_solid=0; seminoel_solid=0; semisoel_solid=0
-  do iel=1,nel_solid
-     if (eltype(ielsolid(iel))=='curved') curvel_solid=curvel_solid+1
-     if (eltype(ielsolid(iel))=='linear') linel_solid=linel_solid+1
-     if (eltype(ielsolid(iel))=='semino') seminoel_solid=seminoel_solid+1
-     if (eltype(ielsolid(iel))=='semiso') semisoel_solid=semisoel_solid+1
-  enddo
+    curvel_fluid=0; linel_fluid=0; seminoel_fluid=0; semisoel_fluid=0
+    do iel=1,nel_fluid
+       if (eltype(ielfluid(iel))=='curved') curvel_fluid=curvel_fluid+1
+       if (eltype(ielfluid(iel))=='linear') linel_fluid=linel_fluid+1
+       if (eltype(ielfluid(iel))=='semino') seminoel_fluid=seminoel_fluid+1
+       if (eltype(ielfluid(iel))=='semiso') semisoel_fluid=semisoel_fluid+1
+    enddo
 
-  curvel_fluid=0; linel_fluid=0; seminoel_fluid=0; semisoel_fluid=0
-  do iel=1,nel_fluid
-     if (eltype(ielfluid(iel))=='curved') curvel_fluid=curvel_fluid+1
-     if (eltype(ielfluid(iel))=='linear') linel_fluid=linel_fluid+1
-     if (eltype(ielfluid(iel))=='semino') seminoel_fluid=seminoel_fluid+1
-     if (eltype(ielfluid(iel))=='semiso') semisoel_fluid=semisoel_fluid+1
-  enddo
+    write(69,*)'  grid spacing min/max...'
+    do iel=1,nelem
+       do ipol=0,npol-1
+          do jpol=0,npol-1
+             dis1(ipol,jpol,iel) = dsqrt(&
+                  (scoord(ipol,jpol,iel)-scoord(ipol+1,jpol,iel))**2&
+                  +(zcoord(ipol,jpol,iel)-zcoord(ipol+1,jpol,iel))**2) 
+             dis2(ipol,jpol,iel) = dsqrt(&
+                  (scoord(ipol,jpol,iel)-scoord(ipol,jpol+1,iel))**2&
+                  +(zcoord(ipol,jpol,iel)-zcoord(ipol,jpol+1,iel))**2) 
+          enddo
+       enddo
+    enddo
 
-  write(69,*)'  grid spacing min/max...'
-  do iel=1,nelem
-     do ipol=0,npol-1
-        do jpol=0,npol-1
-           dis1(ipol,jpol,iel) = dsqrt(&
-                (scoord(ipol,jpol,iel)-scoord(ipol+1,jpol,iel))**2&
-                +(zcoord(ipol,jpol,iel)-zcoord(ipol+1,jpol,iel))**2) 
-           dis2(ipol,jpol,iel) = dsqrt(&
-                (scoord(ipol,jpol,iel)-scoord(ipol,jpol+1,iel))**2&
-                +(zcoord(ipol,jpol,iel)-zcoord(ipol,jpol+1,iel))**2) 
-        enddo
-     enddo
-  enddo
+    write(69,*)'  calculating hmax...'
+    hmax=max(maxval(dis1),maxval(dis2))
+    write(69,*)'  hmaxstuff:',minval(dis1),minval(dis2),hmax
+    hmaxglob=pmax(hmax)
+    write(69,*)'  hmaxglob:',hmaxglob
+    hmaxloc1=maxloc(dis1)
+    if (maxval(dis2)<maxval(dis1)) hmaxloc1=maxloc(dis2)
+    call compute_coordinates(s,z,rmaxglob,thetamaxglob,hmaxloc1(3), &
+         hmaxloc1(1)-1,hmaxloc1(2)-1)
+    write(69,*)' rmax,thetamax:',rmaxglob,thetamaxglob
 
-  write(69,*)'  calculating hmax...'
-  hmax=max(maxval(dis1),maxval(dis2))
-  write(69,*)'  hmaxstuff:',minval(dis1),minval(dis2),hmax
-  hmaxglob=pmax(hmax)
-  write(69,*)'  hmaxglob:',hmaxglob
-  hmaxloc1=maxloc(dis1)
-  if (maxval(dis2)<maxval(dis1)) hmaxloc1=maxloc(dis2)
-  call compute_coordinates(s,z,rmaxglob,thetamaxglob,hmaxloc1(3), &
-       hmaxloc1(1)-1,hmaxloc1(2)-1)
-  write(69,*)' rmax,thetamax:',rmaxglob,thetamaxglob
+    write(69,*)'  calculating hmin...'
+    hmin=min(minval(dis1),minval(dis2))
+    write(69,*)'  hminstuff:',minval(dis1),minval(dis2),hmin
+    hminglob=pmin(hmin)
+    write(69,*)'  hminglob:',hminglob
 
-  write(69,*)'  calculating hmin...'
-  hmin=min(minval(dis1),minval(dis2))
-  write(69,*)'  hminstuff:',minval(dis1),minval(dis2),hmin
-  hminglob=pmin(hmin)
-  write(69,*)'  hminglob:',hminglob
-
-  hminloc1=minloc(dis1)
-  if (minval(dis2)<minval(dis1)) hminloc1=minloc(dis2)
-  call compute_coordinates(s,z,rminglob,thetaminglob,hminloc1(3), &
-          hminloc1(1)-1,hminloc1(2)-1)
+    hminloc1=minloc(dis1)
+    if (minval(dis2)<minval(dis1)) hminloc1=minloc(dis2)
+    call compute_coordinates(s,z,rminglob,thetaminglob,hminloc1(3), &
+            hminloc1(1)-1,hminloc1(2)-1)
 
 ! Checking potential issues with input parameter consistency
-  if (lpr) write(6,*)
-  if (lpr) write(6,*)'  checking input parameters for consistency...'
-  call check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
-                       curvel_solid,linel_solid,seminoel_solid,semisoel_solid,&
-                       curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid)
+    if (lpr) write(6,*)
+    if (lpr) write(6,*)'  checking input parameters for consistency...'
+    call check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
+                         curvel_solid,linel_solid,seminoel_solid,semisoel_solid,&
+                         curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid)
 
-  maxprocssend_solid = pmax_int(sizesend_solid)
-  maxprocsrecv_solid = pmax_int(sizerecv_solid)
-  maxprocssend_fluid = pmax_int(sizesend_fluid)
-  maxprocsrecv_fluid = pmax_int(sizerecv_fluid)
+    maxprocssend_solid = pmax_int(sizesend_solid)
+    maxprocsrecv_solid = pmax_int(sizerecv_solid)
+    maxprocssend_fluid = pmax_int(sizesend_fluid)
+    maxprocsrecv_fluid = pmax_int(sizerecv_fluid)
 
 
 ! output to stdout, only by proc nproc-1
-  if (lpr) then
+    if (lpr) then
 
-     write(6,*)
-     write(6,*)':::::::::::::::: SIMULATION PARAMETERS::::::::::::::::::::::::'
+        write(6,*)
+        write(6,*)':::::::::::::::: SIMULATION PARAMETERS::::::::::::::::::::::::'
 
-     write(6,*)'  Global mesh information______________________________'
-     write(6,12)'     Background model  :',bkgrdmodel
-     write(6,10)'     # discontinuities :',ndisc
-     write(6,13)'     Have fluid region ?',have_fluid
-     write(6,13)'     IC shear wave     ?',resolve_inner_shear
-     write(6,11)'     Outer rad.     [m]:',router
-     write(6,11)'     Inner rad.     [m]:',rmin
-     write(6,10)'     Polynomial order  :',npol
-     write(6,10)'     # control nodes   :',npoin
-     write(6,10)'     Total elements    :',nelem    
-     write(6,10)'     Total # points    :',npoint
-     write(6,10)'     # global numbers  :',nglob
-     write(6,10)'     # axial elements  :',naxel
-     write(6,10)'     # curved elements :',curvel
-     write(6,10)'     # linear elements :',linel
-     write(6,10)'     # mixed elements  :',seminoel+semisoel
-     write(6,11)'     Min. distance  [m]:',min_distance_dim
-     write(6,11)'     Min. distance/r0  :',min_distance_nondim
+        write(6,*)'  Global mesh information______________________________'
+        write(6,12)'     Background model  :',bkgrdmodel
+        write(6,10)'     # discontinuities :',ndisc
+        write(6,13)'     Have fluid region ?',have_fluid
+        write(6,13)'     IC shear wave     ?',resolve_inner_shear
+        write(6,11)'     Outer rad.     [m]:',router
+        write(6,11)'     Inner rad.     [m]:',rmin
+        write(6,10)'     Polynomial order  :',npol
+        write(6,10)'     # control nodes   :',npoin
+        write(6,10)'     Total elements    :',nelem    
+        write(6,10)'     Total # points    :',npoint
+        write(6,10)'     # global numbers  :',nglob
+        write(6,10)'     # axial elements  :',naxel
+        write(6,10)'     # curved elements :',curvel
+        write(6,10)'     # linear elements :',linel
+        write(6,10)'     # mixed elements  :',seminoel+semisoel
+        write(6,11)'     Min. distance  [m]:',min_distance_dim
+        write(6,11)'     Min. distance/r0  :',min_distance_nondim
 
-     write(6,*)'  Grid spacing, velocities etc.________________________'
-     write(6,17)'     Min. (pre,comp)[m]:',hmin_glob,hminglob
-     write(6,17)'     Max. (pre,comp)[m]:',hmax_glob,hmaxglob
-     write(6,17)'     Min. vp[m/s], r[m]:',vpmin,vpminr
-     write(6,17)'     Min. vs[m/s], r[m]:',vsmin,vsminr
-     write(6,17)'     Max. vp[m/s], r[m]:',vpmax,vpmaxr
-     write(6,17)'     Max. vs[m/s], r[m]:',vsmax,vsmaxr
-     write(6,11)'     Max. lead time [s]:',char_time_max
-     write(6,17)'     r [m], theta [deg]:',char_time_max_rad*router,& 
-                                           char_time_max_theta
-     write(6,11)'     Min. lead time [s]:',char_time_min
-     write(6,17)'     r [m], theta [deg]:',char_time_min_rad*router,& 
-                                           char_time_min_theta
+        write(6,*)'  Grid spacing, velocities etc.________________________'
+        write(6,17)'     Min. (pre,comp)[m]:',hmin_glob,hminglob
+        write(6,17)'     Max. (pre,comp)[m]:',hmax_glob,hmaxglob
+        write(6,17)'     Min. vp[m/s], r[m]:',vpmin,vpminr
+        write(6,17)'     Min. vs[m/s], r[m]:',vsmin,vsminr
+        write(6,17)'     Max. vp[m/s], r[m]:',vpmax,vpmaxr
+        write(6,17)'     Max. vs[m/s], r[m]:',vsmax,vsmaxr
+        write(6,11)'     Max. lead time [s]:',char_time_max
+        write(6,17)'     r [m], theta [deg]:',char_time_max_rad*router,& 
+                                              char_time_max_theta
+        write(6,11)'     Min. lead time [s]:',char_time_min
+        write(6,17)'     r [m], theta [deg]:',char_time_min_rad*router,& 
+                                              char_time_min_theta
 
-     write(6,*)'  Solid-Fluid configuration____________________________'
-     write(6,15)'     S/F elements      :',nel_solid,nel_fluid  
-     write(6,15)'     S/F # points      :',npoint_solid,npoint_fluid
-     write(6,15)'     S/F global numbers:',nglob_solid,nglob_fluid
-     write(6,15)'     S/F # axial elems :',naxel_solid,naxel_fluid
-     write(6,10)'     # S/F boundary els:',nel_bdry
-     write(6,15)'     S/F curved elems  :',curvel_solid,curvel_fluid
-     write(6,15)'     S/F linear elems  :',linel_solid,linel_fluid
-     write(6,15)'     S/F mixed elements:',seminoel_solid+semisoel_solid, &
-                                           seminoel_fluid+semisoel_fluid
+        write(6,*)'  Solid-Fluid configuration____________________________'
+        write(6,15)'     S/F elements      :',nel_solid,nel_fluid  
+        write(6,15)'     S/F # points      :',npoint_solid,npoint_fluid
+        write(6,15)'     S/F global numbers:',nglob_solid,nglob_fluid
+        write(6,15)'     S/F # axial elems :',naxel_solid,naxel_fluid
+        write(6,10)'     # S/F boundary els:',nel_bdry
+        write(6,15)'     S/F curved elems  :',curvel_solid,curvel_fluid
+        write(6,15)'     S/F linear elems  :',linel_solid,linel_fluid
+        write(6,15)'     S/F mixed elements:',seminoel_solid+semisoel_solid, &
+                                              seminoel_fluid+semisoel_fluid
 
-     write(6,*)'  Solid message passing_________________________________' 
-     write(6,10)'     # processors      :',nproc
-     write(6,10)'     max. sent messages:',maxprocssend_solid
-     write(6,10)'     max. sent size    :',sizemsgsendmax_solid
-     write(6,10)'     nax. recv messages:',maxprocsrecv_solid
-     write(6,10)'     max. recv size    :',sizemsgrecvmax_solid
+        write(6,*)'  Solid message passing_________________________________' 
+        write(6,10)'     # processors      :',nproc
+        write(6,10)'     max. sent messages:',maxprocssend_solid
+        write(6,10)'     max. sent size    :',sizemsgsendmax_solid
+        write(6,10)'     nax. recv messages:',maxprocsrecv_solid
+        write(6,10)'     max. recv size    :',sizemsgrecvmax_solid
 
-     if (have_fluid) then
-        write(6,*)'  Fluid message passing_________________________________' 
-        write(6,10)'     max. sent messages:',maxprocssend_fluid
-        write(6,10)'     max. sent size    :',sizemsgsendmax_fluid
-        write(6,10)'     nax. recv messages:',maxprocsrecv_fluid
-        write(6,10)'     max. recv size    :',sizemsgrecvmax_fluid
-     endif
+        if (have_fluid) then
+            write(6,*)'  Fluid message passing_________________________________' 
+            write(6,10)'     max. sent messages:',maxprocssend_fluid
+            write(6,10)'     max. sent size    :',sizemsgsendmax_fluid
+            write(6,10)'     nax. recv messages:',maxprocsrecv_fluid
+            write(6,10)'     max. recv size    :',sizemsgrecvmax_fluid
+        endif
 
-     write(6,*)'  Source information___________________________________'
-     write(6,16)'     Source type       :',src_type(1),src_type(2)
-     write(6,11)'     Source depth   [m]:',zsrc
-     write(6,11)'     Source colat [deg]:',srccolat*180./pi
-     write(6,11)'     Source long  [deg]:',srclon*180./pi
-     write(6,11)'     Magnitude    [N/m]:',magnitude
-     write(6,12)'     Source time fct   :',trim(stf_type)
-     write(6,11)'     Dom. period    [s]:',t_0
-     write(6,*)'  Receiver information___________________________________'
-     write(6,12)'     Receiver file type',rec_file_type
-     write(6,19)'     Sum seismograms  :',sum_seis
-     write(6,12)'     Components in:',rot_rec
-     write(6,*)'  General numerical parameters_________________________'
-     write(6,11)'     # elems/wavelength:',pts_wavelngth
-     write(6,11)'     Courant number    :',courant
-     write(6,11)'     Time step [s]     :',deltat
-     write(6,10)'     # iterations      :',niter
-     write(6,11)'     seismo length [s] :',niter*deltat
-     write(6,12)'     time extrapolation:',time_scheme
-     write(6,*)'  Input/Output information_____________________________'
-     write(6,12)'     Output data path  :',trim(datapath)
-     write(6,12)'     Output info path  :',trim(infopath)
-     write(6,19)'     Save big testfiles:',save_large_tests
-     write(6,19)'     Sum wavefields:', sum_fields
-     write(6,19)'     Dump energy       :',dump_energy
-     write(6,18)'     Glob/solflu snaps :',dump_snaps_glob,dump_snaps_solflu
-     write(6,18)'     XDMF VTK          :', dump_xdmf
-     if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
-        write(6,11)'     snap interval [s] :',snap_dt
-        write(6,10)'     # snaps           :',snap_it
-     endif
-     write(6,19)'     Dump wavefields   :',dump_wavefields
-     if (dump_wavefields) then 
-        write(6,12)'     Dumping type      :',dump_type
-        write(6,11)'     dump interval [s] :',period/real(strain_samp)
-        write(6,10)'     # wavefield dumps :',strain_it
-     endif
-     write(6,19)'     Need fluid displ. :',need_fluid_displ
-     write(6,*)
-     write(6,*)':::::::::::::::: END SIMULATION PARAMETERS::::::::::::::::::::'
-     write(6,*)
-     call flush(6)
+        write(6,*)'  Source information___________________________________'
+        write(6,16)'     Source type       :',src_type(1),src_type(2)
+        write(6,11)'     Source depth   [m]:',zsrc
+        write(6,11)'     Source colat [deg]:',srccolat*180./pi
+        write(6,11)'     Source long  [deg]:',srclon*180./pi
+        write(6,11)'     Magnitude    [N/m]:',magnitude
+        write(6,12)'     Source time fct   :',trim(stf_type)
+        write(6,11)'     Dom. period    [s]:',t_0
+        write(6,*)'  Receiver information___________________________________'
+        write(6,12)'     Receiver file type',rec_file_type
+        write(6,19)'     Sum seismograms  :',sum_seis
+        write(6,12)'     Components in:',rot_rec
+        write(6,*)'  General numerical parameters_________________________'
+        write(6,11)'     # elems/wavelength:',pts_wavelngth
+        write(6,11)'     Courant number    :',courant
+        write(6,11)'     Time step [s]     :',deltat
+        write(6,10)'     # iterations      :',niter
+        write(6,11)'     seismo length [s] :',niter*deltat
+        write(6,12)'     time extrapolation:',time_scheme
+        write(6,*)'  Input/Output information_____________________________'
+        write(6,12)'     Output data path  :',trim(datapath)
+        write(6,12)'     Output info path  :',trim(infopath)
+        write(6,19)'     Save big testfiles:',save_large_tests
+        write(6,19)'     Sum wavefields:', sum_fields
+        write(6,19)'     Dump energy       :',dump_energy
+        write(6,18)'     Glob/solflu snaps :',dump_snaps_glob,dump_snaps_solflu
+        write(6,18)'     XDMF VTK          :', dump_xdmf
+        if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
+            write(6,11)'     snap interval [s] :',snap_dt
+            write(6,10)'     # snaps           :',snap_it
+        endif
+        write(6,19)'     Dump wavefields   :',dump_wavefields
+        if (dump_wavefields) then 
+            write(6,12)'     Dumping type      :',dump_type
+            write(6,11)'     dump interval [s] :',period/real(strain_samp)
+            write(6,10)'     # wavefield dumps :',strain_it
+        endif
+        write(6,19)'     Need fluid displ. :',need_fluid_displ
+        write(6,*)
+        write(6,*)':::::::::::::::: END SIMULATION PARAMETERS::::::::::::::::::::'
+        write(6,*)
+        call flush(6)
 
 ! additionally write a header for the kernel software
-     if (dump_wavefields) call create_kernel_header
+        if (dump_wavefields) call create_kernel_header
 
 
 
 ! write generic simulation info file
-     open(unit=55,file='simulation.info')
-     write(55,23)trim(bkgrdmodel),'background model'
-     write(55,21)deltat,'time step [s]'
-     write(55,22)niter,'number of time steps'
-     write(55,23)trim(src_type(1)),'source type'
-     write(55,23)trim(src_type(2)),'source type'
-     write(55,23)trim(stf_type),'source time function'
-     write(55,23)trim(src_file_type),'source file type'
-     write(55,21)period,'dominant source period'
-     write(55,21)src_depth/1000.,'source depth [km]'
-     write(55,25)magnitude,'scalar source magnitude'
-     write(55,22)num_rec_tot,'number of receivers'
-     write(55,22)nseismo,'length of seismogram [time samples]'
-     write(55,21)real(deltat)*real(seis_it),'seismogram sampling [s]'
-     if (dump_wavefields) then
-        write(55,22) nstrain,'number of strain dumps'
-        write(55,21)real(period)/real(strain_samp),'strain dump sampling rate [s]'
-     else
-        write(55,22)0,'number of strain dumps'       
-        write(55,21)0.,'strain dump sampling rate [s]' 
-     endif
-   if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
-      write(55,22) nsnap,'number of snapshot dumps'
-      write(55,21)deltat*real(snap_it),'snapshot dump sampling rate [s]'      
-   else
-      write(55,22)0,'number of snapshot dumps'
-      write(55,21)0.,'snapshot dump sampling rate [s]'      
-   endif
-   write(55,23)rot_rec,'receiver components '
-   write(55,22)ibeg,'  ibeg: beginning gll index for wavefield dumps'
-   write(55,22)iend,'iend: end gll index for wavefield dumps'
-   write(55,21)shift_fact,'source shift factor [s]'
-   write(55,22)int(shift_fact/deltat),'source shift factor for deltat'
-   write(55,22)int(shift_fact/seis_dt),'source shift factor for seis_dt'
-   write(55,22)int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
-   write(55,23)trim(rec_file_type),'receiver file type'
-   write(55,21)dtheta_rec,'receiver spacing (0 if not even)'
-   write(55,24)use_netcdf,'use netcdf for wavefield output?'
-   close(55)
+        open(unit=55,file='simulation.info')
+        write(55,23)trim(bkgrdmodel),'background model'
+        write(55,21)deltat,'time step [s]'
+        write(55,22)niter,'number of time steps'
+        write(55,23)trim(src_type(1)),'source type'
+        write(55,23)trim(src_type(2)),'source type'
+        write(55,23)trim(stf_type),'source time function'
+        write(55,23)trim(src_file_type),'source file type'
+        write(55,21)period,'dominant source period'
+        write(55,21)src_depth/1000.,'source depth [km]'
+        write(55,25)magnitude,'scalar source magnitude'
+        write(55,22)num_rec_tot,'number of receivers'
+        write(55,22)nseismo,'length of seismogram [time samples]'
+        write(55,21)real(deltat)*real(seis_it),'seismogram sampling [s]'
+        if (dump_wavefields) then
+            write(55,22) nstrain,'number of strain dumps'
+            write(55,21) real(period)/real(strain_samp),'strain dump sampling rate [s]'
+        else
+            write(55,22)0,'number of strain dumps'       
+            write(55,21)0.,'strain dump sampling rate [s]' 
+        endif
+        if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
+            write(55,22) nsnap,'number of snapshot dumps'
+            write(55,21)deltat*real(snap_it),'snapshot dump sampling rate [s]'      
+        else
+            write(55,22)0,'number of snapshot dumps'
+            write(55,21)0.,'snapshot dump sampling rate [s]'      
+        endif
+        write(55,23)rot_rec,'receiver components '
+        write(55,22)ibeg,'  ibeg: beginning gll index for wavefield dumps'
+        write(55,22)iend,'iend: end gll index for wavefield dumps'
+        write(55,21)shift_fact,'source shift factor [s]'
+        write(55,22)int(shift_fact/deltat),'source shift factor for deltat'
+        write(55,22)int(shift_fact/seis_dt),'source shift factor for seis_dt'
+        write(55,22)int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
+        write(55,23)trim(rec_file_type),'receiver file type'
+        write(55,21)dtheta_rec,'receiver spacing (0 if not even)'
+        write(55,24)use_netcdf,'use netcdf for wavefield output?'
+        close(55) ! simulation.info
 
-     write(6,*)
-     write(6,*)'  wrote general simulation info into "simulation.info"'
+        write(6,*)
+        write(6,*)'  wrote general simulation info into "simulation.info"'
 
-21 format(f22.7,a45)
-22 format(i20,a45)
-23 format(a20,a45)
-24 format(l20,a45)
-25 format(1pe15.5,a45)
+21      format(f22.7,a45)
+22      format(i20,a45)
+23      format(a20,a45)
+24      format(l20,a45)
+25      format(1pe15.5,a45)
 
-  endif ! lpr
+    endif ! lpr
 
-  if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
+    if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
 ! write generic simulation info file
-    write(6,*) ' Writing simulation info to netcdf file attributes' 
-    call nc_write_att_char(trim(bkgrdmodel),'background_model')
-    call nc_write_att_real(real(deltat),'time step in sec')
-    call nc_write_att_int(niter,'number of time steps')
-    call nc_write_att_char(trim(src_type(1)),'excitation type')
-    call nc_write_att_char(trim(src_type(2)),'source type')
-    call nc_write_att_char(trim(stf_type),'source time function')
-    call nc_write_att_char(trim(src_file_type),'source file type')
-    call nc_write_att_real(real(period),'dominant source period')
-    call nc_write_att_real(real(src_depth/1000.),'source depth in km')
-    call nc_write_att_real(real(magnitude),'scalar source magnitude')
-    call nc_write_att_int(num_rec_tot,'number of receivers')
-    call nc_write_att_int(nseismo,'length of seismogram  in time samples')
-    call nc_write_att_real(real(deltat)*real(seis_it),'seismogram sampling in sec')
-    if (dump_wavefields) then
-       call nc_write_att_int(nstrain,'number of strain dumps')
-       call nc_write_att_real(real(period)/real(strain_samp),'strain dump sampling rate in sec')
-    else
-       call nc_write_att_int(0,'number of strain dumps')       
-       call nc_write_att_real(0.,'strain dump sampling rate in sec' )
-    endif
-    if (dump_snaps_glob .or. dump_snaps_solflu) then
-       call nc_write_att_int(nsnap,'number of snapshot dumps')
-       call nc_write_att_real(real(deltat)*real(snap_it),'snapshot dump sampling rate in sec')      
-    else
-       call nc_write_att_int(0,'number of snapshot dumps')
-       call nc_write_att_real(0.,'snapshot dump sampling rate in sec')
-    endif
-    call nc_write_att_char(rot_rec,'receiver components ')
-    call nc_write_att_int(ibeg,'ibeg')
-    call nc_write_att_int(iend,'iend')
-    call nc_write_att_real(shift_fact,'source shift factor in sec')
-    call nc_write_att_int(int(shift_fact/deltat),'source shift factor for deltat')
-    call nc_write_att_int(int(shift_fact/seis_dt),'source shift factor for seis_dt')
-    call nc_write_att_int(int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse')
-    call nc_write_att_char(trim(rec_file_type),'receiver file type')
-    call nc_write_att_real(dtheta_rec,'receiver spacing (0 if not even)')
-    write(clogic,*) use_netcdf
-    call nc_write_att_char(clogic,'use netcdf for wavefield output?')
-  end if
+        write(6,*) ' Writing simulation info to netcdf file attributes' 
+        call nc_write_att_char(trim(bkgrdmodel),'background model')
+        call nc_write_att_real(real(deltat),'time step in sec')
+        call nc_write_att_int(niter,'number of time steps')
+        call nc_write_att_char(trim(src_type(1)),'excitation type')
+        call nc_write_att_char(trim(src_type(2)),'source type')
+        call nc_write_att_char(trim(stf_type),'source time function')
+        call nc_write_att_char(trim(src_file_type),'source file type')
+        call nc_write_att_real(real(period),'dominant source period')
+        call nc_write_att_real(real(src_depth/1000.),'source depth in km')
+        call nc_write_att_real(real(magnitude),'scalar source magnitude')
+        call nc_write_att_int(num_rec_tot,'number of receivers')
+        call nc_write_att_int(nseismo,'length of seismogram  in time samples')
+        call nc_write_att_real(real(deltat)*real(seis_it),'seismogram sampling in sec')
+        if (dump_wavefields) then
+           call nc_write_att_int(nstrain,'number of strain dumps')
+           call nc_write_att_real(real(period)/real(strain_samp),'strain dump sampling rate in sec')
+        else
+           call nc_write_att_int(0,'number of strain dumps')       
+           call nc_write_att_real(0.,'strain dump sampling rate in sec' )
+        endif
+        if (dump_snaps_glob .or. dump_snaps_solflu) then
+           call nc_write_att_int(nsnap,'number of snapshot dumps')
+           call nc_write_att_real(real(deltat)*real(snap_it),'snapshot dump sampling rate in sec')      
+        else
+           call nc_write_att_int(0,'number of snapshot dumps')
+           call nc_write_att_real(0.,'snapshot dump sampling rate in sec')
+        endif
+        call nc_write_att_char(rot_rec,'receiver components ')
+        call nc_write_att_int(ibeg,'ibeg')
+        call nc_write_att_int(iend,'iend')
+        call nc_write_att_real(shift_fact,'source shift factor in sec')
+        call nc_write_att_int(int(shift_fact/deltat),'source shift factor for deltat')
+        call nc_write_att_int(int(shift_fact/seis_dt),'source shift factor for seis_dt')
+        call nc_write_att_int(int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse')
+        call nc_write_att_char(trim(rec_file_type),'receiver file type')
+        call nc_write_att_real(dtheta_rec,'receiver spacing (0 if not even)')
+        write(clogic,*) use_netcdf
+        call nc_write_att_char(clogic,'use netcdf for wavefield output?')
+    end if
 
 
 ! output for each processor==============================================
 
 ! extract processor location
-  mysmin=router; myzmin=router; mysmax=zero; myzmax=zero
-  myrmin=router; mythetamin=10.*pi; myrmax=zero; mythetamax=zero
-  do iel=1,nelem
-     do ipol=0,npol
-        do jpol=0,npol
-           call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
-           if (s<mysmin) mysmin=s; if (z<myzmin) myzmin=z
-           if (r<myrmin) myrmin=r; if (theta<mythetamin) mythetamin=theta
-           if (s>mysmax) mysmax=s; if (z>myzmax) myzmax=z
-           if (r>myrmax) myrmax=r; if (theta>mythetamax) mythetamax=theta
+    mysmin=router; myzmin=router; mysmax=zero; myzmax=zero
+    myrmin=router; mythetamin=10.*pi; myrmax=zero; mythetamax=zero
+    do iel=1,nelem
+        do ipol=0,npol
+            do jpol=0,npol
+                call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
+                if (s<mysmin) mysmin=s
+                if (s>mysmax) mysmax=s
+                if (r<myrmin) myrmin=r
+                if (z<myzmin) myzmin=z
+                if (z>myzmax) myzmax=z
+                if (r>myrmax) myrmax=r
+                if (theta<mythetamin) mythetamin=theta
+                if (theta>mythetamax) mythetamax=theta
+            enddo
         enddo
-     enddo
-  enddo
+    enddo
+  
+    write(69,*)
+    write(69,15)'My rank, total procs    :', mynum,nproc
+    write(69,17)'Min./max. s [m]         :', mysmin,mysmax
+    write(69,17)'Min./max. z [m]         :', myzmin,myzmax
+    write(69,17)'Min./max. r [m]         :', myrmin,myrmax
+    write(69,17)'Min./max. theta [deg]   :', mythetamin*180./pi, mythetamax*180./pi
+  
+    write(69,10)'Axial total elems       :', naxel
+    write(69,10)'Axial solid elems       :', naxel_solid
+    write(69,10)'Axial fluid elems       :', naxel_fluid
+  
+    write(69,13)'Have source             ?', have_src
+    if (have_src) then
+        write(69,11)'Depth asked for      [m]:', src_depth
+        write(69,11)'Computed depth       [m]:', router - &
+                                      zcoord(ipol_src,jpol_src,ielsolid(iel_src))
+    endif
+    write(69,13)'Have boundary els       ?', have_bdry_elem
+    if (have_bdry_elem) then
+        write(69,10)'# boundary elements     :', nel_bdry
+    end if
 
-  write(69,*)
-  write(69,15)'My rank, total procs    :', mynum,nproc
-  write(69,17)'Min./max. s [m]         :', mysmin,mysmax
-  write(69,17)'Min./max. z [m]         :', myzmin,myzmax
-  write(69,17)'Min./max. r [m]         :', myrmin,myrmax
-  write(69,17)'Min./max. theta [deg]   :', mythetamin*180./pi, mythetamax*180./pi
+    write(69,*)
+    write(69,*)'Solid message passing_____________________________'
+    write(69,10)' # recv messages        :', sizerecv_solid
+    write(69,10)' Max. size recv messages:', sizemsgrecvmax_solid
+    write(69,10)' # sent messages        :', sizesend_solid
+    write(69,10)' Max. size sent messages:', sizemsgsendmax_solid
+  
+    if (have_fluid) then
+        write(69,*)'Fluid message passing_____________________________'
+        write(69,10)' # recv messages        :', sizerecv_fluid
+        write(69,10)' Max. size recv messages:', sizemsgrecvmax_fluid
+        write(69,10)' # sent messages        :', sizesend_fluid
+        write(69,10)' Max. size sent messages:', sizemsgsendmax_fluid
+    endif !have_fluid
 
-  write(69,10)'Axial total elems       :', naxel
-  write(69,10)'Axial solid elems       :', naxel_solid
-  write(69,10)'Axial fluid elems       :', naxel_fluid
+   call flush(69)
 
-  write(69,13)'Have source             ?', have_src
-  if (have_src) then
-     write(69,11)'Depth asked for      [m]:', src_depth
-     write(69,11)'Computed depth       [m]:', router - &
-                                    zcoord(ipol_src,jpol_src,ielsolid(iel_src))
-  endif
-  write(69,13)'Have boundary els       ?', have_bdry_elem
-  if (have_bdry_elem) &
-     write(69,10)'# boundary elements     :', nel_bdry
-
-  write(69,*)
-  write(69,*)'Solid message passing_____________________________'
-  write(69,10)' # recv messages        :', sizerecv_solid
-  write(69,10)' Max. size recv messages:', sizemsgrecvmax_solid
-  write(69,10)' # sent messages        :', sizesend_solid
-  write(69,10)' Max. size sent messages:', sizemsgsendmax_solid
-
-  if (have_fluid) then
-     write(69,*)'Fluid message passing_____________________________'
-     write(69,10)' # recv messages        :', sizerecv_fluid
-     write(69,10)' Max. size recv messages:', sizemsgrecvmax_fluid
-     write(69,10)' # sent messages        :', sizesend_fluid
-     write(69,10)' Max. size sent messages:', sizemsgsendmax_fluid
-  endif !have_fluid
-
-  call flush(69)
-
-10 format(a25,i14)
-11 format(a25,1pe14.5)
-12 format(a25,'   ',a18)
-13 format(a25,L14)
-15 format(a25,i14,i9)
-16 format(a25,' ',a12,a10)
-17 format(a25,2(1pe13.3))
-18 format(a25,2(L14))
-19 format(a25,L14)
+10  format(a25,i14)
+11  format(a25,1pe14.5)
+12  format(a25,'   ',a18)
+13  format(a25,L14)
+15  format(a25,i14,i9)
+16  format(a25,' ',a12,a10)
+17  format(a25,2(1pe13.3))
+18  format(a25,2(L14))
+19  format(a25,L14)
 
 ! write post processing file==============================================
 
 if (lpr) then
-   write(6,*)'  Writing post processing input file: param_post_processing'
-   write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
+    write(6,*)'  Writing post processing input file: param_post_processing'
+    write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
 
-   open(unit=8,file='param_sum_seis') 
-   read(8,*)nsim1
-   close(8)
+    open(unit=8,file='param_sum_seis') 
+    read(8,*)nsim1
+    close(8)
 
-   open(unit=9,file="param_post_processing")
-   if (rot_rec/='cyl') then
-      write(9,222)'.false.','rotate receivers?'
-      write(9,222)"'"//trim(rot_rec)//"'",'receiver components: enz,sph,cyl,xyz,src'
-   else
-      write(9,222)'.true.','rotate receivers?'
-      write(9,222)"'enz'",'receiver components: enz,sph,cyl,xyz,src'
-   endif
-   if (trim(src_file_type)=='cmtsolut' .and. nsim1>1) then
-      write(9,222)'.true.','sum to full Mij'
-   elseif (nsim1>1) then 
-      write(9,222)'.true.','sum to full Mij'
-   else 
-      write(9,222)'.true.','sum to full Mij'
-   endif
-   Mij_char = ['Mrr','Mtt','Mpp','Mrt','Mrp','Mtp']
-   do i=1,6
-      write(9,223)Mij(i),Mij_char(i)
-   enddo
-   
-   if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
-      write(9,223)period,'convolve period ( 0. if not to be convolved)'
-   else
-      write(9,223)0.0,'convolve period (0. if not convolved)'
-   endif
-   write(9,222)"'gauss_0'",'source time function type for convolution'
-   write(9,223)srccolat,'Source colatitude'
-   write(9,223)srclon,'Source longitude'
-   write(9,221)dump_snaps_glob,'plot global snaps?'
-   write(9,224)'disp','disp or velo seismograms'
-   write(9,224)"'Data_Postprocessing'",'Directory for post processed data'
-   write(9,221).true.,'seismograms at negative time (0 at max. of stf)'
-   close(9)
+    open(unit=9,file="param_post_processing")
+    if (rot_rec/='cyl') then
+        write(9,222)'.false.','rotate receivers?'
+        write(9,222)"'"//trim(rot_rec)//"'",'receiver components: enz,sph,cyl,xyz,src'
+    else
+        write(9,222)'.true.','rotate receivers?'
+        write(9,222)"'enz'",'receiver components: enz,sph,cyl,xyz,src'
+    endif
+    if (trim(src_file_type)=='cmtsolut' .and. nsim1>1) then
+       write(9,222)'.true.','sum to full Mij'
+    elseif (nsim1>1) then 
+       write(9,222)'.true.','sum to full Mij'
+    else 
+       write(9,222)'.true.','sum to full Mij'
+    endif
+    Mij_char = ['Mrr','Mtt','Mpp','Mrt','Mrp','Mtp']
+    do i=1,6
+        write(9,223)Mij(i),Mij_char(i)
+    enddo
+    
+    if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
+        write(9,223)period,'convolve period ( 0. if not to be convolved)'
+    else
+        write(9,223)0.0,'convolve period (0. if not convolved)'
+    endif
+    write(9,222)"'gauss_0'",'source time function type for convolution'
+    write(9,223)srccolat,'Source colatitude'
+    write(9,223)srclon,'Source longitude'
+    write(9,221)dump_snaps_glob,'plot global snaps?'
+    write(9,224)'disp','disp or velo seismograms'
+    write(9,224)"'Data_Postprocessing'",'Directory for post processed data'
+    write(9,221).true.,'seismograms at negative time (0 at max. of stf)'
+    close(9)
 221 format(l25,a50)
 222 format(a25,a50)
 223 format(1pe25.6,a50)
 224 format(a25,a50)
-   write(6,*)'    ... wrote file param_post_processing'
+    write(6,*)'    ... wrote file param_post_processing'
 endif
 
 ! write param_snaps ==============================================
 if (dump_snaps_glob) then 
-   if (lpr) then
-      write(6,*)'  Writing param_snaps for wavefield visualization'
-      open(unit=9,file="param_snaps")
+    if (lpr) then
+        write(6,*)'  Writing param_snaps for wavefield visualization'
+        open(unit=9,file="param_snaps")
 
-      write(9,222)"0.","starting phi (right cross section) [deg]"
-      write(9,222)"85.", "increment phi (ending,left cross section) [deg]"
-      write(9,223)router/1000.,"top radius [km]"
-      write(9,222)"3190.","bottom radius [km]"
-      write(9,222)"60. ", "meridional colatitude [deg]"
-      write(9,225)1,nsnap,1, "snap starting number,end number, skipping factor"
-      write(9,222)".false.","consider meridional cross section?"
-      write(9,222)".true.","consider top surface?"
-      write(9,222)".true. ","consider bottom surface?"
-      close(9)
-      write(6,*)'    ... wrote file param_snaps'; call flush(6)
-   endif
+        write(9,222)"0.","starting phi (right cross section) [deg]"
+        write(9,222)"85.", "increment phi (ending,left cross section) [deg]"
+        write(9,223)router/1000.,"top radius [km]"
+        write(9,222)"3190.","bottom radius [km]"
+        write(9,222)"60. ", "meridional colatitude [deg]"
+        write(9,225)1,nsnap,1, "snap starting number,end number, skipping factor"
+        write(9,222)".false.","consider meridional cross section?"
+        write(9,222)".true.","consider top surface?"
+        write(9,222)".true. ","consider bottom surface?"
+        close(9)
+        write(6,*)'    ... wrote file param_snaps'; call flush(6)
+    endif
 225 format(i8,i8,i8,a50)
 endif
 
@@ -1163,22 +1283,21 @@ end subroutine write_parameters
 !=============================================================================
 
 !----------------------------------------------------------------------------- 
+!> Static header with some info for subsequent kernel computations.
+!! Produces file mesh_params_kernel.h
 subroutine create_kernel_header
-!
-! Static header with some info for subsequent kernel computations.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     use data_mesh, ONLY: hmax_glob
     use data_io, ONLY: nstrain
-    character(len=8) :: mydate
+    character(len=8)  :: mydate
     character(len=10) :: mytime
     character(len=80) :: dbname2
-    integer :: lfdbname
+    integer           :: lfdbname
 
     call date_and_time(mydate,mytime)
     dbname2='mesh_params_kernel.h'
     lfdbname=index(dbname2,' ')-1
+    
     open(97,file=dbname2(1:lfdbname))
     write(97,10) nproc
     write(97,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
@@ -1206,167 +1325,166 @@ subroutine create_kernel_header
     write(97,9)'iend',iend,'dumped ending GLL within element'
     
     if (have_fluid) then 
-     write(97,31)
+        write(97,31)
     else
-     write(97,32)
+        write(97,32)
     end if
     write(97,*)''
     write(97,30)
     write(97,*)''
     close(97)
+
     write(6,*)
     write(6,*)'wrote parameters for kerner into ',dbname2(1:lfdbname)
     write(6,*)
 
-9  format(' integer, parameter :: ',A12,' =',i11,'  ! ',A27)
-17 format(' real, parameter    :: ',A12,' =',f11.2,'  ! ',A27)
-19 format(' real, parameter    :: ',A12,' =',f11.5,'  ! ',A27)
-18 format(' character(len=10), parameter    :: ',A12," ='",A10,"'  ! ",A27)
-28 format(' character(len=100), parameter    :: ',A12," ='",A10,"'  ! ",A27)
-31 format(' logical, parameter    :: have_fluid=.true.')
-32 format(' logical, parameter    :: have_fluid=.false.')
-10 format('! Proc ',i3,': Header for kernel information to run static kerner')
-11 format('! created by the solver on ', &
-            A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
-29 format('!:::::::::::::::::::: Input parameters :::::::::::::::::::::::::::')
-12 format('!  ',A23,A20)
-13 format('!  ',A23,L10)
-14 format('!  ',A23,1f10.4)
-30 format('!:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
+9   format(' integer, parameter :: ',A12,' =',i11,'  ! ',A27)
+17  format(' real, parameter    :: ',A12,' =',f11.2,'  ! ',A27)
+19  format(' real, parameter    :: ',A12,' =',f11.5,'  ! ',A27)
+18  format(' character(len=10), parameter    :: ',A12," ='",A10,"'  ! ",A27)
+28  format(' character(len=100), parameter    :: ',A12," ='",A10,"'  ! ",A27)
+31  format(' logical, parameter    :: have_fluid=.true.')
+32  format(' logical, parameter    :: have_fluid=.false.')
+10  format('! Proc ',i3,': Header for kernel information to run static kerner')
+11  format('! created by the solver on ', &
+             A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
+29  format('!:::::::::::::::::::: Input parameters :::::::::::::::::::::::::::')
+12  format('!  ',A23,A20)
+13  format('!  ',A23,L10)
+14  format('!  ',A23,1f10.4)
+30  format('!:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
 
-  end subroutine create_kernel_header
+end subroutine create_kernel_header
 !------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
+!< Checking some mesh parameters and message parsing
 subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
                        curvel_solid,linel_solid,seminoel_solid,semisoel_solid,&
                        curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid)
 
-use data_comm
-
-include 'mesh_params.h'
-
-double precision, intent(in) :: hmaxglob,hminglob
-integer, intent(in) :: curvel,linel,seminoel,semisoel
-integer, intent(in) :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
-integer, intent(in) :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid
-
-write(6,*)procstrg,'Checking solid message-passing...'
-  if (nproc==1 .and. psum_int(sizesend_solid)>0 ) then 
-     write(6,*)'Problem: Have only one proc but want to send messages..'
-     stop
-  endif
-
-  if (nproc==1 .and. psum_int(sizerecv_solid)>0 ) then 
-     write(6,*)'Problem: Have only one proc but want to receive messages...'
-     stop
-  endif
-
-  if (nproc>1 .and. psum_int(sizesend_solid)==0 ) then 
-     write(6,*)'Problem: No proc is willing to send anything....'
-     stop
-  endif
-
-  if (nproc>1 .and. psum_int(sizesend_solid)==0 ) then 
-     write(6,*)'Problem: No proc is willing to receive anything....'
-     stop
-  endif
-
-  if (psum_int(sizesend_solid)< nproc-1 ) then 
-     write(6,*)'Problem: Some proc(s) not willing to send anything...'
-     stop
-  endif
-
-  if (psum_int(sizerecv_solid)< nproc-1 ) then 
-     write(6,*)'Problem: Some proc(s) not willing to receive anything...'
-     stop
-  endif
-
-  if (have_fluid) then
-     write(6,*)procstrg,'Checking fluid message-passing...'
-     if (nproc==1 .and. psum_int(sizesend_fluid)>0 ) then 
-        write(6,*)'Problem: Have only one proc but want to send messages..'
-        stop
-     endif
-
-     if (nproc==1 .and. psum_int(sizerecv_fluid)>0 ) then 
-        write(6,*)'Problem: Have only one proc but want to receive messages...'
-        stop
-     endif
-
-     if (nproc>1 .and. psum_int(sizesend_fluid)==0 ) then 
-        write(6,*)'Problem: No proc is willing to send anything....'
-        stop
-     endif
-
-     if (nproc>1 .and. psum_int(sizesend_fluid)==0 ) then 
-        write(6,*)'Problem: No proc is willing to receive anything....'
-        stop
-     endif
-
-     if (psum_int(sizesend_fluid)< nproc-1 ) then 
-        write(6,*)'Problem: Some proc(s) not willing to send anything...'
-        stop
-     endif
-
-     if (psum_int(sizerecv_fluid)< nproc-1 ) then 
-        write(6,*)'Problem: Some proc(s) not willing to receive anything...'
-        stop
-     endif
-
-  endif !have_fluid
+    use data_comm
+    
+    include 'mesh_params.h'
+    
+    double precision, intent(in) :: hmaxglob,hminglob
+    integer, intent(in) :: curvel,linel,seminoel,semisoel
+    integer, intent(in) :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
+    integer, intent(in) :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid
+    
+    write(6,*)procstrg,'Checking solid message-passing...'
+    if (nproc==1 .and. psum_int(sizesend_solid)>0 ) then 
+       write(6,*)'Problem: Have only one proc but want to send messages..'
+       stop
+    endif
+  
+    if (nproc==1 .and. psum_int(sizerecv_solid)>0 ) then 
+       write(6,*)'Problem: Have only one proc but want to receive messages...'
+       stop
+    endif
+  
+    if (nproc>1 .and. psum_int(sizesend_solid)==0 ) then 
+       write(6,*)'Problem: No proc is willing to send anything....'
+       stop
+    endif
+  
+    if (nproc>1 .and. psum_int(sizesend_solid)==0 ) then 
+       write(6,*)'Problem: No proc is willing to receive anything....'
+       stop
+    endif
+  
+    if (psum_int(sizesend_solid)< nproc-1 ) then 
+       write(6,*)'Problem: Some proc(s) not willing to send anything...'
+       stop
+    endif
+  
+    if (psum_int(sizerecv_solid)< nproc-1 ) then 
+       write(6,*)'Problem: Some proc(s) not willing to receive anything...'
+       stop
+    endif
+  
+    if (have_fluid) then
+       write(6,*)procstrg,'Checking fluid message-passing...'
+       if (nproc==1 .and. psum_int(sizesend_fluid)>0 ) then 
+          write(6,*)'Problem: Have only one proc but want to send messages..'
+          stop
+       endif
+  
+       if (nproc==1 .and. psum_int(sizerecv_fluid)>0 ) then 
+          write(6,*)'Problem: Have only one proc but want to receive messages...'
+          stop
+       endif
+  
+       if (nproc>1 .and. psum_int(sizesend_fluid)==0 ) then 
+          write(6,*)'Problem: No proc is willing to send anything....'
+          stop
+       endif
+  
+       if (nproc>1 .and. psum_int(sizesend_fluid)==0 ) then 
+          write(6,*)'Problem: No proc is willing to receive anything....'
+          stop
+       endif
+  
+       if (psum_int(sizesend_fluid)< nproc-1 ) then 
+          write(6,*)'Problem: Some proc(s) not willing to send anything...'
+          stop
+       endif
+  
+       if (psum_int(sizerecv_fluid)< nproc-1 ) then 
+          write(6,*)'Problem: Some proc(s) not willing to receive anything...'
+          stop
+       endif
+  
+    endif !have_fluid
 
 ! Even more tests.............
 ! stop if difference between loaded and on-the-fly mesh larger than 1 METER....
   if ( (hmin_glob-hminglob)>1.) then
-     write(6,*)
-     write(6,*)mynum,'Problem with minimal global grid spacing!'
-     write(6,*)mynum,'Value from mesher        :',hmin_glob
-     write(6,*)mynum,'Value computed on-the-fly:',hminglob
-     stop
+      write(6,*)
+      write(6,*)mynum,'Problem with minimal global grid spacing!'
+      write(6,*)mynum,'Value from mesher        :',hmin_glob
+      write(6,*)mynum,'Value computed on-the-fly:',hminglob
+      stop
   endif
 
 ! stop if difference between loaded and on-the-fly mesh larger than 1 METER....
   if ((hmax_glob-hmaxglob)>1.) then
-     write(6,*)
-     write(6,*)mynum,'Problem with maximal global grid spacing!'
-     write(6,*)mynum,'Value from mesher        :',hmax_glob
-     write(6,*)mynum,'Value computed on-the-fly:',hmaxglob
-     stop
+      write(6,*)
+      write(6,*)mynum,'Problem with maximal global grid spacing!'
+      write(6,*)mynum,'Value from mesher        :',hmax_glob
+      write(6,*)mynum,'Value computed on-the-fly:',hmaxglob
+      stop
   endif
 
 ! stop if sum of respective element types do not sum up to nelem
   if (curvel+linel+seminoel+semisoel/=nelem) then 
-     write(6,*)
-     write(6,*)mynum,'Problem with number of assigned global element types!'
-     write(6,*)mynum,'curved,lin,semi(N),semi(S):',curvel,linel,seminoel, &
-                                                   semisoel
-     write(6,*)mynum,'Total # elements          :',nelem
-     stop
+      write(6,*)
+      write(6,*)mynum,'Problem with number of assigned global element types!'
+      write(6,*)mynum,'curved,lin,semi(N),semi(S):',curvel,linel,seminoel, &
+                                                    semisoel
+      write(6,*)mynum,'Total # elements          :',nelem
+      stop
   endif
 
   if (curvel_solid+linel_solid+seminoel_solid+semisoel_solid/=nel_solid) then 
-     write(6,*)
-     write(6,*)mynum,'Problem with number of assigned solid element types!'
-     write(6,*)mynum,'curved,lin,semi(N),semi(S):',curvel_solid,linel_solid, &
-                                                  seminoel_solid,semisoel_solid
-     write(6,*)mynum,'Total # elements          :',nel_solid
-     stop
+      write(6,*)
+      write(6,*)mynum,'Problem with number of assigned solid element types!'
+      write(6,*)mynum,'curved,lin,semi(N),semi(S):',curvel_solid,linel_solid, &
+                                                   seminoel_solid,semisoel_solid
+      write(6,*)mynum,'Total # elements          :',nel_solid
+      stop
   endif
 
   if (curvel_fluid+linel_fluid+seminoel_fluid+semisoel_fluid/=nel_fluid) then 
-     write(6,*)
-     write(6,*)mynum,'Problem with number of assigned fluid element types!'
-     write(6,*)mynum,'curved,lin,semi(N),semi(S):',curvel_fluid,linel_fluid, &
-                                                  seminoel_fluid,semisoel_fluid
-     write(6,*)mynum,'Total # elements          :',nel_fluid
-     stop
+      write(6,*)
+      write(6,*)mynum,'Problem with number of assigned fluid element types!'
+      write(6,*)mynum,'curved,lin,semi(N),semi(S):',curvel_fluid,linel_fluid, &
+                                                   seminoel_fluid,semisoel_fluid
+      write(6,*)mynum,'Total # elements          :',nel_fluid
+      stop
   endif
 
 end subroutine check_parameters
-!=============================================================================
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !========================
 end module parameters

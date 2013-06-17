@@ -38,6 +38,7 @@ public
   character(len=6)  :: output_format  !< netcdf or binary
   logical           :: force_ani
   logical           :: do_anel
+  logical           :: verbose
 
   
 ! indices to limit dumping to select contiguous range of GLL points:

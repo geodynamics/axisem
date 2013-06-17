@@ -9,12 +9,16 @@
 TIME_SCHEME     newmark2
 
 # OUTPUT PATHS
-DATA_DIR        ./Data
-INFO_DIR        ./Info
+DATA_DIR        "./Data"
+INFO_DIR        "./Info"
+
+
 
 #### MESH TEST ####
 # Do mesh tests? Suggested to do once per mesh and revision
-MESH_TEST           .false.
+MESH_TEST           false
+
+
 
 #### SENSITIVITY KERNELS ####
 # Save necessary wavefields for Kernel calculation
@@ -33,6 +37,8 @@ KERNEL_SOURCE       mask
 # GLL points to save, starting and ending GLL point index
 KERNEL_IBEG         1
 KERNEL_IEND         1
+
+
 
 #### FOR THE INCLINED ####
 # Save global kinetic/potential energy? generally not needed
