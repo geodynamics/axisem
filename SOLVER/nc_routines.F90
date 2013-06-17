@@ -927,7 +927,6 @@ subroutine nc_write_att_int(attribute_value, attribute_name)
 end subroutine nc_write_att_int
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 ! MvD: we are not really opening in parrallel any more, are we? Then this is a
 !      missleading name + comment
@@ -1008,7 +1007,6 @@ subroutine nc_open_parallel
 end subroutine nc_open_parallel
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 !> Final dumps to netCDF file. In the moment contains only dump of 
 !! receiver seismograms.
@@ -1035,18 +1033,20 @@ subroutine nc_end_output
 end subroutine nc_end_output
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 subroutine nc_make_snapfile
 
-    use data_mesh,    only: npoint_plot
+    use data_mesh,    only: npoint_plot, nelem_plot
     use data_proc,    only: appmynum
     use data_io,      only: datapath, lfdata, nsnap
     use data_source,  only: src_type
+
 #ifdef unc
-    integer              :: nmode, nc_snappoint_dimid, nc_snapdim_dimid
+    integer              :: nmode, nc_snappoint_dimid, nc_snapelem_dimid, nc_snapdim_dimid
     integer              :: nc_snaptime_dimid, nc_snapconnec_dimid
     character(len=120)   :: fname
+
+    if (lpr) write(6,*) '   .... preparing xdmf nc file'
 
     if (src_type(1) /= 'monopole') then
         ndim_disp = 2
@@ -1059,6 +1059,7 @@ subroutine nc_make_snapfile
     call check(nf90_create(path=fname, cmode=nmode, ncid=ncid_out_snap) )
 
     call check(nf90_def_dim(ncid_out_snap, 'points', npoint_plot, nc_snappoint_dimid) )
+    call check(nf90_def_dim(ncid_out_snap, 'elements', nelem_plot, nc_snapelem_dimid) )
     call check(nf90_def_dim(ncid_out_snap, 'dimensions', ndim_disp , nc_snapdim_dimid) )
     call check(nf90_def_dim(ncid_out_snap, 's-z-coordinate', 2 , nc_coord_dimid) )
     call check(nf90_def_dim(ncid_out_snap, 'connections', 4 , nc_snapconnec_dimid) )
@@ -1080,22 +1081,25 @@ subroutine nc_make_snapfile
     call check(nf90_def_var(ncid   = ncid_out_snap, & 
                             name   = 'grid',  &
                             xtype  = NF90_INT,     &
-                            dimids = [nc_snappoint_dimid, nc_snapconnec_dimid], & 
+                            dimids = [nc_snapconnec_dimid, nc_snapelem_dimid], & 
                             varid  = nc_snap_grid_varid) )
 
     call check(nf90_enddef(ncid    = ncid_out_snap))
 
-
+    if (lpr) write(6,*) '   .... DONE'
 
 #endif
+
 end subroutine nc_make_snapfile
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_snapshot(u)
+
     use data_mesh, only: npoint_plot
     use data_io, only:   isnap, nsnap
     real, dimension(:,:), intent(in)       :: u
+
 #ifdef unc
     call check(nf90_put_var(ncid   = ncid_out_snap, &
                             varid  = nc_snap_disp_varid, &
@@ -1103,35 +1107,37 @@ subroutine nc_dump_snapshot(u)
                             count  = [ndim_disp, npoint_plot, 1], &
                             values = u) )
 
-
-
 #endif
+
 end subroutine nc_dump_snapshot
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_snap_points(points)
+
     use data_mesh, only: npoint_plot
-    real, dimension(:,:), intent(in)       :: points
+    real, dimension(2,npoint_plot), intent(in)       :: points
+
 #ifdef unc
     call check(nf90_put_var(ncid   = ncid_out_snap, &
                             varid  = nc_snap_point_varid, &
                             count  = [2, npoint_plot], &
                             values = points) )
 #endif
+
 end subroutine nc_dump_snap_points
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_snap_grid(grid)
-    use data_mesh, only: npoint_plot
-    integer, dimension(:,:), intent(in)       :: grid 
+
+    use data_mesh, only: nelem_plot
+    integer, dimension(4, nelem_plot), intent(in)       :: grid 
+
 #ifdef unc
     call check(nf90_put_var(ncid   = ncid_out_snap, &
                             varid  = nc_snap_grid_varid, &
-                            count  = [npoint_plot, 4], &
+                            count  = [4, nelem_plot], &
                             values = grid) )
 #endif
 end subroutine nc_dump_snap_grid

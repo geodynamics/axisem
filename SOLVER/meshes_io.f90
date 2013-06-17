@@ -92,7 +92,7 @@ end subroutine dump_glob_grid_midpoint
 
 !-----------------------------------------------------------------------------
 subroutine dump_xdmf_grid()
-use nc_routines,      only: nc_dump_snap_points, nc_dump_snap_grid
+use nc_routines,      only: nc_dump_snap_points, nc_dump_snap_grid, nc_make_snapfile
 use data_numbering
 
     integer              :: iel, ipol, jpol, ipol1, jpol1, i, j, ct, ipt, idest
@@ -318,6 +318,7 @@ use data_numbering
     if (lpr) write(6,*) '   .... finished construction of mapping for xdmf plotting'
 
     if (use_netcdf) then
+        call nc_make_snapfile
         call nc_dump_snap_points(points)
     else
         fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
@@ -375,8 +376,13 @@ use data_numbering
     
     fname = datapath(1:lfdata) // '/xdmf_meshonly_' // appmynum // '.xdmf'
     open(100, file=trim(fname))
-    write(100, 732) nelem_plot, nelem_plot, 'xdmf_grid_' // appmynum // '.dat', &
-                    npoint_plot, 'xdmf_points_' // appmynum // '.dat'
+    if (use_netcdf) then
+        write(100, 732) nelem_plot, nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
+                        npoint_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/points'
+    else
+        write(100, 732) nelem_plot, nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
+                        npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
+    endif
 
 732 format(&    
     '<?xml version="1.0" ?>',/&
@@ -387,13 +393,13 @@ use data_numbering
     '    <Grid GridType="Uniform">',/&
     '      <Time Value="0.000" />',/&
     '      <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
-    '        <DataItem Dimensions="',i10,' 4" NumberType="Int" Format="binary">',/&
-                ,A20,/&
+    '        <DataItem Dimensions="',i10,' 4" NumberType="Int" Format="',A,'">',/&
+    '          ',A,/&
     '        </DataItem>',/&
     '      </Topology>',/&
     '      <Geometry GeometryType="XY">',/&
-    '        <DataItem Dimensions="',i10,' 2" NumberType="Float" Format="binary">',/&
-                ,A20/&
+    '        <DataItem Dimensions="',i10,' 2" NumberType="Float" Format="',A,'">',/&
+    '          ',A/&
     '        </DataItem>',/&
     '      </Geometry>',/&
     '    </Grid>',/&

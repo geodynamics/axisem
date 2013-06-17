@@ -32,7 +32,7 @@ subroutine prepare_waves
   use clocks_mod
   use meshes_io
   use attenuation, only: dump_memory_vars
-  use nc_routines, only: nc_make_snapfile
+  !use nc_routines, only: nc_make_snapfile
     
   character(len=120) :: fname
 
@@ -90,10 +90,11 @@ subroutine prepare_waves
   if (dump_xdmf) then
      if (lpr) write(6,*)'  dumping mesh for xdmf snapshots...'
      
-     if (use_netcdf) then
-         call nc_make_snapfile
+     !if (use_netcdf) then
+     !    call nc_make_snapfile
 
-     else
+     !else
+     if (.not. use_netcdf) then
          fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'.dat'
          open(13100, file=trim(fname), access='stream', status='unknown', &
              convert='little_endian', position='append')
