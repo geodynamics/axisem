@@ -330,23 +330,44 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
     open(100, file=trim(fname), access='append')
 
-    if (src_type(1)=='monopole') then
-        write(100, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                    'xdmf_snap_s_'//appmynum//'.dat', &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                    'xdmf_snap_z_'//appmynum//'.dat', &
-                    npoint_plot, appisnap, appisnap
+    if (use_netcdf) then
+        if (src_type(1)=='monopole') then
+            write(100, 736) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                        npoint_plot, isnap-1, npoint_plot, npoint_plot, nsnap, &
+                        'netcdf_snap_'//appmynum//'.nc', &
+                        npoint_plot, isnap-1, npoint_plot, npoint_plot, nsnap, &
+                        'netcdf_snap_'//appmynum//'.nc', &
+                        npoint_plot, appisnap, appisnap
+        else
+            write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_s_'//appmynum//'.dat', &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_p_'//appmynum//'.dat', &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_z_'//appmynum//'.dat', &
+                        npoint_plot, appisnap, appisnap, appisnap
+        endif !monopole
+
     else
-        write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                    'xdmf_snap_s_'//appmynum//'.dat', &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                    'xdmf_snap_p_'//appmynum//'.dat', &
-                    npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                    'xdmf_snap_z_'//appmynum//'.dat', &
-                    npoint_plot, appisnap, appisnap, appisnap
-    endif
+        if (src_type(1)=='monopole') then
+            write(100, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_s_'//appmynum//'.dat', &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_z_'//appmynum//'.dat', &
+                        npoint_plot, appisnap, appisnap
+        else
+            write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_s_'//appmynum//'.dat', &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_p_'//appmynum//'.dat', &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_z_'//appmynum//'.dat', &
+                        npoint_plot, appisnap, appisnap, appisnap
+        endif !monopole
+    end if !use_netcdf
 
 734 format(&    
     '    <Grid Name="', A,'" GridType="Uniform">',/&
@@ -452,6 +473,53 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '            </DataItem>',/&
     '        </Attribute>',/&
     '    </Grid>',/)
+
+
+736 format(&    
+    '    <Grid Name="', A,'" GridType="Uniform">',/&
+    '        <Time Value="',F8.2,'" />',/&
+    '        <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
+    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'grid', A,']" />',/&
+    '        </Topology>',/&
+    '        <Geometry GeometryType="XY">',/&
+    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '        </Geometry>',/&
+    '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 3" Format="XML">',/&
+    '                               0', i10,  '          0',/&
+    '                               1         1          1',/&
+    '                               0         1',      i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions=" 2 ', i10, i10, '" NumberType="Float" Format="HDF">',/&
+    '                   ', A, ':/displacement',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="u_z" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 3" Format="XML">',/&
+    '                               1',  i10,  '          0 ',/&
+    '                               1          1          1 ',/&
+    '                               1          1',      i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions=" 2  ', i10, i10, '" NumberType="Float" Format="HDF">',/&
+    '                   ', A, ':/displacement',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="abs" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="Function" Function="sqrt($0 * $0 + $1 * $1)" Dimensions="', I10,'">',/&
+    '                <DataItem Reference="XML">',/&
+    '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_s"]/DataItem[1]',/&
+    '                </DataItem>',/&
+    '                <DataItem Reference="XML">',/&
+    '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_z"]/DataItem[1]',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '    </Grid>',/)
+
     
     close(100)
 

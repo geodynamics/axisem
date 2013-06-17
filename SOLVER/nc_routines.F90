@@ -71,9 +71,10 @@ module nc_routines
     integer             :: nvar = -1
 
     !! Variables for dumping of wavefields for plotting purposes
-    integer             :: nc_snap_disp_varid
+    integer             :: nc_snap_disp_varid, nc_coord_dimid
     integer             :: nc_snap_point_varid, nc_snap_grid_varid
     integer             :: ncid_out_snap
+    integer             :: ndim_disp !< 2 for monopole, 3 for rest
 
 
     !! @todo These parameters should move to a input file soon
@@ -1038,20 +1039,28 @@ end subroutine nc_end_output
 !-----------------------------------------------------------------------------------------
 subroutine nc_make_snapfile
 
-    use data_mesh, only: npoint_plot
-    use data_proc, only: appmynum
-    use data_io,   only: datapath, lfdata, nsnap
+    use data_mesh,    only: npoint_plot
+    use data_proc,    only: appmynum
+    use data_io,      only: datapath, lfdata, nsnap
+    use data_source,  only: src_type
 #ifdef unc
     integer              :: nmode, nc_snappoint_dimid, nc_snapdim_dimid
     integer              :: nc_snaptime_dimid, nc_snapconnec_dimid
     character(len=120)   :: fname
 
-    fname = datapath(1:lfdata) // '/xdmf_netcdf_' // appmynum // '.nc'
+    if (src_type(1) /= 'monopole') then
+        ndim_disp = 2
+    else
+        ndim_disp = 3
+    end if
+
+    fname = datapath(1:lfdata) // '/netcdf_snap_' // appmynum // '.nc'
     nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
     call check(nf90_create(path=fname, cmode=nmode, ncid=ncid_out_snap) )
 
     call check(nf90_def_dim(ncid_out_snap, 'points', npoint_plot, nc_snappoint_dimid) )
-    call check(nf90_def_dim(ncid_out_snap, 'dimensions', 3 , nc_snapdim_dimid) )
+    call check(nf90_def_dim(ncid_out_snap, 'dimensions', ndim_disp , nc_snapdim_dimid) )
+    call check(nf90_def_dim(ncid_out_snap, 's-z-coordinate', 2 , nc_coord_dimid) )
     call check(nf90_def_dim(ncid_out_snap, 'connections', 4 , nc_snapconnec_dimid) )
     call check(nf90_def_dim(ncid_out_snap, 'timesteps', nsnap , nc_snaptime_dimid) )
 
@@ -1065,7 +1074,7 @@ subroutine nc_make_snapfile
     call check(nf90_def_var(ncid   = ncid_out_snap, & 
                             name   = 'points',  &
                             xtype  = NF90_FLOAT,     &
-                            dimids = [nc_snappoint_dimid], & 
+                            dimids = [nc_coord_dimid, nc_snappoint_dimid], & 
                             varid  = nc_snap_point_varid) )
 
     call check(nf90_def_var(ncid   = ncid_out_snap, & 
@@ -1091,7 +1100,7 @@ subroutine nc_dump_snapshot(u)
     call check(nf90_put_var(ncid   = ncid_out_snap, &
                             varid  = nc_snap_disp_varid, &
                             start  = [1, 1, isnap], &
-                            count  = [3, npoint_plot, 1], &
+                            count  = [ndim_disp, npoint_plot, 1], &
                             values = u) )
 
 
@@ -1108,7 +1117,7 @@ subroutine nc_dump_snap_points(points)
 #ifdef unc
     call check(nf90_put_var(ncid   = ncid_out_snap, &
                             varid  = nc_snap_point_varid, &
-                            count  = [npoint_plot], &
+                            count  = [2, npoint_plot], &
                             values = points) )
 #endif
 end subroutine nc_dump_snap_points
