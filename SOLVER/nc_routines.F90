@@ -1048,7 +1048,7 @@ subroutine nc_make_snapfile
 
     if (lpr) write(6,*) '   .... preparing xdmf nc file'
 
-    if (src_type(1) /= 'monopole') then
+    if (src_type(1) == 'monopole') then
         ndim_disp = 2
     else
         ndim_disp = 3
@@ -1096,16 +1096,29 @@ end subroutine nc_make_snapfile
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_snapshot(u)
 
-    use data_mesh, only: npoint_plot
-    use data_io, only:   isnap, nsnap
-    real, dimension(:,:), intent(in)       :: u
+    use data_mesh,      only: npoint_plot
+    use data_io,        only: isnap, nsnap
+    use data_source,    only: src_type
+
+    real, dimension(3,npoint_plot), intent(in)       :: u
 
 #ifdef unc
-    call check(nf90_put_var(ncid   = ncid_out_snap, &
-                            varid  = nc_snap_disp_varid, &
-                            start  = [1, 1, isnap], &
-                            count  = [ndim_disp, npoint_plot, 1], &
-                            values = u) )
+    if (src_type(1) == 'monopole') then
+        print *, isnap
+       call check(nf90_put_var(ncid   = ncid_out_snap, &
+                               varid  = nc_snap_disp_varid, &
+                               start  = [1, 1, isnap], &
+                               count  = [1, npoint_plot, 1], &
+                               values = u(1,:)) )
+       
+       call check(nf90_put_var(ncid   = ncid_out_snap, &
+                               varid  = nc_snap_disp_varid, &
+                               start  = [2, 1, isnap], &
+                               count  = [1, npoint_plot, 1], &
+                               values = u(3,:)) )
+    else
+        stop 2
+    end if
 
 #endif
 

@@ -333,20 +333,16 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     if (use_netcdf) then
         if (src_type(1)=='monopole') then
             write(100, 736) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                        npoint_plot, isnap-1, npoint_plot, npoint_plot, nsnap, &
+                        npoint_plot, isnap-1, isnap, npoint_plot, &
+                        nsnap, npoint_plot, &
                         'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, isnap-1, npoint_plot, npoint_plot, nsnap, &
+                        npoint_plot, isnap-1, isnap, npoint_plot, &
+                        nsnap, npoint_plot, &
                         'netcdf_snap_'//appmynum//'.nc', &
                         npoint_plot, appisnap, appisnap
         else
-            write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_s_'//appmynum//'.dat', &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_p_'//appmynum//'.dat', &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_z_'//appmynum//'.dat', &
-                        npoint_plot, appisnap, appisnap, appisnap
+            print *, 'not yet implemented'
+            stop 2
         endif !monopole
 
     else
@@ -487,11 +483,11 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
     '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
     '                <DataItem Dimensions="3 3" Format="XML">',/&
-    '                               0', i10,  '          0',/&
+    '                      ', i10,'         0          0',/&
     '                               1         1          1',/&
-    '                               0         1',      i10,/&
+    '                      ', i10,     i10,'          1',/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions=" 2 ', i10, i10, '" NumberType="Float" Format="HDF">',/&
+    '                <DataItem Dimensions="', i10, i10, ' 2" NumberType="Float" Format="hdf">',/&
     '                   ', A, ':/displacement',/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -499,11 +495,11 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '        <Attribute Name="u_z" AttributeType="Scalar" Center="Node">',/&
     '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
     '                <DataItem Dimensions="3 3" Format="XML">',/&
-    '                               1',  i10,  '          0 ',/&
-    '                               1          1          1 ',/&
-    '                               1          1',      i10,/&
+    '                      ', i10,'         0          1',/&
+    '                               1         1          1',/&
+    '                      ', i10,     i10,'          2',/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions=" 2  ', i10, i10, '" NumberType="Float" Format="HDF">',/&
+    '                <DataItem Dimensions="', i10, i10, ' 2" NumberType="Float" Format="hdf">',/&
     '                   ', A, ':/displacement',/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -519,7 +515,6 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '            </DataItem>',/&
     '        </Attribute>',/&
     '    </Grid>',/)
-
     
     close(100)
 

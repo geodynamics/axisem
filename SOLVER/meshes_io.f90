@@ -383,6 +383,7 @@ use data_numbering
         write(100, 732) nelem_plot, nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
                         npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
     endif
+    close(100)
 
 732 format(&    
     '<?xml version="1.0" ?>',/&
@@ -390,44 +391,48 @@ use data_numbering
     '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
     '<Domain>',/&
     '<Grid Name="CellsTime" GridType="Collection" CollectionType="Temporal">',/&
-    '    <Grid GridType="Uniform">',/&
-    '      <Time Value="0.000" />',/&
-    '      <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
-    '        <DataItem Dimensions="',i10,' 4" NumberType="Int" Format="',A,'">',/&
-    '          ',A,/&
-    '        </DataItem>',/&
-    '      </Topology>',/&
-    '      <Geometry GeometryType="XY">',/&
-    '        <DataItem Dimensions="',i10,' 2" NumberType="Float" Format="',A,'">',/&
-    '          ',A/&
-    '        </DataItem>',/&
-    '      </Geometry>',/&
-    '    </Grid>',/&
+    '  <Grid GridType="Uniform">',/&
+    '    <Time Value="0.000" />',/&
+    '    <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
+    '      <DataItem Dimensions="',i10,' 4" NumberType="Int" Format="',A,'">',/&
+    '        ',A,/&
+    '      </DataItem>',/&
+    '    </Topology>',/&
+    '    <Geometry GeometryType="XY">',/&
+    '      <DataItem Dimensions="',i10,' 2" NumberType="Float" Format="',A,'">',/&
+    '        ',A/&
+    '      </DataItem>',/&
+    '    </Geometry>',/&
+    '  </Grid>',/&
     '</Grid>',/&
     '</Domain>',/&
     '</Xdmf>')
     
-    close(100)
     
     fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
     open(100, file=trim(fname))
-    write(100, 733) nelem_plot, 'xdmf_grid_' // appmynum // '.dat', &
-                    npoint_plot, 'xdmf_points_' // appmynum // '.dat'
+    if (use_netcdf) then
+       write(100, 733) nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
+                       npoint_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/points'
+    else
+       write(100, 733) nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
+                       npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
+    endif
+    close(100)
 
 733 format(&    
     '<?xml version="1.0" ?>',/&
     '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
     '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
     '<Domain>',/,/&
-    '<DataItem Name="grid" Dimensions="',i10,' 4" NumberType="Int" Format="binary">',/&
+    '<DataItem Name="grid" Dimensions="',i10,' 4" NumberType="Int" Format="',A,'">',/&
     '  ', A,/&
     '</DataItem>',/&
-    '<DataItem Name="points" Dimensions="',i10,' 2" NumberType="Float" Format="binary">',/&
+    '<DataItem Name="points" Dimensions="',i10,' 2" NumberType="Float" Format="',A,'">',/&
     '  ', A,/&
     '</DataItem>',/,/&
     '<Grid Name="CellsTime" GridType="Collection" CollectionType="Temporal">',/)
     
-    close(100)
 
 end subroutine dump_xdmf_grid
 !=============================================================================
