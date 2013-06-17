@@ -1,0 +1,49 @@
+######## INPUT FILE FOR AXISEM (SOLVER): GLOBAL WAVE PROPAGATION IN
+
+# Choose simulation type, allowed options:
+# single: Simulation of one basic source. Set sourceparams.dat for the
+#         exact type
+# forces: Vertical force, needs two parallel simulations (and twice the
+#         number of CPUs). Set vertforce.dat for the exact source type
+# moment: Full moment tensor, needs four parallel simulations. Set
+#         CMTSOLUTION for the source mechanism.
+
+SIMULATION_TYPE   single
+
+#### SIMULATION PARAMETERS ####
+# Choose desired seismogram length and sampling rate in seconds
+# Select 0.0, for SAMPLING_RATE==TIME_STEP
+
+SEISMOGRAM_LENGTH  1800.
+SAMPLING_RATE       1.0
+
+# Choose desired simulation time step
+# set to 0.0 for mesher's suggestion
+
+TIME_STEP           0.1
+
+#### MODEL / MESH ####
+# Choose Mesh (local subdirname in SOLVER/MESHES directory)
+# N.B. The mesh controls the velocity model and the number of CPUs
+
+MESHNAME            AK135_4CPUs
+
+# Use lateral heterogeneities (aka 2.5D model).
+# The model has to be described in inparam_hetero
+
+LAT_HETEROGENEITY  .false.
+
+#### WAVEFIELD SNAPSHOTS ####
+# Save wavefield snapshots for visualization
+
+SNAPSHOTS          .true.
+
+# Time interval between snapshots
+
+SNAPSHOT_DT          20.
+
+# Snapshot format, allowed: 
+# VTK:    Paraview vtk format: Filesize may be huge
+# XDMF:   NetCDF binary with XDMF descriptor. Needs NetCDF version
+
+SNAPSHOT_FORMAT     XDMF

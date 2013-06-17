@@ -1,0 +1,48 @@
+# Time integration scheme, allowed:
+# newmark2:  default, tested
+# symplec4
+# ML_SO4m5
+# ML_SO6m7
+# KL_O8m17
+# SS_35o10
+
+TIME_SCHEME     newmark2
+
+# OUTPUT PATHS
+DATA_DIR        ./Data
+INFO_DIR        ./Info
+
+#### MESH TEST ####
+# Do mesh tests? Suggested to do once per mesh and revision
+MESH_TEST           .false.
+
+#### SENSITIVITY KERNELS ####
+# Save necessary wavefields for Kernel calculation
+# N.b. Kernel calculation needs Axisem Kerner (sold separately)
+KERNEL_WAVEFIELDS   .true.
+
+# Samples per period
+KERNEL_SPP          8
+
+# source vicinity in wavefields? 
+# igno
+# mask  (default)
+# anal 
+KERNEL_SOURCE       mask
+
+# GLL points to save, starting and ending GLL point index
+KERNEL_IBEG         1
+KERNEL_IEND         1
+
+#### FOR THE INCLINED ####
+# Save global kinetic/potential energy? generally not needed
+SAVE_ENERGY         .false.
+
+# overwrite background model with homogeneous parameters?
+HOMO_MODEL          .false.
+HOMO_VP             10.
+HOMO_VS             5.77
+HOMO_RHO            3.
+
+# Force anisotropic model handling of isotropic models
+FORCE_ANISO         .true.
