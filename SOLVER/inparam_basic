@@ -46,7 +46,7 @@ LAT_HETEROGENEITY  .false.
 #### WAVEFIELD SNAPSHOTS ####
 # Save wavefield snapshots for visualization
 
-SNAPSHOTS          .true.
+SNAPSHOTS          false 
 
 # Time interval between snapshots
 
