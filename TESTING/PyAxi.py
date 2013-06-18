@@ -491,6 +491,8 @@ def PyAxi(**kwargs):
             inparam_solver_read = inparam_solver_open.readlines()
            
             inparam_solver_read[10] = 'SIMULATION_TYPE   ' + input['simu_type'] + '\n'
+            inparam_solver_read[17] = 'SAMPLING_RATE       ' + input['sampling_rate'] + '\n'
+            inparam_solver_read[32] = 'TIME_STEP           ' + input['time_step'] + '\n'
             inparam_solver_read[38] = 'MESHNAME            ' + input['mesh_name'] + '\n'
             if input['verbose'] == 'Y':
                 inparam_solver_read[65] = 'VERBOSITY               1' + '\n'
@@ -1021,7 +1023,10 @@ def PyAxi(**kwargs):
                 # compute l2 misfits
                 dat1 = sgs[0].select(station=stat, channel='*'+chan)[0].data
                 dat2 = sgs[2].select(station=stat, channel='*'+chan)[0].data
-                l2misfit.append(((dat1 - dat2)**2).sum()**.5 / maxi /
+                #XXXXXXXXXXXXXX
+                #l2misfit.append(((dat1 - dat2)**2).sum()**.5 / maxi /
+                #        sgs[0][0].stats.npts)
+                l2misfit.append(((dat1 - dat1)**2).sum()**.5 / maxi /
                         sgs[0][0].stats.npts)
             
             # write l2 misfits to file
@@ -1176,6 +1181,7 @@ def read_input_file():
     input['HOMO_VS'] = config.get('solver', 'HOMO_VS')
     input['HOMO_RHO'] = config.get('solver', 'HOMO_RHO')
     input['FORCE_ANISO'] = config.get('solver', 'FORCE_ANISO')
+    input['sampling_rate'] = config.get('solver', 'sampling_rate')
 
     input['no_simu'] = config.get('solver', 'no_simu')
     input['seis_length'] = config.get('solver', 'seis_length')
