@@ -1,0 +1,66 @@
+######## INPUT FILE FOR AXISEM (SOLVER): GLOBAL WAVE PROPAGATION IN
+
+# Choose simulation type, allowed options:
+# single: Simulation of one basic source. Set sourceparams.dat for the
+#         exact type
+# force:  Vertical force, needs two parallel simulations (and twice the
+#         number of CPUs). Set vertforce.dat for the exact source type
+# moment: Full moment tensor, needs four parallel simulations. Set
+#         CMTSOLUTION for the source mechanism.
+
+SIMULATION_TYPE   single
+
+#### SIMULATION PARAMETERS ####
+# Choose desired seismogram length and sampling rate in seconds
+# Select 0.0, for SAMPLING_RATE==TIME_STEP (default: 0.0)
+
+#SEISMOGRAM_LENGTH  1800.
+#SAMPLING_RATE       1.0  
+
+# Receiver file type, allowed options:
+# colatlon: Colatitude and Longitude for each station.
+# stations: SPECFEM-style stations file with latitude, longitude
+#           and station name (default)
+# database: One station at each GLL point, arbitrary station locations 
+#           can be reconstructed from this.
+#RECFILE_TYPE      stations 
+
+
+
+# Choose desired simulation time step
+# set to 0.0 for mesher's suggestion (default)
+
+#TIME_STEP           0.0
+
+#### MODEL / MESH ####
+# Choose Mesh (local subdirname in SOLVER/MESHES directory)
+# N.B. The mesh controls the velocity model and the number of CPUs
+
+MESHNAME            PREMlight_2CPUs
+
+# Use lateral heterogeneities (aka 2.5D model).
+# The model has to be described in inparam_hetero (default: false)
+
+# LAT_HETEROGENEITY  .false. 
+
+#### WAVEFIELD SNAPSHOTS ####
+# Save wavefield snapshots for visualization (default: false)
+
+#SNAPSHOTS_VTK          true  
+
+# Time interval between snapshots (default: 20)
+# SNAPSHOT_DT          20.
+
+# XDMF wavefield snapshots  (default: false)
+#SNAPSHOTS_XDMF       true
+
+
+# Use NetCDF for heavy output  (default false)
+#USE_NETCDF          true
+
+
+# Set verbosity of the code, allowed values:
+# 0: only errors
+# 1: errors plus some information (default)
+# 2: tells jokes from his time in Princeton
+VERBOSITY               1
