@@ -1203,11 +1203,12 @@ double precision function arbitr_sub(param, idom, bkgrdmodel2)
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   integer, intent(in)             :: idom
+  integer                         :: idom2
   character(len=100), intent(in)  :: bkgrdmodel2
   character(len=3), intent(in)    :: param !rho, vs,vp
   double precision, allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
   double precision, allocatable, dimension(:) :: qmutmp, qkappatmp
-  integer                         :: ndisctmp, i, ndisctmp2
+  integer                         :: ndisctmp, i
   logical                         :: bkgrdmodelfile_exists
 
   ! Does the file bkgrdmodel".bm" exist?
@@ -1217,48 +1218,46 @@ double precision function arbitr_sub(param, idom, bkgrdmodel2)
   if (bkgrdmodelfile_exists) then
       open(unit=77, file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm')
       read(77,*) ndisctmp
+
+      ! necessary in case of stealth layer (see discont meshing)
+      if (idom > ndisctmp) then
+          idom2 = ndisctmp
+      else 
+          idom2 = idom
+      endif
   
-      ndisctmp2 = ndisctmp
-      if (ndisctmp==1) ndisctmp2 = 2
-      allocate(disconttmp(1:ndisctmp2))
-      allocate(vptmp(1:ndisctmp2))
-      allocate(vstmp(1:ndisctmp2))
-      allocate(rhotmp(1:ndisctmp2))
-      allocate(qmutmp(1:ndisctmp2))
-      allocate(qkappatmp(1:ndisctmp2))
+      allocate(disconttmp(1:ndisctmp))
+      allocate(vptmp(1:ndisctmp))
+      allocate(vstmp(1:ndisctmp))
+      allocate(rhotmp(1:ndisctmp))
+      allocate(qmutmp(1:ndisctmp))
+      allocate(qkappatmp(1:ndisctmp))
 
       do i=1, ndisctmp
-          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i), qkappatmp(i), qmutmp(i)
+          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i)!, qkappatmp(i), qmutmp(i)
       enddo
       close(77)
 
-      if (ndisctmp==1) then
-          disconttmp(2) = disconttmp(1) / 4.
-          vptmp(2) = vptmp(1)
-          vstmp(2) = vstmp(1)
-          rhotmp(2) = rhotmp(1)
-      end if
-  
       if (param=='rho') then 
-        arbitr_sub = rhotmp(idom)
+        arbitr_sub = rhotmp(idom2)
       elseif (param=='v_p') then
-        arbitr_sub = vptmp(idom)
+        arbitr_sub = vptmp(idom2)
       elseif (param=='v_s') then
-        arbitr_sub = vstmp(idom)
+        arbitr_sub = vstmp(idom2)
       elseif (param=='vpv') then 
-        arbitr_sub = vptmp(idom)
+        arbitr_sub = vptmp(idom2)
       elseif (param=='vsv') then 
-        arbitr_sub = vstmp(idom)
+        arbitr_sub = vstmp(idom2)
       elseif (param=='vph') then 
-        arbitr_sub = vptmp(idom)
+        arbitr_sub = vptmp(idom2)
       elseif (param=='vsh') then 
-        arbitr_sub = vstmp(idom)
+        arbitr_sub = vstmp(idom2)
       elseif (param=='eta') then 
         arbitr_sub = 1.
       elseif (param=='Qmu') then
-        arbitr_sub = qmutmp(idom)
+        arbitr_sub = qmutmp(idom2)
       elseif (param=='Qka') then
-        arbitr_sub = qkappatmp(idom)
+        arbitr_sub = qkappatmp(idom2)
       endif
       deallocate(disconttmp, vstmp, vptmp, rhotmp)
   else 

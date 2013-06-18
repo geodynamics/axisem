@@ -1092,6 +1092,7 @@ subroutine define_central_region
   roc = ri ; ric = roc*(dble(nr-1)/dble(nr))
   if (dump_mesh_info_screen) write(6,*) 'RIC = ', RIC
   if (dump_mesh_info_screen) write(6,*) 'ROC = ', ROC 
+  if (dump_mesh_info_screen) write(6,*) 'nzs = ', nzs
   if ( nzs < 2 * nex + 1) then 
    write(6,*) 'incompatibility in central square between nex and nr' 
    stop
@@ -1105,6 +1106,8 @@ subroutine define_central_region
 ! nzss is the number of purely spherical levels
   nzss = nzs - 1 ; if (dump_mesh_info_screen) write(6,*) 'nzss = ', nzss
 
+! MvD: this is never true for nzs = 1 as hardcoded above
+!      nzs /= 1 however crashes
   if (nzss /= 0) then  
   
    npts = (nzss+1) * (ns_ib+1) 

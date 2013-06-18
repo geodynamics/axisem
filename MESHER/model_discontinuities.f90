@@ -976,53 +976,71 @@ subroutine arbitr_discont
 
 ! discontinuities (read in from a file) to be honored by the mesh
 
-  integer :: idom
+  integer :: idom, junk
   logical :: bkgrdmodelfile_exists
-  double precision :: disc1,disc2,rho2,vp2,vs2
+  double precision :: disc1, disc2, rho2, vp2, vs2
+  
   
   ! Does the file bkgrdmodel".bm" exist?
   inquire(file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm', &
           exist=bkgrdmodelfile_exists)
   
-  if (bkgrdmodelfile_exists) then
-     open(unit=77,file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm')
-  
-     read(77,*)ndisc
-     allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2),rho(ndisc,2))
-     do idom=1, ndisc
-        read(77,*)discont(idom),rho(idom,1),vp(idom,1),vs(idom,1)
-     enddo
-     close(77)
-  
-     ! add stealth layer to keep central square "down there"
-     if (ndisc==1) then 
-        ndisc = 2
-        disc1 = discont(1)
-        disc2 = discont(1)/4.d0
-        rho2 = rho(1,1)
-        vp2 = vp(1,1)
-        vs2 = vs(1,1)
-        deallocate(discont,vp,vs,rho)
-        allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2),rho(ndisc,2))
-        discont(1) = disc1
-        discont(2) = disc2
-        rho(:,1) = rho2
-        vp(:,1) = vp2
-        vs(:,1) = vs2
-        write(6,*) 'Added a second stealth layer to keep central square small'
-     endif
-  
-     rho(:,2) = rho(:,1)
-     vp(:,2) = vp(:,1)
-     vs(:,2) = vs(:,1)
-  
-  else
+  if (.not. bkgrdmodelfile_exists) then
      write(6,*)'ERROR IN BACKGROUND MODEL: ', &
                 bkgrdmodel(1:index(bkgrdmodel,' ')-1),' NON-EXISTENT!'
      write(6,*)'...failed to open file', &
                bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm'
      stop 
   endif
+
+  open(unit=77,file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm')
+  
+  read(77,*) ndisc
+  allocate(discont(ndisc))
+  allocate(vp(ndisc,2))
+  allocate(vs(ndisc,2))
+  allocate(rho(ndisc,2))
+
+  do idom=1, ndisc
+     read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
+  enddo
+  close(77)
+     
+  print *, discont
+  print *, rho
+  
+  ! add stealth layer to keep central square "down there"
+  if (discont(1) / discont(ndisc) < 2.) then 
+     ndisc = ndisc + 1
+     
+     deallocate(discont,vp,vs,rho)
+     
+     allocate(discont(ndisc))
+     allocate(vp(ndisc,2))
+     allocate(vs(ndisc,2))
+     allocate(rho(ndisc,2))
+
+     open(unit=77,file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm')
+     read(77,*) junk
+     do idom=1, ndisc - 1
+        read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
+     enddo
+     close(77)
+     
+     discont(ndisc) = discont(1) / 4.
+     rho(ndisc,1) = rho(ndisc - 1,1)
+     vp(ndisc,1) = vp(ndisc - 1,1) 
+     vs(ndisc,1) = vs(ndisc - 1,1) 
+     
+     write(6,*) 'Added a second stealth layer to keep central square small'
+  endif
+  
+  rho(:,2) = rho(:,1)
+  vp(:,2) = vp(:,1)
+  vs(:,2) = vs(:,1)
+  
+  print *, discont
+  print *, rho
 
 end subroutine arbitr_discont
 !--------------------------------------------------------------------------
