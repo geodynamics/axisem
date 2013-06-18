@@ -201,7 +201,7 @@ subroutine read_inparam_basic
     keyword = ' '
     keyvalue = ' '
     print *, 'Reading inparam_basic'
-    open(unit=iinparam_basic, file='inparam.basic', status='old', action='read',  iostat=ioerr)
+    open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
     if (ioerr.ne.0) stop 'Check input file ''inparam_basic''! Is it still there?' 
  
     do
@@ -239,10 +239,10 @@ subroutine read_inparam_basic
             read(keyvalue, *) seislength_t
 
         case('SAMPLING_RATE')
-            read(keyvalue, *) enforced_dt
+            read(keyvalue, *) enforced_period
 
         case('TIME_STEP')
-            read(keyvalue, *) enforced_period
+            read(keyvalue, *) enforced_dt
 
         case('MESHNAME')
 
@@ -284,7 +284,7 @@ subroutine read_inparam_advanced
     keyword = ' '
     keyvalue = ' '
     print *, 'Reading inparam_advanced'
-    open(unit=iinparam_advanced, file='inparam.advanced', status='old', action='read',  iostat=ioerr)
+    open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read',  iostat=ioerr)
     if (ioerr.ne.0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
  
     do

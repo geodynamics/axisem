@@ -23,7 +23,7 @@ SAMPLING_RATE       1.0
 #           and station name
 # database: One station at each GLL point, arbitrary station locations 
 #           can be reconstructed from this.
-RECFILE_TYPE      colatlon
+RECFILE_TYPE      stations
 
 
 
@@ -36,7 +36,7 @@ TIME_STEP           0.1
 # Choose Mesh (local subdirname in SOLVER/MESHES directory)
 # N.B. The mesh controls the velocity model and the number of CPUs
 
-MESHNAME            PREM_1CPU
+MESHNAME            AK135    
 
 # Use lateral heterogeneities (aka 2.5D model).
 # The model has to be described in inparam_hetero

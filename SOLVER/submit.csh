@@ -24,8 +24,20 @@ else if ( -d $1) then
     exit
 endif
 
-set datapath = `grep "data output path" inparam  |awk '{print $1}'`
-set infopath = `grep "info output path" inparam |awk '{print $1}'`
+set datapath = `grep "DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"//g'`
+set infopath = `grep "INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
+set meshdir = "MESHES/"`grep "MESHNAME" inparam_basic | awk '{print $2}'`
+
+if ( -d $meshdir) then
+    echo "Using mesh " $meshdir
+else
+    echo "Mesh " $meshdir " not found."
+    echo "Available meshes:"
+    ls MESHES
+    exit
+endif
+
+
 
 if ( ! -f inparam_hetero) then 
   cp inparam_hetero.TEMPLATE inparam_hetero
@@ -39,8 +51,21 @@ if ( ! -f inparam_attenuation) then
   cp inparam_attenuation.TEMPLATE inparam_attenuation
 endif
 
+#set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
+
+## if the mesh has different npol (hence unrolled loops), copy unrolled_loops.f90
+#if ( `diff unrolled_loops.f90 $meshdir/unrolled_loops.f90 | wc -l` != "0" ) then
+#  echo 'copying unrolled_loops.f90 from ' $meshdir
+#  cp $meshdir/unrolled_loops.f90 .
+#endif
+
+# if the mesh has different mesh_params.h, link here
+if ( `diff mesh_params.h $meshdir/mesh_params.h | wc -l` != "0" ) then
+  echo 'copying mesh_params.h from ' $meshdir
+  cp $meshdir/mesh_params.h .
+endif
+
 # if the mesh has different background_models.f90, copy over
-set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
 if ( `diff background_models.f90 $meshdir/background_models.f90 | wc -l` != "0" ) then
   echo 'copying background_models.f90 from ' $meshdir
   cp $meshdir/background_models.f90 .
@@ -50,31 +75,44 @@ endif
 set multisrc = 'false'
 set newqueue = 'false'
 
-if ( "$2" == "-s" ) then
-    set srctype = $3
-    set multisrc = 'true'
-    if ( "$4" == '-q' ) then 
-        set queue = $5
-        set newqueue = 'true'
-    endif
-else if ( "$2" == '-q') then
+#if ( "$2" == "-s" ) then
+#    set srctype = $3
+#    set multisrc = 'true'
+#    if ( "$4" == '-q' ) then 
+#        set queue = $5
+#        set newqueue = 'true'
+#    endif
+if ( "$2" == '-q') then
     set queue = $3
     set newqueue = 'true'
-    if ( "$4" == '-s' ) then 
-        set srctype = $5
-        set multisrc = 'true'
-    endif
+#    if ( "$4" == '-s' ) then 
+#        set srctype = $5
+#        set multisrc = 'true'
+#    endif
 endif
 
-# identify source input file 
-set src_file_type = `grep "source file type" inparam |awk '{print $1}'`
-echo "Source file type:" $src_file_type
+set srctype = `grep "SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
 
-# if cmtsolution, do full moment tensor simulation (4 parallel jobs)!
-if ( $src_file_type == 'cmtsolut' ) then
+if ( $srctype == 'single') then
+    set multisrc = 'false'
+    set src_file_type = 'sourceparams'
+else if ( $srctype == 'force') then
     set multisrc = 'true'
-    set srctype = 'moment'
+    set src_file_type = 'sourceparams'
+else if ( $srctype == 'moment') then
+    set multisrc = 'true'
+    set src_file_type = 'cmtsolut'
 endif
+
+## identify source input file 
+#set src_file_type = `grep "source file type" inparam |awk '{print $1}'`
+#echo "Source file type:" $src_file_type
+#
+## if cmtsolution, do full moment tensor simulation (4 parallel jobs)!
+#if ( $src_file_type == 'cmtsolut' ) then
+#    set multisrc = 'true'
+#    set srctype = 'moment'
+#endif
 
 if ( $newqueue == 'true' ) then 
 	echo "Submitting to queue type" $queue
@@ -82,7 +120,7 @@ endif
 
 # Run make to see whether the code has to be rebuilt and if so, do it.
 # If 'make' returns an Error (something >0), then exit.
-if ( { make all -j 5 } == 0 ) then
+if ( { make -j } == 0 ) then
   echo "Compilation failed, please check the errors."
   exit
 endif
@@ -247,15 +285,15 @@ foreach isrc (${num_src_arr})
         if ( -d $datapath) then
             echo " Saving data into $datapath"
         else
-            mkdir $datapath
             echo "creating $datapath" 
+            mkdir $datapath
         endif
         
         if ( -d $infopath) then 
             echo " saving info into $infopath"
         else
-            mkdir $infopath
             echo "creating $infopath"
+            mkdir $infopath
         endif
         
         mkdir Code
@@ -275,6 +313,8 @@ foreach isrc (${num_src_arr})
         cp $homedir/mesh_params.h .
         cp $homedir/$recfile . 
         cp $homedir/inparam .
+        cp $homedir/inparam_basic .
+        cp $homedir/inparam_advanced .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
         cp $homedir/inparam_attenuation .
@@ -335,7 +375,8 @@ foreach isrc (${num_src_arr})
 
     ######## SUBMIT LOCALLY #######
         else 
-            mpirun.openmpi -n $nodnum ./xsem 2>&1 > $outputname &
+            #/home/simon/local_ifort/bin/mpirun -n $nodnum ./xsem >& $outputname &
+            mpirun -n $nodnum ./xsem >& $outputname &
         endif
 
         echo "Job running in directory $isim"
@@ -368,4 +409,5 @@ echo ".... based on guesses. Edit please. Input file param_sum_seis is generated
 echo "  The moment tensor is given/assumed in the following order:"
 echo "Mzz,Mxx,Myy,Mxz,Myz,Mxy / Mrr,Mtt,Mpp,Mtr,Mpr,Mtp"
 echo " ~ ~ ~ ~ ~ ~ ~ h a n g   o n   &   l o o s e ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~"
+
 
