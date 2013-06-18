@@ -187,20 +187,38 @@ subroutine readin_parameters
   elseif (realkind==8) then
       smallval=smallval_dble
   endif
-  if (lpr) write(6,*)'  small value is:',smallval
+  if ((verbose.eq.2).and.(lpr)) write(6,*)'  small value is:',smallval
 
 end subroutine readin_parameters
 !=============================================================================
 
 subroutine read_inparam_basic
+    use data_mesh,   only: meshname
     integer             :: iinparam_basic=500, ioerr, nval
     character(len=256)  :: line
     character(len=256)  :: keyword, keyvalue
     character(len=16)   :: simtype
 
+    ! Default values
+    enforced_period = 0.0
+    enforced_dt = 0.0
+    seislength_t = 1800.0
+    add_hetero = .false.
+    dump_snaps_glob = .false.
+    dump_xdmf = .false.
+    verbose = 1
+    use_netcdf = .false.
+
+    ! These values have to be set
+    simtype = 'undefined'
+    rec_file_type = 'undefined'
+    src_file_type = 'undefined'
+    meshname = 'undefined'
+
     keyword = ' '
     keyvalue = ' '
-    print *, 'Reading inparam_basic'
+    
+    if(lpr) write(6, '(A)', advance='no') 'Reading inparam_basic...'
     open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
     if (ioerr.ne.0) stop 'Check input file ''inparam_basic''! Is it still there?' 
  
@@ -245,18 +263,18 @@ subroutine read_inparam_basic
             read(keyvalue, *) enforced_dt
 
         case('MESHNAME')
-
+            meshname = keyvalue
 
         case('LAT_HETEROGENEITY')
             read(keyvalue, *) add_hetero
 
-        case('SNAPSHOTS')
+        case('SNAPSHOTS_VTK')
             read(keyvalue, *) dump_snaps_glob
 
         case('SNAPSHOT_DT')
             read(keyvalue, *) snap_dt
 
-        case('SNAPSHOT_FORMAT')
+        case('SNAPSHOT_XDMF')
             read(keyvalue, *) dump_xdmf 
 
         case('VERBOSITY')
@@ -269,10 +287,11 @@ subroutine read_inparam_basic
         end select parameter_to_read
 
     end do
-    print *, 'done'
+    if (lpr) print *, 'done'
 
     
 end subroutine
+!=============================================================================
 
 subroutine read_inparam_advanced
     include 'mesh_params.h'
@@ -283,7 +302,7 @@ subroutine read_inparam_advanced
 
     keyword = ' '
     keyvalue = ' '
-    print *, 'Reading inparam_advanced'
+    if(lpr) write(6, '(A)', advance='no') 'Reading inparam_advanced...'
     open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read',  iostat=ioerr)
     if (ioerr.ne.0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
  
@@ -348,11 +367,29 @@ subroutine read_inparam_advanced
         end select parameter_to_read
 
     end do
+    if (lpr) print *, 'done'
 end subroutine
+
 
 !-----------------------------------------------------------------------------
 !> Checking the consistency of some of the input parameters
 subroutine check_basic_parameters
+
+    if (trim(src_file_type).eq.'undefined') then
+        if (lpr) write(6,200) 'SIMULATION_TYPE', 'inparam_basic'
+        stop
+    end if
+!    if (trim(rec_file_type).eq.'undefined') then
+!        if (lpr) write(6,200) 'RECFILE_TYPE', 'inparam_basic'
+!        stop
+!    end if
+    if (trim(meshname).eq.'undefined') then
+        if (lpr) write(6,200) 'MESHNAME', 'inparam_basic'
+        stop
+    end if
+
+200 format(A,' is not defined in input file ',A, ', but has to')
+
 
 #ifndef unc
     if (use_netcdf) then
@@ -409,49 +446,51 @@ subroutine check_basic_parameters
 
 14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
 
-  if (lpr) then
-      if (dump_snaps_glob .and. dump_snaps_solflu) then 
+  if (dump_snaps_glob .and. dump_snaps_solflu) then 
+      if (lpr) then
          write(6,*)''
          write(6,*)" NOT dumping the same snapshots twice (global AND solid/fluid)"
          write(6,*)'...hence reverting to dumping global snaps only. Sorry.'
-         dump_snaps_solflu=.false.
-      endif
+      end if
+      dump_snaps_solflu=.false.
+  endif
 
-      if (srcvic) then 
-         if (.not. make_homo ) then 
-         if (lpr) then
-         write(6,*)
-         write(6,7)'0000000000000000 WARNING ABOUT PERFORMANCE 0000000000000000000'
-         write(6,7)'00                                                          00'
-         write(6,7)'00    Computing analyt. radiation for heterogeneous model?  00'
-         write(6,7)'00         ...kinda silly, therefore turning it off...      00'
-         write(6,7)'00                                                          00'
-         write(6,7)'00000000000000000000000000000000000000000000000000000000000000'
-         endif
-         srcvic=.false.
-         endif
-      endif
+  if (srcvic) then 
+      if (.not. make_homo ) then 
+          if (lpr) then
+               write(6,*)
+               write(6,7)'0000000000000000 WARNING ABOUT PERFORMANCE 0000000000000000000'
+               write(6,7)'00                                                          00'
+               write(6,7)'00    Computing analyt. radiation for heterogeneous model?  00'
+               write(6,7)'00         ...kinda silly, therefore turning it off...      00'
+               write(6,7)'00                                                          00'
+               write(6,7)'00000000000000000000000000000000000000000000000000000000000000'
+           endif
+           srcvic=.false.
+       endif
+  endif
 
-7     format(04x,a62)
+7 format(04x,a62)
 
+  if (verbose.ne.0) then
       if (realkind==4) then       
-         if (lpr) then
-         write(6,7)
-         write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
-         write(6,7)'444   Running the solver time loop with SINGLE PRECISION   444'
-         write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
-         endif
+          if (lpr) then
+              write(6,7)
+              write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
+              write(6,7)'444   Running the solver time loop with SINGLE PRECISION   444'
+              write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
+          endif
       elseif (realkind==8) then       
-         if (lpr) then
-         write(6,7)
-         write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
-         write(6,7)'888   Running the solver time loop with DOUBLE PRECISION   888'
-         write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
-         endif
+          if (lpr) then
+              write(6,7)
+              write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
+              write(6,7)'888   Running the solver time loop with DOUBLE PRECISION   888'
+              write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
+          endif
       endif
-      write(6,*)
+  endif
+  write(6,*)
 
-  endif !lpr
 
 end subroutine check_basic_parameters
 !=============================================================================

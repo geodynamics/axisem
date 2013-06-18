@@ -79,6 +79,7 @@ module data_mesh
 
   ! Background model--------------------------------------------------------
   character(len=100)          :: bkgrdmodel
+  character(len=100)          :: meshname
   logical                     :: resolve_inner_shear, have_fluid
   double precision            :: discont(ndisc)
   logical                     :: solid_domain(ndisc)

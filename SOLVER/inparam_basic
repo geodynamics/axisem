@@ -12,25 +12,25 @@ SIMULATION_TYPE   single
 
 #### SIMULATION PARAMETERS ####
 # Choose desired seismogram length and sampling rate in seconds
-# Select 0.0, for SAMPLING_RATE==TIME_STEP
+# Select 0.0, for SAMPLING_RATE==TIME_STEP (default: 0.0)
 
-SEISMOGRAM_LENGTH  1800.
-SAMPLING_RATE       1.0  (default: 0.0)
+#SEISMOGRAM_LENGTH  1800.
+#SAMPLING_RATE       1.0  
 
 # Receiver file type, allowed options:
 # colatlon: Colatitude and Longitude for each station.
 # stations: SPECFEM-style stations file with latitude, longitude
-#           and station name
+#           and station name (default)
 # database: One station at each GLL point, arbitrary station locations 
 #           can be reconstructed from this.
-RECFILE_TYPE      stations (default: stations)
+#RECFILE_TYPE      stations 
 
 
 
 # Choose desired simulation time step
-# set to 0.0 for mesher's suggestion
+# set to 0.0 for mesher's suggestion (default)
 
-TIME_STEP           0.1  (default 0.0)
+#TIME_STEP           0.0
 
 #### MODEL / MESH ####
 # Choose Mesh (local subdirname in SOLVER/MESHES directory)
@@ -39,26 +39,24 @@ TIME_STEP           0.1  (default 0.0)
 MESHNAME            PREMlight_2CPUs
 
 # Use lateral heterogeneities (aka 2.5D model).
-# The model has to be described in inparam_hetero
+# The model has to be described in inparam_hetero (default: false)
 
-LAT_HETEROGENEITY  .false. (default: false)
+# LAT_HETEROGENEITY  .false. 
 
 #### WAVEFIELD SNAPSHOTS ####
-# Save wavefield snapshots for visualization
+# Save wavefield snapshots for visualization (default: false)
 
-SNAPSHOTS_VTK          true  (default: false)
+#SNAPSHOTS_VTK          true  
 
-# Time interval between snapshots
+# Time interval between snapshots (default: 20)
+# SNAPSHOT_DT          20.
 
-SNAPSHOT_DT          20. (default: 20)
-
-# XMDF wavefield snapshots 
-
-SNAPSHOTS_XMDF       true (default: false)
+# XMDF wavefield snapshots  (default: false)
+# SNAPSHOTS_XMDF       true
 
 
-# Use NetCDF for heavy output
-USE_NETCDF          true  (default false)
+# Use NetCDF for heavy output  (default false)
+#USE_NETCDF          true
 
 
 # Set verbosity of the code, allowed values:
