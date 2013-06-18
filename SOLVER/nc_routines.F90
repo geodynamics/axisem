@@ -1070,6 +1070,7 @@ subroutine nc_make_snapfile
                             xtype  = NF90_FLOAT,     &
                             dimids = [nc_snapdim_dimid, nc_snappoint_dimid, &
                                       nc_snaptime_dimid], & 
+                            chunksizes = [ndim_disp, npoints_global, 1], &
                             varid  = nc_snap_disp_varid) )
 
     call check(nf90_def_var(ncid   = ncid_out_snap, & 
