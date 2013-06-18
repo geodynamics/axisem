@@ -47,9 +47,6 @@ if ( ! -f inparam_xdmf) then
   cp inparam_xdmf.TEMPLATE inparam_xdmf
 endif
 
-if ( ! -f inparam_attenuation) then 
-  cp inparam_attenuation.TEMPLATE inparam_attenuation
-endif
 
 #set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
 
@@ -141,7 +138,8 @@ if ( ! -f $homedir/$srcfile ) then
 endif
 
 # identify receiver input file
-set rec_file_type = `grep "receiver file type" inparam |awk '{print $1}'`
+#set rec_file_type = `grep "receiver file type" inparam |awk '{print $1}'`
+set rec_file_type = `grep "RECFILE_TYPE" inparam_basic |awk '{print $2}'`
 echo "Receiver file type:" $rec_file_type
 
 if ( $rec_file_type == 'colatlon' ) then
@@ -312,12 +310,10 @@ foreach isrc (${num_src_arr})
         cp $homedir/xsem .
         cp $homedir/mesh_params.h .
         cp $homedir/$recfile . 
-        cp $homedir/inparam .
         cp $homedir/inparam_basic .
         cp $homedir/inparam_advanced .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
-        cp $homedir/inparam_attenuation .
         cp $homedir/*.bm .
 
         cd $mainrundir
@@ -376,7 +372,7 @@ foreach isrc (${num_src_arr})
     ######## SUBMIT LOCALLY #######
         else 
             #/home/simon/local_ifort/bin/mpirun -n $nodnum ./xsem >& $outputname &
-            mpirun -n $nodnum ./xsem >& $outputname &
+            mpirun.openmpi -n $nodnum ./xsem >& $outputname &
         endif
 
         echo "Job running in directory $isim"

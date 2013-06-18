@@ -340,8 +340,17 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
                         'netcdf_snap_'//appmynum//'.nc', &
                         npoint_plot, appisnap, appisnap
         else
-            print *, 'not yet implemented'
-            stop 2
+            write(100, 737) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                        npoint_plot, isnap-1, npoint_plot, &
+                        nsnap, npoint_plot, &
+                        'netcdf_snap_'//appmynum//'.nc', &
+                        npoint_plot, isnap-1, npoint_plot, &
+                        nsnap, npoint_plot, &
+                        'netcdf_snap_'//appmynum//'.nc', &
+                        npoint_plot, isnap-1, npoint_plot, &
+                        nsnap, npoint_plot, &
+                        'netcdf_snap_'//appmynum//'.nc', &
+                        npoint_plot, appisnap, appisnap, appisnap
         endif !monopole
 
     else
@@ -469,7 +478,6 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '        </Attribute>',/&
     '    </Grid>',/)
 
-
 736 format(&    
     '    <Grid Name="', A,'" GridType="Uniform">',/&
     '        <Time Value="',F8.2,'" />',/&
@@ -507,6 +515,66 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '            <DataItem ItemType="Function" Function="sqrt($0 * $0 + $1 * $1)" Dimensions="', I10,'">',/&
     '                <DataItem Reference="XML">',/&
     '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_s"]/DataItem[1]',/&
+    '                </DataItem>',/&
+    '                <DataItem Reference="XML">',/&
+    '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_z"]/DataItem[1]',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '    </Grid>',/)
+
+737 format(&    
+    '    <Grid Name="', A,'" GridType="Uniform">',/&
+    '        <Time Value="',F8.2,'" />',/&
+    '        <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
+    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'grid', A,']" />',/&
+    '        </Topology>',/&
+    '        <Geometry GeometryType="XY">',/&
+    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '        </Geometry>',/&
+    '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 3" Format="XML">',/&
+    '                      ', i10,'         0          0',/&
+    '                               1         1          1',/&
+    '                               1',  i10,'          1',/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, ' 3" NumberType="Float" Format="hdf">',/&
+    '                   ', A, ':/displacement',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="u_p" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 3" Format="XML">',/&
+    '                      ', i10,'         0          1',/&
+    '                               1         1          1',/&
+    '                               1',  i10,'          1',/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, ' 3" NumberType="Float" Format="hdf">',/&
+    '                   ', A, ':/displacement',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="u_z" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 3" Format="XML">',/&
+    '                      ', i10,'         0          2',/&
+    '                               1         1          1',/&
+    '                               1'    i10,'          1',/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, ' 3" NumberType="Float" Format="hdf">',/&
+    '                   ', A, ':/displacement',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="abs" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="Function" Function="sqrt($0 * $0 + $1 * $1 + $2 * $2)" Dimensions="', I10,'">',/&
+    '                <DataItem Reference="XML">',/&
+    '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_s"]/DataItem[1]',/&
+    '                </DataItem>',/&
+    '                <DataItem Reference="XML">',/&
+    '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_p"]/DataItem[1]',/&
     '                </DataItem>',/&
     '                <DataItem Reference="XML">',/&
     '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_z"]/DataItem[1]',/&
