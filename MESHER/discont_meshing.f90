@@ -166,31 +166,17 @@ subroutine create_subregions
          maxh_icb = period*vp(ndisc,1)/ (pts_wavelngth*max_spacing(npol))
       endif
 
-      rmin = maxh_icb*(dble(ns_ref/dble((2.*dble(2**nc_init))))+1.d0)
+      rmin = maxh_icb * (dble(ns_ref / dble ((2. * dble(2**nc_init)))) + 1.d0)
 
       if (dump_mesh_info_screen) write(6,*)'actual ds at innermost discontinuity [km] :', &
                  0.5*pi*rdisc_top(ndisc)/real(ns_ref)*real(2**nc_init)/1000.
       if (dump_mesh_info_screen) write(6,*)'maximal dz at innermost discontinuity [km]:', maxh_icb/1000.
 
-      if (rmin >= rdisc_top(ndisc)) then 
+      if (rmin > rdisc_top(ndisc) - maxh_icb * .9) then 
          ! at least the ICB....
-         rmin=rdisc_top(ndisc)
+         rmin = rdisc_top(ndisc) - maxh_icb * .9
       endif
       
-      ! if deeper, then at least one maxh_icb down from ICB
-      if (dump_mesh_info_screen) write(6,*)'RMIN 1:',rmin
-      rmin = rdisc_top(ndisc) - ( dble(floor(rdisc_top(ndisc)/maxh_icb)) - &
-                                 dble(floor(rmin/maxh_icb)) + 1.d0 )*maxh_icb
-      if (dump_mesh_info_screen) write(6,*)'RMIN 2:',rmin
-
-      !         rmin=min(rmin,rdisc_top(ndisc)-maxh_icb) 
-      ! TNM: SOMEHOW, THIS STILL DOESN'T GIVE THE RIGHT RESULT..............
-      ! STUPID FIX: MAKE IT SMALLER YET AGAIN........................
-      !         rmin=rmin-4.*maxh_icb
-
-      rmin=rmin-maxh_icb       
-      if (dump_mesh_info_screen) write(6,*)'RMIN 3:',rmin
-
       if (dump_mesh_info_screen) write(6,*)'CALCULATED RMIN=',rmin
 !      write(6,*)'RMIN NEXT MAXH:',real(floor(rmin/maxh_icb))*maxh_icb
       if (dump_mesh_info_screen) write(6,*)'MAXH_ICB=',maxh_icb
@@ -306,7 +292,7 @@ subroutine create_subregions
             if (current) iclev_glob(ic) = nz_glob-icount_glob+1
             dz_glob(icount_glob) = dz 
             ds_glob(icount_glob) = ds
-            radius_arr(icount_glob)=current_radius
+            radius_arr(icount_glob) = current_radius
             vp_arr(icount_glob) = velocity(current_radius,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
             vs_arr(icount_glob) = velocity(current_radius,'v_s',idom,bkgrdmodel,lfbkgrdmodel)
             if (vs_arr(icount_glob) < 0.1d0*vs_arr(1) ) & 
