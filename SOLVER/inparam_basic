@@ -51,8 +51,8 @@ MESHNAME            PREMlight_2CPUs
 # Time interval between snapshots (default: 20)
 # SNAPSHOT_DT          20.
 
-# XMDF wavefield snapshots  (default: false)
-# SNAPSHOTS_XMDF       true
+# XDMF wavefield snapshots  (default: false)
+#SNAPSHOTS_XDMF       true
 
 
 # Use NetCDF for heavy output  (default false)

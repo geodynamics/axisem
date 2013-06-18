@@ -4,7 +4,7 @@ module nc_routines
 #ifdef unc
     use netcdf
 #endif
-    use data_proc, ONLY : mynum, nproc, lpr
+    use data_io,   ONLY : verbose
     use data_proc, ONLY : mynum, nproc, lpr
     use global_parameters
 
@@ -85,7 +85,7 @@ module nc_routines
     !> Compression level (0 lowest, 9 highest)
     integer             :: deflate_level = 5
     !> @todo Will hopefully be a global variable one day
-    logical             :: verbose = .true.
+    !logical             :: verbose = .true.
     
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
@@ -119,7 +119,7 @@ subroutine barrier
 
 end subroutine barrier
 !-----------------------------------------------------------------------------------------
-
+!> Write out the model domains for each element
 subroutine nc_write_el_domains(idom)
     integer, dimension(:), intent(in) :: idom
 
@@ -304,13 +304,15 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
     isnap_loc = isnap_global
-    if (ndumps == 0) then 
-        write(6,"('  Proc ', I4, ' in dump routine, isnap =', I5, &
-                & ', nothing to dump, returning...')") mynum, isnap_loc
-        return
-    else
-        write(6,"('  Proc ', I4, ' in dump routine, isnap =', I5, &
-                & ', stepstodump = ', I4)") mynum, isnap_loc, ndumps
+    if (verbose.eq.2) then
+        if (ndumps == 0) then 
+            write(6,"('  Proc ', I4, ' in dump routine, isnap =', I5, &
+                    & ', nothing to dump, returning...')") mynum, isnap_loc
+            return
+        else
+            write(6,"('  Proc ', I4, ' in dump routine, isnap =', I5, &
+                    & ', stepstodump = ', I4)") mynum, isnap_loc, ndumps
+        end if
     end if
 
 
@@ -351,9 +353,11 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 
     call check( nf90_close(ncid_out) ) 
     call cpu_time(tack)
-    write(6,"('  Proc', I5,': Wrote ', F8.2, ' MB in ', F6.2, 's')") &
-        mynum, real(dumpsize) * realkind / 1048576., tack-tick 
-    call flush(6)
+    if (verbose.eq.2) then
+        write(6,"('  Proc', I5,': Wrote ', F8.2, ' MB in ', F6.2, 's')") &
+            mynum, real(dumpsize) * realkind / 1048576., tack-tick 
+        call flush(6)
+    end if
 
 #endif
 end subroutine nc_dump_strain_to_disk
@@ -403,8 +407,10 @@ subroutine nc_dump_rec_to_disk
     dumpsize = nseismo * 3 * num_rec
     call check( nf90_close(ncid=ncid_out))
     call cpu_time(tack)
-    write(6,"(I3,': Receiver data, Wrote ', F8.3, ' MB in ', F6.2, 's')") &
-        mynum, real(dumpsize) * realkind / 1048576., tack-tick 
+    if (verbose.eq.2) then
+        write(6,"(I3,': Receiver data, Wrote ', F8.3, ' MB in ', F6.2, 's')") &
+            mynum, real(dumpsize) * realkind / 1048576., tack-tick 
+    end if
 #endif
 end subroutine nc_dump_rec_to_disk
 !----------------------------------------------------------------------------------------
@@ -543,7 +549,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                             :: nc_pt_dimid
     integer                             :: nc_mesh_s_varid, nc_mesh_z_varid   
     integer                             :: nc_disc_dimid, nc_disc_varid
-    if (mynum == 0) then
+    if ((mynum == 0).and.(verbose.eq.2)) then
         write(6,*)
         write(6,*) '************************************************************************'
         write(6,*) '**** Producing netcdf output file with its variables and dimensions ****'
@@ -554,7 +560,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     call barrier
     dumpstepsnap = int(dumpbuffersize / nproc) * nproc ! Will later be reduced to nstrain, if this is smaller
                                                        ! than value given here
-    if (lpr) write(6,*) '  Dumping NetCDF file to disk every', dumpstepsnap, ' snaps'
+    
+    if (verbose.ne.0) then
+        if (lpr) write(6,*) '  Dumping NetCDF file to disk every', dumpstepsnap, ' snaps'
+    end if
 
     call barrier ! for nicer output only
 
@@ -564,7 +573,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     dumpposition = .false.
     do iproc=0, nproc-1
         dumpposition(iproc*(dumpstepsnap/nproc)) = .true.
-        if (iproc.eq.mynum) then
+        if ((iproc.eq.mynum).and.(verbose.ne.0)) then
             write(6,"('Proc ', I4, ' will dump at position ', I4)") mynum, outputplan
             call flush(6)
         end if
@@ -1065,12 +1074,13 @@ subroutine nc_make_snapfile
     call check(nf90_def_dim(ncid_out_snap, 'connections', 4 , nc_snapconnec_dimid) )
     call check(nf90_def_dim(ncid_out_snap, 'timesteps', nsnap , nc_snaptime_dimid) )
 
+    call flush(6)
     call check(nf90_def_var(ncid   = ncid_out_snap, & 
                             name   = 'displacement',  &
                             xtype  = NF90_FLOAT,     &
                             dimids = [nc_snapdim_dimid, nc_snappoint_dimid, &
                                       nc_snaptime_dimid], & 
-                            chunksizes = [ndim_disp, npoints_global, 1], &
+                            chunksizes = [ndim_disp, npoint_plot, 1], &
                             varid  = nc_snap_disp_varid) )
 
     call check(nf90_def_var(ncid   = ncid_out_snap, & 
@@ -1105,7 +1115,6 @@ subroutine nc_dump_snapshot(u)
 
 #ifdef unc
     if (src_type(1) == 'monopole') then
-        print *, isnap
        call check(nf90_put_var(ncid   = ncid_out_snap, &
                                varid  = nc_snap_disp_varid, &
                                start  = [1, 1, isnap], &
@@ -1118,7 +1127,23 @@ subroutine nc_dump_snapshot(u)
                                count  = [1, npoint_plot, 1], &
                                values = u(3,:)) )
     else
-        stop 2
+       call check(nf90_put_var(ncid   = ncid_out_snap, &
+                               varid  = nc_snap_disp_varid, &
+                               start  = [1, 1, isnap], &
+                               count  = [1, npoint_plot, 1], &
+                               values = u(1,:)) )
+       
+       call check(nf90_put_var(ncid   = ncid_out_snap, &
+                               varid  = nc_snap_disp_varid, &
+                               start  = [2, 1, isnap], &
+                               count  = [1, npoint_plot, 1], &
+                               values = u(2,:)) )
+
+       call check(nf90_put_var(ncid   = ncid_out_snap, &
+                               varid  = nc_snap_disp_varid, &
+                               start  = [3, 1, isnap], &
+                               count  = [1, npoint_plot, 1], &
+                               values = u(3,:)) )
     end if
 
 #endif

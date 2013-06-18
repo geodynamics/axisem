@@ -205,6 +205,7 @@ subroutine read_inparam_basic
     seislength_t = 1800.0
     add_hetero = .false.
     dump_snaps_glob = .false.
+    snap_dt = 20.
     dump_xdmf = .false.
     verbose = 1
     use_netcdf = .false.
@@ -274,7 +275,7 @@ subroutine read_inparam_basic
         case('SNAPSHOT_DT')
             read(keyvalue, *) snap_dt
 
-        case('SNAPSHOT_XDMF')
+        case('SNAPSHOTS_XDMF')
             read(keyvalue, *) dump_xdmf 
 
         case('VERBOSITY')
@@ -288,6 +289,7 @@ subroutine read_inparam_basic
 
     end do
     if (lpr) print *, 'done'
+    print *, 'Dump_XDMF: ', dump_xdmf
 
     
 end subroutine

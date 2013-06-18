@@ -320,8 +320,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
         call nc_dump_snapshot(u)
     else
         write(13100) u(1,:)
-        if (src_type(1) /= 'monopole') &
-           write(13101) u(2,:)
+        if (src_type(1) /= 'monopole') write(13101) u(2,:)
         write(13102) u(3,:)
     end if
 
@@ -333,10 +332,10 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     if (use_netcdf) then
         if (src_type(1)=='monopole') then
             write(100, 736) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                        npoint_plot, isnap-1, isnap, npoint_plot, &
+                        npoint_plot, isnap-1, npoint_plot, &
                         nsnap, npoint_plot, &
                         'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, isnap-1, isnap, npoint_plot, &
+                        npoint_plot, isnap-1, npoint_plot, &
                         nsnap, npoint_plot, &
                         'netcdf_snap_'//appmynum//'.nc', &
                         npoint_plot, appisnap, appisnap
@@ -485,7 +484,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                <DataItem Dimensions="3 3" Format="XML">',/&
     '                      ', i10,'         0          0',/&
     '                               1         1          1',/&
-    '                      ', i10,     i10,'          1',/&
+    '                               1',  i10,'          1',/&
     '                </DataItem>',/&
     '                <DataItem Dimensions="', i10, i10, ' 2" NumberType="Float" Format="hdf">',/&
     '                   ', A, ':/displacement',/&
@@ -497,7 +496,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                <DataItem Dimensions="3 3" Format="XML">',/&
     '                      ', i10,'         0          1',/&
     '                               1         1          1',/&
-    '                      ', i10,     i10,'          2',/&
+    '                               1'    i10,'          1',/&
     '                </DataItem>',/&
     '                <DataItem Dimensions="', i10, i10, ' 2" NumberType="Float" Format="hdf">',/&
     '                   ', A, ':/displacement',/&
