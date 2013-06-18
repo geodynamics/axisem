@@ -4,7 +4,7 @@ module nc_routines
 #ifdef unc
     use netcdf
 #endif
-    use data_io,   ONLY : verbose
+    use data_io,   ONLY : verbose, deflate_level
     use data_proc, ONLY : mynum, nproc, lpr
     use global_parameters
 
@@ -80,12 +80,6 @@ module nc_routines
     !! @todo These parameters should move to a input file soon
     !> How many snaps should be buffered in RAM?
     integer             :: dumpbuffersize = 256
-    !> Should output be compressed?
-    logical             :: deflate = .false.
-    !> Compression level (0 lowest, 9 highest)
-    integer             :: deflate_level = 5
-    !> @todo Will hopefully be a global variable one day
-    !logical             :: verbose = .true.
     
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
@@ -1081,6 +1075,7 @@ subroutine nc_make_snapfile
                             dimids = [nc_snapdim_dimid, nc_snappoint_dimid, &
                                       nc_snaptime_dimid], & 
                             chunksizes = [ndim_disp, npoint_plot, 1], &
+                            deflate_level = deflate_level, &
                             varid  = nc_snap_disp_varid) )
 
     call check(nf90_def_var(ncid   = ncid_out_snap, & 

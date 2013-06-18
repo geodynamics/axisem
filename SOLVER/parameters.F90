@@ -315,7 +315,7 @@ subroutine read_inparam_advanced
     dump_energy = .false.
     make_homo = .false.
     force_ani = .true.
-
+    deflate_level = 5
 
 
     keyword = ' '
@@ -376,6 +376,9 @@ subroutine read_inparam_advanced
         case('HOMO_RHO')
             read(keyvalue,*) rhohomo 
             rhohomo = rhohomo * 1.e3
+
+        case('DEFLATE_LEVEL')
+            read(keyvalue,*) deflate_level
 
         case('FORCE_ANISO')
             read(keyvalue,*) force_ani

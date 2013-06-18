@@ -40,6 +40,8 @@ public
   logical           :: do_anel
   integer           :: verbose
 
+  integer           :: deflate_level  !< Level of deflate compression in NetCDF. Only used
+                                      !! for the XDMF visualization so far.
   
 ! indices to limit dumping to select contiguous range of GLL points:
 ! 0<=ibeg<=iend<=npol

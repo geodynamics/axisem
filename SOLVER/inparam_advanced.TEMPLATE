@@ -20,6 +20,11 @@ MESH_TEST           false
 
 
 
+######################## NetCDF output ########################################
+# Level of compression of wavefield data (0: off, 9:highest)
+#DEFLATE_LEVEL       5
+
+
 ######################## SENSITIVITY KERNELS ##################################
 # Save necessary wavefields for Kernel calculation
 # N.b. Kernel calculation needs Axisem Kerner (sold separately)
