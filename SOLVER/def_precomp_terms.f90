@@ -3346,12 +3346,16 @@ integer                      :: count_lower_disc,count_upper_disc
 
   bdry_sum = psum(real(bdry_sum,kind=realkind))
 
-! yet another check....see if # elements above fluid is multiple of # below
-  if (mod(count_upper_disc,2*count_lower_disc)/=0) then
+! yet another check....see if # elements above fluid is multiple of # below 
+! or the same (this is the case for no coarsening layer in the fluid)
+  if ((count_upper_disc /= count_lower_disc) &
+        .and. mod(count_upper_disc,2*count_lower_disc) /= 0) then
      write(6,*)procstrg,&
                'Problem: Number of elements found to be at discont above fluid'
      write(6,*)procstrg,&
-               '   is not an even multiple of elements found to be below fluid'
+               '   is not an even multiple of or the same as elements found to be below fluid'
+     write(6,*)procstrg,&
+               '   check doubling layers'
      write(6,*)procstrg,'# elems above fluid:',count_upper_disc
      write(6,*)procstrg,'# elems below fluid:',count_lower_disc
      stop
