@@ -208,10 +208,10 @@ subroutine read_inparam_basic
     dump_xdmf = .false.
     verbose = 1
     use_netcdf = .false.
+    rec_file_type = 'stations'
 
     ! These values have to be set
     simtype = 'undefined'
-    rec_file_type = 'undefined'
     src_file_type = 'undefined'
     meshname = 'undefined'
 
@@ -300,6 +300,22 @@ subroutine read_inparam_advanced
     character(len=256)                   :: line
     character(len=256) :: keyword, keyvalue
 
+    ! Default values
+    time_scheme = 'newmark2'
+    datapath = './Data'
+    infopath = './Info'
+    do_mesh_tests = .false.
+    dump_wavefields = .false.
+    strain_samp = 8
+    src_dump_type = 'mask'
+    ibeg = 1
+    iend = 1
+    dump_energy = .false.
+    make_homo = .false.
+    force_ani = .true.
+
+
+
     keyword = ' '
     keyvalue = ' '
     if(lpr) write(6, '(A)', advance='no') 'Reading inparam_advanced...'
@@ -318,11 +334,9 @@ subroutine read_inparam_advanced
 
         case('DATA_DIR')
             datapath = keyvalue
-            lfdata = index(datapath,' ')-1
 
         case('INFO_DIR')
             infopath = keyvalue
-            lfinfo = index(infopath,' ')-1
 
         case('MESH_TEST')
             read(keyvalue,*) do_mesh_tests
@@ -367,6 +381,8 @@ subroutine read_inparam_advanced
         end select parameter_to_read
 
     end do
+    lfdata = index(datapath,' ')-1
+    lfinfo = index(infopath,' ')-1
     if (lpr) print *, 'done'
 end subroutine
 
