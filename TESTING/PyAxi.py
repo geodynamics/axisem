@@ -476,46 +476,28 @@ def PyAxi(**kwargs):
                     print 'DONE'
 
             if input['verbose'] != 'N':
-                print "\n=============="
-                print "Change inparam"
-                print "=============="
+                print "\n===================="
+                print "Change inparam_basic"
+                print "===================="
             else:
-                sys.stdout.write('Change inparam...')
+                sys.stdout.write('Change inparam_basic...')
                 sys.stdout.flush()
             
-            if os.path.isfile('inparam'):
-                subprocess.check_call(['rm', 'inparam'])
-            subprocess.check_call(['cp', 'inparam.TEMPLATE', 'inparam'])
+            if os.path.isfile('inparam_basic'):
+                subprocess.check_call(['rm', 'inparam_basic'])
+            subprocess.check_call(['cp', 'inparam_basic.TEMPLATE', 'inparam_basic'])
             
-            inparam_solver_open = open('./inparam', 'r')
+            inparam_solver_open = open('./inparam_basic', 'r')
             inparam_solver_read = inparam_solver_open.readlines()
-            
-            inparam_solver_read[1] = input['no_simu'] + \
-                '               number of simulations. 1: single Mij/f_i; 2: forces; 4: moment tensor \n'
-            inparam_solver_read[4] = input['seis_length'] + \
-                '           seismogram length [s]\n'
-            inparam_solver_read[5] = input['time_step'] + \
-                "            time step [s]. Put to 0.0 to use mesher's suggestion (mesh_params.h)\n"
-            inparam_solver_read[6] = input['time_scheme'] + \
-                "            time scheme: newmark2,symplec4,ML_SO4m5,ML_SO6m7,KL_O8m17,SS_35o10\n"
-            inparam_solver_read[10] = input['source_type'] + \
-                "        source file type: 'sourceparams','cmtsolut'\n"
-            inparam_solver_read[11] = input['receiver_type'] + \
-                "        receiver file type: 'colatlon','stations','database'\n"
-            inparam_solver_read[18] = input['save_XDMF'] + \
-                "         save XDMF files (high resolution 2D wavefields), more options in inparam_xdmf\n"
-            if input['netCDF'] == 'N':
-                inparam_solver_read[35] = 'binary' + \
-                    '          Output format for seismograms and wavefields: binary, netcdf\n'
-            elif input['netCDF'] != 'N':
-                inparam_solver_read[35] = 'netcdf' + \
-                    '          Output format for seismograms and wavefields: binary, netcdf\n'
-            inparam_solver_read[36] = input['force_aniso'] + \
-                "         force anisotropic model handling\n"
-            inparam_solver_read[37] = input['viscoelastic_attenuation'] + \
-                "         include viscoelastic attenuation"
+           
+            inparam_solver_read[10] = 'SIMULATION_TYPE   ' + input['simu_type'] + '\n'
+            inparam_solver_read[38] = 'MESHNAME            ' + input['mesh_name'] + '\n'
+            if input['verbose'] == 'Y':
+                inparam_solver_read[65] = 'VERBOSITY               1' + '\n'
+            else:
+                inparam_solver_read[65] = 'VERBOSITY               0' + '\n'
             inparam_solver_open.close()
-            inparam_solver_open = open('./inparam', 'w')
+            inparam_solver_open = open('./inparam_basic', 'w')
 
             for i in range(0, len(inparam_solver_read)):
                 inparam_solver_open.write(inparam_solver_read[i])
@@ -527,6 +509,51 @@ def PyAxi(**kwargs):
             else:
                 print 'DONE'
 
+            if input['verbose'] != 'N':
+                print "\n======================="
+                print "Change inparam_advanced"
+                print "======================="
+            else:
+                sys.stdout.write('Change inparam_advanced...')
+                sys.stdout.flush()
+            
+            if os.path.isfile('inparam_advanced'):
+                subprocess.check_call(['rm', 'inparam_advanced'])
+            subprocess.check_call(['cp', 'inparam_advanced.TEMPLATE', 'inparam_advanced'])
+            
+            inparam_solver_open = open('./inparam_advanced', 'r')
+            inparam_solver_read = inparam_solver_open.readlines()
+           
+            inparam_solver_read[11] = 'DATA_DIR        "%s"\n' %(input['out_data'])
+            inparam_solver_read[12] = 'INFO_DIR        "%s"\n' %(input['out_info'])
+            inparam_solver_read[18] = 'MESH_TEST           ' + input['mesh_test'] + '\n'
+            inparam_solver_read[25] = 'KERNEL_WAVEFIELDS   ' + input['kernel_wavefield'] + '\n' 
+            inparam_solver_read[28] = 'KERNEL_SPP          ' + input['kernel_spp'] + '\n'
+            inparam_solver_read[34] = 'KERNEL_SOURCE       ' + input['kernel_src'] + '\n'
+            inparam_solver_read[37] = 'KERNEL_IBEG         ' + input['kernel_ibeg'] + '\n'
+            inparam_solver_read[38] = 'KERNEL_IEND         ' + input['kernel_iend'] + '\n'
+            inparam_solver_read[42] = 'NR_LIN_SOLIDS       ' + input['NR_LIN_SOLIDS'] + '\n'
+            inparam_solver_read[45] = 'F_MIN               ' + input['F_MIN'] + '\n'
+            inparam_solver_read[49] = 'F_MAX               ' + input['F_MAX'] + '\n'
+            inparam_solver_read[83] = 'SAVE_ENERGY         ' + input['SAVE_ENERGY'] + '\n'
+            inparam_solver_read[86] = 'HOMO_MODEL          ' + input['HOMO_MODEL'] + '\n'
+            inparam_solver_read[87] = 'HOMO_VP             ' + input['HOMO_VP'] + '\n'
+            inparam_solver_read[88] = 'HOMO_VS             ' + input['HOMO_VS'] + '\n'
+            inparam_solver_read[89] = 'HOMO_RHO            ' + input['HOMO_RHO'] + '\n'
+            inparam_solver_read[92] = 'FORCE_ANISO         ' + input['FORCE_ANISO'] + '\n'
+            inparam_solver_open.close()
+            inparam_solver_open = open('./inparam_advanced', 'w')
+
+            for i in range(0, len(inparam_solver_read)):
+                inparam_solver_open.write(inparam_solver_read[i])
+
+            inparam_solver_open.close()
+            if input['verbose'] != 'N':
+                print inparam_solver_read[1] + inparam_solver_read[4] + \
+                            inparam_solver_read[10] + inparam_solver_read[11]
+            else:
+                print 'DONE'
+   
             if input['source_type'] == 'sourceparams':
                 if input['verbose'] != 'N':
                     print "\n========================"
@@ -1130,11 +1157,38 @@ def read_input_file():
     input['no_proc'] = config.get('mesher', 'no_proc')
     input['vtk_output'] = config.get('mesher', 'vtk_output')    
     
+    input['simu_type'] = config.get('solver', 'simu_type')
+    
+    input['out_data'] = config.get('solver', 'out_data')
+    input['out_info'] = config.get('solver', 'out_info')
+    input['mesh_test'] = config.get('solver', 'mesh_test')
+    input['kernel_wavefield'] = config.get('solver', 'kernel_wavefield')
+    input['kernel_spp'] = config.get('solver', 'kernel_spp')
+    input['kernel_src'] = config.get('solver', 'kernel_src')
+    input['kernel_ibeg'] = config.get('solver', 'kernel_ibeg')
+    input['kernel_iend'] = config.get('solver', 'kernel_iend')
+    input['NR_LIN_SOLIDS'] = config.get('solver', 'NR_LIN_SOLIDS')
+    input['F_MIN'] = config.get('solver', 'F_MIN')
+    input['F_MAX'] = config.get('solver', 'F_MAX')
+    input['SAVE_ENERGY'] = config.get('solver', 'SAVE_ENERGY')
+    input['HOMO_MODEL'] = config.get('solver', 'HOMO_MODEL')
+    input['HOMO_VP'] = config.get('solver', 'HOMO_VP')
+    input['HOMO_VS'] = config.get('solver', 'HOMO_VS')
+    input['HOMO_RHO'] = config.get('solver', 'HOMO_RHO')
+    input['FORCE_ANISO'] = config.get('solver', 'FORCE_ANISO')
+
     input['no_simu'] = config.get('solver', 'no_simu')
     input['seis_length'] = config.get('solver', 'seis_length')
     input['time_step'] = config.get('solver', 'time_step')
     input['time_scheme'] = config.get('solver', 'time_scheme')
-    input['source_type'] = config.get('solver', 'source_type')
+    if input['simu_type'] == 'single':
+        input['source_type'] = 'sourceparams'
+    elif input['simu_type'] == 'moment':
+        input['source_type'] = 'cmtsolut'
+    else:
+        print 'Check your simulation type, you entered:'
+        print input['simu_type']
+
     input['receiver_type'] = config.get('solver', 'receiver_type')
     input['save_XDMF'] = config.get('solver', 'save_XDMF')
     input['force_aniso'] = config.get('solver', 'force_aniso')
