@@ -175,21 +175,21 @@ subroutine create_subregions
       if (rmin >= rdisc_top(ndisc)) then 
          ! at least the ICB....
          rmin=rdisc_top(ndisc)
-      else
-         ! if deeper, then at least one maxh_icb down from ICB
-         if (dump_mesh_info_screen) write(6,*)'RMIN 1:',rmin
-         rmin = rdisc_top(ndisc) - ( dble(floor(rdisc_top(ndisc)/maxh_icb)) - &
-                                    dble(floor(rmin/maxh_icb)) + 1.d0 )*maxh_icb
-         if (dump_mesh_info_screen) write(6,*)'RMIN 2:',rmin
-
-!         rmin=min(rmin,rdisc_top(ndisc)-maxh_icb) 
-! TNM: SOMEHOW, THIS STILL DOESN'T GIVE THE RIGHT RESULT..............
-! STUPID FIX: MAKE IT SMALLER YET AGAIN........................
-!         rmin=rmin-4.*maxh_icb
-        rmin=rmin-maxh_icb       
-         if (dump_mesh_info_screen) write(6,*)'RMIN 3:',rmin
-
       endif
+      
+      ! if deeper, then at least one maxh_icb down from ICB
+      if (dump_mesh_info_screen) write(6,*)'RMIN 1:',rmin
+      rmin = rdisc_top(ndisc) - ( dble(floor(rdisc_top(ndisc)/maxh_icb)) - &
+                                 dble(floor(rmin/maxh_icb)) + 1.d0 )*maxh_icb
+      if (dump_mesh_info_screen) write(6,*)'RMIN 2:',rmin
+
+      !         rmin=min(rmin,rdisc_top(ndisc)-maxh_icb) 
+      ! TNM: SOMEHOW, THIS STILL DOESN'T GIVE THE RIGHT RESULT..............
+      ! STUPID FIX: MAKE IT SMALLER YET AGAIN........................
+      !         rmin=rmin-4.*maxh_icb
+
+      rmin=rmin-maxh_icb       
+      if (dump_mesh_info_screen) write(6,*)'RMIN 3:',rmin
 
       if (dump_mesh_info_screen) write(6,*)'CALCULATED RMIN=',rmin
 !      write(6,*)'RMIN NEXT MAXH:',real(floor(rmin/maxh_icb))*maxh_icb
