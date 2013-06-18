@@ -14,16 +14,16 @@ INFO_DIR        "./Info"
 
 
 
-#### MESH TEST ####
+######################## MESH TEST ############################################
 # Do mesh tests? Suggested to do once per mesh and revision
 MESH_TEST           false
 
 
 
-#### SENSITIVITY KERNELS ####
+######################## SENSITIVITY KERNELS ##################################
 # Save necessary wavefields for Kernel calculation
 # N.b. Kernel calculation needs Axisem Kerner (sold separately)
-KERNEL_WAVEFIELDS   .true.
+KERNEL_WAVEFIELDS   false 
 
 # Samples per period
 KERNEL_SPP          8
@@ -38,9 +38,48 @@ KERNEL_SOURCE       mask
 KERNEL_IBEG         1
 KERNEL_IEND         1
 
+######################## ATTENUATION ##########################################
+# number of standard linear solids (default: 5)
+NR_LIN_SOLIDS       5
+
+# minimum frequency in attenuation band [Hz] (default: 0.001)
+F_MIN               0.001
+# maximum frequency in attenuation band [Hz] (default: 1.0)
+# must be considered carefully for high-frequency simulations
+F_MAX               1.0
 
 
-#### FOR THE INCLINED ####
+# reference frequency of the background model [Hz] (default: 1.0)
+#F_REFERENCE         1.0
+
+# use correction of the coefficients for small values of Q (default: true)
+#SMALL_Q_CORRECTION  true
+
+# Number of frequencies at which the exact Q is sampled in the 
+# minimization (default: 100)
+#NR_F_SAMPLE         100
+
+# maximum number of iteration in the simulated annealing (default: 100000)
+#MAXINT_SA           100000
+# starting 'temperature' for the stress relaxation frequencies (default: 0.1)
+#TSTART_SR           0.1
+# starting 'temperature' for the amplitude coefficients (default: 0.1)
+#TSTART_AMP          0.1
+
+# temperature decay rate (default: 0.99995)
+#T_DECAY             0.99995
+
+# fix the frequencies log spaced in the attenuation band (default: false)
+#FIX_FREQ            false
+
+# dump memory vars to vtk (not optimized, only meant for testing, 
+# not with cg) (default: false)
+#DUMP_VTK            false
+
+# use coarse grained memory variables (ONLY for npol = 4) (default: true)
+#COARSE_GRAINED      true
+
+######################## FOR THE INCLINED #####################################
 # Save global kinetic/potential energy? generally not needed
 SAVE_ENERGY         .false.
 

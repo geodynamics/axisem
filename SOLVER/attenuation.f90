@@ -493,26 +493,84 @@ subroutine prepare_attenuation(lambda, mu)
   integer                           :: inode, ipol, jpol
   double precision                  :: dsdxi, dzdxi, dsdeta, dzdeta
   double precision                  :: weights_cg(0:npol,0:npol)
+    
+  integer     :: iinparam_advanced=500, ioerr, nval
+  character(len=256)                   :: line
+  character(len=256) :: keyword, keyvalue
 
-  if (lpr) print *, '  ...reading inparam_attanuation...'
-  open(unit=164, file='inparam_attenuation')
-
-  read(164,*) n_sls_attenuation
-  read(164,*) f_min
-  read(164,*) f_max
-  read(164,*) w_0
-  read(164,*) do_corr_lowq
+  keyword = ' '
+  keyvalue = ' '
+  if(lpr) write(6, '(A)', advance='no') 'Reading inparam_advanced...'
+  open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read',  iostat=ioerr)
+  if (ioerr.ne.0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
   
-  read(164,*) nfsamp
-  read(164,*) max_it
-  read(164,*) Tw
-  read(164,*) Ty
-  read(164,*) d
-  read(164,*) fixfreq
-  read(164,*) dump_memory_vars
-  read(164,*) att_coarse_grained
+  ! Default values
+  n_sls_attenuation = 5
+  f_min = 0.001
+  f_max = 1.0
+  w_0 = 1.0
+  do_corr_lowq = .true.
+  nfsamp = 100
+  max_it = 100000
+  Tw = 0.1
+  Ty = 0.1
+  d = 0.99995
+  fixfreq = .false.
+  dump_memory_vars = .false.
+  att_coarse_grained = .true.
 
-  close(unit=164)
+  do
+      read(iinparam_advanced,fmt='(a256)',iostat=ioerr) line
+      if (ioerr.lt.0) exit
+      if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
+      read(line,*) keyword, keyvalue 
+
+      select case(keyword)
+      case('NR_LIN_SOLIDS')
+          read(keyvalue,*) n_sls_attenuation
+
+      case('F_MIN') 
+          read(keyvalue,*) f_min
+
+      case('F_MAX') 
+          read(keyvalue,*) f_max
+
+      case('F_REFERENCE')
+          read(keyvalue,*) w_0
+
+      case('SMALL_Q_CORRECTION')
+          read(keyvalue,*) do_corr_lowq
+
+      case('NR_F_SAMPLE')
+          read(keyvalue,*) nfsamp
+
+      case('MAXINT_SA')
+          read(keyvalue,*) max_it
+
+      case('TSTART_SR')
+          read(keyvalue,*) Tw
+
+      case('TSTART_AMP')
+          read(keyvalue,*) Ty
+
+      case('T_DECAY')
+          read(keyvalue,*) d
+
+      case('FIX_FREQ')
+          read(keyvalue,*) fixfreq
+
+      case('DUMP_VTK')
+          read(keyvalue,*) dump_memory_vars
+
+      case('COARSE_GRAINED')
+          read(keyvalue,*) att_coarse_grained
+
+      end select
+
+  end do
+
+  if (lpr) print *, 'done'
+  
   
   w_0 = w_0 * (2 * pi)
   if (lpr) print *, '       w_0 = ', w_0
