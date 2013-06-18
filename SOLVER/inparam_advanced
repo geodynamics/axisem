@@ -6,7 +6,7 @@
 # KL_O8m17
 # SS_35o10
 
-TIME_SCHEME     newmark2
+#TIME_SCHEME     newmark2
 
 # OUTPUT PATHS
 DATA_DIR        "./Data"
