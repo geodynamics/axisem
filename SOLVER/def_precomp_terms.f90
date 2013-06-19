@@ -3137,6 +3137,9 @@ integer                      :: count_lower_disc,count_upper_disc
         write(6,*)procstrg,'Problem with boundary term mapping near axis!'
         write(6,*)procstrg,'radius,theta solid index:',r1/1.d3,theta1/pi*180.
         write(6,*)procstrg,'radius,theta fluid index:',rf/1.d3,thetaf/pi*180.
+        write(6,*)procstrg,'Possible reason: doubling layer directly on the solid side of'
+        write(6,*)procstrg,'                 solid/fluid boundary. Check your mesh!'
+        write(6,*)procstrg,'                 see ticket 26'
         stop
      endif
 
