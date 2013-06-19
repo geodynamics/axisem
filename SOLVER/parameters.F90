@@ -14,7 +14,10 @@ module parameters
     use commun
     
     implicit none
-    
+
+    character(len=100)  :: hostname, username, svn_version
+    character(len=100)  :: compiler, compilerversion 
+
     public :: open_local_param_file, readin_parameters
     public :: compute_numerical_parameters, write_parameters
     private
@@ -56,6 +59,8 @@ subroutine readin_parameters
   call read_inparam_basic
   
   call read_inparam_advanced
+
+  call get_runinfo
 
 
 ! now pre-set. Most of these are to be considered in the post processing stage now.
@@ -206,6 +211,7 @@ subroutine read_inparam_basic
     enforced_period = 0.0
     enforced_dt = 0.0
     seislength_t = 1800.0
+    seis_dt = 0.0
     add_hetero = .false.
     dump_snaps_glob = .false.
     snap_dt = 20.
@@ -397,6 +403,47 @@ subroutine read_inparam_advanced
     lfdata = index(datapath,' ')-1
     lfinfo = index(infopath,' ')-1
     if (lpr) print *, 'done'
+end subroutine
+
+
+!-----------------------------------------------------------------------------
+!> Getting information like code revision, username and hostname
+subroutine get_runinfo
+    integer  :: iget_runinfo = 500, ioerr
+
+    hostname = 'UNKNOWN'
+    username = 'UNKNOWN'
+    svn_version = 'UNKNOWN'
+
+    if(lpr) write(6, '(A)', advance='no') 'Reading runinfo... '
+    open(unit=iget_runinfo, file='runinfo', status='old', action='read',  iostat=ioerr)
+    if (ioerr.ne.0) then
+        if(lpr) then
+            write(6,*) 'No file ''runinfo'' found, continuing without.'
+        end if
+    else
+        read(iget_runinfo,*) svn_version
+        read(iget_runinfo,*) username
+        read(iget_runinfo,*) hostname 
+        print *, 'done'
+    end if
+    close(iget_runinfo)
+
+
+#if defined(__GFORTRAN__)
+    compiler = 'gfortran'
+#define gfortranversion __VERSION__
+    compilerversion = gfortranversion
+#undef gfortranversion
+#endif
+
+#if defined(__INTEL_COMPILER)
+    compiler = 'ifort'
+#define ifortversion __INTEL_COMPILER
+    compilerversion = ifortversion
+#undef ifortversion
+#endif
+
 end subroutine
 
 
@@ -1004,6 +1051,12 @@ subroutine write_parameters
         write(6,*)
         write(6,*)':::::::::::::::: SIMULATION PARAMETERS::::::::::::::::::::::::'
 
+        write(6,*)'  Code information_____________________________________'
+        write(6,12)'     svn revision      :', svn_version
+        write(6,12)'     username          :', username
+        write(6,12)'     hostname          :', hostname
+        write(6,12)'     compiler          :', compiler
+        write(6,12)'     compilerversion   :', compilerversion
         write(6,*)'  Global mesh information______________________________'
         write(6,12)'     Background model  :',bkgrdmodel
         write(6,10)'     # discontinuities :',ndisc
@@ -1167,6 +1220,11 @@ subroutine write_parameters
 ! write generic simulation info file
         write(6,*) ' Writing simulation info to netcdf file attributes' 
         call nc_write_att_char(trim(bkgrdmodel),'background model')
+        call nc_write_att_char(trim(svn_version), 'SVN revision')
+        call nc_write_att_char(trim(username),'user name')
+        call nc_write_att_char(trim(hostname),'host name')
+        call nc_write_att_char(trim(compiler),'compiler brand')
+        call nc_write_att_char(trim(hostname),'compiler version')
         call nc_write_att_real(real(deltat),'time step in sec')
         call nc_write_att_int(niter,'number of time steps')
         call nc_write_att_char(trim(src_type(1)),'excitation type')

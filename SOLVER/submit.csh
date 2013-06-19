@@ -28,6 +28,15 @@ set datapath = `grep "DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"//
 set infopath = `grep "INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
 set meshdir = "MESHES/"`grep "MESHNAME" inparam_basic | awk '{print $2}'`
 
+set svnrevision = `svnversion`
+echo $svnrevision "SVN_VERSION      " > runinfo
+set username = `whoami`
+echo $username "USER_NAME        " >> runinfo
+set hostname = `hostname`
+echo $hostname "HOST_NAME        " >> runinfo
+
+
+
 if ( -d $meshdir) then
     echo "Using mesh " $meshdir
 else
@@ -309,6 +318,7 @@ foreach isrc (${num_src_arr})
         
         cp $homedir/xsem .
         cp $homedir/mesh_params.h .
+        cp $homedir/runinfo .
         cp $homedir/$recfile . 
         cp $homedir/inparam_basic .
         cp $homedir/inparam_advanced .
