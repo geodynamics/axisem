@@ -982,18 +982,18 @@ subroutine arbitr_discont
   
   
   ! Does the file bkgrdmodel".bm" exist?
-  inquire(file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm', &
-          exist=bkgrdmodelfile_exists)
-  
-  if (.not. bkgrdmodelfile_exists) then
-     write(6,*)'ERROR IN BACKGROUND MODEL: ', &
-                bkgrdmodel(1:index(bkgrdmodel,' ')-1),' NON-EXISTENT!'
-     write(6,*)'...failed to open file', &
-               bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm'
-     stop 
-  endif
+  inquire(file='external_model.bm', exist=bkgrdmodelfile_exists)
 
-  open(unit=77,file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm')
+!  Is checked earlier already
+!  if (.not. bkgrdmodelfile_exists) then
+!     write(6,*)'ERROR IN BACKGROUND MODEL: ', &
+!                bkgrdmodel(1:index(bkgrdmodel,' ')-1),' NON-EXISTENT!'
+!     write(6,*)'...failed to open file', &
+!               bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm'
+!     stop 
+!  endif
+
+  open(unit=77,file='external_model.bm')
   
   read(77,*) ndisc
   allocate(discont(ndisc))

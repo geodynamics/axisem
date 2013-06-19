@@ -35,6 +35,15 @@ mv mesh_params.h* $meshpath
 mv OUTPUT $meshpath
 cp -p inparam_mesh $meshpath
 cp -p background_models.f90 $meshpath
+set bgmodel = `grep "BACKGROUND_MODEL" inparam_mesh | awk '{print $2}'`
+if ( $bgmodel == 'external') then
+  if ( -f external_model.bm) then
+    cp -p external_model.bm $meshpath
+  else
+    echo "external_model.bm does not exist. Did you delete it? Why?"
+    exit
+  endif
+endif
 mkdir $meshpath/Code
 cp -p *.f90 $meshpath/Code
 cp -p Makefile $meshpath/Code
@@ -42,6 +51,7 @@ cp -p makemake.pl $meshpath/Code
 cp -p inparam_mesh $meshpath/Code
 cp -p xmesh $meshpath/Code
 cp -p submit.csh $meshpath/Code
+
 
 #mv Diags/serend_coords_per_proc.dat* $meshpath
 

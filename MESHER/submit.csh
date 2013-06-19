@@ -24,6 +24,17 @@ if ( { make -j 5 all } == 0 ) then
   exit
 endif
 
+set bgmodel = `grep "BACKGROUND_MODEL" inparam_mesh | awk '{print $2}'`
+if ( $bgmodel == 'external') then
+  set fnam_extmodel = `grep "EXT_MODEL" inparam_mesh | awk '{print $2}'`
+  echo "Using external mesh file " $fnam_extmodel
+  if ( ! -f $fnam_extmodel ) then
+    echo "External mesh " $fnam_extmodel " does not exist!"
+    exit
+  endif
+  cp $fnam_extmodel external_model.bm
+endif
+
 if ( $1 == 'lsf' ) then 
   ########## LSF SCHEDULER ######################
   bsub -R "rusage[mem=2048]" -I -n 1 ./xmesh > OUTPUT &
