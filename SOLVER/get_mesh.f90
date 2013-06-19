@@ -54,7 +54,7 @@ integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
   allocate(ielsolid(1:nel_solid))
   allocate(ielfluid(1:nel_fluid))
 
-  dbname = trim(meshpath)//'/meshdb.dat'//appmynum
+  dbname = 'Mesh/meshdb.dat'//appmynum
 
   do i=0, nproc-1
      call barrier

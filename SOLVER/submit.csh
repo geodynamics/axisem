@@ -8,10 +8,6 @@ if ( ${#argv} < 1 || "$1" == "-h" ) then
     echo " Argument 1:  directory name for the simulation"
     echo ""
     echo " Optional arguments after directory name: "
-    echo " -s <sourcetype>, where <sourcetype> can be:"
-    echo "      'moment': submits 4 simulations for full moment tensor"
-    echo "      'force': submits 2 simulations for all single forces"
-    echo "       Default: 1 simulation for the source specified in input file"     
     echo " -q <queue>, where <queue> can be:"
     echo "      'lsf': submit to lsf queue using bsub"
     echo "       Default: submit locally"
@@ -36,7 +32,6 @@ set hostname = `hostname`
 echo $hostname "HOST_NAME        " >> runinfo
 
 
-
 if ( -d $meshdir) then
     echo "Using mesh " $meshdir
 else
@@ -45,7 +40,6 @@ else
     ls MESHES
     exit
 endif
-
 
 
 if ( ! -f inparam_hetero) then 
@@ -57,15 +51,7 @@ if ( ! -f inparam_xdmf) then
 endif
 
 
-#set meshdir = `tail -n 1 mesh_params.h | awk '{split($0,a,"'"'"'"); print a[2]}'`
-
-## if the mesh has different npol (hence unrolled loops), copy unrolled_loops.f90
-#if ( `diff unrolled_loops.f90 $meshdir/unrolled_loops.f90 | wc -l` != "0" ) then
-#  echo 'copying unrolled_loops.f90 from ' $meshdir
-#  cp $meshdir/unrolled_loops.f90 .
-#endif
-
-# if the mesh has different mesh_params.h, link here
+# if the mesh has different mesh_params.h, copy here
 if ( `diff mesh_params.h $meshdir/mesh_params.h | wc -l` != "0" ) then
   echo 'copying mesh_params.h from ' $meshdir
   cp $meshdir/mesh_params.h .
@@ -78,27 +64,14 @@ if ( `diff background_models.f90 $meshdir/background_models.f90 | wc -l` != "0" 
 endif
 
 # Check arguments: source types and submission queues
-set multisrc = 'false'
 set newqueue = 'false'
-
-#if ( "$2" == "-s" ) then
-#    set srctype = $3
-#    set multisrc = 'true'
-#    if ( "$4" == '-q' ) then 
-#        set queue = $5
-#        set newqueue = 'true'
-#    endif
 if ( "$2" == '-q') then
     set queue = $3
     set newqueue = 'true'
-#    if ( "$4" == '-s' ) then 
-#        set srctype = $5
-#        set multisrc = 'true'
-#    endif
 endif
 
+set multisrc = 'false'
 set srctype = `grep "SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
-
 if ( $srctype == 'single') then
     set multisrc = 'false'
     set src_file_type = 'sourceparams'
@@ -109,16 +82,6 @@ else if ( $srctype == 'moment') then
     set multisrc = 'true'
     set src_file_type = 'cmtsolut'
 endif
-
-## identify source input file 
-#set src_file_type = `grep "source file type" inparam |awk '{print $1}'`
-#echo "Source file type:" $src_file_type
-#
-## if cmtsolution, do full moment tensor simulation (4 parallel jobs)!
-#if ( $src_file_type == 'cmtsolut' ) then
-#    set multisrc = 'true'
-#    set srctype = 'moment'
-#endif
 
 if ( $newqueue == 'true' ) then 
 	echo "Submitting to queue type" $queue
@@ -147,7 +110,6 @@ if ( ! -f $homedir/$srcfile ) then
 endif
 
 # identify receiver input file
-#set rec_file_type = `grep "receiver file type" inparam |awk '{print $1}'`
 set rec_file_type = `grep "RECFILE_TYPE" inparam_basic |awk '{print $2}'`
 echo "Receiver file type:" $rec_file_type
 
@@ -166,10 +128,10 @@ if ( ! -f $homedir/$recfile ) then
 endif
 echo "Source file:" $srcfile, "Receiver file:" $recfile
 
-# multiple simulations
 set num_src = 1
 set num_src_arr = ( 1 )
 if ( $multisrc == 'true' ) then
+    # multiple simulations
     echo "setting up multiple simulations for full" $srctype "source type"
     if ( $srctype == 'moment' ) then 
         set mij_sourceparams = ( 0. 0. 0. 0. 0. 0. )
@@ -208,7 +170,7 @@ if ( $multisrc == 'true' ) then
        end
    endif
 else if ( $multisrc == 'false' ) then
-# one simulation
+    # one simulation
     set numsim = 1; 
     set srctype1 = `grep "excitation type" sourceparams.dat |awk '{print $1}'`
     set srctype2 = `head -n 3 sourceparams.dat  | tail -n 1 |awk '{print $1}'` 
@@ -229,12 +191,11 @@ cp -p $homedir/$srcfile $mainrundir/
 # write parameter file for summing seismograms after the simulations
 echo $numsim $num_src |awk '{print ( $1 * $2)}'"             number of simulations" > param_sum_seis
 
+
 # Prepare and copy relevant files for each simulation
 foreach isrc (${num_src_arr})
     set i = 0
-    ########################
     foreach isim  (${srcapp})
-    ########################
 
         @ i ++
 
@@ -246,7 +207,6 @@ foreach isrc (${num_src_arr})
             echo "constructing separate source files for" $isim 
 
             if ( $src_file_type == 'separate' || $src_file_type == 'sourceparams' ) then
-        #	    head -n 1 $homedir/$srcfile  > $srcfile.$isrc.$isim
                 set mijtmp = `echo $mij_sourceparams`
                 set mijtmp[$map_mij[$i]] = '1.E20'
                 echo $mijtmp > $srcfile.$isrc.$isim
@@ -282,10 +242,12 @@ foreach isrc (${num_src_arr})
         else 
             if ( $num_src == 1 ) then
                 set simdir = $isim
-                mkdir $simdir; cd $simdir
+                mkdir $simdir
+                cd $simdir
             else 
                 set simdir = $isrc"_"$isim
-                mkdir $simdir; cd $simdir
+                mkdir $simdir
+                cd $simdir
             endif
         endif 
         
@@ -326,15 +288,21 @@ foreach isrc (${num_src_arr})
         cp $homedir/inparam_xdmf .
         cp $homedir/*.bm .
 
+        if ( $multisrc == 'false' ) then
+            ln -s ../$meshdir/ Mesh
+        else 
+            ln -s ../../$meshdir/ Mesh
+        endif
+        
         cd $mainrundir
         
         # write parameter file for summing seismograms after the simulations
         echo '"'$simdir'"' >> param_sum_seis
 
-    ########################
     end
-########################
 end
+
+
 
 ########################################################
 ######### submit the jobs ##############################
@@ -344,9 +312,7 @@ set nodnum = `grep nproc_mesh $homedir/mesh_params.h |awk '{print $6}'`
 echo "preparing job on $nodnum nodes..."
 
 foreach isrc (${num_src_arr})
-#-----------------------
     foreach isim  (${srcapp})
-    #-----------------------
         if ( $num_src == 1) then 
             cd $isim
         else 
@@ -365,11 +331,11 @@ foreach isrc (${num_src_arr})
 
         if ( $newqueue == 'true' ) then 
 
-    ########## LSF SCHEDULER ######################
+            ########## LSF SCHEDULER ######################
             if ( $queue == 'lsf' ) then 
                 bsub -R "rusage[mem=2048]" -I -n $nodnum mpirun -n $nodnum ./xsem 2>&1 > $outputname &
 
-    ######## TORQUE/MAUI SCHEDULER #######
+            ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 
                 echo "# Sample PBS for parallel jobs" > run_solver.pbs
                 echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
@@ -379,17 +345,14 @@ foreach isrc (${num_src_arr})
                 qsub run_solver.pbs
             endif
 
-    ######## SUBMIT LOCALLY #######
+        ######## SUBMIT LOCALLY #######
         else 
-            #/home/simon/local_ifort/bin/mpirun -n $nodnum ./xsem >& $outputname &
             mpirun.openmpi -n $nodnum ./xsem >& $outputname &
         endif
 
         echo "Job running in directory $isim"
         cd $mainrundir
-    #-----------------------
     end
-#-----------------------
 end 
 
 ######## post processing ##################################################
@@ -407,13 +370,11 @@ cp -p $homedir/UTILS/plot_recfile_seis.csh .
 cp -p $homedir/UTILS/plot_recs.plot .
 cp -p $homedir/UTILS/taup_allrec.csh .
 cp -p $homedir/UTILS/plot_record_section.m .
-#echo ""; cd $homedir; make sum_seis; cp sum_seis.x sum_seis.f90 $mainrundir
+
 echo "To convolve and sum seismograms, run ./post_processing.csh after the simulations in:" 
 echo $mainrundir
 echo ".... the post-processing input files param_post_processing and param_snaps are generated in the solver"
 echo ".... based on guesses. Edit please. Input file param_sum_seis is generated with this submit script"
-echo "  The moment tensor is given/assumed in the following order:"
-echo "Mzz,Mxx,Myy,Mxz,Myz,Mxy / Mrr,Mtt,Mpp,Mtr,Mpr,Mtp"
 echo " ~ ~ ~ ~ ~ ~ ~ h a n g   o n   &   l o o s e ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~"
 
 

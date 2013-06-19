@@ -28,8 +28,6 @@ cd $meshpath
 set meshpath = `echo $PWD`
 cd $homepath
 
-echo "character(len=200) :: meshpath='$meshpath'" >> mesh_params.h
-
 echo "Moving mesh to" $meshpath
 
 mv meshdb.dat0* $meshpath
