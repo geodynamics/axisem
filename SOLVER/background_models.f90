@@ -96,6 +96,8 @@ logical function model_is_anelastic(bkgrdmodel2)
   character(len=100), intent(in) :: bkgrdmodel2
 
   select case(trim(bkgrdmodel2))
+  case('ak135')
+    model_is_anelastic = .true.
   case('prem_ani')
     model_is_anelastic = .true.
   case('prem_onecrust_ani')
@@ -124,6 +126,7 @@ double precision function ak135(r0, param, idom)
   integer, intent(in)          :: idom
   double precision             :: r,x_ak
   double precision             :: ro_ak, vp_ak, vs_ak
+  double precision             :: Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r =r0 / 1000.
@@ -134,45 +137,63 @@ double precision function ak135(r0, param, idom)
      ro_ak = 2.72
      vp_ak = 5.8
      vs_ak = 3.46
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==2) then
      ro_ak = 2.92
      vp_ak = 6.5
      vs_ak = 3.85
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==3) then 
   ! moho -> 210
      ro_ak =  7.1576 - 3.859  * x_ak
      vp_ak = 17.4734 - 9.5332 * x_ak
      vs_ak =  5.8556 - 1.3825 * x_ak
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==4) then
   ! 210 -> 410
      ro_ak =  7.1594 -  3.8608 * x_ak
      vp_ak = 30.7877 - 23.2542 * x_ak
      vs_ak = 15.2181 - 11.0601 * x_ak
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==5) then
   ! 410 -> 660
      ro_ak = 11.1204 -  7.8713 * x_ak
      vp_ak = 29.389  - 21.4066 * x_ak
      vs_ak = 17.7173 - 13.5065 * x_ak
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==6) then
   ! 660 -> D''
      ro_ak =  6.8294 - 1.7227  * x_ak -  1.1064 * x_ak**2 -  0.034409 * x_ak**3
      vp_ak = 26.8598 - 48.9644 * x_ak + 63.7326 * x_ak**2 - 32.4155   * x_ak**3
      vs_ak = 18.0019 - 43.6346 * x_ak + 60.4205 * x_ak**2 - 29.689    * x_ak**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==7) then
   ! D'' -> CMB
      ro_ak = -65.8145 + 386.221  * x_ak - 691.6551 *x_ak**2 + 409.6742 * x_ak**3
      vp_ak =   3.4872 + 55.1872  * x_ak -  99.0089 *x_ak**2 +  58.7141 * x_ak**3
      vs_ak = -22.9553 + 164.0287 * x_ak - 294.2766 *x_ak**2 + 174.5113 * x_ak**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==8) then
   ! CMB -> ICB
      ro_ak = 12.592  - 1.778  * x_ak - 1.6964 * x_ak**2 -  7.3524 * x_ak**3
      vp_ak = 10.7738 - 2.4831 * x_ak + 3.2584 * x_ak**2 - 14.9171 * x_ak**3
      vs_ak = 0
+     Qmu = 0.0
+     Qkappa = 57827.0
   elseif(idom==9) then
   ! inner core
      ro_ak = 13.0122 - 0.0011863 *x_ak - 8.4449 * x_ak**2
      vp_ak = 11.2641 - 0.090247  *x_ak - 5.7431 * x_ak**2
      vs_ak =  3.6677 + 0.0049932 *x_ak - 4.4808 * x_ak**2
+     Qmu = 84.6
+     Qkappa = 1327.7
   endif
 
   if (param=='rho') then
@@ -191,6 +212,10 @@ double precision function ak135(r0, param, idom)
      ak135 = vs_ak * 1000.
   elseif (param=='eta') then
      ak135 = 1.
+  elseif (param=='Qmu') then
+     ak135 = Qmu
+  elseif (param=='Qka') then
+     ak135 = Qkappa
   else
      write(6,*)'ERROR IN AK135 FUNCTION:', param, 'NOT AN OPTION'
      stop
