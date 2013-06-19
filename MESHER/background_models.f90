@@ -1230,7 +1230,6 @@ double precision function arbitr_sub(param, idom)
 ! 
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_bkgrdmodel, only        : fnam_ext_model
   integer, intent(in)             :: idom
   integer                         :: idom2
   character(len=3), intent(in)    :: param !rho, vs,vp
@@ -1241,10 +1240,10 @@ double precision function arbitr_sub(param, idom)
 
   ! Does the file fnam_ext_model exist?
   
-  inquire(file=fnam_ext_model, exist=bkgrdmodelfile_exists)
+  inquire(file='external_model.bm', exist=bkgrdmodelfile_exists)
   
   if (bkgrdmodelfile_exists) then
-      open(unit=77, file=fnam_ext_model)
+      open(unit=77, file='external_model.bm')
       read(77,*) ndisctmp
 
       ! necessary in case of stealth layer (see discont meshing)
@@ -1289,7 +1288,7 @@ double precision function arbitr_sub(param, idom)
       endif
       deallocate(disconttmp, vstmp, vptmp, rhotmp)
   else 
-      write(6,*)'Background model file ', fnam_ext_model, ' does not exist!!!'
+      write(6,*)'Background model file ''external_model.bm'' does not exist!!!'
       stop
   endif
 
