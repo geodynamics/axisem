@@ -286,7 +286,6 @@ foreach isrc (${num_src_arr})
         cp $homedir/inparam_advanced .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
-        cp $homedir/*.bm .
 
         if ( $multisrc == 'false' ) then
             ln -s ../$meshdir/ Mesh
@@ -294,6 +293,7 @@ foreach isrc (${num_src_arr})
             ln -s ../../$meshdir/ Mesh
         endif
         
+        cp Mesh/external_model.bm .
         cd $mainrundir
         
         # write parameter file for summing seismograms after the simulations
