@@ -1,5 +1,5 @@
 ####### INPUT FILE FOR AXISEM MESHER ##########################################
-# Background model: 'prem','prem_solid' etc (SEE BELOW)
+
 #### BACKGROUND MODELS:
 # prem_iso:               Isotropic continental PREM model
 # prem_iso_solid:         like 'prem_iso', replace fluid outer core with vs=vp/sqrt(3)
