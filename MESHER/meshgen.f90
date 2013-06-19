@@ -248,7 +248,6 @@ integer :: iel
   end do
   close(157)
 
-!  if (bkgrdmodel=='prem') then 
    write(6,*)'writing regions of elements...'; call flush(6)
    open(unit=2157,file=diagpath(1:lfdiag)//'/foc_skel.dat')
    open(unit=3157,file=diagpath(1:lfdiag)//'/smcic_skel.dat')
@@ -461,7 +460,6 @@ subroutine def_reference_spherical_grid_discont
 !  use mapping_spheroid
   use analytic_spheroid_mapping
 
-! use prem 
   double precision, dimension(8,2) :: crd_control_nodes(8,2)
   double precision, dimension(:), allocatable :: dz
   integer :: npts

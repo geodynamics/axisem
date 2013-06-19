@@ -125,7 +125,7 @@ subroutine prepare_waves
   call prepare_from_recfile_seis
 
   !if (rec_file_type=='colatlon' .and.  &
-  !    (trim(bkgrdmodel(1:4))=='prem' .or. trim(bkgrdmodel(1:4))=='iasp')) &
+  !    (trim(bkgrdmodel(1:4))=='prem_iso' .or. trim(bkgrdmodel(1:4))=='iasp')) &
   !   call prepare_from_recfile_cmb
 
   ! Need to reload old seismograms and add results

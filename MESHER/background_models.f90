@@ -36,7 +36,7 @@ double precision function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
   select case(bkgrdmodel2(1:lfbkgrdmodel2))
      case('ak135')
         velocity = ak135(r0, param, idom)
-     case('prem')
+     case('prem_iso')
         velocity = prem_sub(r0, param, idom)
      case('prem_ani')
         velocity = prem_ani_sub(r0, param, idom)
@@ -44,11 +44,11 @@ double precision function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
         velocity = prem_solid_sub(r0, param, idom)
      case('prem_light')
         velocity = prem_light_sub(r0, param, idom)
-     case('prem_light_ani')
+     case('prem_ani_light')
         velocity = prem_light_ani_sub(r0, param, idom)
      case('prem_onecrust')
         velocity = prem_onecrust_sub(r0, param, idom)
-     case('prem_onecrust_ani')
+     case('prem_ani_onecrust')
         velocity = prem_onecrust_ani_sub(r0, param, idom)
      case('prem_solid_light')
         velocity = prem_solid_light_sub(r0, param, idom)
@@ -78,9 +78,9 @@ logical function model_is_ani(bkgrdmodel2)
   select case(trim(bkgrdmodel2))
   case('prem_ani')
     model_is_ani = .true.
-  case('prem_onecrust_ani')
+  case('prem_ani_onecrust')
     model_is_ani = .true.
-  case('prem_light_ani')
+  case('prem_ani_light')
     model_is_ani = .true.
   case default
     model_is_ani = .false.
@@ -101,15 +101,15 @@ logical function model_is_anelastic(bkgrdmodel2)
   select case(trim(bkgrdmodel2))
   case('ak135')
     model_is_anelastic = .true.
+  case('prem_iso')
+    model_is_anelastic = .true.
   case('prem_ani')
     model_is_anelastic = .true.
-  case('prem_onecrust_ani')
+  case('prem_ani_onecrust')
     model_is_anelastic = .true.
-  case('prem_light_ani')
+  case('prem_ani_light')
     model_is_anelastic = .true.
   case('prem_light')
-    model_is_anelastic = .true.
-  case('prem')
     model_is_anelastic = .true.
   case default
     model_is_anelastic = .false.
