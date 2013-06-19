@@ -59,9 +59,10 @@ subroutine clocks_init(flag)
     logical :: verbose
 
     verbose = .FALSE.
-    if( PRESENT(flag) )verbose = flag.EQ.0
 
-    if( clocks_initialized )return
+    if( PRESENT(flag) ) verbose = flag.EQ.0
+
+    if( clocks_initialized ) return
     clocks_initialized = .TRUE.
 
     !initialize clocks and reference tick
@@ -69,8 +70,8 @@ subroutine clocks_init(flag)
     tick_rate = 1./ticks_per_sec
     start_tick = ref_tick
     if( verbose )then
-        write(6,"(a)") '  CLOCKS module '//trim(version)
-        write(6,*) '  Realtime clock resolution=', tick_rate, '(', &
+        write(6,*) '    CLOCKS module '//trim(version)
+        write(6,*) '    Realtime clock resolution=', tick_rate, '(', &
                    ticks_per_sec, ' ticks/sec)'
     end if
 

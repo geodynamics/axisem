@@ -66,18 +66,16 @@ integer, intent(in)                :: nc,nel
 real(kind=realkind), intent(inout) :: f(0:npol,0:npol,nel,nc)
 
   if (domainin=='total') then
-     if (lpr) then
-        write(6,*)'PROBLEM: Discarded this case since igloc is not'
-        write(6,*)'         known in the solver any longer...'
-     endif
+     if (lpr) &
+        write(6,'(a/a)') 'PROBLEM: Discarded this case since igloc is not',&
+                         '         known in the solver any longer...'
      stop
   elseif (domainin=='solid') then
      call pdistsum_solid(f,nc)
   elseif (domainin=='fluid') then
      call pdistsum_fluid(f)
   else
-     if (lpr) &
-     write(6,*)'Assembly: Domain',domainin,' non-existent!' 
+     if (lpr) write(6,*) 'Assembly: Domain', domainin, ' non-existent!' 
      stop
   end if
 
@@ -850,14 +848,14 @@ include 'mesh_params.h'
   if (nproc_mesh>1) then 
      call ppinit ! comment for serial
      if (nproc_mesh /= nproc) then        
-        write(6,*)mynum,'Problem with number of processors!'
-        write(6,*)mynum,'Mesh constructed for:', nproc_mesh
-        write(6,*)mynum,'Job submission for:',nproc
+        write(6,*) mynum, 'Problem with number of processors!'
+        write(6,*) mynum, 'Mesh constructed for:', nproc_mesh
+        write(6,*) mynum, 'Job submission for:', nproc
         stop
      endif
   else
-     nproc=nproc_mesh
-     mynum=0
+     nproc = nproc_mesh
+     mynum = 0
   endif
 
   lpr = .false.
@@ -865,20 +863,13 @@ include 'mesh_params.h'
     if (mynum==nproc/2-1) lpr = .true.
   else
     lpr = .true.
- endif
+  endif
 
- call define_io_appendix(appmynum,mynum)
-! open(unit=50,file='procstrg.txt'//appmynum)
-! write(50,12)'Proc',mynum,' '; call flush(50)
-! close(50)
-! open(unit=50,file='procstrg.txt'//appmynum)
-! read(50,12)procstrg
-! close(50)
+  call define_io_appendix(appmynum, mynum)
  
- procstrg = 'Proc '//appmynum(3:4)//' '
+  procstrg = 'Proc '//appmynum(3:4)//' '
 
-  if (lpr) &
-  write(6,*)'  Initialized run for nproc=',nproc; call flush(6)
+  if (lpr) write(6,*)'  Initialized run for nproc=', nproc
 
   if (nproc>1) then ! comment for serial
      if (realkind==4) mpi_realkind = MPI_REAL ! comment for serial

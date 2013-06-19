@@ -4,9 +4,10 @@ module nc_routines
 #ifdef unc
     use netcdf
 #endif
-    use data_io,   ONLY : verbose, deflate_level
-    use data_proc, ONLY : mynum, nproc, lpr
+    use data_io,    only : verbose, deflate_level
+    use data_proc,  only : mynum, nproc, lpr
     use global_parameters
+    use commun,     only : barrier
 
     implicit none
     save
@@ -105,13 +106,6 @@ subroutine check(status)
 end subroutine check  
 !-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------------------
-subroutine barrier
- 
-    use commpi,    ONLY : pbarrier
-    if (nproc>1) call pbarrier ! comment for serial
-
-end subroutine barrier
 !-----------------------------------------------------------------------------------------
 !> Write out the model domains for each element
 subroutine nc_write_el_domains(idom)
@@ -234,8 +228,8 @@ subroutine nc_dump_strain(isnap_loc)
 
         if (mynum == 0) then
             call cpu_time(tackl)
-            if ((tackl-tickl) > 0.5) then
-                write(6,"('Computation was halted for ', F7.2, ' s to wait for ',&
+            if ((tackl-tickl) > 0.5 .and. verbose > 0) then
+                write(6,"('WARNING: Computation was halted for ', F7.2, ' s to wait for ',&
                          & 'dumping processor. Consider adapting netCDF output variables',&
                          & '(disable compression, increase dumpstepsnap)')") tackl-tickl
             end if
@@ -267,7 +261,7 @@ subroutine nc_dump_strain(isnap_loc)
                 isnap_global = nstrain 
                 ndumps = stepstodump
                 call nc_dump_strain_to_disk()
-                write(6,*) mynum, 'finished dumping strain'
+                if (verbose > 1) write(6,*) mynum, 'finished dumping strain'
             end if
             call barrier
         end do
@@ -297,8 +291,9 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
+    
     isnap_loc = isnap_global
-    if (verbose.eq.2) then
+    if (verbose > 1) then
         if (ndumps == 0) then 
             write(6,"('  Proc ', I4, ' in dump routine, isnap =', I5, &
                     & ', nothing to dump, returning...')") mynum, isnap_loc
@@ -347,7 +342,8 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 
     call check( nf90_close(ncid_out) ) 
     call cpu_time(tack)
-    if (verbose.eq.2) then
+
+    if (verbose > 1) then
         write(6,"('  Proc', I5,': Wrote ', F8.2, ' MB in ', F6.2, 's')") &
             mynum, real(dumpsize) * realkind / 1048576., tack-tick 
         call flush(6)
@@ -401,7 +397,8 @@ subroutine nc_dump_rec_to_disk
     dumpsize = nseismo * 3 * num_rec
     call check( nf90_close(ncid=ncid_out))
     call cpu_time(tack)
-    if (verbose.eq.2) then
+
+    if (verbose > 1) then
         write(6,"(I3,': Receiver data, Wrote ', F8.3, ' MB in ', F6.2, 's')") &
             mynum, real(dumpsize) * realkind / 1048576., tack-tick 
     end if
@@ -543,7 +540,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                             :: nc_pt_dimid
     integer                             :: nc_mesh_s_varid, nc_mesh_z_varid   
     integer                             :: nc_disc_dimid, nc_disc_varid
-    if ((mynum == 0).and.(verbose.eq.2)) then
+
+    if ((mynum == 0) .and. (verbose > 1)) then
         write(6,*)
         write(6,*) '************************************************************************'
         write(6,*) '**** Producing netcdf output file with its variables and dimensions ****'
@@ -555,9 +553,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     dumpstepsnap = int(dumpbuffersize / nproc) * nproc ! Will later be reduced to nstrain, if this is smaller
                                                        ! than value given here
     
-    if (verbose.ne.0) then
-        if (lpr) write(6,*) '  Dumping NetCDF file to disk every', dumpstepsnap, ' snaps'
-    end if
+    if (lpr .and. verbose > 1) write(6,*) '  Dumping NetCDF file to disk every', dumpstepsnap, ' snaps'
 
     call barrier ! for nicer output only
 
@@ -567,7 +563,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     dumpposition = .false.
     do iproc=0, nproc-1
         dumpposition(iproc*(dumpstepsnap/nproc)) = .true.
-        if ((iproc.eq.mynum).and.(verbose.ne.0)) then
+        if ((iproc .eq. mynum) .and. (verbose > 1)) then
             write(6,"('Proc ', I4, ' will dump at position ', I4)") mynum, outputplan
             call flush(6)
         end if
@@ -576,11 +572,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
 
     if (mynum == 0) then
-        write (6,*) 'Preparing netcdf file for ', nproc, ' processors'
+        if (verbose > 1) write (6,*) 'Preparing netcdf file for ', nproc, ' processors'
         nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
         call check( nf90_create(path=datapath(1:lfdata)//"/axisem_output.nc4", &
                                 cmode=nmode, ncid=ncid_out) )
-        write(6,*) 'Netcdf file with ID ', ncid_out, ' produced.'
+        if (verbose > 1) write(6,*) 'Netcdf file with ID ', ncid_out, ' produced.'
     end if
 
 
@@ -628,37 +624,38 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     end if ! dump_wavefields
     
     if (mynum == 0) then    
-        write(6,*) '  Producing groups for Seismograms and Snapshots'
+        if (verbose > 1) write(6,*) '  Producing groups for Seismograms and Snapshots'
 
         call check( nf90_def_grp(ncid_out, "Seismograms", ncid_recout) )
         call check( nf90_def_grp(ncid_out, "Snapshots", ncid_snapout) )
         call check( nf90_def_grp(ncid_out, "Surface", ncid_surfout) )
         call check( nf90_def_grp(ncid_out, "Mesh", ncid_meshout) )
-        write(6,*) '  Seismograms group has ID', ncid_recout
-        write(6,*) '  Snapshots group has ID', ncid_snapout
-        write(6,*) '  Surface group has ID', ncid_surfout
-        write(6,*) '  Mesh group has ID', ncid_meshout
+        if (verbose > 1) write(6,*) '  Seismograms group has ID', ncid_recout
+        if (verbose > 1) write(6,*) '  Snapshots group has ID', ncid_snapout
+        if (verbose > 1) write(6,*) '  Surface group has ID', ncid_surfout
+        if (verbose > 1) write(6,*) '  Mesh group has ID', ncid_meshout
         
-        write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
+        if (verbose > 1) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
 
-        write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
+        if (verbose > 1) write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
 110     format(' Dimension ', A20, ' with length ', I8, ' and ID', I6) 
         call check( nf90_def_dim(ncid_out, "timesteps", nseismo, nc_times_dimid) )
-        write(6,110) "timesteps", nseismo, nc_times_dimid 
+        if (verbose > 1) write(6,110) "timesteps", nseismo, nc_times_dimid 
 
         call check( nf90_def_dim(ncid_recout, "receivers", nrec, nc_rec_dimid) )
-        write(6,110) "receivers", nrec, nc_rec_dimid
+        if (verbose > 1) write(6,110) "receivers", nrec, nc_rec_dimid
 
         call check( nf90_def_dim(ncid_out, "components", 3, nc_comp_dimid) )
-        write(6,110) "components", 3, nc_comp_dimid
+        if (verbose > 1) write(6,110) "components", 3, nc_comp_dimid
 
         call check( nf90_def_dim(ncid_recout, "recnamlength", 40, nc_recnam_dimid) ) 
-        write(6,110) "recnamlength", 40, nc_recnam_dimid
+        if (verbose > 1) write(6,110) "recnamlength", 40, nc_recnam_dimid
 
-        write(6,*) 'NetCDF dimensions defined'
+        if (verbose > 1) write(6,*) 'NetCDF dimensions defined'
 
-        write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
+        if (verbose > 1) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
         call flush(6)
+
         call check( nf90_def_var(ncid=ncid_recout, name="displacement", xtype=NF90_FLOAT,&
                                  dimids=(/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), &
                                  !storage = NF90_CHUNKED, chunksizes=(/nseismo,3,1/), &
@@ -687,8 +684,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         if (dump_wavefields) then
             ! Wavefields group of output file N.B: Snapshots for kernel calculation
-            write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file'
-            write(6,*) '  awaiting', nstrain, ' snapshots'
+            if (verbose > 1) write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file', &
+                                        '  awaiting', nstrain, ' snapshots'
 
             call check( nf90_def_dim( ncid  = ncid_out, &
                                       name  = 'snapshots', &
@@ -755,13 +752,13 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                          chunksizes = (/npoints_global, 1/) ))
                 call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
                                               no_fill=1, fill=0) )
-                write(6,"('Netcdf variable ', A16,' with ID ', I3, ' and length', &
+                if (verbose > 1) write(6,"('Netcdf variable ', A16,' with ID ', I3, ' and length', &
                         & I8, ' produced.')") &
                           trim(nc_varnamelist(ivar)), nc_field_varid(ivar), npoints_global
             end do
 
             ! Surface group in output file
-            write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
+            if (verbose > 1) write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
             !call check( nf90_def_dim( ncid_surfout, name="snapshots", len=nstrain, &
             !                          dimid=nc_snap_dimid) )
             call check( nf90_put_att(ncid   = ncid_surfout, &
@@ -770,14 +767,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                      values = nstrain) )
             call check( nf90_def_dim( ncid_surfout, "straincomponents", len=6, &
                                       dimid=nc_strcomp_dimid) )
-            write(6,110) "straincomponents", 6, nc_strcomp_dimid
+            if (verbose > 1) write(6,110) "straincomponents", 6, nc_strcomp_dimid
             
             call check( nf90_def_dim( ncid_surfout, "surf_elems", maxind*nproc, nc_surf_dimid) )     
             call check( nf90_put_att(ncid   = ncid_surfout, &
                                      name   = 'nsurfelem', &
                                      varid  = NF90_GLOBAL, &
                                      values = maxind*nproc) )
-            write(6,110) "surf_elems", maxind*nproc, nc_surf_dimid
+            if (verbose > 1) write(6,110) "surf_elems", maxind*nproc, nc_surf_dimid
 
             call check( nf90_def_var( ncid_surfout, "elem_theta", NF90_FLOAT, &
                                       (/nc_surf_dimid /), &
@@ -809,12 +806,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end if
 
         
-        write(6,*) 'NetCDF variables defined'
-        write(6,*)
+        if (verbose > 1) write(6,'(a/)') 'NetCDF variables defined'
         ! Leave definition mode
         call check( nf90_enddef(ncid_out))
 
-        write(6,*) 'Writing station info into NetCDF file...'
+        if (verbose > 1) write(6,*) 'Writing station info into NetCDF file...'
         call check( nf90_put_var( ncid_recout, nc_th_varid, values = rec_th) )
         call check( nf90_put_var( ncid_recout, nc_ph_varid, values = rec_ph) )
         call check( nf90_put_var( ncid_recout, nc_thr_varid, values = rec_th_req) )
@@ -824,7 +820,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = (/irec, 1/), &
                                       count = (/1, 40/), values = (rec_names(irec))) )
         end do
-        write(6,*) '...done'
+        if (verbose > 1) write(6,*) '...done'
    
         ! Write out strain dump times
         if (dump_wavefields) then
@@ -870,7 +866,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         surfdumpvar_strain = 0.0
         surfdumpvar_srcdisp = 0.0
 
-        if (mynum == 0) then
+        if (mynum == 0 .and. verbose > 1) then
             write(6,*)  'Allocating NetCDF buffer variables'
             write(6,90) 'recdumpvar', real(size(recdumpvar))/262144.
             write(6,90) 'surfdumpvar_disp', real(size(surfdumpvar_disp))/262144.
@@ -944,9 +940,11 @@ subroutine nc_open_parallel
     
     if (mynum == 0) then
         call check(nf90_close(ncid_out))
-        write(6,*) '  Root process closed netCDF file, waiting for all procs to'
-        write(6,*) '  arrive here and then open it to retrieve IDs'
-        if (dump_wavefields) write(6,*) '  and dump mesh coordinates.'
+        if (verbose > 1) then
+           write(6,*) '  Root process closed netCDF file, waiting for all procs to'
+           write(6,*) '  arrive here and then open it to retrieve IDs'
+           if (dump_wavefields) write(6,*) '  and dump mesh coordinates.'
+        endif
     end if
     call barrier
 
@@ -1003,7 +1001,7 @@ subroutine nc_open_parallel
 
             end if !dump_wavefields
             call check( nf90_close( ncid_out))
-            write(6,"('Proc ', I3, ' dumped its mesh and is ready to rupture')") mynum
+            if (verbose > 1) write(6,"('Proc ', I3, ' dumped its mesh and is ready to rupture')") mynum
         end if !mynum.eq.iproc
     end do
 #endif
@@ -1021,7 +1019,7 @@ subroutine nc_end_output
     call barrier
     do iproc=0, nproc-1
         if (iproc == mynum) then
-            write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
+            if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
             call nc_dump_rec_to_disk()
             if (dump_xdmf) then
                 call check(nf90_close(ncid_out_snap))
@@ -1049,7 +1047,7 @@ subroutine nc_make_snapfile
     integer              :: nc_snaptime_dimid, nc_snapconnec_dimid
     character(len=120)   :: fname
 
-    if (lpr) write(6,*) '   .... preparing xdmf nc file'
+    if (lpr .and. verbose > 1) write(6,*) '   .... preparing xdmf nc file'
 
     if (src_type(1) == 'monopole') then
         ndim_disp = 2
@@ -1092,7 +1090,7 @@ subroutine nc_make_snapfile
 
     call check(nf90_enddef(ncid    = ncid_out_snap))
 
-    if (lpr) write(6,*) '   .... DONE'
+    if (lpr .and. verbose > 1) write(6,*) '   .... DONE'
 
 #endif
 
