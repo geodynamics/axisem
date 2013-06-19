@@ -32,6 +32,7 @@ subroutine bkgrdmodel_testing
   ! vtk
   real, dimension(:,:), allocatable     :: mesh2
   real, dimension(:), allocatable       :: vp1, vs1, h_real, rho1
+  real, dimension(:), allocatable       :: Qmu, Qka
   real, allocatable                     :: x(:), y(:), z(:)
   character(len=200)                    :: fname
   integer                               :: npts_vtk, ct
@@ -149,7 +150,12 @@ subroutine bkgrdmodel_testing
       allocate(mesh2(neltot,2), h_real(neltot))
       allocate(vp1(npts_vtk), vs1(npts_vtk), rho1(npts_vtk))
       allocate(x(npts_vtk), y(npts_vtk), z(npts_vtk))
+      
       z = 0.d0
+
+      if (model_is_anelastic(bkgrdmodel)) then
+         allocate(Qmu(npts_vtk), Qka(npts_vtk))
+      endif
   endif
   
   ct = 0
@@ -286,21 +292,42 @@ subroutine bkgrdmodel_testing
            vp1(ct+1) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
            vs1(ct+1) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel) 
            rho1(ct+1) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)    
+           
+           if (model_is_anelastic(bkgrdmodel)) then
+                Qmu(ct+1) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
+                Qka(ct+1) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
+           endif
   
            r = sqrt( (x(ct+2))**2 + (y(ct+2))**2 )
            vp1(ct+2) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
            vs1(ct+2) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel) 
            rho1(ct+2) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)
+           
+           if (model_is_anelastic(bkgrdmodel)) then
+                Qmu(ct+2) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
+                Qka(ct+2) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
+           endif
 
            r = sqrt( (x(ct+3))**2 + (y(ct+3))**2 )
            vp1(ct+3) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
            vs1(ct+3) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
            rho1(ct+3) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)    
+           
+           if (model_is_anelastic(bkgrdmodel)) then
+                Qmu(ct+3) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
+                Qka(ct+3) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
+           endif
   
            r = sqrt( (x(ct+4))**2 + (y(ct+4))**2 )
            vp1(ct+4) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
            vs1(ct+4) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
            rho1(ct+4) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)
+           
+           if (model_is_anelastic(bkgrdmodel)) then
+                Qmu(ct+4) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
+                Qka(ct+4) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
+           endif
+
         endif
   
         mesh2(iel,1) = real(s1)
@@ -327,6 +354,16 @@ subroutine bkgrdmodel_testing
     fname = trim(diagpath)//'/mesh_rho'
     call write_VTK_bin_scal(x, y, z, rho1, npts_vtk/4, fname)
     deallocate(rho1)
+           
+    if (model_is_anelastic(bkgrdmodel)) then
+       fname = trim(diagpath)//'/mesh_Qmu'
+       call write_VTK_bin_scal(x, y, z, Qmu, npts_vtk/4, fname)
+       deallocate(Qmu)
+
+       fname = trim(diagpath)//'/mesh_Qka'
+       call write_VTK_bin_scal(x, y, z, Qka, npts_vtk/4, fname)
+       deallocate(Qka)
+    endif
       
     deallocate(x, y, z)
   
