@@ -56,8 +56,11 @@ double precision function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
         velocity = iasp91_sub(r0, param, idom)
      case('solar')
         velocity = arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
+     case('external')
+        velocity = arbitr_sub(param, idom)
      case default
-        velocity = arbitr_sub(param, idom, bkgrdmodel2)
+        write(6,*) 'Unknown background model: ', bkgrdmodel2 
+        stop
   end select
 
 end function velocity
@@ -1217,7 +1220,7 @@ end function iasp91_sub
 
 
 !-----------------------------------------------------------------------------
-double precision function arbitr_sub(param, idom, bkgrdmodel2)
+double precision function arbitr_sub(param, idom)
 !
 ! file-based, step-wise model in terms of domains separated by disconts.
 ! format:
@@ -1227,21 +1230,21 @@ double precision function arbitr_sub(param, idom, bkgrdmodel2)
 ! 
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
+  use data_bkgrdmodel, only        : fnam_ext_model
   integer, intent(in)             :: idom
   integer                         :: idom2
-  character(len=100), intent(in)  :: bkgrdmodel2
   character(len=3), intent(in)    :: param !rho, vs,vp
   double precision, allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
   double precision, allocatable, dimension(:) :: qmutmp, qkappatmp
   integer                         :: ndisctmp, i
   logical                         :: bkgrdmodelfile_exists
 
-  ! Does the file bkgrdmodel".bm" exist?
-  inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
-              exist=bkgrdmodelfile_exists)
+  ! Does the file fnam_ext_model exist?
+  
+  inquire(file=fnam_ext_model, exist=bkgrdmodelfile_exists)
   
   if (bkgrdmodelfile_exists) then
-      open(unit=77, file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm')
+      open(unit=77, file=fnam_ext_model)
       read(77,*) ndisctmp
 
       ! necessary in case of stealth layer (see discont meshing)
@@ -1286,8 +1289,7 @@ double precision function arbitr_sub(param, idom, bkgrdmodel2)
       endif
       deallocate(disconttmp, vstmp, vptmp, rhotmp)
   else 
-      write(6,*)'Background model file ', &
-          bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', ' does not exist!!!'
+      write(6,*)'Background model file ', fnam_ext_model, ' does not exist!!!'
       stop
   endif
 

@@ -10,7 +10,7 @@ module data_bkgrdmodel
   double precision, allocatable :: vp(:,:), vs(:,:), rho(:,:)
   logical, allocatable          :: solid_domain(:)
   integer                       :: lfbkgrdmodel
-  character(len=100)            :: bkgrdmodel
+  character(len=100)            :: bkgrdmodel, fnam_ext_model
   logical                       :: resolve_inner_shear, have_fluid, have_solid
   double precision              :: pts_wavelngth
   double precision              :: period, courant
