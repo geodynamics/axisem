@@ -22,6 +22,7 @@ module parameters
 contains
 
 !-----------------------------------------------------------------------------
+!> Open processor-specific output files
 subroutine open_local_param_file
 
     open(unit=69,file='output_proc'//appmynum//'.dat')
@@ -192,6 +193,8 @@ subroutine readin_parameters
 end subroutine readin_parameters
 !=============================================================================
 
+!-----------------------------------------------------------------------------
+!> Read file inparam_basic
 subroutine read_inparam_basic
     use data_mesh,   only: meshname
     integer             :: iinparam_basic=500, ioerr, nval
@@ -258,6 +261,9 @@ subroutine read_inparam_basic
             read(keyvalue, *) seislength_t
 
         case('SAMPLING_RATE')
+            read(keyvalue, *) seis_dt 
+            
+        case('SOURCE_PERIOD')
             read(keyvalue, *) enforced_period
 
         case('TIME_STEP')
@@ -295,6 +301,8 @@ subroutine read_inparam_basic
 end subroutine
 !=============================================================================
 
+!-----------------------------------------------------------------------------
+!> Read file inparam_advanced
 subroutine read_inparam_advanced
     include 'mesh_params.h'
 
@@ -517,6 +525,7 @@ end subroutine check_basic_parameters
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Compute numerical parameters, like time step, snapshot frequency
 subroutine compute_numerical_parameters
   use attenuation, only: dump_memory_vars
   include "mesh_params.h"
