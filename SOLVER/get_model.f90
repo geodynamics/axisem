@@ -2056,8 +2056,8 @@ end subroutine compute_numerical_resolution
 !-----------------------------------------------------------------------------
 subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
 implicit none
-real(4), dimension(1:elems*4), intent(in) :: x,y,z,u1
 integer  :: i,t,elems
+real(4), dimension(1:elems*4), intent(in) :: x,y,z,u1
 integer, dimension(1:elems*5) :: cell
 integer, dimension(1:elems) :: cell_type
 character (len=200) :: filename

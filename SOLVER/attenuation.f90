@@ -1034,6 +1034,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     !                   Note that this version uses log-l2 norm!
     !
     use data_proc,            only: lpr, mynum
+!    use ifport
 
     double precision, intent(in)            :: Q, f_min, f_max
     integer, intent(in)                     :: N, nfsamp, max_it
@@ -1063,6 +1064,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     double precision                :: y_j_test(N)
     double precision                :: expo
     double precision                :: chi, chi_test
+    double precision                :: randnr
 
     integer             :: j, it, last_it_print
 
@@ -1126,9 +1128,11 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
     last_it_print = -1
     do it=1, max_it
         do j=1, N
+            call random_number(randnr)
             if (.not. fixfreq_loc) &
-                w_j_test(j) = w_j(j) * (1.0 + (0.5 - rand()) * Tw_loc)
-            y_j_test(j) = y_j(j) * (1.0 + (0.5 - rand()) * Ty_loc)
+                w_j_test(j) = w_j(j) * (1.0 + (0.5 - randnr) * Tw_loc)
+            call random_number(randnr)
+            y_j_test(j) = y_j(j) * (1.0 + (0.5 - randnr) * Ty_loc)
         enddo
     
         ! compute Q with test parameters

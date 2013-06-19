@@ -1972,9 +1972,9 @@ end subroutine plot_hetero_region_vtk
 !-----------------------------------------------------------------------------------------
 subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename, varname)
 
+   integer, intent(in)                          :: rows
    real, dimension(1:rows), intent(in)          :: u2
    real, dimension(1:rows,1:2), intent(in)      :: mesh1
-   integer, intent(in)                          :: rows
    character (len=200), intent(in)              :: filename
    character (len=200), intent(in), optional    :: varname
 

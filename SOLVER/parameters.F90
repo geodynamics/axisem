@@ -329,6 +329,7 @@ subroutine read_inparam_advanced
     dump_energy = .false.
     make_homo = .false.
     force_ani = .true.
+    do_anel = .false.
     deflate_level = 5
 
 
@@ -397,6 +398,9 @@ subroutine read_inparam_advanced
         case('FORCE_ANISO')
             read(keyvalue,*) force_ani
 
+        case('ATTENUATION')
+            read(keyvalue,*) do_anel 
+
         end select parameter_to_read
 
     end do
@@ -440,7 +444,7 @@ subroutine get_runinfo
 #if defined(__INTEL_COMPILER)
     compiler = 'ifort'
 #define ifortversion __INTEL_COMPILER
-    compilerversion = ifortversion
+    write(compilerversion, *) ifortversion
 #undef ifortversion
 #endif
 

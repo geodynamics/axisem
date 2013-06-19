@@ -19,10 +19,10 @@ INFO_DIR        "./Info"
 MESH_TEST           false
 
 
-
 ######################## NetCDF output ########################################
 # Level of compression of wavefield data (0: off, 9:highest)
 #DEFLATE_LEVEL       5
+
 
 
 ######################## SENSITIVITY KERNELS ##################################
@@ -44,6 +44,9 @@ KERNEL_IBEG         1
 KERNEL_IEND         1
 
 ######################## ATTENUATION ##########################################
+# Include viscoelastic attenuation
+ATTENUATION         true 
+
 # number of standard linear solids (default: 5)
 NR_LIN_SOLIDS       5
 
