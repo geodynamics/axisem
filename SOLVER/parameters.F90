@@ -77,7 +77,6 @@ subroutine readin_parameters
   
   call barrier
   if (lpr) then
-     write(6,*)
      write(6,20)
      write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
                  enforced_period, trim(src_file_type), rec_file_type, &
@@ -86,8 +85,8 @@ subroutine readin_parameters
                  dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, srcvic,  &
                  add_hetero, do_mesh_tests, output_format
 
-20 format(08x,&
-       '///////////////////////////////////////////////////////////////',/&
+20 format(/&
+   08x,'///////////////////////////////////////////////////////////////',/  &
    08x,'//                                                           //',/  &
    08x,'//                                                           //',/  &
    08x,'//                  A   X   I   S   E   M                    //',/  &
@@ -114,8 +113,8 @@ subroutine readin_parameters
    08x,'//           numerical analysis can be found in:             //',/  &
    08x,'//                                                           //')
 
-21 format(08x,&
-       '// (1) Tarje Nissen-Meyer, F. A. Dahlen, A Fournier (2007)   //',/&
+21 format(&
+   08x,'// (1) Tarje Nissen-Meyer, F. A. Dahlen, A Fournier (2007)   //',/  &
    08x,'//     "Spherical-earth Frechet sensitivity kernels"         //',/  & 
    08x,'//     Geophysical Journal International 168(3),1051-1066.   //',/  & 
    08x,'//     doi:10.1111/j.1365-246X.2006.03123.x                  //',/  &
@@ -135,59 +134,60 @@ subroutine readin_parameters
    08x,'//  May 2007 : Version 1.1, includes a                       //',/  &
    08x,'//                                                           //',/  &
    08x,'///////////////////////////////////////////////////////////////',// &
-   08x,'=============  I N P U T    P A R A M E T E R S ==============',/ &
-   12x,'Data I/O path:                  ',a20,/                         &
-   12x,'Info I/O path:                  ',a20,/                         &
-   12x,'Number of source simulations:   ',i2,/                          &
-   12x,'Simulation length [s]:          ',f9.3,/                          &
-   12x,'Enforced time step [s]:         ',f7.3,/                        &
-   12x,'Enforced source period [s]:     ',f7.3,/                        &
-   12x,'Source file type:               ',a,/                        &
-   12x,'Receiver file type:             ',a8,/                        &
-   12x,'Sum seismograms?                ',l2,/                          &
-   12x,'Sum wavefields?                 ',l2,/                          &
-   12x,'Receivers coordinates                 ',a3,/                          &
-   12x,'Time extrapolation scheme:      ',a8,/                          &
-   12x,'Seismogram sampling rate [s]:   ',f7.3,/                        &
-   12x,'Dump kin./pot. energy?          ',l2,/                          &
-   12x,'Dump global snaps?              ',l2,/                          &
-   12x,'Dump solid/fluid snaps?         ',l2,/                          &
-   12x,'Dump strain?                    ',l2,/                          &
-   12x,'Wavefield dumping type:         ',a12,/                         &
-   12x,'First GLL to save in strains:   ',i2,/                          &
-   12x,'Last GLL to save in strains:    ',i2,/                          &
-   12x,'Samples per period for strains: ',f7.3,/                        &
-   12x,'Source dumping type:            ',a4,/                          &
-   12x,'Homogenize background model?    ',l2,/                          &
-   12x,'Analyt. homogen. radiation?     ',l2,/                          &
-   12x,'Add heterogeneous region?       ',l2,/                          &
+   08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
+   12x,'Data I/O path:                      ',a20,/                         &
+   12x,'Info I/O path:                      ',a20,/                         &
+   12x,'Number of source simulations:       ',i2,/                          &
+   12x,'Simulation length [s]:              ',f9.3,/                        &
+   12x,'Enforced time step [s]:             ',f7.3,/                        &
+   12x,'Enforced source period [s]:         ',f7.3,/                        &
+   12x,'Source file type:                   ',a,/                           &
+   12x,'Receiver file type:                 ',a8,/                          &
+   12x,'Sum seismograms?                    ',l2,/                          &
+   12x,'Sum wavefields?                     ',l2,/                          &
+   12x,'Receivers coordinates               ',a3,/                          &
+   12x,'Time extrapolation scheme:          ',a8,/                          &
+   12x,'Seismogram sampling rate [s]:       ',f7.3,/                        &
+   12x,'Dump kin./pot. energy?              ',l2,/                          &
+   12x,'Dump global snaps?                  ',l2,/                          &
+   12x,'Dump solid/fluid snaps?             ',l2,/                          &
+   12x,'Dump strain?                        ',l2,/                          &
+   12x,'Wavefield dumping type:             ',a12,/                         &
+   12x,'First GLL to save in strains:       ',i2,/                          &
+   12x,'Last GLL to save in strains:        ',i2,/                          &
+   12x,'Samples per period for strains:     ',f7.3,/                        &
+   12x,'Source dumping type:                ',a4,/                          &
+   12x,'Homogenize background model?        ',l2,/                          &
+   12x,'Analyt. homogen. radiation?         ',l2,/                          &
+   12x,'Add heterogeneous region?           ',l2,/                          &
    12x,'Perform extensive mesh tests?       ',l2,/                          &
-   12x,'Output format (seism., wavefields): ',a6,/                         &
-   08x,'==============================================================')
-  write(6,*)
-  write(6,*)'Processor-specific output is written to: output_proc<PROC ID>.dat'
-  write(6,*)'All potential error messages will appear here...'
+   12x,'Output format (seism., wavefields): ',a6,/                          &
+   08x,'===============================================================')
+
+     write(6,'(a/a)') 'Processor-specific output is written to: output_proc<PROC ID>.dat', &
+                      'All potential error messages will appear here...'
   endif !lpr
 
   call check_basic_parameters
 
-! Need to decide here since this boolean is needed in def_precomp_terms
+  ! Need to decide here since this boolean is needed in def_precomp_terms
   need_fluid_displ = .false.
   if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
-       dump_wavefields .and. dump_type=='fullfields') then
-! Need to add this for each new type of wavefield dumping method that 
-! requires the fluid displacement/velocities
+     dump_wavefields .and. dump_type=='fullfields') then
+     ! Need to add this for each new type of wavefield dumping method that 
+     ! requires the fluid displacement/velocities
      need_fluid_displ = .true.
   endif
 
-! define general small value
+  ! define general small value
 
   if (realkind==4) then
-      smallval=smallval_sngl
+      smallval = smallval_sngl
   elseif (realkind==8) then
-      smallval=smallval_dble
+      smallval = smallval_dble
   endif
-  if ((verbose.eq.2).and.(lpr)) write(6,*)'  small value is:',smallval
+
+  if (lpr .and. verbose > 1) write(6,*)'     small value is:',smallval
 
 end subroutine readin_parameters
 !=============================================================================
@@ -222,14 +222,15 @@ subroutine read_inparam_basic
     keyword = ' '
     keyvalue = ' '
     
-    if(lpr) write(6, '(A)', advance='no') 'Reading inparam_basic...'
+    if (lpr .and. verbose > 1) write(6,'(A)', advance='no') '    Reading inparam_basic...'
     open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
-    if (ioerr.ne.0) stop 'Check input file ''inparam_basic''! Is it still there?' 
+    if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
  
     do
-        read(iinparam_basic,fmt='(a256)',iostat=ioerr) line
-        if (ioerr.lt.0) exit
-        if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
+        read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
+        if (ioerr < 0) exit
+        if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+
         read(line,*) keyword, keyvalue 
     
         parameter_to_read : select case(trim(keyword))
@@ -294,9 +295,7 @@ subroutine read_inparam_basic
         end select parameter_to_read
 
     end do
-    if (lpr) print *, 'done'
-    print *, 'Dump_XDMF: ', dump_xdmf
-
+    if (lpr .and. verbose > 1) print *, 'done'
     
 end subroutine
 !=============================================================================
@@ -326,17 +325,17 @@ subroutine read_inparam_advanced
     do_anel = .false.
     deflate_level = 5
 
-
     keyword = ' '
     keyvalue = ' '
-    if(lpr) write(6, '(A)', advance='no') 'Reading inparam_advanced...'
-    open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read',  iostat=ioerr)
-    if (ioerr.ne.0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
+
+    if (lpr .and. verbose > 1) write(6, '(A)', advance='no') '    Reading inparam_advanced...'
+    open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read', iostat=ioerr)
+    if (ioerr /= 0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
  
     do
-        read(iinparam_advanced,fmt='(a256)',iostat=ioerr) line
-        if (ioerr.lt.0) exit
-        if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
+        read(iinparam_advanced, fmt='(a256)', iostat=ioerr) line
+        if (ioerr < 0) exit
+        if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
         read(line,*) keyword, keyvalue 
     
         parameter_to_read : select case(trim(keyword))
@@ -400,9 +399,10 @@ subroutine read_inparam_advanced
     end do
     lfdata = index(datapath,' ')-1
     lfinfo = index(infopath,' ')-1
-    if (lpr) print *, 'done'
-end subroutine
+    if (lpr .and. verbose > 1) print *, 'done'
 
+end subroutine
+!-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
 !> Getting information like code revision, username and hostname
@@ -413,20 +413,18 @@ subroutine get_runinfo
     username = 'UNKNOWN'
     svn_version = 'UNKNOWN'
 
-    if(lpr) write(6, '(A)', advance='no') 'Reading runinfo... '
+    if (lpr .and. verbose > 1) write(6, '(A)', advance='no') '    Reading runinfo... '
     open(unit=iget_runinfo, file='runinfo', status='old', action='read',  iostat=ioerr)
-    if (ioerr.ne.0) then
-        if(lpr) then
+    if (ioerr /= 0) then
+        if (lpr .and. verbose > 1) &
             write(6,*) 'No file ''runinfo'' found, continuing without.'
-        end if
     else
         read(iget_runinfo,*) svn_version
         read(iget_runinfo,*) username
         read(iget_runinfo,*) hostname 
-        print *, 'done'
+        if(lpr .and. verbose > 1) print *, 'done'
     end if
     close(iget_runinfo)
-
 
 #if defined(__GFORTRAN__)
     compiler = 'gfortran'
@@ -443,13 +441,13 @@ subroutine get_runinfo
 #endif
 
 end subroutine
-
+!-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
 !> Checking the consistency of some of the input parameters
 subroutine check_basic_parameters
 
-    if (trim(src_file_type).eq.'undefined') then
+    if (trim(src_file_type) == 'undefined') then
         if (lpr) write(6,200) 'SIMULATION_TYPE', 'inparam_basic'
         stop
     end if
@@ -457,7 +455,7 @@ subroutine check_basic_parameters
 !        if (lpr) write(6,200) 'RECFILE_TYPE', 'inparam_basic'
 !        stop
 !    end if
-    if (trim(meshname).eq.'undefined') then
+    if (trim(meshname) == 'undefined') then
         if (lpr) write(6,200) 'MESHNAME', 'inparam_basic'
         stop
     end if
@@ -472,34 +470,27 @@ subroutine check_basic_parameters
     endif
 #endif
 
-  if (src_dump_type=='anal') then
-     write(6,*) ''
-     write(6,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-     write(6,*) ''
-     write(6,*) 'Analytical source wavefield dump not implemented YET!'
-     write(6,*) ''
-     write(6,*) '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'
-     write(6,*) ''
+  if (src_dump_type == 'anal') then
+     write(6,*) 'ERROR: Analytical source wavefield dump not implemented YET!'
      stop 2
   endif
 
-  if ( mod(realkind,4)/=0 .or. realkind>8) then
+  if (realkind /= 4 .or. realkind /= 8) then
      if (lpr) then
-        write(6,*)
-        write(6,*)'PROBLEM with REAL data kind!'
-        write(6,*)'... can only handle real kinds 4 or 8.'
-        write(6,*)'real kind here:', realkind
-        write(6,*)'change parameter realkind in global_parameters.f90'
+        write(6,'(a/a/ai4/a)') 'PROBLEM with REAL data kind!', &
+                               '... can only handle real kinds 4 or 8.', &
+                               'real kind here:', realkind, &
+                               'change parameter realkind in global_parameters.f90'
      endif
      stop
   endif
 
-  if (strain_samp> 15) then
+  if (strain_samp > 15) then
      if (lpr) then     
         write(6,*)
-        write(6,*)"!!!!!! NOT GOING ANY FURTHER !!!!!!"
-        write(6,*)"  It's just too much to save 10 frames of strain & velocity"
-        write(6,*)"  per source period! Choose something reasonable."
+        write(6,*) "!!!!!! NOT GOING ANY FURTHER !!!!!!"
+        write(6,*) "  It's just too much to save 10 frames of strain & velocity"
+        write(6,*) "  per source period! Choose something reasonable."
      endif
      stop
   endif
@@ -507,14 +498,14 @@ subroutine check_basic_parameters
   if (enforced_dt > zero) then
      if (lpr) then     
         write(6,*)
-        write(6,14)'maximal time step',enforced_dt
+        write(6,14) 'maximal time step', enforced_dt
      endif
   endif
 
   if (enforced_period > zero) then
      if (lpr) then     
         write(6,*)
-        write(6,14)'min. source period',enforced_period
+        write(6,14) 'min. source period', enforced_period
      endif
   endif
 
