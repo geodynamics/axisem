@@ -225,9 +225,7 @@ subroutine mpi_asynch_messaging_test_solid
 ! 
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_io, ONLY: save_large_tests
 use data_numbering, ONLY: igloc_solid,nglob_solid
-use meshes_io, ONLY : fldout_cyl2
 
 include 'mesh_params.h' 
 
@@ -283,18 +281,6 @@ character(len=80)   :: fname
 
   deallocate(gvec_solid2)
 
-  if (save_large_tests) then
-     fname = 'messagepassing_solid_1'
-     call fldout_cyl2(fname,nel_solid,vec(:,:,:,1),0,npol,0,npol,0,'solid')
-     fname = 'messagepassing_solid_2'
-     call fldout_cyl2(fname,nel_solid,vec(:,:,:,2),0,npol,0,npol,0,'solid')  
-     fname = 'messagepassing_solid_3'
-     call fldout_cyl2(fname,nel_solid,vec(:,:,:,3),0,npol,0,npol,0,'solid')  
-
-     write(69,12)appmynum
-12 format("  wrote MPI test results to 'messagepassing_solid_",a4,".dat' ")
-  endif
-
   deallocate(vec)
 
 end subroutine mpi_asynch_messaging_test_solid
@@ -316,9 +302,7 @@ subroutine mpi_asynch_messaging_test_fluid
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_io, ONLY: save_large_tests
 use data_numbering, ONLY: igloc_fluid
-use meshes_io, ONLY : fldout_cyl2
 
 include 'mesh_params.h' 
 
@@ -354,14 +338,6 @@ character(len=80)               :: fname
         end do
      end do
   end do
-
-  if (save_large_tests) then
-     fname = 'messagepassing_fluid'
-     call fldout_cyl2(fname,nel_fluid,vec(0:npol,0:npol,:),0,npol,0,npol,0,'fluid')
- 
-     write(69,12)appmynum
-12 format("  wrote MPI test results to 'messagepassing_fluid_",a4,".dat' ")
-  endif
 
   deallocate(vec)
 

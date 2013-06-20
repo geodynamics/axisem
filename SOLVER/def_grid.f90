@@ -363,10 +363,6 @@ use commun, ONLY: mpi_asynch_messaging_test_fluid
   if (lpr) write(6,*)'  checking physical coordinates...'
   call check_physical_coordinates
 
-! Dumping the respective serendipity meshes<><><><><><><><><><><><><><><><>
-  if (lpr) write(6,*)'  dumping control-node meshes...'
-  call dump_serendipity_meshes
-
 ! Axial elements & masking <><><><><><><><><><><><><><><><><><><><><><><><>
   if (lpr) write(6,*)'  Checking out axial stuff...'
   call check_axial_stuff
@@ -390,10 +386,6 @@ use commun, ONLY: mpi_asynch_messaging_test_fluid
      if (lpr) write(6,*)'  Checking message-passing for fluid...'
      call mpi_asynch_messaging_test_fluid
   endif
-
-! Valence for all (global/solid/fluid) domains <><><><><><><><><><><><><><>
-  if (lpr) write(6,*)'  Computing valences...'
-  if (save_large_tests) call compute_valence
 
   if (lpr) write(6,*)
   if (lpr) write(6,*)'  >>> FINISHED mesh tests.'
@@ -569,70 +561,6 @@ double precision :: s,z,r,theta
   enddo
 
 end subroutine check_physical_coordinates
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine dump_serendipity_meshes
-!
-! Dumping the respective serendipity meshes for global, solid, fluid domains.
-!
-! Serendipity refers to the 8 fundamental control nodes, i.e. the pillars to 
-! define any physical coordinates s,z or reference GLL/GLJ(0,1) points xi,eta).
-! The numbering inode for an element is defined as follows (both hemispheres):
-!
-!          North
-!         7--6--5
-!         |     |
-! z       8     4   
-! ^       |     |   
-! |       1--2--3   
-! |-->s    South   
-!
-! See analytical mapping routines for details.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-include 'mesh_params.h'
-
-integer :: inode,iel
-
-!\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\
-   if (save_large_tests) then
-
-! Gnuplot serendipity solid mesh dump
-      open(unit=1577,file=infopath(1:lfinfo)//&
-                          '/serend_mesh_solid.dat'//appmynum)
-      do iel = 1, nel_solid
-         do inode=1,8
-            write(1577,*)crd_nodes(lnods(ielsolid(iel),inode),1), & ! s 
-                 crd_nodes(lnods(ielsolid(iel),inode),2)    ! z 
-         enddo
-         write(1577,*)crd_nodes(lnods(ielsolid(iel),1),1), &
-              crd_nodes(lnods(ielsolid(iel),1),2) 
-         write(1577,*)
-      enddo
-      close(1577)
-
-! Gnuplot serendipity fluid mesh dump
-      if (have_fluid) then 
-         open(unit=1577,file=infopath(1:lfinfo)//&
-                             '/serend_mesh_fluid.dat'//appmynum)
-         do iel = 1, nel_fluid
-            do inode=1,8
-               write(1577,*)crd_nodes(lnods(ielfluid(iel),inode),1), & ! s 
-                    crd_nodes(lnods(ielfluid(iel),inode),2)    ! z 
-            enddo
-            write(1577,*)crd_nodes(lnods(ielfluid(iel),1),1), &
-                 crd_nodes(lnods(ielfluid(iel),1),2) 
-            write(1577,*)
-         enddo
-         close(1577)
-      endif
-
-   endif !save_large_tests
-!/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-
-end subroutine dump_serendipity_meshes
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -1481,24 +1409,6 @@ double precision                 :: s,z,r,theta
 !110 format(i4,3(1pe14.3))
 
 !\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\
-if (save_large_tests) then
-! write out both fields (elementally)
-! whole fluid
-  open(unit=111,file=infopath(1:lfinfo)//'/bdrytest_flufield.dat'//appmynum)
-  do iel=1,nel_fluid
-    call compute_coordinates(s,z,r,theta,ielfluid(iel),int(npol/2),int(npol/2))
-    write(111,*)s, z,tmpflufield(int(npol/2),int(npol/2),iel)
-  enddo
-  close(111)
-
-! whole solid
-  open(unit=112,file=infopath(1:lfinfo)//'/bdrytest_solfield.dat'//appmynum)
-  do iel=1,nel_solid
-    call compute_coordinates(s,z,r,theta,ielsolid(iel),int(npol/2),int(npol/2))
-    write(112,*)s,z,tmpsolfield(int(npol/2),int(npol/2),iel)
-  enddo
-  close(112)
-endif !save_large_tests
 
 ! fluid boundary elements
   open(unit=111,file=infopath(1:lfinfo)//'/bdrytest_bdryflufield.dat'//appmynum)
@@ -1537,45 +1447,6 @@ endif !save_large_tests
   deallocate(tmpflufield)
 
 end subroutine check_solid_fluid_boundaries
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine compute_valence
-!
-! Valence: a global field that assumes those values that denote the number 
-!          of elements that share that point. All interior points 
-!          0<ipol<npol have valence 1, and the maximum value for our mesh is 6.
-! This routines does not "check" as in exiting in any sense but merely dumps 
-! the fields for the solid & fluid subdomains. If visually reasonable, it 
-! indicates that global numbering and associated mapping is done properly.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use commun
-use meshes_io
-include "mesh_params.h"
-
-real(kind=realkind), dimension(:,:,:), allocatable :: val_solid
-real(kind=realkind), dimension(:,:,:), allocatable :: val_fluid
-character(len=80) :: fname
-
-  allocate(val_solid(0:npol,0:npol,1:nel_solid))
-  allocate(val_fluid(0:npol,0:npol,1:nel_fluid))
-
-  fname = 'valence_solid'
-  val_solid(:,:,:) = 1.0;
-  call comm2d(val_solid,nel_solid,1,'solid')
-  call fldout_cyl2(fname,nel_solid,val_solid,0,npol,0,npol,0,'solid')
-
-  fname = 'valence_fluid'
-  val_fluid(:,:,:) = 1.0;
-  call comm2d(val_fluid,nel_fluid,1,'fluid')
-  call fldout_cyl2(fname,nel_fluid,val_fluid,0,npol,0,npol,0,'fluid')
-
-  deallocate(val_solid)
-  deallocate(val_fluid)
-
-end subroutine compute_valence
 !=============================================================================
 
 !-----------------------------------------------------------------------------

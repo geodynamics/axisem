@@ -14,7 +14,6 @@ public
 
   character(len=200) :: datapath,infopath
   integer           :: lfdata,lfinfo
-  logical           :: save_large_tests 
   logical           :: dump_energy
   logical           :: dump_snaps_glob
   logical           :: dump_xdmf

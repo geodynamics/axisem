@@ -160,9 +160,6 @@ double precision, dimension(0:npol,0:npol,nelem) :: stmp,ztmp,v_p,v_s
     call check_mesh_discontinuities(ieldom,domcount)
   endif
 
-! read in respective velocities and density on domain basis
-  open(unit=5454,file=infopath(1:lfinfo)//'/background_rad_dom_vel.dat'&
-                                          //appmynum)
 
   if (lpr) write(6,*)'    filling mesh with elastic properties...'   
   call flush(6)
@@ -229,8 +226,6 @@ endif
                                    ( vptmp*vptmp - two*vstmp*vstmp )
            mu(ipol,jpol,iel) = rho(ipol,jpol,iel) * vstmp*vstmp
            
-           if (save_large_tests) &
-                write(5454,12)r,iidom,vptmp,vstmp,rho(ipol,jpol,iel)
 
 !<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 ! test round-off errors for elastic parameters & velocities
@@ -288,7 +283,6 @@ do ipol=ibeg,iend
      enddo
   endif
 
-  close(5454)
 write(6,*)mynum,'done with big mesh loop to define model'
  if (do_mesh_tests) close(60000+mynum)
 12 format(1pe15.7,i4,3(1pe15.7))
@@ -486,9 +480,6 @@ character(len=100) :: modelstring
            fa_ani_theta(ipol,jpol,iel) = thetacoord(ipol, jpol, iel)
            fa_ani_phi(ipol,jpol,iel) = 0.
 
-           if (save_large_tests) &
-                write(5454,12) r, iidom, vphtmp, vpvtmp, vshtmp, vsvtmp, &
-                        eta_ani(ipol,jpol,iel), rho(ipol,jpol,iel)
 
         ! XXX generalize tests for anisotropic parameters:
 
