@@ -869,7 +869,7 @@ include 'mesh_params.h'
  
   procstrg = 'Proc '//appmynum(3:4)//' '
 
-  if (lpr) write(6,*)'  Initialized run for nproc=', nproc
+  if (lpr) write(6,'(a,i5)') '    Initialized run for nproc =', nproc
 
   if (nproc>1) then ! comment for serial
      if (realkind==4) mpi_realkind = MPI_REAL ! comment for serial

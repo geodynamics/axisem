@@ -16,6 +16,7 @@ program axisem
   
   implicit none
 
+  if (lpr .and. verbose >= 1) write(6,'(a/)') 'MAIN: Welcome to AxiSEM!'
   call set_ftz() ! ftz.c, set flush to zero
 
   call pinit ! commun
@@ -108,17 +109,11 @@ subroutine start_clock
   character(len=10) :: mytime
 
   call date_and_time(mydate,mytime) 
-  if (lpr) then
-     write(6,*)
-     write(6,*)'::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
-     write(6,11) mydate(5:6), mydate(7:8), mydate(1:4), mytime(1:2), mytime(3:4)
-     write(6,*)
-  endif
+  if (lpr) write(6,11) mydate(5:6), mydate(7:8), mydate(1:4), mytime(1:2), mytime(3:4)
 
-11 format('     Simulation started on ', A2,'/',A2,'/',A4,' at ', A2,'h ',A2,'min')
+11 format('     Simulation started on ', A2,'/',A2,'/',A4,' at ', A2,'h ',A2,'min',/)
 
   write(69,11) mydate(5:6), mydate(7:8), mydate(1:4), mytime(1:2), mytime(3:4)
-  write(69,*)
 
   if (verbose > 1) then
       call clocks_init(mynum)
@@ -134,11 +129,6 @@ subroutine start_clock
   idanelts = clock_id('Anelastic time step routine')
   iddump   = clock_id('Dump routine')
   idnbio   = clock_id('Non Blocking IO red light')
-
-  if (lpr) then 
-     write(6,*) '::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::'
-     write(6,*)
-  endif
 
 end subroutine start_clock
 !=============================================================================
