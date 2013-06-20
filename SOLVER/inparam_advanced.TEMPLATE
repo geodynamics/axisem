@@ -1,3 +1,18 @@
+
+
+############### TIME PARAMETERS #################################################
+
+#SAMPLING_RATE       1.0 
+
+# Choose desired simulation time step
+# set to 0.0 for mesher's suggestion (default)
+
+#TIME_STEP           0.0
+
+# Source period [s]. Put to 0.0 to use mesh resolution (mesh_params.h)
+#SOURCE_PERIOD       0.0
+
+
 # Time integration scheme, allowed:
 # newmark2:  default, tested
 # symplec4
@@ -8,10 +23,11 @@
 
 #TIME_SCHEME     newmark2
 
+
+
 # OUTPUT PATHS
 DATA_DIR        "./Data"
 INFO_DIR        "./Info"
-
 
 
 ######################## MESH TEST ############################################
@@ -19,10 +35,21 @@ INFO_DIR        "./Info"
 MESH_TEST           false
 
 
+
+
 ######################## NetCDF output ########################################
 # Level of compression of wavefield data (0: off, 9:highest)
 #DEFLATE_LEVEL       5
 
+# Time interval between snapshots (default: 20)
+# SNAPSHOT_DT          20.
+
+# XDMF wavefield snapshots  (default: xdmf)
+# options for values: xdmf, vtk
+#SNAPSHOTS_FORMAT     xdmf  
+
+# Use NetCDF for heavy output  (default false)
+#USE_NETCDF          true
 
 
 ######################## SENSITIVITY KERNELS ##################################
@@ -44,9 +71,6 @@ KERNEL_IBEG         1
 KERNEL_IEND         1
 
 ######################## ATTENUATION ##########################################
-# Include viscoelastic attenuation
-ATTENUATION         true 
-
 # number of standard linear solids (default: 5)
 NR_LIN_SOLIDS       5
 

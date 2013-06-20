@@ -81,7 +81,7 @@ subroutine readin_parameters
      write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
                  enforced_period, trim(src_file_type), rec_file_type, &
                  sum_seis, sum_fields, rot_rec, time_scheme, seis_dt,  &
-                 dump_energy, dump_snaps_glob, dump_snaps_solflu, dump_wavefields, &
+                 dump_energy, dump_vtk, dump_snaps_solflu, dump_wavefields, &
                  dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, srcvic,  &
                  add_hetero, do_mesh_tests, output_format
 
@@ -172,7 +172,7 @@ subroutine readin_parameters
 
   ! Need to decide here since this boolean is needed in def_precomp_terms
   need_fluid_displ = .false.
-  if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
+  if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
      dump_wavefields .and. dump_type=='fullfields') then
      ! Need to add this for each new type of wavefield dumping method that 
      ! requires the fluid displacement/velocities
@@ -207,7 +207,7 @@ subroutine read_inparam_basic
     seislength_t = 1800.0
     seis_dt = 0.0
     add_hetero = .false.
-    dump_snaps_glob = .false.
+    dump_vtk = .false.
     snap_dt = 20.
     dump_xdmf = .false.
     verbose = 1
@@ -261,35 +261,20 @@ subroutine read_inparam_basic
         case('SEISMOGRAM_LENGTH')
             read(keyvalue, *) seislength_t
 
-        case('SAMPLING_RATE')
-            read(keyvalue, *) seis_dt 
-            
-        case('SOURCE_PERIOD')
-            read(keyvalue, *) enforced_period
-
-        case('TIME_STEP')
-            read(keyvalue, *) enforced_dt
-
         case('MESHNAME')
             meshname = keyvalue
 
         case('LAT_HETEROGENEITY')
             read(keyvalue, *) add_hetero
 
-        case('SNAPSHOTS_VTK')
+        case('ATTENUATION')
+            read(keyvalue,*) do_anel 
+
+        case('SAVE_SNAPSHOTS')
             read(keyvalue, *) dump_snaps_glob
-
-        case('SNAPSHOT_DT')
-            read(keyvalue, *) snap_dt
-
-        case('SNAPSHOTS_XDMF')
-            read(keyvalue, *) dump_xdmf 
 
         case('VERBOSITY')
             read(keyvalue, *) verbose
-
-        case('USE_NETCDF')
-            read(keyvalue, *) use_netcdf
 
 
         end select parameter_to_read
@@ -314,6 +299,7 @@ subroutine read_inparam_advanced
     datapath = './Data'
     infopath = './Info'
     do_mesh_tests = .false.
+    dump_vtk = .false.
     dump_wavefields = .false.
     strain_samp = 8
     src_dump_type = 'mask'
@@ -339,6 +325,16 @@ subroutine read_inparam_advanced
         read(line,*) keyword, keyvalue 
     
         parameter_to_read : select case(trim(keyword))
+
+        case('SAMPLING_RATE')
+            read(keyvalue, *) seis_dt 
+            
+        case('SOURCE_PERIOD')
+            read(keyvalue, *) enforced_period
+
+        case('TIME_STEP')
+            read(keyvalue, *) enforced_dt
+
         case('TIME_SCHEME')
             read(keyvalue,*) time_scheme
 
@@ -391,8 +387,23 @@ subroutine read_inparam_advanced
         case('FORCE_ANISO')
             read(keyvalue,*) force_ani
 
-        case('ATTENUATION')
-            read(keyvalue,*) do_anel 
+        case('SNAPSHOT_DT')
+            read(keyvalue, *) snap_dt
+
+        case('SNAPSHOTS_FORMAT')
+            if (dump_snaps_glob) then 
+              select case (trim(keyvalue))
+                case('xdmf') 
+                    dump_xdmf = .true.
+                case('vtk')
+                    dump_vtk = .true.
+                case default 
+                    write(6,*)'invalid value for snapshots format!'; stop
+                end select
+            endif			
+
+        case('USE_NETCDF')
+            read(keyvalue, *) use_netcdf
 
         end select parameter_to_read
 
@@ -511,7 +522,7 @@ subroutine check_basic_parameters
 
 14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
 
-  if (dump_snaps_glob .and. dump_snaps_solflu) then 
+  if (dump_vtk .and. dump_snaps_solflu) then 
       if (lpr) then
          write(6,*)''
          write(6,*)" NOT dumping the same snapshots twice (global AND solid/fluid)"
@@ -709,7 +720,7 @@ subroutine compute_numerical_parameters
 
   ! snapshot output, convert from interval given in seconds to 
   ! incremental time steps
-  if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu .or. dump_memory_vars) then
+  if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu .or. dump_memory_vars) then
      snap_it=floor(snap_dt/deltat)
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
      nsnap = floor(real(niter)/real(snap_it))
@@ -1129,9 +1140,9 @@ subroutine write_parameters
         write(6,12)'     Output info path  :',trim(infopath)
         write(6,19)'     Sum wavefields:', sum_fields
         write(6,19)'     Dump energy       :',dump_energy
-        write(6,18)'     Glob/solflu snaps :',dump_snaps_glob,dump_snaps_solflu
+        write(6,18)'     Glob/solflu snaps :',dump_vtk,dump_snaps_solflu
         write(6,18)'     XDMF VTK          :', dump_xdmf
-        if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
+        if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu) then
             write(6,11)'     snap interval [s] :',snap_dt
             write(6,10)'     # snaps           :',snap_it
         endif
@@ -1174,7 +1185,7 @@ subroutine write_parameters
             write(55,22)0,'number of strain dumps'       
             write(55,21)0.,'strain dump sampling rate [s]' 
         endif
-        if (dump_snaps_glob .or. dump_xdmf .or. dump_snaps_solflu) then
+        if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu) then
             write(55,22) nsnap,'number of snapshot dumps'
             write(55,21)deltat*real(snap_it),'snapshot dump sampling rate [s]'      
         else
@@ -1232,7 +1243,7 @@ subroutine write_parameters
            call nc_write_att_int(0,'number of strain dumps')       
            call nc_write_att_real(0.,'strain dump sampling rate in sec' )
         endif
-        if (dump_snaps_glob .or. dump_snaps_solflu) then
+        if (dump_vtk .or. dump_snaps_solflu) then
            call nc_write_att_int(nsnap,'number of snapshot dumps')
            call nc_write_att_real(real(deltat)*real(snap_it),'snapshot dump sampling rate in sec')      
         else
@@ -1361,7 +1372,7 @@ if (lpr) then
     write(9,222)"'gauss_0'",'source time function type for convolution'
     write(9,223)srccolat,'Source colatitude'
     write(9,223)srclon,'Source longitude'
-    write(9,221)dump_snaps_glob,'plot global snaps?'
+    write(9,221)dump_vtk,'plot global snaps?'
     write(9,224)'disp','disp or velo seismograms'
     write(9,224)"'Data_Postprocessing'",'Directory for post processed data'
     write(9,221).true.,'seismograms at negative time (0 at max. of stf)'
@@ -1374,7 +1385,7 @@ if (lpr) then
 endif
 
 ! write param_snaps ==============================================
-if (dump_snaps_glob) then 
+if (dump_vtk) then 
     if (lpr) then
         write(6,*)'  Writing param_snaps for wavefield visualization'
         open(unit=9,file="param_snaps")

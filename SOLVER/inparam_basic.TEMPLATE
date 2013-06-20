@@ -15,7 +15,6 @@ SIMULATION_TYPE   single
 # Select 0.0, for SAMPLING_RATE==TIME_STEP (default: 0.0)
 
 #SEISMOGRAM_LENGTH  1800.
-#SAMPLING_RATE       1.0  
 
 # Receiver file type, allowed options:
 # colatlon: Colatitude and Longitude for each station.
@@ -23,17 +22,8 @@ SIMULATION_TYPE   single
 #           and station name (default)
 # database: One station at each GLL point, arbitrary station locations 
 #           can be reconstructed from this.
-#RECFILE_TYPE      stations 
+RECFILE_TYPE      stations 
 
-
-
-# Choose desired simulation time step
-# set to 0.0 for mesher's suggestion (default)
-
-#TIME_STEP           0.0
-
-# Source period [s]. Put to 0.0 to use mesh resolution (mesh_params.h)
-#SOURCE_PERIOD       0.0
 
 #### MODEL / MESH ####
 # Choose Mesh (local subdirname in SOLVER/MESHES directory)
@@ -46,21 +36,15 @@ MESHNAME            PREMlight_2CPUs
 
 # LAT_HETEROGENEITY  .false. 
 
-#### WAVEFIELD SNAPSHOTS ####
+
+# Include viscoelastic attenuation (details in inparam_advanced)
+ATTENUATION         true 
+
+#### WAVEFIELD SNAPSHOTS #####################################
 # Save wavefield snapshots for visualization (default: false)
+# more details in inparam_advanced
 
-#SNAPSHOTS_VTK          true  
-
-# Time interval between snapshots (default: 20)
-# SNAPSHOT_DT          20.
-
-# XDMF wavefield snapshots  (default: false)
-#SNAPSHOTS_XDMF       true
-
-
-# Use NetCDF for heavy output  (default false)
-#USE_NETCDF          true
-
+#SAVE_SNAPSHOTS         true  
 
 # Set verbosity of the code, allowed values:
 # 0: only errors

@@ -16,6 +16,7 @@ public
   integer           :: lfdata,lfinfo
   logical           :: dump_energy
   logical           :: dump_snaps_glob
+  logical           :: dump_vtk 
   logical           :: dump_xdmf
   logical           :: dump_snaps_solflu
   !> N.B. This is not wavefield snapshots, but kernel wavefields. Belongs to nstrain and

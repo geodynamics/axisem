@@ -82,7 +82,7 @@ subroutine prepare_waves
      call dump_wavefields_mesh_1d
   endif
 
-  if (dump_snaps_glob) then
+  if (dump_vtk) then
      if (lpr) write(6,*)'  dumping global grids for snapshots...'
      call dump_glob_grid_midpoint(ibeg,iend,ibeg,iend)
   endif
@@ -1116,7 +1116,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   !^-^-^-^-^-^ Wavefield snapshots-^-^^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
-  if (dump_snaps_glob) then
+  if (dump_vtk) then
     if (mod(iter,snap_it)==0) then
        isnap = isnap + 1
        if (lpr) then
@@ -1130,7 +1130,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   
   if (dump_xdmf) then
     if (mod(iter,snap_it)==0) then
-        if (.not.(dump_snaps_glob)) isnap=isnap+1
+        if (.not.(dump_vtk)) isnap=isnap+1
         if (lpr) then
            write(6,*)
            write(6,*)'Writing global xdmf snap to file:',isnap
