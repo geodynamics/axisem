@@ -475,7 +475,7 @@ subroutine check_basic_parameters
      stop 2
   endif
 
-  if (realkind /= 4 .or. realkind /= 8) then
+  if (realkind /= 4 .and. realkind /= 8) then
      if (lpr) then
         write(6,'(a/a/ai4/a)') 'PROBLEM with REAL data kind!', &
                                '... can only handle real kinds 4 or 8.', &
