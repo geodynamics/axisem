@@ -75,18 +75,13 @@ subroutine readin_parameters
   output_format = 'binary'
   if (use_netcdf) output_format='netcdf'
   
-
-
-!10 format(a80)
-
-
   call barrier
   if (lpr) then
      write(6,*)
      write(6,20)
      write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
                  enforced_period, trim(src_file_type), rec_file_type, &
-                 sum_seis, sum_fields, rot_rec, time_scheme, seis_dt, save_large_tests,  &
+                 sum_seis, sum_fields, rot_rec, time_scheme, seis_dt,  &
                  dump_energy, dump_snaps_glob, dump_snaps_solflu, dump_wavefields, &
                  dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, srcvic,  &
                  add_hetero, do_mesh_tests, output_format
@@ -154,7 +149,6 @@ subroutine readin_parameters
    12x,'Receivers coordinates                 ',a3,/                          &
    12x,'Time extrapolation scheme:      ',a8,/                          &
    12x,'Seismogram sampling rate [s]:   ',f7.3,/                        &
-   12x,'Save large tests?               ',l2,/                          &
    12x,'Dump kin./pot. energy?          ',l2,/                          &
    12x,'Dump global snaps?              ',l2,/                          &
    12x,'Dump solid/fluid snaps?         ',l2,/                          &
@@ -1142,7 +1136,6 @@ subroutine write_parameters
         write(6,*)'  Input/Output information_____________________________'
         write(6,12)'     Output data path  :',trim(datapath)
         write(6,12)'     Output info path  :',trim(infopath)
-        write(6,19)'     Save big testfiles:',save_large_tests
         write(6,19)'     Sum wavefields:', sum_fields
         write(6,19)'     Dump energy       :',dump_energy
         write(6,18)'     Glob/solflu snaps :',dump_snaps_glob,dump_snaps_solflu
