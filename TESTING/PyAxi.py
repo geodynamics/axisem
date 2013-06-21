@@ -43,12 +43,13 @@ try:
     from obspy.core import read, Trace, Stream, UTCDateTime
     from obspy.signal import util, cosTaper, detrend
 except Exception, error:
-    obspy_error = 'Please install obspy (http://obspy.org/)'
+    obspy_error = 'obspy (http://obspy.org/) should be installed'
+    obspy_error += 'for using MISC and TEST functionalities.'
     print "\n======================================"
     print 'Error in importing:'
     print error
     print "------------------"
-    print "No MISC and TEST functionalities"
+    print "No MISC and TEST functionalities (refer to inpython.cfg)"
     print obspy_error
     print "======================================"
     print "\n\n-----------------------------------"
@@ -112,6 +113,7 @@ def PyAxi(**kwargs):
             sys.exit(2) 
     except Exception, error:
         print '',
+    
     # ------------------Read INPUT file (Parameters)--------------------
     read_input_file()
     
@@ -128,14 +130,14 @@ def PyAxi(**kwargs):
     
     if os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])) == True:
         print '--------------------------------------------------------'
-        user_raw_input = raw_input('Folder with the same name as ' + input['solver_name'] + \
-                ' \n(solver_name in ipython.cfg) exists in:\n' + \
+        user_raw_input = raw_input('Directory with the same name as ' + input['solver_name'] + \
+                ' \n(SOLVER_NAME in ipython.cfg) exists in:\n' + \
                 os.path.join(input['axi_address'], 'SOLVER', input['solver_name']) + \
                 '\n\n' + \
                 'You could:' + '\n' + \
                 'S: Stop the program' + '\n' + \
-                'R: Remove the folder and continue the program' + '\n' + \
-                'C: continue the program without removing the folder' + '\n\n').upper()
+                'R: Remove the directory and continue the program' + '\n' + \
+                'C: Continue the program without removing the directory' + '\n\n').upper()
         
         print '--------------------------------------------------------'
         if user_raw_input == 'C':
@@ -240,31 +242,31 @@ def PyAxi(**kwargs):
                 sys.stdout.flush()
             if os.path.isfile('./inparam_mesh'):
                 subprocess.check_call(['rm', './inparam_mesh'])
-            subprocess.check_call(['cp', './inparam_mesh.TEMPLATE', './inparam_mesh'])
-            
-            inparam_mesh_open = open('./inparam_mesh', 'r')
-            
-            inparam_mesh_read = inparam_mesh_open.readlines()
-
-            inparam_mesh_read[1] = input['model'] + \
-                "  \t    Background model: 'prem','prem_solid' etc (SEE BELOW)\n"
-            inparam_mesh_read[2] = input['period'] + \
-                "            \t    DOMINANT period [s]\n"
-            inparam_mesh_read[3] = input['no_proc'] + \
-                "              \t    Number of processors to be used\n"
-            inparam_mesh_read[4] = input['vtk_output'] + \
-                "              write vtk output (may cause memory problems " + \
-                "for high frequencies (~2s))\n"
-            inparam_mesh_open.close()
+            #subprocess.check_call(['cp', './inparam_mesh.TEMPLATE', './inparam_mesh'])
+            inparam_mesh_input = []
+            inparam_mesh_input.append('BACKGROUND_MODEL     %s\n' %(input['mesher_bg_model']))
+            inparam_mesh_input.append('EXT_MODEL     %s\n' %(input['mesher_ext_model']))
+            inparam_mesh_input.append('DOMINANT_PERIOD     %s\n' %(input['mesher_dominant_period']))
+            inparam_mesh_input.append('NCPU     %s\n' %(input['mesher_ncpu']))
+            inparam_mesh_input.append('WRITE_VTK     %s\n' %(input['mesher_write_vtk']))
+            inparam_mesh_input.append('COARSENING_LAYERS     %s\n' %(input['mesher_coarsening_layers']))
+            inparam_mesh_input.append('IC_SHEAR_WAVE     %s\n' %(input['mesher_ic_shear_wave']))
+            inparam_mesh_input.append('NPOL     %s\n' %(input['mesher_npol']))
+            inparam_mesh_input.append('EL_PER_LAMBDA     %s\n' %(input['mesher_el_per_lambda']))
+            inparam_mesh_input.append('COURANT_NR     %s\n' %(input['mesher_courant_nr']))
+            inparam_mesh_input.append('RADIUS     %s\n' %(input['mesher_radius']))
+            inparam_mesh_input.append('SAVE_MESH     %s\n' %(input['mesher_save_mesh']))
+            inparam_mesh_input.append('VERBOSE     %s\n' %(input['mesher_verbose']))
             inparam_mesh_open = open('./inparam_mesh', 'w')
-
-            for i in range(0, len(inparam_mesh_read)):
-                inparam_mesh_open.write(inparam_mesh_read[i])
+            
+            for i in range(0, len(inparam_mesh_input)):
+                inparam_mesh_open.write(inparam_mesh_input[i])
 
             inparam_mesh_open.close()
 
             if input['verbose'] != 'N':
-                print inparam_mesh_read[1] + inparam_mesh_read[2] + inparam_mesh_read[3]
+                for inp_item in inparam_mesh_input:
+                    print inp_item,
             else:
                 print 'DONE'
             
@@ -366,19 +368,19 @@ def PyAxi(**kwargs):
         print "======"
         os.chdir(os.path.join(input['axi_address'], 'SOLVER'))
         
-        if input['solver_cp'] != 'N':
-            # Copy the mesh_params.h in the main directory
-            if input['verbose'] != 'N':
-                print "\n======================"
-                print "Copy the mesh_params.h"
-                print "======================\n"
-            else:
-                sys.stdout.write('copy the mesh_params.h...')
-                sys.stdout.flush()
-            output = subprocess.check_call(['cp', '-f', os.path.join('MESHES', \
-                        input['mesh_name'], 'mesh_params.h'), '.'])
-            if output != 0: print output_print
-            print 'DONE'
+        #if input['solver_cp'] != 'N':
+        #    # Copy the mesh_params.h in the main directory
+        #    if input['verbose'] != 'N':
+        #        print "\n======================"
+        #        print "Copy the mesh_params.h"
+        #        print "======================\n"
+        #    else:
+        #        sys.stdout.write('copy the mesh_params.h...')
+        #        sys.stdout.flush()
+        #    output = subprocess.check_call(['cp', '-f', os.path.join('MESHES', \
+        #                input['mesh_name'], 'mesh_params.h'), '.'])
+        #    if output != 0: print output_print
+        #    print 'DONE'
         
         # Create SOLVER Makefile
         if input['solver_makefile'] != 'N':
@@ -485,29 +487,24 @@ def PyAxi(**kwargs):
             
             if os.path.isfile('inparam_basic'):
                 subprocess.check_call(['rm', 'inparam_basic'])
-            subprocess.check_call(['cp', 'inparam_basic.TEMPLATE', 'inparam_basic'])
             
-            inparam_solver_open = open('./inparam_basic', 'r')
-            inparam_solver_read = inparam_solver_open.readlines()
-           
-            inparam_solver_read[10] = 'SIMULATION_TYPE   ' + input['simu_type'] + '\n'
-            inparam_solver_read[17] = 'SAMPLING_RATE       ' + input['sampling_rate'] + '\n'
-            inparam_solver_read[32] = 'TIME_STEP           ' + input['time_step'] + '\n'
-            inparam_solver_read[38] = 'MESHNAME            ' + input['mesh_name'] + '\n'
-            if input['verbose'] == 'Y':
-                inparam_solver_read[65] = 'VERBOSITY               1' + '\n'
-            else:
-                inparam_solver_read[65] = 'VERBOSITY               0' + '\n'
-            inparam_solver_open.close()
+            inparam_basic_input = []
+            inparam_basic_input.append('SIMULATION_TYPE     %s\n' %(input['solver_sim_type']))
+            inparam_basic_input.append('SEISMOGRAM_LENGTH     %s\n' %(input['solver_seis_length']))
+            inparam_basic_input.append('RECFILE_TYPE     %s\n' %(input['solver_recfile_type']))
+            inparam_basic_input.append('MESHNAME     %s\n' %(input['mesher_meshname']))
+            inparam_basic_input.append('LAT_HETEROGENEITY     %s\n' %(input['solver_lat_heterogeneity']))
+            inparam_basic_input.append('ATTENUATION     %s\n' %(input['solver_attenuation']))
+            inparam_basic_input.append('SAVE_SNAPSHOTS     %s\n' %(input['solver_save_snapshots']))
+            inparam_basic_input.append('VERBOSITY     %s\n' %(input['solver_verbosity']))
+            
             inparam_solver_open = open('./inparam_basic', 'w')
 
-            for i in range(0, len(inparam_solver_read)):
-                inparam_solver_open.write(inparam_solver_read[i])
-
+            for i in range(0, len(inparam_basic_input)):
+                inparam_solver_open.write(inparam_basic_input[i])
             inparam_solver_open.close()
             if input['verbose'] != 'N':
-                print inparam_solver_read[1] + inparam_solver_read[4] + \
-                            inparam_solver_read[10] + inparam_solver_read[11]
+                print inparam_basic_input
             else:
                 print 'DONE'
 
@@ -521,38 +518,50 @@ def PyAxi(**kwargs):
             
             if os.path.isfile('inparam_advanced'):
                 subprocess.check_call(['rm', 'inparam_advanced'])
-            subprocess.check_call(['cp', 'inparam_advanced.TEMPLATE', 'inparam_advanced'])
-            
-            inparam_solver_open = open('./inparam_advanced', 'r')
-            inparam_solver_read = inparam_solver_open.readlines()
-           
-            inparam_solver_read[11] = 'DATA_DIR        "%s"\n' %(input['out_data'])
-            inparam_solver_read[12] = 'INFO_DIR        "%s"\n' %(input['out_info'])
-            inparam_solver_read[18] = 'MESH_TEST           ' + input['mesh_test'] + '\n'
-            inparam_solver_read[25] = 'KERNEL_WAVEFIELDS   ' + input['kernel_wavefield'] + '\n' 
-            inparam_solver_read[28] = 'KERNEL_SPP          ' + input['kernel_spp'] + '\n'
-            inparam_solver_read[34] = 'KERNEL_SOURCE       ' + input['kernel_src'] + '\n'
-            inparam_solver_read[37] = 'KERNEL_IBEG         ' + input['kernel_ibeg'] + '\n'
-            inparam_solver_read[38] = 'KERNEL_IEND         ' + input['kernel_iend'] + '\n'
-            inparam_solver_read[42] = 'NR_LIN_SOLIDS       ' + input['NR_LIN_SOLIDS'] + '\n'
-            inparam_solver_read[45] = 'F_MIN               ' + input['F_MIN'] + '\n'
-            inparam_solver_read[49] = 'F_MAX               ' + input['F_MAX'] + '\n'
-            inparam_solver_read[83] = 'SAVE_ENERGY         ' + input['SAVE_ENERGY'] + '\n'
-            inparam_solver_read[86] = 'HOMO_MODEL          ' + input['HOMO_MODEL'] + '\n'
-            inparam_solver_read[87] = 'HOMO_VP             ' + input['HOMO_VP'] + '\n'
-            inparam_solver_read[88] = 'HOMO_VS             ' + input['HOMO_VS'] + '\n'
-            inparam_solver_read[89] = 'HOMO_RHO            ' + input['HOMO_RHO'] + '\n'
-            inparam_solver_read[92] = 'FORCE_ANISO         ' + input['FORCE_ANISO'] + '\n'
-            inparam_solver_open.close()
+            inparam_advanced_input = []
+            inparam_advanced_input.append('SAMPLING_RATE     %s\n' %(input['solver_sampling_rate']))
+            inparam_advanced_input.append('TIME_STEP     %s\n' %(input['solver_time_step']))
+            inparam_advanced_input.append('SOURCE_PERIOD     %s\n' %(input['solver_source_period']))
+            inparam_advanced_input.append('TIME_SCHEME     %s\n' %(input['solver_time_scheme']))
+            inparam_advanced_input.append('DATA_DIR     "%s"\n' %(input['solver_data_dir']))
+            inparam_advanced_input.append('INFO_DIR     "%s"\n' %(input['solver_info_dir']))
+            inparam_advanced_input.append('MESH_TEST     %s\n' %(input['solver_mesh_test']))
+            inparam_advanced_input.append('DEFLATE_LEVEL     %s\n' %(input['solver_deflate_level']))
+            inparam_advanced_input.append('SNAPSHOT_DT     %s\n' %(input['solver_snapshot_dt']))
+            inparam_advanced_input.append('SNAPSHOTS_FORMAT     %s\n' %(input['solver_snapshots_format']))
+            inparam_advanced_input.append('USE_NETCDF     %s\n' %(input['solver_netCDF']))
+            inparam_advanced_input.append('KERNEL_WAVEFIELDS     %s\n' %(input['solver_kernel_wavefields']))
+            inparam_advanced_input.append('KERNEL_SPP     %s\n' %(input['solver_kernel_spp']))
+            inparam_advanced_input.append('KERNEL_SOURCE     %s\n' %(input['solver_kernel_source']))
+            inparam_advanced_input.append('KERNEL_IBEG     %s\n' %(input['solver_kernel_ibeg']))
+            inparam_advanced_input.append('KERNEL_IEND     %s\n' %(input['solver_kernel_iend']))
+            inparam_advanced_input.append('ATTENUATION     %s\n' %(input['solver_attenuation']))
+            inparam_advanced_input.append('NR_LIN_SOLIDS     %s\n' %(input['solver_nr_lin_solids']))
+            inparam_advanced_input.append('F_MIN     %s\n' %(input['solver_fmin']))
+            inparam_advanced_input.append('F_MAX     %s\n' %(input['solver_fmax']))
+            inparam_advanced_input.append('F_REFERENCE     %s\n' %(input['solver_fref']))
+            inparam_advanced_input.append('SMALL_Q_CORRECTION     %s\n' %(input['solver_small_q_correction']))
+            inparam_advanced_input.append('NR_F_SAMPLE     %s\n' %(input['solver_nr_f_sample']))
+            inparam_advanced_input.append('MAXINT_SA     %s\n' %(input['solver_maxint_sa']))
+            inparam_advanced_input.append('TSTART_SR     %s\n' %(input['solver_tstart_sr']))
+            inparam_advanced_input.append('TSTART_AMP     %s\n' %(input['solver_tstart_amp']))
+            inparam_advanced_input.append('T_DECAY     %s\n' %(input['solver_t_decay']))
+            inparam_advanced_input.append('FIX_FREQ     %s\n' %(input['solver_fix_freq']))
+            inparam_advanced_input.append('DUMP_VTK     %s\n' %(input['solver_dump_vtk']))
+            inparam_advanced_input.append('COARSE_GRAINED     %s\n' %(input['solver_coarse_grained']))
+            inparam_advanced_input.append('SAVE_ENERGY     %s\n' %(input['solver_save_energy']))
+            inparam_advanced_input.append('HOMO_MODEL     %s\n' %(input['solver_homo_model']))
+            inparam_advanced_input.append('HOMO_VP     %s\n' %(input['solver_homo_vp']))
+            inparam_advanced_input.append('HOMO_VS     %s\n' %(input['solver_homo_vs']))
+            inparam_advanced_input.append('HOMO_RHO     %s\n' %(input['solver_homo_rho']))
+            inparam_advanced_input.append('FORCE_ANISO     %s\n' %(input['solver_force_aniso']))
+          
             inparam_solver_open = open('./inparam_advanced', 'w')
-
-            for i in range(0, len(inparam_solver_read)):
-                inparam_solver_open.write(inparam_solver_read[i])
-
+            for i in range(0, len(inparam_advanced_input)):
+                inparam_solver_open.write(inparam_advanced_input[i])
             inparam_solver_open.close()
             if input['verbose'] != 'N':
-                print inparam_solver_read[1] + inparam_solver_read[4] + \
-                            inparam_solver_read[10] + inparam_solver_read[11]
+                print inparam_advanced_input
             else:
                 print 'DONE'
    
@@ -1024,10 +1033,10 @@ def PyAxi(**kwargs):
                 dat1 = sgs[0].select(station=stat, channel='*'+chan)[0].data
                 dat2 = sgs[2].select(station=stat, channel='*'+chan)[0].data
                 #XXXXXXXXXXXXXX
-                #l2misfit.append(((dat1 - dat2)**2).sum()**.5 / maxi /
+                l2misfit.append(((dat1 - dat2)**2).sum()**.5 / maxi /
+                       sgs[0][0].stats.npts)
+                #l2misfit.append(((dat1 - dat1)**2).sum()**.5 / maxi /
                 #        sgs[0][0].stats.npts)
-                l2misfit.append(((dat1 - dat1)**2).sum()**.5 / maxi /
-                        sgs[0][0].stats.npts)
             
             # write l2 misfits to file
             fl2 = open(os.path.join(folder_new, 'l2misfit_%s.dat' % chan), 'w')
@@ -1098,10 +1107,8 @@ def read_input_file():
     """
     
     global input, obspy_error
-    
     config = ConfigParser.RawConfigParser()
     input = {}
-    
     try:
         config.read(os.path.join(sys.argv[1], 'inpython.cfg'))
         input['inpython_address'] = os.path.join(sys.argv[1], 'inpython.cfg')
@@ -1116,152 +1123,180 @@ def read_input_file():
         print os.path.join(os.getcwd(), 'inpython.cfg')
     
     if not os.path.isabs(input['inpython_address']):
-        input['inpython_address'] = os.path.join(os.getcwd(), \
-                                            input['inpython_address'])
+        input['inpython_address'] = os.path.join(os.getcwd(),
+                                      input['inpython_address'])
     
-    input['axi_address'] = config.get('general', 'address')
+    input['axi_address'] = config.get('GENERAL', 'AXISEM_DIR')
     if not os.path.isabs(input['axi_address']):
         input['axi_address'] = os.path.join(os.getcwd(), input['axi_address'])
     print '\nWorking Directory:'
     print input['axi_address'] 
     print '****************************************\n'
     
-    input['mesh_name'] = config.get('general', 'mesh_name')
-    input['solver_name'] = config.get('general', 'solver_name')
-    input['verbose'] = config.get('general', 'verbose')
+    input['mesh_name'] = config.get('GENERAL', 'MESHER_NAME')
+    input['solver_name'] = config.get('GENERAL', 'SOLVER_NAME')
+    input['verbose'] = config.get('GENERAL', 'VERBOSE')
     
-    #input['all_steps'] = config.get('general', 'all_steps')
-    input['new_mesh'] = config.get('general', 'new_mesh')
-    input['post_processing'] = config.get('general', 'post_processing')
+    input['new_mesh'] = config.get('GENERAL', 'NEW_MESH')
+    input['post_processing'] = config.get('GENERAL', 'POST_PROCESSING')
     
-    input['mesher'] = config.get('general', 'mesher')
-    input['solver'] = config.get('general', 'solver')
+    input['mesher'] = config.get('GENERAL', 'MESHER')
+    input['solver'] = config.get('GENERAL', 'SOLVER')
     
-    input['mesher_makefile'] = config.get('general', 'mesher_makefile')
-    input['mesher_make'] = config.get('general', 'mesher_make')
-    input['mesher_move'] = config.get('general', 'mesher_move')
+    input['mesher_makefile'] = config.get('GENERAL', 'MESHER_MAKEFILE')
+    input['mesher_make'] = config.get('GENERAL', 'MESHER_MAKE')
+    input['mesher_move'] = config.get('GENERAL', 'MESHER_MOVE')
     
-    input['solver_cp'] = config.get('general', 'solver_cp')
-    input['solver_makefile'] = config.get('general', 'solver_makefile')
-    input['solver_make'] = config.get('general', 'solver_make')
+    input['solver_cp'] = config.get('GENERAL', 'SOLVER_COPY')
+    input['solver_makefile'] = config.get('GENERAL', 'SOLVER_MAKEFILE')
+    input['solver_make'] = config.get('GENERAL', 'SOLVER_MAKE')
     
     if input['mesher_make'] != 'N':
         input['mesher_move'] = 'Y'
         input['solver_cp'] = 'Y'
-    
 
-    input['make_flag'] = config.get('mpi_netCDF', 'make_flag')
-    input['mpi_compiler'] = config.get('mpi_netCDF', 'mpi_compiler')
-    input['netCDF'] = config.get('mpi_netCDF', 'netCDF')
-    input['netCDF_LIBS'] = config.get('mpi_netCDF', 'netCDF_LIBS')
-    input['netCDF_INCLUDE'] = config.get('mpi_netCDF', 'netCDF_INCLUDE')
+    input['mesher_bg_model'] = config.get('MESHER_BASIC', 'BACKGROUND_MODEL')
+    input['mesher_ext_model'] = config.get('MESHER_BASIC', 'EXT_MODEL')
+    input['mesher_dominant_period'] = config.get('MESHER_BASIC', 'DOMINANT_PERIOD')
+    input['mesher_ncpu'] = config.get('MESHER_BASIC', 'NCPU')
+    #### VERY UGLY ### JUST FOR TEST
+    input['no_proc'] = input['mesher_ncpu']
+    input['mesher_write_vtk'] = config.get('MESHER_BASIC', 'WRITE_VTK')
+    input['mesher_coarsening_layers'] = config.get('MESHER_BASIC', 'COARSENING_LAYERS')
+    input['mesher_meshname'] = config.get('MESHER_BASIC', 'MESHNAME')
+    #### VERY UGLY ### JUST FOR TEST
+    input['mesh_name'] = input['mesher_meshname']
+    input['mesher_ic_shear_wave'] = config.get('MESHER_ADVANCED', 'IC_SHEAR_WAVE')
+    input['mesher_npol'] = config.get('MESHER_ADVANCED', 'NPOL')
+    input['mesher_el_per_lambda'] = config.get('MESHER_ADVANCED', 'EL_PER_LAMBDA')
+    input['mesher_courant_nr'] = config.get('MESHER_ADVANCED', 'COURANT_NR')
+    input['mesher_radius'] = config.get('MESHER_ADVANCED', 'RADIUS')
+    input['mesher_save_mesh'] = config.get('MESHER_ADVANCED', 'SAVE_MESH')
+    input['mesher_verbose'] = config.get('MESHER_ADVANCED', 'VERBOSE')
 
-    
-    input['model'] = config.get('mesher', 'model')
-    input['period'] = config.get('mesher', 'period')
-    input['no_proc'] = config.get('mesher', 'no_proc')
-    input['vtk_output'] = config.get('mesher', 'vtk_output')    
-    
-    input['simu_type'] = config.get('solver', 'simu_type')
-    
-    input['out_data'] = config.get('solver', 'out_data')
-    input['out_info'] = config.get('solver', 'out_info')
-    input['mesh_test'] = config.get('solver', 'mesh_test')
-    input['kernel_wavefield'] = config.get('solver', 'kernel_wavefield')
-    input['kernel_spp'] = config.get('solver', 'kernel_spp')
-    input['kernel_src'] = config.get('solver', 'kernel_src')
-    input['kernel_ibeg'] = config.get('solver', 'kernel_ibeg')
-    input['kernel_iend'] = config.get('solver', 'kernel_iend')
-    input['NR_LIN_SOLIDS'] = config.get('solver', 'NR_LIN_SOLIDS')
-    input['F_MIN'] = config.get('solver', 'F_MIN')
-    input['F_MAX'] = config.get('solver', 'F_MAX')
-    input['SAVE_ENERGY'] = config.get('solver', 'SAVE_ENERGY')
-    input['HOMO_MODEL'] = config.get('solver', 'HOMO_MODEL')
-    input['HOMO_VP'] = config.get('solver', 'HOMO_VP')
-    input['HOMO_VS'] = config.get('solver', 'HOMO_VS')
-    input['HOMO_RHO'] = config.get('solver', 'HOMO_RHO')
-    input['FORCE_ANISO'] = config.get('solver', 'FORCE_ANISO')
-    input['sampling_rate'] = config.get('solver', 'sampling_rate')
-
-    input['no_simu'] = config.get('solver', 'no_simu')
-    input['seis_length'] = config.get('solver', 'seis_length')
-    input['time_step'] = config.get('solver', 'time_step')
-    input['time_scheme'] = config.get('solver', 'time_scheme')
-    if input['simu_type'] == 'single':
+    input['solver_sim_type'] = config.get('SOLVER_BASIC', 'SIMULATION_TYPE')
+    if input['solver_sim_type'] == 'single':
         input['source_type'] = 'sourceparams'
-    elif input['simu_type'] == 'moment':
+    elif input['solver_sim_type'] == 'moment':
         input['source_type'] = 'cmtsolut'
     else:
         print 'Check your simulation type, you entered:'
-        print input['simu_type']
-
-    input['receiver_type'] = config.get('solver', 'receiver_type')
-    input['save_XDMF'] = config.get('solver', 'save_XDMF')
-    input['force_aniso'] = config.get('solver', 'force_aniso')
-    input['viscoelastic_attenuation'] = config.get('solver', 'viscoelastic_attenuation')
-
-    input['sourceparams_type'] = config.get('solver', 'sourceparams_type')
-    input['sourceparams_MDQ'] = config.get('solver', 'sourceparams_MDQ')
+        print input['solver_simu_type']
+    input['solver_seis_length'] = config.get('SOLVER_BASIC', 'SEISMOGRAM_LENGTH')
+    input['solver_recfile_type'] = config.get('STATION_INFO', 'RECFILE_TYPE')
+    input['solver_lat_heterogeneity'] = config.get('SOLVER_BASIC', 'LAT_HETEROGENEITY')
+    input['solver_attenuation'] = config.get('SOLVER_BASIC', 'ATTENUATION')
+    input['solver_save_snapshots'] = config.get('SOLVER_BASIC', 'SAVE_SNAPSHOTS')
+    input['solver_verbosity'] = config.get('SOLVER_BASIC', 'VERBOSITY')
+   
+    input['solver_netCDF'] = config.get('SOLVER_ADVANCED', 'USE_NETCDF')
+    if input['solver_netCDF'] != 'false': input['netCDF'] = 'Y'
+    else: input['netCDF'] = 'N'
+    input['netCDF_LIBS'] = config.get('SOLVER_ADVANCED', 'NETCDF_LIBS')
+    input['netCDF_INCLUDE'] = config.get('SOLVER_ADVANCED', 'NETCDF_INCLUDE')
+   
+    input['solver_sampling_rate'] = config.get('SOLVER_ADVANCED', 'SAMPLING_RATE')
+    input['solver_time_step'] = config.get('SOLVER_ADVANCED', 'TIME_STEP')
+    input['solver_source_period'] = config.get('SOLVER_ADVANCED', 'SOURCE_PERIOD')
+    input['solver_time_scheme'] = config.get('SOLVER_ADVANCED', 'TIME_SCHEME')
+    input['solver_data_dir'] = config.get('SOLVER_ADVANCED', 'DATA_DIR')
+    input['solver_info_dir'] = config.get('SOLVER_ADVANCED', 'INFO_DIR')
+    input['solver_mesh_test'] = config.get('SOLVER_ADVANCED', 'MESH_TEST')
+    input['solver_deflate_level'] = config.get('SOLVER_ADVANCED', 'DEFLATE_LEVEL')
+    input['solver_snapshot_dt'] = config.get('SOLVER_ADVANCED', 'SNAPSHOT_DT')
+    input['solver_snapshots_format'] = config.get('SOLVER_ADVANCED', 'SNAPSHOTS_FORMAT')
+    input['solver_kernel_wavefields'] = config.get('SOLVER_ADVANCED', 'KERNEL_WAVEFIELDS')
+    input['solver_kernel_spp'] = config.get('SOLVER_ADVANCED', 'KERNEL_SPP')
+    input['solver_kernel_source'] = config.get('SOLVER_ADVANCED', 'KERNEL_SOURCE')
+    input['solver_kernel_ibeg'] = config.get('SOLVER_ADVANCED', 'KERNEL_IBEG')
+    input['solver_kernel_iend'] = config.get('SOLVER_ADVANCED', 'KERNEL_IEND')
+    input['solver_nr_lin_solids'] = config.get('SOLVER_ADVANCED', 'NR_LIN_SOLIDS')
+    input['solver_fmin'] = config.get('SOLVER_ADVANCED', 'F_MIN')
+    input['solver_fmax'] = config.get('SOLVER_ADVANCED', 'F_MAX')
+    input['solver_fref'] = config.get('SOLVER_ADVANCED', 'F_REFERENCE')
+    input['solver_small_q_correction'] = config.get('SOLVER_ADVANCED', 'SMALL_Q_CORRECTION')
+    input['solver_nr_f_sample'] = config.get('SOLVER_ADVANCED', 'NR_F_SAMPLE')
+    input['solver_maxint_sa'] = config.get('SOLVER_ADVANCED', 'MAXINT_SA')
+    input['solver_tstart_sr'] = config.get('SOLVER_ADVANCED', 'TSTART_SR')
+    input['solver_tstart_amp'] = config.get('SOLVER_ADVANCED', 'TSTART_AMP')
+    input['solver_t_decay'] = config.get('SOLVER_ADVANCED', 'T_DECAY')
+    input['solver_fix_freq'] = config.get('SOLVER_ADVANCED', 'FIX_FREQ')
+    input['solver_dump_vtk'] = config.get('SOLVER_ADVANCED', 'DUMP_VTK')
+    input['solver_coarse_grained'] = config.get('SOLVER_ADVANCED', 'COARSE_GRAINED')
+    input['solver_save_energy'] = config.get('SOLVER_ADVANCED', 'SAVE_ENERGY')
+    input['solver_homo_model'] = config.get('SOLVER_ADVANCED', 'HOMO_MODEL')
+    input['solver_homo_vp'] = config.get('SOLVER_ADVANCED', 'HOMO_VP')
+    input['solver_homo_vs'] = config.get('SOLVER_ADVANCED', 'HOMO_VS')
+    input['solver_homo_rho'] = config.get('SOLVER_ADVANCED', 'HOMO_RHO')
+    input['solver_force_aniso'] = config.get('SOLVER_ADVANCED', 'FORCE_ANISO')
     
-    input['src_Mzz'] = config.get('solver', 'src_Mzz')
-    input['src_Mxx'] = config.get('solver', 'src_Mxx')
-    input['src_Myy'] = config.get('solver', 'src_Myy')
-    input['src_Mxz'] = config.get('solver', 'src_Mxz')
-    input['src_Myz'] = config.get('solver', 'src_Myz')
-    input['src_Mxy'] = config.get('solver', 'src_Mxy')
+    input['receiver_type'] = input['solver_recfile_type']
+    input['sourceparams_type'] = config.get('SOURCE_INFO', 'SOURCEPARAMS_TYPE')
+    input['sourceparams_MDQ'] = config.get('SOURCE_INFO', 'SOURCEPARAMS_MDQ')
     
-    input['source_dp'] = config.get('solver', 'source_dp')
-    input['source_colat'] = config.get('solver', 'source_colat')
-    input['source_lon'] = config.get('solver', 'source_lon')
-    input['source_stf'] = config.get('solver', 'source_stf')
+    input['src_Mzz'] = config.get('SOURCE_INFO', 'SOURCE_MZZ')
+    input['src_Mxx'] = config.get('SOURCE_INFO', 'SOURCE_MXX')
+    input['src_Myy'] = config.get('SOURCE_INFO', 'SOURCE_MYY')
+    input['src_Mxz'] = config.get('SOURCE_INFO', 'SOURCE_MXZ')
+    input['src_Myz'] = config.get('SOURCE_INFO', 'SOURCE_MYZ')
+    input['src_Mxy'] = config.get('SOURCE_INFO', 'SOURCE_MXY')
     
-    input['cmt_STF'] = config.get('solver', 'cmt_STF')
-    input['cmt_lat'] = config.get('solver', 'cmt_lat')
-    input['cmt_lon'] = config.get('solver', 'cmt_lon')
-    input['cmt_dp'] = config.get('solver', 'cmt_dp')
-    input['cmt_Mrr'] = config.get('solver', 'cmt_Mrr')
-    input['cmt_Mtt'] = config.get('solver', 'cmt_Mtt')
-    input['cmt_Mpp'] = config.get('solver', 'cmt_Mpp')
-    input['cmt_Mrt'] = config.get('solver', 'cmt_Mrt')
-    input['cmt_Mrp'] = config.get('solver', 'cmt_Mrp')
-    input['cmt_Mtp'] = config.get('solver', 'cmt_Mtp')
+    input['source_dp'] = config.get('SOURCE_INFO', 'SOURCE_DEPTH')
+    input['source_colat'] = config.get('SOURCE_INFO', 'SOURCE_COLAT')
+    input['source_lon'] = config.get('SOURCE_INFO', 'SOURCE_LON')
+    input['source_stf'] = config.get('SOURCE_INFO', 'SOURCE_STF')
     
-    input['post_components'] = config.get('post_processing', 'post_components')
-    input['post_conv_period'] = config.get('post_processing', 'post_conv_period')
-    input['post_rotate'] = config.get('post_processing', 'post_rotate')
-    input['post_full_Mij'] = config.get('post_processing', 'post_full_Mij')
-    input['post_Mrr'] = config.get('post_processing', 'post_Mrr')
-    input['post_Mtt'] = config.get('post_processing', 'post_Mtt')
-    input['post_Mpp'] = config.get('post_processing', 'post_Mpp')
-    input['post_Mrt'] = config.get('post_processing', 'post_Mrt')
-    input['post_Mrp'] = config.get('post_processing', 'post_Mrp')
-    input['post_Mtp'] = config.get('post_processing', 'post_Mtp')
-    input['post_STF'] = config.get('post_processing', 'post_STF')
-    input['post_Scolat'] = config.get('post_processing', 'post_Scolat')
-    input['post_Slon'] = config.get('post_processing', 'post_Slon')
-    input['post_snap'] = config.get('post_processing', 'post_snap')
-    input['post_dv'] = config.get('post_processing', 'post_dv')
-    input['post_path'] = config.get('post_processing', 'post_path')
-    input['post_negative'] = config.get('post_processing', 'post_negative')
+    input['cmt_STF'] = config.get('SOURCE_INFO', 'CMT_STF')
+    input['cmt_lat'] = config.get('SOURCE_INFO', 'CMT_LAT')
+    input['cmt_lon'] = config.get('SOURCE_INFO', 'CMT_LON')
+    input['cmt_dp'] = config.get('SOURCE_INFO', 'CMT_DEPTH')
+    input['cmt_Mrr'] = config.get('SOURCE_INFO', 'CMT_MRR')
+    input['cmt_Mtt'] = config.get('SOURCE_INFO', 'CMT_MTT')
+    input['cmt_Mpp'] = config.get('SOURCE_INFO', 'CMT_MPP')
+    input['cmt_Mrt'] = config.get('SOURCE_INFO', 'CMT_MRT')
+    input['cmt_Mrp'] = config.get('SOURCE_INFO', 'CMT_MRP')
+    input['cmt_Mtp'] = config.get('SOURCE_INFO', 'CMT_MTP')
     
-    input['mseed'] = config.get('MISC', 'mseed')
-    input['mseed_all'] = config.get('MISC', 'mseed_all')
-    input['convSTF'] = config.get('MISC', 'convSTF')
-    input['halfduration'] = eval(config.get('MISC', 'halfduration'))
-    input['filter'] = config.get('MISC', 'filter')
-    input['fmin'] = eval(config.get('MISC', 'fmin'))
-    input['fmax'] = eval(config.get('MISC', 'fmax'))
+    input['post_components'] = config.get('POST_PROCESSING', 'COMPONENTS')
+    input['post_conv_period'] = config.get('POST_PROCESSING', 'CONVOLUTION_PERIOD')
+    input['post_rotate'] = config.get('POST_PROCESSING', 'ROTATE')
+    input['post_full_Mij'] = config.get('POST_PROCESSING', 'FULL_MIJ')
+    input['post_Mrr'] = config.get('POST_PROCESSING', 'MRR')
+    input['post_Mtt'] = config.get('POST_PROCESSING', 'MTT')
+    input['post_Mpp'] = config.get('POST_PROCESSING', 'MPP')
+    input['post_Mrt'] = config.get('POST_PROCESSING', 'MRT')
+    input['post_Mrp'] = config.get('POST_PROCESSING', 'MRP')
+    input['post_Mtp'] = config.get('POST_PROCESSING', 'MTP')
+    input['post_STF'] = config.get('POST_PROCESSING', 'STF')
+    input['post_Scolat'] = config.get('POST_PROCESSING', 'SOURCE_COLAT')
+    input['post_Slon'] = config.get('POST_PROCESSING', 'SOURCE_LON')
+    input['post_snap'] = config.get('POST_PROCESSING', 'SOURCE_SNAPS')
+    input['post_dv'] = config.get('POST_PROCESSING', 'DISP_VEL')
+    input['post_path'] = config.get('POST_PROCESSING', 'SOURCE_PATH')
+    input['post_negative'] = config.get('POST_PROCESSING', 'SOURCE_NEGATIVE')
     
-    input['test'] = config.get('testing', 'test')
-    input['test_folder'] = config.get('testing', 'test_folder')
-    input['plot'] = config.get('testing', 'plot')
-    input['save_plots'] = config.get('testing', 'save_plots')
-    input['plot_format'] = config.get('testing', 'plot_format')
-    input['test_chans'] = config.get('testing', 'chans')
-    input['test_fmin'] = config.get('testing', 'fmin')
-    input['test_fmax'] = config.get('testing', 'fmax')
-    input['test_half'] = config.get('testing', 'halfduration')
-    input['test_nstat'] = config.get('testing', 'nstat')
+    input['mseed'] = config.get('MISC', 'MSEED')
+    input['mseed_all'] = config.get('MISC', 'MSEED_ALL')
+    input['convSTF'] = config.get('MISC', 'CONV_STF')
+    input['halfduration'] = eval(config.get('MISC', 'HALF_DURATION'))
+    input['filter'] = config.get('MISC', 'FILTER')
+    input['fmin'] = eval(config.get('MISC', 'FMIN'))
+    input['fmax'] = eval(config.get('MISC', 'FMAX'))
+   
+   
+    input['make_flag'] = config.get('MPI', 'MAKE_FLAG')
+    input['mpi_compiler'] = config.get('MPI', 'MPI_COMPILER')
+    
+    input['test'] = config.get('TEST', 'TEST')
+    input['test_folder'] = config.get('TEST', 'TEST_FOLDER')
+    input['plot'] = config.get('TEST', 'PLOT')
+    input['save_plots'] = config.get('TEST', 'SAVE_PLOTS')
+    input['plot_format'] = config.get('TEST', 'PLOT_FORMAT')
+    input['test_chans'] = config.get('TEST', 'CHANS')
+    input['test_fmin'] = config.get('TEST', 'FMIN')
+    input['test_fmax'] = config.get('TEST', 'FMAX')
+    input['test_half'] = config.get('TEST', 'HALF_DURATION')
+    input['test_nstat'] = config.get('TEST', 'NSTAT')
     
     if input['new_mesh'] == 'Y':
         input['mesher'] = 'Y'
@@ -1318,43 +1353,43 @@ def edit_param_post_processing(post_process_read):
     
     global input
 
-    if input['post_rotate'] != 'N':
+    if input['post_rotate'] != 'DNC':
         post_process_read[0] = '                   ' + \
         input['post_rotate'] + \
         '                                 rotate receivers?\n'
-    if input['post_components'] != 'N':
+    if input['post_components'] != 'DNC':
         post_process_read[1] = "                    " + \
         input['post_components'] + \
         "          receiver components: enz,sph,cyl,xyz,src\n"
-    if input['post_full_Mij'] != 'N':
+    if input['post_full_Mij'] != 'DNC':
         post_process_read[2] = '                   ' + \
         input['post_full_Mij'] + \
         '                                   sum to full Mij\n'
-    if input['post_Mrr'] != 'N':
+    if input['post_Mrr'] != 'DNC':
         post_process_read[3] = '             ' + \
         input['post_Mrr'] + \
         '                                              Mrr \n'
-    if input['post_Mtt'] != 'N':
+    if input['post_Mtt'] != 'DNC':
         post_process_read[4] = '             ' + \
         input['post_Mtt'] + \
         '                                              Mtt \n'
-    if input['post_Mpp'] != 'N':
+    if input['post_Mpp'] != 'DNC':
         post_process_read[5] = '             ' + \
         input['post_Mpp'] + \
         '                                              Mpp \n'
-    if input['post_Mrt'] != 'N':
+    if input['post_Mrt'] != 'DNC':
         post_process_read[6] = '             ' + \
         input['post_Mrt'] + \
         '                                              Mrt \n'
-    if input['post_Mrp'] != 'N':
+    if input['post_Mrp'] != 'DNC':
         post_process_read[7] = '             ' + \
         input['post_Mrp'] + \
         '                                              Mrp \n'
-    if input['post_Mtp'] != 'N':
+    if input['post_Mtp'] != 'DNC':
         post_process_read[8] = '             ' + \
         input['post_Mtp'] + \
         '                                              Mtp \n'
-    if input['post_conv_period'] != 'N':
+    if input['post_conv_period'] != 'DNC':
         if input['post_conv_period'] == '0.':
             post_process_read[9] = '                       ' + \
             '0.             convolve period (0. if not convolved)\n'
@@ -1362,31 +1397,31 @@ def edit_param_post_processing(post_process_read):
             post_process_read[9] = '             ' + \
             input['post_conv_period'] + \
             '             convolve period (0. if not convolved)\n'
-    if input['post_STF'] != 'N':
+    if input['post_STF'] != 'DNC':
         post_process_read[10] = "                " + \
         input['post_STF'] + \
         "         source time function type for convolution\n"
-    if input['post_Scolat'] != 'N':
+    if input['post_Scolat'] != 'DNC':
         post_process_read[11] = '             ' + \
         input['post_Scolat'] + \
         '                                 Source colatitude\n'
-    if input['post_Slon'] != 'N':
+    if input['post_Slon'] != 'DNC':
         post_process_read[12] = '             ' + \
         input['post_Slon'] + \
         '                                  Source longitude\n'
-    if input['post_snap'] != 'N':
+    if input['post_snap'] != 'DNC':
         post_process_read[13] = '                        ' + \
         input['post_snap'] + \
         '                                plot global snaps?\n'
-    if input['post_dv'] != 'N':
+    if input['post_dv'] != 'DNC':
         post_process_read[14] = '                     ' + \
         input['post_dv'] + \
         '                          disp or velo seismograms\n'
-    if input['post_path'] != 'N':
+    if input['post_path'] != 'DNC':
         post_process_read[15] = "    " + \
         input['post_path'] + \
         "                 Directory for post processed data\n"
-    if input['post_negative'] != 'N':
+    if input['post_negative'] != 'DNC':
         post_process_read[16] = '                        ' + \
         input['post_negative'] + \
         '   seismograms at negative time (0 at max. of stf)\n'
