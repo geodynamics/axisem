@@ -142,12 +142,6 @@ subroutine prepare_waves
      stop
   endif
 
-  ! Specific file format defined with Karin Sigloch: delivergf.dat
-  if (src_file_type=='deliverg') then
-     ! MvD: what is supposed to happen here? 
-     stop
-  endif
-
   ! write out seismic & numerical information on the simulation
   ! and run some tests on consistency of mesh/spacing/element types/messaging
   call write_parameters
@@ -1057,13 +1051,12 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   !
   ! Includes all output action done during the time loop such as
   ! various receiver definitions, wavefield snapshots, velocity field & strain 
-  ! tensor for 3-D kernels, analytical radiation in a homogeneous model.
+  ! tensor for 3-D kernels 
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_io
   use data_mesh
-  !use analyt_homog_radiation, ONLY : src_vicinity
   use wavefields_io
   use attenuation,          ONLY: n_sls_attenuation, dump_memory_vars
   
@@ -1104,14 +1097,8 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
 
   endif
 
-  ! Analaytical radiation in homogeneous models-^-^-^-^-^-^-^-^-^^-^-^-^
-  !  if (srcvic) call src_vicinity(iter,disp)
-
-
-  ! Compute kinetic and potential energy globally every 5th time step
-  !  if (dump_energy .and. mod(iter,5)==0) &
-  if (dump_energy) &
-       call energy(disp,velo,dchi,ddchi)
+  ! Compute kinetic and potential energy globally
+  if (dump_energy) call energy(disp, velo, dchi, ddchi)
 
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   !^-^-^-^-^-^ Wavefield snapshots-^-^^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^

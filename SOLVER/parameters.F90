@@ -82,7 +82,7 @@ subroutine readin_parameters
                  enforced_period, trim(src_file_type), rec_file_type, &
                  sum_seis, sum_fields, rot_rec, time_scheme, seis_dt,  &
                  dump_energy, dump_vtk, dump_snaps_solflu, dump_wavefields, &
-                 dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, srcvic,  &
+                 dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, &
                  add_hetero, do_mesh_tests, output_format
 
 20 format(/&
@@ -158,7 +158,6 @@ subroutine readin_parameters
    12x,'Samples per period for strains:     ',f7.3,/                        &
    12x,'Source dumping type:                ',a4,/                          &
    12x,'Homogenize background model?        ',l2,/                          &
-   12x,'Analyt. homogen. radiation?         ',l2,/                          &
    12x,'Add heterogeneous region?           ',l2,/                          &
    12x,'Perform extensive mesh tests?       ',l2,/                          &
    12x,'Output format (seism., wavefields): ',a6,/                          &
@@ -528,22 +527,7 @@ subroutine check_basic_parameters
          write(6,*)" NOT dumping the same snapshots twice (global AND solid/fluid)"
          write(6,*)'...hence reverting to dumping global snaps only. Sorry.'
       end if
-      dump_snaps_solflu=.false.
-  endif
-
-  if (srcvic) then 
-      if (.not. make_homo ) then 
-          if (lpr) then
-               write(6,*)
-               write(6,7)'0000000000000000 WARNING ABOUT PERFORMANCE 0000000000000000000'
-               write(6,7)'00                                                          00'
-               write(6,7)'00    Computing analyt. radiation for heterogeneous model?  00'
-               write(6,7)'00         ...kinda silly, therefore turning it off...      00'
-               write(6,7)'00                                                          00'
-               write(6,7)'00000000000000000000000000000000000000000000000000000000000000'
-           endif
-           srcvic=.false.
-       endif
+      dump_snaps_solflu = .false.
   endif
 
 7 format(04x,a62)

@@ -25,8 +25,8 @@ integer :: i,j
 
     if (lpr) then
         write(6,*)
-        write(6,*)'  Need to rotate the source to the north pole!'
-        write(6,*)'  .... therefore computing rotation matrix and its transpose'
+        write(6,*) '  Need to rotate the source to the north pole!'
+        write(6,*) '  .... therefore computing rotation matrix and its transpose'
     endif
  
 ! This is the rotation matrix of Nissen-Meyer, Dahlen, Fournier, GJI 2007.
@@ -48,7 +48,7 @@ integer :: i,j
 
     trans_rot_mat=transpose(rot_mat)
 
-    if ((trim(src_file_type)=='separate').or.(trim(src_file_type)=='sourceparams')) then 
+    if ((trim(src_file_type) == 'sourceparams')) then 
       if (lpr) then
           write(6,*)'  WARNING: This means that your source radiation patterns are different!'
           write(6,*)'                         .... to make sure the pattern is as desired, you will need to rotate'

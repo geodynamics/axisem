@@ -34,7 +34,7 @@ public
   character(len=8)  :: rec_file_type
   logical           :: sum_seis, sum_fields
   character(len=3)  :: rot_rec
-  logical           :: srcvic,add_hetero,file_exists,use_netcdf 
+  logical           :: add_hetero, file_exists, use_netcdf 
   character(len=6)  :: output_format  !< netcdf or binary
   logical           :: force_ani
   logical           :: do_anel

@@ -1,5 +1,12 @@
 #!/bin/csh -f
 
+if ( ${#argv} < 1 || "$1" == "-h" ) then
+    echo "USAGE:"
+    echo "  Argument 1:  name for the mesh"
+    echo ""
+    exit
+endif
+
 # test if mesher finished without problems:
 if (`tail -n 1 OUTPUT |grep 'DONE WITH MESHER'|wc -l` != '1') then
   echo "ERROR: MESHER did not finish yet or encountered a problem."

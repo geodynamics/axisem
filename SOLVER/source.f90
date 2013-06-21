@@ -40,7 +40,7 @@ subroutine read_sourceparams
   rot_src = .false.
 
   !=========================
-  if (src_file_type=='separate' .or. src_file_type=='sourceparams') then 
+  if (src_file_type=='sourceparams') then 
   !=========================
 
      open(unit=20000, file='sourceparams.dat', POSITION='REWIND', status='old')
@@ -214,7 +214,7 @@ subroutine read_sourceparams
         src_type(1) = 'monopole'
         src_type(2) = 'mzz'
         magnitude = Mij(1)
-        if (lpr) write(6,*) '    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
+        if (lpr) write(6,*) '    simulating a '//src_type(2)
 
      elseif ( abs(Mij(2) - Mij(3)) < smallval * abs(Mij(2)) &
                 .and. abs(Mij(1)) < smallval * abs(Mij(2)) &
@@ -222,7 +222,7 @@ subroutine read_sourceparams
         src_type(1) = 'monopole'
         src_type(2) = 'mxx_p_myy'
         magnitude = (Mij(2) + Mij(3)) / 2.
-        if (lpr) write(6,*) '    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
+        if (lpr) write(6,*) '    simulating a '//src_type(2)
 
      elseif ( abs(Mij(2) - Mij(3)) < smallval * abs(Mij(2)) &
                 .and. abs(Mij(2) - Mij(1)) < smallval * abs(Mij(2)) &
@@ -230,27 +230,27 @@ subroutine read_sourceparams
         src_type(1) = 'monopole'
         src_type(2) = 'explosion'
         magnitude = sum(Mij(1:3)) / 3.
-        if (lpr) write(6,*) '    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
+        if (lpr) write(6,*) '    simulating a '//src_type(2)
 
      elseif ( Mij(4) /= zero &
                 .and. sum(abs(Mij(1:3))) + sum(abs(Mij(5:6))) < smallval * abs(Mij(4)) ) then 
         src_type(1) = 'dipole'
         src_type(2) = 'mxz'
         magnitude = Mij(4)
-        if (lpr) write(6,*) '    simulating a '//src_type(2)//' source instead of CMTSOLUTION!' 
+        if (lpr) write(6,*) '    simulating a '//src_type(2)
 
      elseif ( Mij(5) /= zero &
                 .and. (sum(abs(Mij(1:4))) + abs(Mij(6))) < smallval * abs(Mij(5)) ) then 
         src_type(1) = 'dipole'
         src_type(2) = 'myz'
         magnitude = Mij(5)
-        if (lpr) write(6,*) '    simulating a '//src_type(2)//' source instead of CMTSOLUTION!' 
+        if (lpr) write(6,*) '    simulating a '//src_type(2)
 
      elseif ( Mij(6) /= zero .and. sum(abs(Mij(1:5))) < smallval * abs(Mij(6)) ) then 
         src_type(1) = 'quadpole'
         src_type(2) = 'mxy'
         magnitude = Mij(6)
-        if (lpr) write(6,*) '    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
+        if (lpr) write(6,*) '    simulating a '//src_type(2)
 
      elseif ( abs(Mij(2) + Mij(3)) < smallval * abs(Mij(2)) &
                 .and. abs(Mij(1)) < smallval * abs(Mij(2)) &
@@ -258,18 +258,13 @@ subroutine read_sourceparams
         src_type(1) = 'quadpole'
         src_type(2) = 'mxx_m_myy'
         magnitude = (Mij(2) - Mij(3)) / 2.
-        if (lpr) write(6,*) '    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
+        if (lpr) write(6,*) '    simulating a '//src_type(2)
 
      else
-        if (lpr) write(6,*) '  Moment tensor has multiple non-zero entries... therefore doing separate simulations.. '
-        if (lpr) write(6,*) '  Me thinks we should never arrive here, because CMT should be handled by submit script'
+        if (lpr) write(6,'(a,a)') &
+            '  Moment tensor has multiple non-zero entries... therefore doing separate simulations.. ', &
+            '  Me thinks we should never arrive here, because CMT should be handled by submit script'
         stop
-        ! if arriving here, continuing with mzz does not really make to much
-        ! sense, so stopping with error now
-        !magnitude = Mij(1)
-        !src_type(1) = 'monopole'
-        !src_type(2) = 'mzz'
-        !if (lpr) write(6,*)'    simulating a '//src_type(2)//' source instead of CMTSOLUTION!'
      endif
 
      ! Magnitude in CMTSOLUTION is given in dyn*cm... rescaling:
@@ -290,7 +285,7 @@ subroutine read_sourceparams
      
      if (lpr) write(6,*) ' Simulating a finite fault'
      open(unit=20000,file='finite_fault.dat',POSITION='REWIND',status='old')
-     READ(20000,*)junk
+     read(20000,*)junk
      read(20000,*)fflt_num
      read(20000,*)fflt_stf_name
      read(20000,*)fflt_nt,fflt_dt
@@ -359,13 +354,6 @@ subroutine read_sourceparams
      ! prepare number of simulations, rotations, etc
   
   !=========================
-  elseif (src_file_type=='deliverg') then
-  !=========================
-
-     write(6,*) ' deliverg SOURCE FILE TYPE NOT IMPLEMENTED YET!'
-     stop
-
-  !=========================
   else 
   !=========================
 
@@ -408,13 +396,6 @@ subroutine read_sourceparams
 12 format(a28,f9.4)
 13 format(a28,2(a12))
 14 format(a28,a12)
-
-  if (srcvic) then 
-     if (src_type(2) /= 'explosion') then
-        if (lpr) write(6,*) 'ERROR: Analyt. rad. for non-explos. sources not implemented'
-        stop
-     endif
-  endif
 
 end subroutine read_sourceparams
 !=============================================================================

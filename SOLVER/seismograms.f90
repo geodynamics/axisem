@@ -406,10 +406,6 @@ integer ierror
        enddo
        close(34); close(30)
 
-    elseif (rec_file_type=='deliverg') then 
-       if (lpr) write(6,*)'  reading receiver colatitudes/longitudes from deliverg...'
-       if (lpr) write(6,*)'  .....not yet implemented!'
-       stop
     else 
        write(6,*)procstrg, 'Undefined receiver file format!!'
        stop
