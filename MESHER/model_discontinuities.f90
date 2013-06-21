@@ -22,6 +22,9 @@ subroutine define_discont
      case('ak135')
         write(6,*)'Reading AK135 discontinuities...'
         call ak135_discont
+     case('ak135f')
+        write(6,*)'Reading AK135f discontinuities...'
+        call ak135f_discont
      case('prem_iso')
         write(6,*)'Reading PREM discontinuities...'
         call prem_discont
@@ -52,14 +55,119 @@ subroutine define_discont
      case('solar')
         write(6,*)'Reading solar stealth discontinuities...'
         call solar_discont
-     case default
+     case('external')
         write(6,*)'Reading step-wise model from file:', bkgrdmodel
         call arbitr_discont
+     case default
+        write(6,*) 'Unknown model' ,bkgrdmodel
+        stop
   end select
 
 end subroutine define_discont
 !--------------------------------------------------------------------------
 
+!--------------------------------------------------------------------------
+subroutine ak135f_discont
+! Montagner and Kennett 1996
+
+    ndisc = 12
+    
+    allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2))
+
+    ! 0 to 10
+    discont(1) = 6371.000000
+    vp(1,1) = 5.800000
+    vs(1,1) = 3.200000
+    vp(1,2) = 5.800000
+    vs(1,2) = 3.900000
+     
+    ! 10 to 18
+    discont(2) = 6361.000000
+    vp(2,1) = 6.800000
+    vs(2,1) = 3.900000
+    vp(2,2) = 6.800000
+    vs(2,2) = 3.900000
+     
+    ! 18 to 80
+    discont(3) = 6353.000000
+    vp(3,1) = 8.035500
+    vs(3,1) = 4.483900
+    vp(3,2) = 8.040000
+    vs(3,2) = 4.480000
+     
+    ! 80 to 120
+    discont(4) = 6291.000000
+    vp(4,1) = 8.045000
+    vs(4,1) = 4.490000
+    vp(4,2) = 8.050500
+    vs(4,2) = 4.500000
+     
+    ! 120 to 210
+    discont(5) = 6251.000000
+    vp(5,1) = 8.050500
+    vs(5,1) = 4.500000
+    vp(5,2) = 8.300700
+    vs(5,2) = 4.518400
+     
+    ! 210 to 410
+    discont(6) = 6161.000000
+    vp(6,1) = 8.300700
+    vs(6,1) = 4.518400
+    vp(6,2) = 9.030200
+    vs(6,2) = 4.870200
+     
+    ! 410 to 660
+    discont(7) = 5961.000000
+    vp(7,1) = 9.360100
+    vs(7,1) = 5.080600
+    vp(7,2) = 10.200000
+    vs(7,2) = 5.610400
+     
+    ! 660 to 760
+    discont(8) = 5711.000000
+    vp(8,1) = 10.790900
+    vs(8,1) = 5.960700
+    vp(8,2) = 11.055300
+    vs(8,2) = 6.210000
+     
+    ! 760 to 2740
+    discont(9) = 5611.000000
+    vp(9,1) = 11.055300
+    vs(9,1) = 6.210000
+    vp(9,2) = 13.649800
+    vs(9,2) = 7.248500
+     
+    ! 2740 to 2891.5
+    discont(10) = 3631.000000
+    vp(10,1) = 13.649800
+    vs(10,1) = 7.248500
+    vp(10,2) = 13.660100
+    vs(10,2) = 7.281700
+     
+    ! 2891.5 to 5153.5
+    discont(11) = 3479.500000
+    vp(11,1) = 8.000000
+    vs(11,1) = 0.000000
+    vp(11,2) = 10.289000
+    vs(11,2) = 0.000000
+     
+    ! 5153.5 to center
+    discont(12) = 1217.500000
+    vp(12,1) = 11.042700
+    vs(12,1) = 3.504300
+    vp(12,2) = 11.262200
+    vs(12,2) = 3.667800
+
+    ! numbering relates to regions within, i.e. counting numbers as in discont
+    ! for regions above the respective discontinuities
+    
+    vp = vp * 1000.
+    vs = vs * 1000.
+    discont = discont * 1000.
+  
+end subroutine ak135f_discont
+!--------------------------------------------------------------------------
+ 
 !--------------------------------------------------------------------------
 subroutine ak135_discont
 ! Kennett et al., 1995: Constrains on seismic velocities in the Earth
@@ -996,13 +1104,15 @@ subroutine arbitr_discont
   open(unit=77,file='external_model.bm')
   
   read(77,*) ndisc
+  print *, 'Model has ', ndisc, ' layers...'
   allocate(discont(ndisc))
   allocate(vp(ndisc,2))
   allocate(vs(ndisc,2))
   allocate(rho(ndisc,2))
 
   do idom=1, ndisc
-     read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
+      print *,idom
+      read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
   enddo
   close(77)
      
@@ -1020,7 +1130,7 @@ subroutine arbitr_discont
      allocate(vs(ndisc,2))
      allocate(rho(ndisc,2))
 
-     open(unit=77,file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm')
+     open(unit=77,file='external_model.bm')
      read(77,*) junk
      do idom=1, ndisc - 1
         read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
