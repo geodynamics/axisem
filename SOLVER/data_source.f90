@@ -30,9 +30,9 @@ include "mesh_params.h"
  character(len=6)    :: discrete_choice
  logical             :: discrete_dirac
 
-! elemental source term, maximally across 6 elements and 3 components
- real(kind=realkind) :: source_term_el(0:npol,0:npol,6,3)
- integer             :: nelsrc, ielsrc(6)
+! elemental source term, maximally across 8 elements and 3 components
+ real(kind=realkind) :: source_term_el(0:npol,0:npol,8,3)
+ integer             :: nelsrc, ielsrc(8)
 
 ! How to deal with the source for kernel wavefield dumps
  character(len=4)    :: src_dump_type
