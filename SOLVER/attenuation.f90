@@ -624,12 +624,12 @@ subroutine prepare_attenuation(lambda, mu)
       print *, '  ...coarse grained   : ', att_coarse_grained
 
       print *, '  ...writing fitted Q to file...'
-      open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='new')
+      open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='replace')
       write(165,*) (w_samp(i), q_fit(i), char(10), i=1,nfsamp)
       close(unit=165)
       
       print *, '  ...writing convergence of chi to file...'
-      open(unit=166, file=infopath(1:lfinfo)//'/attenuation_convergence', status='new')
+      open(unit=166, file=infopath(1:lfinfo)//'/attenuation_convergence', status='replace')
       write(166,*) (chil(i), char(10), i=1,max_it)
       close(unit=166)
   endif
