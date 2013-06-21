@@ -11,7 +11,8 @@
 # prem_ani_onecrust:      like 'prem_ani' but extend lower crust to surface
 # prem_ani_light:         like 'prem_ani' but with mantle material extended to surface
 # 
-# ak135               AK135 (Isotropic, no attenuation
+# ak135               AK135 (Isotropic, PREM attenuation)
+# ak135f              AK135 (Isotropic, own attenuation)
 # iasp91:             Isotropic IASP91 model with PREM density
 # external:           Layered external model, give file name in EXT_MODEL, the 
 #                     inner core needs to be big enough, check VTK output.
