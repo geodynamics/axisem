@@ -46,16 +46,15 @@ subroutine read_params
 
 
     write(6, '(A)', advance='no') 'Reading inparam_mesh...'
-    open(unit=iinparam_mesh, file='inparam_mesh', status='old', action='read',  iostat=ioerr)
+    open(unit=iinparam_mesh, file='./inparam_mesh', status='old', action='read',  iostat=ioerr)
     if (ioerr.ne.0) stop 'Check input file ''inparam_mesh''! Is it still there?' 
  
     do
-        read(iinparam_mesh,fmt='(a256)',iostat=ioerr) line
+        read(iinparam_mesh,fmt='(a100)',iostat=ioerr) line
         if (ioerr.lt.0) exit
         if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
-        
+       
         read(line,*) keyword, keyvalue 
-        print *,  keyword, keyvalue    
         parameter_to_read : select case(trim(keyword))
         
         case('BACKGROUND_MODEL') 
