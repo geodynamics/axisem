@@ -44,11 +44,11 @@ print MAKEFILE "CFLAGS = -O3 -DF_UNDERSCORE\n";
 ############ CHOOSE BETWEEN DIFFERENT FORTRAN COMPILERS ###########################
 if ($ARGV[0] eq 'ifort'){
     if ($ARGV[1] eq 'debug'){
-	$F90_strg = 'mpif90  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -ftz -check all -debug  -check -traceback';
-	$FC_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -ftz -check all -debug  -check -traceback';
+	$F90_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -ftz -check all -debug  -check -traceback -heap-arrays 10';
+	$FC_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -ftz -check all -debug  -check -traceback -heap-arrays 10';
     } else {
-	$F90_strg = 'mpif90  -vec-report:0 -g -O4 -xHOST -shared-intel'; 
-	$FC_strg = 'ifort  -vec-report:0 -g -O4 -xHOST -shared-intel'; 
+	$F90_strg = 'ifort  -vec-report:0 -g -O3 -xHOST -shared-intel -heap-arrays 10'; 
+	$FC_strg = 'ifort  -vec-report:0 -g -O3 -xHOST -shared-intel -heap-arrays 10'; 
     }
 }
 elsif ($ARGV[0] eq 'gfortran'){
