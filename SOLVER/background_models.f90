@@ -36,6 +36,8 @@ double precision function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
   select case(bkgrdmodel2(1:lfbkgrdmodel2))
      case('ak135')
         velocity = ak135(r0, param, idom)
+     case('ak135f')
+        velocity = ak135f(r0, param, idom)
      case('prem_iso')
         velocity = prem_sub(r0, param, idom)
      case('prem_ani')
@@ -101,6 +103,8 @@ logical function model_is_anelastic(bkgrdmodel2)
   select case(trim(bkgrdmodel2))
   case('ak135')
     model_is_anelastic = .true.
+  case('ak135f')
+    model_is_anelastic = .true.
   case('prem_iso')
     model_is_anelastic = .true.
   case('prem_ani')
@@ -116,6 +120,127 @@ logical function model_is_anelastic(bkgrdmodel2)
   end select
 
 end function model_is_anelastic
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+double precision function ak135f(r0, param, idom)
+! from Montagner and Kennett (1995)
+! interpolated between discontinuities using matlab's polyfit, use radii!!!
+! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
+!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
+    double precision, intent(in) :: r0
+    integer, intent(in)          :: idom
+    double precision             :: r,x_ak
+    double precision             :: ro_ak, vp_ak, vs_ak
+    double precision             :: Qmu_ak, Qka_ak
+    character(len=3), intent(in) :: param !rho, vs,vp
+  
+    r =r0 / 1000.
+    x_ak = r / 6371. ! normalized
+
+
+    select case(idom) 
+    case(12) ! depth: 6371.000000
+        ro_ak = 13.012216 - 0.001140 * x_ak - 8.445249 * x_ak**2
+        vp_ak = 11.264846 - 0.103927 * x_ak - 5.687562 * x_ak**2
+        vs_ak = 3.667675 + 0.005479 * x_ak - 4.482579 * x_ak**2
+        Qmu_ak = 85.03
+        Qka_ak = 595.258179 + 166.678237 * x_ak
+    case(11) ! depth: 5153.500000
+        ro_ak = 12.277066 + 1.075439 * x_ak - 9.829445 * x_ak**2
+        vp_ak = 10.134921 + 3.305589 * x_ak - 13.242147 * x_ak**2
+        vs_ak = 0.0
+        Qmu_ak = 0.0
+        Qka_ak = 57822.0
+    case(10) ! depth: 2891.500000
+        ro_ak = 6.090533  + 2.034521 * x_ak - 4.792620 * x_ak**2
+        vp_ak = 13.185166 + 2.121947 * x_ak - 2.292893 * x_ak**2
+        vs_ak = 8.483334  - 2.972926 * x_ak + 1.414776 * x_ak**2
+        Qmu_ak = 320.279248 -83.970345 * x_ak
+        Qka_ak = 719.424861 + 9.016892 * x_ak
+    case(9) ! depth: 2740.000000
+        ro_ak = 5.880628 + 0.806448 * x_ak - 2.809695 * x_ak**2
+        vp_ak = 15.048453 + 1.120394 * x_ak - 6.384131 * x_ak**2
+        vs_ak = 7.454967 + 1.448974 * x_ak - 3.232585 * x_ak**2
+        Qmu_ak = 6.940579 + 597.788236 * x_ak
+        Qka_ak = 301.363871 + 1112.990919 * x_ak
+    case(8) ! depth: 760.000000
+        ro_ak = -1.851510 + 21.347947 * x_ak - 16.235856 * x_ak**2
+        vp_ak = 37.426776 - 42.812610 * x_ak + 14.612271 * x_ak**2
+        vs_ak = -36.840846 + 112.512879 * x_ak - 72.249561 * x_ak**2
+        Qmu_ak = -125.610200 + 753.052200 * x_ak
+        Qka_ak = -2797.238767 + 4625.983100 * x_ak
+    case(7) ! depth: 660.000000
+        ro_ak = 11.125709 - 16.016803 * x_ak + 8.900728 * x_ak**2
+        vp_ak = 29.313708 - 21.244664 * x_ak - 0.086978 * x_ak**2
+        vs_ak = 17.598241 - 13.243125 * x_ak - 0.144963 * x_ak**2
+        Qmu_ak = 407.826350 - 262.048331 * x_ak
+        Qka_ak = 762.534265 - 372.539674 * x_ak
+    case(6) ! depth: 410.000000
+        ro_ak = 25.946777 - 41.561564 * x_ak + 18.787205 * x_ak**2
+        vp_ak = 32.879415 - 27.659605 * x_ak + 2.319408 * x_ak**2
+        vs_ak =  6.725880 +  6.913882 * x_ak - 9.509573 * x_ak**2
+        Qmu_ak = 528.635760 - 408.763360 * x_ak
+        Qka_ak = 1555.736580 - 1260.056380 * x_ak
+    case(5) ! depth: 210.000000
+        ro_ak = 80.939817 - 166.517962 * x_ak + 89.196989 * x_ak**2
+        vp_ak = 36.839365 - 41.141558  * x_ak + 12.026560 * x_ak**2
+        vs_ak = 9.581677  - 9.112575   * x_ak +  4.008853 * x_ak**2
+        Qmu_ak = 307.648222 - 236.434889 * x_ak
+        Qka_ak = 1459.535556 - 1302.515556 * x_ak
+    case(4) ! depth: 120.000000
+        ro_ak = -8.325080 + 11.977480 * x_ak 
+        vp_ak =  8.910012 - 0.876012 * x_ak 
+        vs_ak =  6.062750 - 1.592750 * x_ak 
+        Qmu_ak = 147.946500 - 73.266500 * x_ak
+        Qka_ak = 266.958500 - 86.008500 * x_ak
+    case(3) ! depth: 80.000000
+        ro_ak = 199.022923 - 408.226152 * x_ak + 212.892136 * x_ak**2
+        vp_ak = -16.800554 +  50.525274 * x_ak - 25.691438 * x_ak**2
+        vs_ak = -137.314994 + 285.398038 * x_ak - 143.603107 * x_ak**2
+        Qmu_ak = 2747.697307 -2359.725421 * x_ak
+        Qka_ak = 6930.368496 -5997.284866 * x_ak
+    case(2) ! depth: 18.000000
+        ro_ak = 2.920000
+        vp_ak = 6.800000
+        vs_ak = 3.900000
+        Qmu_ak = 599.990000 
+        Qka_ak = 1368.020000 
+    case(1) ! depth: 10.000000
+        ro_ak = 2.600000
+        vp_ak = 5.800000
+        vs_ak = 3.200000
+        Qmu_ak = 599.990000
+        Qka_ak = 1478.300000
+    end select 
+
+    if (param=='rho') then
+       ak135f = ro_ak * 1000.
+    elseif (param=='v_p') then
+       ak135f = vp_ak * 1000.
+    elseif (param=='v_s') then
+       ak135f = vs_ak * 1000.
+    elseif (param=='vpv') then
+       ak135f = vp_ak * 1000.
+    elseif (param=='vsv') then
+       ak135f = vs_ak * 1000.
+    elseif (param=='vph') then
+       ak135f = vp_ak * 1000.
+    elseif (param=='vsh') then
+       ak135f = vs_ak * 1000.
+    elseif (param=='eta') then
+       ak135f = 1.
+    elseif (param=='Qmu') then
+       ak135f = Qmu_ak
+    elseif (param=='Qka') then
+       ak135f = Qka_ak
+    else
+       write(6,*)'ERROR IN AK135 FUNCTION:', param, 'NOT AN OPTION'
+       stop
+    endif
+
+end function ak135f
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -1261,7 +1386,7 @@ double precision function arbitr_sub(param, idom)
       allocate(qkappatmp(1:ndisctmp))
 
       do i=1, ndisctmp
-          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i)!, qkappatmp(i), qmutmp(i)
+          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i), qkappatmp(i), qmutmp(i)
       enddo
       close(77)
 

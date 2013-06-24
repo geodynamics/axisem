@@ -137,7 +137,8 @@ subroutine read_sourceparams
            magnitude = (Mij(1) + Mij(2) + Mij(3)) / 3.
            Mij = 0.
            Mij(1:3) = magnitude
-        elseif (src_type(2) == 'vertforce' .or. src_type(2) == 'xforce' .or. src_type(2) == 'yforce') then
+        elseif (src_type(2) == 'vertforce' .or. src_type(2) == 'xforce' &
+                .or. src_type(2) == 'yforce') then
            magnitude = Mij(1) 
         endif
 
@@ -195,13 +196,15 @@ subroutine read_sourceparams
      srccolat = srccolat * pi / 180.0
      src_depth = src_depth * 1000.
 
-     if (trim(stf_type) /= 'gauss_0' .and. trim(stf_type) /= 'gauss_1' .and. trim(stf_type) /= 'gauss_2' .and. &
-          trim(stf_type) /= 'heavis' .and. trim(stf_type) /= 'quheavi' ) then
+     if (trim(stf_type) /= 'gauss_0' .and. trim(stf_type) /= 'gauss_1' &
+            .and. trim(stf_type) /= 'gauss_2' .and. &
+            trim(stf_type) /= 'heavis' .and. trim(stf_type) /= 'quheavi' ) then
         if (lpr) then 
            write(6,'(a,/,a,/,a,a,/,a,/)') &
               '  ...setting source time function to dirac by default!', &
               '     if you wish to choose another stf, ', &
-              '     prepend the first line with the stf name, i.e before: ', trim(stf_type), &
+              '     prepend the first line with the stf name, i.e before: ', &
+              trim(stf_type), &
               '     add gauss_0, gauss_1, gauss_2, heavis, or quheavi.'
         endif
         stf_type = 'dirac_0'
@@ -675,11 +678,11 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
 
   use data_mesh_preloop
   use utlity
-  use commun, ONLY: pmin,barrier,broadcast_int,psum_int
+  use commun, only: pmin, psum_int
   
-  integer, intent(out) :: iel_src2,ipol_src2,jpol_src2
-  double precision     :: s,z,r,theta,mydzsrc,zsrcout,dzsrc
-  integer              :: ielem,ipol,jpol,count_src_procs
+  integer, intent(out) :: iel_src2, ipol_src2, jpol_src2
+  double precision     :: s, z, r, theta, mydzsrc, zsrcout, dzsrc
+  integer              :: ielem, ipol, jpol, count_src_procs
   
   ! find depth that is closest to desired value zsrc
 
@@ -689,8 +692,8 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   do ielem = 1, nel_solid
      do ipol = 0, npol
         do jpol = 0, npol
-           call compute_coordinates(s,z,r,theta,ielsolid(ielem),ipol,jpol)
-           if (s== zero .and. abs(z-zsrc) < dzsrc .and. z>=zero) then 
+           call compute_coordinates(s, z, r, theta, ielsolid(ielem), ipol, jpol)
+           if (s == zero .and. abs(z-zsrc) < dzsrc .and. z >= zero) then 
               zsrcout = z
               dzsrc = abs(z - zsrc)
               iel_src = ielem
@@ -699,7 +702,7 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
               iel_src2 = ielem
               ipol_src2 = ipol
               jpol_src2 = jpol
-           elseif (s== zero .and. abs(z-zsrc) == dzsrc .and. z>=zero) then 
+           elseif (s == zero .and. abs(z-zsrc) == dzsrc .and. z >= zero) then 
               write(69,15) ielem,ipol,jpol,z/1000.
               iel_src2 = ielem
               ipol_src2 = ipol
@@ -708,7 +711,7 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
         enddo
      enddo
   enddo
-15 format('  found a second point with same distance:',i6,i3,i3,1pe13.3)
+15 format('  found a second point with same distance:', i6, i3, i3, 1pe13.3)
 
   ! Make sure only closest processor has source
   mydzsrc = dzsrc
@@ -1211,7 +1214,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_mesh_preloop
-  use data_spec, ONLY : shp_deri_k
+  use data_spec, only : shp_deri_k
   
   use apply_masks
   use utlity
@@ -1238,6 +1241,9 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   allocate(ds(0:npol),dz(0:npol))
 
   oldway = .true.
+  ! oldway: numerical derivatives
+  ! newway: analytical derivatives, only in circular elements (not in doubling
+  ! layer)
   
   dzwz(:,:,:) = zero
   dsws(:,:,:) = zero
@@ -1302,9 +1308,9 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                             dzwz(lipol_src,ljpol_src,liel_src)
 
                     case default
-                       write(6,*) procstrg, 'PROBLEM: Didn"t compute any source: '
-                       write(6,*) procstrg, 'Monopole source doesn"t exist for ', &
-                            src_type(2)
+                       write(6,'(a,a,/,a,a,a)') &
+                            procstrg, 'PROBLEM: Didn"t compute any source: ', &
+                            procstrg, 'Monopole source doesn"t exist for ', src_type(2)
                        stop
                     end select
 
@@ -1321,8 +1327,9 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                             dsws(lipol_src, ljpol_src, liel_src)
 
                     case default
-                       write(6,*) procstrg, 'PROBLEM: Didn"t compute any source!'
-                       write(6,*) procstrg, 'Dipole source doesn"t exist for ', src_type(2)
+                       write(6,'(a,a,/,a,a,a)') &
+                            procstrg, 'PROBLEM: Didn"t compute any source!', &
+                            procstrg, 'Dipole source doesn"t exist for ', src_type(2)
                        stop
                     end select
 
@@ -1338,10 +1345,10 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                        source_term(ipol,jpol,liel_src,2) = &
                             ws_over_s(lipol_src,ljpol_src,liel_src) 
                     case default
-                       write(6,*) procstrg, "PROBLEM: Didn't compute any source!"
-                       write(6,*) procstrg, "Quadrupole doesn't exist for", src_type(2)
+                       write(6,'(a,a,/,a,a,a)') &
+                            procstrg, "PROBLEM: Didn't compute any source!", &
+                            procstrg, "Quadrupole doesn't exist for", src_type(2)
                        stop
-
                     end select
                  end select poletype
 
@@ -1349,70 +1356,67 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
            end do ! ipol
 
         else ! new way
-           if (eltype(ielsolid(iel_src))/='curved') then 
-              write(6,*)' '
-              write(6,*)'SOURCE IS IN (partly linear) ELEMENT,', &
-                   'NOT DEFINED AT THIS POINT...'
-              write(6,*)'PROBLEM: mapping derivatives at axis only analytical.'
-              call compute_coordinates(s,z,r,theta,ielsolid(iel_src), &
-                   lipol_src,ljpol_src)
-              write(6,*)'SOURCE LOCATION iel,type,jpol,r:', &
-                   iel_src,eltype(ielsolid(iel_src)),ljpol_src,r 
-              call flush(6)
+           if (eltype(ielsolid(iel_src)) /= 'curved') then 
+              call compute_coordinates(s, z, r, theta, ielsolid(iel_src),  lipol_src, &
+                                       ljpol_src)
+              write(6,'(/,a,/,a,/,a,i7,a,i2,e5.3)') &
+                    'source is in (partly linear) element', &
+                    'PROBLEM: mapping derivatives at axis only analytical with "new way"', &
+                    'source location iel, type, jpol, r:', &
+                    iel_src, eltype(ielsolid(iel_src)), ljpol_src, r 
               stop
            endif
 
-           ds=zero
-           dz=zero
+           ds = zero
+           dz = zero
 
-           call compute_coordinates(s,z,r1,theta,ielsolid(iel_src),0,0)
-           call compute_coordinates(s,z,r2,theta,ielsolid(iel_src),0,npol)
-           call compute_coordinates(s,z,r,theta,ielsolid(iel_src),npol,jpol_src)
+           call compute_coordinates(s, z, r1, theta, ielsolid(iel_src), 0, 0)
+           call compute_coordinates(s, z, r2, theta, ielsolid(iel_src), 0, npol)
+           call compute_coordinates(s, z, r, theta, ielsolid(iel_src), npol, jpol_src)
 
-           write(69,*)'  THETA (rad),Z (m):',theta,z
-           write(69,*)'  R1 (m),R2 (m)',r1,r2
+           write(69,*) '  THETA (rad),Z (m):',theta,z
+           write(69,*) '  R1 (m),R2 (m)',r1,r2
 
            do ipol=0,npol
-              ds(ipol)=shp_deri_k(ipol,0,2,1)*two/(theta*z)
+              ds(ipol) = shp_deri_k(ipol,0,2,1)*two / (theta * z)
            enddo
 
            do jpol=0,npol
-              dz(jpol)=shp_deri_k(jpol,jpol_src,2,2)*two/(r2-r1)
+              dz(jpol) = shp_deri_k(jpol,jpol_src,2,2) * two / (r2 - r1)
            enddo
 
            do ipol=0,npol
               select case (src_type(2))
 
               case('mxx_p_myy')
-                 source_term(ipol,ljpol_src,liel_src,1)=two*ds(ipol)
+                 source_term(ipol,ljpol_src,liel_src,1) = two * ds(ipol)
 
               case('mzz')
-                 source_term(0,ipol,liel_src,3)=dz(ipol)
+                 source_term(0,ipol,liel_src,3) = dz(ipol)
 
               case('explosion')
-                 source_term(ipol,ljpol_src,liel_src,1)=two*ds(ipol)
-                 source_term(0,ipol,liel_src,3)=dz(ipol)
+                 source_term(ipol,ljpol_src,liel_src,1) = two * ds(ipol)
+                 source_term(0,ipol,liel_src,3) = dz(ipol)
 
               case('mxz')
-                 source_term(0,ipol,liel_src,1)=dz(ipol)
-                 source_term(ipol,ljpol_src,liel_src,3)=ds(ipol)
+                 source_term(0,ipol,liel_src,1) = dz(ipol)
+                 source_term(ipol,ljpol_src,liel_src,3) = ds(ipol)
 
               case('myz')
-                 source_term(0,ipol,liel_src,1)=dz(ipol)
-                 source_term(ipol,ljpol_src,liel_src,3)=ds(ipol)
+                 source_term(0,ipol,liel_src,1) = dz(ipol ) 
+                 source_term(ipol,ljpol_src,liel_src,3) = ds(ipol)
 
               case('mxx_m_myy')
-                 source_term(ipol,ljpol_src,liel_src,1)=ds(ipol)
-                 source_term(ipol,ljpol_src,liel_src,2)=ds(ipol)
+                 source_term(ipol,ljpol_src,liel_src,1) = ds(ipol)
+                 source_term(ipol,ljpol_src,liel_src,2) = ds(ipol)
 
               case('mxy')
-                 source_term(ipol,ljpol_src,liel_src,1)=ds(ipol)
-                 source_term(ipol,ljpol_src,liel_src,2)=ds(ipol)
+                 source_term(ipol,ljpol_src,liel_src,1) = ds(ipol)
+                 source_term(ipol,ljpol_src,liel_src,2) = ds(ipol)
 
               case default
-                 write(6,*)'PROBLEM: Don"t know any moment tensor component ',&
-                      src_type(2); call flush(6); stop
-
+                 write(6,*) 'PROBLEM: Don"t know any moment tensor component ', src_type(2)
+                 stop
               end select
            enddo
         endif ! new way
@@ -1420,96 +1424,96 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
      ! If spread over two elements (i.e., if point source coincides 
      ! with element edge/corner), need to divide by two
-     source_term = source_term/real(nsrcelem)
+     source_term = source_term / real(nsrcelem)
 
-     write(69,*)'source term minmax:',minval(source_term),maxval(source_term)
+     write(69,*) 'source term minmax:', minval(source_term), maxval(source_term)
 
   endif ! have_src
 
   ! assembly
-  write(69,*)'  ',procstrg,'assembling the source term....'
-  call comm2d(source_term,nel_solid,3,'solid') 
+  write(69,*) '  ', procstrg, 'assembling the source term....'
+  call comm2d(source_term, nel_solid, 3, 'solid') 
 
   ! cut out round-off errors
   do ielem=1, nel_solid
-     do ipol=0,npol
-        do jpol=0,npol
-           if (abs(source_term(ipol,jpol,ielem,1))< smallval) &
-                source_term(ipol,jpol,ielem,1)=zero
-           if (abs(source_term(ipol,jpol,ielem,2))< smallval) &
-                source_term(ipol,jpol,ielem,2)=zero
-           if (abs(source_term(ipol,jpol,ielem,3))< smallval) &
-                source_term(ipol,jpol,ielem,3)=zero
+     do ipol=0, npol
+        do jpol=0, npol
+           if (abs(source_term(ipol,jpol,ielem,1)) < smallval) &
+                source_term(ipol,jpol,ielem,1) = zero
+           if (abs(source_term(ipol,jpol,ielem,2)) < smallval) &
+                source_term(ipol,jpol,ielem,2) = zero
+           if (abs(source_term(ipol,jpol,ielem,3)) < smallval) &
+                source_term(ipol,jpol,ielem,3) = zero
         enddo
      enddo
   enddo
 
   if (have_src) then
 
-     if (maxval(abs(source_term))==zero) then
-        write(6,*)procstrg,'PROBLEM: No source generated!'
-        write(6,*)procstrg,'Bye from define_mono_moment';call flush(6)
+     if (maxval(abs(source_term)) == zero) then
+        write(6,'(a,a,/,a,a)') procstrg, 'PROBLEM: No source generated!', &
+                               procstrg, 'Bye from define_mono_moment'
         stop
      endif
 
      ! mask source
      select case (src_type(1))
      case ('monopole')
-        call apply_axis_mask_onecomp(source_term,nel_solid,ax_el_solid,&
+        call apply_axis_mask_onecomp(source_term, nel_solid, ax_el_solid, &
                                      naxel_solid)
      case ('dipole') 
-        call apply_axis_mask_twocomp(source_term,nel_solid,ax_el_solid, &
+        call apply_axis_mask_twocomp(source_term, nel_solid, ax_el_solid, &
                                      naxel_solid)
      case ('quadpole') 
-        call apply_axis_mask_threecomp(source_term,nel_solid,ax_el_solid, &
+        call apply_axis_mask_threecomp(source_term, nel_solid, ax_el_solid, &
                                        naxel_solid)
      end select
      write(6,*)'  ...masked the source'
 
      ! write out the source element only
      fmt1 = "(K(1pe12.3))"
-     write(fmt1(2:2),'(i1.1)') npol+1
+     write(fmt1(2:2),'(i1.1)') npol + 1
 
      write(69,*)
      write(69,*)'  *^*^*^*^*^*^* The moment-tensor source term *^*^*^*^*^**^*^'
 
-     liel_src=iel_src
-     lipol_src=ipol_src
-     ljpol_src=jpol_src
+     liel_src = iel_src
+     lipol_src = ipol_src
+     ljpol_src = jpol_src
 
-     do i =1,nsrcelem
-        if (i==2) then 
-           liel_src=iel_src2
-           lipol_src=ipol_src2
-           ljpol_src=jpol_src2
+     do i =1, nsrcelem
+        if (i == 2) then 
+           liel_src = iel_src2
+           lipol_src = ipol_src2
+           ljpol_src = jpol_src2
         endif
 
-        write(69,*)'iel,jpol,r:',liel_src,ljpol_src, &
-             rcoord(lipol_src,ljpol_src,ielsolid(liel_src))/1.d3
+        write(69,*) 'iel,jpol,r:', liel_src, ljpol_src, &
+             rcoord(lipol_src,ljpol_src,ielsolid(liel_src)) / 1.d3
         write(69,*)'North| s-dir -->'
         if (src_type(1)=='dipole') then
-           write(69,*)'  ',src_type(2),'+ component'
+           write(69,*) '  ', src_type(2), '+ component'
         else
-           write(69,*)'  ',src_type(2),'s component'   
+           write(69,*) '  ', src_type(2), 's component'   
         endif
-        do jpol=npol,0,-1
-           write(69,fmt1)(source_term(ipol,jpol,liel_src,1),ipol=0,npol)
+        do jpol=npol, 0, -1
+           write(69,fmt1)(source_term(ipol,jpol,liel_src,1), ipol=0, npol)
         enddo
         write(69,*)
 
         if (src_type(1)=='dipole') then
-           write(69,*)src_type(2),'- component'
+           write(69,*)src_type(2), '- component'
         else
-           write(69,*)src_type(2),'phi component'   
+           write(69,*)src_type(2), 'phi component'   
         endif
-        do jpol=npol,0,-1
-           write(69,fmt1)(source_term(ipol,jpol,liel_src,2),ipol=0,npol)
+        do jpol=npol, 0, -1
+           write(69,fmt1)(source_term(ipol,jpol,liel_src,2), ipol=0,npol)
         enddo
         write(69,*)
 
         write(69,*)src_type(2),'z component'
-        do jpol=npol,0,-1
-           write(69,fmt1)(source_term(ipol,jpol,liel_src,3),ipol=0,npol)
+        do jpol=npol, 0, -1
+           write(69,fmt1)(source_term(ipol,jpol,liel_src,3), ipol=0,npol)
         enddo
         write(69,*)
         write(69,*)
@@ -1517,9 +1521,9 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
   endif ! have_src
 
-  deallocate(ws,dsws)
-  deallocate(ws_over_s,dzwz)
-  deallocate(ds,dz)
+  deallocate(ws, dsws)
+  deallocate(ws_over_s, dzwz)
+  deallocate(ds, dz)
 
 end subroutine define_moment_tensor
 !=============================================================================
