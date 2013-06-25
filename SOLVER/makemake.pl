@@ -46,11 +46,11 @@ print MAKEFILE "CFLAGS = -O3 -DF_UNDERSCORE\n";
 ############ CHOOSE BETWEEN DIFFERENT FORTRAN COMPILERS ###########################
 if ($ARGV[0] eq 'ifort'){
     if ($ARGV[1] eq 'debug'){
-	$F90_strg = 'mpif90  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -ftz -check all -check noarg_temp_created -debug  -check -traceback';
-	$FC_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -ftz -check all -check noarg_temp_created -debug  -check -traceback';
+	$F90_strg = 'mpif90  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -check noarg_temp_created -debug  -check -traceback';
+	$FC_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -check noarg_temp_created -debug  -check -traceback';
     } else {
-	$F90_strg = 'mpif90  -vec-report:0 -g -O4 -xHOST -shared-intel'; 
-	$FC_strg = 'ifort  -vec-report:0 -g -O4 -xHOST -shared-intel'; 
+	$F90_strg = 'mpif90  -vec-report:0 -O3 -xHOST -shared-intel'; 
+	$FC_strg = 'ifort  -vec-report:0 -O3 -xHOST -shared-intel'; 
     }
 }
 elsif ($ARGV[0] eq '-h'){
@@ -67,8 +67,8 @@ else {
 	$F90_strg = 'mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace -g';
 	$FC_strg =  'gfortran -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace -g';
     } else {
-	$F90_strg = 'mpif90   -O3 -fbacktrace -g';
-	$FC_strg =  'gfortran -O3 -fbacktrace -g';	
+	$F90_strg = 'mpif90   -O3 -fbacktrace';
+	$FC_strg =  'gfortran -O3 -fbacktrace';	
     }
 }
 ###################################################################################
