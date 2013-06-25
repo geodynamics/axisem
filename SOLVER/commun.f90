@@ -30,19 +30,19 @@ module commun
   
   implicit none
   public :: comm2d ! the general assembly & communication routine
-  public :: assemb_sum_solid,assemb_3sum_solid ! energy in solid
-  public :: assemb_sum_fluid,assemb_2sum_fluid ! energy in fluid
+  public :: assemb_sum_solid, assemb_3sum_solid ! energy in solid
+  public :: assemb_sum_fluid, assemb_2sum_fluid ! energy in fluid
   
-  public :: assemb_sum_solid2,assemb_3sum_solid2 ! energy in solid
-  public :: assemb_sum_fluid2,assemb_2sum_fluid2 ! energy in fluid
-  public :: glob_sum_solid,glob_sum3_solid,glob_sum_fluid
+  public :: assemb_sum_solid2, assemb_3sum_solid2 ! energy in solid
+  public :: assemb_sum_fluid2, assemb_2sum_fluid2 ! energy in fluid
+  public :: glob_sum_solid, glob_sum3_solid, glob_sum_fluid
   
-  public :: assembmass_sum_solid,assembmass_sum_fluid ! assemble and sum massmat
-  public :: broadcast_int,broadcast_dble
-  public :: pinit,pend
-  public :: pmin,pmax,pmax_int,psum,psum_int,psum_dble
+  public :: assembmass_sum_solid, assembmass_sum_fluid ! assemble and sum massmat
+  public :: broadcast_int, broadcast_dble
+  public :: pinit, pend
+  public :: pmin, pmax, pmax_int, psum, psum_int, psum_dble
   public :: barrier
-  public :: mpi_asynch_messaging_test_solid,mpi_asynch_messaging_test_fluid
+  public :: mpi_asynch_messaging_test_solid, mpi_asynch_messaging_test_fluid
   private
 
 contains
@@ -55,8 +55,6 @@ subroutine comm2d(f,nel,nc,domainin)
   ! The global assembly is discarded as it is not necessary during the time loop
   ! and therefore chose not to store any global numbering arrays.
   ! If nproc>1, then internode message passing is applied where necessary.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   include 'mesh_params.h' 
   
@@ -91,8 +89,6 @@ subroutine pdistsum_solid(vec,nc)
   ! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
   ! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
   ! sum & exchange values on processor boundary points.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_numbering,   only: igloc_solid
   use data_mesh,        only: gvec_solid
@@ -155,8 +151,6 @@ subroutine pdistsum_fluid(vec)
   ! the "gather" and "scatter" operations, i.e. to add up all element-edge 
   ! contributions at the global stage and place them back into local arrays.
   ! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_numbering,   only: igloc_fluid
   use data_time,        only: idmpi, iclockmpi
@@ -211,8 +205,6 @@ subroutine mpi_asynch_messaging_test_solid
   !
   ! The local arrays are allocatable since this routine is only called before 
   ! the time loop.
-  ! 
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_numbering, only: igloc_solid, nglob_solid
   
@@ -279,8 +271,6 @@ subroutine mpi_asynch_messaging_test_fluid
   !
   ! The local arrays are allocatable since this routine is only called before 
   ! the time loop.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_numbering, only: igloc_fluid
   
@@ -917,6 +907,21 @@ subroutine barrier
   if (nproc>1) call pbarrier ! comment for serial
 
 end subroutine barrier
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine pcheck(test, errmsg)
+ 
+  logical, intent(in)            :: test
+  character(len=*), intent(in)   :: errmsg
+  
+  if (nproc > 1) then
+     call ppcheck(test, errmsg)
+  else
+     print '(a)', trim(parse_nl(errmsg))
+  endif
+
+end subroutine pcheck
 !=============================================================================
 
 !====================

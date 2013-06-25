@@ -31,18 +31,17 @@ module commpi
   public :: testing_asynch_messaging_solid
   public :: feed_buffer, send_recv_buffers_solid, extract_from_buffer
   public :: pbroadcast_dble, pbroadcast_int
+  public :: ppcheck, parse_nl
   private
 
 contains
 
 !----------------------------------------------------------------------------
-subroutine pcheck(test, errmsg)
+subroutine ppcheck(test, errmsg)
   ! Routine that checks if an  error has occured at all ranks, at some ranks, or
   ! not at all. The message is only printed once if the error occured on all
   ! ranks, otherwise each processor spits its message stdout
-
-  use mpi
-  implicit none
+  ! newlines in the error message can be achieved using '\n'
 
   logical, intent(in)            :: test
   character(len=*), intent(in)   :: errmsg
@@ -77,7 +76,6 @@ end subroutine
 function parse_nl(str)
   ! returns the input string with all '\n' in it converted to newlines
 
-  implicit none
   character(len=*), intent(in)  :: str
   character(len=len(str))       :: parse_nl
   integer                       :: lenstr, i
@@ -142,7 +140,7 @@ subroutine pbroadcast_dble(input_dble,input_proc)
   integer                         :: ierror
 
   call mpi_bcast(input_dble, 1, MPI_DOUBLE_PRECISION, input_proc, &
-                 MPI_COMM_WORLD,  ierror)
+                 MPI_COMM_WORLD, ierror)
 
 end subroutine pbroadcast_dble
 !=============================================================================
@@ -269,7 +267,7 @@ subroutine feed_buffer(ic)
   integer                        :: sizemsg_solid
   
   ! Fill send buffer
-  if (sizesend_solid>0) then
+  if (sizesend_solid > 0) then
      buffs_all(:,ic,:) = 0.d0
      do imsg = 1, sizesend_solid
         sizemsg_solid = sizemsgsend_solid(imsg)
@@ -281,7 +279,7 @@ subroutine feed_buffer(ic)
   endif
   
   ! Fill receive buffer
-  if (sizerecv_solid>0) then 
+  if (sizerecv_solid > 0) then 
      buffr_all(:,ic,:) = 0.d0
      do imsg = 1, sizerecv_solid
         sizemsg_solid = sizemsgrecv_solid(imsg)
@@ -313,27 +311,27 @@ subroutine send_recv_buffers_solid(nc)
   integer             :: ierror
   
   ! Send stuff around (phase 1)
-  if (sizesend_solid>0) then
+  if (sizesend_solid > 0) then
      do imsg = 1, sizesend_solid
         sizemsg_solid = sizemsgsend_solid(imsg)
-        buffs_solid(1:sizemsg_solid,1:nc)=buffs_all(1:sizemsg_solid,1:nc,imsg)
-        sizeb  = nc*sizemsg_solid
+        buffs_solid(1:sizemsg_solid,1:nc) = buffs_all(1:sizemsg_solid,1:nc,imsg)
+        sizeb  = nc * sizemsg_solid
         ipdes  = listsend_solid(imsg)
-        msgnum = mynum*nproc + ipdes
-        call MPI_SEND(buffs_solid,sizeb,mpi_realkind,&
-                      ipdes,msgnum,MPI_COMM_WORLD,ierror)
+        msgnum = mynum * nproc + ipdes
+        call MPI_SEND(buffs_solid, sizeb, mpi_realkind,&
+                      ipdes, msgnum, MPI_COMM_WORLD, ierror)
      end do
   endif
 
   ! Receive data, sum things up and send back to initial sender (phase 2)
-  if (sizerecv_solid>0) then 
+  if (sizerecv_solid > 0) then 
      do imsg = 1, sizerecv_solid
         sizemsg_solid = sizemsgrecv_solid(imsg)
-        sizeb = nc*sizemsg_solid
+        sizeb = nc * sizemsg_solid
         ipsrc = listrecv_solid(imsg)
-        msgnum1 = ipsrc*nproc + mynum
-        call MPI_RECV(buffr_solid,sizeb,mpi_realkind,&
-                      ipsrc,msgnum1,MPI_COMM_WORLD,status,ierror)
+        msgnum1 = ipsrc * nproc + mynum
+        call MPI_RECV(buffr_solid, sizeb,mpi_realkind,&
+                      ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
 
         ! add received buffer to own field at same global point
         buffr_all(1:sizemsg_solid,1:nc,imsg) = &
@@ -341,25 +339,25 @@ subroutine send_recv_buffers_solid(nc)
                                   buffr_solid(1:sizemsg_solid,1:nc)
 
         ! assuming that each global point is mapped one2one: each ip has one ipg
-        buffr_solid(1:sizemsg_solid,1:nc)= buffr_all(1:sizemsg_solid,1:nc,imsg)
+        buffr_solid(1:sizemsg_solid,1:nc) = buffr_all(1:sizemsg_solid,1:nc,imsg)
 
         ! send joint data back, but stick into new envelope/msgnum
-        msgnum2 = mynum*nproc + ipsrc
-        call MPI_SEND(buffr_solid,sizeb,mpi_realkind,&
-                      ipsrc,msgnum2,MPI_COMM_WORLD,ierror)
+        msgnum2 = mynum * nproc + ipsrc
+        call MPI_SEND(buffr_solid, sizeb, mpi_realkind, &
+                      ipsrc, msgnum2, MPI_COMM_WORLD, ierror)
      end do
   endif
 
   ! Receive updated data back (phase 3)
-  if (sizesend_solid>0) then
+  if (sizesend_solid > 0) then
      do imsg =1, sizesend_solid
         sizemsg_solid = sizemsgsend_solid(imsg)
-        sizeb = nc*sizemsg_solid
+        sizeb = nc * sizemsg_solid
         ipsrc = listsend_solid(imsg)
-        msgnum = ipsrc*nproc + mynum
-        call MPI_RECV(buffs_solid,sizeb,mpi_realkind,&
-                      ipsrc,msgnum,MPI_COMM_WORLD,status,ierror)
-        buffs_all(1:sizemsg_solid,1:nc,imsg)=buffs_solid(1:sizemsg_solid,1:nc)
+        msgnum = ipsrc * nproc + mynum
+        call MPI_RECV(buffs_solid, sizeb, mpi_realkind, &
+                      ipsrc, msgnum, MPI_COMM_WORLD, status, ierror)
+        buffs_all(1:sizemsg_solid,1:nc,imsg) = buffs_solid(1:sizemsg_solid,1:nc)
      enddo
   endif
 
@@ -377,15 +375,14 @@ subroutine extract_from_buffer(vec,nc)
   
   integer, intent(in) :: nc
   real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_solid,nc)
-  integer             :: imsg,ipg,ip,ipol,jpol,iel,ipt,ic
+  integer             :: imsg, ipg, ip, ipol, jpol, iel, ipt, ic
   integer             :: sizemsg_solid
-  
   
   do ic = 1, nc
 
      ! Extract back-received from buffer (phase 3)
      if (sizesend_solid>0) then
-        do imsg =1, sizesend_solid
+        do imsg = 1, sizesend_solid
            sizemsg_solid = sizemsgsend_solid(imsg)
            do ip = 1, sizemsg_solid
               ipg = glocal_index_msg_send_solid(ip,imsg)
@@ -439,29 +436,28 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
   include 'mesh_params.h'
   real(kind=realkind),intent(inout)  :: gvec_solid2(:,:)
   integer, intent(in)                :: nc
-  integer                            :: imsg, ipg, ip, sizeb, ipdes, ipsrc
-  integer                            :: msgnum, msgnum1, msgnum2
-  integer                            :: status(MPI_STATUS_SIZE), sizemsg_solid
-  integer                            :: ierror
+
+  integer :: imsg, ipg, ip, sizeb, ipdes, ipsrc
+  integer :: msgnum, msgnum1, msgnum2
+  integer :: status(MPI_STATUS_SIZE), sizemsg_solid
+  integer :: ierror
   
   ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
   write(69,*)' Asynchrounous solid communication test:'
   call flush(69)
 
-  if (sizesend_solid>1) then
-     write(6,*)
-     write(6,*)'  PROBLEM:',procstrg,'sending more than one message!',&
-               sizesend_solid
+  if (sizesend_solid > 1) then
+     write(6,*) '  PROBLEM:', procstrg, 'sending more than one message!',&
+                sizesend_solid
      stop
   endif
   if (sizerecv_solid>1) then 
-     write(6,*)
-     write(6,*)'  PROBLEM:',procstrg,'receiving more than one message!',&
-               sizerecv_solid
+     write(6,*) '  PROBLEM:', procstrg, 'receiving more than one message!',&
+                sizerecv_solid
      stop
   endif
 
-  if (sizesend_solid>0) then
+  if (sizesend_solid > 0) then
      do imsg = 1, sizesend_solid
         sizemsg_solid = sizemsgsend_solid(imsg)
         do ip = 1, sizemsg_solid
@@ -470,12 +466,12 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
         end do
         
         ! Send stuff around
-        sizeb  = nc*sizemsg_solid
+        sizeb  = nc * sizemsg_solid
         ipdes  = listsend_solid(imsg)
         msgnum = mynum*nproc + ipdes
         write(69,12)procstrg,'SENDING #',msgnum,sizemsg_solid,' to',ipdes
-        call MPI_SEND(buffs_solid,sizeb,mpi_realkind,&
-                      ipdes,msgnum,MPI_COMM_WORLD,ierror)
+        call MPI_SEND(buffs_solid, sizeb, mpi_realkind, &
+                      ipdes, msgnum, MPI_COMM_WORLD, ierror)
      end do
   endif
 
@@ -487,35 +483,35 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
         ipsrc = listrecv_solid(imsg)
         msgnum1 = ipsrc*nproc + mynum
         write(69,12)procstrg,'RECEIVING #',msgnum1,sizemsg_solid,' from',ipsrc
-        call MPI_RECV(buffr_solid,sizeb,mpi_realkind,&
-                      ipsrc,msgnum1,MPI_COMM_WORLD,status,ierror)
+        call MPI_RECV(buffr_solid, sizeb, mpi_realkind, &
+                      ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
            ! Add received buffer to own field at same global point
            do ip = 1, sizemsg_solid
               ipg = glocal_index_msg_recv_solid(ip,imsg)
               ! assuming here that each global point is mapped one2one from 
               ! the buffer... i.e. each ip has one ipg
-              gvec_solid2(ipg,1:nc) = gvec_solid2(ipg,1:nc)+buffr_solid(ip,1:nc)
+              gvec_solid2(ipg,1:nc) = gvec_solid2(ipg,1:nc) + buffr_solid(ip,1:nc)
               buffr_solid(ip,1:nc) = gvec_solid2(ipg,1:nc)
            end do
         ! Send joint data back, but stick into new envelope/msgnum
         msgnum2 = mynum*nproc + ipsrc
         write(69,12)procstrg,'RETURNING #',msgnum2,sizemsg_solid,' to',ipsrc
-        call MPI_SEND(buffr_solid,sizeb,mpi_realkind,&
-                      ipsrc,msgnum2,MPI_COMM_WORLD,ierror)
+        call MPI_SEND(buffr_solid, sizeb, mpi_realkind, &
+                      ipsrc, msgnum2, MPI_COMM_WORLD, ierror)
      end do
   endif
 
   ! Receive updated data back
-  if (sizesend_solid>0) then
-     do imsg =1, sizesend_solid
+  if (sizesend_solid > 0) then
+     do imsg = 1, sizesend_solid
         sizemsg_solid = sizemsgsend_solid(imsg)
         sizeb = nc*sizemsg_solid
         ipsrc = listsend_solid(imsg)
         msgnum = ipsrc*nproc + mynum
         write(69,12)procstrg,'RECV UPDATED #',msgnum,&
                     sizemsg_solid,' from',ipsrc
-        call MPI_RECV(buffs_solid,sizeb,mpi_realkind,&
-             ipsrc,msgnum,MPI_COMM_WORLD,status,ierror)
+        call MPI_RECV(buffs_solid, sizeb, mpi_realkind, &
+             ipsrc, msgnum, MPI_COMM_WORLD, status, ierror)
         do ip = 1, sizemsg_solid
            ipg = glocal_index_msg_send_solid(ip,imsg)
            gvec_solid2(ipg,1:nc) = buffs_solid(ip,1:nc)
@@ -548,7 +544,7 @@ subroutine asynch_messaging_fluid
   integer :: ierror
   
   ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
-  if (sizesend_fluid>0) then
+  if (sizesend_fluid > 0) then
      do imsg = 1, sizesend_fluid
         sizemsg_fluid = sizemsgsend_fluid(imsg)
         do ip = 1, sizemsg_fluid
@@ -566,7 +562,7 @@ subroutine asynch_messaging_fluid
   endif
 
   ! Receive data, sum things up and send back to initial sender
-  if (sizerecv_fluid>0) then 
+  if (sizerecv_fluid > 0) then 
      do imsg = 1, sizerecv_fluid
         sizemsg_fluid = sizemsgrecv_fluid(imsg)
         sizeb = sizemsg_fluid
@@ -592,14 +588,14 @@ subroutine asynch_messaging_fluid
   endif
 
   ! Receive updated data back
-  if (sizesend_fluid>0) then
+  if (sizesend_fluid > 0) then
      do imsg =1, sizesend_fluid
         sizemsg_fluid = sizemsgsend_fluid(imsg)
         sizeb = sizemsg_fluid
         ipsrc = listsend_fluid(imsg)
         msgnum = ipsrc*nproc + mynum
-        call MPI_RECV(buffs_fluid,sizeb,mpi_realkind,&
-                      ipsrc,msgnum,MPI_COMM_WORLD,status,ierror)
+        call MPI_RECV(buffs_fluid, sizeb, mpi_realkind, &
+                      ipsrc, msgnum, MPI_COMM_WORLD, status, ierror)
         do ip = 1, sizemsg_fluid
            ipg = glocal_index_msg_send_fluid(ip,imsg)
            gvec_fluid(ipg) = buffs_fluid(ip)
@@ -632,7 +628,7 @@ subroutine testing_asynch_messaging_fluid
   write(69,*)' Asynchrounous fluid communication test:'
   call flush(69)
 
-  if (sizesend_fluid>0) then
+  if (sizesend_fluid > 0) then
      do imsg = 1, sizesend_fluid
         sizemsg_fluid = sizemsgsend_fluid(imsg)
         do ip = 1, sizemsg_fluid
@@ -645,13 +641,13 @@ subroutine testing_asynch_messaging_fluid
         ipdes  = listsend_fluid(imsg)
         msgnum = mynum*nproc + ipdes
         write(69,12)procstrg,'SENDING #',msgnum,sizemsg_fluid,' to',ipdes
-        call MPI_SEND(buffs_fluid,sizeb,mpi_realkind,&
-                      ipdes,msgnum,MPI_COMM_WORLD,ierror)
+        call MPI_SEND(buffs_fluid, sizeb, mpi_realkind, &
+                      ipdes, msgnum, MPI_COMM_WORLD, ierror)
      end do
   endif
 
   ! Receive data, sum things up and send back to initial sender
-  if (sizerecv_fluid>0) then 
+  if (sizerecv_fluid > 0) then 
      do imsg = 1, sizerecv_fluid
         sizemsg_fluid = sizemsgrecv_fluid(imsg)
         sizeb = sizemsg_fluid
@@ -671,22 +667,22 @@ subroutine testing_asynch_messaging_fluid
         ! Send joint data back, but stick into new envelope/msgnum
         msgnum2 = mynum*nproc + ipsrc
         write(69,12)procstrg,'RETURNING #',msgnum2,sizemsg_fluid,' to',ipsrc
-        call MPI_SEND(buffr_fluid,sizeb,mpi_realkind,&
-                      ipsrc,msgnum2,MPI_COMM_WORLD,ierror)
+        call MPI_SEND(buffr_fluid, sizeb, mpi_realkind, &
+                      ipsrc, msgnum2, MPI_COMM_WORLD, ierror)
      end do
   endif
 
   ! Receive updated data back
-  if (sizesend_fluid>0) then
-     do imsg =1, sizesend_fluid
+  if (sizesend_fluid > 0) then
+     do imsg = 1, sizesend_fluid
         sizemsg_fluid = sizemsgsend_fluid(imsg)
         sizeb = sizemsg_fluid
         ipsrc = listsend_fluid(imsg)
         msgnum = ipsrc*nproc + mynum
         write(69,12)procstrg,'RECV UPDATED #',msgnum,&
                     sizemsg_fluid,' from',ipsrc
-        call MPI_RECV(buffs_fluid,sizeb,mpi_realkind,&
-             ipsrc,msgnum,MPI_COMM_WORLD,status,ierror)
+        call MPI_RECV(buffs_fluid, sizeb, mpi_realkind, &
+             ipsrc, msgnum, MPI_COMM_WORLD, status, ierror)
         do ip = 1, sizemsg_fluid
            ipg = glocal_index_msg_send_fluid(ip,imsg)
            gvec_fluid(ipg) = buffs_fluid(ip)
