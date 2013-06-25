@@ -7,8 +7,7 @@ module commpi
   ! In other words, the routines are called by wrappers that contain an 
   ! if (nproc>1) statement such that a serial version 
   ! (i.e. without MPI libraries) of this code *shall* run after merely taking 
-  ! out this module commpi. Consequently, this module is 'public' 
-  ! (every routine here needs to be called by external wrapper)
+  ! out this module commpi. 
   !
   ! WARNING: Need to make sure this is consistent for other issues like 
   ! source and receiver locations in global/local reference.
@@ -42,6 +41,8 @@ subroutine ppcheck(test, errmsg)
   ! not at all. The message is only printed once if the error occured on all
   ! ranks, otherwise each processor spits its message stdout
   ! newlines in the error message can be achieved using '\n'
+  ! IMPORTANT: As this routine contains a barrier, it needs to be allways called
+  !            on ALL ranks 
 
   logical, intent(in)            :: test
   character(len=*), intent(in)   :: errmsg
