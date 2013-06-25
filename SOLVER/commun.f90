@@ -785,7 +785,7 @@ subroutine pinit
   include 'mesh_params.h'
   
   ! Start message passing interface if parallel simulation
-  if (nproc_mesh>1) then 
+  if (nproc_mesh > 1) then 
      call ppinit ! comment for serial
      if (nproc_mesh /= nproc) then        
         write(6,*) mynum, 'Problem with number of processors!'
@@ -810,11 +810,6 @@ subroutine pinit
   procstrg = 'Proc '//appmynum(3:4)//' '
 
   if (lpr) write(6,'(a,i5)') '    Initialized run for nproc =', nproc
-
-  if (nproc>1) then ! comment for serial
-     if (realkind==4) mpi_realkind = MPI_REAL ! comment for serial
-     if (realkind==8) mpi_realkind = MPI_DOUBLE_PRECISION ! comment for serial
-  endif ! comment for serial
 
 end subroutine pinit
 !=============================================================================
