@@ -2,17 +2,18 @@
 program axisem 
 !===================
 
-  use data_proc,      ONLY : nproc, mynum, appnproc, appmynum, lpr, procstrg
-  use data_io,        ONLY : dump_xdmf, use_netcdf, verbose
-  use nc_routines,    ONLY : nc_end_output, nc_open_parallel 
-  use data_source,    ONLY : isim,num_simul
-  use data_mesh,      ONLY : do_mesh_tests
-  use parameters,     ONLY : open_local_param_file, readin_parameters
-  use get_mesh,       ONLY : read_db 
-  use def_grid,       ONLY : init_grid, mesh_tests, deallocate_preloop_arrays
-  use time_evol_wave, ONLY : prepare_waves, time_loop
-  use commun,         ONLY : pinit, pend, barrier
-  use meshes_io,      ONLY : finish_xdmf_xml
+  use data_proc,      only : nproc, mynum, appnproc, appmynum, lpr, procstrg
+  use data_io,        only : dump_xdmf, use_netcdf, verbose
+  use nc_routines,    only : nc_end_output, nc_open_parallel 
+  use data_source,    only : isim,num_simul
+  use data_mesh,      only : do_mesh_tests
+  use parameters,     only : open_local_param_file, readin_parameters
+  use get_mesh,       only : read_db 
+  use def_grid,       only : init_grid, mesh_tests, deallocate_preloop_arrays
+  use time_evol_wave, only : prepare_waves, time_loop
+  use commun,         only : pinit, pend, barrier
+  use meshes_io,      only : finish_xdmf_xml
+  use data_io,        only : verbose
   
   implicit none
 
@@ -84,7 +85,7 @@ program axisem
 
   write(6,*) procstrg, '=========PROGRAM axisem FINISHED============='
 
-  write(69,*) '=========PROGRAM axisem FINISHED============='
+  if (verbose > 1) write(69,*) '=========PROGRAM axisem FINISHED============='
 
 !=======================
 end program axisem
@@ -98,10 +99,10 @@ subroutine start_clock
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_time,  ONLY : idcomm, iddump, idmpi, idnbio, idold, idstiff, idanelts, idanelst
-  use data_proc,  ONLY : lpr, mynum
-  use clocks_mod, ONLY : clock_id, clocks_init
-  use data_io,    ONLY : verbose
+  use data_time,  only : idcomm, iddump, idmpi, idnbio, idold, idstiff, idanelts, idanelst
+  use data_proc,  only : lpr, mynum
+  use clocks_mod, only : clock_id, clocks_init
+  use data_io,    only : verbose
   
   implicit none
   
@@ -140,8 +141,8 @@ subroutine end_clock
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use clocks_mod, ONLY : clocks_exit
-  use data_proc,  ONLY : mynum
+  use clocks_mod, only : clocks_exit
+  use data_proc,  only : mynum
 
   implicit none
 

@@ -1,55 +1,51 @@
 !======================
 module def_precomp_terms
 !======================
-!
-! Read elastic information of the background model, define precomputable 
-! matrices for mass, stiffness, boundary terms, pointwise derivatives.
-! This is the quintessential module of the code...
 
-use global_parameters
-use data_mesh
-use data_mesh_preloop
-use data_spec
-use data_matr
-use data_source, ONLY : src_type
-use data_proc
-
-use get_mesh,    ONLY : compute_coordinates_mesh
-use geom_transf
-use utlity
-use analytic_mapping
-
-implicit none
-
-public :: read_model_compute_terms
-private
+  ! Read elastic information of the background model, define precomputable 
+  ! matrices for mass, stiffness, boundary terms, pointwise derivatives.
+  ! This is the quintessential module of the code...
+  
+  use global_parameters
+  use data_mesh
+  use data_mesh_preloop
+  use data_spec
+  use data_matr
+  use data_source, only : src_type
+  use data_io,     only : verbose
+  use data_proc
+  
+  use get_mesh,    only : compute_coordinates_mesh
+  use geom_transf
+  use utlity
+  use analytic_mapping
+  
+  implicit none
+  
+  public :: read_model_compute_terms
+  private
 contains
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !-----------------------------------------------------------------------------
 subroutine read_model_compute_terms
-!
-! Wrapper routine to contain globally defined large matrices that are not 
-! used in the time loop to this module (e.g. rho, lambda, mu).
-!
-! Also fills up Q with values (which is used in the time loop)
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  ! Wrapper routine to contain globally defined large matrices that are not 
+  ! used in the time loop to this module (e.g. rho, lambda, mu).
+  !
+  ! Also fills up Q with values (which is used in the time loop)
 
   use get_model
-  use attenuation,  ONLY: prepare_attenuation
-  use commun,       ONLY: barrier
+  use attenuation,  only: prepare_attenuation
+  use commun,       only: barrier
   
-  implicit none
   include 'mesh_params.h'
   
   double precision, dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
   double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
   double precision, dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
 
-  if(lpr) write(6,*) '  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::'
-  if(lpr) write(6,*) '  allocate elastic fields....'
+  if(lpr) write(6,'(a,/,a)') &
+            '  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::', &
+            '  allocate elastic fields....'
 
   allocate(rho(0:npol,0:npol,1:nelem),massmat_kwts2(0:npol,0:npol,1:nelem))
   allocate(lambda(0:npol,0:npol,1:nelem),mu(0:npol,0:npol,1:nelem))
@@ -66,13 +62,13 @@ subroutine read_model_compute_terms
     allocate(Q_kappa(1:nel_solid))
   endif
 
-! load velocity/density model  (velocities in m/s, density in kg/m^3 )
-  if(lpr)write(6,*)'  define background model....';call flush(6)
+  ! load velocity/density model  (velocities in m/s, density in kg/m^3 )
+  if (lpr) write(6,*)'  define background model....'
 
   if (ani_true) then
-    if(lpr)write(6,*)'  model is anisotropic....';call flush(6)
+    if (lpr) write(6,*) '  model is anisotropic....'
     if (anel_true) then
-        if(lpr)write(6,*)'  ....and anelastic...';call flush(6)
+      if(lpr) write(6,*)'  ....and anelastic...'
       call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
                           fa_ani_phi, Q_mu, Q_kappa)
     else
@@ -86,36 +82,36 @@ subroutine read_model_compute_terms
     endif
   endif
 
-  if(lpr)write(6,*)'  compute Lagrange interpolant derivatives...'
+  if (lpr) write(6,*) '  compute Lagrange interpolant derivatives...'
   call lagrange_derivs
 
-  if(lpr)write(6,*)'  define mass matrix....';call flush(6)
+  if (lpr) write(6,*) '  define mass matrix....'
   call def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
    
   if (do_mesh_tests) then
-    if(lpr)write(6,*)'  compute mass of the earth model....';call flush(6)
+    if (lpr) write(6,*) '  compute mass of the earth model....'
     call compute_mass_earth(rho)
   endif
 
-  if(lpr)write(6,*)'  define precomputed matrices for pointwise derivatives...'
+  if (lpr)write(6,*) '  define precomputed matrices for pointwise derivatives...'
   call compute_pointwisederiv_matrices
 
   if (do_mesh_tests) then
-    if(lpr)write(6,*)'  test pointwise derivatives & Laplacian in solid....'
+    if (lpr) write(6,*)'  test pointwise derivatives & Laplacian in solid....'
     call test_pntwsdrvtvs_solid
-    if(lpr)write(6,*)'  test pointwise derivatives & Laplacian in fluid....'
+    if (lpr) write(6,*)'  test pointwise derivatives & Laplacian in fluid....'
     if (have_fluid) call test_pntwsdrvtvs_fluid
   endif
 
   if (anel_true) then
-     if (lpr) write(6,*)'  preparing Q model'
+     if (lpr) write(6,*) '  preparing Q model'
      ! this needs to be done before def_solid_stiffness_terms, as it calculates
      ! the unrelaxed moduli from the ones at reference frequency
      call prepare_attenuation(lambda, mu)
-     if (lpr) write(6,*)'  done preparing Q model';call flush(6)
+     if (lpr) write(6,*) '  done preparing Q model'
   endif
      
-  if(lpr)write(6,*)'  define solid stiffness terms....';call flush(6)
+  if (lpr) write(6,*)'  define solid stiffness terms....'
   if (ani_true) then
     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
                                    eta_ani, fa_ani_theta, fa_ani_phi)
@@ -124,17 +120,17 @@ subroutine read_model_compute_terms
     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2)
   endif
   
-  if (lpr) write(6,*)'  deallocating lambda + mu';call flush(6)
+  if (lpr) write(6,*)'  deallocating lambda + mu'
     
   deallocate(lambda,mu)
   
-  if (lpr) write(6,*)'  done deallocating lambda + mu';call flush(6)
+  if (lpr) write(6,*)'  done deallocating lambda + mu'
 
   if (have_fluid) then
-     if(lpr) write(6,*)'  define fluid stiffness terms....';call flush(6)
+     if (lpr) write(6,*) '  define fluid stiffness terms....'
      call def_fluid_stiffness_terms(rho, massmat_kwts2)
 
-     if(lpr)write(6,*)'  define solid-fluid boundary terms....';call flush(6)
+     if (lpr) write(6,*) '  define solid-fluid boundary terms....'
      call def_solid_fluid_boundary_terms
   else
      M_w_fl = zero
@@ -145,12 +141,12 @@ subroutine read_model_compute_terms
      bdry_matr = zero
   endif
 
-  if (lpr) write(6,*)'  ...defined all precomputed arrays';call flush(6)
-  deallocate(rho,massmat_kwts2)
+  if (lpr) write(6,*) '  ...defined all precomputed arrays'
+  deallocate(rho, massmat_kwts2)
 
   if (lpr) write(6,*)'  ...deallocated unnecessary elastic arrays'
   
-  if(lpr)write(6,*)'  ::::::: END BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
+  if (lpr) write(6,*)'  ::::::: END BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
   call flush(6)
 
 end subroutine read_model_compute_terms
@@ -158,65 +154,61 @@ end subroutine read_model_compute_terms
 
 !-----------------------------------------------------------------------------
 subroutine lagrange_derivs
-!
-! Defines elemental arrays for the derivatives of Lagrange interpolating 
-! functions either upon 
-! Gauss-Lobatto-Legendre (all eta, and xi direction for non-axial elements) or 
-! Gauss-Lobatto-Jacobi (0,1) points (axial xi direction):
-! G1(i,j) = \partial_\xi ( \bar{l}_i(\xi_j) )  i.e. axial xi direction
-! G2(i,j) = \partial_\eta ( l_i(\eta_j) )  i.e. all eta/non-ax xi directions 
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  ! Defines elemental arrays for the derivatives of Lagrange interpolating 
+  ! functions either upon 
+  ! Gauss-Lobatto-Legendre (all eta, and xi direction for non-axial elements) or 
+  ! Gauss-Lobatto-Jacobi (0,1) points (axial xi direction):
+  ! G1(i,j) = \partial_\xi ( \bar{l}_i(\xi_j) )  i.e. axial xi direction
+  ! G2(i,j) = \partial_\eta ( l_i(\eta_j) )  i.e. all eta/non-ax xi directions 
 
-use splib, only : hn_jprime,lag_interp_deriv_wgl
-
-implicit none
-include 'mesh_params.h'
-
-double precision  :: df(0:npol),dg(0:npol)
-integer           :: ishp,jpol
-character(len=16) :: fmt1
-logical           :: tensorwrong
-
-! shp_deri_k only needed for the source and pointwise derivatives,
-! otherwise (stiffness terms) we apply G0, G1, G2 and their transposes.
+  use splib, only : hn_jprime,lag_interp_deriv_wgl
+  
+  include 'mesh_params.h'
+  
+  double precision  :: df(0:npol),dg(0:npol)
+  integer           :: ishp,jpol
+  character(len=16) :: fmt1
+  logical           :: tensorwrong
+  
+  ! shp_deri_k only needed for the source and pointwise derivatives,
+  ! otherwise (stiffness terms) we apply G0, G1, G2 and their transposes.
 
   shp_deri_k(:,:,:,:) = zero
 
-! non-axial elements
-        do ishp = 0, npol
-           call hn_jprime(eta,ishp,npol,df)
-           call hn_jprime(eta,ishp,npol,dg)
-           do jpol = 0, npol
-              shp_deri_k(ishp,jpol,1,1)=df(jpol)
-              shp_deri_k(ishp,jpol,1,2)=dg(jpol)
-           end do
-        end do
+  ! non-axial elements
+  do ishp = 0, npol
+     call hn_jprime(eta,ishp,npol,df)
+     call hn_jprime(eta,ishp,npol,dg)
+     do jpol = 0, npol
+        shp_deri_k(ishp,jpol,1,1)=df(jpol)
+        shp_deri_k(ishp,jpol,1,2)=dg(jpol)
+     end do
+  end do
 
-! axial elements
-        do ishp = 0, npol
-           call lag_interp_deriv_wgl(df,xi_k,ishp,npol)
-           call hn_jprime(eta,ishp,npol,dg)
-           do jpol = 0, npol 
-              shp_deri_k(ishp,jpol,2,1)=df(jpol)
-              shp_deri_k(ishp,jpol,2,2)=dg(jpol)
-           end do
-        end do
+  ! axial elements
+  do ishp = 0, npol
+     call lag_interp_deriv_wgl(df,xi_k,ishp,npol)
+     call hn_jprime(eta,ishp,npol,dg)
+     do jpol = 0, npol 
+        shp_deri_k(ishp,jpol,2,1)=df(jpol)
+        shp_deri_k(ishp,jpol,2,2)=dg(jpol)
+     end do
+  end do
 
-! Define elemental Lagrange interpolant derivatives as needed for stiffness
+  ! Define elemental Lagrange interpolant derivatives as needed for stiffness
 
-! Derivative in z direction: \partial_\eta (l_j(\eta_q))
+  ! Derivative in z direction: \partial_\eta (l_j(\eta_q))
   G2 = shp_deri_k(0:npol,0:npol,1,2)
   G2T = transpose(G2)
 
-! Derivative in s-direction: \partial_\xi (\bar{l}_i(\xi_p))
+  ! Derivative in s-direction: \partial_\xi (\bar{l}_i(\xi_p))
   G1 = shp_deri_k(0:npol,0:npol,2,1)
   G1T = transpose(G1)
 
-! Axial vector
+  ! Axial vector
   G0 = shp_deri_k(0:npol,0,2,1)
 
-! Simple test on Lagrange derivative tensor's antisymmetries...
+  ! Simple test on Lagrange derivative tensor's antisymmetries...
   tensorwrong=.false.
   if ( mod(npol,2) == 0 ) then
      do jpol = 0,npol-1
@@ -248,16 +240,13 @@ end subroutine lagrange_derivs
 
 !-----------------------------------------------------------------------------
 subroutine compute_pointwisederiv_matrices
-!
-! The 4 necessary global matrices due to pointwise derivatives d/ds and d/dz:
-! dzdeta/J, dzdxi/J, dsdeta/J, dsdxi/J (J: Jacobian).
-! These are known during the time loop if the strain is computed on-the-fly.
-! This is convenient to avoid recomputing these mapping derivatives at each 
-! dumping stage and to avoid knowing the grid itself during the time loop
-! (hence the additional 4 global variables in exchange for at least 2 for the
-! mesh, i.e. only slightly more memory intensive).
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  ! The 4 necessary global matrices due to pointwise derivatives d/ds and d/dz:
+  ! dzdeta/J, dzdxi/J, dsdeta/J, dsdxi/J (J: Jacobian).
+  ! These are known during the time loop if the strain is computed on-the-fly.
+  ! This is convenient to avoid recomputing these mapping derivatives at each 
+  ! dumping stage and to avoid knowing the grid itself during the time loop
+  ! (hence the additional 4 global variables in exchange for at least 2 for the
+  ! mesh, i.e. only slightly more memory intensive).
 
   use data_pointwise
   include 'mesh_params.h'
@@ -266,7 +255,7 @@ subroutine compute_pointwisederiv_matrices
   double precision :: dsdxi,dzdxi,dsdeta,dzdeta
   double precision :: local_crd_nodes(8,2)
 
-! fluid pointwise derivatives     
+  ! fluid pointwise derivatives     
   allocate(DsDeta_over_J_flu(0:npol,0:npol,1:nel_fluid))
   allocate(DzDeta_over_J_flu(0:npol,0:npol,1:nel_fluid))
   allocate(DsDxi_over_J_flu(0:npol,0:npol,1:nel_fluid))
@@ -274,18 +263,18 @@ subroutine compute_pointwisederiv_matrices
   allocate(inv_s_fluid(0:npol,0:npol,1:nel_fluid))
   allocate(prefac_inv_s_rho_fluid(0:npol,0:npol,1:nel_fluid))
 
-! solid pointwise derivatives
+  ! solid pointwise derivatives
   allocate(DsDeta_over_J_sol(0:npol,0:npol,1:nel_solid))
   allocate(DzDeta_over_J_sol(0:npol,0:npol,1:nel_solid))
   allocate(DsDxi_over_J_sol(0:npol,0:npol,1:nel_solid))
   allocate(DzDxi_over_J_sol(0:npol,0:npol,1:nel_solid))
   allocate(inv_s_solid(0:npol,0:npol,1:nel_solid))
 
-! Solid region
+  ! Solid region
   do iel = 1, nel_solid
     do inode = 1, 8
       call compute_coordinates_mesh(local_crd_nodes(inode,1),&
-                                  local_crd_nodes(inode,2),ielsolid(iel),inode)
+                                    local_crd_nodes(inode,2),ielsolid(iel),inode)
     end do
     if (.not. axis_solid(iel)) then ! non-axial elements
     do ipol=0,npol
@@ -331,18 +320,20 @@ subroutine compute_pointwisederiv_matrices
     endif !axis
   enddo
   
-  write(69,*)'Pointwise derivative precomputed terms in solid:'
-  write(69,8)'  min/max DsDeta/J [1/m]:',minval(DsDeta_over_J_sol), &
-       maxval(DsDeta_over_J_sol)
-  write(69,8)'  min/max DzDeta/J [1/m]:',minval(DzDeta_over_J_sol), &
-       maxval(DzDeta_over_J_sol)
-  write(69,8)'  min/max DsDxi/J  [1/m]:',minval(DsDxi_over_J_sol), &
-       maxval(DsDxi_over_J_sol)
-  write(69,8)'  min/max DzDxi/J  [1/m]:',minval(DzDxi_over_J_sol), &
-       maxval(DzDxi_over_J_sol)
-  write(69,*)
+  if (verbose > 1) then
+     write(69,*)'Pointwise derivative precomputed terms in solid:'
+     write(69,8)'  min/max DsDeta/J [1/m]:',minval(DsDeta_over_J_sol), &
+          maxval(DsDeta_over_J_sol)
+     write(69,8)'  min/max DzDeta/J [1/m]:',minval(DzDeta_over_J_sol), &
+          maxval(DzDeta_over_J_sol)
+     write(69,8)'  min/max DsDxi/J  [1/m]:',minval(DsDxi_over_J_sol), &
+          maxval(DsDxi_over_J_sol)
+     write(69,8)'  min/max DzDxi/J  [1/m]:',minval(DzDxi_over_J_sol), &
+          maxval(DzDxi_over_J_sol)
+     write(69,*)
+  endif
 
-! Fluid region
+  ! Fluid region
   do iel = 1, nel_fluid
     do inode = 1, 8
       call compute_coordinates_mesh(local_crd_nodes(inode,1),&
@@ -397,60 +388,57 @@ subroutine compute_pointwisederiv_matrices
     endif !axis
   enddo
   
-  write(69,*)'Pointwise derivative precomputed terms in fluid:'
-  write(69,8)'  min/max DsDeta/J [1/m]:',minval(DsDeta_over_J_flu),&
-       maxval(DsDeta_over_J_flu)
-  write(69,8)'  min/max DzDeta/J [1/m]:',minval(DzDeta_over_J_flu),&
-       maxval(DzDeta_over_J_flu)
-  write(69,8)'  min/max DsDxi/J  [1/m]:',minval(DsDxi_over_J_flu),&
-       maxval(DsDxi_over_J_flu)
-  write(69,8)'  min/max DzDxi/J  [1/m]:',minval(DzDxi_over_J_flu),&
-       maxval(DzDxi_over_J_flu)
-  write(69,*)
+  if (verbose > 1) then
+     write(69,*)'Pointwise derivative precomputed terms in fluid:'
+     write(69,8)'  min/max DsDeta/J [1/m]:',minval(DsDeta_over_J_flu),&
+          maxval(DsDeta_over_J_flu)
+     write(69,8)'  min/max DzDeta/J [1/m]:',minval(DzDeta_over_J_flu),&
+          maxval(DzDeta_over_J_flu)
+     write(69,8)'  min/max DsDxi/J  [1/m]:',minval(DsDxi_over_J_flu),&
+          maxval(DsDxi_over_J_flu)
+     write(69,8)'  min/max DzDxi/J  [1/m]:',minval(DzDxi_over_J_flu),&
+          maxval(DzDxi_over_J_flu)
+     write(69,*)
+  endif
 
 8 format(a25,2(1pe14.4))
 
 
-! Prefactor for quadrupole phi-comp of fluid displacement
+  ! Prefactor for quadrupole phi-comp of fluid displacement
   if (src_type(1)=='monopole') prefac_inv_s_rho_fluid = zero
   if (src_type(1)=='quadpole') prefac_inv_s_rho_fluid = two * prefac_inv_s_rho_fluid
 
 end subroutine compute_pointwisederiv_matrices
-!--------------------------------------------------------------------------
 !=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine test_pntwsdrvtvs_solid
-!
-! Test pointwise derivatives & axisymmetric Laplacian in solid region
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  ! Test pointwise derivatives & axisymmetric Laplacian in solid region
 
-use data_io
-use pointwise_derivatives
-
-implicit none
-include 'mesh_params.h'
-
-real(kind=realkind),allocatable :: tmpsolfield(:,:,:)
-real(kind=realkind),allocatable :: tmpsolfieldcomp(:,:,:,:)
-real(kind=realkind),allocatable :: tmpsolfielddiff(:,:,:,:)
-real(kind=realkind)             :: meandiff(2)
-double precision,allocatable    :: elderiv(:,:)
-double precision                :: s,z,r,theta
-integer                         :: iel,ipol,jpol,iarr(3)
-character(len=16)               :: fmt1
+  use data_io
+  use pointwise_derivatives
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),allocatable :: tmpsolfield(:,:,:)
+  real(kind=realkind),allocatable :: tmpsolfieldcomp(:,:,:,:)
+  real(kind=realkind),allocatable :: tmpsolfielddiff(:,:,:,:)
+  real(kind=realkind)             :: meandiff(2)
+  double precision,allocatable    :: elderiv(:,:)
+  double precision                :: s,z,r,theta
+  integer                         :: iel,ipol,jpol,iarr(3)
+  character(len=16)               :: fmt1
 
   allocate(tmpsolfield(0:npol,0:npol,1:nel_solid))
   allocate(tmpsolfieldcomp(0:npol,0:npol,1:nel_solid,1:3))
   allocate(tmpsolfielddiff(0:npol,0:npol,1:nel_solid,1:3))
   allocate(elderiv(0:npol,0:npol))
   
-! Test derivatives: define scalar field inside solid
+  ! Test derivatives: define scalar field inside solid
   do iel=1,nel_solid
      do jpol=0,npol
         do ipol=0,npol
-! make tmpsolfield equal to z s^3 + s z^3
+           ! make tmpsolfield equal to z s^3 + s z^3
            call compute_coordinates(s,z,r,theta,ielsolid(iel),ipol,jpol)
            tmpsolfield(ipol,jpol,iel)= z*s**3+s*z**3 + (s+z)*router
         enddo
@@ -459,13 +447,11 @@ character(len=16)               :: fmt1
 
   call axisym_gradient_solid(tmpsolfield,tmpsolfieldcomp(:,:,:,1:2))
 
-  meandiff=zero
+  meandiff = zero
 
-!/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
-  open(unit=34,file=infopath(1:lfinfo)//&
-       '/pointwise_deriv_sol_num.dat'//appmynum)
-  open(unit=36,file=infopath(1:lfinfo)//&
-       '/pointwise_deriv_reldiff.dat'//appmynum)
+  open(unit=34,file=infopath(1:lfinfo)// '/pointwise_deriv_sol_num.dat'//appmynum)
+  open(unit=36,file=infopath(1:lfinfo)// '/pointwise_deriv_reldiff.dat'//appmynum)
+
   do iel=1,nel_solid
      do jpol=0,npol
         do ipol=0,npol
@@ -493,65 +479,69 @@ character(len=16)               :: fmt1
         enddo
      enddo
   enddo
-  close(34); close(36)
-!/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+  close(34)
+  close(36)
 
-  write(69,*)
-  write(69,*)'/_/_/_/_/_/_/SOLID pointwise deriv with f=zs^3+sz^3/_/_/_/_/_/_/'
-  write(69,9)'  mean error df/ds          :',meandiff(1)/ &
-                                            real((npol)**2*nel_solid)
-  write(69,8)'  min/max error df/ds       :',minval(tmpsolfielddiff(:,:,:,1)),&
-                                            maxval(tmpsolfielddiff(:,:,:,1))
-  iarr = maxloc(tmpsolfielddiff(:,:,:,1))
-  write(69,8)'  r[m],theta max error df/ds:', &
-                     rcoord(iarr(1)-1,iarr(2)-1,ielsolid(iarr(3))), &
-                     thetacoord(iarr(1)-1,iarr(2)-1,ielsolid(iarr(3)))*180./pi
-  write(69,7)'  elem type,coarsening ,axis :',eltype(ielsolid(iarr(3))), &
-                                             coarsing(ielsolid(iarr(3))), &
-                                             axis_solid(iarr(3))
 
-  fmt1 = "(K(1pe13.4))"
-  write(fmt1(2:2),'(i1.1)') npol+1
-  write(69,*)' Analytical derivatives df/ds across that element (-->xi):'
-  do jpol=0,npol
-     do ipol=0,npol
-        call compute_coordinates(s,z,r,theta,ielsolid(iarr(3)),ipol,jpol)
-        elderiv(ipol,jpol)=3.d0*z*s**2+z**3+router
+  if (verbose > 1) then
+     write(69,*)
+     write(69,*)'/_/_/_/_/_/_/SOLID pointwise deriv with f=zs^3+sz^3/_/_/_/_/_/_/'
+     write(69,9)'  mean error df/ds          :',meandiff(1)/ &
+                                               real((npol)**2*nel_solid)
+     write(69,8)'  min/max error df/ds       :',minval(tmpsolfielddiff(:,:,:,1)),&
+                                               maxval(tmpsolfielddiff(:,:,:,1))
+     iarr = maxloc(tmpsolfielddiff(:,:,:,1))
+     write(69,8)'  r[m],theta max error df/ds:', &
+                        rcoord(iarr(1)-1,iarr(2)-1,ielsolid(iarr(3))), &
+                        thetacoord(iarr(1)-1,iarr(2)-1,ielsolid(iarr(3)))*180./pi
+     write(69,7)'  elem type,coarsening ,axis :',eltype(ielsolid(iarr(3))), &
+                                                coarsing(ielsolid(iarr(3))), &
+                                                axis_solid(iarr(3))
+
+     fmt1 = "(K(1pe13.4))"
+     write(fmt1(2:2),'(i1.1)') npol+1
+     write(69,*)' Analytical derivatives df/ds across that element (-->xi):'
+     do jpol=0,npol
+        do ipol=0,npol
+           call compute_coordinates(s,z,r,theta,ielsolid(iarr(3)),ipol,jpol)
+           elderiv(ipol,jpol)=3.d0*z*s**2+z**3+router
+        enddo
+        write(69,fmt1)(elderiv(ipol,jpol),ipol=0,npol)
      enddo
-     write(69,fmt1)(elderiv(ipol,jpol),ipol=0,npol)
-  enddo
-  write(69,*)' Numerical derivatives df/ds across that element (-->xi):'
-  do jpol=0,npol
-     write(69,fmt1)(tmpsolfieldcomp(ipol,jpol,iarr(3),1),ipol=0,npol)
-  enddo
-  write(69,*)
-
-  write(69,9)'  mean error df/dz          :',meandiff(2)/ &
-                                             real((npol)**2*nel_solid)
-  write(69,8)'  min/max error df/dz       :',minval(tmpsolfielddiff(:,:,:,2)),&
-                                             maxval(tmpsolfielddiff(:,:,:,2))
-  iarr = maxloc(tmpsolfielddiff(:,:,:,2))
-  write(69,8)'  r[m],theta max error df/dz:', &
-                      rcoord(iarr(1)-1,iarr(2)-1,ielsolid(iarr(3))), &
-                      thetacoord(iarr(1)-1,iarr(2)-1,ielsolid(iarr(3)))*180./pi
-  write(69,7)'  elem type,coarsening,axis :',eltype(ielsolid(iarr(3))), &
-                                            coarsing(ielsolid(iarr(3))), &
-                                            axis_solid(iarr(3))
-  write(69,*)' Analytical derivatives df/dz across that element (-->xi):'
-  do jpol=0,npol
-     do ipol=0,npol
-        call compute_coordinates(s,z,r,theta,ielsolid(iarr(3)),ipol,jpol)
-                                 elderiv(ipol,jpol)=3.d0*s*z**2+s**3+router
+     write(69,*)' Numerical derivatives df/ds across that element (-->xi):'
+     do jpol=0,npol
+        write(69,fmt1)(tmpsolfieldcomp(ipol,jpol,iarr(3),1),ipol=0,npol)
      enddo
-     write(69,fmt1)(elderiv(ipol,jpol),ipol=0,npol)
-  enddo
-  write(69,*)' Numerical derivatives df/dz across that element (-->xi):'
-  do jpol=0,npol
-     write(69,fmt1)(tmpsolfieldcomp(ipol,jpol,iarr(3),2),ipol=0,npol)
-  enddo
-  write(69,*)'/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/'
+     write(69,*)
 
-  write(69,*)
+     write(69,9)'  mean error df/dz          :',meandiff(2)/ &
+                                                real((npol)**2*nel_solid)
+     write(69,8)'  min/max error df/dz       :',minval(tmpsolfielddiff(:,:,:,2)),&
+                                                maxval(tmpsolfielddiff(:,:,:,2))
+     iarr = maxloc(tmpsolfielddiff(:,:,:,2))
+     write(69,8)'  r[m],theta max error df/dz:', &
+                         rcoord(iarr(1)-1,iarr(2)-1,ielsolid(iarr(3))), &
+                         thetacoord(iarr(1)-1,iarr(2)-1,ielsolid(iarr(3)))*180./pi
+     write(69,7)'  elem type,coarsening,axis :',eltype(ielsolid(iarr(3))), &
+                                               coarsing(ielsolid(iarr(3))), &
+                                               axis_solid(iarr(3))
+     write(69,*)' Analytical derivatives df/dz across that element (-->xi):'
+     do jpol=0,npol
+        do ipol=0,npol
+           call compute_coordinates(s,z,r,theta,ielsolid(iarr(3)),ipol,jpol)
+                                    elderiv(ipol,jpol)=3.d0*s*z**2+s**3+router
+        enddo
+        write(69,fmt1)(elderiv(ipol,jpol),ipol=0,npol)
+     enddo
+     write(69,*)' Numerical derivatives df/dz across that element (-->xi):'
+     do jpol=0,npol
+        write(69,fmt1)(tmpsolfieldcomp(ipol,jpol,iarr(3),2),ipol=0,npol)
+     enddo
+     write(69,*)'/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/'
+
+     write(69,*)
+  endif
+
 7  format(a30,a10,2(l4))
 8  format(a30,2(1pe14.4))
 9  format(a30,1pe14.4)
@@ -568,36 +558,32 @@ end subroutine test_pntwsdrvtvs_solid
 
 !-----------------------------------------------------------------------------
 subroutine test_pntwsdrvtvs_fluid
-!
-! Test pointwise derivatives & axisymmetric Laplacian in fluid
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use data_io
-use pointwise_derivatives
-
-implicit none
-include 'mesh_params.h'
-
-real(kind=realkind),allocatable :: tmpflufield(:,:,:)
-real(kind=realkind),allocatable :: tmpflufieldcomp(:,:,:,:)
-real(kind=realkind),allocatable :: tmpflufielddiff(:,:,:,:)
-real(kind=realkind)             :: meandiff(2)
-double precision,allocatable    :: elderiv(:,:)
-double precision                :: s,z,r,theta
-integer                         :: iel,ipol,jpol,iarr(3)
-character(len=16)               :: fmt1
+  ! Test pointwise derivatives & axisymmetric Laplacian in fluid
+  
+  use data_io
+  use pointwise_derivatives
+  
+  include 'mesh_params.h'
+  
+  real(kind=realkind),allocatable :: tmpflufield(:,:,:)
+  real(kind=realkind),allocatable :: tmpflufieldcomp(:,:,:,:)
+  real(kind=realkind),allocatable :: tmpflufielddiff(:,:,:,:)
+  real(kind=realkind)             :: meandiff(2)
+  double precision,allocatable    :: elderiv(:,:)
+  double precision                :: s,z,r,theta
+  integer                         :: iel,ipol,jpol,iarr(3)
+  character(len=16)               :: fmt1
 
   allocate(tmpflufield(0:npol,0:npol,1:nel_fluid))
   allocate(tmpflufieldcomp(0:npol,0:npol,1:nel_fluid,1:3))
   allocate(tmpflufielddiff(0:npol,0:npol,1:nel_fluid,1:3))
   allocate(elderiv(0:npol,0:npol))
   
-! Test derivatives: define scalar field inside fluid
+  ! Test derivatives: define scalar field inside fluid
   do iel=1,nel_fluid
      do jpol=0,npol
         do ipol=0,npol
-! make tmpflufield equal to z s^3 + s z^3
+           ! make tmpflufield equal to z s^3 + s z^3
            call compute_coordinates(s,z,r,theta,ielfluid(iel),ipol,jpol)
            tmpflufield(ipol,jpol,iel)= z*s**3+s*z**3 + (s+z)*router
         enddo
@@ -606,9 +592,8 @@ character(len=16)               :: fmt1
 
   call axisym_gradient_fluid(tmpflufield,tmpflufieldcomp(:,:,:,1:2))
 
-  meandiff=zero
+  meandiff = zero
 
-!/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
   open(unit=34,file=infopath(1:lfinfo)//&
        '/pointwise_deriv_flu_num.dat'//appmynum)
   open(unit=36,file=infopath(1:lfinfo)//&
@@ -640,65 +625,68 @@ character(len=16)               :: fmt1
         enddo
      enddo
   enddo
-  close(34); close(36)
-!/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
+  close(34)
+  close(36)
 
-  write(69,*)
-  write(69,*)'/_/_/_/_/_/_/FLUID pointwise deriv with f=zs^3+sz^3/_/_/_/_/_/_/'
-  write(69,9)'  mean error df/ds          :',meandiff(1)/ &
-                                            real((npol)**2*nel_fluid)
-  write(69,8)'  min/max error df/ds       :',minval(tmpflufielddiff(:,:,:,1)),&
-                                            maxval(tmpflufielddiff(:,:,:,1))
-  iarr = maxloc(tmpflufielddiff(:,:,:,1))
-  write(69,8)'  r[m],theta max error df/ds:', &
-                     rcoord(iarr(1)-1,iarr(2)-1,ielfluid(iarr(3))), &
-                     thetacoord(iarr(1)-1,iarr(2)-1,ielfluid(iarr(3)))*180./pi
-  write(69,7)'  elem type,coarsening ,axis :',eltype(ielfluid(iarr(3))), &
-                                             coarsing(ielfluid(iarr(3))), &
-                                             axis_fluid(iarr(3))
+  if (verbose > 1) then
+     write(69,*)
+     write(69,*)'/_/_/_/_/_/_/FLUID pointwise deriv with f=zs^3+sz^3/_/_/_/_/_/_/'
+     write(69,9)'  mean error df/ds          :',meandiff(1)/ &
+                                               real((npol)**2*nel_fluid)
+     write(69,8)'  min/max error df/ds       :',minval(tmpflufielddiff(:,:,:,1)),&
+                                               maxval(tmpflufielddiff(:,:,:,1))
+     iarr = maxloc(tmpflufielddiff(:,:,:,1))
+     write(69,8)'  r[m],theta max error df/ds:', &
+                        rcoord(iarr(1)-1,iarr(2)-1,ielfluid(iarr(3))), &
+                        thetacoord(iarr(1)-1,iarr(2)-1,ielfluid(iarr(3)))*180./pi
+     write(69,7)'  elem type,coarsening ,axis :',eltype(ielfluid(iarr(3))), &
+                                                coarsing(ielfluid(iarr(3))), &
+                                                axis_fluid(iarr(3))
 
-  fmt1 = "(K(1pe13.4))"
-  write(fmt1(2:2),'(i1.1)') npol+1
-  write(69,*)' Analytical derivatives df/ds across that element (-->xi):'
-  do jpol=0,npol
-     do ipol=0,npol
-        call compute_coordinates(s,z,r,theta,ielfluid(iarr(3)),ipol,jpol)
-        elderiv(ipol,jpol)=3.d0*z*s**2+z**3+router
+     fmt1 = "(K(1pe13.4))"
+     write(fmt1(2:2),'(i1.1)') npol+1
+     write(69,*)' Analytical derivatives df/ds across that element (-->xi):'
+     do jpol=0,npol
+        do ipol=0,npol
+           call compute_coordinates(s,z,r,theta,ielfluid(iarr(3)),ipol,jpol)
+           elderiv(ipol,jpol)=3.d0*z*s**2+z**3+router
+        enddo
+        write(69,fmt1)(elderiv(ipol,jpol),ipol=0,npol)
      enddo
-     write(69,fmt1)(elderiv(ipol,jpol),ipol=0,npol)
-  enddo
-  write(69,*)' Numerical derivatives df/ds across that element (-->xi):'
-  do jpol=0,npol
-     write(69,fmt1)(tmpflufieldcomp(ipol,jpol,iarr(3),1),ipol=0,npol)
-  enddo
-  write(69,*)
-
-  write(69,9)'  mean error df/dz          :',meandiff(2)/ &
-                                             real((npol)**2*nel_fluid)
-  write(69,8)'  min/max error df/dz       :',minval(tmpflufielddiff(:,:,:,2)),&
-                                             maxval(tmpflufielddiff(:,:,:,2))
-  iarr = maxloc(tmpflufielddiff(:,:,:,2))
-  write(69,8)'  r[m],theta max error df/dz:', &
-                      rcoord(iarr(1)-1,iarr(2)-1,ielfluid(iarr(3))), &
-                      thetacoord(iarr(1)-1,iarr(2)-1,ielfluid(iarr(3)))*180./pi
-  write(69,7)'  elem type,coarsening,axis :',eltype(ielfluid(iarr(3))), &
-                                            coarsing(ielfluid(iarr(3))), &
-                                            axis_fluid(iarr(3))
-  write(69,*)' Analytical derivatives df/dz across that element (-->xi):'
-  do jpol=0,npol
-     do ipol=0,npol
-        call compute_coordinates(s,z,r,theta,ielfluid(iarr(3)),ipol,jpol)
-                                 elderiv(ipol,jpol)=3.d0*s*z**2+s**3+router
+     write(69,*)' Numerical derivatives df/ds across that element (-->xi):'
+     do jpol=0,npol
+        write(69,fmt1)(tmpflufieldcomp(ipol,jpol,iarr(3),1),ipol=0,npol)
      enddo
-     write(69,fmt1)(elderiv(ipol,jpol),ipol=0,npol)
-  enddo
-  write(69,*)' Numerical derivatives df/dz across that element (-->xi):'
-  do jpol=0,npol
-     write(69,fmt1)(tmpflufieldcomp(ipol,jpol,iarr(3),2),ipol=0,npol)
-  enddo
-  write(69,*)'/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/'
+     write(69,*)
 
-  write(69,*)
+     write(69,9)'  mean error df/dz          :',meandiff(2)/ &
+                                                real((npol)**2*nel_fluid)
+     write(69,8)'  min/max error df/dz       :',minval(tmpflufielddiff(:,:,:,2)),&
+                                                maxval(tmpflufielddiff(:,:,:,2))
+     iarr = maxloc(tmpflufielddiff(:,:,:,2))
+     write(69,8)'  r[m],theta max error df/dz:', &
+                         rcoord(iarr(1)-1,iarr(2)-1,ielfluid(iarr(3))), &
+                         thetacoord(iarr(1)-1,iarr(2)-1,ielfluid(iarr(3)))*180./pi
+     write(69,7)'  elem type,coarsening,axis :',eltype(ielfluid(iarr(3))), &
+                                               coarsing(ielfluid(iarr(3))), &
+                                               axis_fluid(iarr(3))
+     write(69,*)' Analytical derivatives df/dz across that element (-->xi):'
+     do jpol=0,npol
+        do ipol=0,npol
+           call compute_coordinates(s,z,r,theta,ielfluid(iarr(3)),ipol,jpol)
+                                    elderiv(ipol,jpol)=3.d0*s*z**2+s**3+router
+        enddo
+        write(69,fmt1)(elderiv(ipol,jpol),ipol=0,npol)
+     enddo
+     write(69,*)' Numerical derivatives df/dz across that element (-->xi):'
+     do jpol=0,npol
+        write(69,fmt1)(tmpflufieldcomp(ipol,jpol,iarr(3),2),ipol=0,npol)
+     enddo
+     write(69,*)'/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/'
+
+     write(69,*)
+  endif
+
 7  format(a30,a10,2(l4))
 8  format(a30,2(1pe14.4))
 9  format(a30,1pe14.4)
@@ -715,38 +703,34 @@ end subroutine test_pntwsdrvtvs_fluid
 
 !-----------------------------------------------------------------------------
 subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
-!
-! This routine computes and stores the coefficients of the diagonal 
-! mass matrix, when a weighted Gauss-Lobatto quadrature for axial elements.
-! It is built here with a factor of volume equal to s * ds * dz, as required
-! by our approach.  we also define in this routine the mass matrix weighted
-! by 1/s^2, as required by some components of the Laplacian of the
-! fields. Note the special contribution arising in the case of an
-! axial element. 
-! massmat_k    : The actual mass term:    \sigma_I \sigma_J J^{IJ} s^{IJ} 
-! massmat_kwts2: Paper 2, table 1, term A=\sigma_I \sigma_J J^{IJ} / s^{IJ}
-! jacob: just defined locally for check on extrema further below....
-! 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use data_io, ONLY : need_fluid_displ, dump_energy
-use commun, only : comm2d
-use data_pointwise, ONLY: inv_rho_fluid
-
-implicit none
-include "mesh_params.h"
-
-double precision, dimension(0:npol,0:npol,nelem),intent(in)  :: rho,lambda,mu
-double precision, dimension(0:npol,0:npol,nelem),intent(out) :: massmat_kwts2
-
-double precision, allocatable    :: massmat_k(:,:,:)   ! Mass matrix
-double precision, allocatable    :: jacob (:,:,:)      ! jacobian array
-real(kind=realkind), allocatable :: drdxi(:,:,:,:)     ! min/max derivs
-
-double precision  :: local_crd_nodes(8,2),s,z,r,theta
-integer           :: iel,inode,iarr(3),ipol,jpol
-character(len=16) :: fmt1
-double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
+  ! This routine computes and stores the coefficients of the diagonal 
+  ! mass matrix, when a weighted Gauss-Lobatto quadrature for axial elements.
+  ! It is built here with a factor of volume equal to s * ds * dz, as required
+  ! by our approach.  we also define in this routine the mass matrix weighted
+  ! by 1/s^2, as required by some components of the Laplacian of the
+  ! fields. Note the special contribution arising in the case of an
+  ! axial element. 
+  ! massmat_k    : The actual mass term:    \sigma_I \sigma_J J^{IJ} s^{IJ} 
+  ! massmat_kwts2: Paper 2, table 1, term A=\sigma_I \sigma_J J^{IJ} / s^{IJ}
+  ! jacob: just defined locally for check on extrema further below....
+  
+  use data_io,          only : need_fluid_displ, dump_energy
+  use commun,           only : comm2d
+  use data_pointwise,   only: inv_rho_fluid
+  
+  include "mesh_params.h"
+  
+  double precision, dimension(0:npol,0:npol,nelem),intent(in)  :: rho,lambda,mu
+  double precision, dimension(0:npol,0:npol,nelem),intent(out) :: massmat_kwts2
+  
+  double precision, allocatable    :: massmat_k(:,:,:)   ! Mass matrix
+  double precision, allocatable    :: jacob (:,:,:)      ! jacobian array
+  real(kind=realkind), allocatable :: drdxi(:,:,:,:)     ! min/max derivs
+  
+  double precision  :: local_crd_nodes(8,2),s,z,r,theta
+  integer           :: iel,inode,iarr(3),ipol,jpol
+  character(len=16) :: fmt1
+  double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
 
   allocate(massmat_k(0:npol,0:npol,1:nelem),jacob(0:npol,0:npol,1:nelem))
   allocate(drdxi(0:npol,0:npol,1:nelem,1:4))
@@ -754,16 +738,14 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
 
   massmat_k(:,:,:) = zero; massmat_kwts2(:,:,:) = zero
 
-!----------------------
   do iel = 1, nelem
-!----------------------
      do inode = 1, 8
         call compute_coordinates_mesh(local_crd_nodes(inode,1),&
              local_crd_nodes(inode,2),iel,inode)
      end do
 
-! computing global arrays for the respective coordinate mapping derivatives
-! ONLY needed for min/max write statements below!
+     ! computing global arrays for the respective coordinate mapping derivatives
+     ! only needed for min/max write statements below!
      if ( axis(iel) ) then
         do ipol  = 0, npol
            do jpol = 0, npol
@@ -784,7 +766,7 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
         enddo
      endif
 
-! ::::::::::::::::non-axial elements::::::::::::::::
+     ! ::::::::::::::::non-axial elements::::::::::::::::
      if ( .not. axis(iel)) then
         do ipol  = 0, npol
            do jpol = 0, npol
@@ -799,7 +781,7 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
            end do
         end do
 
-! ::::::::::::::::axial elements::::::::::::::::
+     ! ::::::::::::::::axial elements::::::::::::::::
      elseif (axis(iel)) then
         do ipol  = 0, npol ! Be careful here !!!!
            do jpol = 0, npol
@@ -819,18 +801,16 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
                    wt_axial_k(ipol)*wt(jpol)
            end do
         end do
-!TNM ADDITION NOV 2006: for ipol=0
-           do jpol = 0, npol
-              massmat_kwts2(0,jpol,iel) = &
-                   jacobian(xi_k(0),eta(jpol),local_crd_nodes,iel)* &
-                   (s_over_oneplusxi_axis(xi_k(0),eta(jpol),&
-                   local_crd_nodes,iel))**(-1) * &
-                   wt_axial_k(0)*wt(jpol)
-           enddo
-! END ADDITION
+        do jpol = 0, npol
+           massmat_kwts2(0,jpol,iel) = &
+                jacobian(xi_k(0),eta(jpol),local_crd_nodes,iel)* &
+                (s_over_oneplusxi_axis(xi_k(0),eta(jpol),&
+                local_crd_nodes,iel))**(-1) * &
+                wt_axial_k(0)*wt(jpol)
+        enddo
 
-! check consistency of s/(1+xi) definitions...
-! axial element but off-axis
+        ! check consistency of s/(1+xi) definitions...
+        ! axial element but off-axis
         do ipol = 1, npol
            do jpol = 0, npol
               if ( .not. dblreldiff_small( scoord(ipol,jpol,iel)/ &
@@ -852,13 +832,10 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
         end do
 
      end if ! axial?
+  end do ! iel
 
-!----------------------
-  end do
-!----------------------
-
-  if(lpr)write(6,*)'  solid mass matrix...'; call flush(6)
-! Solid inverse mass term_____________________________________________
+  if (lpr) write(6,*) '  solid mass matrix...'
+  ! Solid inverse mass term
   do iel=1,nel_solid
      do ipol = 0, npol
         do jpol = 0, npol
@@ -868,17 +845,16 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
      end do
   enddo
 
-! unassembled mass matrix in solid for energy.
-   if (dump_energy) then
-     allocate(unassem_mass_rho_solid(0:npol,0:npol,nel_solid))
-     unassem_mass_rho_solid = inv_mass_rho
-     if (src_type(1)=='dipole') &
-                    unassem_mass_rho_solid = two * unassem_mass_rho_solid
-   endif
+  ! unassembled mass matrix in solid for energy.
+  if (dump_energy) then
+    allocate(unassem_mass_rho_solid(0:npol,0:npol,nel_solid))
+    unassem_mass_rho_solid = inv_mass_rho
+    if (src_type(1)=='dipole') &
+                   unassem_mass_rho_solid = two * unassem_mass_rho_solid
+  endif
 
 
-
-! Exchange boundary information_______________________________________
+  ! Exchange boundary information
   if(lpr)write(6,*)'  assemble solid mass matrix...'; call flush(6)
   call comm2d(inv_mass_rho,nel_solid,1,'solid')
 
@@ -899,10 +875,10 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
 
   if (src_type(1)=='dipole') inv_mass_rho = half * inv_mass_rho
 
-! Fluid inverse mass term_____________________________________________
+  ! Fluid inverse mass term
   if(lpr)write(6,*)'  fluid mass matrix...'; call flush(6)
   do iel=1,nel_fluid
-! check if fluid element is really fluid throughout
+     ! check if fluid element is really fluid throughout
      if (maxval(mu(:,:,ielfluid(iel)))> zero) then
         call compute_coordinates(s,z,r,theta,ielfluid(iel), &
                                  int(npol/2),int(npol/2))
@@ -917,13 +893,13 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
 
      do ipol = 0, npol
         do jpol = 0, npol
-! since mu=0 only consider lambda here for the
-! bulk modulus/incompressibility kappa = lambda + 2/3 mu
-! in the ideal fluid that harbors the outer core...
+           ! since mu=0 only consider lambda here for the
+           ! bulk modulus/incompressibility kappa = lambda + 2/3 mu
+           ! in the ideal fluid that harbors the outer core...
            inv_mass_fluid(ipol,jpol,iel)=massmat_k(ipol,jpol,ielfluid(iel))/&
                                          lambda(ipol,jpol,ielfluid(iel))
 
-! inverse density inside the fluid, needed to calculate displacement in fluid
+           ! inverse density inside the fluid, needed to calculate displacement in fluid
            if (need_fluid_displ) &
               inv_rho_fluid(ipol,jpol,iel) = one / rho(ipol,jpol,ielfluid(iel))
         end do
@@ -931,14 +907,14 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
   enddo
 
 
-! unassembled mass matrix in fluid for the energy.
-   if (dump_energy) then 
-     allocate(unassem_mass_lam_fluid(0:npol,0:npol,nel_fluid))
-     unassem_mass_lam_fluid = inv_mass_fluid
-   endif
+  ! unassembled mass matrix in fluid for the energy.
+  if (dump_energy) then 
+    allocate(unassem_mass_lam_fluid(0:npol,0:npol,nel_fluid))
+    unassem_mass_lam_fluid = inv_mass_fluid
+  endif
 
 
-! Exchange boundary information_______________________________________
+  ! Exchange boundary information
   if(lpr)write(6,*)'  assemble fluid mass matrix...'; call flush(6)
   call comm2d(inv_mass_fluid,nel_fluid,1,'fluid')
 
@@ -959,151 +935,152 @@ double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
 
 
 
+  ! In the remainder: document min/max values and locations for velocities, 
+  !    density, Jacobian, mass terms, GLL points. Lagrange derivatives etc.
+  if (verbose > 1) then
+     fmt1 = "(a18,K(f9.4))"
+     write(fmt1(6:6),'(i1.1)') npol+1
+     write(69,*)
+     write(69,*)'-+-+-+-+-+-+-+-+-+-+ Integration weights +-+-+-+-+-+-+-+-+-+-+-+'
+     write(69,fmt1)'GLJ sigma_I ax   :',(wt_axial_k(ipol),ipol=0,npol)  
+     write(69,fmt1)'GLL sigma_J nonax:',(wt(ipol),ipol=0,npol)  
 
-! In the remainder: document min/max values and locations for velocities, 
-!    density, Jacobian, mass terms, GLL points. Lagrange derivatives etc.
-  fmt1 = "(a18,K(f9.4))"
-  write(fmt1(6:6),'(i1.1)') npol+1
-  write(69,*)
-  write(69,*)'-+-+-+-+-+-+-+-+-+-+ Integration weights +-+-+-+-+-+-+-+-+-+-+-+'
-  write(69,fmt1)'GLJ sigma_I ax   :',(wt_axial_k(ipol),ipol=0,npol)  
-  write(69,fmt1)'GLL sigma_J nonax:',(wt(ipol),ipol=0,npol)  
+     fmt1 = "(a11,K(f9.4))"
+     write(fmt1(6:6),'(i1.1)') npol+1
+     write(69,*)
+     write(69,*)'-+-+-+- Gauss-Lobatto-Legendre pts, Lagrange derivatives +-+-+-+'
+     write(69,fmt1)'GLL eta  :',(eta(ipol),ipol=0,npol)
+     write(69,*)
+     write(69,*)' Lagrange derivatives eta: \partial_\eta (l_j(\eta_q)), --> li_i'
+     do jpol=0,npol
+        write(69,fmt1)'',(G2(ipol,jpol),ipol=0,npol)
+     enddo
+     write(69,*)' transpose derivatives eta: --> eta_p'
+     do jpol=0,npol
+        write(69,fmt1)'',(G2T(ipol,jpol),ipol=0,npol)
+     enddo
 
-  fmt1 = "(a11,K(f9.4))"
-  write(fmt1(6:6),'(i1.1)') npol+1
-  write(69,*)
-  write(69,*)'-+-+-+- Gauss-Lobatto-Legendre pts, Lagrange derivatives +-+-+-+'
-  write(69,fmt1)'GLL eta  :',(eta(ipol),ipol=0,npol)
-  write(69,*)
-  write(69,*)' Lagrange derivatives eta: \partial_\eta (l_j(\eta_q)), --> li_i'
-  do jpol=0,npol
-     write(69,fmt1)'',(G2(ipol,jpol),ipol=0,npol)
-  enddo
-  write(69,*)' transpose derivatives eta: --> eta_p'
-  do jpol=0,npol
-     write(69,fmt1)'',(G2T(ipol,jpol),ipol=0,npol)
-  enddo
+     write(69,*)
+     write(69,*)'-+-+-+ Gauss-Lobatto-Jacobi (0,1) pts, Lagrange derivatives +-+-'
+     write(69,fmt1)'GLJ xi_ax:',(xi_k(ipol),ipol=0,npol)
+     write(69,*)
+     write(69,*)' Lagrange derivatives G1 xi : \partial_\xi (l_i(\xi_p)), --> li_i'
+     do jpol=0,npol
+        write(69,fmt1)'',(G1(ipol,jpol),ipol=0,npol)
+     enddo
+     write(69,*)' transpose G1T derivatives xi --> xi_p'
+     do jpol=0,npol
+        write(69,fmt1)'',(G1T(ipol,jpol),ipol=0,npol)
+     enddo  
 
-  write(69,*)
-  write(69,*)'-+-+-+ Gauss-Lobatto-Jacobi (0,1) pts, Lagrange derivatives +-+-'
-  write(69,fmt1)'GLJ xi_ax:',(xi_k(ipol),ipol=0,npol)
-  write(69,*)
-  write(69,*)' Lagrange derivatives G1 xi : \partial_\xi (l_i(\xi_p)), --> li_i'
-  do jpol=0,npol
-     write(69,fmt1)'',(G1(ipol,jpol),ipol=0,npol)
-  enddo
-  write(69,*)' transpose G1T derivatives xi --> xi_p'
-  do jpol=0,npol
-     write(69,fmt1)'',(G1T(ipol,jpol),ipol=0,npol)
-  enddo  
+     write(69,*)' Lagrange derivatives axial vector: \partial_\xi (l_i(\xi_0)) '
+     write(69,fmt1)'',(G0(ipol),ipol=0,npol)
+     write(69,*)' '
 
-  write(69,*)' Lagrange derivatives axial vector: \partial_\xi (l_i(\xi_0)) '
-  write(69,fmt1)'',(G0(ipol),ipol=0,npol)
-  write(69,*)' '
-
-  write(69,*)'+-+-+-+-+-+- Coordinate mapping/derivative extrema +-+-+-+-+-+--'
-  iarr = minloc(drdxi(:,:,:,1))
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Min,r,th dsdxi [m,m,deg]        :',minval(drdxi(:,:,:,1)), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-  iarr = maxloc(drdxi(:,:,:,1))
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Max,r,th dsdxi [m,m,deg]        :',maxval(drdxi(:,:,:,1)), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-
-  iarr = minloc(drdxi(:,:,:,2))
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Min,r,th dzdxi [m,m,deg]        :',minval(drdxi(:,:,:,2)), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-  iarr = maxloc(drdxi(:,:,:,2))
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Max,r,th dzdxi [m,m,deg]        :',maxval(drdxi(:,:,:,2)), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-
-  iarr = minloc(drdxi(:,:,:,3))
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Min,r,th dsdeta [m,m,deg]       :',minval(drdxi(:,:,:,3)), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-  iarr = maxloc(drdxi(:,:,:,3))
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Max,r,th dsdeta [m,m,deg]       :',maxval(drdxi(:,:,:,3)), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-
-  iarr = minloc(drdxi(:,:,:,4))
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Min,r,th dzdeta [m,m,deg]       :',minval(drdxi(:,:,:,4)), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-  iarr = maxloc(drdxi(:,:,:,4))
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Max,r,th dzdeta [m,m,deg]       :',maxval(drdxi(:,:,:,4)), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-
-  write(69,*)' '
-  write(69,*)'+-+-+-+-+-+-+-+- Jacobian & mass term extrema -+-+-+-+-+-+-+-+-+'
-  write(69,*)'   Jacobian  = dsdxi dzdeta - dsdeta dzdxi'
-  write(69,*)'   (mass term)_{IJ} = Jacobian_{IJ} \sigma_I \sigma_J s_{IJ}))'
-  iarr = minloc(jacob)
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Min,r,th Jacobian [m,m,deg]        :',minval(jacob), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-  iarr = maxloc(jacob)
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Max,r,th Jacobian [m,m,deg]        :',maxval(jacob), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
-  
-  iarr = minloc(massmat_k)
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Min,r,th mass term [m^3,m,deg]     :',minval(massmat_k), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
-
-  iarr = maxloc(massmat_k)
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Max,r,th mass term [m^3,m,deg]     :',maxval(massmat_k), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
-  iarr = minloc(inv_mass_rho)
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Min,r,th sol. invmass [1/kg,m,deg] :',minval(inv_mass_rho), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
-  iarr = maxloc(inv_mass_rho)
-  theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-  write(69,9)'Max,r,th sol. invmass [1/kg,m,deg] :',maxval(inv_mass_rho), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
-  if (have_fluid) then
-     iarr = minloc(inv_mass_fluid)
+     write(69,*)'+-+-+-+-+-+- Coordinate mapping/derivative extrema +-+-+-+-+-+--'
+     iarr = minloc(drdxi(:,:,:,1))
      theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-     write(69,9)'Min,r,th flu. invmass [N/m^5,m,deg]:',minval(inv_mass_fluid), &
-          rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
-     iarr = maxloc(inv_mass_fluid)
+     write(69,9)'Min,r,th dsdxi [m,m,deg]        :',minval(drdxi(:,:,:,1)), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+     iarr = maxloc(drdxi(:,:,:,1))
      theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
-     write(69,9)'Max,r,th flu. invmass [N/m^5,m,deg]:',maxval(inv_mass_fluid), &
-                                rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
+     write(69,9)'Max,r,th dsdxi [m,m,deg]        :',maxval(drdxi(:,:,:,1)), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+
+     iarr = minloc(drdxi(:,:,:,2))
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Min,r,th dzdxi [m,m,deg]        :',minval(drdxi(:,:,:,2)), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+     iarr = maxloc(drdxi(:,:,:,2))
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Max,r,th dzdxi [m,m,deg]        :',maxval(drdxi(:,:,:,2)), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+
+     iarr = minloc(drdxi(:,:,:,3))
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Min,r,th dsdeta [m,m,deg]       :',minval(drdxi(:,:,:,3)), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+     iarr = maxloc(drdxi(:,:,:,3))
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Max,r,th dsdeta [m,m,deg]       :',maxval(drdxi(:,:,:,3)), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+
+     iarr = minloc(drdxi(:,:,:,4))
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Min,r,th dzdeta [m,m,deg]       :',minval(drdxi(:,:,:,4)), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+     iarr = maxloc(drdxi(:,:,:,4))
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Max,r,th dzdeta [m,m,deg]       :',maxval(drdxi(:,:,:,4)), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+
+     write(69,*)' '
+     write(69,*)'+-+-+-+-+-+-+-+- Jacobian & mass term extrema -+-+-+-+-+-+-+-+-+'
+     write(69,*)'   Jacobian  = dsdxi dzdeta - dsdeta dzdxi'
+     write(69,*)'   (mass term)_{IJ} = Jacobian_{IJ} \sigma_I \sigma_J s_{IJ}))'
+     iarr = minloc(jacob)
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Min,r,th Jacobian [m,m,deg]        :',minval(jacob), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+     iarr = maxloc(jacob)
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Max,r,th Jacobian [m,m,deg]        :',maxval(jacob), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta
+     
+     iarr = minloc(massmat_k)
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Min,r,th mass term [m^3,m,deg]     :',minval(massmat_k), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
+
+     iarr = maxloc(massmat_k)
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Max,r,th mass term [m^3,m,deg]     :',maxval(massmat_k), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
+     iarr = minloc(inv_mass_rho)
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Min,r,th sol. invmass [1/kg,m,deg] :',minval(inv_mass_rho), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
+     iarr = maxloc(inv_mass_rho)
+     theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+     write(69,9)'Max,r,th sol. invmass [1/kg,m,deg] :',maxval(inv_mass_rho), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
+     if (have_fluid) then
+        iarr = minloc(inv_mass_fluid)
+        theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+        write(69,9)'Min,r,th flu. invmass [N/m^5,m,deg]:',minval(inv_mass_fluid), &
+             rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
+        iarr = maxloc(inv_mass_fluid)
+        theta = thetacoord(iarr(1)-1,iarr(2)-1,iarr(3)); theta = theta*180./pi
+        write(69,9)'Max,r,th flu. invmass [N/m^5,m,deg]:',maxval(inv_mass_fluid), &
+                                   rcoord(iarr(1)-1,iarr(2)-1,iarr(3)),theta 
+     endif
+
+
+     write(69,*)' '
+     write(69,*)'+-+-+-+-+-+-+-+-+-+-+- Elastic extrema -+-+-+-+-+-+-+-+-+-+-+-+-'
+     iarr = minloc(sqrt((lambda+2*mu)/rho))
+     write(69,8)'Min,r P-vel [m/s,m]   :',minval(dsqrt((lambda+2*mu)/rho)), &
+                                        rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
+     iarr = minloc(sqrt(mu/rho)) 
+     write(69,8)'Min,r S-vel [m/s,m]   :',minval(dsqrt(mu/rho)), &
+                                         rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
+     iarr = maxloc(sqrt((lambda+2*mu)/rho)) 
+     write(69,8)'Max,r P-vel [m/s,m]   :',maxval(dsqrt((lambda+2*mu)/rho)), &
+                                         rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
+     iarr = maxloc(sqrt(mu/rho))
+     write(69,8)'Max,r S-vel [m/s,m]   :',maxval(dsqrt(mu/rho)), &
+                                         rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
+     iarr = minloc(rho)
+     write(69,8)'Min,r rho [kg/m^3,m]  :',minval(rho), &
+                                         rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
+     iarr = maxloc(rho)
+     write(69,8)'Max,r rho [kg/m^3,m]  :',maxval(rho), &
+                                          rcoord(iarr(1)-1,iarr(2)-1,iarr(3))/1.d3
+     write(69,8)'Min/max mu [N/m^2]    :',minval(mu),maxval(mu)
+     write(69,8)'Min/max lambda [N/m^2]:',minval(lambda),maxval(lambda)
+
+     write(69,*)'' 
   endif
-
-
-  write(69,*)' '
-  write(69,*)'+-+-+-+-+-+-+-+-+-+-+- Elastic extrema -+-+-+-+-+-+-+-+-+-+-+-+-'
-  iarr = minloc(sqrt((lambda+2*mu)/rho))
-  write(69,8)'Min,r P-vel [m/s,m]   :',minval(dsqrt((lambda+2*mu)/rho)), &
-                                     rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
-  iarr = minloc(sqrt(mu/rho)) 
-  write(69,8)'Min,r S-vel [m/s,m]   :',minval(dsqrt(mu/rho)), &
-                                      rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
-  iarr = maxloc(sqrt((lambda+2*mu)/rho)) 
-  write(69,8)'Max,r P-vel [m/s,m]   :',maxval(dsqrt((lambda+2*mu)/rho)), &
-                                      rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
-  iarr = maxloc(sqrt(mu/rho))
-  write(69,8)'Max,r S-vel [m/s,m]   :',maxval(dsqrt(mu/rho)), &
-                                      rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
-  iarr = minloc(rho)
-  write(69,8)'Min,r rho [kg/m^3,m]  :',minval(rho), &
-                                      rcoord(iarr(1)-1,iarr(2)-1,iarr(3))
-  iarr = maxloc(rho)
-  write(69,8)'Max,r rho [kg/m^3,m]  :',maxval(rho), &
-                                       rcoord(iarr(1)-1,iarr(2)-1,iarr(3))/1.d3
-  write(69,8)'Min/max mu [N/m^2]    :',minval(mu),maxval(mu)
-  write(69,8)'Min/max lambda [N/m^2]:',minval(lambda),maxval(lambda)
-
-  write(69,*)'' 
 
 8 format(a25,2(1pe12.4))
 9 format(a37,3(1pe12.4))
@@ -1116,48 +1093,47 @@ end subroutine def_mass_matrix_k
 
 !-----------------------------------------------------------------------------
 subroutine compute_mass_earth(rho)
-!
-! A straight computation of the mass of the sphere and that of its 
-! solid and fluid sub-volumes. This is the same as computing the volume 
-! (see def_grid.f90), but with a multiplicative density factor, i.e. the 
-! actual mass matrix. The comparison to the exact value is merely 
-! done as an indicator and does not cause any error. One should keep an eye 
-! on these values when generating any new kind of background model for which 
-! one then needs to dig up the total mass...
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  ! A straight computation of the mass of the sphere and that of its 
+  ! solid and fluid sub-volumes. This is the same as computing the volume 
+  ! (see def_grid.f90), but with a multiplicative density factor, i.e. the 
+  ! actual mass matrix. The comparison to the exact value is merely 
+  ! done as an indicator and does not cause any error. One should keep an eye 
+  ! on these values when generating any new kind of background model for which 
+  ! one then needs to dig up the total mass...
 
-use def_grid, ONLY : massmatrix
-use background_models, ONLY: velocity
-use commun, ONLY : psum
-use data_io, ONLY : infopath,lfinfo
-
-implicit none
-include 'mesh_params.h'
-
-double precision, intent(in)     :: rho(0:npol,0:npol,nelem)
-integer                          :: iel,ipol,jpol,idom,iidom,idisc
-integer                          :: count_solid,count_fluid,count_sic
-double precision                 :: mass_glob,mass_solid,mass_fluid,mass_sic
-double precision                 :: mass_glob_num,mass_solid_num
-double precision                 :: mass_fluid_num,mass_sic_num
-double precision                 :: mass_layer(ndisc)
-double precision                 :: r,density,vs,dr
-real(kind=realkind), allocatable :: massmat(:,:,:),massmat_solid(:,:,:)
-real(kind=realkind), allocatable :: massmat_fluid(:,:,:)
-!af pgf
-character(len=100) :: modelstring
+  use def_grid,             only : massmatrix
+  use background_models,    only : velocity
+  use commun,               only : psum
+  use data_io,              only : infopath,lfinfo
+  
+  include 'mesh_params.h'
+  
+  double precision, intent(in)     :: rho(0:npol,0:npol,nelem)
+  integer                          :: iel,ipol,jpol,idom,iidom,idisc
+  integer                          :: count_solid,count_fluid,count_sic
+  double precision                 :: mass_glob,mass_solid,mass_fluid,mass_sic
+  double precision                 :: mass_glob_num,mass_solid_num
+  double precision                 :: mass_fluid_num,mass_sic_num
+  double precision                 :: mass_layer(ndisc)
+  double precision                 :: r,density,vs,dr
+  real(kind=realkind), allocatable :: massmat(:,:,:),massmat_solid(:,:,:)
+  real(kind=realkind), allocatable :: massmat_fluid(:,:,:)
+  character(len=100)               :: modelstring
 
   allocate(massmat(0:npol,0:npol,1:nelem))
   allocate(massmat_solid(0:npol,0:npol,1:nel_solid))
   allocate(massmat_fluid(0:npol,0:npol,1:nel_fluid))
   
-  mass_fluid=zero; mass_glob=zero; mass_solid=zero; mass_sic=zero
-  count_fluid=0; count_solid = 0; count_sic = 0
+  mass_fluid = zero
+  mass_glob = zero
+  mass_solid = zero
+  mass_sic = zero
+  count_fluid = 0
+  count_solid = 0
+  count_sic = 0
 
-!af
   modelstring=bkgrdmodel!(1:(lfbkgrdmodel))
-! actual masses, calculated by summation over layers spaced 100 meters
+  ! actual masses, calculated by summation over layers spaced 100 meters
   do iel=1,int(router/100.)+1
      r = router-(real(iel)-.5)*100.
      dr = (router-(real(iel)-1.)*100.)**3 - (router-(real(iel)*100.))**3
@@ -1178,7 +1154,7 @@ character(len=100) :: modelstring
      else
         mass_solid = mass_solid + density*dr
      endif
-! Solid inner core only
+     ! Solid inner core only
      if (idom==ndisc) mass_sic = mass_sic + density*dr
   enddo
   mass_glob  = 4.d0/3.d0*pi*mass_glob
@@ -1189,7 +1165,7 @@ character(len=100) :: modelstring
   mass_glob_num=zero; mass_solid_num=zero; mass_fluid_num=zero
   mass_sic_num=zero
 
-! numerically computed masses
+  ! numerically computed masses
   call massmatrix(massmat,nelem,'total')
   call massmatrix(massmat_solid,nel_solid,'solid')
   call massmatrix(massmat_fluid,nel_fluid,'fluid')
@@ -1199,12 +1175,12 @@ character(len=100) :: modelstring
         do jpol = 0, npol
            mass_glob_num = mass_glob_num + &
                            rho(ipol,jpol,iel)*massmat(ipol,jpol,iel)
-! solid inner core only
+           ! solid inner core only
            if (rcoord(npol/2,npol/2,iel)< discont(ndisc)) &
                 mass_sic_num = mass_sic_num + & 
                                rho(ipol,jpol,iel)*massmat(ipol,jpol,iel)
 
-! compute mass for each layer between discontinuities
+           ! compute mass for each layer between discontinuities
            do idisc = 1,ndisc-1
               if (rcoord(npol/2,npol/2,iel) <= discont(idisc) .and. &
                   rcoord(npol/2,npol/2,iel) >  discont(idisc+1) ) then
@@ -1286,93 +1262,89 @@ end subroutine compute_mass_earth
 
 !-----------------------------------------------------------------------------
 subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
-!
-! This routine is a merged version to minimize global work 
-! array definitions. The terms alpha_wt_k etc. are now 
-! merely elemental arrays, and defined on the fly when 
-! computing the global, final precomputable matrices 
-! for the solid stiffness term. The loop is over solid elements only.
-! Tarje, Sept 2006.
-!
-! Adding optional arguments for anisotropy, MvD
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use attenuation, only: att_coarse_grained
-implicit none
-include "mesh_params.h"
-
-double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
-double precision, dimension(0:npol,0:npol,nelem), intent(in) :: massmat_kwts2
-double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
-
-double precision :: local_crd_nodes(8,2)
-integer          :: ielem,ipol,jpol,inode
-double precision :: dsdxi,dzdeta,dzdxi,dsdeta
-
-double precision :: alpha_wt_k(0:npol,0:npol)
-double precision :: beta_wt_k(0:npol,0:npol)
-double precision :: gamma_wt_k(0:npol,0:npol)
-double precision :: delta_wt_k(0:npol,0:npol)
-double precision :: epsil_wt_k(0:npol,0:npol)
-double precision :: zeta_wt_k(0:npol,0:npol)
-
-double precision :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-double precision :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-double precision :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-double precision :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-double precision :: M_s_xi_wt_k(0:npol,0:npol)
-double precision :: M_z_xi_wt_k(0:npol,0:npol)
-double precision :: M_z_eta_wt_k(0:npol,0:npol)
-double precision :: M_s_eta_wt_k(0:npol,0:npol)
-
-! non-diagfact
-double precision, allocatable :: non_diag_fact(:,:)
-
-! Allocate Global Stiffness Arrays depending on source type:
+  ! This routine is a merged version to minimize global work 
+  ! array definitions. The terms alpha_wt_k etc. are now 
+  ! merely elemental arrays, and defined on the fly when 
+  ! computing the global, final precomputable matrices 
+  ! for the solid stiffness term. The loop is over solid elements only.
+  ! Tarje, Sept 2006.
+  !
+  ! Adding optional arguments for anisotropy, MvD
+  
+  use attenuation, only: att_coarse_grained
+  include "mesh_params.h"
+  
+  double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
+  double precision, dimension(0:npol,0:npol,nelem), intent(in) :: massmat_kwts2
+  double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
+  
+  double precision :: local_crd_nodes(8,2)
+  integer          :: ielem,ipol,jpol,inode
+  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  
+  double precision :: alpha_wt_k(0:npol,0:npol)
+  double precision :: beta_wt_k(0:npol,0:npol)
+  double precision :: gamma_wt_k(0:npol,0:npol)
+  double precision :: delta_wt_k(0:npol,0:npol)
+  double precision :: epsil_wt_k(0:npol,0:npol)
+  double precision :: zeta_wt_k(0:npol,0:npol)
+  
+  double precision :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  double precision :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  double precision :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  double precision :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  double precision :: M_s_xi_wt_k(0:npol,0:npol)
+  double precision :: M_z_xi_wt_k(0:npol,0:npol)
+  double precision :: M_z_eta_wt_k(0:npol,0:npol)
+  double precision :: M_s_eta_wt_k(0:npol,0:npol)
+  
+  ! non-diagfact
+  double precision, allocatable :: non_diag_fact(:,:)
+  
+  ! Allocate Global Stiffness Arrays depending on source type:
   select case (src_type(1))
-    
-    case ('dipole')
-    
-        allocate(M13s(0:npol,0:npol,nel_solid))
-        allocate(M33s(0:npol,0:npol,nel_solid))
-        allocate(M43s(0:npol,0:npol,nel_solid))
-       
-        allocate(M_5(0:npol,0:npol,nel_solid))
-        allocate(M_6(0:npol,0:npol,nel_solid))
-        allocate(M_7(0:npol,0:npol,nel_solid))
-        allocate(M_8(0:npol,0:npol,nel_solid))
-        
-        allocate(M_w2(0:npol,0:npol,nel_solid))
-        allocate(M_w3(0:npol,0:npol,nel_solid))
-        
-        allocate(M0_w4(0:npol,nel_solid))
-        allocate(M0_w5(0:npol,nel_solid))
-        allocate(M0_w6(0:npol,nel_solid))
-        allocate(M0_w7(0:npol,nel_solid))
-        allocate(M0_w8(0:npol,nel_solid))
-        allocate(M0_w9(0:npol,nel_solid))
-        allocate(M0_w10(0:npol,nel_solid))
-    
-    case ('quadpole')
+  
+  case ('dipole')
+  
+      allocate(M13s(0:npol,0:npol,nel_solid))
+      allocate(M33s(0:npol,0:npol,nel_solid))
+      allocate(M43s(0:npol,0:npol,nel_solid))
+     
+      allocate(M_5(0:npol,0:npol,nel_solid))
+      allocate(M_6(0:npol,0:npol,nel_solid))
+      allocate(M_7(0:npol,0:npol,nel_solid))
+      allocate(M_8(0:npol,0:npol,nel_solid))
+      
+      allocate(M_w2(0:npol,0:npol,nel_solid))
+      allocate(M_w3(0:npol,0:npol,nel_solid))
+      
+      allocate(M0_w4(0:npol,nel_solid))
+      allocate(M0_w5(0:npol,nel_solid))
+      allocate(M0_w6(0:npol,nel_solid))
+      allocate(M0_w7(0:npol,nel_solid))
+      allocate(M0_w8(0:npol,nel_solid))
+      allocate(M0_w9(0:npol,nel_solid))
+      allocate(M0_w10(0:npol,nel_solid))
+  
+  case ('quadpole')
 
-        allocate(M1phi(0:npol,0:npol,nel_solid))
-        allocate(M2phi(0:npol,0:npol,nel_solid))
-        allocate(M4phi(0:npol,0:npol,nel_solid))
-        
-        allocate(M_5(0:npol,0:npol,nel_solid))
-        allocate(M_6(0:npol,0:npol,nel_solid))
-        allocate(M_7(0:npol,0:npol,nel_solid))
-        allocate(M_8(0:npol,0:npol,nel_solid))
-        
-        allocate(M_w2(0:npol,0:npol,nel_solid))
-        allocate(M_w3(0:npol,0:npol,nel_solid))
-        allocate(M_w4(0:npol,0:npol,nel_solid))
-        allocate(M_w5(0:npol,0:npol,nel_solid))
-        
-        allocate(M0_w4(0:npol,nel_solid))
-        allocate(M0_w5(0:npol,nel_solid))
-        allocate(M0_w6(0:npol,nel_solid))
+      allocate(M1phi(0:npol,0:npol,nel_solid))
+      allocate(M2phi(0:npol,0:npol,nel_solid))
+      allocate(M4phi(0:npol,0:npol,nel_solid))
+      
+      allocate(M_5(0:npol,0:npol,nel_solid))
+      allocate(M_6(0:npol,0:npol,nel_solid))
+      allocate(M_7(0:npol,0:npol,nel_solid))
+      allocate(M_8(0:npol,0:npol,nel_solid))
+      
+      allocate(M_w2(0:npol,0:npol,nel_solid))
+      allocate(M_w3(0:npol,0:npol,nel_solid))
+      allocate(M_w4(0:npol,0:npol,nel_solid))
+      allocate(M_w5(0:npol,0:npol,nel_solid))
+      
+      allocate(M0_w4(0:npol,nel_solid))
+      allocate(M0_w5(0:npol,nel_solid))
+      allocate(M0_w6(0:npol,nel_solid))
 
   end select
 
@@ -1403,10 +1375,7 @@ double precision, allocatable :: non_diag_fact(:,:)
      V0_z_xi = 0
   endif
 
-
-!-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
-! NON DIAG FAC------------- --<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
-!-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
+  ! NON DIAG FAC
   allocate(non_diag_fact(0:npol,1:nel_solid))
   non_diag_fact(:,:) = zero
   do ielem = 1, nel_solid
@@ -1424,13 +1393,9 @@ double precision, allocatable :: non_diag_fact(:,:)
      end if
   end do
 
-!-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
-! SOLID STIFFNESS TERMS-------<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
-!-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->-<->
+  ! SOLID STIFFNESS TERMS
 
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  do ielem=1,nel_solid
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  do ielem=1, nel_solid
 
      alpha_wt_k(:,:) = zero
      beta_wt_k(:,:)  = zero
@@ -1454,7 +1419,7 @@ double precision, allocatable :: non_diag_fact(:,:)
              local_crd_nodes(inode,2),ielsolid(ielem),inode)
      end do
 
-! ::::::::::::::::non-axial elements::::::::::::::::
+     ! ::::::::::::::::non-axial elements::::::::::::::::
      if ( .not. axis_solid(ielem) ) then
         do ipol  = 0, npol
            do jpol = 0, npol
@@ -1518,7 +1483,7 @@ double precision, allocatable :: non_diag_fact(:,:)
            enddo
         enddo
 
-! ::::::::::::::::axial elements::::::::::::::::
+     ! ::::::::::::::::axial elements::::::::::::::::
      elseif ( axis_solid(ielem) ) then
         do jpol  = 0, npol
            do ipol = 0, npol
@@ -1621,9 +1586,7 @@ double precision, allocatable :: non_diag_fact(:,:)
         enddo
      endif ! axis_solid or not
 
-!    +++++++++++++++++++++
      do jpol=0,npol
-!    +++++++++++++++++++++
        select case (src_type(1))
        case ('monopole')
          if (ani_true) then
@@ -1696,13 +1659,8 @@ double precision, allocatable :: non_diag_fact(:,:)
 
       end select
 
-!    +++++++++++++++++++++
      enddo  ! jpol
-!    +++++++++++++++++++++
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   enddo ! solid elements
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   if (anel_true .and. att_coarse_grained) then
      allocate(Y_cg4(1:4,nel_solid))
@@ -1750,15 +1708,16 @@ double precision, allocatable :: non_diag_fact(:,:)
 
   endif
 
-  write(69,*)' '
-  write(69,*)'Min/max M11s [kg/s^2]:', minval(M11s),maxval(M11s)
-  write(69,*)' '
+  if (verbose > 1) then
+     write(69,*) ' '
+     write(69,*) 'Min/max M11s [kg/s^2]:', minval(M11s),maxval(M11s)
+     write(69,*) ' '
+  endif
 
   deallocate(non_diag_fact)
 
 end subroutine def_solid_stiffness_terms
 !=============================================================================
-
 
 !-----------------------------------------------------------------------------
 subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
@@ -1770,49 +1729,45 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                        Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use global_parameters
-implicit none
-include "mesh_params.h"
-
-integer, intent(in) :: ielem,jpol
-
-double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
-
-double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-double precision, intent(in) :: local_crd_nodes(8,2)
-
-double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
-
-integer          :: ipol
-double precision :: dsdxi,dzdeta,dzdxi,dsdeta
-
-! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
+  include "mesh_params.h"
+  
+  integer, intent(in) :: ielem,jpol
+  
+  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
+  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
+  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  
+  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
+  double precision, intent(in) :: local_crd_nodes(8,2)
+  
+  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  
+  integer          :: ipol
+  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  
+  ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
      M0_w1(0:npol,1:nel_solid) = zero
      M0_w2(0:npol,1:nel_solid) = zero
      M0_w3(0:npol,1:nel_solid) = zero
   endif
   
-! ----------------
   do ipol=0,npol
-! ----------------
      M11s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
           two*mu(ipol,jpol,ielsolid(ielem)))*delta_wt_k(ipol,jpol)+&
           mu(ipol,jpol,ielsolid(ielem))*alpha_wt_k(ipol,jpol)
@@ -1855,13 +1810,12 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
           two*mu(ipol,jpol,ielsolid(ielem)))* &
           massmat_kwts2(ipol,jpol,ielsolid(ielem))
      if (axis_solid(ielem)) M_w1(0,jpol,ielem)=zero
-! ----------------
   enddo
-! ----------------
+  
+  ! AXIS
   if ( axis_solid(ielem) ) then
      call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta, &
           xi_k(0),eta(jpol),local_crd_nodes,ielsolid(ielem))
-! AXIS-------------------
      ipol=0
 
      M0_w3(jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
@@ -1873,7 +1827,6 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
 
 end subroutine compute_monopole_stiff_terms
 !=============================================================================
-
 
 !-----------------------------------------------------------------------------
 subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
@@ -1887,57 +1840,53 @@ subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                        Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use global_parameters
-implicit none
-include "mesh_params.h"
-
-integer, intent(in) :: ielem,jpol
-
-double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
-double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
-double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
-
-double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-double precision, intent(in) :: local_crd_nodes(8,2)
-
-double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
-
-integer          :: ipol
-double precision :: dsdxi,dzdeta,dzdxi,dsdeta
-double precision :: fa_ani_thetal, fa_ani_phil
-double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
-double precision :: lambdal, mul, xil, phil, etal
-
-! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
+  include "mesh_params.h"
+  
+  integer, intent(in) :: ielem, jpol
+  
+  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
+  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
+  double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+  double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
+  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  
+  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
+  double precision, intent(in) :: local_crd_nodes(8,2)
+  
+  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  
+  integer          :: ipol
+  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  double precision :: fa_ani_thetal, fa_ani_phil
+  double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
+  double precision :: lambdal, mul, xil, phil, etal
+  
+  ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
      M0_w1(0:npol,1:nel_solid) = zero
      M0_w2(0:npol,1:nel_solid) = zero
      M0_w3(0:npol,1:nel_solid) = zero
   endif
   
-! ----------------
-  do ipol=0,npol
-! ----------------
+  do ipol=0, npol
      fa_ani_thetal = fa_ani_theta(ipol,jpol,ielsolid(ielem))
      fa_ani_phil = fa_ani_phi(ipol,jpol,ielsolid(ielem))
    
@@ -1961,24 +1910,33 @@ double precision :: lambdal, mul, xil, phil, etal
      C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 3, 1)
      C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 2, 1, 2)
 
-    ! Test for the components that should be zero:
+     ! Test for the components that should be zero:
      if (do_mesh_tests) then
         if ( ielem==1 .and. jpol==0 .and. ipol==0 ) then
-           if (lpr) write(6,*) ' Test for the components of c_ijkl that should be zero in anisotropic case'
+           if (lpr) write(6,*) &
+                ' Test for the components of c_ijkl that should be zero in anisotropic case'
         endif
         Ctmp = zero
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 3, 1))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 1, 1, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 1, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 2, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 2, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 3, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 3, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 3, 3, 1))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 1, 1, 2))
         
         if (Ctmp > smallval_sngl) then
-           write(6,*)procstrg,' ERROR: some stiffness term that should be zero '
-           write(6,*)procstrg,'        is not: in compute_monopole_stiff_terms_ani()'
+           write(6,*) procstrg, ' ERROR: some stiffness term that should be zero '
+           write(6,*) procstrg, '        is not: in compute_monopole_stiff_terms_ani()'
            stop
         endif
      endif
@@ -2046,8 +2004,7 @@ double precision :: lambdal, mul, xil, phil, etal
         M0_w3(jpol,ielem) = C23 * dsdxi * wt_axial_k(0) * wt(jpol) &
                           + C25 * dzdxi * wt_axial_k(0) * wt(jpol)
      endif
-  enddo
-! ----------------
+  enddo ! ipol
 
 end subroutine compute_monopole_stiff_terms_ani
 !=============================================================================
@@ -2062,40 +2019,38 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use global_parameters
-implicit none
-include "mesh_params.h"
-
-integer, intent(in) :: ielem,jpol
-
-double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
-
-double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-double precision, intent(in) :: local_crd_nodes(8,2)
-
-double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
-
-integer          :: ipol
-double precision :: dsdxi,dzdeta,dzdxi,dsdeta
-
-! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
+  include "mesh_params.h"
+  
+  integer, intent(in) :: ielem,jpol
+  
+  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
+  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
+  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  
+  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
+  double precision, intent(in) :: local_crd_nodes(8,2)
+  
+  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  
+  integer          :: ipol
+  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  
+  ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
      M0_w1(0:npol,1:nel_solid) = zero
      M0_w2(0:npol,1:nel_solid) = zero
@@ -2109,10 +2064,8 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
      M0_w10(0:npol,1:nel_solid) = zero
   endif
   
-! ----------------
   do ipol=0,npol
-! ----------------
-! + and - components
+     ! + and - components
      M11s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
           three*mu(ipol,jpol,ielsolid(ielem)))*delta_wt_k(ipol,jpol)+&
           two*mu(ipol,jpol,ielsolid(ielem))*alpha_wt_k(ipol,jpol)
@@ -2141,7 +2094,7 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
      M43s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
           mu(ipol,jpol,ielsolid(ielem)))*Ms_z_xi_s_xi_wt_k(ipol,jpol)
 
-! z component
+     ! z component
      M11z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))* &
           delta_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
           two*mu(ipol,jpol,ielsolid(ielem)))*alpha_wt_k(ipol,jpol)
@@ -2152,7 +2105,7 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
           epsil_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
           two*mu(ipol,jpol,ielsolid(ielem)))*beta_wt_k(ipol,jpol)
 
-! D^x_y terms
+     ! D^x_y terms
      M_1(ipol,jpol,ielem) = two * &
          (lambda(ipol,jpol,ielsolid(ielem)) + &
          mu(ipol,jpol,ielsolid(ielem))) * M_z_eta_wt_k(ipol,jpol)
@@ -2172,8 +2125,8 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
      M_8(ipol,jpol,ielem) = &
          two * lambda(ipol,jpol,ielsolid(ielem)) * M_s_xi_wt_k(ipol,jpol)
 
-! AXIS-------------------
-! 2nd order terms
+     ! AXIS-------------------
+     ! 2nd order terms
      M_w1(ipol,jpol,ielem) = four * &
           (lambda(ipol,jpol,ielsolid(ielem)) + &
           three * mu(ipol,jpol,ielsolid(ielem))) * &
@@ -2181,11 +2134,9 @@ double precision :: dsdxi,dzdeta,dzdxi,dsdeta
      M_w2(ipol,jpol,ielem) = zero
      M_w3(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem)) * &
           massmat_kwts2(ipol,jpol,ielsolid(ielem))
-! ----------------
-  enddo
-! ----------------
+  enddo ! ipol
 
-! AXIS-------------------
+  ! AXIS
   if ( axis_solid(ielem) ) then
 
      M11s(0,jpol,ielem) = zero
@@ -2246,46 +2197,44 @@ subroutine compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use global_parameters
-implicit none
-include "mesh_params.h"
-
-integer, intent(in) :: ielem,jpol
-
-double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
-double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
-double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
-
-double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-double precision, intent(in) :: local_crd_nodes(8,2)
-
-double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
-
-integer          :: ipol
-double precision :: dsdxi, dzdeta, dzdxi, dsdeta
-double precision :: fa_ani_thetal, fa_ani_phil
-double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
-double precision :: lambdal, mul, xil, phil, etal
+  include "mesh_params.h"
+  
+  integer, intent(in) :: ielem,jpol
+  
+  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
+  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
+  double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+  double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
+  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  
+  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
+  double precision, intent(in) :: local_crd_nodes(8,2)
+  
+  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  
+  integer          :: ipol
+  double precision :: dsdxi, dzdeta, dzdxi, dsdeta
+  double precision :: fa_ani_thetal, fa_ani_phil
+  double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
+  double precision :: lambdal, mul, xil, phil, etal
 
   if ( ielem==1 .and. jpol==0 ) then
      M0_w1(0:npol,1:nel_solid) = zero
@@ -2324,29 +2273,37 @@ double precision :: lambdal, mul, xil, phil, etal
      C55 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 3, 1)
      C66 = c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 2, 1, 2)
 
-    ! Test for the components that should be zero:
+     ! Test for the components that should be zero:
      if (do_mesh_tests) then
         if ( ielem==1 .and. jpol==0 .and. ipol==0 ) then
            if (lpr) write(6,*) ' Test for the components of c_ijkl that should be zero in anisotropic case'
         endif
         Ctmp = zero
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 1, 1, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 2, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 2, 3))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 3, 1, 2))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 2, 3, 3, 1))
-        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, fa_ani_phil, 3, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 1, 1, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 1, 1, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 2, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 2, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 3, 2, 3))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 3, 1, 2))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 2, 3, 3, 1))
+        Ctmp = Ctmp + dabs(c_ijkl_ani(lambdal, mul, xil, phil, etal, fa_ani_thetal, &
+                                      fa_ani_phil, 3, 1, 1, 2))
         
         if (Ctmp > smallval_sngl) then
-           write(6,*)procstrg,' ERROR: some stiffness term that should be zero '
-           write(6,*)procstrg,'        is not: in compute_monopole_stiff_terms_ani()'
+           write(6,*) procstrg, ' ERROR: some stiffness term that should be zero '
+           write(6,*) procstrg, '        is not: in compute_monopole_stiff_terms_ani()'
            stop
         endif
      endif
 
-! + and - components
+     ! + and - components
      M11s(ipol,jpol,ielem) = (C11 + C66) * delta_wt_k(ipol,jpol) &
                            + (C15 + C46) * (Ms_z_eta_s_xi_wt_k(ipol,jpol) &
                                             +  Ms_z_xi_s_eta_wt_k(ipol,jpol)) &
@@ -2394,7 +2351,7 @@ double precision :: lambdal, mul, xil, phil, etal
                            + C35 * beta_wt_k(ipol,jpol)
 
 
-! z component
+     ! z component
      M11z(ipol,jpol,ielem) = C55 * delta_wt_k(ipol,jpol) &
                            + C35 * (Ms_z_eta_s_xi_wt_k(ipol,jpol) &
                                     +  Ms_z_xi_s_eta_wt_k(ipol,jpol)) &
@@ -2408,7 +2365,7 @@ double precision :: lambdal, mul, xil, phil, etal
                            + C35 * two * Ms_z_xi_s_xi_wt_k(ipol,jpol)&
                            + C33 * beta_wt_k(ipol,jpol)
 
-! D^x_y terms
+     ! D^x_y terms
      M_1(ipol,jpol,ielem) = (C12 + C66) * two * M_z_eta_wt_k(ipol,jpol) &
                           + (C25 + C46) * two * M_s_eta_wt_k(ipol,jpol)
      M_2(ipol,jpol,ielem) = (C12 + C66) * two * M_z_xi_wt_k(ipol,jpol)  &
@@ -2429,7 +2386,7 @@ double precision :: lambdal, mul, xil, phil, etal
      M_8(ipol,jpol,ielem) = C25 * two * M_z_xi_wt_k(ipol,jpol)  &
                           + C23 * two * M_s_xi_wt_k(ipol,jpol)
 
-! 2nd order terms
+     ! 2nd order terms
      M_w1(ipol,jpol,ielem) = four * (C22 + C66) * massmat_kwts2(ipol,jpol,ielsolid(ielem))
      M_w2(ipol,jpol,ielem) = two * C46 * massmat_kwts2(ipol,jpol,ielsolid(ielem))
      M_w3(ipol,jpol,ielem) = C44 * massmat_kwts2(ipol,jpol,ielsolid(ielem))
@@ -2493,10 +2450,7 @@ subroutine compute_quadrupole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use global_parameters
-implicit none
-include "mesh_params.h"
-!use data_quadrupole
+  include "mesh_params.h"
 
   integer, intent(in) :: ielem,jpol
 
@@ -2607,7 +2561,7 @@ include "mesh_params.h"
           massmat_kwts2(ipol,jpol,ielsolid(ielem))
   enddo ! ipol
 
-   ! AXIS-------------------
+  ! AXIS
   if ( axis_solid(ielem) ) then
      ipol=0
      
@@ -2669,7 +2623,6 @@ include "mesh_params.h"
      M0_w5(jpol,ielem) = zero
 
   endif
-              
 
 end subroutine compute_quadrupole_stiff_terms
 !=============================================================================
@@ -2686,46 +2639,44 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-use global_parameters
-implicit none
-include "mesh_params.h"
-
-integer, intent(in) :: ielem,jpol
-
-double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
-double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
-double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
-double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
-
-double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-double precision, intent(in) :: local_crd_nodes(8,2)
-
-double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-
-double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
-
-integer          :: ipol
-double precision :: dsdxi, dzdeta, dzdxi, dsdeta
-double precision :: fa_ani_thetal, fa_ani_phil
-double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
-double precision :: lambdal, mul, xil, phil, etal
+  include "mesh_params.h"
+  
+  integer, intent(in) :: ielem,jpol
+  
+  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
+  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
+  double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
+  double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+  double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
+  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  
+  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
+  double precision, intent(in) :: local_crd_nodes(8,2)
+  
+  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  
+  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  
+  integer          :: ipol
+  double precision :: dsdxi, dzdeta, dzdxi, dsdeta
+  double precision :: fa_ani_thetal, fa_ani_phil
+  double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
+  double precision :: lambdal, mul, xil, phil, etal
   
   if ( ielem==1 .and. jpol==0 ) then
      M0_w1(0:npol,1:nel_solid) = zero
@@ -2901,78 +2852,71 @@ end subroutine compute_quadrupole_stiff_terms_ani
 !-----------------------------------------------------------------------------
 double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
                                      theta_fa, phi_fa, i, j, k, l)
-!
-! returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
-! i, j, k and l should be in [1,3]
-!
-! MvD [Anisotropy Notes, p. 13.4]
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-implicit none
-
-double precision, intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
-double precision, intent(in) :: theta_fa, phi_fa
-integer, intent(in) :: i, j, k, l
-double precision, dimension(1:3, 1:3) :: deltaf
-double precision, dimension(1:3) :: s
-
-deltaf = zero
-deltaf(1,1) = one
-deltaf(2,2) = one
-deltaf(3,3) = one
-
-s(1) = dcos(phi_fa) * dsin(theta_fa)
-s(2) = dsin(phi_fa) * dsin(theta_fa)
-s(3) = dcos(theta_fa)
-
-c_ijkl_ani = zero
-
-! isotropic part:
-c_ijkl_ani = c_ijkl_ani + lambda * deltaf(i,j) * deltaf(k,l)
-
-c_ijkl_ani = c_ijkl_ani + mu * (deltaf(i,k) * deltaf(j,l) + deltaf(i,l) * deltaf(j,k))
-
-
-! anisotropic part:
-! in xi, phi, eta
-
-c_ijkl_ani = c_ijkl_ani &
-    + ((eta_ani - one) * lambda + two * eta_ani * mu * (one - one / xi_ani)) &
-        * (deltaf(i,j) * s(k) * s(l) + deltaf(k,l) * s(i) * s(j))
-    
-c_ijkl_ani = c_ijkl_ani &
-    + mu * (one / xi_ani - one) &
-        * (deltaf(i,k) * s(j) * s(l) + deltaf(i,l) * s(j) * s(k) + &
-           deltaf(j,k) * s(i) * s(l) + deltaf(j,l) * s(i) * s(k))
-
-c_ijkl_ani = c_ijkl_ani &
-    + ((one - two * eta_ani + phi_ani) * (lambda + two * mu) &
-            + (4. * eta_ani - 4.) * mu / xi_ani) &
-        * (s(i) * s(j) * s(k) * s(l))
+  ! returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
+  ! i, j, k and l should be in [1,3]
+  !
+  ! MvD [Anisotropy Notes, p. 13.4]
+  
+  
+  double precision, intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
+  double precision, intent(in) :: theta_fa, phi_fa
+  integer, intent(in) :: i, j, k, l
+  double precision, dimension(1:3, 1:3) :: deltaf
+  double precision, dimension(1:3) :: s
+  
+  deltaf = zero
+  deltaf(1,1) = one
+  deltaf(2,2) = one
+  deltaf(3,3) = one
+  
+  s(1) = dcos(phi_fa) * dsin(theta_fa)
+  s(2) = dsin(phi_fa) * dsin(theta_fa)
+  s(3) = dcos(theta_fa)
+  
+  c_ijkl_ani = zero
+  
+  ! isotropic part:
+  c_ijkl_ani = c_ijkl_ani + lambda * deltaf(i,j) * deltaf(k,l)
+  
+  c_ijkl_ani = c_ijkl_ani + mu * (deltaf(i,k) * deltaf(j,l) + deltaf(i,l) * deltaf(j,k))
+  
+  
+  ! anisotropic part:
+  ! in xi, phi, eta
+  
+  c_ijkl_ani = c_ijkl_ani &
+      + ((eta_ani - one) * lambda + two * eta_ani * mu * (one - one / xi_ani)) &
+          * (deltaf(i,j) * s(k) * s(l) + deltaf(k,l) * s(i) * s(j))
+      
+  c_ijkl_ani = c_ijkl_ani &
+      + mu * (one / xi_ani - one) &
+          * (deltaf(i,k) * s(j) * s(l) + deltaf(i,l) * s(j) * s(k) + &
+             deltaf(j,k) * s(i) * s(l) + deltaf(j,l) * s(i) * s(k))
+  
+  c_ijkl_ani = c_ijkl_ani &
+      + ((one - two * eta_ani + phi_ani) * (lambda + two * mu) &
+              + (4. * eta_ani - 4.) * mu / xi_ani) &
+          * (s(i) * s(j) * s(k) * s(l))
 
 end function c_ijkl_ani
 !=============================================================================
 
 !-----------------------------------------------------------------------------
 subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
-!
-! Fluid precomputed matrices definitions for all sources.
-! Note that in this routine terms alpha etc. are scalars 
-! (as opposed to the solid case of being elemental arrays).
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  !
+  ! Fluid precomputed matrices definitions for all sources.
+  ! Note that in this routine terms alpha etc. are scalars 
+  ! (as opposed to the solid case of being elemental arrays).
+    
+  include "mesh_params.h"
+  double precision, intent(in)  :: rho(0:npol,0:npol,nelem)
+  double precision, intent(in)  :: massmat_kwts2(0:npol,0:npol,nelem)
   
-implicit none
-include "mesh_params.h"
-double precision, intent(in)  :: rho(0:npol,0:npol,nelem)
-double precision, intent(in)  :: massmat_kwts2(0:npol,0:npol,nelem)
-
-double precision, allocatable :: non_diag_fact(:,:)
-double precision              :: local_crd_nodes(8,2)
-double precision              :: alpha_wt_k,beta_wt_k,gamma_wt_k
-double precision              :: delta_wt_k,epsil_wt_k,zeta_wt_k
-integer                       :: iel,ipol,jpol,inode
+  double precision, allocatable :: non_diag_fact(:,:)
+  double precision              :: local_crd_nodes(8,2)
+  double precision              :: alpha_wt_k,beta_wt_k,gamma_wt_k
+  double precision              :: delta_wt_k,epsil_wt_k,zeta_wt_k
+  integer                       :: iel,ipol,jpol,inode
 
   allocate(non_diag_fact(0:npol,1:nel_fluid))
   
@@ -2985,7 +2929,7 @@ integer                       :: iel,ipol,jpol,inode
 
      do jpol=0,npol
         do ipol=0, npol
-! ::::::::::::::::non-axial elements::::::::::::::::
+           ! ::::::::::::::::non-axial elements::::::::::::::::
            if ( .not. axis_fluid(iel) ) then
 
               alpha_wt_k = alpha(eta(ipol), &
@@ -3007,7 +2951,7 @@ integer                       :: iel,ipol,jpol,inode
                    eta(jpol),local_crd_nodes,ielfluid(iel)) &
                    *wt(ipol)*wt(jpol)
 
- ! ::::::::::::::::axial elements::::::::::::::::
+           ! ::::::::::::::::axial elements::::::::::::::::
            elseif (axis_fluid(iel) ) then
               alpha_wt_k = alphak(xi_k(ipol),&
                    eta(jpol),local_crd_nodes,ielfluid(iel)) &
@@ -3045,16 +2989,16 @@ integer                       :: iel,ipol,jpol,inode
      enddo
   enddo
 
-!  2nd order term for multipoles
+  !  2nd order term for multipoles
   if (src_type(1)=='dipole' .or. src_type(1)=='quadpole') then
 
      non_diag_fact(:,:) = zero
      do iel=1,nel_fluid
 
-! ::::::::::::::::all elements::::::::::::::::
-        M_w_fl(:,:,iel)=massmat_kwts2(:,:,ielfluid(iel))/rho(:,:,ielfluid(iel))
+        ! ::::::::::::::::all elements::::::::::::::::
+        M_w_fl(:,:,iel) = massmat_kwts2(:,:,ielfluid(iel))/rho(:,:,ielfluid(iel))
 
-! ::::::::::::::::axial elements::::::::::::::::
+        ! ::::::::::::::::axial elements::::::::::::::::
         if ( axis_fluid(iel) ) then
            do inode = 1, 8
               call compute_coordinates_mesh(local_crd_nodes(inode,1),&
@@ -3067,10 +3011,10 @@ integer                       :: iel,ipol,jpol,inode
                    eta(jpol),local_crd_nodes,ielfluid(iel))
            end do
 
-! axial masking of main term
+           ! axial masking of main term
            M_w_fl(0,0:npol,iel)=zero
 
-! additional axial term
+           ! additional axial term
            M0_w_fl(:,iel)=non_diag_fact(:,iel)/rho(0,:,ielfluid(iel))
         endif ! axis
      enddo
@@ -3080,8 +3024,10 @@ integer                       :: iel,ipol,jpol,inode
      endif
   endif ! multipole
 
-  write(69,*)' '
-  write(69,*)'Min/max M1chi_fl [m^4/kg]:',minval(M1chi_fl),maxval(M1chi_fl)
+  if (verbose > 1) then
+    write(69,*) ' '
+    write(69,*) 'Min/max M1chi_fl [m^4/kg]:',minval(M1chi_fl),maxval(M1chi_fl)
+  endif
 
   deallocate(non_diag_fact)
 
@@ -3090,200 +3036,193 @@ end subroutine def_fluid_stiffness_terms
 
 !-----------------------------------------------------------------------------
 subroutine def_solid_fluid_boundary_terms
-!
-! Defines the 1-d vector-array bdry_matr which acts as the diagonal matrix
-! to accomodate the exchange of fields across solid-fluid boundaries 
-! in both directions. Take note of the sign conventions in accordance with 
-! those used in the time loop.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-use commun, only : psum
-use data_io
-
-implicit none
-include 'mesh_params.h'
-
-!double precision, intent(in) :: rho(0:npol,0:npol,nelem)
-double precision             :: local_crd_nodes(8,2)
-double precision             :: s,z,r,theta,rf,thetaf
-double precision             :: theta1,theta2,r1,r2,delta_th,bdry_sum
-integer                      :: iel,ielglob,ipol,inode,idom
-integer                      :: count_lower_disc,count_upper_disc
+  ! Defines the 1-d vector-array bdry_matr which acts as the diagonal matrix
+  ! to accomodate the exchange of fields across solid-fluid boundaries 
+  ! in both directions. Take note of the sign conventions in accordance with 
+  ! those used in the time loop.
+  
+  use commun, only : psum
+  use data_io
+  
+  include 'mesh_params.h'
+  
+  !double precision, intent(in) :: rho(0:npol,0:npol,nelem)
+  double precision             :: local_crd_nodes(8,2)
+  double precision             :: s,z,r,theta,rf,thetaf
+  double precision             :: theta1,theta2,r1,r2,delta_th,bdry_sum
+  integer                      :: iel,ielglob,ipol,inode,idom
+  integer                      :: count_lower_disc,count_upper_disc
 
   bdry_sum = zero
 
-! check if proc has boundary elements
+  ! check if proc has boundary elements
   if (have_bdry_elem) then
 
-  count_lower_disc=0; count_upper_disc=0
+     count_lower_disc = 0
+     count_upper_disc = 0
 
-  do iel=1,nel_bdry
+     do iel=1,nel_bdry
 
-! Map from boundary to global indexing. Choice of the solid side is random...
-     ielglob=ielsolid(bdry_solid_el(iel))
+        ! Map from boundary to global indexing. Choice of the solid side is random...
+        ielglob=ielsolid(bdry_solid_el(iel))
 
-! closest to axis
-     call compute_coordinates(s,z,r1,theta1,ielglob,0,bdry_jpol_solid(iel))
+        ! closest to axis
+        call compute_coordinates(s,z,r1,theta1,ielglob,0,bdry_jpol_solid(iel))
 
-     call compute_coordinates(s,z,rf,thetaf,ielfluid(bdry_fluid_el(iel)),&
-                              0,bdry_jpol_fluid(iel))
+        call compute_coordinates(s,z,rf,thetaf,ielfluid(bdry_fluid_el(iel)),&
+                                 0,bdry_jpol_fluid(iel))
 
-! test if the mapping of solid element & jpol numbers agrees for solid & fluid
-! af rock-lgit
-!    if (rf/=r1 .or. thetaf/=theta1) then 
-     if (abs( (rf-r1) /r1 ) > 1.e-5 .or. abs((thetaf-theta1)) > 1.e-3) then 
-        write(6,*)
-        write(6,*)procstrg,'Problem with boundary term mapping near axis!'
-        write(6,*)procstrg,'radius,theta solid index:',r1/1.d3,theta1/pi*180.
-        write(6,*)procstrg,'radius,theta fluid index:',rf/1.d3,thetaf/pi*180.
-        write(6,*)procstrg,'Possible reason: doubling layer directly on the solid side of'
-        write(6,*)procstrg,'                 solid/fluid boundary. Check your mesh!'
-        write(6,*)procstrg,'                 see ticket 26'
-        stop
-     endif
-
-! furthest away from axis
-     call compute_coordinates(s,z,r2,theta2,ielglob,npol,bdry_jpol_solid(iel))
-     call compute_coordinates(s,z,rf,thetaf,ielfluid(bdry_fluid_el(iel)),&
-                             npol,bdry_jpol_fluid(iel))
-
-! test if the mapping of solid element & jpol numbers agrees for solid & fluid
-!af rock-lgit
-!    if (rf/=r2 .or. thetaf/=theta2) then 
-     if (abs( (rf-r2) /r2 ) > 1.e-5 .or. abs((thetaf-theta2)) > 1.e-3) then 
-        write(6,*)
-        write(6,*)procstrg,'Problem with boundary term mapping far axis!'
-        write(6,*)procstrg,'radius,theta solid index:',r2/1.d3,theta2/pi*180.
-        write(6,*)procstrg,'radius,theta fluid index:',rf/1.d3,thetaf/pi*180.
-        stop
-     endif
-
-     if ( abs(r1-r2)>min_distance_dim) then 
-        write(6,*)
-        write(6,*)procstrg,'Problem with S/F boundary element',ielglob
-        write(6,*)procstrg,'radii at min./max theta are not equal!'
-        write(6,*)procstrg,'r1,r2 [km],theta [deg]:', &
-                            r1/1000.,r2/1000.,theta1*180./pi
-        stop
-     endif
-!1/2 comes from d_th=1/2 (th_2 - th_1)d_xi; abs() takes care of southern elems
-     delta_th=half*abs(theta2-theta1)
-
-! ::::::::::::::::axial elements::::::::::::::::
-     if ( axis(ielglob) ) then
-
-        if (abs(sin(theta1))*two*pi*r1>min_distance_dim) then
+        ! test if the mapping of solid element & jpol numbers agrees for solid & fluid
+        if (abs( (rf-r1) /r1 ) > 1.e-5 .or. abs((thetaf-theta1)) > 1.e-3) then 
            write(6,*)
-           write(6,*)procstrg,'Problem with axial S/F boundary element',ielglob
-           write(6,*)procstrg,'Min theta is not exactly on the axis'
-           write(6,*)procstrg,'r [km],theta [deg]:',r1/1000.,theta1*180./pi
+           write(6,*)procstrg,'Problem with boundary term mapping near axis!'
+           write(6,*)procstrg,'radius,theta solid index:',r1/1.d3,theta1/pi*180.
+           write(6,*)procstrg,'radius,theta fluid index:',rf/1.d3,thetaf/pi*180.
+           write(6,*)procstrg,'Possible reason: doubling layer directly on the solid side of'
+           write(6,*)procstrg,'                 solid/fluid boundary. Check your mesh!'
+           write(6,*)procstrg,'                 see ticket 26'
            stop
         endif
 
-        do inode = 1, 8
-           call compute_coordinates_mesh(local_crd_nodes(inode,1),&
-                local_crd_nodes(inode,2),ielglob,inode)
-        end do
+        ! furthest away from axis
+        call compute_coordinates(s,z,r2,theta2,ielglob,npol,bdry_jpol_solid(iel))
+        call compute_coordinates(s,z,rf,thetaf,ielfluid(bdry_fluid_el(iel)),&
+                                npol,bdry_jpol_fluid(iel))
 
-        ! I>0 (off the axis)
-        do ipol=1,npol
-           call compute_coordinates(s,z,r,theta,ielglob,ipol,&
-                                    bdry_jpol_solid(iel))
-           if(abs(r-r1)>min_distance_dim) then 
+        ! test if the mapping of solid element & jpol numbers agrees for solid & fluid
+        if (abs( (rf-r2) /r2 ) > 1.e-5 .or. abs((thetaf-theta2)) > 1.e-3) then 
+           write(6,*)
+           write(6,*)procstrg,'Problem with boundary term mapping far axis!'
+           write(6,*)procstrg,'radius,theta solid index:',r2/1.d3,theta2/pi*180.
+           write(6,*)procstrg,'radius,theta fluid index:',rf/1.d3,thetaf/pi*180.
+           stop
+        endif
+
+        if ( abs(r1-r2)>min_distance_dim) then 
+           write(6,*)
+           write(6,*)procstrg,'Problem with S/F boundary element',ielglob
+           write(6,*)procstrg,'radii at min./max theta are not equal!'
+           write(6,*)procstrg,'r1,r2 [km],theta [deg]:', &
+                               r1/1000.,r2/1000.,theta1*180./pi
+           stop
+        endif
+        !1/2 comes from d_th=1/2 (th_2 - th_1)d_xi; abs() takes care of southern elems
+        delta_th = half*abs(theta2-theta1)
+
+        ! ::::::::::::::::axial elements::::::::::::::::
+        if ( axis(ielglob) ) then
+
+           if (abs(sin(theta1))*two*pi*r1>min_distance_dim) then
               write(6,*)
-              write(6,*)procstrg,'Problem with axial S/F boundary element',&
-                        ielglob
-              write(6,*)procstrg,'radius at ipol=',ipol,'different from ipol=0'
-              write(6,*)procstrg,'r,r1 [km],theta [deg]:',r/1000.,r1/1000., &
-                                                           theta*180./pi 
+              write(6,*)procstrg,'Problem with axial S/F boundary element',ielglob
+              write(6,*)procstrg,'Min theta is not exactly on the axis'
+              write(6,*)procstrg,'r [km],theta [deg]:',r1/1000.,theta1*180./pi
               stop
            endif
-           bdry_matr(ipol,iel,1)=delta_th*wt_axial_k(ipol)* &
-                dsin(theta)/(one+xi_k(ipol))*dsin(theta)
-           bdry_matr(ipol,iel,2)=delta_th*wt_axial_k(ipol)* &
-                dsin(theta)/(one+xi_k(ipol))*dcos(theta)
 
-! Test: Integrated over the whole boundary, the boundary term san sin/cos
-! equals two: \int_0^pi sin(\theta) d\theta = two, i.e. 4 if 2 boundaries
-        bdry_sum = bdry_sum + delta_th*wt_axial_k(ipol)*dsin(theta)/ &
-                              (one+xi_k(ipol))
-        enddo
+           do inode = 1, 8
+              call compute_coordinates_mesh(local_crd_nodes(inode,1),&
+                   local_crd_nodes(inode,2),ielglob,inode)
+           enddo
 
-! I=0 axis 
-        bdry_sum = bdry_sum + 1/r * delta_th * wt_axial_k(0) * &
-                           s_over_oneplusxi_axis(xi_k(0), &
-                           eta(bdry_jpol_solid(iel)),local_crd_nodes,ielglob)
+           ! I>0 (off the axis)
+           do ipol=1,npol
+              call compute_coordinates(s,z,r,theta,ielglob,ipol,&
+                                       bdry_jpol_solid(iel))
+              if(abs(r-r1)>min_distance_dim) then 
+                 write(6,*)
+                 write(6,*)procstrg,'Problem with axial S/F boundary element',&
+                           ielglob
+                 write(6,*)procstrg,'radius at ipol=',ipol,'different from ipol=0'
+                 write(6,*)procstrg,'r,r1 [km],theta [deg]:',r/1000.,r1/1000., &
+                                                              theta*180./pi 
+                 stop
+              endif
+              bdry_matr(ipol,iel,1)=delta_th*wt_axial_k(ipol)* &
+                   dsin(theta)/(one+xi_k(ipol))*dsin(theta)
+              bdry_matr(ipol,iel,2)=delta_th*wt_axial_k(ipol)* &
+                   dsin(theta)/(one+xi_k(ipol))*dcos(theta)
 
-! I=0 axis itself
-        bdry_matr(0,iel,1)=zero ! note sin(0) = 0    
+              ! Test: Integrated over the whole boundary, the boundary term san sin/cos
+              ! equals two: \int_0^pi sin(\theta) d\theta = two, i.e. 4 if 2 boundaries
+              bdry_sum = bdry_sum + delta_th*wt_axial_k(ipol)*dsin(theta)/ &
+                                    (one+xi_k(ipol))
+           enddo
 
-! need factor 1/r to compensate for using s/(1+xi) rather than sin theta/(1+xi)
-! note cos(0) = 1
-        bdry_matr(0,iel,2)= 1/r * delta_th * wt_axial_k(0) * &
-                           s_over_oneplusxi_axis(xi_k(0), &
-                           eta(bdry_jpol_solid(iel)),local_crd_nodes,ielglob)
-        write(69,*)
-        write(69,11)'S/F axial r[km], theta[deg]   :',r1/1000.,theta1*180/pi
-        write(69,10)'S/F axial element (bdry,glob.):',iel,ielglob
-        write(69,9)'S/F deltath, sigma_0, s/(1+xi):',delta_th*180/pi, &
-                                                     wt_axial_k(0),delta_th*r
-10 format(a33,2(i8))
-11 format(a33,2(1pe14.5))
-9 format(a33,3(1pe14.5))
+           ! I=0 axis 
+           bdry_sum = bdry_sum + 1/r * delta_th * wt_axial_k(0) * &
+                              s_over_oneplusxi_axis(xi_k(0), &
+                              eta(bdry_jpol_solid(iel)),local_crd_nodes,ielglob)
 
-! testing some algebra...
-        if (abs(s_over_oneplusxi_axis(xi_k(0),eta(bdry_jpol_solid(iel)), &
-            local_crd_nodes,ielglob)-delta_th*r)> min_distance_dim) then 
-           write(6,*)
-           write(6,*)procstrg,&
-                     'Problem with some axialgebra/definitions, elem:',ielglob
-           write(6,*)procstrg,'r [km],theta [deg]:',r1/1000.,theta1*180/pi
-           write(6,*)procstrg,'s_0 / (1+xi_0)  =',&
-                                         s_over_oneplusxi_axis(xi_k(0),&
-                                         eta(bdry_jpol_solid(iel)), &
-                                         local_crd_nodes,ielglob)
-           write(6,*)procstrg,'1/2 theta2 r_sf =',delta_th*r
-           write(6,*)procstrg,'...are not the same :('
-           write(6,*)procstrg,'xi,eta,eltype', &
-                      xi_k(0),eta(bdry_jpol_solid(iel)),eltype(ielglob)
-           write(6,*)procstrg,'theta1,theta2',theta1*180/pi,theta2*180/pi
-           write(6,*)procstrg,'s,z min:', &
-                     minval(local_crd_nodes(:,1)),minval(local_crd_nodes(:,2))
-           stop
-        endif
+           ! I=0 axis itself
+           bdry_matr(0,iel,1)=zero ! note sin(0) = 0    
 
-! ::::::::::::::::non-axial elements::::::::::::::::
-        else
-           do ipol=0,npol
+           ! need factor 1/r to compensate for using s/(1+xi) rather than sin theta/(1+xi)
+           ! note cos(0) = 1
+           bdry_matr(0,iel,2)= 1/r * delta_th * wt_axial_k(0) * &
+                              s_over_oneplusxi_axis(xi_k(0), &
+                              eta(bdry_jpol_solid(iel)),local_crd_nodes,ielglob)
+           if (verbose > 1) then
+              write(69,*)
+              write(69,11)'S/F axial r[km], theta[deg]   :',r1/1000.,theta1*180/pi
+              write(69,10)'S/F axial element (bdry,glob.):',iel,ielglob
+              write(69,9)'S/F deltath, sigma_0, s/(1+xi):',delta_th*180/pi, &
+                                                        wt_axial_k(0),delta_th*r
+           endif
 
-           call compute_coordinates(s,z,r,theta,ielglob,ipol,&
-                                    bdry_jpol_solid(iel))
+10         format(a33,2(i8))
+11         format(a33,2(1pe14.5))
+9          format(a33,3(1pe14.5))
 
-!           write(6,12)'r,r1 [km],theta [deg]:',r/1000.,r1/1000., &
-!                                              theta*180./pi 
-
-           if (abs(r-r1)>min_distance_dim) then 
+           ! testing some algebra...
+           if (abs(s_over_oneplusxi_axis(xi_k(0),eta(bdry_jpol_solid(iel)), &
+               local_crd_nodes,ielglob)-delta_th*r)> min_distance_dim) then 
               write(6,*)
               write(6,*)procstrg,&
-                        'Problem with non-axial S/F boundary element',ielglob
-              write(6,*)procstrg,'radius at ipol=',ipol,'different from ipol=0'
-              write(6,12)procstrg,'r,r1 [km],theta [deg]:',r/1000.,r1/1000., &
-                                                           theta*180./pi 
+                        'Problem with some axialgebra/definitions, elem:',ielglob
+              write(6,*)procstrg,'r [km],theta [deg]:',r1/1000.,theta1*180/pi
+              write(6,*)procstrg,'s_0 / (1+xi_0)  =',&
+                                            s_over_oneplusxi_axis(xi_k(0),&
+                                            eta(bdry_jpol_solid(iel)), &
+                                            local_crd_nodes,ielglob)
+              write(6,*)procstrg,'1/2 theta2 r_sf =',delta_th*r
+              write(6,*)procstrg,'...are not the same :('
+              write(6,*)procstrg,'xi,eta,eltype', &
+                         xi_k(0),eta(bdry_jpol_solid(iel)),eltype(ielglob)
+              write(6,*)procstrg,'theta1,theta2',theta1*180/pi,theta2*180/pi
+              write(6,*)procstrg,'s,z min:', &
+                        minval(local_crd_nodes(:,1)),minval(local_crd_nodes(:,2))
               stop
            endif
 
-           bdry_matr(ipol,iel,1)=delta_th*wt(ipol)*dsin(theta)*dsin(theta)
-           bdry_matr(ipol,iel,2)=delta_th*wt(ipol)*dsin(theta)*dcos(theta)
+           ! ::::::::::::::::non-axial elements::::::::::::::::
+           else
+              do ipol=0,npol
 
-! Test: Integrated over the whole boundary, the boundary term san sin/cos
-! equals two: \int_0^pi sin(\theta) d\theta = two, i.e. 4 if 2 boundaries
-        bdry_sum = bdry_sum + delta_th*wt(ipol)*dsin(theta)
+                 call compute_coordinates(s,z,r,theta,ielglob,ipol,&
+                                          bdry_jpol_solid(iel))
 
-     enddo
-  endif ! ax/nonax
+                 if (abs(r-r1)>min_distance_dim) then 
+                    write(6,*)
+                    write(6,*)procstrg,&
+                              'Problem with non-axial S/F boundary element',ielglob
+                    write(6,*)procstrg,'radius at ipol=',ipol,'different from ipol=0'
+                    write(6,12)procstrg,'r,r1 [km],theta [deg]:',r/1000.,r1/1000., &
+                                                                 theta*180./pi 
+                    stop
+                 endif
 
-! Define the term such that B >(<) 0 of solid above(below) fluid
+                 bdry_matr(ipol,iel,1)=delta_th*wt(ipol)*dsin(theta)*dsin(theta)
+                 bdry_matr(ipol,iel,2)=delta_th*wt(ipol)*dsin(theta)*dcos(theta)
+
+              ! Test: Integrated over the whole boundary, the boundary term san sin/cos
+              ! equals two: \int_0^pi sin(\theta) d\theta = two, i.e. 4 if 2 boundaries
+              bdry_sum = bdry_sum + delta_th*wt(ipol)*dsin(theta)
+
+           enddo
+        endif ! ax/nonax
+
+        ! Define the term such that B >(<) 0 of solid above(below) fluid
         do idom=1,ndisc
            if ( .not. solid_domain(idom) ) then
               ! run a check to make sure radius is either discontinuity
@@ -3309,39 +3248,37 @@ integer                      :: count_lower_disc,count_upper_disc
            endif
         enddo ! idom
 
-! Factor r^2 stemming from the integration over spherical domain
-      bdry_matr(0:npol,iel,1:2)=bdry_matr(0:npol,iel,1:2)*r*r
-      solflubdry_radius(iel) = r
+        ! Factor r^2 stemming from the integration over spherical domain
+        bdry_matr(0:npol,iel,1:2) = bdry_matr(0:npol,iel,1:2) * r * r
+        solflubdry_radius(iel) = r
 
-! NEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEW
-! Adopt fluid formulation of Chaljub & Valette 2004, Komatitsch et al 2006: 
-! u = \nabla \chi (leaving out the 1/rho factor)
-! This choice merely results in factors of rho for all boundary terms
-! and (supposedly?) allows for density stratification in the fluid
-!!$
-!!$  write(6,*)'Fluid:',r/1000.,iel,bdry_jpol_fluid(iel)
-!!$  write(6,*)'Fluid:',bdry_fluid_el(iel),ielfluid(bdry_fluid_el(iel))
-!!$  write(6,*)'Fluid minrho:',minval(rho(0:npol,bdry_jpol_fluid(iel), &
-!!$                            ielfluid(bdry_fluid_el(iel))))
-!!$  write(6,*)'Fluid maxrho:',maxval(rho(0:npol,bdry_jpol_fluid(iel), &
-!!$                            ielfluid(bdry_fluid_el(iel)))) 
-!!$  write(6,*)
-!!$  write(6,*)'Solid:',r/1000.,theta/pi*180.,iel,bdry_jpol_solid(iel)
-!!$  write(6,*)'Solid:',bdry_solid_el(iel),ielsolid(bdry_solid_el(iel))
-!!$  write(6,*)'Solid minrho:',minval(rho(0:npol,bdry_jpol_solid(iel), &
-!!$                            ielsolid(bdry_solid_el(iel))))
-!!$  write(6,*)'Solid maxrho:',maxval(rho(0:npol,bdry_jpol_solid(iel), &
-!!$                            ielsolid(bdry_solid_el(iel)))) 
-!!$
-!!$  if (iel==1) write(6,*)'Chaljub/Komatitsch potential formulation w/o density' 
-!!$  do i=1,2
-!!$     bdry_matr_fluid(0:npol,iel,i)=bdry_matr(0:npol,iel,i) / &
-!!$          rho(0:npol,bdry_jpol_fluid(iel),ielfluid(bdry_fluid_el(iel)))
-!!$
-!!$     bdry_matr_solid(0:npol,iel,i)=bdry_matr(0:npol,iel,i) * &
-!!$          rho(0:npol,bdry_jpol_solid(iel),ielsolid(bdry_solid_el(iel)))
-!!$  enddo
-! NEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEWNEW
+        ! Adopt fluid formulation of Chaljub & Valette 2004, Komatitsch et al 2006: 
+        ! u = \nabla \chi (leaving out the 1/rho factor)
+        ! This choice merely results in factors of rho for all boundary terms
+        ! and (supposedly?) allows for density stratification in the fluid
+        !
+        !  write(6,*)'Fluid:',r/1000.,iel,bdry_jpol_fluid(iel)
+        !  write(6,*)'Fluid:',bdry_fluid_el(iel),ielfluid(bdry_fluid_el(iel))
+        !  write(6,*)'Fluid minrho:',minval(rho(0:npol,bdry_jpol_fluid(iel), &
+        !                            ielfluid(bdry_fluid_el(iel))))
+        !  write(6,*)'Fluid maxrho:',maxval(rho(0:npol,bdry_jpol_fluid(iel), &
+        !                            ielfluid(bdry_fluid_el(iel)))) 
+        !  write(6,*)
+        !  write(6,*)'Solid:',r/1000.,theta/pi*180.,iel,bdry_jpol_solid(iel)
+        !  write(6,*)'Solid:',bdry_solid_el(iel),ielsolid(bdry_solid_el(iel))
+        !  write(6,*)'Solid minrho:',minval(rho(0:npol,bdry_jpol_solid(iel), &
+        !                            ielsolid(bdry_solid_el(iel))))
+        !  write(6,*)'Solid maxrho:',maxval(rho(0:npol,bdry_jpol_solid(iel), &
+        !                            ielsolid(bdry_solid_el(iel)))) 
+        !
+        !  if (iel==1) write(6,*)'Chaljub/Komatitsch potential formulation w/o density' 
+        !  do i=1,2
+        !     bdry_matr_fluid(0:npol,iel,i)=bdry_matr(0:npol,iel,i) / &
+        !          rho(0:npol,bdry_jpol_fluid(iel),ielfluid(bdry_fluid_el(iel)))
+        !
+        !     bdry_matr_solid(0:npol,iel,i)=bdry_matr(0:npol,iel,i) * &
+        !          rho(0:npol,bdry_jpol_solid(iel),ielsolid(bdry_solid_el(iel)))
+        !  enddo
 
      enddo ! elements along solid-fluid boundary
 
@@ -3349,8 +3286,8 @@ integer                      :: count_lower_disc,count_upper_disc
 
   bdry_sum = psum(real(bdry_sum,kind=realkind))
 
-! yet another check....see if # elements above fluid is multiple of # below 
-! or the same (this is the case for no coarsening layer in the fluid)
+  ! yet another check....see if # elements above fluid is multiple of # below 
+  ! or the same (this is the case for no coarsening layer in the fluid)
   if ((count_upper_disc /= count_lower_disc) &
         .and. mod(count_upper_disc,2*count_lower_disc) /= 0) then
      write(6,*)procstrg,&
@@ -3366,15 +3303,17 @@ integer                      :: count_lower_disc,count_upper_disc
 
 12 format(a25,3(1pe14.6))
 
-  write(69,*)
-  write(69,*)'# bdry elems above fluid:',count_upper_disc
-  write(69,*)'# bdry elems below fluid:',count_lower_disc
-  write(69,*)'Min/max of boundary term [m^2]:', &
-                                           minval(bdry_matr),maxval(bdry_matr)
-  write(69,*)'Min location bdry term  :',minloc(bdry_matr)
-  write(69,*)'Max location bdry term  :',maxloc(bdry_matr)
-  write(69,*)'Integr. bdry term, diff :',bdry_sum,dbleabsreldiff(bdry_sum,four)
-  write(69,*)
+  if (verbose > 1) then
+     write(69,*)
+     write(69,*) '# bdry elems above fluid:',count_upper_disc
+     write(69,*) '# bdry elems below fluid:',count_lower_disc
+     write(69,*) 'Min/max of boundary term [m^2]:', &
+                                               minval(bdry_matr),maxval(bdry_matr)
+     write(69,*) 'Min location bdry term  :',minloc(bdry_matr)
+     write(69,*) 'Max location bdry term  :',maxloc(bdry_matr)
+     write(69,*) 'Integr. bdry term, diff :',bdry_sum,dbleabsreldiff(bdry_sum,four)
+     write(69,*)
+  endif
 
   if ( .not. dblreldiff_small(bdry_sum,four) ) then
      if (lpr) then
@@ -3385,45 +3324,41 @@ integer                      :: count_lower_disc,count_upper_disc
      stop
   endif
   
-!\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\
-! output boundary precomputable matrix with radius [k]m and colatitude [deg]
-
-
+  ! output boundary precomputable matrix with radius [k]m and colatitude [deg]
   open(unit=500+mynum,file=infopath(1:lfinfo)//'/boundary_term_sol'&
                            //appmynum//'.dat')
   open(unit=400+mynum,file=infopath(1:lfinfo)//'/boundary_term_flu'&
                            //appmynum//'.dat')
-  write(69,*)
-  write(69,*)'saving boundary matrix with solid radius/colatitude into ',&
-              'boundary_term_sol_'//appmynum//'.dat'
-  write(69,*)'saving boundary matrix with fluid radius/colatitude into ',&
-              'boundary_term_flu_'//appmynum//'.dat'
-  write(69,*)
+  if (verbose > 1) then
+     write(69,*)
+     write(69,*)'saving boundary matrix with solid radius/colatitude into ',&
+                 'boundary_term_sol_'//appmynum//'.dat'
+     write(69,*)'saving boundary matrix with fluid radius/colatitude into ',&
+                 'boundary_term_flu_'//appmynum//'.dat'
+     write(69,*)
+  endif
 
   do iel=1,nel_bdry  
      ielglob=ielsolid(bdry_solid_el(iel))
      do ipol=0,npol
-      write(500+mynum,15)rcoord(ipol,bdry_jpol_solid(iel),ielglob)/1.d3, &
-                        thetacoord(ipol,bdry_jpol_solid(iel),ielglob)/pi*180.,&
-                         bdry_matr(ipol,iel,1),bdry_matr(ipol,iel,2)
+        write(500+mynum,15)rcoord(ipol,bdry_jpol_solid(iel),ielglob)/1.d3, &
+                           thetacoord(ipol,bdry_jpol_solid(iel),ielglob)/pi*180.,&
+                           bdry_matr(ipol,iel,1),bdry_matr(ipol,iel,2)
 
-      write(400+mynum,15)rcoord(ipol,bdry_jpol_fluid(iel),&
-                                ielfluid(bdry_fluid_el(iel)))/1.d3, &
-                         thetacoord(ipol,bdry_jpol_fluid(iel),&
-                                    ielfluid(bdry_fluid_el(iel)))/pi*180.,&
-                         bdry_matr(ipol,iel,1),bdry_matr(ipol,iel,2)
+        write(400+mynum,15)rcoord(ipol,bdry_jpol_fluid(iel),&
+                                   ielfluid(bdry_fluid_el(iel)))/1.d3, &
+                            thetacoord(ipol,bdry_jpol_fluid(iel),&
+                                       ielfluid(bdry_fluid_el(iel)))/pi*180.,&
+                            bdry_matr(ipol,iel,1),bdry_matr(ipol,iel,2)
      enddo
   enddo
-  call flush(500+mynum); close(500+mynum)
-  call flush(400+mynum); close(400+mynum)
+  close(500+mynum)
+  close(400+mynum)
 
 15 format(4(1pe12.4))
-!/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/_/
 
 end subroutine def_solid_fluid_boundary_terms
 !=============================================================================
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !=========================
 end module def_precomp_terms

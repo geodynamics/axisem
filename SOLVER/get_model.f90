@@ -907,14 +907,16 @@ subroutine check_elastic_discontinuities(ieldom,domcount,lambda,mu,rho)
   ! check whether the right number of points resides on each discontinuity
   ! and compute the velocities above/below the discontinuities
 
-  write(69,*)' '
-  write(69,*)'# points and elastic info around discontinuities'
-  write(69,*)
-  write(69,133)'','r disc. [km]','# pts','vp [km/s]','vs [km/s]','rho [g/cm^3]'
+  if (verbose > 1) then
+     write(69,*)' '
+     write(69,*)'# points and elastic info around discontinuities'
+     write(69,*)
+     write(69,133)'','r disc. [km]','# pts','vp [km/s]','vs [km/s]','rho [g/cm^3]'
+     write(69,13) 'Below', discont(1)/1.d3, domcount(1), minvpdombelow(1)/1.d3,&
+                   minvsdombelow(1)/1.d3, minrodombelow(1)/1.d3
+  endif
 133 format(a7,a13,a7,3(a13))
  
-  write(69,13) 'Below', discont(1)/1.d3, domcount(1), minvpdombelow(1)/1.d3,&
-                minvsdombelow(1)/1.d3, minrodombelow(1)/1.d3
  
   if (.not. dblreldiff_small(minvpdombelow(1),maxvpdombelow(1))) then
      write(6,*)
@@ -944,7 +946,7 @@ subroutine check_elastic_discontinuities(ieldom,domcount,lambda,mu,rho)
   endif
  
   do iidom=2,ndisc
-     write(69,13) 'Above', discont(iidom)/1.d3, domcount(iidom), &
+     if (verbose > 1) write(69,13) 'Above', discont(iidom)/1.d3, domcount(iidom), &
                   minvpdomabove(iidom)/1.d3, minvsdomabove(iidom)/1.d3, &
                   minrodomabove(iidom)/1.d3  
      
@@ -976,7 +978,7 @@ subroutine check_elastic_discontinuities(ieldom,domcount,lambda,mu,rho)
         stop
      endif
      
-     write(69,13)  'Below', discont(iidom)/1.d3, domcount(iidom), &
+     if (verbose > 1) write(69,13)  'Below', discont(iidom)/1.d3, domcount(iidom), &
                    minvpdombelow(iidom)/1.d3, minvsdombelow(iidom)/1.d3, &
                    minrodombelow(iidom)/1.d3
      
@@ -1186,23 +1188,25 @@ subroutine check_background_model(lambda,mu,rho)
   
 64 format(1pe14.4,1pe13.3,3(1pe15.5))
     
-  write(69,*)
-  write(69,*) 'Maximal variation in density across one element:', &
-              maxval(maxdiffrho)
-  write(69,*) 'at r [km], theta[deg]:', &
-              rcoord(npol/2,npol/2,maxloc(maxdiffrho,1))/1000., &
-              thetacoord(npol/2,npol/2,maxloc(maxdiffrho,1))*180./pi
-  write(69,*)
-  write(69,*) 'Maximal variation in lambda across one element:',&
-              maxval(maxdifflam)
-  write(69,*) 'at r [km], theta[deg]:', &
-              rcoord(npol/2,npol/2,maxloc(maxdifflam,1))/1000., &
-              thetacoord(npol/2,npol/2,maxloc(maxdifflam,1))*180./pi
-  write(69,*)
-  write(69,*) 'Maximal variation in mu across one element:',maxval(maxdiffmu)
-  write(69,*) 'at r [km], theta[deg]:', &
-              rcoord(npol/2,npol/2,maxloc(maxdiffmu,1))/1000., &
-              thetacoord(npol/2,npol/2,maxloc(maxdiffmu,1))*180./pi
+  if (verbose > 1) then
+     write(69,*)
+     write(69,*) 'Maximal variation in density across one element:', &
+                 maxval(maxdiffrho)
+     write(69,*) 'at r [km], theta[deg]:', &
+                 rcoord(npol/2,npol/2,maxloc(maxdiffrho,1))/1000., &
+                 thetacoord(npol/2,npol/2,maxloc(maxdiffrho,1))*180./pi
+     write(69,*)
+     write(69,*) 'Maximal variation in lambda across one element:',&
+                 maxval(maxdifflam)
+     write(69,*) 'at r [km], theta[deg]:', &
+                 rcoord(npol/2,npol/2,maxloc(maxdifflam,1))/1000., &
+                 thetacoord(npol/2,npol/2,maxloc(maxdifflam,1))*180./pi
+     write(69,*)
+     write(69,*) 'Maximal variation in mu across one element:',maxval(maxdiffmu)
+     write(69,*) 'at r [km], theta[deg]:', &
+                 rcoord(npol/2,npol/2,maxloc(maxdiffmu,1))/1000., &
+                 thetacoord(npol/2,npol/2,maxloc(maxdiffmu,1))*180./pi
+  endif
 
   deallocate(maxdiffrho, maxdifflam, maxdiffmu)
 
@@ -1238,19 +1242,18 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
   allocate(mass(0:npol,0:npol,nelem))
 
   do iidom = 1,2
-     write(69,*)
      if (iidom == 1) then
         vptmp=minval(dsqrt( (lambda+2.d0*mu )/rho ))
         vstmp = vptmp/dsqrt(3.d0)
-        write(69,*)':::::::::Resolution test for globally MINIMAL vp, ', &
-             'vs::::::::::::::::::'
-        write(69,*)'     sin(2 pi/(T0*minv) r) integrated over 3-D volume'
+        if (verbose > 1) write(69,'(/,a,/,a)') &
+                ':::::::::Resolution test for globally MINIMAL vp, vs::::::::::::::::::', &
+                '     sin(2 pi/(T0*minv) r) integrated over 3-D volume'
      elseif (iidom ==2) then
         vptmp=maxval(dsqrt( (lambda+2.d0*mu )/rho ))
         vstmp = vptmp/dsqrt(3.d0)
-        write(69,*)':::::::::Resolution test for globally MAXIMAL vp, ', &
-             'vs::::::::::::::::::'
-        write(69,*)'     sin(2 pi/(T0*maxv) r) integrated over 3-D volume'
+        if (verbose > 1) write(69,'(/,a,/,a)') &
+            ':::::::::Resolution test for globally MAXIMAL vp, vs::::::::::::::::::', &
+            '     sin(2 pi/(T0*maxv) r) integrated over 3-D volume'
      endif
 
      do i = 1,4 ! 0.5*period, period, 1.5*period, 2*period
@@ -1301,21 +1304,25 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
         ints_ana = four*pi*( two*router/arg**2 * dsin(arg*router) - &
              (router**2/arg-two/arg**3)*dcos(arg*router) - two/arg**3 )
 
-        write(69,*) 'T0=period*', real(i)/2.
-        write(69,1234) ' Num., ana., diff vp:', intp_num, intp_ana, &
-                       dbleabsreldiff(intp_num,intp_ana)
-        write(69,1234) ' Num., ana., diff vs:', ints_num, ints_ana, &
-                       dbleabsreldiff(ints_num,ints_ana)
+        if (verbose > 1) then
+           write(69,*) 'T0=period*', real(i)/2.
+           write(69,1234) ' Num., ana., diff vp:', intp_num, intp_ana, &
+                          dbleabsreldiff(intp_num,intp_ana)
+           write(69,1234) ' Num., ana., diff vs:', ints_num, ints_ana, &
+                          dbleabsreldiff(ints_num,ints_ana)
+        endif
 1234    format(a22,2(1pe18.8),1pe13.3)
 
      enddo ! 4 periods
   enddo ! min/max velocities
 
   ! Same but for constant function, i.e. the pure volume of the sphere
-  write(69,*)
-  write(69,*)':::::::::Resolution test for constant function::::', &
-       '::::::::::::::::::::'
-  write(69,*)'             3-D spherical volume itself'
+  if (verbose > 1) then
+     write(69,*)
+     write(69,*) ':::::::::Resolution test for constant function::::::::::::::::::::::::'
+     write(69,*) '             3-D spherical volume itself'
+  endif
+
   call massmatrix_dble(mass,nelem,'total')
   intp_num = zero
   do iel = 1, nelem
@@ -1330,8 +1337,8 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
 
   intp_ana = four / three * pi * router**3
 
-  write(69,1234)' Num., ana., diff vp:',intp_num,intp_ana, &
-       dbleabsreldiff(intp_num,intp_ana)
+  if (verbose > 1) write(69,1234) ' Num., ana., diff vp:',intp_num,intp_ana, &
+                                  dbleabsreldiff(intp_num,intp_ana)
 
   ! Piecewise constant velocities over each element,
   ! only for spheroidal element shapes and leaving out coarsening levels
@@ -1360,22 +1367,23 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
   open(unit=779,file=infopath(1:lfinfo)//'/resolutionsine.dat'//appmynum)
 
   do iidom = 1,2
-     write(69,*)
      if (iidom == 1) then
         open(unit=779,file=infopath(1:lfinfo)// &
              '/resolutionsine_elminvp.dat'//appmynum)      
-        write(69,*)':::::::::Resolution test for elementally MINIMAL vp, ', &
-             'vs:::::::::::::::'
-        write(69,*)'     sin(2 pi/(T0*minv) r) integrated over 3-D volume'
+        if (verbose > 1) write(69,'(/,a,/,a)')&
+            ':::::::::Resolution test for elementally MINIMAL vp, vs:::::::::::::::', &
+            '     sin(2 pi/(T0*minv) r) integrated over 3-D volume'
      elseif (iidom ==2) then
         open(unit=779,file=infopath(1:lfinfo)//'/resolutionsine_elmaxvp.dat' &
              //appmynum)  
-        write(69,*)':::::::::Resolution test for elementally MAXIMAL vp, ', &
-             'vs:::::::::::::::'
-        write(69,*)'     sin(2 pi/(T0*maxv) r) integrated over 3-D volume'
+        if (verbose > 1) write(69,'(/,a,/,a)') &
+            ':::::::::Resolution test for elementally MAXIMAL vp, vs:::::::::::::::', &
+            '     sin(2 pi/(T0*maxv) r) integrated over 3-D volume'
      endif
 
-     fp=zero; fs=zero; iirad=0; 
+     fp = zero
+     fs = zero
+     iirad = 0
      do iel = 1, nelem
         if (eltype(iel)=='curved' .and. .not. coarsing(iel) ) then
 
@@ -1401,7 +1409,7 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
                  write(779,*) rcoord(0,jpol,iel),fp(0,jpol,iel),fs(0,jpol,iel)
               endif
            enddo
-          ! radii needed for analytical integration
+           ! radii needed for analytical integration
            if (axis(iel) .and. north(iel) .and. mynum==0) then
               iirad = iirad + 1
               vel(iirad,1) = vptmp
@@ -1452,15 +1460,15 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
              two*radii(i,2)/arg**2*dsin(arg*radii(i,2)) + &
              (radii(i,2)**2/arg-two/arg**3)*dcos(arg*radii(i,2)) )
      enddo
-
-     write(69,1234)' Num., ana., diff vp:',intp_num,intp_ana, &
-          dbleabsreldiff(intp_num,intp_ana)
-     write(69,1234)' Num., ana., diff vs:',ints_num,ints_ana, &
-          dbleabsreldiff(ints_num,ints_ana)
+    
+     if (verbose > 1) then
+        write(69,1234)' Num., ana., diff vp:',intp_num,intp_ana, &
+             dbleabsreldiff(intp_num,intp_ana)
+        write(69,1234)' Num., ana., diff vs:',ints_num,ints_ana, &
+             dbleabsreldiff(ints_num,ints_ana)
+     endif
 
   enddo ! min/max velocities
-
-  write(69,*)
 
   deallocate(fp,fs)
   deallocate(mass)

@@ -8,7 +8,6 @@ module def_grid
   use data_spec
   use data_io
   use data_proc
-  
   use utlity
   
   implicit none
@@ -397,7 +396,7 @@ subroutine dump_coarsing_element_info
   integer          :: nsemino,nsemiso,nlinear
 
   open(444+mynum,file=infopath(1:lfinfo)//'/element_info.dat'//appmynum) 
-  write(69,*)'  Dumping element information into element_info.dat'//appmynum
+  if (verbose > 1) write(69,*)'  Dumping element information into element_info.dat'//appmynum
   do iel = 1, nelem
      ! check for central point in element
      call compute_coordinates(s,z,r,theta,iel,int(npol/2),int(npol/2)) 
@@ -410,7 +409,7 @@ subroutine dump_coarsing_element_info
   enddo
   close(444+mynum)
 
-  write(69,*)'  Dumping coarsening elements into coarsing_els.dat'//appmynum
+  if (verbose > 1) write(69,*)'  Dumping coarsening elements into coarsing_els.dat'//appmynum
   open(unit=1577,file=infopath(1:lfinfo)//'/coarsing_els.dat'//appmynum)
   do iel = 1, nelem
      if (coarsing(iel)) then 
@@ -447,19 +446,21 @@ subroutine dump_coarsing_element_info
      if (axis_fluid(iel)) naxis_fluid = naxis_fluid+1
   enddo
 
-  write(69,*)
-  write(69,16)procstrg, nelem, 'total'
-  write(69,16)procstrg, nel_solid, 'solid'
-  write(69,16)procstrg, nel_fluid, 'fluid'
-  write(69,16)procstrg, naxis, 'axial'
-  write(69,16)procstrg, naxis_solid, 'solid axial' 
-  write(69,16)procstrg, naxis_fluid, 'fluid axial' 
-  write(69,16)procstrg, ncoars, 'coarsing'
-  write(69,16)procstrg, ncurve, 'spheroidal'
-  write(69,16)procstrg, nlinear, 'rectangular'
-  write(69,16)procstrg, nsemino, 'north mixed'
-  write(69,16)procstrg, nsemiso, 'south mixed'
-  write(69,*)
+  if (verbose > 1) then
+     write(69,*)
+     write(69,16) procstrg, nelem, 'total'
+     write(69,16) procstrg, nel_solid, 'solid'
+     write(69,16) procstrg, nel_fluid, 'fluid'
+     write(69,16) procstrg, naxis, 'axial'
+     write(69,16) procstrg, naxis_solid, 'solid axial' 
+     write(69,16) procstrg, naxis_fluid, 'fluid axial' 
+     write(69,16) procstrg, ncoars, 'coarsing'
+     write(69,16) procstrg, ncurve, 'spheroidal'
+     write(69,16) procstrg, nlinear, 'rectangular'
+     write(69,16) procstrg, nsemino, 'north mixed'
+     write(69,16) procstrg, nsemiso, 'south mixed'
+     write(69,*)
+  endif
 
 16 format('   ',a8,'has ',i6,a12,' elements')
 
@@ -971,9 +972,9 @@ subroutine compute_spherical_surfaces
   double precision             :: tmpdble1,tmpdble2,deltacosth
 
   allocate(tmpradii(1:naxel,1:2))
-  tmpradii(:,:)=zero
+  tmpradii(:,:) = zero
 
-  write(69,*) &
+  if (verbose > 1) write(69,*) &
          '  Computing surface areas for all spherical radii (sans coarsing)...'
 
   ! define radii via axial loop (only consider purely spheroidal shapes)
@@ -1080,13 +1081,15 @@ subroutine compute_spherical_surfaces
   deltacosth = dcos(pi*dble(mynum)/dble(nproc)) - &
                dcos(pi*dble(mynum+1)/dble(nproc))
 
-  write(69,1233)'(below):',maxval(dabs(radsurf(1:irad,1)-deltacosth)),&
-              radii2(maxloc(dabs(radsurf(1:irad,1)-deltacosth)),1)/1.d3
-  write(69,1233)'(above):',maxval(dabs(radsurf(1:irad,2)-deltacosth)),&
-              radii2(maxloc(dabs(radsurf(1:irad,2)-deltacosth)),2)/1.d3
+  if (verbose > 1) then
+     write(69,1233)'(below):',maxval(dabs(radsurf(1:irad,1)-deltacosth)),&
+                 radii2(maxloc(dabs(radsurf(1:irad,1)-deltacosth)),1)/1.d3
+     write(69,1233)'(above):',maxval(dabs(radsurf(1:irad,2)-deltacosth)),&
+                 radii2(maxloc(dabs(radsurf(1:irad,2)-deltacosth)),2)/1.d3
+     write(69,*)
+  endif
 1233 format('   ==> Largest surface area error ',a8,1pe11.4, &
                 ' at r=',1pe11.4,' km')
-  write(69,*)
 
   ! write out comparison numerical/analytical surfaces
   open(unit=109,file=infopath(1:lfinfo)//&

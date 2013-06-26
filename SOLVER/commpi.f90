@@ -13,8 +13,9 @@ module commpi
   ! source and receiver locations in global/local reference.
 
   use global_parameters
-  use data_mesh, only: gvec_solid,gvec_fluid
   use data_proc
+  use data_mesh,        only : gvec_solid,gvec_fluid
+  use data_io,          only : verbose
 
   ! in case you have problems with the mpi module, you might try to use the
   ! include below, in which case you will have to specify the location in the 
@@ -444,8 +445,7 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
   integer :: ierror
   
   ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
-  write(69,*)' Asynchrounous solid communication test:'
-  call flush(69)
+  if (verbose > 1) write(69,*)' Asynchrounous solid communication test:'
 
   if (sizesend_solid > 1) then
      write(6,*) '  PROBLEM:', procstrg, 'sending more than one message!',&
@@ -470,7 +470,8 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
         sizeb  = nc * sizemsg_solid
         ipdes  = listsend_solid(imsg)
         msgnum = mynum*nproc + ipdes
-        write(69,12)procstrg,'SENDING #',msgnum,sizemsg_solid,' to',ipdes
+        if (verbose > 1) write(69,12) procstrg, 'SENDING #', msgnum, sizemsg_solid, &
+                                      ' to', ipdes
         call MPI_SEND(buffs_solid, sizeb, mpi_realkind, &
                       ipdes, msgnum, MPI_COMM_WORLD, ierror)
      end do
@@ -483,7 +484,8 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
         sizeb = nc*sizemsg_solid
         ipsrc = listrecv_solid(imsg)
         msgnum1 = ipsrc*nproc + mynum
-        write(69,12)procstrg,'RECEIVING #',msgnum1,sizemsg_solid,' from',ipsrc
+        if (verbose > 1) write(69,12) procstrg, 'RECEIVING #', msgnum1, sizemsg_solid, &
+                                      ' from', ipsrc
         call MPI_RECV(buffr_solid, sizeb, mpi_realkind, &
                       ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
            ! Add received buffer to own field at same global point
@@ -496,7 +498,8 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
            end do
         ! Send joint data back, but stick into new envelope/msgnum
         msgnum2 = mynum*nproc + ipsrc
-        write(69,12)procstrg,'RETURNING #',msgnum2,sizemsg_solid,' to',ipsrc
+        if (verbose > 1) write(69,12) procstrg, 'RETURNING #', msgnum2, sizemsg_solid, &
+                                      ' to', ipsrc
         call MPI_SEND(buffr_solid, sizeb, mpi_realkind, &
                       ipsrc, msgnum2, MPI_COMM_WORLD, ierror)
      end do
@@ -509,8 +512,8 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
         sizeb = nc*sizemsg_solid
         ipsrc = listsend_solid(imsg)
         msgnum = ipsrc*nproc + mynum
-        write(69,12)procstrg,'RECV UPDATED #',msgnum,&
-                    sizemsg_solid,' from',ipsrc
+        if (verbose > 1) write(69,12) procstrg, 'RECV UPDATED #', msgnum, &
+                                      sizemsg_solid,' from',ipsrc
         call MPI_RECV(buffs_solid, sizeb, mpi_realkind, &
              ipsrc, msgnum, MPI_COMM_WORLD, status, ierror)
         do ip = 1, sizemsg_solid
@@ -520,7 +523,7 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
      enddo
   endif
 
-  write(69,13)procstrg; call flush(69)
+  if (verbose > 1) write(69,13) procstrg
 
 12 format('   MPI: ',a8,a15,i3,', size=',i8,a6,i3)
 13 format('   MPI: ',a8,' DONE.')
@@ -626,8 +629,7 @@ subroutine testing_asynch_messaging_fluid
   integer :: ierror
   
   ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
-  write(69,*)' Asynchrounous fluid communication test:'
-  call flush(69)
+  if (verbose > 1) write(69,*) ' Asynchrounous fluid communication test:'
 
   if (sizesend_fluid > 0) then
      do imsg = 1, sizesend_fluid
@@ -641,7 +643,8 @@ subroutine testing_asynch_messaging_fluid
         sizeb  = sizemsg_fluid
         ipdes  = listsend_fluid(imsg)
         msgnum = mynum*nproc + ipdes
-        write(69,12)procstrg,'SENDING #',msgnum,sizemsg_fluid,' to',ipdes
+        if (verbose > 1) write(69,12) procstrg, 'SENDING #', msgnum, sizemsg_fluid, &
+                                      ' to', ipdes
         call MPI_SEND(buffs_fluid, sizeb, mpi_realkind, &
                       ipdes, msgnum, MPI_COMM_WORLD, ierror)
      end do
@@ -654,7 +657,8 @@ subroutine testing_asynch_messaging_fluid
         sizeb = sizemsg_fluid
         ipsrc = listrecv_fluid(imsg)
         msgnum1 = ipsrc*nproc + mynum
-        write(69,12)procstrg,'RECEIVING #',msgnum1,sizemsg_fluid,' from',ipsrc
+        if (verbose > 1) write(69,12) procstrg, 'RECEIVING #', msgnum1,  sizemsg_fluid, &
+                                      ' from', ipsrc
         call MPI_RECV(buffr_fluid,sizeb,mpi_realkind,&
                       ipsrc,msgnum1,MPI_COMM_WORLD,status,ierror)
            !Add received buffer to own field at same global point
@@ -667,7 +671,8 @@ subroutine testing_asynch_messaging_fluid
            end do
         ! Send joint data back, but stick into new envelope/msgnum
         msgnum2 = mynum*nproc + ipsrc
-        write(69,12)procstrg,'RETURNING #',msgnum2,sizemsg_fluid,' to',ipsrc
+        if (verbose > 1) write(69,12) procstrg, 'RETURNING #', msgnum2, sizemsg_fluid, &
+                                      ' to', ipsrc
         call MPI_SEND(buffr_fluid, sizeb, mpi_realkind, &
                       ipsrc, msgnum2, MPI_COMM_WORLD, ierror)
      end do
@@ -680,8 +685,8 @@ subroutine testing_asynch_messaging_fluid
         sizeb = sizemsg_fluid
         ipsrc = listsend_fluid(imsg)
         msgnum = ipsrc*nproc + mynum
-        write(69,12)procstrg,'RECV UPDATED #',msgnum,&
-                    sizemsg_fluid,' from',ipsrc
+        if (verbose > 1) write(69,12) procstrg, 'RECV UPDATED #', msgnum, &
+                                      sizemsg_fluid,' from',ipsrc
         call MPI_RECV(buffs_fluid, sizeb, mpi_realkind, &
              ipsrc, msgnum, MPI_COMM_WORLD, status, ierror)
         do ip = 1, sizemsg_fluid
@@ -691,7 +696,7 @@ subroutine testing_asynch_messaging_fluid
      enddo
   endif
 
-  write(69,13)procstrg; call flush(69)
+  if (verbose > 1) write(69,13) procstrg
 
 12 format('   MPI: ',a8,a15,i3,', size=',i8,a6,i3)
 13 format('   MPI: ',a8,' DONE.')
