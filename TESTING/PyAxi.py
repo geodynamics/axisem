@@ -368,19 +368,19 @@ def PyAxi(**kwargs):
         print "======"
         os.chdir(os.path.join(input['axi_address'], 'SOLVER'))
         
-        #if input['solver_cp'] != 'N':
-        #    # Copy the mesh_params.h in the main directory
-        #    if input['verbose'] != 'N':
-        #        print "\n======================"
-        #        print "Copy the mesh_params.h"
-        #        print "======================\n"
-        #    else:
-        #        sys.stdout.write('copy the mesh_params.h...')
-        #        sys.stdout.flush()
-        #    output = subprocess.check_call(['cp', '-f', os.path.join('MESHES', \
-        #                input['mesh_name'], 'mesh_params.h'), '.'])
-        #    if output != 0: print output_print
-        #    print 'DONE'
+        if input['solver_cp'] != 'N':
+            # Copy the mesh_params.h in the main directory
+            if input['verbose'] != 'N':
+                print "\n======================"
+                print "Copy the mesh_params.h"
+                print "======================\n"
+            else:
+                sys.stdout.write('copy the mesh_params.h...')
+                sys.stdout.flush()
+            output = subprocess.check_call(['cp', '-f', os.path.join('MESHES', \
+                        input['mesh_name'], 'mesh_params.h'), '.'])
+            if output != 0: print output_print
+            print 'DONE'
         
         # Create SOLVER Makefile
         if input['solver_makefile'] != 'N':
@@ -707,6 +707,9 @@ def PyAxi(**kwargs):
             #if output != 0: print output_print
             #
             #print 'DONE'
+            
+            output = subprocess.check_call(['./submit.csh', input['solver_name']], stdout = stdout_param)
+            if output != 0: print output_print
                 
             if os.path.isfile('xsem'):
                 if input['verbose'] != 'N':
@@ -724,10 +727,7 @@ def PyAxi(**kwargs):
             else:
                 print 'xsem does not exist!'
                 sys.exit(2)
-            
-            output = subprocess.check_call(['./submit.csh', input['solver_name']], stdout = stdout_param)
-            if output != 0: print output_print
-           
+
             print 'DONE'
 
             # copy the input file to the folder (for reference!)
