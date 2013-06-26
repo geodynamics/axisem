@@ -165,9 +165,9 @@ def PyAxi(**kwargs):
         
         # Delete previous mesh_params.h, meshdb.dat*, Diags/*
         if input['verbose'] != 'N': 
-            print "\n=========================================================================="
-            print 'Removing old mesh_params.h*, meshdb.dat*, ./Diags/* and unrolled_loops.f90'
-            print "==========================================================================\n"
+            print "\n====================================================="
+            print 'Removing old mesh_params.h*, meshdb.dat* and ./Diags/*'
+            print "=====================================================\n"
             stdout_param = None
         else:
             sys.stdout.write('Remove old files...')
@@ -179,8 +179,8 @@ def PyAxi(**kwargs):
         if output != 0: print output_print
         output = subprocess.check_call(['rm', '-rf', './Diags/*'], stdout = stdout_param)
         if output != 0: print output_print
-        output = subprocess.check_call(['rm', '-rf', './unrolled_loops.f90'], stdout = stdout_param)
-        if output != 0: print output_print
+        #output = subprocess.check_call(['rm', '-rf', './unrolled_loops.f90'], stdout = stdout_param)
+        #if output != 0: print output_print
         print 'DONE'
 
         # Create Mesher Makefile (required just once!)
@@ -270,22 +270,22 @@ def PyAxi(**kwargs):
             else:
                 print 'DONE'
             
-            if input['verbose'] != 'N':
-                print "================"
-                print "make clean; make"
-                print "================"
-                stdout_param = None
-            else:
-                sys.stdout.write('make clean; make...')
-                sys.stdout.flush()
-                stdout_param = subprocess.PIPE
-            
-            output = subprocess.check_call(['make', 'clean'], stdout = stdout_param)
-            if output != 0: print output_print
-            
-            output = subprocess.check_call(['make'], stdout = stdout_param)
-            if output != 0: print output_print
-            print 'DONE'
+            #if input['verbose'] != 'N':
+            #    print "================"
+            #    print "make clean; make"
+            #    print "================"
+            #    stdout_param = None
+            #else:
+            #    sys.stdout.write('make clean; make...')
+            #    sys.stdout.flush()
+            #    stdout_param = subprocess.PIPE
+            #
+            #output = subprocess.check_call(['make', 'clean'], stdout = stdout_param)
+            #if output != 0: print output_print
+            #
+            #output = subprocess.check_call(['make'], stdout = stdout_param)
+            #if output != 0: print output_print
+            #print 'DONE'
 
             if os.path.isfile('xmesh'):
                 if input['verbose'] != 'N':
@@ -368,19 +368,19 @@ def PyAxi(**kwargs):
         print "======"
         os.chdir(os.path.join(input['axi_address'], 'SOLVER'))
         
-        if input['solver_cp'] != 'N':
-            # Copy the mesh_params.h in the main directory
-            if input['verbose'] != 'N':
-                print "\n======================"
-                print "Copy the mesh_params.h"
-                print "======================\n"
-            else:
-                sys.stdout.write('copy the mesh_params.h...')
-                sys.stdout.flush()
-            output = subprocess.check_call(['cp', '-f', os.path.join('MESHES', \
-                        input['mesh_name'], 'mesh_params.h'), '.'])
-            if output != 0: print output_print
-            print 'DONE'
+        #if input['solver_cp'] != 'N':
+        #    # Copy the mesh_params.h in the main directory
+        #    if input['verbose'] != 'N':
+        #        print "\n======================"
+        #        print "Copy the mesh_params.h"
+        #        print "======================\n"
+        #    else:
+        #        sys.stdout.write('copy the mesh_params.h...')
+        #        sys.stdout.flush()
+        #    output = subprocess.check_call(['cp', '-f', os.path.join('MESHES', \
+        #                input['mesh_name'], 'mesh_params.h'), '.'])
+        #    if output != 0: print output_print
+        #    print 'DONE'
         
         # Create SOLVER Makefile
         if input['solver_makefile'] != 'N':
@@ -690,23 +690,23 @@ def PyAxi(**kwargs):
                 receiver_read = receiver_open.readlines()
                 print "Number of receivers: " + str(len(receiver_read))
             
-            if input['verbose'] != 'N':
-                print "\n================"
-                print "make clean; make"
-                print "================"
-                stdout_param = None
-            else:
-                sys.stdout.write('make clean; make...')
-                sys.stdout.flush()
-                stdout_param = subprocess.PIPE
+            #if input['verbose'] != 'N':
+            #    print "\n================"
+            #    print "make clean; make"
+            #    print "================"
+            #    stdout_param = None
+            #else:
+            #    sys.stdout.write('make clean; make...')
+            #    sys.stdout.flush()
+            #    stdout_param = subprocess.PIPE
 
-            output = subprocess.check_call(['make', 'clean'], stdout = stdout_param)
-            if output != 0: print output_print
-                
-            output = subprocess.check_call(['make'], stdout = stdout_param)
-            if output != 0: print output_print
-            
-            print 'DONE'
+            #output = subprocess.check_call(['make', 'clean'], stdout = stdout_param)
+            #if output != 0: print output_print
+            #    
+            #output = subprocess.check_call(['make'], stdout = stdout_param)
+            #if output != 0: print output_print
+            #
+            #print 'DONE'
                 
             if os.path.isfile('xsem'):
                 if input['verbose'] != 'N':
