@@ -707,29 +707,22 @@ def PyAxi(**kwargs):
             #if output != 0: print output_print
             #
             #print 'DONE'
-            
+           
+            if input['verbose'] != 'N':
+                print "\n=============="
+                print "RUN submit.csh"
+                print "=============="
+                stdout_param = None
+            else:
+                sys.stdout.write('submit.csh...')
+                sys.stdout.flush()
+                stdout_param = subprocess.PIPE
+                        
             output = subprocess.check_call(['./submit.csh', input['solver_name']], stdout = stdout_param)
             if output != 0: print output_print
-                
-            if os.path.isfile('xsem'):
-                if input['verbose'] != 'N':
-                    print "\n=============="
-                    print "xsem --- CHECK"
-                    print "==============" 
-                    print "RUN submit.csh"
-                    print "================="
-                    stdout_param = None
-                else:
-                    print 'xsem...CHECK'
-                    sys.stdout.write('submit.csh...')
-                    sys.stdout.flush()
-                    stdout_param = subprocess.PIPE
-            else:
-                print 'xsem does not exist!'
-                sys.exit(2)
-
+            
             print 'DONE'
-
+           
             # copy the input file to the folder (for reference!)
             if input['verbose'] != 'N':
                 print "=================="
