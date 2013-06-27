@@ -18,7 +18,6 @@ parser = argparse.ArgumentParser(description=
 
 parser.add_argument('-a', help='run all tests', action='store_const',
                     const=True, default=False)
-
 args = parser.parse_args()
 
 if not args.a:
@@ -40,6 +39,7 @@ print 'Requested Test numbers:'
 
 for i in range(0, len(test_no.split(','))):
     num = test_no.split(',')[i]
+    num = num.strip()
     if len(num) == 1:
         num = '0' + num
     print 'test' + num
@@ -47,6 +47,7 @@ print '====================================================='
 
 for i in range(0, len(test_no.split(','))):
     num = test_no.split(',')[i]
+    num = num.strip()
     if len(num) == 1:
         num = '0' + num
     
