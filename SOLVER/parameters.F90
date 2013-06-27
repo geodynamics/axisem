@@ -196,102 +196,96 @@ end subroutine readin_parameters
 !-----------------------------------------------------------------------------
 !> Read file inparam_basic
 subroutine read_inparam_basic
-    use data_mesh,   only: meshname
-    use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
+  use data_mesh,   only: meshname
+  use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
-    integer             :: iinparam_basic=500, ioerr, nval
-    character(len=256)  :: line
-    character(len=256)  :: keyword, keyvalue
-    character(len=16)   :: simtype
+  integer             :: iinparam_basic=500, ioerr, nval
+  character(len=256)  :: line
+  character(len=256)  :: keyword, keyvalue
+  character(len=16)   :: simtype
 
-    ! Default values
-    enforced_period = 0.0
-    enforced_dt = 0.0
-    seislength_t = 1800.0
-    seis_dt = 0.0
-    add_hetero = .false.
-    dump_vtk = .false.
-    snap_dt = 20.
-    dump_xdmf = .false.
-    !verbose = 1
-    use_netcdf = .false.
-    rec_file_type = 'stations'
+  ! Default values
+  seislength_t = 1800.0
+  add_hetero = .false.
+  rec_file_type = 'stations'
+  do_anel = .false.
+  dump_snaps_glob = .false.
 
-    ! These values have to be set
-    simtype = 'undefined'
-    src_file_type = 'undefined'
-    meshname = 'undefined'
+  ! These values have to be set
+  simtype = 'undefined'
+  src_file_type = 'undefined'
+  meshname = 'undefined'
 
-    ! only rank 0 reads the file
-    if (mynum == 0) then
-       keyword = ' '
-       keyvalue = ' '
-       
-       if (verbose > 1) write(6,'(A)', advance='no') '    Reading inparam_basic...'
-       open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
-       if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
+  ! only rank 0 reads the file
+  if (mynum == 0) then
+     keyword = ' '
+     keyvalue = ' '
+     
+     if (verbose > 1) write(6,'(A)', advance='no') '    Reading inparam_basic...'
+     open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
+     if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
  
-       do
-           read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
-           if (ioerr < 0) exit
-           if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+     do
+       read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
+       if (ioerr < 0) exit
+       if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
 
-           read(line,*) keyword, keyvalue 
+       read(line,*) keyword, keyvalue 
+     
+       parameter_to_read : select case(trim(keyword))
        
-           parameter_to_read : select case(trim(keyword))
-           
-           case('SIMULATION_TYPE') 
-               read(keyvalue, *) simtype
-               select case(trim(simtype))
-               case('single')
-                   src_file_type = 'sourceparams'
-               case('forces')
-                   print *, 'FIXME: Forces needs to be checked!'
-                   stop 2
-               case('moment')
-                   src_file_type = 'cmtsolut'
-               case default
-                   if(lpr) then
-                       print *, 'SIMULATION_TYPE in inparam_basic has invalid value ', simtype
-                   end if
-                   stop 2
-               end select
+       case('SIMULATION_TYPE') 
+         read(keyvalue, *) simtype
+         select case(trim(simtype))
+         case('single')
+            src_file_type = 'sourceparams'
+         case('forces')
+            print *, 'FIXME: Forces needs to be checked!'
+            stop 2
+         case('moment')
+            src_file_type = 'cmtsolut'
+         case default
+            if(lpr) then
+               print *, 'SIMULATION_TYPE in inparam_basic has invalid value ', simtype
+            end if
+            stop 2
+         end select
 
-           case('RECFILE_TYPE')
-               rec_file_type = keyvalue
+       case('RECFILE_TYPE')
+          rec_file_type = keyvalue
 
-           case('SEISMOGRAM_LENGTH')
-               read(keyvalue, *) seislength_t
+       case('SEISMOGRAM_LENGTH')
+          read(keyvalue, *) seislength_t
 
-           case('MESHNAME')
-               meshname = keyvalue
+       case('MESHNAME')
+          meshname = keyvalue
 
-           case('LAT_HETEROGENEITY')
-               read(keyvalue, *) add_hetero
+       case('LAT_HETEROGENEITY')
+          read(keyvalue, *) add_hetero
 
-           case('ATTENUATION')
-               read(keyvalue,*) do_anel 
+       case('ATTENUATION')
+          read(keyvalue,*) do_anel 
 
-           case('SAVE_SNAPSHOTS')
-               read(keyvalue, *) dump_snaps_glob
+       case('SAVE_SNAPSHOTS')
+          read(keyvalue, *) dump_snaps_glob
 
-           end select parameter_to_read
+       end select parameter_to_read
 
-       end do
-       
-       close(iinparam_basic)
-       if (lpr .and. verbose > 1) print *, 'done'
-   endif
-   
-   ! broadcast values to other processors
-   call broadcast_char(simtype, 0) 
-   call broadcast_char(src_file_type, 0)
-   call broadcast_char(rec_file_type, 0)
-   call broadcast_dble(seislength_t, 0)
-   call broadcast_char(meshname, 0)
-   call broadcast_log(add_hetero, 0)
-   call broadcast_log(do_anel, 0)
-   call broadcast_log(dump_snaps_glob, 0)
+     end do
+     
+     close(iinparam_basic)
+     if (lpr .and. verbose > 1) print *, 'done'
+  endif
+  
+  ! broadcast values to other processors
+  call broadcast_char(simtype, 0) 
+  call broadcast_char(src_file_type, 0)
+  call broadcast_char(rec_file_type, 0)
+  call broadcast_dble(seislength_t, 0)
+  call broadcast_char(meshname, 0)
+  call broadcast_log(add_hetero, 0)
+  call broadcast_log(do_anel, 0)
+  call broadcast_log(dump_snaps_glob, 0)
     
 end subroutine
 !=============================================================================
@@ -300,37 +294,38 @@ end subroutine
 !> get verbosity in the very beginning
 subroutine read_inparam_basic_verbosity
 
-    use data_mesh,   only: meshname
-    use commun,      only: broadcast_int
-    integer             :: iinparam_basic=500, ioerr, nval
-    character(len=256)  :: line
-    character(len=256)  :: keyword, keyvalue
-    character(len=16)   :: simtype
+  use data_mesh,   only: meshname
+  use commun,      only: broadcast_int
+  integer             :: iinparam_basic=500, ioerr, nval
+  character(len=256)  :: line
+  character(len=256)  :: keyword, keyvalue
+  character(len=16)   :: simtype
 
-    ! only rank 0 reads the file
-    if (mynum == 0) then
-       ! Default value
-       verbose = 1
-       
-       keyword = ' '
-       keyvalue = ' '
-       
-       open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
-       if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
-       do
-           read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
-           if (ioerr < 0) exit
-           if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+  ! Default value
+  verbose = 1
 
-           read(line,*) keyword, keyvalue 
-       
-           if (trim(keyword) == 'VERBOSITY') read(keyvalue, *) verbose
-       end do
-       close(iinparam_basic)
-   endif
-   
-   ! broadcast verbosity to other processors
-   call broadcast_int(verbose, 0) 
+  ! only rank 0 reads the file
+  if (mynum == 0) then
+     
+     keyword = ' '
+     keyvalue = ' '
+     
+     open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
+     if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
+     do
+         read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
+         if (ioerr < 0) exit
+         if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+
+         read(line,*) keyword, keyvalue 
+     
+         if (trim(keyword) == 'VERBOSITY') read(keyvalue, *) verbose
+     end do
+     close(iinparam_basic)
+  endif
+  
+  ! broadcast verbosity to other processors
+  call broadcast_int(verbose, 0) 
     
 end subroutine
 !=============================================================================
@@ -339,166 +334,180 @@ end subroutine
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
     
-    use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
-    include 'mesh_params.h'
+  use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
+  include 'mesh_params.h'
 
-    integer     :: iinparam_advanced=500, ioerr, nval
-    character(len=256)                   :: line
-    character(len=256) :: keyword, keyvalue
+  integer               :: iinparam_advanced=500, ioerr, nval
+  character(len=256)    :: line
+  character(len=256)    :: keyword, keyvalue
 
-    ! Default values
-    time_scheme = 'newmark2'
-    datapath = './Data'
-    infopath = './Info'
-    do_mesh_tests = .false.
-    dump_vtk = .false.
-    dump_wavefields = .false.
-    strain_samp = 8
-    src_dump_type = 'mask'
-    ibeg = 1
-    iend = 1
-    dump_energy = .false.
-    make_homo = .false.
-    force_ani = .true.
-    do_anel = .false.
-    deflate_level = 5
+  ! Default values
+  seis_dt = 0.0
+  enforced_period = 0.0
+  enforced_dt = 0.0
+  time_scheme = 'newmark2'
+  
+  datapath = './Data'
+  infopath = './Info'
+  
+  do_mesh_tests = .false.
+  dump_wavefields = .false.
+  strain_samp = 8
+  src_dump_type = 'mask'
+  ibeg = 1
+  iend = 1
+  
+  dump_energy = .false.
+  make_homo = .false.
+  vphomo = 10.
+  vshomo = 10.
+  rhohomo = 10.
+  
+  deflate_level = 5
+  force_ani = .true.
+  snap_dt = 20.
+  dump_vtk = .false.
+  dump_xdmf = .false.
+  use_netcdf = .false.
+  
+  keyword = ' '
+  keyvalue = ' '
 
-    keyword = ' '
-    keyvalue = ' '
-
-    if (lpr .and. verbose > 1) write(6, '(A)', advance='no') '    Reading inparam_advanced...'
-    open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read', iostat=ioerr)
-    if (ioerr /= 0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
+  if (mynum == 0) then
+     if (verbose > 1) write(6, '(A)', advance='no') '    Reading inparam_advanced...'
+     open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read', iostat=ioerr)
+     if (ioerr /= 0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
  
-    do
-        read(iinparam_advanced, fmt='(a256)', iostat=ioerr) line
-        if (ioerr < 0) exit
-        if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
-        read(line,*) keyword, keyvalue 
-    
-        parameter_to_read : select case(trim(keyword))
+     do
+         read(iinparam_advanced, fmt='(a256)', iostat=ioerr) line
+         if (ioerr < 0) exit
+         if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+         read(line,*) keyword, keyvalue 
+     
+         parameter_to_read : select case(trim(keyword))
 
-        case('SAMPLING_RATE')
-            read(keyvalue, *) seis_dt 
-            
-        case('SOURCE_PERIOD')
-            read(keyvalue, *) enforced_period
+         case('SAMPLING_RATE')
+             read(keyvalue, *) seis_dt 
+             
+         case('SOURCE_PERIOD')
+             read(keyvalue, *) enforced_period
 
-        case('TIME_STEP')
-            read(keyvalue, *) enforced_dt
+         case('TIME_STEP')
+             read(keyvalue, *) enforced_dt
 
-        case('TIME_SCHEME')
-            read(keyvalue,*) time_scheme
+         case('TIME_SCHEME')
+             read(keyvalue,*) time_scheme
 
-        case('DATA_DIR')
-            datapath = keyvalue
+         case('DATA_DIR')
+             datapath = keyvalue
 
-        case('INFO_DIR')
-            infopath = keyvalue
+         case('INFO_DIR')
+             infopath = keyvalue
 
-        case('MESH_TEST')
-            read(keyvalue,*) do_mesh_tests
+         case('MESH_TEST')
+             read(keyvalue,*) do_mesh_tests
 
-        case('KERNEL_WAVEFIELDS')
-            read(keyvalue,*) dump_wavefields
+         case('KERNEL_WAVEFIELDS')
+             read(keyvalue,*) dump_wavefields
 
-        case('KERNEL_SPP')
-            read(keyvalue,*) strain_samp
+         case('KERNEL_SPP')
+             read(keyvalue,*) strain_samp
 
-        case('KERNEL_SOURCE')
-            read(keyvalue,*) src_dump_type
+         case('KERNEL_SOURCE')
+             read(keyvalue,*) src_dump_type
 
-        case('KERNEL_IBEG')
-            read(keyvalue,*) ibeg
+         case('KERNEL_IBEG')
+             read(keyvalue,*) ibeg
 
-        case('KERNEL_IEND')
-            read(keyvalue,*) iend
-            iend = npol - iend
+         case('KERNEL_IEND')
+             read(keyvalue,*) iend
+             iend = npol - iend
 
-        case('SAVE_ENERGY')
-            read(keyvalue,*) dump_energy
+         case('SAVE_ENERGY')
+             read(keyvalue,*) dump_energy
 
-        case('HOMO_MODEL')
-            read(keyvalue,*) make_homo
+         case('HOMO_MODEL')
+             read(keyvalue,*) make_homo
 
-        case('HOMO_VP')
-            read(keyvalue,*) vphomo 
-            vphomo = vphomo * 1.e3
+         case('HOMO_VP')
+             read(keyvalue,*) vphomo 
+             vphomo = vphomo * 1.e3
 
-        case('HOMO_VS')
-            read(keyvalue,*) vshomo 
-            vshomo = vshomo * 1.e3
+         case('HOMO_VS')
+             read(keyvalue,*) vshomo 
+             vshomo = vshomo * 1.e3
 
-        case('HOMO_RHO')
-            read(keyvalue,*) rhohomo 
-            rhohomo = rhohomo * 1.e3
+         case('HOMO_RHO')
+             read(keyvalue,*) rhohomo 
+             rhohomo = rhohomo * 1.e3
 
-        case('DEFLATE_LEVEL')
-            read(keyvalue,*) deflate_level
+         case('DEFLATE_LEVEL')
+             read(keyvalue,*) deflate_level
 
-        case('FORCE_ANISO')
-            read(keyvalue,*) force_ani
+         case('FORCE_ANISO')
+             read(keyvalue,*) force_ani
 
-        case('SNAPSHOT_DT')
-            read(keyvalue, *) snap_dt
+         case('SNAPSHOT_DT')
+             read(keyvalue, *) snap_dt
 
-        case('SNAPSHOTS_FORMAT')
-            if (dump_snaps_glob) then 
-              select case (trim(keyvalue))
-                case('xdmf') 
-                    dump_xdmf = .true.
-                case('vtk')
-                    dump_vtk = .true.
-                case default 
-                    write(6,*)'invalid value for snapshots format!'; stop
-                end select
-            endif
+         case('SNAPSHOTS_FORMAT')
+             if (dump_snaps_glob) then 
+               select case (trim(keyvalue))
+                 case('xdmf') 
+                     dump_xdmf = .true.
+                     ! @TODO
+                     !dump_vtk = .true.
+                 case('vtk')
+                     dump_vtk = .true.
+                 case default 
+                     write(6,*)'invalid value for snapshots format!'; stop
+                 end select
+             endif
 
-        case('USE_NETCDF')
-            read(keyvalue, *) use_netcdf
+         case('USE_NETCDF')
+             read(keyvalue, *) use_netcdf
+         end select parameter_to_read
+     end do
+  endif
+  
+  call broadcast_dble(seis_dt, 0) 
+  call broadcast_dble(enforced_period, 0) 
+  call broadcast_dble(enforced_dt, 0) 
+  
+  call broadcast_char(time_scheme, 0) 
+  call broadcast_char(datapath, 0) 
+  call broadcast_char(infopath, 0) 
+  
+  call broadcast_log(do_mesh_tests, 0) 
+  call broadcast_log(dump_wavefields, 0) 
+  
+  call broadcast_dble(strain_samp, 0) 
+  call broadcast_char(src_dump_type, 0) 
+  
+  call broadcast_int(ibeg, 0) 
+  call broadcast_int(iend, 0) 
 
-        end select parameter_to_read
-
-    end do
-    
-    call broadcast_dble(seis_dt, 0) 
-    call broadcast_dble(enforced_period, 0) 
-    call broadcast_dble(enforced_dt, 0) 
-   
-    call broadcast_char(time_scheme, 0) 
-    call broadcast_char(datapath, 0) 
-    call broadcast_char(infopath, 0) 
-    
-    call broadcast_log(do_mesh_tests, 0) 
-    call broadcast_log(dump_wavefields, 0) 
-    
-    call broadcast_dble(strain_samp, 0) 
-    call broadcast_char(src_dump_type, 0) 
-    
-    call broadcast_int(ibeg, 0) 
-    call broadcast_int(iend, 0) 
-
-    call broadcast_log(dump_energy, 0) 
-    call broadcast_log(make_homo, 0) 
-    
-    call broadcast_dble(vphomo, 0) 
-    call broadcast_dble(vshomo, 0) 
-    call broadcast_dble(rhohomo, 0) 
-    
-    call broadcast_int(deflate_level, 0) 
-    call broadcast_dble(snap_dt, 0) 
-    
-    call broadcast_log(dump_energy, 0) 
-    call broadcast_log(force_ani, 0) 
-    call broadcast_log(dump_snaps_glob, 0) 
-    call broadcast_log(dump_xdmf, 0) 
-    call broadcast_log(dump_vtk, 0) 
-    call broadcast_log(use_netcdf, 0) 
-    
-    
-    lfdata = index(datapath,' ') - 1
-    lfinfo = index(infopath,' ') - 1
-    if (lpr .and. verbose > 1) print *, 'done'
+  call broadcast_log(dump_energy, 0) 
+  call broadcast_log(make_homo, 0) 
+  
+  call broadcast_dble(vphomo, 0) 
+  call broadcast_dble(vshomo, 0) 
+  call broadcast_dble(rhohomo, 0) 
+  
+  call broadcast_int(deflate_level, 0) 
+  call broadcast_dble(snap_dt, 0) 
+  
+  call broadcast_log(dump_energy, 0) 
+  call broadcast_log(force_ani, 0) 
+  call broadcast_log(dump_snaps_glob, 0) 
+  call broadcast_log(dump_xdmf, 0) 
+  call broadcast_log(dump_vtk, 0) 
+  call broadcast_log(use_netcdf, 0) 
+  
+  
+  lfdata = index(datapath,' ') - 1
+  lfinfo = index(infopath,' ') - 1
+  if (lpr .and. verbose > 1) print *, 'done'
 
 end subroutine
 !-----------------------------------------------------------------------------
@@ -506,36 +515,36 @@ end subroutine
 !-----------------------------------------------------------------------------
 !> Getting information like code revision, username and hostname
 subroutine get_runinfo
-    integer  :: iget_runinfo = 500, ioerr
+  integer  :: iget_runinfo = 500, ioerr
 
-    hostname = 'UNKNOWN'
-    username = 'UNKNOWN'
-    svn_version = 'UNKNOWN'
+  hostname = 'UNKNOWN'
+  username = 'UNKNOWN'
+  svn_version = 'UNKNOWN'
 
-    if (lpr .and. verbose > 1) write(6, '(A)', advance='no') '    Reading runinfo... '
-    open(unit=iget_runinfo, file='runinfo', status='old', action='read',  iostat=ioerr)
-    if (ioerr /= 0) then
-        if (lpr .and. verbose > 1) &
-            write(6,*) 'No file ''runinfo'' found, continuing without.'
-    else
-        read(iget_runinfo,*) svn_version
-        read(iget_runinfo,*) username
-        read(iget_runinfo,*) hostname 
-        if(lpr .and. verbose > 1) print *, 'done'
-    end if
-    close(iget_runinfo)
+  if (lpr .and. verbose > 1) write(6, '(A)', advance='no') '    Reading runinfo... '
+  open(unit=iget_runinfo, file='runinfo', status='old', action='read',  iostat=ioerr)
+  if (ioerr /= 0) then
+     if (lpr .and. verbose > 1) &
+        write(6,*) 'No file ''runinfo'' found, continuing without.'
+  else
+     read(iget_runinfo,*) svn_version
+     read(iget_runinfo,*) username
+     read(iget_runinfo,*) hostname 
+     if(lpr .and. verbose > 1) print *, 'done'
+  end if
+  close(iget_runinfo)
 
 #if defined(__GFORTRAN__)
-    compiler = 'gfortran'
+   compiler = 'gfortran'
 #define gfortranversion __VERSION__
-    compilerversion = gfortranversion
+   compilerversion = gfortranversion
 #undef gfortranversion
 #endif
 
 #if defined(__INTEL_COMPILER)
-    compiler = 'ifort'
+   compiler = 'ifort'
 #define ifortversion __INTEL_COMPILER
-    write(compilerversion, *) ifortversion
+   write(compilerversion, *) ifortversion
 #undef ifortversion
 #endif
 
@@ -546,27 +555,27 @@ end subroutine
 !> Checking the consistency of some of the input parameters
 subroutine check_basic_parameters
 
-    if (trim(src_file_type) == 'undefined') then
-        if (lpr) write(6,200) 'SIMULATION_TYPE', 'inparam_basic'
-        stop
-    end if
-    !if (trim(rec_file_type).eq.'undefined') then
-    !    if (lpr) write(6,200) 'RECFILE_TYPE', 'inparam_basic'
-    !    stop
-    !end if
-    if (trim(meshname) == 'undefined') then
-        if (lpr) write(6,200) 'MESHNAME', 'inparam_basic'
-        stop
-    end if
+  if (trim(src_file_type) == 'undefined') then
+      if (lpr) write(6,200) 'SIMULATION_TYPE', 'inparam_basic'
+      stop
+  end if
+  !if (trim(rec_file_type).eq.'undefined') then
+  !    if (lpr) write(6,200) 'RECFILE_TYPE', 'inparam_basic'
+  !    stop
+  !end if
+  if (trim(meshname) == 'undefined') then
+      if (lpr) write(6,200) 'MESHNAME', 'inparam_basic'
+      stop
+  end if
 
 200 format(A,' is not defined in input file ',A, ', but has to')
 
 
 #ifndef unc
-    if (use_netcdf) then
-       write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
-       stop 2
-    endif
+  if (use_netcdf) then
+     write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
+     stop 2
+  endif
 #endif
 
   if (src_dump_type == 'anal') then

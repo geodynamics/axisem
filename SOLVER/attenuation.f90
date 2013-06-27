@@ -27,12 +27,10 @@ module attenuation
 contains
 
 !-----------------------------------------------------------------------------------------
+!> analytical time integration of memory variables (linear interpolation for
+!! the strain), coarse grained version
+!! MvD, attenutation notes, p 13.2
 subroutine time_step_memvars_cg4(memvar, disp)
-  !
-  ! analytical time integration of memory variables (linear interpolation for
-  ! the strain), coarse grained version
-  ! MvD, attenutation notes, p 13.2
-  !
   use data_time,            only: deltat
   use data_matr,            only: Q_mu, Q_kappa
   use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
@@ -160,12 +158,11 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> analytical time integration of memory variables (linear interpolation for
+!! the strain)
+!! MvD, attenutation notes, p 13.2
 subroutine time_step_memvars(memvar, disp)
-  !
-  ! analytical time integration of memory variables (linear interpolation for
-  ! the strain)
-  ! MvD, attenutation notes, p 13.2
-  !
+
   use data_time,            only: deltat
   use data_matr,            only: Q_mu, Q_kappa
   use data_matr,            only: delta_mu, delta_kappa
@@ -296,12 +293,11 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> compute strain in Voigt notation for a single element
+!! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
+!! coarse grained version, so only computed at gll points (1,1), (1,3), (3,1) and (3,3)
 subroutine compute_strain_att_el_cg4(u, grad_u, iel)
-  !
-  ! compute strain in Voigt notation for a single element
-  ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
-  ! coarse grained version, so only computed at gll points (1,1), (1,3), (3,1) and (3,3)
-  !  
+  
   use data_source,              only: src_type
   use pointwise_derivatives,    only: axisym_gradient_solid_el_cg4
   use pointwise_derivatives,    only: f_over_s_solid_el_cg4
@@ -369,11 +365,10 @@ end subroutine compute_strain_att_el_cg4
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> compute strain in Voigt notation for a single element
+!! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
 subroutine compute_strain_att_el(u, grad_u, iel)
-  !
-  ! compute strain in Voigt notation for a single element
-  ! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
-  !  
+
   use data_source,              only: src_type
   use pointwise_derivatives,    only: axisym_gradient_solid_el
   use pointwise_derivatives,    only: f_over_s_solid_el
@@ -441,12 +436,11 @@ end subroutine compute_strain_att_el
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> read 'inparam_attenuation' file and compute precomputable terms
 subroutine prepare_attenuation(lambda, mu)
-  !
-  ! read 'inparam_attenuation' file and compute precomputable terms
-  !
+
   use data_io,              only: infopath, lfinfo
-  use data_proc,            only: lpr
+  use data_proc,            only: lpr, mynum
   use data_time,            only: deltat
   use global_parameters,    only: pi
   use data_matr,            only: Q_mu, Q_kappa
@@ -461,6 +455,8 @@ subroutine prepare_attenuation(lambda, mu)
   use analytic_mapping,     only: compute_partial_derivatives
   use data_source,          only: nelsrc, ielsrc
   use data_pointwise!,       only: DsDeta_over_J_sol_cg4, DzDeta_over_J_sol_cg4, DsDxi_over_J_sol_cg4, DzDxi_over_J_sol_cg4
+    use commun,             only: broadcast_int, broadcast_log, &
+                                  broadcast_char, broadcast_dble
 
 
   include 'mesh_params.h'
@@ -494,16 +490,10 @@ subroutine prepare_attenuation(lambda, mu)
   double precision                  :: dsdxi, dzdxi, dsdeta, dzdeta
   double precision                  :: weights_cg(0:npol,0:npol)
     
-  integer     :: iinparam_advanced=500, ioerr, nval
-  character(len=256)                   :: line
-  character(len=256) :: keyword, keyvalue
+  integer                           :: iinparam_advanced=500, ioerr, nval
+  character(len=256)                :: line
+  character(len=256)                :: keyword, keyvalue
 
-  keyword = ' '
-  keyvalue = ' '
-  if(lpr) write(6, '(A)', advance='no') 'Reading inparam_advanced...'
-  open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read',  iostat=ioerr)
-  if (ioerr.ne.0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
-  
   ! Default values
   n_sls_attenuation = 5
   f_min = 0.001
@@ -519,56 +509,80 @@ subroutine prepare_attenuation(lambda, mu)
   dump_memory_vars = .false.
   att_coarse_grained = .true.
 
-  do
-      read(iinparam_advanced,fmt='(a256)',iostat=ioerr) line
-      if (ioerr.lt.0) exit
-      if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
-      read(line,*) keyword, keyvalue 
+  if (mynum == 0) then
+     keyword = ' '
+     keyvalue = ' '
+  
+     write(6, '(A)', advance='no') 'Reading inparam_advanced...'
+     open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read',  iostat=ioerr)
+     if (ioerr.ne.0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
 
-      select case(keyword)
-      case('NR_LIN_SOLIDS')
-          read(keyvalue,*) n_sls_attenuation
+     do
+        read(iinparam_advanced,fmt='(a256)',iostat=ioerr) line
+        if (ioerr.lt.0) exit
+        if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
+        read(line,*) keyword, keyvalue 
 
-      case('F_MIN') 
-          read(keyvalue,*) f_min
+        select case(keyword)
+        case('NR_LIN_SOLIDS')
+            read(keyvalue,*) n_sls_attenuation
 
-      case('F_MAX') 
-          read(keyvalue,*) f_max
+        case('F_MIN') 
+            read(keyvalue,*) f_min
 
-      case('F_REFERENCE')
-          read(keyvalue,*) w_0
+        case('F_MAX') 
+            read(keyvalue,*) f_max
 
-      case('SMALL_Q_CORRECTION')
-          read(keyvalue,*) do_corr_lowq
+        case('F_REFERENCE')
+            read(keyvalue,*) w_0
 
-      case('NR_F_SAMPLE')
-          read(keyvalue,*) nfsamp
+        case('SMALL_Q_CORRECTION')
+            read(keyvalue,*) do_corr_lowq
 
-      case('MAXINT_SA')
-          read(keyvalue,*) max_it
+        case('NR_F_SAMPLE')
+            read(keyvalue,*) nfsamp
 
-      case('TSTART_SR')
-          read(keyvalue,*) Tw
+        case('MAXINT_SA')
+            read(keyvalue,*) max_it
 
-      case('TSTART_AMP')
-          read(keyvalue,*) Ty
+        case('TSTART_SR')
+            read(keyvalue,*) Tw
 
-      case('T_DECAY')
-          read(keyvalue,*) d
+        case('TSTART_AMP')
+            read(keyvalue,*) Ty
 
-      case('FIX_FREQ')
-          read(keyvalue,*) fixfreq
+        case('T_DECAY')
+            read(keyvalue,*) d
 
-      case('DUMP_VTK')
-          read(keyvalue,*) dump_memory_vars
+        case('FIX_FREQ')
+            read(keyvalue,*) fixfreq
 
-      case('COARSE_GRAINED')
-          read(keyvalue,*) att_coarse_grained
+        case('DUMP_VTK')
+            read(keyvalue,*) dump_memory_vars
 
-      end select
+        case('COARSE_GRAINED')
+            read(keyvalue,*) att_coarse_grained
 
-  end do
+        end select
 
+     end do
+  endif ! mynum
+
+  ! broadcast values to other processors
+  call broadcast_int(n_sls_attenuation, 0)
+  call broadcast_dble(f_min, 0)
+  call broadcast_dble(f_max, 0)
+  call broadcast_dble(w_0, 0)
+  call broadcast_log(do_corr_lowq, 0)
+  call broadcast_int(nfsamp, 0)
+  call broadcast_int(max_it, 0)
+  call broadcast_dble(Tw, 0)
+  call broadcast_dble(Ty, 0)
+  call broadcast_dble(d, 0)
+  call broadcast_log(fixfreq, 0)
+  call broadcast_log(dump_memory_vars, 0)
+  call broadcast_log(att_coarse_grained, 0)
+  
   if (lpr) print *, 'done'
   
   
@@ -615,23 +629,23 @@ subroutine prepare_attenuation(lambda, mu)
   enddo
 
   if (lpr) then
-      print *, '  ...log-l2 misfit    : ', chil(max_it)
-      print *, '  ...frequencies      : ', w_j_attenuation / (2. * pi)
-      print *, '  ...coefficients y_j : ', y_j_attenuation
-      print *, '  ...exp-frequencies  : ', exp_w_j_deltat
-      print *, '  ...ts_fac_t         : ', ts_fac_t
-      print *, '  ...ts_fac_tm1       : ', ts_fac_tm1
-      print *, '  ...coarse grained   : ', att_coarse_grained
+     print *, '  ...log-l2 misfit    : ', chil(max_it)
+     print *, '  ...frequencies      : ', w_j_attenuation / (2. * pi)
+     print *, '  ...coefficients y_j : ', y_j_attenuation
+     print *, '  ...exp-frequencies  : ', exp_w_j_deltat
+     print *, '  ...ts_fac_t         : ', ts_fac_t
+     print *, '  ...ts_fac_tm1       : ', ts_fac_tm1
+     print *, '  ...coarse grained   : ', att_coarse_grained
 
-      print *, '  ...writing fitted Q to file...'
-      open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='replace')
-      write(165,*) (w_samp(i), q_fit(i), char(10), i=1,nfsamp)
-      close(unit=165)
-      
-      print *, '  ...writing convergence of chi to file...'
-      open(unit=166, file=infopath(1:lfinfo)//'/attenuation_convergence', status='replace')
-      write(166,*) (chil(i), char(10), i=1,max_it)
-      close(unit=166)
+     print *, '  ...writing fitted Q to file...'
+     open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='replace')
+     write(165,*) (w_samp(i), q_fit(i), char(10), i=1,nfsamp)
+     close(unit=165)
+     
+     print *, '  ...writing convergence of chi to file...'
+     open(unit=166, file=infopath(1:lfinfo)//'/attenuation_convergence', status='replace')
+     write(166,*) (chil(i), char(10), i=1,max_it)
+     close(unit=166)
   endif
 
 
@@ -902,269 +916,264 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> compute Q after (Emmerich & Korn, inverse of eq 21)
+!! linearized version (exact = false) is eq 22 in E&K
 subroutine q_linear_solid(y_j, w_j, w, exact, Qls)
-    !
-    ! compute Q after (Emmerich & Korn, inverse of eq 21)
-    ! linearized version (exact = false) is eq 22 in E&K
-    !
-    double precision, intent(in)    :: y_j(:), w_j(:), w(:)
-    double precision, intent(out)   :: Qls(size(w))
-    integer                         :: j
-    
-    logical, optional, intent(in)           :: exact
-    !f2py logical, optional, intent(in)     :: exact = 0 
-    logical                                 :: exact_loc = .false.
-    
-    double precision                :: Qls_denom(size(w))
-    
-    if (present(exact)) exact_loc = exact
-    
-    Qls = 1
-    if (exact_loc) then
-        do j=1, size(y_j)
-            Qls = Qls + y_j(j) *  w**2 / (w**2 + w_j(j)**2)
-        enddo
-    endif
-    
-    Qls_denom = 0
-    do j=1, size(y_j)
-        Qls_denom = Qls_denom + y_j(j) * w * w_j(j) / (w**2 + w_j(j)**2)
-    enddo
+  
+  double precision, intent(in)    :: y_j(:), w_j(:), w(:)
+  double precision, intent(out)   :: Qls(size(w))
+  integer                         :: j
+  
+  logical, optional, intent(in)           :: exact
+  !f2py logical, optional, intent(in)     :: exact = 0 
+  logical                                 :: exact_loc = .false.
+  
+  double precision                :: Qls_denom(size(w))
+  
+  if (present(exact)) exact_loc = exact
+  
+  Qls = 1
+  if (exact_loc) then
+     do j=1, size(y_j)
+        Qls = Qls + y_j(j) *  w**2 / (w**2 + w_j(j)**2)
+     enddo
+  endif
+  
+  Qls_denom = 0
+  do j=1, size(y_j)
+     Qls_denom = Qls_denom + y_j(j) * w * w_j(j) / (w**2 + w_j(j)**2)
+  enddo
 
-    Qls = Qls / Qls_denom
+  Qls = Qls / Qls_denom
 end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> computes a first order correction to the linearized coefficients:
+!! yp_j_corrected = y_j * delta_j 
+!! MvD Attenuation Notes, p. 17.3 bottom
 subroutine fast_correct(y_j, yp_j)
-    !
-    ! computes a first order correction to the linearized coefficients:
-    ! yp_j_corrected = y_j * delta_j 
-    !
-    ! MvD Attenuation Notes, p. 17.3 bottom
-    !
-    double precision, intent(in)    :: y_j(:)
-    double precision, intent(out)   :: yp_j(size(y_j))
-    
-    double precision                :: dy_j(size(y_j))
-    integer                         :: k
 
-    dy_j(1) = 1 + .5 * y_j(1)
+  double precision, intent(in)    :: y_j(:)
+  double precision, intent(out)   :: yp_j(size(y_j))
+  
+  double precision                :: dy_j(size(y_j))
+  integer                         :: k
 
-    do k=2, size(y_j)
-        dy_j(k) = dy_j(k-1) + (dy_j(k-1) - .5) * y_j(k-1) + .5 * y_j(k)
-    enddo
+  dy_j(1) = 1 + .5 * y_j(1)
 
-    yp_j = y_j * dy_j
-    
+  do k=2, size(y_j)
+     dy_j(k) = dy_j(k-1) + (dy_j(k-1) - .5) * y_j(k-1) + .5 * y_j(k)
+  enddo
+
+  yp_j = y_j * dy_j
+  
 end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> returns l2 misfit between constant Q and fitted Q using standard linear solids
 subroutine l2_error(Q, Qls, lognorm, lse)
-    !
-    ! returns l2 misfit between constant Q and fitted Q using standard linear solids
-    !
-    double precision, intent(in)    :: Q, Qls(:)
-    
-    logical, optional, intent(in)   :: lognorm
-    ! optional argument with default value (a bit nasty in f2py)
-    !f2py logical, optional, intent(in) :: lognorm = 1
-    logical :: lognorm_loc = .true.
-    
-    double precision, intent(out)   :: lse
-    integer                         :: nfsamp, i
-    
-    if (present(lognorm)) lognorm_loc = lognorm
+ 
+  double precision, intent(in)    :: Q, Qls(:)
+  
+  logical, optional, intent(in)   :: lognorm
+  ! optional argument with default value (a bit nasty in f2py)
+  !f2py logical, optional, intent(in) :: lognorm = 1
+  logical :: lognorm_loc = .true.
+  
+  double precision, intent(out)   :: lse
+  integer                         :: nfsamp, i
+  
+  if (present(lognorm)) lognorm_loc = lognorm
 
-    lse = 0
-    nfsamp = size(Qls)
+  lse = 0
+  nfsamp = size(Qls)
 
-    if (lognorm_loc) then
-        !print *, 'log-l2 norm'
-        do i=1, nfsamp
-            lse = lse + (log(Q / Qls(i)))**2
-        end do
-    else
-        !print *, 'standard l2 norm'
-        do i=1, nfsamp
-            lse = lse + (1/Q - 1/Qls(i))**2
-        end do
-        lse = lse * Q**2
-    endif
-    lse = lse / float(nfsamp)
-    lse = dsqrt(lse)
+  if (lognorm_loc) then
+     !print *, 'log-l2 norm'
+     do i=1, nfsamp
+        lse = lse + (log(Q / Qls(i)))**2
+     end do
+  else
+     !print *, 'standard l2 norm'
+     do i=1, nfsamp
+        lse = lse + (1/Q - 1/Qls(i))**2
+     end do
+     lse = lse * Q**2
+  endif
+  lse = lse / float(nfsamp)
+  lse = dsqrt(lse)
 end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> Inverts for constant Q, minimizing the L2 error for 1/Q using a simulated annealing
+!! approach (varying peak frequencies and amplitudes).
 subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
                                  fixfreq, verbose, exact, mode, w_j, y_j, w, q_fit, chil)
-    !
-    ! Inverts for constant Q, minimizing the L2 error for 1/Q using a simulated annealing
-    ! approach (varying peak frequencies and amplitudes).
 
-    ! Parameters:
-    ! Q:              clear
-    ! f_min, fmax:    frequency band (in Hz)
-    ! N:              number of standard linear solids
-    ! nfsamp:         number of sampling frequencies for computation of the misfit (log
-    !                   spaced in freqeuncy band)
+  ! Parameters:
+  ! Q:              clear
+  ! f_min, fmax:    frequency band (in Hz)
+  ! N:              number of standard linear solids
+  ! nfsamp:         number of sampling frequencies for computation of the misfit (log
+  !                   spaced in freqeuncy band)
 
-    ! max_it:         number of iterations
-    ! Tw:             starting temperature for the frequencies
-    ! Ty:             starting temperature for the amplitudes
-    ! d:              temperature decay
-    ! fixfreq:        use log spaced peak frequencies (fixed)
-    ! verbose:        clear
-    ! exact:          use exact relation for Q and the coefficients (Emmerich & Korn, eq
-    !                   21). If false, linearized version is used (large Q approximation, eq
-    !                   22).
-    ! mode:           'maxwell' (default) oder 'zener' depending on the reology
-    !
-    ! Returns:
-    ! w_j:            relaxation frequencies, equals 1/tau_sigma in zener
-    !                   formulation
-    ! y_j:            coefficients of the linear solids, (Emmerich & Korn, eq 23 and 24)
-    !                   if mode is set to 'zener', this array contains the
-    !                   tau_epsilon as defined by Blanch et al, eq 12.
-    ! w:              sampling frequencies at which Q(w) is minimized
-    ! q_fit:          resulting q(w) at these frequencies
-    ! chil:           error as a function of iteration to check convergence,
-    !                   Note that this version uses log-l2 norm!
-    !
-    use data_proc,            only: lpr, mynum
-!    use ifport
+  ! max_it:         number of iterations
+  ! Tw:             starting temperature for the frequencies
+  ! Ty:             starting temperature for the amplitudes
+  ! d:              temperature decay
+  ! fixfreq:        use log spaced peak frequencies (fixed)
+  ! verbose:        clear
+  ! exact:          use exact relation for Q and the coefficients (Emmerich & Korn, eq
+  !                   21). If false, linearized version is used (large Q approximation, eq
+  !                   22).
+  ! mode:           'maxwell' (default) oder 'zener' depending on the reology
+  !
+  ! Returns:
+  ! w_j:            relaxation frequencies, equals 1/tau_sigma in zener
+  !                   formulation
+  ! y_j:            coefficients of the linear solids, (Emmerich & Korn, eq 23 and 24)
+  !                   if mode is set to 'zener', this array contains the
+  !                   tau_epsilon as defined by Blanch et al, eq 12.
+  ! w:              sampling frequencies at which Q(w) is minimized
+  ! q_fit:          resulting q(w) at these frequencies
+  ! chil:           error as a function of iteration to check convergence,
+  !                   Note that this version uses log-l2 norm!
+  !
+  use data_proc,            only: lpr, mynum
+  ! use ifport
 
-    double precision, intent(in)            :: Q, f_min, f_max
-    integer, intent(in)                     :: N, nfsamp, max_it
+  double precision, intent(in)            :: Q, f_min, f_max
+  integer, intent(in)                     :: N, nfsamp, max_it
 
-    double precision, optional, intent(in)          :: Tw, Ty, d
-    !f2py double precision, optional, intent(in)    :: Tw=.1, Ty=.1, d=.99995
-    double precision                                :: Tw_loc = .1, Ty_loc = .1
-    double precision                                :: d_loc = .99995
+  double precision, optional, intent(in)          :: Tw, Ty, d
+  !f2py double precision, optional, intent(in)    :: Tw=.1, Ty=.1, d=.99995
+  double precision                                :: Tw_loc = .1, Ty_loc = .1
+  double precision                                :: d_loc = .99995
 
-    logical, optional, intent(in)           :: fixfreq, verbose, exact
-    !f2py logical, optional, intent(in)     :: fixfreq = 0, verbose = 0
-    !f2py logical, optional, intent(in)     :: exact = 0
-    logical                                 :: fixfreq_loc = .false., verbose_loc = .false.
-    logical                                 :: exact_loc = .false.
-    
-    character(len=7), optional, intent(in)  :: mode
-    !f2py character(len=7), optional, intent(in) :: mode = 'maxwell'
-    character(len=7)                        :: mode_loc = 'maxwell'
+  logical, optional, intent(in)           :: fixfreq, verbose, exact
+  !f2py logical, optional, intent(in)     :: fixfreq = 0, verbose = 0
+  !f2py logical, optional, intent(in)     :: exact = 0
+  logical                                 :: fixfreq_loc = .false., verbose_loc = .false.
+  logical                                 :: exact_loc = .false.
+  
+  character(len=7), optional, intent(in)  :: mode
+  !f2py character(len=7), optional, intent(in) :: mode = 'maxwell'
+  character(len=7)                        :: mode_loc = 'maxwell'
 
-    double precision, intent(out)   :: w_j(N)
-    double precision, intent(out)   :: y_j(N)
-    double precision, intent(out)   :: w(nfsamp) 
-    double precision, intent(out)   :: q_fit(nfsamp) 
-    double precision, intent(out)   :: chil(max_it) 
+  double precision, intent(out)   :: w_j(N)
+  double precision, intent(out)   :: y_j(N)
+  double precision, intent(out)   :: w(nfsamp) 
+  double precision, intent(out)   :: q_fit(nfsamp) 
+  double precision, intent(out)   :: chil(max_it) 
 
-    double precision                :: w_j_test(N)
-    double precision                :: y_j_test(N)
-    double precision                :: expo
-    double precision                :: chi, chi_test
-    double precision                :: randnr
+  double precision                :: w_j_test(N)
+  double precision                :: y_j_test(N)
+  double precision                :: expo
+  double precision                :: chi, chi_test
+  double precision                :: randnr
 
-    integer             :: j, it, last_it_print
+  integer             :: j, it, last_it_print
 
-    ! set default values
-    if (present(Tw)) Tw_loc = Tw
-    if (present(Ty)) Ty_loc = Ty
-    if (present(d)) d_loc = d
+  ! set default values
+  if (present(Tw)) Tw_loc = Tw
+  if (present(Ty)) Ty_loc = Ty
+  if (present(d)) d_loc = d
 
-    if (present(fixfreq)) fixfreq_loc = fixfreq
-    if (present(verbose)) verbose_loc = verbose
-    if (present(exact)) exact_loc = exact
-    
-    if (present(mode)) mode_loc = mode
+  if (present(fixfreq)) fixfreq_loc = fixfreq
+  if (present(verbose)) verbose_loc = verbose
+  if (present(exact)) exact_loc = exact
+  
+  if (present(mode)) mode_loc = mode
 
-    if (.not. lpr) verbose_loc = .false.
-    
-    if ((mode_loc .ne. 'maxwell') .and. (mode_loc .ne. 'zener')) then
-        print *, "ERROR: mode should be either 'maxwell' or 'zener'"
-        return
-    endif
+  if (.not. lpr) verbose_loc = .false.
+  
+  if ((mode_loc .ne. 'maxwell') .and. (mode_loc .ne. 'zener')) then
+     print *, "ERROR: mode should be either 'maxwell' or 'zener'"
+     return
+  endif
 
 
-    ! Set the starting test frequencies equally spaced in log frequency
-    if (N > 1) then
-        expo = (log10(f_max) - log10(f_min)) / (N - 1.d0)
-        do j=1, N
-            ! pi = 4 * atan(1)
-            w_j_test(j) = datan(1.d0) * 8.d0 * 10**(log10(f_min) + (j - 1) * expo)
-        end do 
-    else
-        w_j_test(1) = (f_max * f_min)**.5 * 8 * datan(1.d0)
-    endif
+  ! Set the starting test frequencies equally spaced in log frequency
+  if (N > 1) then
+     expo = (log10(f_max) - log10(f_min)) / (N - 1.d0)
+     do j=1, N
+        ! pi = 4 * atan(1)
+        w_j_test(j) = datan(1.d0) * 8.d0 * 10**(log10(f_min) + (j - 1) * expo)
+     end do 
+  else
+     w_j_test(1) = (f_max * f_min)**.5 * 8 * datan(1.d0)
+  endif
 
 
-    if (verbose_loc) print *, w_j_test
-    
-    ! Set the sampling frequencies equally spaced in log frequency
-    expo = (log10(f_max) - log10(f_min)) / (nfsamp - 1.d0)
-    do j=1, nfsamp
-        w(j) = datan(1.d0) * 8.d0 * 10**(log10(f_min) + (j - 1) * expo)
-    end do
+  if (verbose_loc) print *, w_j_test
+  
+  ! Set the sampling frequencies equally spaced in log frequency
+  expo = (log10(f_max) - log10(f_min)) / (nfsamp - 1.d0)
+  do j=1, nfsamp
+     w(j) = datan(1.d0) * 8.d0 * 10**(log10(f_min) + (j - 1) * expo)
+  end do
 
-    if (verbose_loc) print *, w
-    
-    ! initial weights
-    y_j_test = 1.d0 / Q * 1.5
-    if (verbose_loc) print *, y_j_test
+  if (verbose_loc) print *, w
+  
+  ! initial weights
+  y_j_test = 1.d0 / Q * 1.5
+  if (verbose_loc) print *, y_j_test
 
-    ! initial Q(omega)
-    call q_linear_solid(y_j=y_j_test, w_j=w_j_test, w=w, exact=exact_loc, Qls=q_fit)
-    
-    if (verbose_loc) print *, q_fit
-   
-    ! initial chi
-    call l2_error(Q=Q, Qls=q_fit, lognorm=.true., lse=chi)
-    if (verbose_loc) print *, 'initital chi: ', chi
+  ! initial Q(omega)
+  call q_linear_solid(y_j=y_j_test, w_j=w_j_test, w=w, exact=exact_loc, Qls=q_fit)
+  
+  if (verbose_loc) print *, q_fit
+ 
+  ! initial chi
+  call l2_error(Q=Q, Qls=q_fit, lognorm=.true., lse=chi)
+  if (verbose_loc) print *, 'initital chi: ', chi
 
-    y_j(:) = y_j_test(:)
-    w_j(:) = w_j_test(:)
-    
-    last_it_print = -1
-    do it=1, max_it
-        do j=1, N
-            call random_number(randnr)
-            if (.not. fixfreq_loc) &
-                w_j_test(j) = w_j(j) * (1.0 + (0.5 - randnr) * Tw_loc)
-            call random_number(randnr)
-            y_j_test(j) = y_j(j) * (1.0 + (0.5 - randnr) * Ty_loc)
-        enddo
-    
-        ! compute Q with test parameters
-        call q_linear_solid(y_j=y_j_test, w_j=w_j_test, w=w, exact=exact_loc, Qls=q_fit)
-        
-        ! compute new misfit and new temperature
-        call l2_error(Q=Q, Qls=q_fit, lognorm=.true., lse=chi_test)
-        Tw_loc = Tw_loc * d_loc
-        Ty_loc = Ty_loc * d_loc
-                                        
-        ! check if the tested parameters are better
-        if (chi_test < chi) then
-            y_j(:) = y_j_test(:)
-            w_j(:) = w_j_test(:)
-            chi = chi_test
+  y_j(:) = y_j_test(:)
+  w_j(:) = w_j_test(:)
+  
+  last_it_print = -1
+  do it=1, max_it
+     do j=1, N
+        call random_number(randnr)
+        if (.not. fixfreq_loc) &
+           w_j_test(j) = w_j(j) * (1.0 + (0.5 - randnr) * Tw_loc)
+        call random_number(randnr)
+        y_j_test(j) = y_j(j) * (1.0 + (0.5 - randnr) * Ty_loc)
+     enddo
+  
+     ! compute Q with test parameters
+     call q_linear_solid(y_j=y_j_test, w_j=w_j_test, w=w, exact=exact_loc, Qls=q_fit)
+     
+     ! compute new misfit and new temperature
+     call l2_error(Q=Q, Qls=q_fit, lognorm=.true., lse=chi_test)
+     Tw_loc = Tw_loc * d_loc
+     Ty_loc = Ty_loc * d_loc
+                                     
+     ! check if the tested parameters are better
+     if (chi_test < chi) then
+        y_j(:) = y_j_test(:)
+        w_j(:) = w_j_test(:)
+        chi = chi_test
 
-            if (verbose_loc) then
-                print *, '---------------'
-                print *, it, chi
-                print *, w_j / (8 * tan(1.))
-                print *, y_j
-            endif
-    
+        if (verbose_loc) then
+           print *, '---------------'
+           print *, it, chi
+           print *, w_j / (8 * tan(1.))
+           print *, y_j
         endif
-        chil(it) = chi
-    enddo
+  
+     endif
+     chil(it) = chi
+  enddo
 
-    if (mode_loc .eq. 'zener') then
-        ! compare Attenuation Notes, p 18.1
-        ! easy to find from Blanch et al, eq. (12) and Emmerick & Korn, eq. (21)
-        y_j = (y_j + 1) / w_j
-    endif
+  if (mode_loc .eq. 'zener') then
+     ! compare Attenuation Notes, p 18.1
+     ! easy to find from Blanch et al, eq. (12) and Emmerick & Korn, eq. (21)
+     y_j = (y_j + 1) / w_j
+  endif
 
 end subroutine
 !-----------------------------------------------------------------------------------------
