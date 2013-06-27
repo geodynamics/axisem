@@ -44,12 +44,12 @@ try:
     from obspy.signal import util, cosTaper, detrend
 except Exception, error:
     obspy_error = 'obspy (http://obspy.org/) should be installed'
-    obspy_error += 'for using MISC and TEST functionalities.'
+    obspy_error += 'for using MSEED, Filter, STF and TEST functionalities.'
     print "\n======================================"
     print 'Error in importing:'
     print error
     print "------------------"
-    print "No MISC and TEST functionalities (refer to inpython.cfg)"
+    print "No MSEED, Filter, STF and TEST functionalities (refer to inpython.cfg)"
     print obspy_error
     print "======================================"
     print "\n\n-----------------------------------"
@@ -70,7 +70,7 @@ def PyAxi(**kwargs):
     1. change the "inpython.cfg" file based on the inputs that you want
     2. type: python PyAxi.py
     3. if you have run the code once before with the same name, then PyAxi
-       will ask whether it should remove the folder or not!
+       will ask whether it should remove the old directory or not!
     """
     
     # global variables
@@ -79,13 +79,12 @@ def PyAxi(**kwargs):
         if sys.argv[1] == '--check':
             print 'Check the Basic, Processing and Visualization requirements:\n'
             p = []
-            
             print repr('Compiler').rjust(20).replace("'", '') + "    |    " +   repr('Installed').rjust(11).replace("'", '')
             print '  ' + 42*'-'
             
-            for compilers in ['gfortran', 'ifort', 'mpif90', 'mpif90.openmpi', \
+            for compilers in ['gfortran', 'ifort', 'mpif90', 'mpif90.openmpi',
                                 'gnuplot', 'taup', 'paraview', 'matlab', 'googleearth']:
-                p.append([compilers, subprocess.Popen(['which', compilers], \
+                p.append([compilers, subprocess.Popen(['which', compilers],
                                     stdout = subprocess.PIPE).communicate()])
             for comp in range(0, len(p)):
                 if p[comp][1][0] != '':
@@ -118,8 +117,8 @@ def PyAxi(**kwargs):
     read_input_file()
     
     if input['test'] != 'N':
-        subprocess.check_call(['cp', \
-            os.path.join(input['test_folder'], 'STATIONS'), \
+        subprocess.check_call(['cp',
+            os.path.join(input['test_folder'], 'STATIONS'),
             os.path.join(input['axi_address'], 'SOLVER', 'STATIONS')])
         read_input_file()
     
@@ -130,14 +129,13 @@ def PyAxi(**kwargs):
     
     if os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])) == True:
         print '--------------------------------------------------------'
-        user_raw_input = raw_input('Directory with the same name as ' + input['solver_name'] + \
-                ' \n(SOLVER_NAME in ipython.cfg) exists in:\n' + \
-                os.path.join(input['axi_address'], 'SOLVER', input['solver_name']) + \
-                '\n\n' + \
-                'You could:' + '\n' + \
-                'S: Stop the program' + '\n' + \
-                'R: Remove the directory and continue the program' + '\n' + \
-                'C: Continue the program without removing the directory' + '\n\n').upper()
+        user_raw_input = raw_input('Directory with the same name as ' + input['solver_name'] +
+                ' \n(SOLVER_NAME in ipython.cfg) exists in:\n' +
+                os.path.join(input['axi_address'], 'SOLVER', input['solver_name']) + '\n\n' +
+                'You could:\n' +
+                'S: Stop the program\n' +
+                'R: Remove the directory and continue the program\n' +
+                'C: Continue the program without removing the directory\n\n').upper()
         
         print '--------------------------------------------------------'
         if user_raw_input == 'C':
@@ -146,7 +144,7 @@ def PyAxi(**kwargs):
         elif user_raw_input == 'R':
             print "Removing the directory and continue the program!"
             print '--------------------------------------------------------'
-            subprocess.check_call(['rm', '-rf', \
+            subprocess.check_call(['rm', '-rf',
                 os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])])
         elif user_raw_input == 'S':
             print 'EXIT AXISEM!'
@@ -195,8 +193,8 @@ def PyAxi(**kwargs):
                 sys.stdout.flush()
                 stdout_param = subprocess.PIPE
 
-            if input['make_flag'] != 'N':
-                output = subprocess.check_call(['./makemake.pl', input['make_flag']], stdout = stdout_param)
+            if input['make_flag_mesher'] != 'N':
+                output = subprocess.check_call(['./makemake.pl', input['make_flag_mesher']], stdout = stdout_param)
                 if output != 0: print output_print
             else:
                 output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
@@ -392,17 +390,17 @@ def PyAxi(**kwargs):
             else:
                 stdout_param = subprocess.PIPE
 
-            if input['netCDF'] == 'N' and input['make_flag'] == 'N':
+            if input['netCDF'] == 'N' and input['make_flag_solver'] == 'N':
                 output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
                 if output != 0: print output_print
-            elif input['netCDF'] == 'N' and input['make_flag'] != 'N':
-                output = subprocess.check_call(['./makemake.pl', input['make_flag']], stdout = stdout_param)
+            elif input['netCDF'] == 'N' and input['make_flag_solver'] != 'N':
+                output = subprocess.check_call(['./makemake.pl', input['make_flag_solver']], stdout = stdout_param)
                 if output != 0: print output_print
-            elif input['netCDF'] != 'N' and input['make_flag'] == 'N':
+            elif input['netCDF'] != 'N' and input['make_flag_solver'] == 'N':
                 output = subprocess.check_call(['./makemake.pl', '-netcdf'], stdout = stdout_param)
                 if output != 0: print output_print
-            elif input['netCDF'] != 'N' and input['make_flag'] != 'N':
-                output = subprocess.check_call(['./makemake.pl', input['make_flag'], '-netcdf'], stdout = stdout_param)
+            elif input['netCDF'] != 'N' and input['make_flag_solver'] != 'N':
+                output = subprocess.check_call(['./makemake.pl', input['make_flag_solver'], '-netcdf'], stdout = stdout_param)
                 if output != 0: print output_print
             print 'Create Solver Makefile...DONE'
        
@@ -1277,7 +1275,8 @@ def read_input_file():
     input['fmax'] = eval(config.get('MISC', 'FMAX'))
    
    
-    input['make_flag'] = config.get('MPI', 'MAKE_FLAG')
+    input['make_flag_mesher'] = config.get('MPI', 'MAKE_FLAG_MESHER')
+    input['make_flag_solver'] = config.get('MPI', 'MAKE_FLAG_SOLVER')
     input['mpi_compiler'] = config.get('MPI', 'MPI_COMPILER')
     
     input['test'] = config.get('TEST', 'TEST')

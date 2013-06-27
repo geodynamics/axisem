@@ -262,7 +262,8 @@ FMAX = 0.1                               ; Maximum frequency
 #========================= MPI ====================================
 #******************************************************************
 [MPI]
-MAKE_FLAG = gfortran                     ; Add require flags to makemake.pl
+MAKE_FLAG_MESHER = gfortran              ; Add require flags to makemake.pl
+MAKE_FLAG_SOLVER = gfortran              ; Add require flags to makemake.pl
 MPI_COMPILER = mpif90 -O3 -fbacktrace    ; MPI compiler of your local machine
 
 
