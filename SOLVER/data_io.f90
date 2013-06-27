@@ -3,9 +3,6 @@
 !=================
 module data_io
 !=================
-!
-! Miscellaneous variables relevant to any read/write process such as 
-! paths, logicals describing what to save, sampling rate of dumps
 
 implicit none
 public 

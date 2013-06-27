@@ -1,3 +1,4 @@
+!> Variables describing anything related to the source
 !===================
 module data_source
 !===================
@@ -10,7 +11,6 @@ include "mesh_params.h"
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-! Variables describing anything related to the source
  character(len=10)   :: src_type(2)
  double precision    :: t_0,magnitude
  character(len=12)   :: src_file_type

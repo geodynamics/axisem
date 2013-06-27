@@ -1,9 +1,9 @@
+!> Global numbering for the stiffness assembly
+!! (size: all unique grid points in respective domains)
 !===================
 module data_numbering
 !===================
 
-! Global numbering for the stiffness assembly
-! (size: all unique grid points in respective domains)
 
 implicit none
 public

@@ -1,4 +1,4 @@
-!! Various variables around timing
+!> Various variables around timing
 !==================
 module data_time
 !==================

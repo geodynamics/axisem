@@ -1,10 +1,10 @@
 !===================
+!> Message-passing communication variables
+!! Note: For the easy serialization of the code (see commun.f90 and commpi.f90),
+!! one still needs this module as these quantities are read in from the mesher.
 module data_comm
 !===================
 
-  ! Message-passing communication variables
-  ! Note: For the easy serialization of the code (see commun.f90 and commpi.f90),
-  ! one still needs this module as these quantities are read in from the mesher.
 
   use global_parameters
   

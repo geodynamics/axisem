@@ -1,10 +1,8 @@
+!> Variables concerned with elemental & spectral aspects only
+!! (e.g. GLL points, Lagrange interpolant derivatives, quadrature weights)
 !===================
  module data_spec
 !===================
-!
-! Variables concerned with elemental & spectral aspects only
-! (e.g. GLL points, Lagrange interpolant derivatives, quadrature weights)
-!
 
 use global_parameters
 implicit none
@@ -13,7 +11,6 @@ public
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-  !character(len=3) :: quadrature
 
   double precision, dimension(0:npol) :: xi_k, eta
   double precision, dimension(0:npol) :: dxi
