@@ -503,7 +503,7 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 
   ! Fill up Q arrays with values from the backgroundmodel
   if (anel_true) then
-      print *, '...filling up Q arrays'
+      if (lpr .and. verbose > 1) print *, '...filling up Q arrays'
       do iel=1, nel_solid
           iidom = ieldom(ielsolid(iel))
           call compute_coordinates(s, z, r, theta, ielsolid(iel), npol/2 - 1, npol/2 - 1)
@@ -1543,7 +1543,7 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   write(100) u1
 
   close(100)
-  write(6,*)'...saved ',trim(filename)//'.vtk'
+  if (verbose > 1) write(6,*)'...saved ',trim(filename)//'.vtk'
 
 end subroutine write_VTK_bin_scal
 !=============================================================================

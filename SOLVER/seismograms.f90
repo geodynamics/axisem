@@ -537,14 +537,16 @@ subroutine prepare_from_recfile_seis
      write(6,*)procstrg,'Number of receivers:',num_rec
      stop
   endif
-
-  if (lpr) write(6,*)
-  do irec=0,nproc-1
-     call barrier
-     if (mynum==irec) write(6,14)procstrg,num_rec,num_rec_glob
-     call barrier
-  enddo
-  if (verbose > 1) write(69,14)procstrg,num_rec,num_rec_glob
+  
+  if (verbose > 1) then
+     if (lpr) write(6,*)
+     do irec=0,nproc-1
+        call barrier
+        if (mynum==irec) write(6,14)procstrg,num_rec,num_rec_glob
+        call barrier
+     enddo
+     write(69,14)procstrg,num_rec,num_rec_glob
+  endif
 14 format(/,'   ',a8,'has',i4,' out of',i6,' receivers')
 
   ! Output colatitudes globally (this is the file needed to plot seismograms)
@@ -573,7 +575,7 @@ subroutine prepare_from_recfile_seis
      if ( pi/180*router*abs(recfile_readth(loc2globrec(i))-recfile_th(i) ) >  &
           min_distance_dim) then
         count_diff_loc=count_diff_loc+1
-        write(6,22)procstrg, &
+        if (verbose > 1) write(6,22)procstrg, &
                   recfile_readth(loc2globrec(i)), recfile_th(i)
         if (dabs(recfile_readth(loc2globrec(i))-recfile_th(i))> maxreclocerr) &
              maxreclocerr=dabs(recfile_readth(loc2globrec(i))-recfile_th(i))/ &
@@ -595,7 +597,7 @@ subroutine prepare_from_recfile_seis
 
 
   if(.not.(use_netcdf))   then
-     write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
+     if (verbose > 1) write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
      open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
   endif
  
@@ -861,7 +863,7 @@ subroutine prepare_from_recfile_cmb
      if ( pi/180*router*abs(cmbfile_readth(loc2globcmb(i))-cmbfile_th(i) ) >  &
           min_distance_dim) then
         count_diff_loc=count_diff_loc+1
-        write(6,22)procstrg, &
+        if (verbose > 1) write(6,22) procstrg, &
                   cmbfile_readth(loc2globcmb(i)),cmbfile_th(i),cmbfile_r(i)/1.d3
 
         if (dabs(cmbfile_readth(loc2globcmb(i))-cmbfile_th(i))> maxcmblocerr) &
@@ -872,7 +874,7 @@ subroutine prepare_from_recfile_cmb
 
 22 format('   WARNING:',a8,' cmbrec location file/mesh:',3(f9.3))
 
-     write(6,*)'  ',procstrg,'opening cmbrec file:',i,appielem
+     if (verbose > 1) write(6,*)'  ',procstrg,'opening cmbrec file:',i,appielem
 
      open(200000+i,file=datapath(1:lfdata)//'/cmbfile_seis.dat'//appielem)
      open(250000+i,file=datapath(1:lfdata)//'/cmbfile_straintrace.dat'//appielem)

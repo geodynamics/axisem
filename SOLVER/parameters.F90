@@ -1583,7 +1583,7 @@ subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
     integer, intent(in) :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
     integer, intent(in) :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid
     
-    write(6,*)procstrg,'Checking solid message-passing...'
+    if (verbose > 1) write(6,*)procstrg,'Checking solid message-passing...'
     if (nproc==1 .and. psum_int(sizesend_solid)>0 ) then 
        write(6,*)'Problem: Have only one proc but want to send messages..'
        stop
@@ -1615,7 +1615,7 @@ subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
     endif
   
     if (have_fluid) then
-       write(6,*)procstrg,'Checking fluid message-passing...'
+       if (verbose > 1) write(6,*)procstrg,'Checking fluid message-passing...'
        if (nproc==1 .and. psum_int(sizesend_fluid)>0 ) then 
           write(6,*)'Problem: Have only one proc but want to send messages..'
           stop

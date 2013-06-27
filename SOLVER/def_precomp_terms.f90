@@ -104,11 +104,11 @@ subroutine read_model_compute_terms
   endif
 
   if (anel_true) then
-     if (lpr) write(6,*) '  preparing Q model'
+     if (lpr) write(6, '(/,a,/)') '  preparing ATTENUATION model'
      ! this needs to be done before def_solid_stiffness_terms, as it calculates
      ! the unrelaxed moduli from the ones at reference frequency
      call prepare_attenuation(lambda, mu)
-     if (lpr) write(6,*) '  done preparing Q model'
+     if (lpr) write(6, '(/,a,/)') '  done preparing ATTENUATION model'
   endif
      
   if (lpr) write(6,*)'  define solid stiffness terms....'

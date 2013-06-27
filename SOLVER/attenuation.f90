@@ -1,5 +1,7 @@
 module attenuation
+  
   use global_parameters,    only: realkind, third
+  use data_io,              only: verbose
   implicit none
   include 'mesh_params.h'
 
@@ -31,6 +33,7 @@ contains
 !! the strain), coarse grained version
 !! MvD, attenutation notes, p 13.2
 subroutine time_step_memvars_cg4(memvar, disp)
+
   use data_time,            only: deltat
   use data_matr,            only: Q_mu, Q_kappa
   use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
@@ -456,7 +459,7 @@ subroutine prepare_attenuation(lambda, mu)
   use data_source,          only: nelsrc, ielsrc
   use data_pointwise!,       only: DsDeta_over_J_sol_cg4, DzDeta_over_J_sol_cg4, DsDxi_over_J_sol_cg4, DzDxi_over_J_sol_cg4
     use commun,             only: broadcast_int, broadcast_log, &
-                                  broadcast_char, broadcast_dble
+                                  broadcast_char, broadcast_dble, barrier
 
 
   include 'mesh_params.h'
@@ -509,11 +512,14 @@ subroutine prepare_attenuation(lambda, mu)
   dump_memory_vars = .false.
   att_coarse_grained = .true.
 
+  call barrier ! only for nicer output
+
   if (mynum == 0) then
      keyword = ' '
      keyvalue = ' '
   
-     write(6, '(A)', advance='no') 'Reading inparam_advanced...'
+     if (verbose > 1) write(6, '(A)', advance='no') &
+            '   Reading attenuation parameters from inparam_advanced...'
      open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read',  iostat=ioerr)
      if (ioerr.ne.0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
 
@@ -583,14 +589,13 @@ subroutine prepare_attenuation(lambda, mu)
   call broadcast_log(dump_memory_vars, 0)
   call broadcast_log(att_coarse_grained, 0)
   
-  if (lpr) print *, 'done'
-  
+  if (lpr .and. verbose > 1) print *, 'done'
   
   w_0 = w_0 * (2 * pi)
-  if (lpr) print *, '       w_0 = ', w_0
+  if (lpr .and. verbose > 1) print '(a,f6.3)', '       w_0 = ', w_0
   
   w_1 = dsqrt(f_min * f_max) * (2 * pi)
-  if (lpr) print *, '       w_1 = ', w_1
+  if (lpr .and. verbose > 1) print '(a,f6.3)', '       w_1 = ', w_1
 
   if (f_min > f_max) then
      print *, "ERROR: minimum frequency larger then maximum frequency"
@@ -613,12 +618,13 @@ subroutine prepare_attenuation(lambda, mu)
   allocate(ts_fac_tm1(1:n_sls_attenuation))
   
   
-  if (lpr) print *, '  ...inverting for standard linear solid parameters...'
+  if (lpr .and. verbose > 1) print *, &
+        '  inverting for standard linear solid parameters...'
 
   call invert_linear_solids(1.d0, f_min, f_max, n_sls_attenuation, nfsamp, max_it, Tw, &
                             Ty, d, fixfreq, .false., .false., 'maxwell', w_j_attenuation, &
                             y_j_attenuation, w_samp, q_fit, chil)
-  if (lpr) print *, '  ...done'
+  if (lpr .and. verbose > 1) print *, '  ...done'
   
   ! prefactors for the exact time stepping (att notes p 13.3)
   do j=1, n_sls_attenuation
@@ -629,27 +635,26 @@ subroutine prepare_attenuation(lambda, mu)
   enddo
 
   if (lpr) then
-     print *, '  ...log-l2 misfit    : ', chil(max_it)
-     print *, '  ...frequencies      : ', w_j_attenuation / (2. * pi)
-     print *, '  ...coefficients y_j : ', y_j_attenuation
-     print *, '  ...exp-frequencies  : ', exp_w_j_deltat
-     print *, '  ...ts_fac_t         : ', ts_fac_t
-     print *, '  ...ts_fac_tm1       : ', ts_fac_tm1
-     print *, '  ...coarse grained   : ', att_coarse_grained
-
-     print *, '  ...writing fitted Q to file...'
+     if (verbose > 1) then
+        print *, '  ...log-l2 misfit    : ', chil(max_it)
+        print *, '  ...frequencies      : ', w_j_attenuation / (2. * pi)
+        print *, '  ...coefficients y_j : ', y_j_attenuation
+        print *, '  ...coarse grained   : ', att_coarse_grained
+        
+        print *, '  ...writing fitted Q to file...'
+     endif
      open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='replace')
      write(165,*) (w_samp(i), q_fit(i), char(10), i=1,nfsamp)
      close(unit=165)
      
-     print *, '  ...writing convergence of chi to file...'
+     if (verbose > 1) print *, '  ...writing convergence of chi to file...'
      open(unit=166, file=infopath(1:lfinfo)//'/attenuation_convergence', status='replace')
      write(166,*) (chil(i), char(10), i=1,max_it)
      close(unit=166)
   endif
 
 
-  if (lpr) print *, '  ...calculating relaxed moduli...'
+  if (lpr .and. verbose > 1) print *, '  ...calculating relaxed moduli...'
 
   if (att_coarse_grained) then
 
@@ -910,7 +915,7 @@ subroutine prepare_attenuation(lambda, mu)
      DsDxi_over_J_sol_cg4(4,:) = DsDxi_over_J_sol(3,3,:)
   endif
   
-  if (lpr) print *, '  ...DONE'
+  if (lpr .and. verbose > 1) print *, '  ...DONE'
 
 end subroutine
 !-----------------------------------------------------------------------------------------
