@@ -474,7 +474,7 @@ def PyAxi(**kwargs):
             inparam_basic_input.append('SIMULATION_TYPE     %s\n' %(input['solver_sim_type']))
             inparam_basic_input.append('SEISMOGRAM_LENGTH     %s\n' %(input['solver_seis_length']))
             inparam_basic_input.append('RECFILE_TYPE     %s\n' %(input['solver_recfile_type']))
-            inparam_basic_input.append('MESHNAME     %s\n' %(input['mesher_meshname']))
+            inparam_basic_input.append('MESHNAME     %s\n' %(input['mesh_name']))
             inparam_basic_input.append('LAT_HETEROGENEITY     %s\n' %(input['solver_lat_heterogeneity']))
             inparam_basic_input.append('ATTENUATION     %s\n' %(input['solver_attenuation']))
             inparam_basic_input.append('SAVE_SNAPSHOTS     %s\n' %(input['solver_save_snapshots']))
@@ -714,7 +714,7 @@ def PyAxi(**kwargs):
                     output_file_open =  open('OUTPUT_' + input['solver_name'], 'r')
                     output_file_read = output_file_open.readlines()
                     test = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                    for k in range(0, int(input['no_proc'])):
+                    for k in range(0, int(input['mesher_ncpu'])):
                         if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
                             test = -1
                             print_output = output_file_read[-1-k].split('\n')[0]
@@ -726,7 +726,7 @@ def PyAxi(**kwargs):
                         output_file_open =  open(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'), 'r')
                         output_file_read = output_file_open.readlines()
                         test_1 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        for k in range(0, int(input['no_proc'])):
+                        for k in range(0, int(input['mesher_ncpu'])):
                             if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
                                 test_1 = -1
                                 print_output = output_file_read[-1-k].split('\n')[0]
@@ -735,7 +735,7 @@ def PyAxi(**kwargs):
                         output_file_open =  open(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'), 'r')
                         output_file_read = output_file_open.readlines()
                         test_2 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        for k in range(0, int(input['no_proc'])):
+                        for k in range(0, int(input['mesher_ncpu'])):
                             if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
                                 test_2 = -1
                                 print_output = output_file_read[-1-k].split('\n')[0]
@@ -744,7 +744,7 @@ def PyAxi(**kwargs):
                         output_file_open =  open(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'), 'r')
                         output_file_read = output_file_open.readlines()
                         test_3 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        for k in range(0, int(input['no_proc'])):
+                        for k in range(0, int(input['mesher_ncpu'])):
                             if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
                                 test_3 = -1
                                 print_output = output_file_read[-1-k].split('\n')[0]
@@ -753,7 +753,7 @@ def PyAxi(**kwargs):
                         output_file_open =  open(os.path.join('MZZ', 'OUTPUT_MZZ'), 'r')
                         output_file_read = output_file_open.readlines()
                         test_4 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        for k in range(0, int(input['no_proc'])):
+                        for k in range(0, int(input['mesher_ncpu'])):
                             if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
                                 test_4 = -1
                                 print_output = output_file_read[-1-k].split('\n')[0]
@@ -1059,7 +1059,6 @@ def read_input_file():
     print input['axi_address'] 
     print '****************************************\n'
     
-    input['mesh_name'] = config.get('GENERAL', 'MESHER_NAME')
     input['solver_name'] = config.get('GENERAL', 'SOLVER_NAME')
     input['verbose'] = config.get('GENERAL', 'VERBOSE')
     
@@ -1085,13 +1084,9 @@ def read_input_file():
     input['mesher_ext_model'] = config.get('MESHER_BASIC', 'EXT_MODEL')
     input['mesher_dominant_period'] = config.get('MESHER_BASIC', 'DOMINANT_PERIOD')
     input['mesher_ncpu'] = config.get('MESHER_BASIC', 'NCPU')
-    #### VERY UGLY ### JUST FOR TEST
-    input['no_proc'] = input['mesher_ncpu']
     input['mesher_write_vtk'] = config.get('MESHER_BASIC', 'WRITE_VTK')
     input['mesher_coarsening_layers'] = config.get('MESHER_BASIC', 'COARSENING_LAYERS')
-    input['mesher_meshname'] = config.get('MESHER_BASIC', 'MESHNAME')
-    #### VERY UGLY ### JUST FOR TEST
-    input['mesh_name'] = input['mesher_meshname']
+    input['mesh_name'] = config.get('MESHER_BASIC', 'MESHNAME')
     input['mesher_ic_shear_wave'] = config.get('MESHER_ADVANCED', 'IC_SHEAR_WAVE')
     input['mesher_npol'] = config.get('MESHER_ADVANCED', 'NPOL')
     input['mesher_el_per_lambda'] = config.get('MESHER_ADVANCED', 'EL_PER_LAMBDA')
