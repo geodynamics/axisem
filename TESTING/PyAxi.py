@@ -348,7 +348,7 @@ def PyAxi(**kwargs):
             if input['verbose'] != 'N':
                 print "\n======================"
                 print "Copy the mesh_params.h"
-                print "======================\n"
+                print "======================"
             else:
                 sys.stdout.write('copy the mesh_params.h...')
                 sys.stdout.flush()
@@ -368,26 +368,36 @@ def PyAxi(**kwargs):
                 stdout_param = subprocess.PIPE
 
             if input['netCDF'] == 'N' and input['make_flag_solver'] == 'N':
+                print '--------------------------------'
                 print 'No specific flag fot makemake.pl'
                 print 'No netCDF option'
+                print '--------------------------------\n'
                 output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
                 if output != 0: print output_print
             elif input['netCDF'] == 'N' and input['make_flag_solver'] != 'N':
+                print '--------------------------------'
                 print 'Specific flag(s) fot makemake.pl: ' + input['make_flag_solver']
                 print 'No netCDF option'
+                print '--------------------------------\n'
                 output = subprocess.check_call(['./makemake.pl', input['make_flag_solver']], stdout = stdout_param)
                 if output != 0: print output_print
             elif input['netCDF'] != 'N' and input['make_flag_solver'] == 'N':
+                print '--------------------------------'
                 print 'No specific flag fot makemake.pl'
                 print 'With netCDF option'
+                print '--------------------------------\n'
                 output = subprocess.check_call(['./makemake.pl', '-netcdf'], stdout = stdout_param)
                 if output != 0: print output_print
             elif input['netCDF'] != 'N' and input['make_flag_solver'] != 'N':
+                print '--------------------------------'
                 print 'Specific flag(s) fot makemake.pl: ' + input['make_flag_solver']
                 print 'With netCDF option'
+                print '--------------------------------\n'
                 output = subprocess.check_call(['./makemake.pl', input['make_flag_solver'], '-netcdf'], stdout = stdout_param)
                 if output != 0: print output_print
+            print '\n-----------------------------'
             print 'Create Solver Makefile...DONE'
+            print '-----------------------------'
        
        # Change the input files + make clean; make
         if input['solver_make'] != 'N':
@@ -485,7 +495,7 @@ def PyAxi(**kwargs):
                 inparam_solver_open.write(inparam_basic_input[i])
             inparam_solver_open.close()
             if input['verbose'] != 'N':
-                print inparam_basic_input
+                for basic_line in inparam_basic_input: print basic_line,
             else:
                 print 'DONE'
 
@@ -541,7 +551,7 @@ def PyAxi(**kwargs):
                 inparam_solver_open.write(inparam_advanced_input[i])
             inparam_solver_open.close()
             if input['verbose'] != 'N':
-                print inparam_advanced_input
+                for advanced_line in inparam_advanced_input: print advanced_line,
             else:
                 print 'DONE'
    
