@@ -7,7 +7,8 @@ program axisem
   use nc_routines,    only : nc_end_output, nc_open_parallel 
   use data_source,    only : isim,num_simul
   use data_mesh,      only : do_mesh_tests
-  use parameters,     only : open_local_param_file, readin_parameters
+  use parameters,     only : open_local_output_file, readin_parameters, &
+                             read_inparam_basic_verbosity
   use get_mesh,       only : read_db 
   use def_grid,       only : init_grid, mesh_tests, deallocate_preloop_arrays
   use time_evol_wave, only : prepare_waves, time_loop
@@ -17,13 +18,14 @@ program axisem
   
   implicit none
 
-  if (lpr .and. verbose >= 1) write(6,'(a/)') 'MAIN: Welcome to AxiSEM!'
   call set_ftz() ! ftz.c, set flush to zero
-
   call pinit ! commun
+  call read_inparam_basic_verbosity ! parameters
+  if (lpr .and. verbose >= 1) write(6,'(a/)') ' MAIN: Welcome to AxiSEM!'
+
   call define_io_appendix(appmynum,mynum)
   call define_io_appendix(appnproc,nproc)
-  call open_local_param_file ! parameters, open file for processor-specific screen output 
+  call open_local_output_file ! parameters, open file for processor-specific screen output 
   call start_clock !clocks
 
   if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Reading parameters..................................'
@@ -114,7 +116,7 @@ subroutine start_clock
 
 11 format('     Simulation started on ', A2,'/',A2,'/',A4,' at ', A2,'h ',A2,'min',/)
 
-  write(69,11) mydate(5:6), mydate(7:8), mydate(1:4), mytime(1:2), mytime(3:4)
+  if (verbose > 1) write(69,11) mydate(5:6), mydate(7:8), mydate(1:4), mytime(1:2), mytime(3:4)
 
   if (verbose > 1) then
       call clocks_init(mynum)

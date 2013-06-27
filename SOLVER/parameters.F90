@@ -18,7 +18,7 @@ module parameters
     character(len=100)  :: hostname, username, svn_version
     character(len=100)  :: compiler, compilerversion 
 
-    public :: open_local_param_file, readin_parameters
+    public :: open_local_output_file, readin_parameters, read_inparam_basic_verbosity
     public :: compute_numerical_parameters, write_parameters
     private
 
@@ -26,25 +26,27 @@ contains
 
 !-----------------------------------------------------------------------------
 !> Open processor-specific output files
-subroutine open_local_param_file
+subroutine open_local_output_file
 
-    open(unit=69,file='output_proc'//appmynum//'.dat')
-    write(69,*)
-    write(69,*)'********** This is the OUTPUT for ',procstrg,&
-               '***********************'
-    write(69,*)
-    write(69,*)' CONTAINS all information on the mesh, background model,'
-    write(69,*)' source, receivers, precomputed matrices, and various tests '
-    write(69,*)' such as surface areas, volume, valence, discontinuities,'
-    write(69,*)' resolution test, axial masking, solid-fluid boundary copying,'
-    write(69,*)' Lagrange interpolants, integration weights, message-passing.'
-    write(69,*)
-    write(69,*)'****************************************************************'
-    write(69,*)
+    
+    if (verbose > 1) then    
+       open(unit=69,file='output_proc'//appmynum//'.dat')
+       write(69,*)
+       write(69,*)'********** This is the OUTPUT for ',procstrg,&
+                  '***********************'
+       write(69,*)
+       write(69,*)' CONTAINS all information on the mesh, background model,'
+       write(69,*)' source, receivers, precomputed matrices, and various tests '
+       write(69,*)' such as surface areas, volume, valence, discontinuities,'
+       write(69,*)' resolution test, axial masking, solid-fluid boundary copying,'
+       write(69,*)' Lagrange interpolants, integration weights, message-passing.'
+       write(69,*)
+       write(69,*)'****************************************************************'
+       write(69,*)
+    endif
 
-end subroutine open_local_param_file
+end subroutine
 !=============================================================================
-
 
 !-----------------------------------------------------------------------------
 !> Routine that reads in simulation parameters that are relevant at the 
@@ -63,7 +65,7 @@ subroutine readin_parameters
   call get_runinfo
 
 
-! now pre-set. Most of these are to be considered in the post processing stage now.
+  ! now pre-set. Most of these are to be considered in the post processing stage now.
   sum_seis = .false.
   sum_fields = .false.
   rot_rec = 'cyl'
@@ -195,6 +197,8 @@ end subroutine readin_parameters
 !> Read file inparam_basic
 subroutine read_inparam_basic
     use data_mesh,   only: meshname
+    use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
+
     integer             :: iinparam_basic=500, ioerr, nval
     character(len=256)  :: line
     character(len=256)  :: keyword, keyvalue
@@ -209,7 +213,7 @@ subroutine read_inparam_basic
     dump_vtk = .false.
     snap_dt = 20.
     dump_xdmf = .false.
-    verbose = 1
+    !verbose = 1
     use_netcdf = .false.
     rec_file_type = 'stations'
 
@@ -218,68 +222,115 @@ subroutine read_inparam_basic
     src_file_type = 'undefined'
     meshname = 'undefined'
 
-    keyword = ' '
-    keyvalue = ' '
-    
-    if (lpr .and. verbose > 1) write(6,'(A)', advance='no') '    Reading inparam_basic...'
-    open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
-    if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
+    ! only rank 0 reads the file
+    if (mynum == 0) then
+       keyword = ' '
+       keyvalue = ' '
+       
+       if (verbose > 1) write(6,'(A)', advance='no') '    Reading inparam_basic...'
+       open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
+       if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
  
-    do
-        read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
-        if (ioerr < 0) exit
-        if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+       do
+           read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
+           if (ioerr < 0) exit
+           if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
 
-        read(line,*) keyword, keyvalue 
+           read(line,*) keyword, keyvalue 
+       
+           parameter_to_read : select case(trim(keyword))
+           
+           case('SIMULATION_TYPE') 
+               read(keyvalue, *) simtype
+               select case(trim(simtype))
+               case('single')
+                   src_file_type = 'sourceparams'
+               case('forces')
+                   print *, 'FIXME: Forces needs to be checked!'
+                   stop 2
+               case('moment')
+                   src_file_type = 'cmtsolut'
+               case default
+                   if(lpr) then
+                       print *, 'SIMULATION_TYPE in inparam_basic has invalid value ', simtype
+                   end if
+                   stop 2
+               end select
+
+           case('RECFILE_TYPE')
+               rec_file_type = keyvalue
+
+           case('SEISMOGRAM_LENGTH')
+               read(keyvalue, *) seislength_t
+
+           case('MESHNAME')
+               meshname = keyvalue
+
+           case('LAT_HETEROGENEITY')
+               read(keyvalue, *) add_hetero
+
+           case('ATTENUATION')
+               read(keyvalue,*) do_anel 
+
+           case('SAVE_SNAPSHOTS')
+               read(keyvalue, *) dump_snaps_glob
+
+           end select parameter_to_read
+
+       end do
+       
+       close(iinparam_basic)
+       if (lpr .and. verbose > 1) print *, 'done'
+   endif
+   
+   ! broadcast values to other processors
+   call broadcast_char(simtype, 0) 
+   call broadcast_char(src_file_type, 0)
+   call broadcast_char(rec_file_type, 0)
+   call broadcast_dble(seislength_t, 0)
+   call broadcast_char(meshname, 0)
+   call broadcast_log(add_hetero, 0)
+   call broadcast_log(do_anel, 0)
+   call broadcast_log(dump_snaps_glob, 0)
     
-        parameter_to_read : select case(trim(keyword))
-        
-        case('SIMULATION_TYPE') 
-            read(keyvalue, *) simtype
-            select case(trim(simtype))
-            case('single')
-                src_file_type = 'sourceparams'
-            case('forces')
-                print *, 'FIXME: Forces needs to be checked!'
-                stop 2
-            case('moment')
-                src_file_type = 'cmtsolut'
-            case default
-                if(lpr) then
-                    print *, 'SIMULATION_TYPE in inparam_basic has invalid value ', simtype
-                end if
-                stop 2
-            end select
+end subroutine
+!=============================================================================
 
-!        case('SOURCE_TYPE')
-!            read(keyvalue, *) src_file_type
+!-----------------------------------------------------------------------------
+!> get verbosity in the very beginning
+subroutine read_inparam_basic_verbosity
 
-        case('RECFILE_TYPE')
-            rec_file_type = keyvalue
+    use data_mesh,   only: meshname
+    use commun,      only: broadcast_int
+    integer             :: iinparam_basic=500, ioerr, nval
+    character(len=256)  :: line
+    character(len=256)  :: keyword, keyvalue
+    character(len=16)   :: simtype
 
-        case('SEISMOGRAM_LENGTH')
-            read(keyvalue, *) seislength_t
+    ! only rank 0 reads the file
+    if (mynum == 0) then
+       ! Default value
+       verbose = 1
+       
+       keyword = ' '
+       keyvalue = ' '
+       
+       open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
+       if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
+       do
+           read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
+           if (ioerr < 0) exit
+           if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
 
-        case('MESHNAME')
-            meshname = keyvalue
-
-        case('LAT_HETEROGENEITY')
-            read(keyvalue, *) add_hetero
-
-        case('ATTENUATION')
-            read(keyvalue,*) do_anel 
-
-        case('SAVE_SNAPSHOTS')
-            read(keyvalue, *) dump_snaps_glob
-
-        case('VERBOSITY')
-            read(keyvalue, *) verbose
-
-
-        end select parameter_to_read
-
-    end do
-    if (lpr .and. verbose > 1) print *, 'done'
+           read(line,*) keyword, keyvalue 
+       
+           if (trim(keyword) == 'VERBOSITY') read(keyvalue, *) verbose
+       end do
+       close(iinparam_basic)
+   endif
+   
+   ! broadcast verbosity to other processors
+   call broadcast_int(verbose, 0) 
     
 end subroutine
 !=============================================================================
@@ -287,6 +338,8 @@ end subroutine
 !-----------------------------------------------------------------------------
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
+    
+    use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
     include 'mesh_params.h'
 
     integer     :: iinparam_advanced=500, ioerr, nval
@@ -399,7 +452,7 @@ subroutine read_inparam_advanced
                 case default 
                     write(6,*)'invalid value for snapshots format!'; stop
                 end select
-            endif			
+            endif
 
         case('USE_NETCDF')
             read(keyvalue, *) use_netcdf
@@ -407,8 +460,44 @@ subroutine read_inparam_advanced
         end select parameter_to_read
 
     end do
-    lfdata = index(datapath,' ')-1
-    lfinfo = index(infopath,' ')-1
+    
+    call broadcast_dble(seis_dt, 0) 
+    call broadcast_dble(enforced_period, 0) 
+    call broadcast_dble(enforced_dt, 0) 
+   
+    call broadcast_char(time_scheme, 0) 
+    call broadcast_char(datapath, 0) 
+    call broadcast_char(infopath, 0) 
+    
+    call broadcast_log(do_mesh_tests, 0) 
+    call broadcast_log(dump_wavefields, 0) 
+    
+    call broadcast_dble(strain_samp, 0) 
+    call broadcast_char(src_dump_type, 0) 
+    
+    call broadcast_int(ibeg, 0) 
+    call broadcast_int(iend, 0) 
+
+    call broadcast_log(dump_energy, 0) 
+    call broadcast_log(make_homo, 0) 
+    
+    call broadcast_dble(vphomo, 0) 
+    call broadcast_dble(vshomo, 0) 
+    call broadcast_dble(rhohomo, 0) 
+    
+    call broadcast_int(deflate_level, 0) 
+    call broadcast_dble(snap_dt, 0) 
+    
+    call broadcast_log(dump_energy, 0) 
+    call broadcast_log(force_ani, 0) 
+    call broadcast_log(dump_snaps_glob, 0) 
+    call broadcast_log(dump_xdmf, 0) 
+    call broadcast_log(dump_vtk, 0) 
+    call broadcast_log(use_netcdf, 0) 
+    
+    
+    lfdata = index(datapath,' ') - 1
+    lfinfo = index(infopath,' ') - 1
     if (lpr .and. verbose > 1) print *, 'done'
 
 end subroutine
@@ -461,10 +550,10 @@ subroutine check_basic_parameters
         if (lpr) write(6,200) 'SIMULATION_TYPE', 'inparam_basic'
         stop
     end if
-!    if (trim(rec_file_type).eq.'undefined') then
-!        if (lpr) write(6,200) 'RECFILE_TYPE', 'inparam_basic'
-!        stop
-!    end if
+    !if (trim(rec_file_type).eq.'undefined') then
+    !    if (lpr) write(6,200) 'RECFILE_TYPE', 'inparam_basic'
+    !    stop
+    !end if
     if (trim(meshname) == 'undefined') then
         if (lpr) write(6,200) 'MESHNAME', 'inparam_basic'
         stop
@@ -835,8 +924,8 @@ subroutine compute_numerical_parameters
      write(6,*)''
   endif
 
-! strain tensor output, convert from num of dumps per period into 
-! incremental time steps
+  ! strain tensor output, convert from num of dumps per period into 
+  ! incremental time steps
   if (dump_wavefields) then
      nstrain = floor(real(niter)/real(strain_it))
 
@@ -952,9 +1041,10 @@ subroutine write_parameters
     character(len=4) :: Mij_char(6)
     character(len=7) :: clogic
 
-    write(69,*)'  writing out all relevant simulation parameters...'
-
-    write(69,*)'  number of respective element types...'
+    if (verbose > 1) then
+       write(69,*)'  writing out all relevant simulation parameters...'
+       write(69,*)'  number of respective element types...'
+    endif
 
     curvel=0; linel=0; seminoel=0; semisoel=0
     do iel=1,nelem
@@ -994,29 +1084,29 @@ subroutine write_parameters
        enddo
     enddo
 
-    write(69,*)'  calculating hmax...'
+    if (verbose > 1) write(69,*)'  calculating hmax...'
     hmax=max(maxval(dis1),maxval(dis2))
-    write(69,*)'  hmaxstuff:',minval(dis1),minval(dis2),hmax
+    if (verbose > 1) write(69,*)'  hmaxstuff:',minval(dis1),minval(dis2),hmax
     hmaxglob=pmax(hmax)
-    write(69,*)'  hmaxglob:',hmaxglob
+    if (verbose > 1) write(69,*)'  hmaxglob:',hmaxglob
     hmaxloc1=maxloc(dis1)
     if (maxval(dis2)<maxval(dis1)) hmaxloc1=maxloc(dis2)
     call compute_coordinates(s,z,rmaxglob,thetamaxglob,hmaxloc1(3), &
          hmaxloc1(1)-1,hmaxloc1(2)-1)
-    write(69,*)' rmax,thetamax:',rmaxglob,thetamaxglob
+    if (verbose > 1) write(69,*)' rmax,thetamax:',rmaxglob,thetamaxglob
 
-    write(69,*)'  calculating hmin...'
+    if (verbose > 1) write(69,*)'  calculating hmin...'
     hmin=min(minval(dis1),minval(dis2))
-    write(69,*)'  hminstuff:',minval(dis1),minval(dis2),hmin
+    if (verbose > 1) write(69,*)'  hminstuff:',minval(dis1),minval(dis2),hmin
     hminglob=pmin(hmin)
-    write(69,*)'  hminglob:',hminglob
+    if (verbose > 1) write(69,*)'  hminglob:',hminglob
 
     hminloc1=minloc(dis1)
     if (minval(dis2)<minval(dis1)) hminloc1=minloc(dis2)
     call compute_coordinates(s,z,rminglob,thetaminglob,hminloc1(3), &
             hminloc1(1)-1,hminloc1(2)-1)
 
-! Checking potential issues with input parameter consistency
+    ! Checking potential issues with input parameter consistency
     if (lpr) write(6,*)
     if (lpr) write(6,*)'  checking input parameters for consistency...'
     call check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
@@ -1029,7 +1119,7 @@ subroutine write_parameters
     maxprocsrecv_fluid = pmax_int(sizerecv_fluid)
 
 
-! output to stdout, only by proc nproc-1
+    ! output to stdout, only by proc nproc-1
     if (lpr) then
 
         write(6,*)
@@ -1142,12 +1232,12 @@ subroutine write_parameters
         write(6,*)
         call flush(6)
 
-! additionally write a header for the kernel software
+        ! additionally write a header for the kernel software
         if (dump_wavefields) call create_kernel_header
 
 
 
-! write generic simulation info file
+        ! write generic simulation info file
         open(unit=55,file='simulation.info')
         write(55,23)trim(bkgrdmodel),'background model'
         write(55,21)deltat,'time step [s]'
@@ -1200,7 +1290,7 @@ subroutine write_parameters
     endif ! lpr
 
     if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
-! write generic simulation info file
+        ! write generic simulation info file
         write(6,*) ' Writing simulation info to netcdf file attributes' 
         call nc_write_att_char(trim(bkgrdmodel),'background model')
         call nc_write_att_char(trim(svn_version), 'SVN revision')
@@ -1248,9 +1338,9 @@ subroutine write_parameters
     end if
 
 
-! output for each processor==============================================
+    ! output for each processor==============================================
 
-! extract processor location
+    ! extract processor location
     mysmin=router; myzmin=router; mysmax=zero; myzmax=zero
     myrmin=router; mythetamin=10.*pi; myrmax=zero; mythetamax=zero
     do iel=1,nelem
@@ -1268,45 +1358,47 @@ subroutine write_parameters
             enddo
         enddo
     enddo
+
+    if (verbose > 1) then
+       write(69,*)
+       write(69,15)'My rank, total procs    :', mynum,nproc
+       write(69,17)'Min./max. s [m]         :', mysmin,mysmax
+       write(69,17)'Min./max. z [m]         :', myzmin,myzmax
+       write(69,17)'Min./max. r [m]         :', myrmin,myrmax
+       write(69,17)'Min./max. theta [deg]   :', mythetamin*180./pi, mythetamax*180./pi
   
-    write(69,*)
-    write(69,15)'My rank, total procs    :', mynum,nproc
-    write(69,17)'Min./max. s [m]         :', mysmin,mysmax
-    write(69,17)'Min./max. z [m]         :', myzmin,myzmax
-    write(69,17)'Min./max. r [m]         :', myrmin,myrmax
-    write(69,17)'Min./max. theta [deg]   :', mythetamin*180./pi, mythetamax*180./pi
+       write(69,10)'Axial total elems       :', naxel
+       write(69,10)'Axial solid elems       :', naxel_solid
+       write(69,10)'Axial fluid elems       :', naxel_fluid
   
-    write(69,10)'Axial total elems       :', naxel
-    write(69,10)'Axial solid elems       :', naxel_solid
-    write(69,10)'Axial fluid elems       :', naxel_fluid
+       write(69,13)'Have source             ?', have_src
+       if (have_src) then
+           write(69,11)'Depth asked for      [m]:', src_depth
+           write(69,11)'Computed depth       [m]:', router - &
+                                         zcoord(ipol_src,jpol_src,ielsolid(iel_src))
+       endif
+       write(69,13)'Have boundary els       ?', have_bdry_elem
+       if (have_bdry_elem) then
+           write(69,10)'# boundary elements     :', nel_bdry
+       end if
+
+       write(69,*)
+       write(69,*)'Solid message passing_____________________________'
+       write(69,10)' # recv messages        :', sizerecv_solid
+       write(69,10)' Max. size recv messages:', sizemsgrecvmax_solid
+       write(69,10)' # sent messages        :', sizesend_solid
+       write(69,10)' Max. size sent messages:', sizemsgsendmax_solid
   
-    write(69,13)'Have source             ?', have_src
-    if (have_src) then
-        write(69,11)'Depth asked for      [m]:', src_depth
-        write(69,11)'Computed depth       [m]:', router - &
-                                      zcoord(ipol_src,jpol_src,ielsolid(iel_src))
+       if (have_fluid) then
+           write(69,*)'Fluid message passing_____________________________'
+           write(69,10)' # recv messages        :', sizerecv_fluid
+           write(69,10)' Max. size recv messages:', sizemsgrecvmax_fluid
+           write(69,10)' # sent messages        :', sizesend_fluid
+           write(69,10)' Max. size sent messages:', sizemsgsendmax_fluid
+       endif !have_fluid
+
+       call flush(69)
     endif
-    write(69,13)'Have boundary els       ?', have_bdry_elem
-    if (have_bdry_elem) then
-        write(69,10)'# boundary elements     :', nel_bdry
-    end if
-
-    write(69,*)
-    write(69,*)'Solid message passing_____________________________'
-    write(69,10)' # recv messages        :', sizerecv_solid
-    write(69,10)' Max. size recv messages:', sizemsgrecvmax_solid
-    write(69,10)' # sent messages        :', sizesend_solid
-    write(69,10)' Max. size sent messages:', sizemsgsendmax_solid
-  
-    if (have_fluid) then
-        write(69,*)'Fluid message passing_____________________________'
-        write(69,10)' # recv messages        :', sizerecv_fluid
-        write(69,10)' Max. size recv messages:', sizemsgrecvmax_fluid
-        write(69,10)' # sent messages        :', sizesend_fluid
-        write(69,10)' Max. size sent messages:', sizemsgsendmax_fluid
-    endif !have_fluid
-
-   call flush(69)
 
 10  format(a25,i14)
 11  format(a25,1pe14.5)
@@ -1318,76 +1410,76 @@ subroutine write_parameters
 18  format(a25,2(L14))
 19  format(a25,L14)
 
-! write post processing file==============================================
-
-if (lpr) then
-    write(6,*)'  Writing post processing input file: param_post_processing'
-    write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
-
-    open(unit=8,file='param_sum_seis') 
-    read(8,*)nsim1
-    close(8)
-
-    open(unit=9,file="param_post_processing")
-    if (rot_rec/='cyl') then
-        write(9,222)'.false.','rotate receivers?'
-        write(9,222)"'"//trim(rot_rec)//"'",'receiver components: enz,sph,cyl,xyz,src'
-    else
-        write(9,222)'.true.','rotate receivers?'
-        write(9,222)"'enz'",'receiver components: enz,sph,cyl,xyz,src'
-    endif
-    if (trim(src_file_type)=='cmtsolut' .and. nsim1>1) then
-       write(9,222)'.true.','sum to full Mij'
-    elseif (nsim1>1) then 
-       write(9,222)'.true.','sum to full Mij'
-    else 
-       write(9,222)'.true.','sum to full Mij'
-    endif
-    Mij_char = ['Mrr','Mtt','Mpp','Mrt','Mrp','Mtp']
-    do i=1,6
-        write(9,223)Mij(i),Mij_char(i)
-    enddo
+    ! write post processing file==============================================
     
-    if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
-        write(9,223)period,'convolve period ( 0. if not to be convolved)'
-    else
-        write(9,223)0.0,'convolve period (0. if not convolved)'
-    endif
-    write(9,222)"'gauss_0'",'source time function type for convolution'
-    write(9,223)srccolat,'Source colatitude'
-    write(9,223)srclon,'Source longitude'
-    write(9,221)dump_vtk,'plot global snaps?'
-    write(9,224)'disp','disp or velo seismograms'
-    write(9,224)"'Data_Postprocessing'",'Directory for post processed data'
-    write(9,221).true.,'seismograms at negative time (0 at max. of stf)'
-    close(9)
+    if (lpr) then
+        write(6,*)'  Writing post processing input file: param_post_processing'
+        write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
+    
+        open(unit=8,file='param_sum_seis') 
+        read(8,*)nsim1
+        close(8)
+    
+        open(unit=9,file="param_post_processing")
+        if (rot_rec/='cyl') then
+            write(9,222)'.false.','rotate receivers?'
+            write(9,222)"'"//trim(rot_rec)//"'",'receiver components: enz,sph,cyl,xyz,src'
+        else
+            write(9,222)'.true.','rotate receivers?'
+            write(9,222)"'enz'",'receiver components: enz,sph,cyl,xyz,src'
+        endif
+        if (trim(src_file_type)=='cmtsolut' .and. nsim1>1) then
+           write(9,222)'.true.','sum to full Mij'
+        elseif (nsim1>1) then 
+           write(9,222)'.true.','sum to full Mij'
+        else 
+           write(9,222)'.true.','sum to full Mij'
+        endif
+        Mij_char = ['Mrr','Mtt','Mpp','Mrt','Mrp','Mtp']
+        do i=1,6
+            write(9,223)Mij(i),Mij_char(i)
+        enddo
+        
+        if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
+            write(9,223)period,'convolve period ( 0. if not to be convolved)'
+        else
+            write(9,223)0.0,'convolve period (0. if not convolved)'
+        endif
+        write(9,222)"'gauss_0'",'source time function type for convolution'
+        write(9,223)srccolat,'Source colatitude'
+        write(9,223)srclon,'Source longitude'
+        write(9,221)dump_vtk,'plot global snaps?'
+        write(9,224)'disp','disp or velo seismograms'
+        write(9,224)"'Data_Postprocessing'",'Directory for post processed data'
+        write(9,221).true.,'seismograms at negative time (0 at max. of stf)'
+        close(9)
 221 format(l25,a50)
 222 format(a25,a50)
 223 format(1pe25.6,a50)
 224 format(a25,a50)
-    write(6,*)'    ... wrote file param_post_processing'
-endif
-
-! write param_snaps ==============================================
-if (dump_vtk) then 
-    if (lpr) then
-        write(6,*)'  Writing param_snaps for wavefield visualization'
-        open(unit=9,file="param_snaps")
-
-        write(9,222)"0.","starting phi (right cross section) [deg]"
-        write(9,222)"85.", "increment phi (ending,left cross section) [deg]"
-        write(9,223)router/1000.,"top radius [km]"
-        write(9,222)"3190.","bottom radius [km]"
-        write(9,222)"60. ", "meridional colatitude [deg]"
-        write(9,225)1,nsnap,1, "snap starting number,end number, skipping factor"
-        write(9,222)".false.","consider meridional cross section?"
-        write(9,222)".true.","consider top surface?"
-        write(9,222)".true. ","consider bottom surface?"
-        close(9)
-        write(6,*)'    ... wrote file param_snaps'; call flush(6)
+        write(6,*)'    ... wrote file param_post_processing'
     endif
+    
+    ! write param_snaps ==============================================
+    if (dump_vtk) then 
+        if (lpr) then
+            write(6,*)'  Writing param_snaps for wavefield visualization'
+            open(unit=9,file="param_snaps")
+    
+            write(9,222)"0.","starting phi (right cross section) [deg]"
+            write(9,222)"85.", "increment phi (ending,left cross section) [deg]"
+            write(9,223)router/1000.,"top radius [km]"
+            write(9,222)"3190.","bottom radius [km]"
+            write(9,222)"60. ", "meridional colatitude [deg]"
+            write(9,225)1,nsnap,1, "snap starting number,end number, skipping factor"
+            write(9,222)".false.","consider meridional cross section?"
+            write(9,222)".true.","consider top surface?"
+            write(9,222)".true. ","consider bottom surface?"
+            close(9)
+            write(6,*)'    ... wrote file param_snaps'; call flush(6)
+        endif
 225 format(i8,i8,i8,a50)
-endif
+    endif
 
 end subroutine write_parameters
 !=============================================================================
@@ -1465,7 +1557,7 @@ subroutine create_kernel_header
 30  format('!:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
 
 end subroutine create_kernel_header
-!------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
 !< Checking some mesh parameters and message parsing
@@ -1547,8 +1639,8 @@ subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
   
     endif !have_fluid
 
-! Even more tests.............
-! stop if difference between loaded and on-the-fly mesh larger than 1 METER....
+  ! Even more tests.............
+  ! stop if difference between loaded and on-the-fly mesh larger than 1 METER....
   if ( (hmin_glob-hminglob)>1.) then
       write(6,*)
       write(6,*)mynum,'Problem with minimal global grid spacing!'
@@ -1557,7 +1649,7 @@ subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
       stop
   endif
 
-! stop if difference between loaded and on-the-fly mesh larger than 1 METER....
+  ! stop if difference between loaded and on-the-fly mesh larger than 1 METER....
   if ((hmax_glob-hmaxglob)>1.) then
       write(6,*)
       write(6,*)mynum,'Problem with maximal global grid spacing!'
@@ -1566,7 +1658,7 @@ subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
       stop
   endif
 
-! stop if sum of respective element types do not sum up to nelem
+  ! stop if sum of respective element types do not sum up to nelem
   if (curvel+linel+seminoel+semisoel/=nelem) then 
       write(6,*)
       write(6,*)mynum,'Problem with number of assigned global element types!'
@@ -1595,6 +1687,7 @@ subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
   endif
 
 end subroutine check_parameters
+!-----------------------------------------------------------------------------
 
 !========================
 end module parameters

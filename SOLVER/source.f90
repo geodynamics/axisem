@@ -14,22 +14,19 @@ module source
 contains
 
 !-----------------------------------------------------------------------------
+!> sourceparams.dat :
+!!
+!!1.E20               magnitude (Nm)
+!!'dipole'            excitation type: 'monopole', 'dipole', 'quadpole'
+!!'mxz'               'explosion','mxx_p_myy','mzz','vertforce' (MONOPOLE)
+!!                    'mxz', 'myz', 'xforce', 'yforce'          (DIPOLE)
+!!                    'mxy', 'mxx_m_myy'                        (QUADRUPOLE)
+!!344.034             source depth [km]
+!!'gauss_1'           source time function: 'dirac_0', 'gauss_0', 'gauss_1' 
+!!                    (1st deriv), 'gauss_2' (2nd)
+!!100.0               dominant source period [s]; put 0 if to be 
+!!                    calculated automatically from mesh/model
 subroutine read_sourceparams
-  !
-  ! sourceparams.dat :
-  !
-  !1.E20               magnitude (Nm)
-  !'dipole'            excitation type: 'monopole', 'dipole', 'quadpole'
-  !'mxz'               'explosion','mxx_p_myy','mzz','vertforce' (MONOPOLE)
-  !                    'mxz', 'myz', 'xforce', 'yforce'          (DIPOLE)
-  !                    'mxy', 'mxx_m_myy'                        (QUADRUPOLE)
-  !344.034             source depth [km]
-  !'gauss_1'           source time function: 'dirac_0', 'gauss_0', 'gauss_1' 
-  !                    (1st deriv), 'gauss_2' (2nd)
-  !100.0               dominant source period [s]; put 0 if to be 
-  !                    calculated automatically from mesh/model
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   real(kind=realkind)   :: srclat
   character(len=30)     :: junk, eventname
@@ -466,9 +463,9 @@ end subroutine compute_stf
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> These *_t routines are needed by the symplectic time integration schemes. 
+!! Eventually there should be only one type, point- or array-wise.
 subroutine compute_stf_t(nstf_t,t,stf_t)
-  ! These *_t routines are needed by the symplectic time integration schemes. 
-  ! Eventually there should be only one type, point- or array-wise.
   
   integer, intent(in)           :: nstf_t
   double precision, intent(in)  :: t(1:nstf_t)
@@ -520,7 +517,7 @@ subroutine compute_src
             '  *****************************************', &
             '  locating the source....'
   
-  write(69,'(/,a)')'    L O O K I N G   F O R   T H E   S O U R C E '
+  if (verbose > 1) write(69,'(/,a)')'    L O O K I N G   F O R   T H E   S O U R C E '
 
   call find_srcloc(iel_src2, ipol_src2, jpol_src2)
 
@@ -598,7 +595,8 @@ subroutine compute_src
   ! if I don't have the source
   if (.not. have_src) then 
      source_term = zero
-     write(69,'(/,a,/)') "******  I  D O N ' T   H A V E   T H E   S O U R C E *******"
+     if (verbose > 1) write(69,'(/,a,/)') &
+            "******  I  D O N ' T   H A V E   T H E   S O U R C E *******"
   endif
  
   ! write all elements containing non-zero source term components to file
@@ -665,10 +663,11 @@ subroutine compute_src
            '     End of source term calculator', &
            '  *********************************'
   endif
-
-  write(69,*)'  *********************************'
-  write(69,*)'     End of source term calculator'
-  write(69,*)'  *********************************'
+  if (verbose > 1) then 
+     write(69,*)'  *********************************'
+     write(69,*)'     End of source term calculator'
+     write(69,*)'  *********************************'
+  endif
 
 end subroutine compute_src
 !=============================================================================
@@ -703,7 +702,7 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
               ipol_src2 = ipol
               jpol_src2 = jpol
            elseif (s == zero .and. abs(z-zsrc) == dzsrc .and. z >= zero) then 
-              write(69,15) ielem,ipol,jpol,z/1000.
+              if (verbose > 1) write(69,15) ielem,ipol,jpol,z/1000.
               iel_src2 = ielem
               ipol_src2 = ipol
               jpol_src2 = jpol
@@ -769,11 +768,13 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
      write(6,*) '    depth offered   [km]:', (router - zsrcout) / 1000.d0
      write(6,*) '    difference      [km]:', dzsrc / 1000.d0
 
-     write(69,*) '  ',procstrg,' found it:'
-     write(69,*) '    depth asked for [km]:',(router-zsrc)/1000.d0
-     write(69,*) '    depth offered   [km]:',(router-zsrcout)/1000.d0
-     write(69,*) '    difference      [km]:',dzsrc/1000.d0
-     write(69,*) '    source element and jpol index:', iel_src,jpol_src
+     if (verbose > 1) then
+        write(69,*) '  ',procstrg,' found it:'
+        write(69,*) '    depth asked for [km]:',(router-zsrc)/1000.d0
+        write(69,*) '    depth offered   [km]:',(router-zsrcout)/1000.d0
+        write(69,*) '    difference      [km]:',dzsrc/1000.d0
+        write(69,*) '    source element and jpol index:', iel_src,jpol_src
+     endif
 
      if (iel_src2 /= iel_src) then
          call compute_coordinates(s, z, r, theta, ielsolid(iel_src2), ipol_src2, jpol_src2)
@@ -781,10 +782,12 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
                             iel_src2, jpol_src2
          write(6,*) '       s, z: ', s, z
 
-         write(69,*) '    SECOND source element and jpol index:',  &
-                            iel_src2,jpol_src2
-         write(69,*) '      s, z: ', s, z
-         write(69,*) '    depth offered   [km]:',(router-z)/1000.d0
+         if (verbose > 1) then
+            write(69,*) '    SECOND source element and jpol index:',  &
+                               iel_src2,jpol_src2
+            write(69,*) '      s, z: ', s, z
+            write(69,*) '    depth offered   [km]:',(router-z)/1000.d0
+         endif
      endif
 
      zsrc = zsrcout
@@ -873,8 +876,8 @@ end subroutine heavis
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!! approximate discrete dirac
 subroutine delta_src
-  ! approximate discrete dirac
   integer :: i,j
   double precision :: a,integral
   character(len=6) :: dirac_approx(6)
@@ -1170,14 +1173,13 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
   ! assembly
   call comm2d(f, nel_solid, 1, 'solid')
 
-  if (have_src) then
+  if (have_src .and. verbose > 1) then
 
      ! write out the source element
      fmt1 = "(K(1pe12.3))"
      write(fmt1(2:2),'(i1.1)') npol+1
 
-     write(69,*)
-     write(69,*)'  *^*^*^*^**^*^*^* The single-force source term *^*^*^*^*^^*^'
+     write(69,'(/,a)') '  *^*^*^*^**^*^*^* The single-force source term *^*^*^*^*^^*^'
 
      liel_src = iel_src
      lipol_src = ipol_src
@@ -1189,7 +1191,6 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
            lipol_src = ipol_src2
            ljpol_src = jpol_src2
         endif
-
         write(69,*) 'iel,jpol,r:', liel_src, ljpol_src, &
              rcoord(lipol_src, ljpol_src, ielsolid(liel_src)) / 1.d3
         write(69,*) 'North| s-dir -->'
@@ -1205,13 +1206,10 @@ end subroutine define_bodyforce
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Defines the moment tensor elements for the given source type in all 
+!! elements having non-zero source contributions,
+!! using pointwise derivatives of arbitrary scalar functions.
 subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
-  !
-  ! Defines the moment tensor elements for the given source type in all 
-  ! elements having non-zero source contributions,
-  ! using pointwise derivatives of arbitrary scalar functions.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_mesh_preloop
   use data_spec, only : shp_deri_k
@@ -1373,9 +1371,11 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
            call compute_coordinates(s, z, r1, theta, ielsolid(iel_src), 0, 0)
            call compute_coordinates(s, z, r2, theta, ielsolid(iel_src), 0, npol)
            call compute_coordinates(s, z, r, theta, ielsolid(iel_src), npol, jpol_src)
-
-           write(69,*) '  THETA (rad),Z (m):',theta,z
-           write(69,*) '  R1 (m),R2 (m)',r1,r2
+        
+           if (verbose > 1) then
+              write(69,*) '  THETA (rad),Z (m):',theta,z
+              write(69,*) '  R1 (m),R2 (m)',r1,r2
+           endif
 
            do ipol=0,npol
               ds(ipol) = shp_deri_k(ipol,0,2,1)*two / (theta * z)
@@ -1426,12 +1426,13 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
      ! with element edge/corner), need to divide by two
      source_term = source_term / real(nsrcelem)
 
-     write(69,*) 'source term minmax:', minval(source_term), maxval(source_term)
+     if (verbose > 1) write(69,*) 'source term minmax:', &
+                                  minval(source_term), maxval(source_term)
 
   endif ! have_src
 
   ! assembly
-  write(69,*) '  ', procstrg, 'assembling the source term....'
+  if (verbose > 1) write(69,*) '  ', procstrg, 'assembling the source term....'
   call comm2d(source_term, nel_solid, 3, 'solid') 
 
   ! cut out round-off errors
@@ -1474,51 +1475,52 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
      fmt1 = "(K(1pe12.3))"
      write(fmt1(2:2),'(i1.1)') npol + 1
 
-     write(69,*)
-     write(69,*)'  *^*^*^*^*^*^* The moment-tensor source term *^*^*^*^*^**^*^'
+     if (verbose > 1) then
+     
+        write(69,'(/,a)') '  *^*^*^*^*^*^* The moment-tensor source term *^*^*^*^*^**^*^'
 
-     liel_src = iel_src
-     lipol_src = ipol_src
-     ljpol_src = jpol_src
+        liel_src = iel_src
+        lipol_src = ipol_src
+        ljpol_src = jpol_src
 
-     do i =1, nsrcelem
-        if (i == 2) then 
-           liel_src = iel_src2
-           lipol_src = ipol_src2
-           ljpol_src = jpol_src2
-        endif
+        do i =1, nsrcelem
+           if (i == 2) then 
+              liel_src = iel_src2
+              lipol_src = ipol_src2
+              ljpol_src = jpol_src2
+           endif
 
-        write(69,*) 'iel,jpol,r:', liel_src, ljpol_src, &
-             rcoord(lipol_src,ljpol_src,ielsolid(liel_src)) / 1.d3
-        write(69,*)'North| s-dir -->'
-        if (src_type(1)=='dipole') then
-           write(69,*) '  ', src_type(2), '+ component'
-        else
-           write(69,*) '  ', src_type(2), 's component'   
-        endif
-        do jpol=npol, 0, -1
-           write(69,fmt1)(source_term(ipol,jpol,liel_src,1), ipol=0, npol)
+           write(69,*) 'iel,jpol,r:', liel_src, ljpol_src, &
+                rcoord(lipol_src,ljpol_src,ielsolid(liel_src)) / 1.d3
+           write(69,*)'North| s-dir -->'
+           if (src_type(1)=='dipole') then
+              write(69,*) '  ', src_type(2), '+ component'
+           else
+              write(69,*) '  ', src_type(2), 's component'   
+           endif
+           do jpol=npol, 0, -1
+              write(69,fmt1)(source_term(ipol,jpol,liel_src,1), ipol=0, npol)
+           enddo
+           write(69,*)
+
+           if (src_type(1)=='dipole') then
+              write(69,*)src_type(2), '- component'
+           else
+              write(69,*)src_type(2), 'phi component'   
+           endif
+           do jpol=npol, 0, -1
+              write(69,fmt1)(source_term(ipol,jpol,liel_src,2), ipol=0,npol)
+           enddo
+           write(69,*)
+
+           write(69,*)src_type(2),'z component'
+           do jpol=npol, 0, -1
+              write(69,fmt1)(source_term(ipol,jpol,liel_src,3), ipol=0,npol)
+           enddo
+           write(69,*)
+           write(69,*)
         enddo
-        write(69,*)
-
-        if (src_type(1)=='dipole') then
-           write(69,*)src_type(2), '- component'
-        else
-           write(69,*)src_type(2), 'phi component'   
-        endif
-        do jpol=npol, 0, -1
-           write(69,fmt1)(source_term(ipol,jpol,liel_src,2), ipol=0,npol)
-        enddo
-        write(69,*)
-
-        write(69,*)src_type(2),'z component'
-        do jpol=npol, 0, -1
-           write(69,fmt1)(source_term(ipol,jpol,liel_src,3), ipol=0,npol)
-        enddo
-        write(69,*)
-        write(69,*)
-     enddo
-
+     endif
   endif ! have_src
 
   deallocate(ws, dsws)

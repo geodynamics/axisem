@@ -30,7 +30,7 @@ module commpi
   public :: testing_asynch_messaging_fluid, asynch_messaging_fluid
   public :: testing_asynch_messaging_solid
   public :: feed_buffer, send_recv_buffers_solid, extract_from_buffer
-  public :: pbroadcast_dble, pbroadcast_int
+  public :: pbroadcast_dble, pbroadcast_int, pbroadcast_char, pbroadcast_log
   public :: ppcheck, parse_nl
   private
 
@@ -123,6 +123,34 @@ end subroutine ppend
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+subroutine pbroadcast_char(input_char,input_proc)
+
+  integer, intent(in)           :: input_proc
+  character(*), intent(inout)   :: input_char
+  integer                       :: ierror
+
+
+  call mpi_bcast(input_char, len(input_char), MPI_CHARACTER, input_proc, &
+                 MPI_COMM_WORLD, ierror)
+  call mpi_barrier(MPI_COMM_WORLD, ierror)
+
+end subroutine pbroadcast_char
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine pbroadcast_log(input_log,input_proc)
+
+  integer, intent(in)    :: input_proc
+  logical, intent(inout) :: input_log
+  integer                :: ierror
+
+  call mpi_bcast(input_log, 1, MPI_LOGICAL, input_proc, MPI_COMM_WORLD, ierror)
+  call mpi_barrier(MPI_COMM_WORLD, ierror)
+
+end subroutine pbroadcast_log
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 subroutine pbroadcast_int(input_int,input_proc)
 
   integer, intent(in)    :: input_proc
@@ -130,6 +158,7 @@ subroutine pbroadcast_int(input_int,input_proc)
   integer                :: ierror
 
   call mpi_bcast(input_int, 1, MPI_INTEGER, input_proc, MPI_COMM_WORLD, ierror)
+  call mpi_barrier(MPI_COMM_WORLD, ierror)
 
 end subroutine pbroadcast_int
 !=============================================================================
@@ -143,6 +172,7 @@ subroutine pbroadcast_dble(input_dble,input_proc)
 
   call mpi_bcast(input_dble, 1, MPI_DOUBLE_PRECISION, input_proc, &
                  MPI_COMM_WORLD, ierror)
+  call mpi_barrier(MPI_COMM_WORLD, ierror)
 
 end subroutine pbroadcast_dble
 !=============================================================================

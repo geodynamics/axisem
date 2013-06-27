@@ -38,7 +38,7 @@ module commun
   public :: glob_sum_solid, glob_sum3_solid, glob_sum_fluid
   
   public :: assembmass_sum_solid, assembmass_sum_fluid ! assemble and sum massmat
-  public :: broadcast_int, broadcast_dble
+  public :: broadcast_int, broadcast_dble, broadcast_char, broadcast_log
   public :: pinit, pend
   public :: pmin, pmax, pmax_int, psum, psum_int, psum_dble
   public :: barrier
@@ -811,6 +811,28 @@ subroutine pend
   if (nproc>1) call ppend ! comment for serial
 
 end subroutine pend
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine broadcast_char(input_char,input_proc)
+
+  character(*), intent(inout)   :: input_char
+  integer, intent(in)           :: input_proc
+
+  if (nproc>1) call pbroadcast_char(input_char,input_proc) ! comment for serial
+   
+end subroutine broadcast_char
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine broadcast_log(input_log,input_proc)
+
+  integer, intent(in)    :: input_proc
+  logical, intent(inout) :: input_log
+
+  if (nproc>1) call pbroadcast_log(input_log,input_proc) ! comment for serial
+   
+end subroutine broadcast_log
 !=============================================================================
 
 !-----------------------------------------------------------------------------

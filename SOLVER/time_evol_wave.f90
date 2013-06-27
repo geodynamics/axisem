@@ -9,6 +9,7 @@ module time_evol_wave
   use data_time
   use seismograms
   use rotations 
+  use data_io,          only: verbose
   
   implicit none
   public :: prepare_waves, time_loop
@@ -17,13 +18,10 @@ module time_evol_wave
 contains
  
 !-----------------------------------------------------------------------------
+!> Contains all the preliminaries to propagate waves; such as the 
+!! background model, the stiffness and mass terms, the source and receiver 
+!! parameters, and preparations for I/O (dumping meshes, opening files).
 subroutine prepare_waves
-  !
-  ! Contains all the preliminaries to propagate waves; such as the 
-  ! background model, the stiffness and mass terms, the source and receiver 
-  ! parameters, and preparations for I/O (dumping meshes, opening files).
-  ! 
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_io
   use parameters
@@ -32,7 +30,6 @@ subroutine prepare_waves
   use clocks_mod
   use meshes_io
   use attenuation, only: dump_memory_vars
-  !use nc_routines, only: nc_make_snapfile
     
   character(len=120) :: fname
 
@@ -152,8 +149,8 @@ end subroutine prepare_waves
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!! TESTING routine to initialize a plane wave along the equator
 subroutine plane_wave_initial_conditions(disp, velo)
-  ! TESTING routine to initialize a plane wave along the equator
 
   use utlity,   only: zcoord, scoord
   use data_mesh_preloop,    only: ielsolid
@@ -190,8 +187,8 @@ end subroutine plane_wave_initial_conditions
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!! TESTING routine finding two  points to dump the wavefield
 !subroutine find_dump_points(dumppoint_ids)
-!  ! TESTING routine finding two  points to dump the wavefield
 !
 !  use utlity,   only: zcoord, scoord
 !  use data_mesh_preloop,    only: ielsolid
@@ -251,7 +248,7 @@ end subroutine plane_wave_initial_conditions
 !-----------------------------------------------------------------------------
 subroutine time_loop
 
-  use clocks_mod, ONLY: tick
+  use clocks_mod, only: tick
 
   iclockold = tick()
 
@@ -272,32 +269,29 @@ end subroutine time_loop
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 !-----------------------------------------------------------------------------
+!> The conventional explicit, acceleration-driven Newmark scheme of 2nd order.
+!! (e.g. Chaljub & Valette, 2004). The mass matrix is diagonal; we only store 
+!! its pre-assembled inverse at the stage of the time loop.
+!! Explicit axial masking follows Nissen-Meyer et al. 2007, GJI, 
+!! "Spherical-earth Frechet sensitivity kernels" eqs. (80)-(82).
+!! Note that the ordering (starting inside the fluid) is crucial such that no 
+!! iterations for the boundary terms are necessary.
+!! Also note that our definition of the fluid potential is different from 
+!! Chaljub & Valette and the code SPECFEM by an inverse density factor.
+!! This is the correct choice for our case of non-gravitating Earth models, 
+!! but shall be altered once gravity is taken into account.
 subroutine sf_time_loop_newmark
-  !
-  ! The conventional explicit, acceleration-driven Newmark scheme of 2nd order.
-  ! (e.g. Chaljub & Valette, 2004). The mass matrix is diagonal; we only store 
-  ! its pre-assembled inverse at the stage of the time loop.
-  ! Explicit axial masking follows Nissen-Meyer et al. 2007, GJI, 
-  ! "Spherical-earth Frechet sensitivity kernels" eqs. (80)-(82).
-  ! Note that the ordering (starting inside the fluid) is crucial such that no 
-  ! iterations for the boundary terms are necessary.
-  ! Also note that our definition of the fluid potential is different from 
-  ! Chaljub & Valette and the code SPECFEM by an inverse density factor.
-  ! This is the correct choice for our case of non-gravitating Earth models, 
-  ! but shall be altered once gravity is taken into account.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use commun
   use global_parameters
   use apply_masks
   use stiffness
   use clocks_mod
-  use data_matr,            ONLY: inv_mass_rho, inv_mass_fluid
-  use attenuation,          ONLY: time_step_memvars
-  use attenuation,          ONLY: time_step_memvars_cg4
-  use attenuation,          ONLY: n_sls_attenuation
-  use attenuation,          ONLY: att_coarse_grained
+  use data_matr,            only: inv_mass_rho, inv_mass_fluid
+  use attenuation,          only: time_step_memvars
+  use attenuation,          only: time_step_memvars_cg4
+  use attenuation,          only: n_sls_attenuation
+  use attenuation,          only: att_coarse_grained
   
   include 'mesh_params.h'
   
@@ -379,8 +373,9 @@ subroutine sf_time_loop_newmark
   !open(unit=myunit, file='Info/dispersion.dat')
 
 
-  if (lpr) write(6,*)'************ S T A R T I N G   T I M E   L O O P *************'
-  write(69,*)'************ S T A R T I N G   T I M E   L O O P *************'
+  if (lpr) write(6,*) '************ S T A R T I N G   T I M E   L O O P *************'
+  if (verbose > 1) write(69,*) &
+        '************ S T A R T I N G   T I M E   L O O P *************'
 
   do iter = 1, niter
     
@@ -547,28 +542,25 @@ end subroutine sf_time_loop_newmark
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> SOLVE coupled solid-fluid system of temporal ODEs:
+!!   M*\dot{u}    = -K*u - B*\ddot{\chi} + F (solid)
+!!   M*\ddot{chi} = -K*\chi - B*u (fluid)
+!! using symplectic time integration schemes of 4th, 6th, 8th, 10th order 
+!!
+!! The time step can be chosen 1.5 times larger than in Newmark, resulting 
+!! in CPU times about 2.5 times longer than Newmark, but considerably more 
+!! accurate. Consult Ampuero & Nissen-Meyer (2007) for examples of when 
+!! this choice might be more appropriate. Generally, for long propagation 
+!! distances (say, > 100 wavelengths), it is worthwhile considering this.
 subroutine symplectic_time_loop
-  !
-  ! SOLVE coupled solid-fluid system of temporal ODEs:
-  !   M*\dot{u}    = -K*u - B*\ddot{\chi} + F (solid)
-  !   M*\ddot{chi} = -K*\chi - B*u (fluid)
-  ! using symplectic time integration schemes of 4th, 6th, 8th, 10th order 
-  !
-  ! The time step can be chosen 1.5 times larger than in Newmark, resulting 
-  ! in CPU times about 2.5 times longer than Newmark, but considerably more 
-  ! accurate. Consult Ampuero & Nissen-Meyer (2007) for examples of when 
-  ! this choice might be more appropriate. Generally, for long propagation 
-  ! distances (say, > 100 wavelengths), it is worthwhile considering this.
-  ! 
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use global_parameters
   use commun
   use apply_masks
   use stiffness
   use clocks_mod
-  use source,       ONLY: compute_stf_t
-  use data_matr,    ONLY: inv_mass_rho,inv_mass_fluid
+  use source,       only: compute_stf_t
+  use data_matr,    only: inv_mass_rho,inv_mass_fluid
   
   include 'mesh_params.h'
   
@@ -599,7 +591,8 @@ subroutine symplectic_time_loop
 
   t = zero
   if (lpr) write(6,*)'*********** S T A R T I N G   T I M E   L O O P ************'
-  write(69,*)'*********** S T A R T I N G   T I M E   L O O P ************'
+  if (verbose > 1) write(69,*) &
+        '*********** S T A R T I N G   T I M E   L O O P ************'
 
   do iter=1, niter
 
@@ -720,7 +713,7 @@ end subroutine symplectic_time_loop
 !-----------------------------------------------------------------------------
 subroutine symplectic_coefficients(coefd,coeff,coefv)
 
-  use commun,         ONLY : barrier,pend
+  use commun,         only : barrier,pend
   
   double precision, allocatable, dimension(:), intent(out) :: coefd,coeff,coefv
   double precision, allocatable, dimension(:) :: g
@@ -929,9 +922,8 @@ end subroutine symplectic_coefficients
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
+!! coefficients for symmetric compositions of symmetric methods
 subroutine SS_scheme(n,a,b,g)
-
-  ! coefficients for symmetric compositions of symmetric methods
   
   integer, intent(in) :: n
   double precision, intent(in)  :: g(n)
@@ -955,11 +947,9 @@ end subroutine SS_scheme
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
+!> Print time step, time, min/max displacement and potential values
+!! and stop the simulation if displacements blow up beyond acceptable...
 subroutine runtime_info(iter,disp,chi)
-  ! 
-  ! Print time step, time, min/max displacement and potential values
-  ! and stop the simulation if displacements blow up beyond acceptable...
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use commun, only : pend
   
@@ -991,12 +981,14 @@ subroutine runtime_info(iter,disp,chi)
   endif
 
   ! Check on min/max. displacement/potential values globally
-  if ( mod(iter,check_disp)==0 ) then
-     if (iter==check_disp) then
-        write(69,14) 'time', 'absmax(us)', 'absmax(up)', 'absmax(uz)', 'absmax(chi)'
+  if (verbose > 1) then
+     if ( mod(iter,check_disp)==0 ) then
+        if (iter==check_disp) then
+           write(69,14) 'time', 'absmax(us)', 'absmax(up)', 'absmax(uz)', 'absmax(chi)'
+        endif
+        write(69,15) t, maxval(abs(disp(:,:,:,1))), maxval(abs(disp(:,:,:,2))), &
+                     maxval(abs(disp(:,:,:,3))), maxval(abs(chi))
      endif
-     write(69,15) t, maxval(abs(disp(:,:,:,1))), maxval(abs(disp(:,:,:,2))), &
-                  maxval(abs(disp(:,:,:,3))), maxval(abs(chi))
   endif
 14 format(a7,4(a13))
 15 format(f7.1,4(1pe12.3))
@@ -1021,12 +1013,9 @@ end subroutine runtime_info
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Add source term inside source elements only if source time function non-zero
+!! and I have the source.
 subroutine add_source(acc1, stf1)
-  !
-  ! Add source term inside source elements only if source time function non-zero
-  ! and I have the source.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   include 'mesh_params.h'
   
@@ -1047,18 +1036,15 @@ end subroutine add_source
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Includes all output action done during the time loop such as
+!! various receiver definitions, wavefield snapshots, velocity field & strain 
+!! tensor for 3-D kernels 
 subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
-  !
-  ! Includes all output action done during the time loop such as
-  ! various receiver definitions, wavefield snapshots, velocity field & strain 
-  ! tensor for 3-D kernels 
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_io
   use data_mesh
   use wavefields_io
-  use attenuation,          ONLY: n_sls_attenuation, dump_memory_vars
+  use attenuation,          only: n_sls_attenuation, dump_memory_vars
   
   integer, intent(in)            :: iter
   real(kind=realkind),intent(in) :: disp(0:npol,0:npol,nel_solid,3)
@@ -1156,7 +1142,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   ! The FIRST one ('displ_only') dumps a minimal amount and requires extensive 
   ! post-processing when calculating the kernels, but optimizes the SEM 
   ! simulation in terms of memory, storage amount and CPU time.
-  ! Note that this method IS ONLY POSSIBLE IF ENTIRE SEM MESH IS DUMPED!!!
+  ! Note that this method IS only POSSIBLE IF ENTIRE SEM MESH IS DUMPED!!!
   !
   ! The SECOND one ('fullfields') computes the entire strain tensor and velocity 
   ! field on-the-fly, resulting in more output (9 rather than 6 fields), 
@@ -1216,14 +1202,13 @@ end subroutine dump_stuff
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> This is for quick checks and singular computations of the bulk moduli kernels
+!! hence only the trace of the strain tensor is needed and computed. 
 subroutine dump_velo_straintrace_cmb(u,velo)
-  ! 
-  ! This is for quick checks and singular computations of the bulk moduli kernels
-  ! hence only the trace of the strain tensor is needed and computed. 
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-  use data_source,              ONLY: src_type
-  use pointwise_derivatives,    ONLY: axisym_gradient_solid
-  use pointwise_derivatives,    ONLY: f_over_s_solid
+
+  use data_source,              only: src_type
+  use pointwise_derivatives,    only: axisym_gradient_solid
+  use pointwise_derivatives,    only: f_over_s_solid
   
   include 'mesh_params.h'
   
@@ -1262,29 +1247,26 @@ end subroutine dump_velo_straintrace_cmb
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Compute the full, global strain tensor on-the-fly. Each of 6 (monopole: 4)
+!! components is stored separately for solid and fluid domains respectively.
+!! The dipole case is transfered to the (s,phi,z) system here.
+!!
+!! Dumping Ekk, E11, E22, E13, E23, and E12, this has the advantage
+!! that if only lambda/bulk sound speed are of interest, then only a 
+!! scalar Ekk needs to be loaded. Be aware that diuj in the variable names does
+!! NOT stand for partial derivatives, but rather the ij component of the
+!! strain.
 subroutine compute_strain(u, chi)
-  !
-  ! Compute the full, global strain tensor on-the-fly. Each of 6 (monopole: 4)
-  ! components is stored separately for solid and fluid domains respectively.
-  ! The dipole case is transfered to the (s,phi,z) system here.
-  !
-  ! Dumping Ekk, E11, E22, E13, E23, and E12, this has the advantage
-  ! that if only lambda/bulk sound speed are of interest, then only a 
-  ! scalar Ekk needs to be loaded. Be aware that diuj in the variable names does
-  ! NOT stand for partial derivatives, but rather the ij component of the
-  ! strain.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_pointwise,           ONLY: inv_rho_fluid, prefac_inv_s_rho_fluid
-  use data_source,              ONLY: src_type
-  use pointwise_derivatives,    ONLY: axisym_gradient_fluid_add
-  use pointwise_derivatives,    ONLY: axisym_gradient_fluid
-  use pointwise_derivatives,    ONLY: axisym_gradient_solid_add
-  use pointwise_derivatives,    ONLY: axisym_gradient_solid
-  use pointwise_derivatives,    ONLY: f_over_s_solid
-  use pointwise_derivatives,    ONLY: f_over_s_fluid
-  use wavefields_io,            ONLY: dump_field_1d
+  use data_pointwise,           only: inv_rho_fluid, prefac_inv_s_rho_fluid
+  use data_source,              only: src_type
+  use pointwise_derivatives,    only: axisym_gradient_fluid_add
+  use pointwise_derivatives,    only: axisym_gradient_fluid
+  use pointwise_derivatives,    only: axisym_gradient_solid_add
+  use pointwise_derivatives,    only: axisym_gradient_solid
+  use pointwise_derivatives,    only: f_over_s_solid
+  use pointwise_derivatives,    only: f_over_s_fluid
+  use wavefields_io,            only: dump_field_1d
   
   include 'mesh_params.h'
   
@@ -1438,23 +1420,20 @@ end subroutine compute_strain
 
 
 !-----------------------------------------------------------------------------
+!> Computes the kinetic and potential/elastic/stored energy in the solid and 
+!! fluid subdomains separately. This involves one additional evaluation of 
+!! the stiffness system (for the velocity vector rather than displacement) 
+!! in both domains, but additional cost is rather low if only performed every 
+!! 5th time step such as the default for the time being.
+!! Although non-applicable for accuracy measures of the numerical 
+!! approximation, the preserved total energy over time
+!! (only sufficiently after the source time function is active!) is a useful 
+!! check on the consistency of the used time scheme and also reveals whether 
+!! the system leaks, i.e. whether all boundary conditions are correct.
 subroutine energy(disp1,vel,dchi1,ddchi)
-  !
-  ! Computes the kinetic and potential/elastic/stored energy in the solid and 
-  ! fluid subdomains separately. This involves one additional evaluation of 
-  ! the stiffness system (for the velocity vector rather than displacement) 
-  ! in both domains, but additional cost is rather low if only performed every 
-  ! 5th time step such as the default for the time being.
-  ! Although non-applicable for accuracy measures of the numerical 
-  ! approximation, the preserved total energy over time
-  ! (only sufficiently after the source time function is active!) is a useful 
-  ! check on the consistency of the used time scheme and also reveals whether 
-  ! the system leaks, i.e. whether all boundary conditions are correct.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-  use data_source, ONLY: src_type
-  use data_matr, ONLY : unassem_mass_rho_solid, unassem_mass_lam_fluid
+  use data_source, only: src_type
+  use data_matr, only : unassem_mass_rho_solid, unassem_mass_lam_fluid
   use stiffness
   use apply_masks
   use commun
@@ -1555,15 +1534,12 @@ end subroutine energy
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> FLUID: solid-fluid boundary term (solid displ.) added to fluid stiffness
+!!        minus sign in accordance with the definition of bdry_matr
 subroutine bdry_copy2fluid(uflu,usol)
-  !
-  ! FLUID: solid-fluid boundary term (solid displ.) added to fluid stiffness
-  !        minus sign in accordance with the definition of bdry_matr
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-  use data_matr, ONLY : bdry_matr,solflubdry_radius
-  use data_source, ONLY : src_type
+  use data_matr, only : bdry_matr,solflubdry_radius
+  use data_source, only : src_type
   
   include 'mesh_params.h'
   
@@ -1604,15 +1580,12 @@ end subroutine bdry_copy2fluid
 !============================================================================
 
 !----------------------------------------------------------------------------
+!> SOLID: solid-fluid boundary term (fluid potential) added to solid stiffness
+!!        plus sign in accordance with definition of bdry_matr
 subroutine bdry_copy2solid(usol,uflu)
-  !
-  ! SOLID: solid-fluid boundary term (fluid potential) added to solid stiffness
-  !        plus sign in accordance with definition of bdry_matr
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-  use data_matr, ONLY : bdry_matr,solflubdry_radius
-  use data_source, ONLY : src_type
+  use data_matr,   only : bdry_matr, solflubdry_radius
+  use data_source, only : src_type
   
   include 'mesh_params.h'
   
