@@ -1,4 +1,4 @@
-!> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
+> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
 !! compute other parameters for the simulation;
 !! write out summaries of all relevant simulation settings.
 module parameters
@@ -1079,7 +1079,7 @@ subroutine write_parameters
        if (eltype(ielfluid(iel))=='semiso') semisoel_fluid=semisoel_fluid+1
     enddo
 
-    write(69,*)'  grid spacing min/max...'
+    if (verbose > 1) write(69,*)'  grid spacing min/max...'
     do iel=1,nelem
        do ipol=0,npol-1
           do jpol=0,npol-1

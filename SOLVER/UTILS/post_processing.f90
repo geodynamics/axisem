@@ -2046,12 +2046,12 @@ double precision, parameter :: pi = 3.1415926535898
       write(6,*)'done with cubed sphere for r=',rsurf
       deallocate(xcol,ycol,zcol,x_el,y_el,z_el)
 
-    end subroutine construct_surface_cubed_sphere
+end subroutine construct_surface_cubed_sphere
+!-----------------------------------------------------------------------------
 
-
-!dk szphi2xyz----------------------------------------------------------
-  subroutine sphi2xy(x,y,s,phi,n)
-    integer, intent(in) :: n
+!-----------------------------------------------------------------------------
+subroutine sphi2xy(x,y,s,phi,n)
+  integer, intent(in) :: n
   real, dimension(1:n), intent(out) :: x,y
   real, dimension(1:n), intent(in) :: s
   real, intent(in) :: phi
@@ -2059,159 +2059,157 @@ double precision, parameter :: pi = 3.1415926535898
   x(1:n)=s(1:n)*cos(phi)
   y(1:n)=s(1:n)*sin(phi)
 
-  end subroutine sphi2xy
-!--------------------------------------------------------------------------
-
+end subroutine sphi2xy
+!-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
 subroutine write_VTK_bin_scal(x,y,z,u1,rows,nelem_disk,filename1)
-use data_all
- implicit none
- integer :: t,rows,nelem_disk,ioerr,dims
- real, dimension(1:rows), intent(in) :: x,y,z,u1
- integer, dimension(1:rows,2) :: cell
- integer, dimension(1:rows) :: cell_type
- real, dimension(1:rows,3) :: W
- 
- character (len=30) :: celltype;
- character (len=100) :: filename1;
- character (len=50) :: ss; !stream
- 
- W(1:rows,1)=x
- W(1:rows,2)=y
- W(1:rows,3)=z
-!points structure
-do i=1,rows
- cell(i,1)=1
- cell(i,2)=i
- cell_type(i)=1
-enddo
-
- write(6,*)'computing VTK bin file ',trim(filename1)//'.vtk  ...'
-
-! 1 IS WRONG FOR OUTDIR !!!!! 
-open(100,file=trim(filename1)//'.vtk',access='stream',&
-                        status='replace',convert='big_endian')
-
-write(100) '# vtk DataFile Version 3.0'//char(10)
-write(100) 'Cell Fractions'//char(10)
-write(100) 'BINARY'//char(10)
-write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
-write(ss,fmt='(A8,I12,A10)') 'POINTS',rows,' float'
-write(100) ss//char(10)
-!points
-do i=1,rows
-write(100) W(i,1:3)
-enddo
-write(100) char(10)
-!cell topology
-write(ss,fmt='(A5,2I12)') 'CELLS',rows,rows*2
-write(100) char(10)//ss//char(10)
-do i=1,rows
-write(100) cell(i,1:2)
-enddo
-write(100) char(10)
-!cell type
-write(ss,fmt='(A10,2I12)') 'CELL_TYPES',rows
-write(100) char(10)//ss//char(10)
-do i=1,rows
-write(100) cell_type(i)
-enddo
-write(100) char(10)
-!data
-write(ss,fmt='(A10,I12)') 'CELL_DATA',rows
-write(100) char(10)//ss//char(10)
-write(100) 'SCALARS Displ_u1 float 1'//char(10)
-write(100) 'LOOKUP_TABLE default'//char(10) !color table?
-do i=1,rows
-write(100) u1(i)
-enddo
- close(100)
-write(6,*)'...saved ',trim(outdir(1))//'/'//trim(filename1)//'.vtk'
+  use data_all
+  implicit none
+  integer :: t,rows,nelem_disk,ioerr,dims
+  real, dimension(1:rows), intent(in) :: x,y,z,u1
+  integer, dimension(1:rows,2) :: cell
+  integer, dimension(1:rows) :: cell_type
+  real, dimension(1:rows,3) :: W
+  
+  character (len=30) :: celltype;
+  character (len=100) :: filename1;
+  character (len=50) :: ss; !stream
+  
+  W(1:rows,1)=x
+  W(1:rows,2)=y
+  W(1:rows,3)=z
+  !points structure
+  do i=1,rows
+   cell(i,1)=1
+   cell(i,2)=i
+   cell_type(i)=1
+  enddo
+  
+   write(6,*)'computing VTK bin file ',trim(filename1)//'.vtk  ...'
+  
+  ! 1 IS WRONG FOR OUTDIR !!!!! 
+  open(100,file=trim(filename1)//'.vtk',access='stream',&
+                          status='replace',convert='big_endian')
+  
+  write(100) '# vtk DataFile Version 3.0'//char(10)
+  write(100) 'Cell Fractions'//char(10)
+  write(100) 'BINARY'//char(10)
+  write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
+  write(ss,fmt='(A8,I12,A10)') 'POINTS',rows,' float'
+  write(100) ss//char(10)
+  !points
+  do i=1,rows
+  write(100) W(i,1:3)
+  enddo
+  write(100) char(10)
+  !cell topology
+  write(ss,fmt='(A5,2I12)') 'CELLS',rows,rows*2
+  write(100) char(10)//ss//char(10)
+  do i=1,rows
+  write(100) cell(i,1:2)
+  enddo
+  write(100) char(10)
+  !cell type
+  write(ss,fmt='(A10,2I12)') 'CELL_TYPES',rows
+  write(100) char(10)//ss//char(10)
+  do i=1,rows
+  write(100) cell_type(i)
+  enddo
+  write(100) char(10)
+  !data
+  write(ss,fmt='(A10,I12)') 'CELL_DATA',rows
+  write(100) char(10)//ss//char(10)
+  write(100) 'SCALARS Displ_u1 float 1'//char(10)
+  write(100) 'LOOKUP_TABLE default'//char(10) !color table?
+  do i=1,rows
+  write(100) u1(i)
+  enddo
+   close(100)
+  write(6,*)'...saved ',trim(outdir(1))//'/'//trim(filename1)//'.vtk'
 end subroutine write_vtk_bin_scal
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
 subroutine write_VTK_bin_scal_topology(x,y,z,u1,elems,filename)
- implicit none
- integer*4 :: i,t,elems
- real*4, dimension(1:elems*4), intent(in) :: x,y,z,u1
- integer*4, dimension(1:elems*5) :: cell
- integer*4, dimension(1:elems) :: cell_type
- character (len=200) :: filename
- character (len=50) :: ss; !stream
-!points structure
-
-do i=5,elems*5,5
- cell(i-4)=4;
- enddo
-t=0
-do i=5,elems*5,5
-t=t+4
-cell(i-3)=t-4;
-cell(i-2)=t-3;
-cell(i-1)=t-2;
-cell(i)=t-1;
-enddo
-
-!do i=1,elems
-! cell_type(i)=9
-!enddo
-cell_type=9
-! write(6,*)'computing vtk file ',trim(filename),' ...'
-open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
-write(100) '# vtk DataFile Version 4.0'//char(10)
-write(100) 'mittico'//char(10)
-write(100) 'BINARY'//char(10)
-write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
-write(ss,fmt='(A6,I10,A5)') 'POINTS',elems*4,'float'
-write(100) ss//char(10)
-!points
-write(100) (x(i),y(i),z(i),i=1,elems*4)
-write(100) char(10)
-!cell topology
-write(ss,fmt='(A5,2I10)') 'CELLS',elems,elems*5
-write(100) char(10)//ss//char(10)
-write(100) cell
-write(100) char(10)
-!cell type
-write(ss,fmt='(A10,2I10)') 'CELL_TYPES',elems
-write(100) char(10)//ss//char(10)
-write(100) cell_type
-write(100) char(10)
-!data
-write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
-write(100) char(10)//ss//char(10)
-write(100) 'SCALARS data float 1'//char(10)
-write(100) 'LOOKUP_TABLE default'//char(10) !color table?
-write(100) u1
- close(100)
-write(6,*)'...saved ',trim(filename)//'.vtk'
+  implicit none
+  integer*4 :: i,t,elems
+  real*4, dimension(1:elems*4), intent(in) :: x,y,z,u1
+  integer*4, dimension(1:elems*5) :: cell
+  integer*4, dimension(1:elems) :: cell_type
+  character (len=200) :: filename
+  character (len=50) :: ss; !stream
+  !points structure
+  
+  do i=5,elems*5,5
+   cell(i-4)=4;
+   enddo
+  t=0
+  do i=5,elems*5,5
+  t=t+4
+  cell(i-3)=t-4;
+  cell(i-2)=t-3;
+  cell(i-1)=t-2;
+  cell(i)=t-1;
+  enddo
+  
+  !do i=1,elems
+  ! cell_type(i)=9
+  !enddo
+  cell_type=9
+  ! write(6,*)'computing vtk file ',trim(filename),' ...'
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+  write(100) '# vtk DataFile Version 4.0'//char(10)
+  write(100) 'mittico'//char(10)
+  write(100) 'BINARY'//char(10)
+  write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
+  write(ss,fmt='(A6,I10,A5)') 'POINTS',elems*4,'float'
+  write(100) ss//char(10)
+  !points
+  write(100) (x(i),y(i),z(i),i=1,elems*4)
+  write(100) char(10)
+  !cell topology
+  write(ss,fmt='(A5,2I10)') 'CELLS',elems,elems*5
+  write(100) char(10)//ss//char(10)
+  write(100) cell
+  write(100) char(10)
+  !cell type
+  write(ss,fmt='(A10,2I10)') 'CELL_TYPES',elems
+  write(100) char(10)//ss//char(10)
+  write(100) cell_type
+  write(100) char(10)
+  !data
+  write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
+  write(100) char(10)//ss//char(10)
+  write(100) 'SCALARS data float 1'//char(10)
+  write(100) 'LOOKUP_TABLE default'//char(10) !color table?
+  write(100) u1
+   close(100)
+  write(6,*)'...saved ',trim(filename)//'.vtk'
 end subroutine write_vtk_bin_scal_topology
 !-----------------------------------------------------------------------------
 
-
-
-!dk rthetaphi2xyz----------------------------------------------------------
-  subroutine rthetaphi2xyz(x,y,z,r,theta,phi)
+!-------------------------------------------------------------------------------
+subroutine rthetaphi2xyz(x,y,z,r,theta,phi)
   real, intent(out) :: x,y,z
   real, intent(in) :: r,theta,phi
   x=r*sin(theta)*cos(phi)
   y=r*sin(theta)*sin(phi)
   z=r*cos(theta)
-  end subroutine rthetaphi2xyz
-!--------------------------------------------------------------------------
+end subroutine rthetaphi2xyz
+!-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
 real function prem(r0,param)
-!
-! prem model in terms of domains separated by discontinuities
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
-real, intent(in) :: r0
-real            :: r,x_prem
-real             :: ro_prem,vp_prem,vs_prem
-character(len=3), intent(in) :: param !rho, vs,vp
+  !
+  ! prem model in terms of domains separated by discontinuities
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  
+  real, intent(in) :: r0
+  real            :: r,x_prem
+  real             :: ro_prem,vp_prem,vs_prem
+  character(len=3), intent(in) :: param !rho, vs,vp
 
   r=r0/1000.
   
@@ -2277,92 +2275,92 @@ character(len=3), intent(in) :: param !rho, vs,vp
   endif
 
 end function prem
+!-------------------------------------------------------------------------------
 
-!dk get_welegl------------------------------------------------------------------
-  subroutine get_welegl(N,xi,wt)
-!	
-!	This routine computes the N+1 weights associated with the
-!Gauss-Lobatto-Legendre quadrature formula of order N.
-!
+!-------------------------------------------------------------------------------
+subroutine get_welegl(N,xi,wt)
+  !	
+  !	This routine computes the N+1 weights associated with the
+  ! Gauss-Lobatto-Legendre quadrature formula of order N.
+  !
 
-use global_par
+  use global_par
   implicit none
-!
+
   integer :: N
   double precision ::  xi(0:N),wt(0:N)
   integer :: j
   double precision :: y,dy,d2y,fact 
-!
+
   fact = two/(dble(N)*dble(N+1))
-!
+
   wt(:) = zero
-!
+
   do j = 0, N
      call VALEPO(N,xi(j),y,dy,d2y)
      wt(j) =  fact*y**(-2)
   end do
-!
-  end subroutine get_welegl
+
+end subroutine get_welegl
 !-------------------------------------------------------------------------------
 
-!dk get_welegl_axial------------------------------------------------------------
-  subroutine get_welegl_axial(N,xi,wt,iflag)
-!
-!       This routine computes the N+1 weights associated with the
-!Gauss-Lobatto-Legendre quadrature formula of order N that one 
-!to apply for elements having a non-zero intersection with the
-!axis of symmetry of the Earth.
-!
-!
-! iflag = 2 : Second  quadrature formula proposed by Bernardi et al.
-!             Formula : (VI.1.12), page 104             
-! iflag = 3 : Third   quadrature formula proposed by Bernardi et al.
-!             Formula : (VI.1.20), page 107            
-!
+!-------------------------------------------------------------------------------
+subroutine get_welegl_axial(N,xi,wt,iflag)
+  !
+  !       This routine computes the N+1 weights associated with the
+  !Gauss-Lobatto-Legendre quadrature formula of order N that one 
+  !to apply for elements having a non-zero intersection with the
+  !axis of symmetry of the Earth.
+  !
+  !
+  ! iflag = 2 : Second  quadrature formula proposed by Bernardi et al.
+  !             Formula : (VI.1.12), page 104             
+  ! iflag = 3 : Third   quadrature formula proposed by Bernardi et al.
+  !             Formula : (VI.1.20), page 107            
+  !
 
-use global_par
+  use global_par
 
   implicit none
-!
+
   integer :: N,iflag
   double precision ::  xi(0:N),wt(0:N)
   integer :: j
   double precision :: y,dy,d2y,fact
-!
+
   wt(:) = zero
-!
-       if (iflag == 2 ) then 
 
-          fact = four/(dble(N)*dble(N+2))
-          do j = 0, N
-             call VAmnPO(N,xi(j),y,dy,d2y)
-             wt(j) =  fact*y**(-2)
-             if (j == 0) wt(j) = two*wt(j)
-          end do
+  if (iflag == 2 ) then 
 
-       elseif ( iflag == 3 ) then 
+     fact = four/(dble(N)*dble(N+2))
+     do j = 0, N
+        call vamnpo(N,xi(j),y,dy,d2y)
+        wt(j) =  fact*y**(-2)
+        if (j == 0) wt(j) = two*wt(j)
+     end do
 
-          fact = one/(dble(N+1)*dble(N+1))
-          do j = 0, N
-             call valepo(N,xi(j),y,dy,d2y)
-             wt(j) = (fact*(1+xi(j))**2)*y**(-2)
-          end do  
+  elseif ( iflag == 3 ) then 
 
-       end if
-!
-  end subroutine get_welegl_axial
+     fact = one/(dble(N+1)*dble(N+1))
+     do j = 0, N
+        call valepo(N,xi(j),y,dy,d2y)
+        wt(j) = (fact*(1+xi(j))**2)*y**(-2)
+     end do  
+
+  end if
+
+end subroutine get_welegl_axial
 !-------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
-!dk zelegl
-      SUBROUTINE ZELEGL(N,ET,VN)
-!********************************************************************
-!   COMPUTES THE NODES RELATIVE TO THE LEGENDRE GAUSS-LOBATTO FORMULA
-!   N  = ORDER OF THE FORMULA
-!   ET = VECTOR OF THE NODES, ET(I), I=0,N
-!   VN = VALUES OF THE LEGENDRE POLYNOMIAL AT THE NODES, VN(I), I=0,N
-!********************************************************************
-use global_par
+subroutine zelegl(n,et,vn)
+  !********************************************************************
+  !   COMPUTES THE NODES RELATIVE TO THE LEGENDRE GAUSS-LOBATTO FORMULA
+  !   N  = ORDER OF THE FORMULA
+  !   ET = VECTOR OF THE NODES, ET(I), I=0,N
+  !   VN = VALUES OF THE LEGENDRE POLYNOMIAL AT THE NODES, VN(I), I=0,N
+  !********************************************************************
+  use global_par
   IMPLICIT DOUBLE PRECISION (A-H,O-Z)
   DIMENSION ET(0:*), VN(0:*)
   IF (N  ==  0) RETURN
@@ -2395,12 +2393,11 @@ use global_par
 1 CONTINUE   
 
   RETURN     
-!-----------------------
-  end subroutine zelegl
-!-----------------------
-!
-!dk valepo------------------------------------------------------
-  SUBROUTINE VALEPO(N,X,Y,DY,D2Y)
+end subroutine zelegl
+!--------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------
+subroutine valepo(n,x,y,dy,d2y)
   !*************************************************************
   !   COMPUTES THE VALUE OF THE LEGENDRE POLYNOMIAL OF DEGREE N
   !   AND ITS FIRST AND SECOND DERIVATIVES AT A GIVEN POINT
@@ -2410,7 +2407,7 @@ use global_par
   !   DY = VALUE OF THE FIRST DERIVATIVE IN X
   !   D2Y= VALUE OF THE SECOND DERIVATIVE IN X
   !*************************************************************
-use global_par
+  use global_par
   IMPLICIT DOUBLE PRECISION (A-H,O-Z)
 
    Y   = 1.D0
@@ -2442,13 +2439,12 @@ use global_par
   1     CONTINUE
 
   RETURN
+        
+end subroutine valepo
+!--------------------------------------------------------------------------
 
-!        
-  end subroutine valepo
-!-----------------------
-
-!dk vamnpo---------------------------------------------------------
-  SUBROUTINE VAMNPO(N,X,Y,DY,D2Y)
+!-------------------------------------------------------------------------
+subroutine vamnpo(n,x,y,dy,d2y)
   !*************************************************************
   !   COMPUTES THE VALUE OF the "cylindrical" polynomial
   !   M_n = (L_n + L_{n+1})/(1+x) OF DEGREE N
@@ -2462,7 +2458,7 @@ use global_par
   !   Implemented after Bernardi et al., page 57, eq. (III.1.10)
   ! 
   !*************************************************************
-use global_par
+  use global_par
   IMPLICIT DOUBLE PRECISION (A-H,O-Z)
   
    Y   = 1.D0
@@ -2496,19 +2492,17 @@ use global_par
     D2Y  = (two*C1+three)*D2Y/(c1+two)
     D2YP = D2YM
   end do
-!
-  RETURN
-!
-!-----------------------
-  end subroutine vamnpo
-!-----------------------
 
-!dk xyz2rthetaphi----------------------------------------------------------
-  subroutine xyz2rthetaphi(r,theta,phi,x,y,z)
-use global_par
-! Alex2TNM: 
-! This one you might find useful for other purposes
-! TNM@Alex: Indeed, done.
+  RETURN
+end subroutine vamnpo
+!--------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------
+subroutine xyz2rthetaphi(r,theta,phi,x,y,z)
+  use global_par
+  ! Alex2TNM: 
+  ! This one you might find useful for other purposes
+  ! TNM@Alex: Indeed, done.
   double precision, intent(out) :: r,theta,phi
   double precision, intent(in) :: x,y,z
 
@@ -2534,21 +2528,21 @@ use global_par
     phi = 1.5d0*pi
    end if
   endif
-  end subroutine xyz2rthetaphi
+end subroutine xyz2rthetaphi
 !--------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------
- subroutine get_r_theta(s,z,r,th)
-use global_par
-double precision, intent(in) :: s,z
-double precision, intent(out) :: r,th
-
- th=datan(s/(z+epsi))
-
- if ( 0.d0 > th ) th = pi + th
- if (th == zero .and. z < 0.d0) th = pi
-
- r=dsqrt(s**2 + z**2)
+subroutine get_r_theta(s,z,r,th)
+  use global_par
+  double precision, intent(in) :: s,z
+  double precision, intent(out) :: r,th
+ 
+  th=datan(s/(z+epsi))
+ 
+  if ( 0.d0 > th ) th = pi + th
+  if (th == zero .and. z < 0.d0) th = pi
+ 
+  r=dsqrt(s**2 + z**2)
 
 end subroutine get_r_theta
 !==========================================================================
