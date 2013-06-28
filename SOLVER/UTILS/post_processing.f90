@@ -437,9 +437,21 @@ subroutine read_input
   close(99)
 
   ! read in post processing input file
-  allocate(rot_rec_posttmp(nsim),rec_comp_systmp(nsim),sum_seis_true(nsim),mij_loc(6,nsim),conv_period(nsim))
-  allocate(conv_stf(nsim),srccolat(nsim),srclon(nsim),load_snapstmp(nsim),outdir(nsim),seistype(nsim),negative_time(nsim))
-  any_sum_seis_true=.false.
+  allocate(rot_rec_posttmp(nsim))
+  allocate(rec_comp_systmp(nsim))
+  allocate(sum_seis_true(nsim))
+  allocate(mij_loc(6,nsim))
+  allocate(conv_period(nsim))
+
+  allocate(conv_stf(nsim))
+  allocate(srccolat(nsim))
+  allocate(srclon(nsim))
+  allocate(load_snapstmp(nsim))
+  allocate(outdir(nsim))
+  allocate(seistype(nsim))
+  allocate(negative_time(nsim))
+
+  any_sum_seis_true = .false.
   do isim=1,nsim
      open(unit=99,file=trim(simdir(isim))//'/param_post_processing')
      read(99,*)rot_rec_posttmp(isim)
@@ -462,7 +474,7 @@ subroutine read_input
   write(6,*)'Output directory:',trim(outdir(isim))
   write(6,*)'shift time series to negative time (event at zero)?',negative_time(isim)
 
-! read standard in, if any
+  ! read standard in, if any
   inquire(file=trim(outdir(1))//"/param_post_processing_overwrite",exist=file_exist)
   if (file_exist) then
      write(6,*)'OVERWRITING generic post processing parameters...'
@@ -494,28 +506,29 @@ subroutine read_input
   if (sum_seis_true(isim)) any_sum_seis_true=.true.
 
   if ( sum_seis_true(isim) .and. nsim ==2)  then
-     write(6,*)' WARNING: You want to sum seismograms but only have two simulations ==> are you sure?'
+     write(6,'(a,/,a)') ' WARNING: You want to sum seismograms but only have two simulations', &
+                        ' ==> are you sure?'
   elseif (.not. sum_seis_true(isim) .and. nsim == 4)  then
-     write(6,*)'  WARNING: you have 4 simulations but do not want to sum?'
+     write(6,*) '  WARNING: you have 4 simulations but do not want to sum?'
   endif
 
   write(6,*)'receiver system:',isim,rec_comp_systmp(isim)
   if (isim>1 .and. rec_comp_systmp(isim)/=rec_comp_systmp(isim-1) ) then 
-     write(6,*)'inconsistency with receiver component system:'
-     write(6,*)simdir(isim),rec_comp_systmp(isim)
-     write(6,*)simdir(isim-1),rec_comp_systmp(isim-1)
-     write(6,*)'make sure these are all identical in the subdirectories'
+     write(6,*) 'inconsistency with receiver component system:'
+     write(6,*) simdir(isim),rec_comp_systmp(isim)
+     write(6,*) simdir(isim-1),rec_comp_systmp(isim-1)
+     write(6,*) 'make sure these are all identical in the subdirectories'
      stop
  else
-    rec_comp_sys=rec_comp_systmp(1)
+    rec_comp_sys = rec_comp_systmp(1)
  endif
 
-  write(6,*)'receiver rotation?',isim,rot_rec_posttmp(isim)
+  write(6,*) 'receiver rotation?',isim,rot_rec_posttmp(isim)
   if (isim>1 .and. (rot_rec_posttmp(isim) .neqv. rot_rec_posttmp(isim-1)) ) then 
-     write(6,*)'inconsistency with receiver rotation:'
-     write(6,*)simdir(isim),rot_rec_posttmp(isim)
-     write(6,*)simdir(isim-1),rot_rec_posttmp(isim-1)
-     write(6,*)'make sure these are all identical in the subdirectories'
+     write(6,*) 'inconsistency with receiver rotation:'
+     write(6,*) simdir(isim),rot_rec_posttmp(isim)
+     write(6,*) simdir(isim-1),rot_rec_posttmp(isim-1)
+     write(6,*) 'make sure these are all identical in the subdirectories'
      stop
   else
      rot_rec_post=rot_rec_posttmp(1)
@@ -532,74 +545,74 @@ subroutine read_input
 2    format(a2,6(1pe12.2))
 3    format(a2,6(a12))
   endif
-  write(6,*)'  convolution period:',conv_period(isim)
-  write(6,*)'  convolution source time function: ' ,conv_stf(isim)
-  write(6,*)'  source colatitude [deg]:',srccolat(isim)*180./pi
-  write(6,*)'  source longitude:',srclon(isim)*180./pi
-  write(6,*)'  load snaps?',load_snapstmp(isim)
-  write(6,*)'  output directory: ',trim(outdir(isim))
+  write(6,*) '  convolution period:',conv_period(isim)
+  write(6,*) '  convolution source time function: ' ,conv_stf(isim)
+  write(6,*) '  source colatitude [deg]:',srccolat(isim)*180./pi
+  write(6,*) '  source longitude:',srclon(isim)*180./pi
+  write(6,*) '  load snaps?',load_snapstmp(isim)
+  write(6,*) '  output directory: ',trim(outdir(isim))
   write(6,*)
 enddo 
 
-  tshift=0.
+  tshift = 0.
 
-  allocate(bkgrndmodel(nsim),stf_type(nsim))
+  allocate(bkgrndmodel(nsim), stf_type(nsim))
   allocate(src_type(nsim,2))
-  allocate(dt(nsim),period(nsim),magnitude(nsim),dt_seis(nsim))
-  allocate(dt_strain(nsim),dt_snap(nsim))
-  allocate(correct_azi(nsim),rot_rec(nsim),rot_rec_post_array(nsim))
-  allocate(nt(nsim),nrec(nsim),nt_seis(nsim),nt_strain(nsim),nt_snap(nsim))
-  allocate(ibeg(nsim),iend(nsim),src_depth(nsim))
+  allocate(dt(nsim), period(nsim), magnitude(nsim), dt_seis(nsim))
+  allocate(dt_strain(nsim), dt_snap(nsim))
+  allocate(correct_azi(nsim), rot_rec(nsim), rot_rec_post_array(nsim))
+  allocate(nt(nsim), nrec(nsim), nt_seis(nsim), nt_strain(nsim), nt_snap(nsim))
+  allocate(ibeg(nsim), iend(nsim), src_depth(nsim))
   allocate(shift_fact(nsim))
-  allocate(ishift_deltat(nsim),ishift_seisdt(nsim),ishift_straindt(nsim))
+  allocate(ishift_deltat(nsim), ishift_seisdt(nsim), ishift_straindt(nsim))
 
   do isim = 1,nsim
      open(unit=99,file=trim(simdir(isim))//'/simulation.info')
-     read(99,*)bkgrndmodel(isim)
-     read(99,*)dt(isim)
-     read(99,*)nt(isim)
-     read(99,*)src_type(isim,1)
-     read(99,*)src_type(isim,2)
-     read(99,*)stf_type(isim)
-     read(99,*)src_file_type
-     read(99,*)period(isim)
-     read(99,*)src_depth(isim)
-     read(99,*)magnitude(isim)
-     read(99,*)nrec(isim)
-     read(99,*)nt_seis(isim)
-     read(99,*)dt_seis(isim)
-     !read(99,*)correct_azi(isim)
+     read(99,*) bkgrndmodel(isim)
+     read(99,*) dt(isim)
+     read(99,*) nt(isim)
+     read(99,*) src_type(isim,1)
+     read(99,*) src_type(isim,2)
+     read(99,*) stf_type(isim)
+     read(99,*) src_file_type
+     read(99,*) period(isim)
+     read(99,*) src_depth(isim)
+     read(99,*) magnitude(isim)
+     read(99,*) nrec(isim)
+     read(99,*) nt_seis(isim)
+     read(99,*) dt_seis(isim)
+     !read(99,*) correct_azi(isim)
      correct_azi(isim) = .false.
-     read(99,*)nt_strain(isim)
-     read(99,*)dt_strain(isim)
-     read(99,*)nt_snap(isim)
-     read(99,*)dt_snap(isim)
-     read(99,*)rot_rec(isim)
-     read(99,*)ibeg(isim)
-     read(99,*)iend(isim)
-     read(99,*)shift_fact(isim)
-     read(99,*)ishift_deltat(isim)
-     read(99,*)ishift_seisdt(isim)
-     read(99,*)ishift_straindt(isim)
+     read(99,*) nt_strain(isim)
+     read(99,*) dt_strain(isim)
+     read(99,*) nt_snap(isim)
+     read(99,*) dt_snap(isim)
+     read(99,*) rot_rec(isim)
+     read(99,*) ibeg(isim)
+     read(99,*) iend(isim)
+     read(99,*) shift_fact(isim)
+     read(99,*) ishift_deltat(isim)
+     read(99,*) ishift_seisdt(isim)
+     read(99,*) ishift_straindt(isim)
      close(99)
 
      if (src_type(isim,2)=='vertforce' .or. src_type(isim,2)=='xforce' .or. &
          src_type(isim,2)=='yforce') sum_seis_true(isim)=.false.
 
-     write(6,*)'Simulations: ',isim,trim(simdir(isim))
-     write(6,*)'  source type:',src_type(isim,1),' ',src_type(isim,2)
-     write(6,*)'  source time function:',stf_type(isim)
-     write(6,*)'  source file type:',src_file_type
-     write(6,*)'  magnitude:',magnitude(isim)
-     write(6,*)'  receivers:',nrec(isim)
-     write(6,*)'  correct azi?',correct_azi(isim)
-     write(6,*)'  source period:',period(isim)
-     write(6,*)'  time steps:',nt(isim)
-     write(6,*)'  rotate recs?',trim(rot_rec(isim))
-     write(6,*)'  shift factor of stf:',shift_fact(isim)
-     write(6,*)'  shift factor in samples (dt,dtseis,dtstrain):',&
-                   ishift_deltat(isim),ishift_seisdt(isim),ishift_straindt(isim)
-     write(6,*)''  
+     write(6,*) 'Simulations: ',isim,trim(simdir(isim))
+     write(6,*) '  source type:',src_type(isim,1),' ',src_type(isim,2)
+     write(6,*) '  source time function:',stf_type(isim)
+     write(6,*) '  source file type:',src_file_type
+     write(6,*) '  magnitude:',magnitude(isim)
+     write(6,*) '  receivers:',nrec(isim)
+     write(6,*) '  correct azi?',correct_azi(isim)
+     write(6,*) '  source period:',period(isim)
+     write(6,*) '  time steps:',nt(isim)
+     write(6,*) '  rotate recs?',trim(rot_rec(isim))
+     write(6,*) '  shift factor of stf:',shift_fact(isim)
+     write(6,*) '  shift factor in samples (dt,dtseis,dtstrain):',&
+                    ishift_deltat(isim),ishift_seisdt(isim),ishift_straindt(isim)
+     write(6,*) ''  
 
   enddo
 
@@ -621,93 +634,96 @@ end subroutine read_input
 !--------------------------------------------------------------------
 subroutine compute_radiation_prefactor(mij_prefact,npts,nsim,longit)
 
-use data_all, only : src_type,magnitude,mij,sum_seis_true,correct_azi,rot_mat
-use data_all, only : trans_rot_mat,src_file_type,srccolat,srclon,any_sum_seis_true,outdir
-use global_par
+  use data_all, only : src_type,magnitude,mij,sum_seis_true,correct_azi,rot_mat
+  use data_all, only : trans_rot_mat,src_file_type,srccolat,srclon,any_sum_seis_true,outdir
+  use global_par
+  
+  implicit none
+  
+  real, dimension(1:npts,1:nsim,1:3), intent(out)   :: mij_prefact
+  real, dimension(1:npts), intent(in)               :: longit
+  integer, intent(in)   :: npts,nsim
+  real, dimension(6)    :: Mij_scale
+  character(len=100)    :: junk
+  integer               :: isim, i, j
+  logical               :: file_exist
+  real                  :: transrottmp(1:3,1:3), Mij_matr(3,3)
+  
+  ! This is the rotation matrix of Nissen-Meyer, Dahlen, Fournier, GJI 2007
+  ! to rotate xyz coordinates 
 
-implicit none
+  if (.not. allocated(trans_rot_mat)) allocate(trans_rot_mat(3,3,nsim))
 
-real, dimension(1:npts,1:nsim,1:3), intent(out) :: mij_prefact
-real, dimension(1:npts), intent(in) :: longit
-integer, intent(in) :: npts,nsim
-real, dimension(6) :: Mij_scale
-character(len=100) :: junk
-integer isim,i,j
-logical :: file_exist
-real :: transrottmp(1:3,1:3),Mij_matr(3,3)
+  do isim=1,nsim
+     rot_mat(1,1)=cos(srccolat(isim))*cos(srclon(isim))
+     rot_mat(2,2)=cos(srclon(isim))
+     rot_mat(3,3)=cos(srccolat(isim))
+     rot_mat(2,1)=cos(srccolat(isim))*sin(srclon(isim))
+     rot_mat(3,1)=-sin(srccolat(isim))
+     rot_mat(3,2)=0.d0
+     rot_mat(1,2)=-sin(srclon(isim))
+     rot_mat(1,3)=sin(srccolat(isim))*cos(srclon(isim))
+     rot_mat(2,3)=sin(srccolat(isim))*sin(srclon(isim))
+     do i=1,3
+        do j=1,3
+           if (abs(rot_mat(i,j))<epsi_real) rot_mat(i,j)=0.0
+        enddo
+     enddo        
+     trans_rot_mat(:,:,isim)=transpose(rot_mat)
+  enddo
 
-! This is the rotation matrix of Nissen-Meyer, Dahlen, Fournier, GJI 2007 to rotate xyz coordinates 
+  if (src_file_type=='cmtsolut') then
+     write(6,*)'  reading CMTSOLUTION file....'
+     open(unit=20000,file='CMTSOLUTION',POSITION='REWIND',status='old')
+     read(20000,*)junk
+     read(20000,*)junk
+     read(20000,*)junk
+     read(20000,*)junk
+     read(20000,*)junk
+     read(20000,*)junk  
+     read(20000,*)junk
+     read(20000,*)junk,Mij(1) !Mrr
+     read(20000,*)junk,Mij(2) !Mtt
+     read(20000,*)junk,Mij(3) !Mpp
+     read(20000,*)junk,Mij(4) !Mrt
+     read(20000,*)junk,Mij(5) !Mrp
+     read(20000,*)junk,Mij(6) !Mtp
+     close(20000)
 
-    if (.not. allocated(trans_rot_mat)) allocate(trans_rot_mat(3,3,nsim))
-     do isim=1,nsim
-        rot_mat(1,1)=cos(srccolat(isim))*cos(srclon(isim))
-        rot_mat(2,2)=cos(srclon(isim))
-        rot_mat(3,3)=cos(srccolat(isim))
-        rot_mat(2,1)=cos(srccolat(isim))*sin(srclon(isim))
-        rot_mat(3,1)=-sin(srccolat(isim))
-        rot_mat(3,2)=0.d0
-        rot_mat(1,2)=-sin(srclon(isim))
-        rot_mat(1,3)=sin(srccolat(isim))*cos(srclon(isim))
-        rot_mat(2,3)=sin(srccolat(isim))*sin(srclon(isim))
-        do i=1,3
-           do j=1,3
-              if (abs(rot_mat(i,j))<epsi_real) rot_mat(i,j)=0.0
-           enddo
-        enddo        
-        trans_rot_mat(:,:,isim)=transpose(rot_mat)
-     enddo
+     Mij=Mij/1.E7 ! CMTSOLUTION given in dyn-cm
 
-     if (src_file_type=='cmtsolut') then
-        write(6,*)'  reading CMTSOLUTION file....'
-        open(unit=20000,file='CMTSOLUTION',POSITION='REWIND',status='old')
-        read(20000,*)junk
-        read(20000,*)junk
-        read(20000,*)junk
-        read(20000,*)junk
-        read(20000,*)junk
-        read(20000,*)junk  
-        read(20000,*)junk
-        read(20000,*)junk,Mij(1) !Mrr
-        read(20000,*)junk,Mij(2) !Mtt
-        read(20000,*)junk,Mij(3) !Mpp
-        read(20000,*)junk,Mij(4) !Mrt
-        read(20000,*)junk,Mij(5) !Mrp
-        read(20000,*)junk,Mij(6) !Mtp
-        close(20000)
-
-        Mij=Mij/1.E7 ! CMTSOLUTION given in dyn-cm
-
-     elseif (src_file_type=='separate' .or. src_file_type=='sourceparams') then 
-        open(unit=20000,file='sourceparams.dat',POSITION='REWIND',status='old')
-        read(20000,*)(Mij(i),i=1,6)
+  elseif (src_file_type=='separate' .or. src_file_type=='sourceparams') then 
+     open(unit=20000,file='sourceparams.dat',POSITION='REWIND',status='old')
+     read(20000,*)(Mij(i),i=1,6)
      close(20000)        
-     else
-        write(6,*)'unknown source file type!',src_file_type
-     endif
+  else
+     write(6,*)'unknown source file type!',src_file_type
+  endif
 
-     write(6,*)'Original moment tensor: (Mrr,Mtt,Mpp,Mrt,Mrp,Mtp)'
-     write(6,*)(Mij(i),i=1,6)
-     write(6,*)'magnitudes of each run:'
-     write(6,*)(magnitude(isim),isim=1,nsim)
+  write(6,*)'Original moment tensor: (Mrr,Mtt,Mpp,Mrt,Mrp,Mtp)'
+  write(6,*)(Mij(i),i=1,6)
+  write(6,*)'magnitudes of each run:'
+  write(6,*)(magnitude(isim),isim=1,nsim)
 
   inquire(file=trim(outdir(1))//"/param_mij",exist=file_exist)
   if (file_exist) then
-     write(6,*)'OVERWRITING moment tensor...'
+     write(6,*) 'OVERWRITING moment tensor...'
      open(unit=99,file=trim(outdir(1))//'/param_mij')
-     read(99,*)(Mij(i),i=1,6)
-     write(6,*)'overwritten moment tensor:'
-     write(6,*)(Mij(i),i=1,6)
+     read(99,*) (Mij(i),i=1,6)
+     write(6,*) 'overwritten moment tensor:'
+     write(6,*) (Mij(i),i=1,6)
      close(99)
   endif
 
-     if (any_sum_seis_true) then
+  if (any_sum_seis_true) then
      do isim=1,nsim
 
         Mij_scale=Mij/magnitude(isim)
 
         write(6,*)'Mij scaled:',Mij_scale
 
-        if ( ( src_file_type=='separate'  .or. src_file_type=='sourceparams' ) .and. .not. file_exist) then 
+        if ( (src_file_type=='separate'  .or. src_file_type=='sourceparams') &
+                .and. .not. file_exist ) then 
            write(6,*)isim, 'rotating moment tensor from sourceparams..'
            transrottmp(1:3,1:3) = trans_rot_mat(:,:,isim)
            Mij_matr(1,1) = Mij_scale(1)
@@ -739,178 +755,191 @@ real :: transrottmp(1:3,1:3),Mij_matr(3,3)
               if (src_type(isim,2)=='mzz') then
                  mij_prefact(i,isim,:) = Mij_scale(1)
                  mij_prefact(i,isim,2) = 0.
-                 if (i==1) write(6,*)isim,'Simulation is mzz, prefact:',&
-                                                mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
+                 if (i==1) write(6,*) isim, 'Simulation is mzz, prefact:', &
+                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                      mij_prefact(i,isim,3)
 
               elseif (src_type(isim,2)=='mxx_p_myy') then
                  mij_prefact(i,isim,:) = Mij_scale(2)+Mij_scale(3)
                  mij_prefact(i,isim,2) = 0.
-                 if (i==1) write(6,*)isim,'Simulation is mxx, prefact:',&
-                                                         mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
+                 if (i==1) write(6,*) isim, 'Simulation is mxx, prefact:', &
+                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                      mij_prefact(i,isim,3)
 
               elseif (src_type(isim,2)=='mxz' .or. src_type(isim,2)=='myz') then
                  mij_prefact(i,isim,:) = Mij_scale(4)*cos(longit(i))+Mij_scale(5)*sin(longit(i))
                  mij_prefact(i,isim,2) = -Mij_scale(4)*sin(longit(i))+Mij_scale(5)*cos(longit(i))
 
-                 if (i==1) write(6,*)isim,'Simulation is mxz, prefact:',&
-                                                        mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
+                 if (i==1) write(6,*) isim, 'Simulation is mxz, prefact:', &
+                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                      mij_prefact(i,isim,3)
 
               elseif (src_type(isim,2)=='mxy' .or. src_type(isim,2)=='mxx_m_myy') then
                  mij_prefact(i,isim,:) = (Mij_scale(2)-Mij_scale(3))*cos(2.*longit(i))  &
                                                        +2.*Mij_scale(6)*sin(2.*longit(i)) 
                  mij_prefact(i,isim,2) = (Mij_scale(3)-Mij_scale(2))*sin(2.*longit(i)) &
                                                         +2.*Mij_scale(6)*cos(2.*longit(i))
-                 if (i==1) write(6,*)isim,'Simulation is mxy, prefact:',&
-                                                        mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
+                 if (i==1) write(6,*) isim, 'Simulation is mxy, prefact:', &
+                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                      mij_prefact(i,isim,3)
 
               elseif(src_type(isim,2)=='explosion') then 
-                  mij_prefact(i,isim,:) = (Mij_scale(1)+Mij_scale(2)+Mij_scale(3)) / 3.
-                 if (i==1) write(6,*)isim,'Simulation is explosion, prefact:',&
-                                                mij_prefact(i,isim,1),mij_prefact(i,isim,2),mij_prefact(i,isim,3)
+                 mij_prefact(i,isim,:) = (Mij_scale(1)+Mij_scale(2)+Mij_scale(3)) / 3.
+                 if (i==1) write(6,*) isim, 'Simulation is explosion, prefact:', &
+                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                      mij_prefact(i,isim,3)
               endif
               
            enddo
 
-           write(6,*)'Mij phi prefactor:',maxval(mij_prefact(:,isim,1)),maxval(mij_prefact(:,isim,2)),maxval(mij_prefact(:,isim,3))
+           write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
+                      maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
         else ! correct_azi
-           write(6,*)' .... ISSUE: correct azimuth embedded in simulation, thus various components may be unretrievable!'
-           write(6,*)' ..... hence we are NOT summing seismograms!'
-           write(6,*)' .... to be sure to obtain correct results, rerun the solver with correc_azi set to .false. '
+           write(6,'(a,a,/,a,/,a,a)') &
+                ' .... ISSUE: correct azimuth embedded in simulation, ', &
+                'thus various components may be unretrievable!', &
+                ' ..... hence we are NOT summing seismograms!', &
+                ' .... to be sure to obtain correct results, rerun the ', &
+                'solver with correc_azi set to .false. '
+
            sum_seis_true = .false.
         endif
      enddo ! isim
-     endif ! any_sum_seis_true
+  endif ! any_sum_seis_true
 end subroutine compute_radiation_prefactor
+!------------------------------------------------------------------------
 
 !------------------------------------------------------------------------
-subroutine sum_individual_wavefields(field_sum,field_in,n,mij_prefact)
+subroutine sum_individual_wavefields(field_sum, field_in, n, mij_prefact)
 
-implicit none
+  implicit none
+  
+  integer, intent(in) :: n
+  real, dimension(n,3), intent(in) :: field_in
+  real, dimension(3), intent(in) :: mij_prefact
+  real, dimension(n,3), intent(inout) :: field_sum
 
-integer, intent(in) :: n
-real, dimension(n,3), intent(in) :: field_in
-real, dimension(3), intent(in) :: mij_prefact
-real, dimension(n,3), intent(inout) :: field_sum
-
-   field_sum(:,1) = field_sum(:,1) + mij_prefact(1)*field_in(:,1)
-   field_sum(:,2) = field_sum(:,2) + mij_prefact(2)*field_in(:,2)
-   field_sum(:,3) = field_sum(:,3) + mij_prefact(3)*field_in(:,3)
+  field_sum(:,1) = field_sum(:,1) + mij_prefact(1)*field_in(:,1)
+  field_sum(:,2) = field_sum(:,2) + mij_prefact(2)*field_in(:,2)
+  field_sum(:,3) = field_sum(:,3) + mij_prefact(3)*field_in(:,3)
 
 end subroutine sum_individual_wavefields
+!--------------------------------------------------------------------
 
 !--------------------------------------------------------------------
-subroutine rotate_receiver_comp(isim,rec_comp_sys,srccolat,srclon,th_rot,ph_rot,th_orig,ph_orig,nt,seis)
+subroutine rotate_receiver_comp(isim, rec_comp_sys, srccolat, srclon, th_rot, ph_rot, &
+                                th_orig, ph_orig, nt, seis)
 
-use data_all, only : nsim,trans_rot_mat
-use global_par
-implicit none
-include 'mesh_params.h'
-
-character(len=3) :: rec_comp_sys
-real, intent(in) :: th_rot,ph_rot ! coordinates in the rotated (src at pole) system
-real, intent(in) :: th_orig,ph_orig ! coordinates in the unrotated (actual src) system
-real, intent(in) :: srccolat,srclon ! orginal source coordinates
-integer, intent(in) :: nt,isim
-real, intent(inout) :: seis(nt,3)
-real :: seis_tmp(nt,3),seisvec(3),rot(3,3)
-integer :: i
-
-write(6,*)'ROTATIONS'
-write(6,*)th_orig*180./pi,ph_orig*180./pi
-write(6,*)th_rot*180./pi,ph_rot*180./pi
-
-! Need to consider *local* spherical geometry in the first place,
-! THEN rotate the source-receiver frame to the north pole in the solver.
-! E.g., consider the difference between source-projected and spherical coordinates for a source 
-! away from the north pole: they are not the same, but in the framework below would 
-! be identified as the same.
-
-! Source projected frame: transform to spherical without any further rotations
-if (rec_comp_sys=='src') then  
-   seis_tmp(:,1) = cos(th_rot) * seis(:,1) - sin(th_rot) * seis(:,3)
-   seis_tmp(:,2) = seis(:,2)
-   seis_tmp(:,3) = sin(th_rot) * seis(:,1) + cos(th_rot) * seis(:,3)
-
-! Rotate from rotated u_sphiz to rotated u_xyz (both in reference, source-at-pole system) 
-else 
-   seis_tmp(:,1) = cos(ph_rot) * seis(:,1) - sin(ph_rot) * seis(:,2) 
-   seis_tmp(:,2) = sin(ph_rot) * seis(:,1) + cos(ph_rot) * seis(:,2)
-   seis_tmp(:,3) = seis(:,3)
-
-   ! Rotate to the original (i.e. real src-rec coordinate-based) u_xyz
-   if (srccolat>epsi_real .or. srclon>epsi_real) then 
-      rot=transpose(trans_rot_mat(:,:,isim))
-      do i=1,nt
-         seisvec = seis_tmp(i,:)
-         seis_tmp(i,:) = matmul(rot,seisvec)
-      enddo
-   endif
-
-endif 
-
-! Rotate to coordinate system of choice
-if (rec_comp_sys=='enz') then
-   seis(:,1) = - cos(th_orig) * cos(ph_orig) * seis_tmp(:,1) &
-             & - cos(th_orig) * sin(ph_orig) * seis_tmp(:,2) &
-             & + sin(th_orig) * seis_tmp(:,3)
-   seis(:,2) = - sin(ph_orig) * seis_tmp(:,1) &
-             & + cos(ph_orig) * seis_tmp(:,2)
-   seis(:,3) =   sin(th_orig) * cos(ph_orig) * seis_tmp(:,1) & 
-             & + sin(th_orig) * sin(ph_orig) * seis_tmp(:,2) &
-             & + cos(th_orig) * seis_tmp(:,3)
-   
-
-elseif (rec_comp_sys=='sph') then 
-   seis(:,1) =   cos(th_orig) * cos(ph_orig) * seis_tmp(:,1) &
-             & + cos(th_orig) * sin(ph_orig) * seis_tmp(:,2) &
-             & - sin(th_orig) * seis_tmp(:,3)
-   seis(:,2) = - sin(ph_orig) * seis_tmp(:,1) & 
-             & + cos(ph_orig) * seis_tmp(:,2)
-   seis(:,3) =   sin(th_orig) * cos(ph_orig) * seis_tmp(:,1) & 
-             & + sin(th_orig) * sin(ph_orig) * seis_tmp(:,2) &
-             & + cos(th_orig) * seis_tmp(:,3)
-
-elseif (rec_comp_sys=='cyl') then 
-   seis(:,1) =   cos(ph_orig) * seis_tmp(:,1) + sin(ph_orig) * seis_tmp(:,2)
-   seis(:,2) = - sin(ph_orig) * seis_tmp(:,1) + cos(ph_orig) * seis_tmp(:,2)
-   seis(:,3) =   seis_tmp(:,3)
-
-elseif (rec_comp_sys=='xyz') then
-   seis = seis_tmp
-
-elseif (rec_comp_sys=='src') then
-   seis = seis_tmp ! taken from above
-
-else
-   write(6,*)'unknown component system',rec_comp_sys
-   stop
-endif
+  use data_all,     only : nsim, trans_rot_mat
+  use global_par
+  implicit none
+  include 'mesh_params.h'
+  
+  character(len=3)      :: rec_comp_sys
+  real, intent(in)      :: th_rot, ph_rot ! coordinates in the rotated (src at pole) system
+  real, intent(in)      :: th_orig, ph_orig ! coordinates in the unrotated (actual src) system
+  real, intent(in)      :: srccolat, srclon ! orginal source coordinates
+  integer, intent(in)   :: nt,isim
+  real, intent(inout)   :: seis(nt,3)
+  real                  :: seis_tmp(nt,3), seisvec(3), rot(3,3)
+  integer               :: i
+  
+  write(6,*) 'ROTATIONS'
+  write(6,*) th_orig*180./pi, ph_orig*180./pi
+  write(6,*) th_rot*180./pi, ph_rot*180./pi
+  
+  ! Need to consider *local* spherical geometry in the first place,
+  ! THEN rotate the source-receiver frame to the north pole in the solver.
+  ! E.g., consider the difference between source-projected and spherical coordinates for a source 
+  ! away from the north pole: they are not the same, but in the framework below would 
+  ! be identified as the same.
+  
+  ! Source projected frame: transform to spherical without any further rotations
+  if (rec_comp_sys=='src') then  
+     seis_tmp(:,1) = cos(th_rot) * seis(:,1) - sin(th_rot) * seis(:,3)
+     seis_tmp(:,2) = seis(:,2)
+     seis_tmp(:,3) = sin(th_rot) * seis(:,1) + cos(th_rot) * seis(:,3)
+  
+  ! Rotate from rotated u_sphiz to rotated u_xyz (both in reference, source-at-pole system) 
+  else 
+     seis_tmp(:,1) = cos(ph_rot) * seis(:,1) - sin(ph_rot) * seis(:,2) 
+     seis_tmp(:,2) = sin(ph_rot) * seis(:,1) + cos(ph_rot) * seis(:,2)
+     seis_tmp(:,3) = seis(:,3)
+  
+     ! Rotate to the original (i.e. real src-rec coordinate-based) u_xyz
+     if (srccolat>epsi_real .or. srclon>epsi_real) then 
+        rot=transpose(trans_rot_mat(:,:,isim))
+        do i=1,nt
+           seisvec = seis_tmp(i,:)
+           seis_tmp(i,:) = matmul(rot,seisvec)
+        enddo
+     endif
+  
+  endif 
+  
+  ! Rotate to coordinate system of choice
+  if (rec_comp_sys=='enz') then
+     seis(:,1) = - cos(th_orig) * cos(ph_orig) * seis_tmp(:,1) &
+               & - cos(th_orig) * sin(ph_orig) * seis_tmp(:,2) &
+               & + sin(th_orig) * seis_tmp(:,3)
+     seis(:,2) = - sin(ph_orig) * seis_tmp(:,1) &
+               & + cos(ph_orig) * seis_tmp(:,2)
+     seis(:,3) =   sin(th_orig) * cos(ph_orig) * seis_tmp(:,1) & 
+               & + sin(th_orig) * sin(ph_orig) * seis_tmp(:,2) &
+               & + cos(th_orig) * seis_tmp(:,3)
+     
+  
+  elseif (rec_comp_sys=='sph') then 
+     seis(:,1) =   cos(th_orig) * cos(ph_orig) * seis_tmp(:,1) &
+               & + cos(th_orig) * sin(ph_orig) * seis_tmp(:,2) &
+               & - sin(th_orig) * seis_tmp(:,3)
+     seis(:,2) = - sin(ph_orig) * seis_tmp(:,1) & 
+               & + cos(ph_orig) * seis_tmp(:,2)
+     seis(:,3) =   sin(th_orig) * cos(ph_orig) * seis_tmp(:,1) & 
+               & + sin(th_orig) * sin(ph_orig) * seis_tmp(:,2) &
+               & + cos(th_orig) * seis_tmp(:,3)
+  
+  elseif (rec_comp_sys=='cyl') then 
+     seis(:,1) =   cos(ph_orig) * seis_tmp(:,1) + sin(ph_orig) * seis_tmp(:,2)
+     seis(:,2) = - sin(ph_orig) * seis_tmp(:,1) + cos(ph_orig) * seis_tmp(:,2)
+     seis(:,3) =   seis_tmp(:,3)
+  
+  elseif (rec_comp_sys=='xyz') then
+     seis = seis_tmp
+  
+  elseif (rec_comp_sys=='src') then
+     seis = seis_tmp ! taken from above
+  
+  else
+     write(6,*)'unknown component system',rec_comp_sys
+     stop
+  endif
 
 end subroutine rotate_receiver_comp
+!-----------------------------------------------------------------------------
 
 
 !-----------------------------------------------------------------------------
+!! convolve seismograms computed for dirac delta with a Gaussian
 subroutine convolve_with_stf(t_0,dt,nt,src_type,stf,outdir,seis,seis_fil)          
-!
-! convolve seismograms computed for dirac delta with a Gaussian
-!
-use data_all, only : stf_type,shift_fact
-use global_par, only: pi,decay,shift_fact1
-implicit none
-
-integer, intent(in)            :: nt
-real, intent(in)               :: t_0,dt
-character(len=100), intent(in) :: outdir
-real                           :: time(nt)
-real                           :: tau_j,source,sqrt_pi_inv
-integer                        :: i,j,N_j,irec,lffile,ishift
-real, intent(in)               :: seis(nt,3)
-real, intent(out)              :: seis_fil(nt,3)
-real                           :: src_array(nt),temp_expo,alpha
-character(len=7), intent(in)   :: src_type
-character(len=7), intent(in)   :: stf
-character(len=4)               :: appidur,appirec
-logical                        :: monopole
+  
+  use data_all, only : stf_type,shift_fact
+  use global_par, only: pi,decay,shift_fact1
+  implicit none
+  
+  integer, intent(in)            :: nt
+  real, intent(in)               :: t_0,dt
+  character(len=100), intent(in) :: outdir
+  real                           :: time(nt)
+  real                           :: tau_j,source,sqrt_pi_inv
+  integer                        :: i,j,N_j,irec,lffile,ishift
+  real, intent(in)               :: seis(nt,3)
+  real, intent(out)              :: seis_fil(nt,3)
+  real                           :: src_array(nt),temp_expo,alpha
+  character(len=7), intent(in)   :: src_type
+  character(len=7), intent(in)   :: stf
+  character(len=4)               :: appidur,appirec
+  logical                        :: monopole
 
   write(6,*)
   write(6,*)'Convolving with period=',t_0
@@ -918,27 +947,26 @@ logical                        :: monopole
 
   monopole = .false. 
   if (src_type == 'monopole') monopole=.true.
-  N_j=int(2.*shift_fact1*t_0/dt)
+  N_j = int(2.*shift_fact1*t_0/dt)
   call define_io_appendix(appidur,int(t_0))
-  alpha=decay/t_0
-  sqrt_pi_inv=1./dsqrt(pi)
+  alpha = decay/t_0
+  sqrt_pi_inv = 1./dsqrt(pi)
   do i=1,nt
-    time(i)=dt*real(i)
-    seis_fil(i,:)=0.
-    do j=1,N_j
-!       tau_j=dble(j+1)*dt ! +1 accomodates the fact that dirac delta is centered at t=dt
+    time(i) = dt * real(i)
+    seis_fil(i,:) = 0.
+    do j=1, N_j
        tau_j=dble(j)*dt
        ! convolve with a Gaussian
-       if (stf=='gauss_0' ) then 
-          temp_expo=alpha*(tau_j-shift_fact1*t_0)
-          if (temp_expo<50.) then
+       if (stf == 'gauss_0') then 
+          temp_expo = alpha*(tau_j-shift_fact1*t_0)
+          if (temp_expo < 50.) then
              source = alpha*exp(-temp_expo**2 )*sqrt_pi_inv / pi
           else
-             source=0.
+             source = 0.
           endif
-       elseif (stf=='quheavi') then 
+       elseif (stf == 'quheavi') then 
           source = 0.5*(1.0+erf((tau_j-shift_fact1*t_0)/t_0))
-       elseif (stf=='gauss_1' ) then 
+       elseif (stf == 'gauss_1') then 
           source = -2.*(decay/t_0)**2*(tau_j-shift_fact1*t_0) * &
                            exp(-( (decay/t_0*(tau_j-shift_fact1*t_0))**2) )
           source=source/( decay/t_0*sqrt(2.)*exp(-2.) )
@@ -954,7 +982,7 @@ logical                        :: monopole
   seis_fil=seis_fil*pi
   write(6,*)'convolve:',stf,stf_type(1),maxval(seis_fil)
 
-! Output source time function as used here
+  ! Output source time function as used here
   open(unit=55,file=trim(outdir)//'/stf_'//trim(stf)//'_'//appidur//'sec.dat')
   do i=1,N_j
     write(55,*)time(i),src_array(i)
@@ -965,119 +993,123 @@ end subroutine convolve_with_stf
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine save_google_earth_kml(srccolat1,srclon1,srcdepth,Mij,per,rcvcolat,rcvlon,reccomp,&
-                                 src_type,sum_seis_true,nsim,num_rec_glob,outdir,receiver_name)
+subroutine save_google_earth_kml(srccolat1, srclon1, srcdepth, Mij, per, rcvcolat, &
+                                 rcvlon, reccomp, src_type, sum_seis_true, nsim, &
+                                 num_rec_glob, outdir, receiver_name)
 
-use global_par, only : pi
-implicit none
+  use global_par, only : pi
+  implicit none
+  
+  integer, intent(in)   :: num_rec_glob,nsim
+  real, intent(in)      :: srccolat1, srclon1, srcdepth, rcvcolat(1:num_rec_glob), &
+                           rcvlon(1:num_rec_glob)
+  real, intent(in)      :: Mij(6),per
+  logical, intent(in)   :: sum_seis_true
 
-integer, intent(in)                    :: num_rec_glob,nsim
-real, intent(in) :: srccolat1,srclon1,srcdepth,rcvcolat(1:num_rec_glob),rcvlon(1:num_rec_glob)
-real, intent(in) :: Mij(6),per
-character(len=100), intent(in)     :: receiver_name(1:num_rec_glob)
-character(len=100), intent(in) :: outdir
-character(len=10), intent(in) :: src_type
-character(len=1),dimension(3), intent(in) :: reccomp
-logical, intent(in) :: sum_seis_true
-real :: slon,slat,rlon(1:num_rec_glob),rlat(1:num_rec_glob)
-integer :: i
-character(len=4) :: app
-character(len=2) :: comp(3)
-character(len=100) :: fname2
+  character(len=100), intent(in)            :: receiver_name(1:num_rec_glob)
+  character(len=100), intent(in)            :: outdir
+  character(len=10), intent(in)             :: src_type
+  character(len=1),dimension(3), intent(in) :: reccomp
 
-write(6,*)'writing google earth kml file for plotting earthquake and receiver locations/seismograms...'
-write(6,*)'Check it out: '//trim(outdir)//'/googleearth_src_rec_seis.kml'
-
-slat=90.-srccolat1*180./pi
-slon=srclon1*180./pi
-if (slon>180.) slon=slon-360.
-
-rlat=90.-rcvcolat*180./pi
-rlon=rcvlon*180./pi
-do i=1,num_rec_glob
-   if (rlon(i)>180.) rlon(i)=rlon(i)-360.
-enddo
-open(unit=88,file=trim(outdir)//'/googleearth_src_rec_seis.kml')
-
-write(88,14)'<?xml version="1.0" encoding="UTF-8"?> '
-write(88,15)'<kml xmlns="http://earth.google.com/kml/2.0"> '
-write(88,16)'<Document> '
-
-write(88,*)
-write(88,*)'  <name> earthquake-receiver configuration</name>'
-write(88,*)'    <LookAt>'
-write(88,12)'     <longitude>',slon,'</longitude><latitude>',slat,'</latitude>'
-write(88,*)'     <range>7000000</range><tilt>0</tilt><heading>0</heading>'
-write(88,*)'    </LookAt>'
-write(88,*)
-write(88,*)'......'
-write(88,*)'  <Placemark>'
-write(88,*)'     <Style id="earthquake">'
-write(88,*)'       <IconStyle>'
- write(88,*)'       <scale>5</scale>'
-write(88,*)'         <Icon>'
-write(88,*)' <href>http://maps.google.com/mapfiles/kml/shapes/earthquake.png</href>'
-write(88,*)'             </Icon>'
-write(88,*)'           </IconStyle>'
-write(88,*)'                  <LabelStyle>'
-write(88,*)'                      <scale>5</scale>'
- write(88,*)'                 </LabelStyle>'
-write(88,*)'        </Style>'
-write(88,*)'    <name> earthquake</name>'
-write(88,*) ' <description> Event details:'
-write(88,20) ' colat,lon [deg]:',srccolat1*180./pi,srclon1*180./pi
-write(88,21)' source depth [km]',srcdepth
-write(88,23)'Mrr=',Mij(1)
-write(88,23)'Mtt=',Mij(2)
-write(88,23)'Mpp=',Mij(3)
-write(88,23)'Mtr=',Mij(4)
-write(88,23)'Mpr=',Mij(5)
-write(88,23)'Mtp=',Mij(6)
-write(88,21)'source period [s]:',per
-write(88,*)'</description>'
-write(88,13)'   <Point><coordinates>',slon,',',slat,'</coordinates></Point>'
-write(88,*)'   </Placemark>'
-
-do i=1,num_rec_glob
-   write(88,*)
-   write(88,*) ' <Placemark>'
-   write(88,*) '     <Style id="cam">'
-   write(88,*) '       <IconStyle>'
- write(88,*)'       <scale>2</scale>'
-   write(88,*) '         <Icon>'
-      write(88,*)' <href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'
-   write(88,*) '         </Icon>'
-   write(88,*) '       </IconStyle>'
-write(88,*)'                  <LabelStyle>'
-write(88,*)'                      <scale>2</scale>'
-write(88,*)'                 </LabelStyle>'
-   write(88,*) '     </Style>'
-   write(88,17) ' <name> ',trim(receiver_name(i)),'  # ',i,'</name>'
-   call define_io_appendix(app,i)
-   write(88,119) ' <description> station ',trim(receiver_name(i))
-   write(88,20) ' colat,lon [deg]:',rcvcolat(i)*180./pi,rcvlon(i)*180./pi
-
-   fname2='GRAPHICS/'//trim(receiver_name(i))//'_'//reccomp(1)//'.gif'
-   write(88,*) ' <img src="',trim(fname2),'"></img>'
-
-   fname2='GRAPHICS/'//trim(receiver_name(i))//'_'//reccomp(3)//'.gif'
-   write(88,*) ' <img src="',trim(fname2),'"></img>'
-
-   if (sum_seis_true .or. nsim>1 .or. src_type/='monopole') then 
-      fname2='GRAPHICS/'//trim(receiver_name(i))//'_'//reccomp(2)//'.gif'
-      write(88,*) ' <img src="',trim(fname2),'"></img>'
-   endif
-   write(88,*) '  </description>'
-   write(88,13) '   <Point><coordinates>',rlon(i),',',rlat(i),'</coordinates></Point>'
-   write(88,*) ' </Placemark>'
-enddo
-
-write(88,*)'......'
-write(88,*)
-write(88,*)'</Document>'
-write(88,*)'</kml>'
-
-close(88)
+  real                  :: slon, slat, rlon(1:num_rec_glob), rlat(1:num_rec_glob)
+  integer               :: i
+  character(len=4)      :: app
+  character(len=2)      :: comp(3)
+  character(len=100)    :: fname2
+  
+  write(6,*) 'writing google earth kml file for plotting earthquake and receiver locations/seismograms...'
+  write(6,*) 'Check it out: '//trim(outdir)//'/googleearth_src_rec_seis.kml'
+  
+  slat=90.-srccolat1*180./pi
+  slon=srclon1*180./pi
+  if (slon>180.) slon=slon-360.
+  
+  rlat=90.-rcvcolat*180./pi
+  rlon=rcvlon*180./pi
+  do i=1,num_rec_glob
+     if (rlon(i)>180.) rlon(i)=rlon(i)-360.
+  enddo
+  open(unit=88,file=trim(outdir)//'/googleearth_src_rec_seis.kml')
+  
+  write(88,14)'<?xml version="1.0" encoding="UTF-8"?> '
+  write(88,15)'<kml xmlns="http://earth.google.com/kml/2.0"> '
+  write(88,16)'<Document> '
+  
+  write(88,*)
+  write(88,*)'  <name> earthquake-receiver configuration</name>'
+  write(88,*)'    <LookAt>'
+  write(88,12)'     <longitude>',slon,'</longitude><latitude>',slat,'</latitude>'
+  write(88,*)'     <range>7000000</range><tilt>0</tilt><heading>0</heading>'
+  write(88,*)'    </LookAt>'
+  write(88,*)
+  write(88,*)'......'
+  write(88,*)'  <Placemark>'
+  write(88,*)'     <Style id="earthquake">'
+  write(88,*)'       <IconStyle>'
+  write(88,*)'       <scale>5</scale>'
+  write(88,*)'         <Icon>'
+  write(88,*)' <href>http://maps.google.com/mapfiles/kml/shapes/earthquake.png</href>'
+  write(88,*)'             </Icon>'
+  write(88,*)'           </IconStyle>'
+  write(88,*)'                  <LabelStyle>'
+  write(88,*)'                      <scale>5</scale>'
+  write(88,*)'                 </LabelStyle>'
+  write(88,*)'        </Style>'
+  write(88,*)'    <name> earthquake</name>'
+  write(88,*) ' <description> Event details:'
+  write(88,20) ' colat,lon [deg]:',srccolat1*180./pi,srclon1*180./pi
+  write(88,21)' source depth [km]',srcdepth
+  write(88,23)'Mrr=',Mij(1)
+  write(88,23)'Mtt=',Mij(2)
+  write(88,23)'Mpp=',Mij(3)
+  write(88,23)'Mtr=',Mij(4)
+  write(88,23)'Mpr=',Mij(5)
+  write(88,23)'Mtp=',Mij(6)
+  write(88,21)'source period [s]:',per
+  write(88,*)'</description>'
+  write(88,13)'   <Point><coordinates>',slon,',',slat,'</coordinates></Point>'
+  write(88,*)'   </Placemark>'
+  
+  do i=1,num_rec_glob
+     write(88,*)
+     write(88,*) ' <Placemark>'
+     write(88,*) '     <Style id="cam">'
+     write(88,*) '       <IconStyle>'
+   write(88,*)'       <scale>2</scale>'
+     write(88,*) '         <Icon>'
+        write(88,*)' <href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>'
+     write(88,*) '         </Icon>'
+     write(88,*) '       </IconStyle>'
+  write(88,*)'                  <LabelStyle>'
+  write(88,*)'                      <scale>2</scale>'
+  write(88,*)'                 </LabelStyle>'
+     write(88,*) '     </Style>'
+     write(88,17) ' <name> ',trim(receiver_name(i)),'  # ',i,'</name>'
+     call define_io_appendix(app,i)
+     write(88,119) ' <description> station ',trim(receiver_name(i))
+     write(88,20) ' colat,lon [deg]:',rcvcolat(i)*180./pi,rcvlon(i)*180./pi
+  
+     fname2='GRAPHICS/'//trim(receiver_name(i))//'_'//reccomp(1)//'.gif'
+     write(88,*) ' <img src="',trim(fname2),'"></img>'
+  
+     fname2='GRAPHICS/'//trim(receiver_name(i))//'_'//reccomp(3)//'.gif'
+     write(88,*) ' <img src="',trim(fname2),'"></img>'
+  
+     if (sum_seis_true .or. nsim>1 .or. src_type/='monopole') then 
+        fname2='GRAPHICS/'//trim(receiver_name(i))//'_'//reccomp(2)//'.gif'
+        write(88,*) ' <img src="',trim(fname2),'"></img>'
+     endif
+     write(88,*) '  </description>'
+     write(88,13) '   <Point><coordinates>',rlon(i),',',rlat(i),'</coordinates></Point>'
+     write(88,*) ' </Placemark>'
+  enddo
+  
+  write(88,*)'......'
+  write(88,*)
+  write(88,*)'</Document>'
+  write(88,*)'</kml>'
+  
+  close(88)
 
 12 format(a16,f14.2,a23,f14.2,a12)
 13 format(a23,f14.2,a1,f14.2,a23)
@@ -1096,12 +1128,9 @@ end subroutine save_google_earth_kml
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-  subroutine define_io_appendix(app,iproc)
-!
+subroutine define_io_appendix(app,iproc)
 ! Defines the 4 digit character string appended to any 
 ! data or io file related to process myid. 
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   integer, intent(in)           :: iproc
   character(len=4), intent(out) :: app
@@ -1112,7 +1141,7 @@ end subroutine define_io_appendix
 !=============================================================================
 
 
-!=========================================================
+!-----------------------------------------------------------------------------
 subroutine compute_3d_wavefields
 
   use data_all
