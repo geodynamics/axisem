@@ -1,70 +1,69 @@
-!-------------------------------
 module data_all
-!------------------------------
-implicit none
-public
-  logical,allocatable, dimension(:) :: correct_azi,rot_rec_post_array
-  logical :: rot_src_rec_true
-  character(len=100) :: stf_file,rot_rec_file,filename,fname
-  character(len=100),allocatable, dimension(:) :: bkgrndmodel,rot_rec
-  character(len=7),allocatable, dimension(:) :: stf_type
-  character(len=100),allocatable, dimension(:) :: recname
-  character(len=100),allocatable, dimension(:,:) :: outname,outname2,rec_full_name
-  character(len=10),allocatable, dimension(:,:) :: src_type
-  character(len=1),dimension(3) :: reccomp
-  character(len=100), allocatable :: simdir(:)
-  character(len=4) :: appmynum,appidur
-  integer :: i,it,nsim,isim,iseis,ii,iii,ishift
-  integer,allocatable, dimension(:) :: nt,nrec,nt_seis,nt_strain,nt_snap,ibeg,iend
-  real :: junk,rec_loc_tol,Mij(6),tshift
-  real, dimension(3) :: rloc_xyz, rloc_xyz_tmp, rloc_rtp
-  real,dimension(:), allocatable :: time,src_depth
-  real, dimension(:,:), allocatable :: seis,seis_fil,seis_sglcomp
+
+  implicit none
+  public
+
+  logical,allocatable, dimension(:) :: correct_azi, rot_rec_post_array
+  logical                           :: rot_src_rec_true
+  character(len=100)                :: stf_file, rot_rec_file, filename, fname
+
+  character(len=100),allocatable, dimension(:)      :: bkgrndmodel, rot_rec
+  character(len=7),allocatable, dimension(:)        :: stf_type
+  character(len=100),allocatable, dimension(:)      :: recname
+  character(len=100),allocatable, dimension(:,:)    :: outname, outname2, rec_full_name
+  character(len=10),allocatable, dimension(:,:)     :: src_type
+  integer, allocatable, dimension(:)                :: nt, nrec, nt_seis, nt_strain, &
+                                                       nt_snap, ibeg, iend
+  character(len=1),dimension(3)       :: reccomp
+  character(len=100), allocatable     :: simdir(:)
+  character(len=4)                    :: appmynum, appidur
+  integer                             :: i, it, nsim, isim, iseis, ii, iii, ishift
+  real                                :: junk, rec_loc_tol, Mij(6), tshift
+  real, dimension(3)                  :: rloc_xyz, rloc_xyz_tmp, rloc_rtp
+  real, dimension(:), allocatable     :: time, src_depth
+  real, dimension(:,:), allocatable   :: seis, seis_fil, seis_sglcomp
   real, dimension(:,:,:), allocatable :: mij_phi
-  real,allocatable, dimension(:) :: dt,period,dt_seis,dt_strain,dt_snap,magnitude
-  real, allocatable, dimension(:) :: thr_orig,phr_orig
-  real, dimension(3,3) :: rot_mat
-  character(len=3) :: rec_comp_sys
-  logical :: rot_rec_post,any_sum_seis_true,load_snaps
-  character(len=12) :: src_file_type
+  real, allocatable, dimension(:)     :: dt, period, dt_seis, dt_strain, dt_snap ,magnitude
+  real, allocatable, dimension(:)     :: thr_orig,phr_orig
+  real, dimension(3,3)                :: rot_mat
+  character(len=3)                    :: rec_comp_sys
+  logical                             :: rot_rec_post,any_sum_seis_true,load_snaps
+  character(len=12)                   :: src_file_type
 
-! discrete dirac sources
-  real, allocatable, dimension(:) :: shift_fact
-  integer, allocatable, dimension(:) :: ishift_deltat,ishift_seisdt,ishift_straindt
+  ! discrete dirac sources
+  real, allocatable, dimension(:)     :: shift_fact
+  integer, allocatable, dimension(:)  :: ishift_deltat, ishift_seisdt, ishift_straindt
 
-! parameters from param_post_processing
-  logical, dimension(:), allocatable :: rot_rec_posttmp,sum_seis_true,load_snapstmp,negative_time
-  character(len=3), allocatable :: rec_comp_systmp(:)
-  real, dimension(:,:), allocatable :: mij_loc
-  real, dimension(:), allocatable :: conv_period,srccolat,srclon
-  character(len=7), allocatable :: conv_stf(:)
-  character(len=100), allocatable  :: outdir(:)
-  character(len=4), allocatable :: seistype(:)
+  ! parameters from param_post_processing
+  logical, dimension(:), allocatable  :: rot_rec_posttmp, sum_seis_true, load_snapstmp, &
+                                         negative_time
+  character(len=3), allocatable       :: rec_comp_systmp(:)
+  real, dimension(:,:), allocatable   :: mij_loc
+  real, dimension(:), allocatable     :: conv_period, srccolat, srclon
+  character(len=7), allocatable       :: conv_stf(:)
+  character(len=100), allocatable     :: outdir(:)
+  character(len=4), allocatable       :: seistype(:)
 
   real, allocatable :: period_final(:)
   real, allocatable :: trans_rot_mat(:,:,:)
   real, allocatable :: colat(:,:),lon(:,:)
-!-----------------------------
-end module data_all
-!------------------------------
 
-module global_par !-------------------------------------------------------------------------------------------------
+end module data_all
+
+module global_par
 
   double precision, parameter :: pi = 3.1415926535898
 
-  double precision, parameter :: zero =0d0,half=5d-1,third=1d0/3d0
-  double precision, parameter :: quart=25d-2,one=1d0,sixth=1d0/6d0
-  double precision, parameter :: two = 2d0,three=3d0,four=4d0,five=5.d0
+  double precision, parameter :: zero = 0d0, half = 5d-1, third = 1d0/3d0
+  double precision, parameter :: quart = 25d-2, one = 1d0, sixth = 1d0/6d0
+  double precision, parameter :: two = 2d0, three=3d0, four=4d0, five=5.d0
   double precision, parameter :: fifth = 2.d-1
   double precision, parameter :: epsi = 1d-30
-  real, parameter :: epsi_real=1.e-10
+  real, parameter             :: epsi_real=1.e-10
   real(kind=8), parameter     :: smallval_dble = 1e-11
-  real, parameter                :: decay=3.5d0
-  !real, parameter   :: decay=1.628d0
-  real, parameter                :: shift_fact1=1.5d0
+  real, parameter             :: decay = 3.5d0
+  real, parameter             :: shift_fact1 = 1.5d0
 end module global_par
-!-------------------------------------------------------------------------------------------------------------------------
-!-------------------------------------------------------------------------------------------------------------------------
 
 program post_processing_seis
 
@@ -76,30 +75,43 @@ program post_processing_seis
   call read_input
 
   if (rot_rec_post ) then
-     rot_rec_post_array=.true.
-     if (rec_comp_sys=='sph') then
-        reccomp(1)='th'; reccomp(2)='ph'; reccomp(3)='r'
-     elseif (rec_comp_sys=='enz') then
-        reccomp(1)='N'; reccomp(2)='E'; reccomp(3)='Z'
-     elseif (rec_comp_sys=='cyl') then
-        reccomp(1)='s'; reccomp(2)='ph'; reccomp(3)='z'
-     elseif (rec_comp_sys=='xyz') then
-        reccomp(1)='x'; reccomp(2)='y'; reccomp(3)='z'
-     elseif (rec_comp_sys=='src') then
-        reccomp(1)='R'; reccomp(2)='T'; reccomp(3)='Z'
+     rot_rec_post_array = .true.
+     if (rec_comp_sys == 'sph') then
+        reccomp(1) = 'th'
+        reccomp(2) = 'ph'
+        reccomp(3) = 'r'
+     elseif (rec_comp_sys == 'enz') then
+        reccomp(1) = 'N'
+        reccomp(2) = 'E'
+        reccomp(3) = 'Z'
+     elseif (rec_comp_sys == 'cyl') then
+        reccomp(1) = 's'
+        reccomp(2) = 'ph'
+        reccomp(3) = 'z'
+     elseif (rec_comp_sys == 'xyz') then
+        reccomp(1) = 'x'
+        reccomp(2) = 'y'
+        reccomp(3) = 'z'
+     elseif (rec_comp_sys == 'src') then
+        reccomp(1) = 'R'
+        reccomp(2) = 'T'
+        reccomp(3) = 'Z'
      endif
 
   else
      rot_rec_post_array = .false.
-     reccomp(1)='s0'; reccomp(2)='ph0'; reccomp(3)='z0' 
-     write(6,*)'WARNING: Receiver components are cylindrical and rotated with the source at the north pole!'
+     reccomp(1) = 's0'
+     reccomp(2) = 'ph0'
+     reccomp(3) = 'z0' 
+     write(6,*) 'WARNING: Receiver components are cylindrical and rotated with the source at the north pole!'
   endif
   write(6,*)'receiver components: ',(reccomp(i),i=1,3)
   write(6,*)
   
   ! input seismogram names
-  allocate(recname(nrec(1)),thr_orig(nrec(1)),phr_orig(nrec(1)))
-! these are the original receiver coordinates, having the source at the actual location
+  allocate(recname(nrec(1)), thr_orig(nrec(1)), phr_orig(nrec(1)))
+  
+  ! these are the original receiver coordinates, having the source at the actual location
   open(unit=61,file=trim(simdir(1))//'/Data/receiver_names.dat')
   do i=1,nrec(1)
      read(61,*)recname(i),thr_orig(i),phr_orig(i)
@@ -109,7 +121,7 @@ program post_processing_seis
   thr_orig=thr_orig/180.*pi 
   phr_orig=phr_orig/180.*pi
 
-! these are the rotated receiver coordinates, having the source at the north pole
+  ! these are the rotated receiver coordinates, having the source at the north pole
   allocate(colat(nrec(1),nsim),lon(nrec(1),nsim))
   do isim=1,nsim
      open(unit=20,file=trim(simdir(isim))//'/Data/receiver_pts.dat')
@@ -163,87 +175,89 @@ program post_processing_seis
         phr_orig(i) = rloc_rtp(3)
         
         ! write exact receiver locations (gll points) in the earth fixed coordinate system to file
-        write(21,'(a15,3f15.8)') recname(i), rloc_rtp(2) / pi * 180., rloc_rtp(2) / pi * 180. - 90., rloc_rtp(3) / pi * 180.
+        write(21,'(a15,3f15.8)') recname(i), rloc_rtp(2) / pi * 180., &
+                                 rloc_rtp(2) / pi * 180. - 90., &
+                                 rloc_rtp(3) / pi * 180.
      enddo
      close(20)
      close(21)
   enddo
-  if (maxval(lon)> 0.1) any_sum_seis_true=.true. 
-  colat=colat/180.*pi;  lon=lon/180.*pi
+  if (maxval(lon) > 0.1) any_sum_seis_true = .true. 
+  colat = colat / 180. * pi
+  lon = lon / 180. * pi
   
-!------------------------
   if (any_sum_seis_true .or. rot_rec_post) then
-!------------------------
-! calculate moment tensor and azimuth prefactors/radiation patterns for each simulation
+     ! calculate moment tensor and azimuth prefactors/radiation patterns for each simulation
      allocate(mij_phi(nrec(1),nsim,3)); mij_phi = -1.E30
      call compute_radiation_prefactor(mij_phi,nrec(1),nsim,lon)
-!------------------------
   endif !sum_seis
-!------------------------
 
   ! convolve with source period?
   allocate(seis_fil(nt_seis(1),3)) ! need this for saving...
   allocate(period_final(nsim))
+  
   do isim=1,nsim
      if (conv_period(isim)>0. ) then 
-        if (stf_type(isim)/='dirac_0' .and. stf_type(isim)/='quheavi') then 
+        if (stf_type(isim) /= 'dirac_0' .and. stf_type(isim) /= 'quheavi') then 
            write(6,*) ' ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !'
-           write(6,*)'    WARNING! You want to convolve although seismograms are upon a ',trim(stf_type(isim))
+           write(6,*)'    WARNING! You want to convolve although seismograms are upon a ', &
+                    trim(stf_type(isim))
            write(6,*) ' ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !'
         endif
+
         if (conv_period(isim) < period(isim)) then
            write(6,*)'Cannot convolve with a period shorter than allowed by the mesh/simulation!'
            write(6,*)'convolution period, min. mesh period [s]:',conv_period(isim),period(isim)
            write(6,*)'Using mesh period instead......'
            conv_period(isim)=period(isim)
         endif
+
         write(6,*)' Convolve with source period [s]:',conv_period(isim)
-        period_final(isim)=conv_period(isim)
+        period_final(isim) = conv_period(isim)
      else
-        period_final(isim)=period(isim)
+        period_final(isim) = period(isim)
      endif
-     period(isim)=period_final(isim)
+     period(isim) = period_final(isim)
   enddo
 
   ! define time series
   allocate(time(nt_seis(1)), seis(nt_seis(1),3))
-  do iseis=1,nt_seis(1)
-     time(iseis)=real(iseis)*dt_seis(1)
+  do iseis=1, nt_seis(1)
+     time(iseis) = real(iseis) * dt_seis(1)
   enddo
   allocate(seis_sglcomp(nt_seis(1),3))
 
   ! output seismogram names
-  allocate(outname(nrec(1),nsim),outname2(nrec(1),nsim),rec_full_name(nrec(1),nsim))
-  do i=1,nrec(1)
+  allocate(outname(nrec(1),nsim), outname2(nrec(1),nsim), rec_full_name(nrec(1),nsim))
+  do i=1, nrec(1)
      do isim=1,nsim
-        rec_full_name(i,isim)=trim(recname(i))//'_'//seistype(isim)//'_post'
-        if (sum_seis_true(isim)) rec_full_name(i,isim)=trim(rec_full_name(i,isim))//'_mij'
+        rec_full_name(i,isim) = trim(recname(i))//'_'//seistype(isim)//'_post'
+        if (sum_seis_true(isim)) rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_mij'
 
-        call define_io_appendix(appidur,int(conv_period(isim)))
-        rec_full_name(i,isim)=trim(rec_full_name(i,isim))//'_conv'//appidur//''
-        outname(i,isim)=trim(outdir(isim))//'/SEISMOGRAMS/'//trim(rec_full_name(i,isim))
+        call define_io_appendix(appidur, int(conv_period(isim)))
+        rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_conv'//appidur//''
+        outname(i,isim) = trim(outdir(isim))//'/SEISMOGRAMS/'//trim(rec_full_name(i,isim))
 
         ! if no summation, put output traces in each of the simulation directories
-        outname2(i,isim)=trim(outdir(isim))//'/SEISMOGRAMS/UNPROCESSED/'//&
-                                       trim(recname(i))//'_'//seistype(isim)//'_post_'//trim(src_type(isim,2))
-!        if (conv_period(isim)>0.)  outname2(i,isim)=trim(outname2(i,isim))//'_conv'//appidur
-
-!        if ( .not. sum_seis_true(isim)) outname(i,isim)=trim(outname2(i,isim))
-                write(6,*)'outname: ',i,trim(outname(i,isim))
-                write(6,*)'outname2: ',isim,trim(outname2(i,isim))
+        outname2(i,isim) = trim(outdir(isim))//'/SEISMOGRAMS/UNPROCESSED/'&
+                            //trim(recname(i))//'_'//seistype(isim)//'_post_'&
+                            //trim(src_type(isim,2))
+        
+        write(6,*) 'outname: ', i, trim(outname(i,isim))
+        write(6,*) 'outname2: ', isim, trim(outname2(i,isim))
      enddo
   enddo
 
-  if (conv_period(1)>0.)  then 
-    tshift=shift_fact1*conv_period(1)
+  if (conv_period(1) > 0.)  then 
+    tshift = shift_fact1 * conv_period(1)
   else
-     tshift=0.
+     tshift = 0.
   endif
   ishift = int((shift_fact(1)+tshift)/(time(2)-time(1)))
-  write(6,*)'ishift1:',shift_fact(1),tshift,time(2)-time(1)
-  write(6,*)'ishift:',(shift_fact(1)+tshift)/(time(2)-time(1)),int((shift_fact(1)+tshift)/(time(2)-time(1)))
+  write(6,*) 'ishift1:', shift_fact(1), tshift,time(2)-time(1)
+  write(6,*) 'ishift:', (shift_fact(1)+tshift)/(time(2)-time(1)),int((shift_fact(1)+tshift)/(time(2)-time(1)))
 
-  ! ----------------------------------------- Start actual post processing -----------------------------------
+  ! ----------------- Start actual post processing -------------------------
   !=================
   do i=1,nrec(1)
   !=================
@@ -256,32 +270,19 @@ program post_processing_seis
      do isim=1,nsim
      !::::::::::::::::::::::::::::::::
 
-! For Kasra:
-     ! construct array that maps i into processor number: proc(i)=[0,1], 
-          ! extract that from receiver_pts.dat, third column
-               ! call define_io_appendix(appmynum,proc(i)) ! this maps an
-               ! integer into a 4-char string
-                    ! then have
-                    ! recname(i)='recname_'//seistype(isim)//appmynum//'.nc'
-                         ! then call the netcdf routine as below....
-                              ! WARNING: NETCDF LIBRARIES SHOULD NOT BE REQUIRED
-                              ! TO BE INSTALLED.... HENCE MODULES NEED TO BE
-                              ! GHOSTED....
+        ! load seismograms from all directories
+        open(unit=60,file = trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
+                            //seistype(isim)//'.dat')
+        write(6,*) 'opened ', trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
+                    //seistype(isim)//'.dat'
 
-! netcdf
-!        call
-!        read_ncdf_matrix(trim(simdir(isim))//'/Data/recfile_'//seistype(isim)//'.nc',seis_sglcomp,3,i,nt_seis(1)  )
-
-     ! load seismograms from all directories
-        open(unit=60,file=trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'//seistype(isim)//'.dat')
-        write(6,*)'opened ',trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'//seistype(isim)//'.dat'
         if (src_type(isim,1) == 'monopole') then 
-           do iseis=1,nt_seis(1) 
-              read(60,*)seis_sglcomp(iseis,1),seis_sglcomp(iseis,3)
+           do iseis=1, nt_seis(1) 
+              read(60,*) seis_sglcomp(iseis,1), seis_sglcomp(iseis,3)
            enddo
         else 
-           do iseis=1,nt_seis(1)
-              read(60,*)seis_sglcomp(iseis,1),seis_sglcomp(iseis,2),seis_sglcomp(iseis,3)      
+           do iseis=1, nt_seis(1)
+              read(60,*) seis_sglcomp(iseis,1), seis_sglcomp(iseis,2), seis_sglcomp(iseis,3)
            enddo
         endif
         close(60)
@@ -292,6 +293,7 @@ program post_processing_seis
         open(unit=150,file=trim(outname2(i,isim))//'_s0.dat',status='new')
         open(unit=151,file=trim(outname2(i,isim))//'_ph0.dat',status='new')
         open(unit=152,file=trim(outname2(i,isim))//'_z0.dat',status='new')
+
         if (negative_time(isim)) then
            do it=1,nt_seis(1)
               write(150,*)time(it)-shift_fact(1)-tshift,seis_sglcomp(it,1)
@@ -309,81 +311,86 @@ program post_processing_seis
         endif 
 
         ! sum seismograms upon separate moment tensors and include azimuthal radiation factor 
-        ! This needs to be done prior to component rotation such that the system is still cylindrical.
+        ! This needs to be done prior to component rotation such that the system is still &
+        ! cylindrical.
         if (sum_seis_true(isim)) then
-           call sum_individual_wavefields(seis,seis_sglcomp,nt_seis(1),mij_phi(i,isim,:))
+           call sum_individual_wavefields(seis, seis_sglcomp, nt_seis(1), mij_phi(i,isim,:))
         else
-           seis=seis_sglcomp
+           seis = seis_sglcomp
         endif
 
      !::::::::::::::::::::::::::::::::
      enddo !isim
      !::::::::::::::::::::::::::::::::
 
-        ! convolve with a source time function
-        if (conv_period(1)>0.)  then 
-           write(6,*)'conv period:',conv_stf(1)
-           call convolve_with_stf(conv_period(1),dt_seis(1),nt_seis(1),src_type(1,1),conv_stf(1),&
-                                                  outdir(1),seis,seis_fil)
-        else
-           seis_fil=seis
-        endif
+     ! convolve with a source time function
+     if (conv_period(1)>0.)  then 
+        write(6,*)'conv period:',conv_stf(1)
+        call convolve_with_stf(conv_period(1),dt_seis(1),nt_seis(1),src_type(1,1),conv_stf(1),&
+                                               outdir(1),seis,seis_fil)
+     else
+        seis_fil=seis
+     endif
 
-        ! rotate receiver components to coordinate system of choice
-        ! doing this after the nsim loop assumes that all simulations have the same coordinates. 
-        ! this is fine within a Mij set, but NOT for a finite fault: In that case, we will have to 
-        ! amend this by another loop over fault points. 
-        if (rot_rec_post_array(1)) call rotate_receiver_comp(1,rec_comp_sys,srccolat(1),srclon(1),&
-                                          colat(i,1),lon(i,1),thr_orig(i),phr_orig(i),nt_seis(1),seis_fil)
+     ! rotate receiver components to coordinate system of choice
+     ! doing this after the nsim loop assumes that all simulations have the same coordinates. 
+     ! this is fine within a Mij set, but NOT for a finite fault: In that case, we will have to 
+     ! amend this by another loop over fault points. 
+     if (rot_rec_post_array(1)) &
+            call rotate_receiver_comp(1, rec_comp_sys, srccolat(1), srclon(1), &
+                                      colat(i,1), lon(i,1), thr_orig(i), phr_orig(i), &
+                                      nt_seis(1), seis_fil)
 
      ! write processed seismograms into joint outdir
-!     if (any_sum_seis_true) then
-        open(unit=50,file=trim(outname(i,1))//'_'//reccomp(1)//'.dat',status='new')
-        open(unit=51,file=trim(outname(i,1))//'_'//reccomp(2)//'.dat',status='new')
-        open(unit=52,file=trim(outname(i,1))//'_'//reccomp(3)//'.dat',status='new')
-        if (negative_time(1)) then
-           write(6,*)' writing seismograms into joint directory: negative time'
-           do it=1,nt_seis(1)
-              write(50,*)time(it)-shift_fact(1)-tshift,seis_fil(it,1)
-              write(51,*)time(it)-shift_fact(1)-tshift,seis_fil(it,2)
-              write(52,*)time(it)-shift_fact(1)-tshift,seis_fil(it,3)
-           enddo
-        else
-           write(6,*)' writing seismograms into joint directory: zero time'
-           do it=ishift+1,nt_seis(1)
-              write(50,*)time(it-ishift-1),seis_fil(it,1)
-              write(51,*)time(it-ishift-1),seis_fil(it,2)
-              write(52,*)time(it-ishift-1),seis_fil(it,3)
-           enddo
-        endif
-        close(50);close(51);close(52);
-!     endif
+     open(unit=50,file=trim(outname(i,1))//'_'//reccomp(1)//'.dat',status='new')
+     open(unit=51,file=trim(outname(i,1))//'_'//reccomp(2)//'.dat',status='new')
+     open(unit=52,file=trim(outname(i,1))//'_'//reccomp(3)//'.dat',status='new')
+     if (negative_time(1)) then
+        write(6,*)' writing seismograms into joint directory: negative time'
+        do it=1,nt_seis(1)
+           write(50,*)time(it)-shift_fact(1)-tshift,seis_fil(it,1)
+           write(51,*)time(it)-shift_fact(1)-tshift,seis_fil(it,2)
+           write(52,*)time(it)-shift_fact(1)-tshift,seis_fil(it,3)
+        enddo
+     else
+        write(6,*)' writing seismograms into joint directory: zero time'
+        do it=ishift+1,nt_seis(1)
+           write(50,*)time(it-ishift-1),seis_fil(it,1)
+           write(51,*)time(it-ishift-1),seis_fil(it,2)
+           write(52,*)time(it-ishift-1),seis_fil(it,3)
+        enddo
+     endif
+     close(50);close(51);close(52);
 
   !=================
   enddo ! nrec
   !=================
 
-! plot original source and receiver locations in google earth kml file with link to seismogram images
-  call save_google_earth_kml(srccolat(1),srclon(1),src_depth(1),Mij,period_final(1),thr_orig,phr_orig,&
-                   reccomp,src_type(1,1),sum_seis_true(1),nsim,nrec(1),outdir(1),rec_full_name(:,1))
-
-write(6,*)'writing matlab input files for record sections...'
-open(unit=99,file=trim(outdir(1))//'/info_matlab.dat')
+  ! plot original source and receiver locations in google earth kml file with link 
+  ! to seismogram images
+  call save_google_earth_kml(srccolat(1), srclon(1), src_depth(1), Mij,period_final(1), &
+                             thr_orig,phr_orig, reccomp, src_type(1,1), sum_seis_true(1), &
+                             nsim,nrec(1), outdir(1), rec_full_name(:,1))
+  
+  write(6,*) 'writing matlab input files for record sections...'
+  
+  open(unit=99,file=trim(outdir(1))//'/info_matlab.dat')
   write(99,*)nrec(1)
   if (negative_time(1)) then 
      write(99,*)nt_seis(1)
   else
      write(99,*)nt_seis(1)-ishift
   endif
-
+  
   write(99,*)time(2)-time(1)
   write(99,*)conv_period(1)
   do i=1,nrec(1)
      write(99,*)colat(i,1)
   enddo
-close(99)
-open(unit=99,file=trim(outdir(1))//'/info_seisnames.dat')
-open(unit=98,file=trim(outdir(1))//'/info_seisstations.dat')
+  close(99)
+  
+  open(unit=99,file=trim(outdir(1))//'/info_seisnames.dat')
+  open(unit=98,file=trim(outdir(1))//'/info_seisstations.dat')
   do ii=1,3
      do i=1,nrec(1)
         fname=trim(rec_full_name(i,1))//'_'//reccomp(ii)//".dat"
@@ -391,21 +398,22 @@ open(unit=98,file=trim(outdir(1))//'/info_seisstations.dat')
         write(98,*)trim(recname(i))
      enddo
   enddo
-close(99); close(98)
-open(unit=99,file=trim(outdir(1))//'/info_seiscomp.dat')
-do i=1,3
-     write(99,*)reccomp(i)
-enddo
-close(99)
+  close(99)
+  close(98)
   
-! compute snapshots of the wavefield in a 3D sphere with given top/bottom surface and 
-! opening cross section (see param_snaps)
+  open(unit=99,file=trim(outdir(1))//'/info_seiscomp.dat')
+  do i=1,3
+       write(99,*)reccomp(i)
+  enddo
+  close(99)
+    
+  ! compute snapshots of the wavefield in a 3D sphere with given top/bottom surface and 
+  ! opening cross section (see param_snaps)
   if (load_snaps) call compute_3d_wavefields
 
   write(6,*)' DONE with seismogram post processing!'
 21 format(a100)
 end program post_processing_seis
-!=============================================================================
 !=============================================================================
 
 !--------------------------------------------------------------------
@@ -1086,6 +1094,7 @@ close(88)
 
 end subroutine save_google_earth_kml
 !=============================================================================
+
 !-----------------------------------------------------------------------------
   subroutine define_io_appendix(app,iproc)
 !
@@ -1094,16 +1103,10 @@ end subroutine save_google_earth_kml
 !
 !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-integer :: iproc
-character(len=4) :: app
-character(len=1) :: milp,cenp,dizp,unip
-
-  milp = char(48+    iproc/1000)
-  cenp = char(48+mod(iproc/100,10))
-  dizp = char(48+mod(iproc/10,10))
-  unip = char(48+mod(iproc,10))
-
-  app = milp//cenp//dizp//unip
+  integer, intent(in)           :: iproc
+  character(len=4), intent(out) :: app
+  
+  write(app,"(I4.4)") iproc
 
 end subroutine define_io_appendix
 !=============================================================================
