@@ -1,7 +1,7 @@
 !> This determines the precision for the memory-/CPU-intensive time loop. 
 !! Set the parameter realkind to either 
-!!   4: single precision (half memory compared to 8, faster on many systems)
-!!   8: double precision (more expensive (double memory), but more precise.
+!!  sp: single precision (half memory compared to 8, faster on many systems)
+!!  dp: double precision (more expensive (double memory), but more precise.
 !! The mesher is intrinsically double precision, as are all precomputed, mesh 
 !! related variables. This distinction is only relevant for the global 
 !! arrays used in the time evolution.
@@ -15,14 +15,15 @@ public
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
- integer, parameter          :: realkind = 4  !< Choose solver precision here
-!  integer, parameter          :: realkind = 8 
+  integer, parameter         :: sp = kind(0.0)
+  integer, parameter         :: dp = kind(0.0d0)
+  integer, parameter         :: realkind = sp  !< Choose solver precision here
 
 ! Do not change these unless problems with any of the accuracy tests arise.
 ! As floating point rounding is system-dependent, there might be different 
 ! numbers for different systems, but the below values seem generally reasonable. 
-  real(kind=4), parameter     :: smallval_sngl = 1e-6
-  real(kind=8), parameter     :: smallval_dble = 1e-11
+  real(kind=sp), parameter    :: smallval_sngl = 1e-6
+  real(kind=dp), parameter    :: smallval_dble = 1e-11
 
 ! Do not change these.
   double precision, parameter :: zero = 0d0, half = 5d-1, third = 1d0 / 3d0
