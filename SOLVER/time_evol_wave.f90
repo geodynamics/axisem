@@ -1215,8 +1215,6 @@ subroutine dump_velo_straintrace_cmb(u,velo)
   real(kind=realkind), intent(in)   :: u(0:npol,0:npol,nel_solid,3)
   real(kind=realkind), intent(in)   :: velo(0:npol,0:npol,nel_solid,3)
   real(kind=realkind)               :: grad_sol(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind)               :: dsdf(0:npol,naxel_solid)
-  integer                           :: iel
 
   if (src_type(1)=='dipole') then
      call axisym_gradient_solid(u(:,:,:,1)+u(:,:,:,2),grad_sol(:,:,:,1:2))

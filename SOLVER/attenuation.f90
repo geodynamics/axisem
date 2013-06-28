@@ -1,5 +1,6 @@
 module attenuation
-  
+!< Variables and routines for viscoelastic wave propagation
+
   use global_parameters,    only: realkind, third
   use data_io,              only: verbose
   implicit none
@@ -468,14 +469,10 @@ subroutine prepare_attenuation(lambda, mu)
   double precision, intent(inout)   :: mu(0:npol,0:npol,1:nelem)
 
   double precision                  :: mu_w1(0:npol,0:npol)
-  double precision                  :: mu_r(0:npol,0:npol)
-  double precision                  :: kappa_r(0:npol,0:npol)
 
   double precision                  :: delta_mu_0(0:npol,0:npol)
   double precision                  :: kappa_w1(0:npol,0:npol)
   double precision                  :: delta_kappa_0(0:npol,0:npol)
-  double precision                  :: mu_u(0:npol,0:npol)
-  double precision                  :: kappa_u(0:npol,0:npol)
   
   double precision                  :: kappa_fac, mu_fac
 

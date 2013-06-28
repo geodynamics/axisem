@@ -40,10 +40,9 @@ function f_over_s_solid_el_cg4(f, iel)
 
   include 'mesh_params.h'
   
-  real(kind=realkind),intent(in) :: f(0:npol,0:npol)
+  real(kind=realkind),intent(in) :: f(0:4,0:4)
   integer,intent(in)             :: iel
   real(kind=realkind)            :: f_over_s_solid_el_cg4(1:4)
-  real(kind=realkind)            :: dsdf(0:npol,0:npol)
   
   ! in the bulk:
   f_over_s_solid_el_cg4(1) = inv_s_solid(1,1,iel) * f(1,1)
@@ -245,7 +244,6 @@ subroutine mxm_cg4_sparse_c(a,b,c)
 
   real(kind=realkind), intent(in)  :: a(0:4,0:4), b(0:4,0:4)
   real(kind=realkind), intent(out) :: c(1:4)
-  integer i,j
 
   c(1) = & 
      + a(1,0) * b(0,1) &
