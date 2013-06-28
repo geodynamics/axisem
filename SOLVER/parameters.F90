@@ -165,8 +165,9 @@ subroutine readin_parameters
    12x,'Output format (seism., wavefields): ',a6,/                          &
    08x,'===============================================================')
 
-     write(6,'(a/a)') 'Processor-specific output is written to: output_proc<PROC ID>.dat', &
-                      'All potential error messages will appear here...'
+     if (verbose > 1) write(6,'(a/a)') &
+           'Processor-specific output is written to: output_proc<PROC ID>.dat', &
+           'All potential error messages will appear here...'
   endif !lpr
 
   call check_basic_parameters

@@ -1,27 +1,23 @@
-!================
+!> This is the communication module which loads/sorts data
+!! to exchange/examine over the processors.
+!!
+!! APRIL 2007:
+!! At this level, we only call parallel routines, but do not invoke MPI here. 
+!! This simplifies the construction of a completely serial code in that we 
+!! only need to decide here whether to call a parallel routine or not.
+!! It also means that a simulation on one processor, but using the full 
+!! parallel code in fact never utilizes the parallel routines. 
+!!
+!! To make this code purely serial: ---------------------------------------
+!! 1) remove module commpi.f90
+!! 2) comment out "use commpi"
+!! 3) comment out any lines containing "if (nproc>1)"
+!!    (marked "comment out for serial" below)
+!! 4) change the Makefile to compile with regular Fortran compiler, not mpif90
+!!         and delete any entries for commpi
+!!    alternatively: use the perl script makemake.pl after changing its entry 
+!!                   to the fortran compiler instead of mpif90 
 module commun
-!================
-  !
-  ! This is the communication module which loads/sorts data
-  ! to exchange/examine over the processors.
-  !
-  ! APRIL 2007:
-  ! At this level, we only call parallel routines, but do not invoke MPI here. 
-  ! This simplifies the construction of a completely serial code in that we 
-  ! only need to decide here whether to call a parallel routine or not.
-  ! It also means that a simulation on one processor, but using the full 
-  ! parallel code in fact never utilizes the parallel routines. 
-  !
-  ! To make this code purely serial: ---------------------------------------
-  ! 1) remove module commpi.f90
-  ! 2) comment out "use commpi"
-  ! 3) comment out any lines containing "if (nproc>1)"
-  !    (marked "comment out for serial" below)
-  ! 4) change the Makefile to compile with regular Fortran compiler, not mpif90
-  !         and delete any entries for commpi
-  !    alternatively: use the perl script makemake.pl after changing its entry 
-  !                   to the fortran compiler instead of mpif90 
-  ! -------------------------------------------------------------------------
   
   use global_parameters
   use data_mesh, ONLY : gvec_solid,gvec_fluid
@@ -48,13 +44,12 @@ module commun
 contains
 
 !-----------------------------------------------------------------------------
+!> This is a driver routine to call the assembly of field f of dimension nc
+!! and either solid or fluid subdomains.
+!! The global assembly is discarded as it is not necessary during the time loop
+!! and therefore chose not to store any global numbering arrays.
+!! If nproc>1, then internode message passing is applied where necessary.
 subroutine comm2d(f,nel,nc,domainin)
-  !
-  ! This is a driver routine to call the assembly of field f of dimension nc
-  ! and either solid or fluid subdomains.
-  ! The global assembly is discarded as it is not necessary during the time loop
-  ! and therefore chose not to store any global numbering arrays.
-  ! If nproc>1, then internode message passing is applied where necessary.
   
   include 'mesh_params.h' 
   
@@ -80,15 +75,14 @@ end subroutine comm2d
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> This is a driver routine to perform the assembly of field f of dimension nc
+!! defined in the solid. The assembly/direct stiffness summation is composed of
+!! the "gather" and "scatter" operations, i.e. to add up all element-edge 
+!! contributions at the global stage and place them back into local arrays.
+!! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
+!! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
+!! sum & exchange values on processor boundary points.
 subroutine pdistsum_solid(vec,nc)
-  !
-  ! This is a driver routine to perform the assembly of field f of dimension nc
-  ! defined in the solid. The assembly/direct stiffness summation is composed of
-  ! the "gather" and "scatter" operations, i.e. to add up all element-edge 
-  ! contributions at the global stage and place them back into local arrays.
-  ! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
-  ! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
-  ! sum & exchange values on processor boundary points.
   
   use data_numbering,   only: igloc_solid
   use data_mesh,        only: gvec_solid
@@ -144,13 +138,12 @@ end subroutine pdistsum_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> This is a driver routine to perform the assembly of field f of dimension nc
+!! defined in the fluid. The assembly/direct stiffness summation is composed of
+!! the "gather" and "scatter" operations, i.e. to add up all element-edge 
+!! contributions at the global stage and place them back into local arrays.
+!! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
 subroutine pdistsum_fluid(vec)
-  !
-  ! This is a driver routine to perform the assembly of field f of dimension nc
-  ! defined in the fluid. The assembly/direct stiffness summation is composed of
-  ! the "gather" and "scatter" operations, i.e. to add up all element-edge 
-  ! contributions at the global stage and place them back into local arrays.
-  ! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
   
   use data_numbering,   only: igloc_fluid
   use data_time,        only: idmpi, iclockmpi
@@ -193,18 +186,17 @@ end subroutine pdistsum_fluid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> This is a driver routine to perform the assembly of field f of dimension nc
+!! defined in the solid. The assembly/direct stiffness summation is composed of
+!! the "gather" and "scatter" operations, i.e. to add up all element-edge 
+!! contributions at the global stage and place them back into local arrays.
+!! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
+!! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
+!! sum & exchange values on processor boundary points.
+!!
+!! The local arrays are allocatable since this routine is only called before 
+!! the time loop.
 subroutine mpi_asynch_messaging_test_solid
-  !
-  ! This is a driver routine to perform the assembly of field f of dimension nc
-  ! defined in the solid. The assembly/direct stiffness summation is composed of
-  ! the "gather" and "scatter" operations, i.e. to add up all element-edge 
-  ! contributions at the global stage and place them back into local arrays.
-  ! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
-  ! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
-  ! sum & exchange values on processor boundary points.
-  !
-  ! The local arrays are allocatable since this routine is only called before 
-  ! the time loop.
   
   use data_numbering, only: igloc_solid, nglob_solid
   
@@ -259,18 +251,17 @@ end subroutine mpi_asynch_messaging_test_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> This is a driver routine to perform the assembly of field f of dimension nc
+!! defined in the fluid. The assembly/direct stiffness summation is composed of
+!! the "gather" and "scatter" operations, i.e. to add up all element-edge 
+!! contributions at the global stage and place them back into local arrays.
+!! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
+!! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
+!! sum & exchange values on processor boundary points.
+!!
+!! The local arrays are allocatable since this routine is only called before 
+!! the time loop.
 subroutine mpi_asynch_messaging_test_fluid
-  !
-  ! This is a driver routine to perform the assembly of field f of dimension nc
-  ! defined in the fluid. The assembly/direct stiffness summation is composed of
-  ! the "gather" and "scatter" operations, i.e. to add up all element-edge 
-  ! contributions at the global stage and place them back into local arrays.
-  ! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
-  ! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
-  ! sum & exchange values on processor boundary points.
-  !
-  ! The local arrays are allocatable since this routine is only called before 
-  ! the time loop.
   
   use data_numbering, only: igloc_fluid
   
@@ -805,9 +796,9 @@ end subroutine pinit
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!! End message passing interface if parallel
 subroutine pend
 
-  ! End message passing interface if parallel
   if (nproc>1) call ppend ! comment for serial
 
 end subroutine pend
