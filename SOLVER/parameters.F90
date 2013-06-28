@@ -1,4 +1,4 @@
-> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
+!> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
 !! compute other parameters for the simulation;
 !! write out summaries of all relevant simulation settings.
 module parameters
