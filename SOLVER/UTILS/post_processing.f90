@@ -513,26 +513,28 @@ subroutine read_input
   endif
 
   write(6,*)'receiver system:',isim,rec_comp_systmp(isim)
-  if (isim>1 .and. rec_comp_systmp(isim)/=rec_comp_systmp(isim-1) ) then 
-     write(6,*) 'inconsistency with receiver component system:'
-     write(6,*) simdir(isim),rec_comp_systmp(isim)
-     write(6,*) simdir(isim-1),rec_comp_systmp(isim-1)
-     write(6,*) 'make sure these are all identical in the subdirectories'
-     stop
- else
-    rec_comp_sys = rec_comp_systmp(1)
- endif
+  if (isim>1) then
+     if (rec_comp_systmp(isim)/=rec_comp_systmp(isim-1) ) then 
+         write(6,*) 'inconsistency with receiver component system:'
+         write(6,*) simdir(isim),rec_comp_systmp(isim)
+         write(6,*) simdir(isim-1),rec_comp_systmp(isim-1)
+         write(6,*) 'make sure these are all identical in the subdirectories'
+         stop
+     end if
+  endif
+  rec_comp_sys = rec_comp_systmp(1)
 
   write(6,*) 'receiver rotation?',isim,rot_rec_posttmp(isim)
-  if (isim>1 .and. (rot_rec_posttmp(isim) .neqv. rot_rec_posttmp(isim-1)) ) then 
-     write(6,*) 'inconsistency with receiver rotation:'
-     write(6,*) simdir(isim),rot_rec_posttmp(isim)
-     write(6,*) simdir(isim-1),rot_rec_posttmp(isim-1)
-     write(6,*) 'make sure these are all identical in the subdirectories'
-     stop
-  else
-     rot_rec_post=rot_rec_posttmp(1)
- endif
+  if (isim>1) then
+     if (rot_rec_posttmp(isim) .neqv. rot_rec_posttmp(isim-1))  then 
+         write(6,*) 'inconsistency with receiver rotation:'
+         write(6,*) simdir(isim),rot_rec_posttmp(isim)
+         write(6,*) simdir(isim-1),rot_rec_posttmp(isim-1)
+         write(6,*) 'make sure these are all identical in the subdirectories'
+         stop
+     endif
+  endif
+  rot_rec_post=rot_rec_posttmp(1)
 
   write(6,*)' Input from param_post_processing:',simdir(isim)
   write(6,*)'  Rotate receivers?',rot_rec_post
@@ -948,6 +950,8 @@ subroutine convolve_with_stf(t_0,dt,nt,src_type,stf,outdir,seis,seis_fil)
   monopole = .false. 
   if (src_type == 'monopole') monopole=.true.
   N_j = int(2.*shift_fact1*t_0/dt)
+  if (N_j>nt) N_j = nt
+
   call define_io_appendix(appidur,int(t_0))
   alpha = decay/t_0
   sqrt_pi_inv = 1./dsqrt(pi)
@@ -972,20 +976,20 @@ subroutine convolve_with_stf(t_0,dt,nt,src_type,stf,outdir,seis,seis_fil)
           source=source/( decay/t_0*sqrt(2.)*exp(-2.) )
        else
           write(6,*)' other source time function not implemented yet!',stf
-            stop
-         endif
-       if(i > j .and. i-j <= nt) seis_fil(i,:) = seis_fil(i,:)+seis(i-j,:)*source*dt
-       if (i==1 ) src_array(j)= source
+          stop
+       endif
+       if (i > j .and. i-j <= nt) seis_fil(i,:) = seis_fil(i,:)+seis(i-j,:)*source*dt
+       if (i==1 ) src_array(j) = source
     enddo
   enddo
 
   seis_fil=seis_fil*pi
-  write(6,*)'convolve:',stf,stf_type(1),maxval(seis_fil)
+  write(6,*) 'convolve:', stf, stf_type(1), maxval(seis_fil)
 
   ! Output source time function as used here
   open(unit=55,file=trim(outdir)//'/stf_'//trim(stf)//'_'//appidur//'sec.dat')
   do i=1,N_j
-    write(55,*)time(i),src_array(i)
+    write(55,*) time(i), src_array(i)
   enddo
   close(55)
 
