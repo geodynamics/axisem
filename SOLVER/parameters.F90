@@ -27,7 +27,6 @@ contains
 !-----------------------------------------------------------------------------
 !> Open processor-specific output files
 subroutine open_local_output_file
-
     
     if (verbose > 1) then    
        open(unit=69,file='output_proc'//appmynum//'.dat')
@@ -631,7 +630,7 @@ subroutine check_basic_parameters
 
 7 format(04x,a62)
 
-  if (verbose.ne.0) then
+  if (verbose > 1) then
       if (realkind==4) then       
           if (lpr) then
               write(6,7)

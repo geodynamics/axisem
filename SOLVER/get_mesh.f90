@@ -284,7 +284,7 @@ subroutine read_db
   read(1000+mynum) ax_el_fluid(1:naxel_fluid)
 
   ! mask s-coordinate of axial elements identically to zero
-  if (lpr) write(6,*)'  setting s coordinate identical to zero along axis...'
+  if (lpr .and. verbose > 1) write(6,*)'  setting s coordinate identical to zero along axis...'
   do iel=1, naxel
     crd_nodes(lnods(ax_el(iel),1),1) = zero
     crd_nodes(lnods(ax_el(iel),7),1) = zero
