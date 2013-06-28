@@ -1,123 +1,123 @@
 !==============
-  module splib
+!> Core of the spectral method. 
+module splib
 !==============
-!
-! Core of the spectral method. 
-!
-  use global_parameters
-!
-  public :: zemngr,valepo,inlegl,zelegl,zemngl2,               &
-            delegl,hn_j,hn_jprime,lag_interp, lag_interp_deriv,&
-            lag_interp_deriv_wgl,                              &
-            get_welegl,get_welegl_axial,vamnpo
-  private
-!
+ 
+use global_parameters
+
+public :: inlegl, zelegl, zemngl2,               &
+          hn_jprime, lag_interp_deriv_wgl,       &
+          get_welegl,get_welegl_axial
+private
+
+ ! include mesh_params.h
   contains
-!
-!dk order---------------------------------------------------------------
-  subroutine order(vin,vout,n)
-!
-!       This routine reorders array vin(n) in increasing order and
-! outputs array vout(n).
-!
-  integer :: n
-  double precision, dimension(n) :: vin,vout
-  integer :: rankmax
-  integer , dimension (n) :: rank
-  integer :: i, j
+ 
+!---------------------------------------------------------------
+!> This routine reorders array vin(n) in increasing order and
+!! outputs array vout(n).
+subroutine order(vin,vout,n)
+
+  integer, intent(in)            :: n
+  double precision, intent(in)   :: vin(n)
+  double precision, intent(out)  :: vout(n)
+  integer                        :: rankmax
+  integer , dimension (n)        :: rank
+  integer                        :: i, j
 
   rankmax = 1
 
   do i = 1, n
-!
+
      rank(i) = 1
-!
+
      do j = 1, n
         if((vin(i) > vin(j)) .and. (i /= j) ) rank(i) = rank(i) + 1
      end do
-!
+
      rankmax = max(rank(i),rankmax)
      vout(rank(i)) = vin(i)
-!
+
   end do
-!
-  end subroutine order
-!-------------------------------------------------------------------------
-!
-!--------------------------------------------
-  double precision function hn_j(zeta,xi,j,N)
-!--------------------------------------------
-! Compute the value of the j-th Lagrange polynomial 
-! of order N defined by the N+1 GLL points xi at a
-! point zeta in [-1,1].
-!
+
+end subroutine order
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> Compute the value of the j-th Lagrange polynomial 
+!! of order N defined by the N+1 GLL points xi at a
+!! point zeta in [-1,1].
+double precision function hn_j(n,zeta,xi,j)
+
   implicit none
-!
-  integer :: j, N
-  integer :: i 
-  double precision :: zeta, DX,D2X
-  double precision :: VN (0:N), QN(0:N)
-  double precision :: xi(0:N)
+
+  integer, intent(in)          :: n
+  integer, intent(in)          :: j
+  integer                      :: i 
+  double precision,intent(in)  :: xi(0:n)
+  double precision,intent(out) :: zeta
+  double precision             :: DX,D2X
+  double precision             :: VN (0:n), QN(0:n)
 !
   hn_j = 0d0
   VN(:)= 0d0
   QN(:)= 0d0
-!
-! 
- do i = 0, N
-    call VALEPO(N,xi(i), VN(i), DX,D2X)
-    if (i == j) QN(i) = 1d0
- end do
-!
- call INLEGL(N,xi,VN,QN,zeta,hn_j)
-! 
- end function hn_j
-!------------------
-!
-!dk lag_interp------------------------------------------------ 
-  double precision function lag_interp(zeta,xi,j,N,iibeg,iiend)   
-!
-! Computes the value of the j-th Lagrange polynomial
-! of order N defined by the N+1 points xi at a
-! point zeta in [-1,1].
-!
+
+ 
+  do i = 0, N
+     call VALEPO(N,xi(i), VN(i), DX,D2X)
+     if (i == j) QN(i) = 1d0
+  end do
+ 
+  call inlegl(N,xi,VN,QN,zeta,hn_j)
+ 
+end function hn_j
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> Computes the value of the j-th Lagrange polynomial
+!! of order N defined by the N+1 points xi at a
+!! point zeta in [-1,1].
+double precision function lag_interp(zeta,xi,j,N,iibeg,iiend)   
+
+
   implicit none
-!
+
   integer :: j, N,iibeg,iiend
   integer :: i
   double precision :: zeta, adist
   double precision :: xi(0:N)
-!
+
   lag_interp = one
-!
-!
+
+
   do i = iibeg,iiend
      if ( i /= j) then 
         adist = 1./(xi(j)-xi(i))
         lag_interp = lag_interp*(zeta-xi(i))*adist
      end if
   end do
-!
+
   end function lag_interp
-!-------------------------
-!
-!dk lag_interp_deriv---------------------------------------------------
-  subroutine lag_interp_deriv(df,xi,j,N)
-!
-! Computes the value of the derivative of the j-th Lagrange polynomial
-! of order N defined by the N+1 points xi at each of these collocation
-! points xi. 
-!
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> Computes the value of the derivative of the j-th Lagrange polynomial
+!! of order N defined by the N+1 points xi at each of these collocation
+!! points xi. 
+subroutine lag_interp_deriv(df,xi,j,N)
+
+
   implicit none
-!
+
   integer          :: j, N
   double precision :: xi(0:N), df(0:N)
   integer          :: i,ixi,l
   double precision :: dist,fact,prod(0:N,0:N)
-!
+
   df(:) = zero
   fact  = one
-!
+
   do i = 0,N
      if ( i /= j) then
         dist = (xi(j)-xi(i))
@@ -141,35 +141,32 @@
   end do
 
   df(:) = df(:)/fact
-!
-!---------------------------------
-  end subroutine lag_interp_deriv
-!---------------------------------
-!
-!dk lag_interp_deriv_wgl---------------------------------
-  subroutine lag_interp_deriv_wgl(dl,xi,i,N)
-!
-!	Applies more robust formula to return
-! value of the derivative of the i-th Lagrangian interpolant
-! defined over the weighted GLL points computed at these
-! weighted GLL points.
-!
-! Alex 08282003: New (robust) routine. 
-! Apply formula (A11) of appendix A of JCP draft.
-! 
-!
+  
+end subroutine lag_interp_deriv
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> Applies more robust formula to return
+!! value of the derivative of the i-th Lagrangian interpolant
+!! defined over the weighted GLL points computed at these
+!! weighted GLL points.
+subroutine lag_interp_deriv_wgl(dl,xi,i,N)
+  
   implicit none
-  integer :: N, j
-  double precision :: dl(0:N),xi(0:N)
-  double precision :: mn_xi_i,mnprime_xi_i,mnprimeprime_xi_i
-  double precision :: mn_xi_j,mnprime_xi_j,mnprimeprime_xi_j
-  double precision :: DN
-  integer :: i
-!
+  integer, intent(in)           :: N, i
+  double precision, intent(in)  :: xi(0:N)
+  double precision, intent(out) :: dl(0:N)
+  double precision              :: mn_xi_i, mnprime_xi_i
+  double precision              :: mnprimeprime_xi_i
+  double precision              :: mn_xi_j, mnprime_xi_j 
+  double precision              :: mnprimeprime_xi_j
+  double precision              :: DN
+  integer                       :: j
+
   if ( i > N ) stop
   DN = dble(N)
   call vamnpo(N,xi(i),mn_xi_i,mnprime_xi_i,mnprimeprime_xi_i)
-!
+
   if ( i == 0) then
 
      do j = 0, N
@@ -182,9 +179,9 @@
         if (j == N) &
                      dl(j) = ((-one)**N)/(DN+one) 
      end do
-!
+
   elseif (i == N) then
-!
+
      do j = 0, N
         call vamnpo(N,xi(j),mn_xi_j,mnprime_xi_j,mnprimeprime_xi_j)
         if (j == 0) &
@@ -194,9 +191,9 @@
         if (j == N) &
                      dl(j) = (DN*(DN+two)-one)/4.d0 
      end do
-!
+
   else
-!
+
      do j = 0, N
         call vamnpo(N,xi(j),mn_xi_j,mnprime_xi_j,mnprimeprime_xi_j)
         if (j == 0) &
@@ -212,154 +209,147 @@
 !
   end if
 
-  end subroutine lag_interp_deriv_wgl
-!--------------------------------------------------------
-!
-!--------------------------------
- subroutine hn_jprime(xi,j,N,dhj)
-!--------------------------------
-!Compute the value of the derivative of the j-th Lagrange polynomial
-!of order N defined by the N+1 GLL points xi evaluated at these very
-!same N+1 GLL points. 
- implicit none
-!
- integer :: j, N
- integer :: i
- double precision :: DX,D2X
- double precision :: VN (0:N), QN(0:N)
- double precision :: xi(0:N), dhj(0:N)
-!
- dhj(:) = 0d0
- VN(:)= 0d0
- QN(:)= 0d0
-!
-!
- do i = 0, N
-    call VALEPO(N,xi(i), VN(i), DX,D2X)
-    if (i == j) QN(i) = 1d0
- end do
-!
- call DELEGL(N,xi,VN,QN,dhj)
-!
-!------------------------
- end subroutine hn_jprime
-!------------------------
-!
+end subroutine lag_interp_deriv_wgl
+!=============================================================================
+
 !-----------------------------------------------------------------------------
-!dk zelegl
-      SUBROUTINE ZELEGL(N,ET,VN)
-!********************************************************************
-!   COMPUTES THE NODES RELATIVE TO THE LEGENDRE GAUSS-LOBATTO FORMULA
-!   N  = ORDER OF THE FORMULA
-!   ET = VECTOR OF THE NODES, ET(I), I=0,N
-!   VN = VALUES OF THE LEGENDRE POLYNOMIAL AT THE NODES, VN(I), I=0,N
-!********************************************************************
+!> Compute the value of the derivative of the j-th Lagrange polynomial
+!! of order N defined by the N+1 GLL points xi evaluated at these very
+!! same N+1 GLL points. 
+subroutine hn_jprime(xi,j,N,dhj)
+ 
+  implicit none
+ 
+  integer,intent(in)            :: N
+  integer,intent(in)            :: j
+  integer                       :: i
+  double precision, intent(out) :: dhj(0:N)
+  double precision              :: DX,D2X
+  double precision              :: VN (0:N), QN(0:N)
+  double precision              :: xi(0:N)
+ 
+  dhj(:) = 0d0
+  VN(:)= 0d0
+  QN(:)= 0d0
+  
+  
+  do i = 0, N
+     call valepo(N, xi(i), VN(i), DX, D2X)
+     if (i == j) QN(i) = 1d0
+  end do
+  
+  call delegl(N, xi, VN, QN, dhj)
+ 
+end subroutine hn_jprime
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!>   computes the nodes relative to the legendre gauss-lobatto formula
+subroutine ZELEGL(N,ET,VN)
   IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-  DIMENSION ET(0:*), VN(0:*)
-  IF (N  ==  0) RETURN
+  integer, intent(in)            :: n !< Order of the formula
+  double precision, intent(out)  :: ET(0:n) ! Vector of the nodes
+  double precision, intent(out)  :: VN(0:n) ! Values of the Legendre polynomial at the nodes
+  
+  if (n  ==  0) return
 
-     N2 = (N-1)/2
-     SN = DFLOAT(2*N-4*N2-3)
-     ET(0) = -1.D0
-     ET(N) = 1.D0
-     VN(0) = SN
-     VN(N) = 1.D0
-  IF (N  ==  1) RETURN
+     n2 = (n-1)/2
+     sn = dfloat(2*n-4*n2-3)
+     et(0) = -1.d0
+     et(n) = 1.d0
+     vn(0) = sn
+     vn(n) = 1.d0
+  if (n  ==  1) return
 
-     ET(N2+1) = 0.D0
-     X = 0.D0
-  CALL VALEPO(N,X,Y,DY,D2Y)
-     VN(N2+1) = Y
-  IF(N  ==  2) RETURN
+     et(n2+1) = 0.d0
+     x = 0.d0
+  call valepo(n,x,y,dy,d2y)
+     vn(n2+1) = y
+  if(n  ==  2) return
 
-     C  = PI/DFLOAT(N)
-  DO 1 I=1,N2
-     ETX = DCOS(C*DFLOAT(I))
-  DO 2 IT=1,8
-  CALL VALEPO(N,ETX,Y,DY,D2Y)
-     ETX = ETX-DY/D2Y
-2 CONTINUE   
-     ET(I) = -ETX
-     ET(N-I) = ETX
-     VN(I) = Y*SN
-     VN(N-I) = Y
-1 CONTINUE   
+     c  = pi/dfloat(n)
+  do 1 i=1,n2
+     etx = dcos(c*dfloat(i))
+  do 2 it=1,8
+  call valepo(n,etx,y,dy,d2y)
+     etx = etx-dy/d2y
+2 continue   
+     et(i) = -etx
+     et(n-i) = etx
+     vn(i) = y*sn
+     vn(n-i) = y
+1 continue   
 
-  RETURN     
-!-----------------------
-  end subroutine zelegl
-!-----------------------
-!
-!dk zelegl2-----------------------------------------------------------------
-      SUBROUTINE ZELEGL2(N,ET)
-!********************************************************************
-!   COMPUTES THE NODES RELATIVE TO THE LEGENDRE GAUSS-LOBATTO FORMULA
-!   N  = ORDER OF THE FORMULA
-!   ET = VECTOR OF THE NODES, ET(I), I=0,N
-!********************************************************************
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-  DIMENSION ET(0:*)
-  IF (N  ==  0) RETURN
+end subroutine zelegl
+!=============================================================================
 
-     N2 = (N-1)/2
-     SN = DFLOAT(2*N-4*N2-3)
-     ET(0) = -1.D0
-     ET(N) = 1.D0
-  IF (N  ==  1) RETURN
+!-----------------------------------------------------------------------------
+!>   computes the nodes relative to the legendre gauss-lobatto formula
+subroutine zelegl2(n,et)
+  implicit double precision (a-h,o-z)
+  integer, intent(in)            :: n !< Order of the formula
+  double precision, intent(out)  :: ET(0:n) ! Vector of the nodes
+  
+  if (n  ==  0) return
 
-     ET(N2+1) = 0.D0
-     X = 0.D0
-  CALL VALEPO(N,X,Y,DY,D2Y)
-  IF(N  ==  2) RETURN
+  n2 = (n-1)/2
+  sn = dfloat(2*n-4*n2-3)
+  et(0) = -1.d0
+  et(n) = 1.d0
 
-     C  = PI/DFLOAT(N)
-  DO 1 I=1,N2
-     ETX = DCOS(C*DFLOAT(I))
-  DO 2 IT=1,8
-  CALL VALEPO(N,ETX,Y,DY,D2Y)
-     ETX = ETX-DY/D2Y
-2 CONTINUE
-     ET(I) = -ETX
-     ET(N-I) = ETX
-1 CONTINUE
+  if (n  ==  1) return
 
-  RETURN
+  et(n2+1) = 0.d0
+  x = 0.d0
+  call valepo(n,x,y,dy,d2y)
+
+  if(n  .gt. 2) then
+
+     c  = pi/dfloat(n)
+      do i=1,n2
+         etx = dcos(c*dfloat(i))
+         do it=1,8
+            call valepo(n,etx,y,dy,d2y)
+            etx = etx-dy/d2y
+         enddo   
+         et(i) = -etx
+         et(n-i) = etx
+      enddo
+  endif
+
+  return
 !
   end subroutine zelegl2
-!---------------------------------------------------------------------------------
-!
-!dk zemngl2----------------------------------------------------------
-      SUBROUTINE ZEmnGL2(N,ET)
-!********************************************************************
-!
-!   COMPUTES THE NODES RELATIVE TO THE modified LEGENDRE GAUSS-LOBATTO
-!   FORMULA along the s-axis
-!   N  = ORDER OF THE FORMULA
-!   ET = VECTOR OF THE NODES, ET(I), I=0,N. 
-!   Relies on computing the eigenvalues of tridiagonal matrix. 
-!   The nodes correspond to the second quadrature formula proposed
-!   by Azaiez et al.  
-!
-!********************************************************************
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-  DIMENSION ET(0:*)
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!>   Computes the nodes relative to the modified legendre gauss-lobatto
+!!   FORMULA along the s-axis
+!!   Relies on computing the eigenvalues of tridiagonal matrix. 
+!!   The nodes correspond to the second quadrature formula proposed
+!!   by Azaiez et al.  
+subroutine zemngl2(n,et)
+  
+  implicit double precision (a-h,o-z)
+  integer, intent(in)              :: n       !< Order of the formula
+  double precision, intent(out)    :: et(0:n) !< vector of the nodes, et(i), i=0,n.
   double precision, dimension(n-1) :: d, e
-  integer :: i
+  integer                          :: i
 
-  IF (N  ==  0) RETURN
+  if (n  ==  0) return
 
-     N2 = (N-1)/2
-     ET(0) = -1.D0
-     ET(N) = 1.D0
-  IF (N  ==  1) RETURN
+     n2 = (n-1)/2
+     et(0) = -1.d0
+     et(n) = 1.d0
+  if (n  ==  1) return
 
-     ET(N2+1) = 2D-1
-     X = 2d-1
-  IF(N  ==  2) RETURN
-!
+     et(n2+1) = 2d-1
+     x = 2d-1
+  if(n  ==  2) return
+
 ! Form the matrix diagonals and subdiagonals according to
 ! formulae page 109 of Azaiez, Bernardi, Dauge and Maday.
-!
+
   do i = 1, n-1
      d(i) = three/(four*(dble(i)+half)*(dble(i)+three*half))
   end do
@@ -368,47 +358,41 @@
      e(i+1) =   dsqrt(dble(i)*(dble(i)+three)) &
                       /(two*(dble(i)+three*half))
   end do
-!
+
 ! Compute eigenvalues
   call tqli(d,e,n-1)
-!
+
 ! Sort them in increasing order
   call order(d,e,n-1)
-!
+
   ET(1:n-1) = e(1:n-1)
-!
-!
-  end subroutine zemngl2
-!------------------------
-!
-!dk zemngr----------------------------------------------------------
-      SUBROUTINE ZEmnGr(N,ET)
-!********************************************************************
-!
-!   COMPUTES THE NODES RELATIVE TO THE pseudo-Gauss Radau
-!   FORMULA along the s-axis
-!   N  = ORDER OF THE FORMULA
-!   ET = VECTOR OF THE NODES, ET(I), I=0,N.
-!   Relies on computing the eigenvalues of tridiagonal matrix.
-!   The nodes correspond to the third quadrature formula proposed
-!   by Azaiez et al.  
-!
-!********************************************************************
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-  DIMENSION ET(0:*)
-! double precision, dimension(n-1) :: d, e  ! ALEX CHANGE 10102001
+
+end subroutine zemngl2
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!>   Computes the nodes relative to the pseudo-Gauss Radau
+!!   formula along the s-axis
+!!   Relies on computing the eigenvalues of tridiagonal matrix.
+!!   The nodes correspond to the third quadrature formula proposed
+!!   by Azaiez et al.  
+subroutine zemngr(N,ET)
+  implicit double precision (a-h,o-z)
+  integer, intent(in)            :: n       !< Order of the formula
+  double precision, intent(out)  :: et(0:n) !< vector of the nodes, et(i), i=0,n.
   double precision, dimension(n) :: d, e
-  integer :: i
+  integer                        :: i
 
-  IF (N  ==  0) RETURN
+  if (n  ==  0) return
 
-  ET(N) = 1.D0
+  et(n) = 1.d0
 !
 ! Form the matrix diagonals and subdiagonals according to
 ! formulae page 109 of Azaiez, Bernardi, Dauge and Maday.
 !
   do i = 1, n
-     d(i) = -one/(four*(dble(i)-half)*(dble(i)+half))
+     !d(i) = -one/(four*(dble(i)-half)*(dble(i)+half))
+     d(i) = - 1.0 / (4.0*dble(i*i) - 1.0)
   end do
 
   do i = 1, n-1
@@ -425,23 +409,22 @@
   ET(0:n-1) = e(1:n)
 !
   end subroutine zemngr
-!-------------------------------------------------------------------------
-!
-!dk tqli------------------------------------------------------------------
-  subroutine tqli(d,e,n)
-!
-!  	This routines returns the eigenvalues of the tridiagonal matrix 
-!which diagonal and subdiagonal coefficients are contained in d(1:n) and
-!e(2:n) respectively. e(1) is free. The eigenvalues are returned in array
-!d. 
-!
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> This routines returns the eigenvalues of the tridiagonal matrix 
+!! which diagonal and subdiagonal coefficients are contained in d(1:n) and
+!! e(2:n) respectively. e(1) is free. The eigenvalues are returned in array d
+subroutine tqli(d,e,n)
+  
   implicit none
-!
-  integer :: n
-  double precision :: d(n),e(n)
-  integer ::  i,iter,l,m
-  double precision :: b,c,dd,f,g,p,r,s
-!
+
+  integer, intent(in)             :: n
+  double precision, intent(inout) :: d(n)
+  double precision, intent(inout) :: e(n)
+  integer                         :: i,iter,l,m
+  double precision                :: b, c, dd, f, g, p, r, s
+
   do i = 2, n
     e(i-1) = e(i)
   end do
@@ -487,19 +470,21 @@
      end do iterate
   end do
 
-  end subroutine tqli
-!------------------------------------------------------------------------
-!dk pythag---------------------------------------------------------------
-  double precision FUNCTION pythag(a,b)
-!
+end subroutine tqli
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> L2 norm of a and b  
+double precision function pythag(a,b)
+
   implicit none  
-!
-  double precision :: a,b
-  double precision :: absa,absb
-!
+
+  double precision, intent(in) :: a, b
+  double precision             :: absa,absb
+
   absa=dabs(a)
   absb=dabs(b)
-!
+
   if(absa.gt.absb)then
 
      pythag=absa*sqrt(1.+(absb/absa)**2)
@@ -513,310 +498,305 @@
 
   endif
 
-  end function pythag
+end function pythag
+!=============================================================================
+
 !-------------------------------------------------------------------------
-  SUBROUTINE DELEGL(N,ET,VN,QN,DQN)
-!***********************************************************************
-!  COMPUTES THE DERIVATIVE OF A POLYNOMIAL AT THE LEGENDRE GAUSS-LOBATTO
-!  NODES FROM THE VALUES OF THE POLYNOMIAL ATTAINED AT THE SAME POINTS
-!   N   = THE DEGREE OF THE POLYNOMIAL
-!   ET  = VECTOR OF THE NODES, ET(I), I=0,N
-!   VN  = VALUES OF THE LEGENDRE POLYNOMIAL AT THE NODES, VN(I), I=0,N
-!   QN  = VALUES OF THE POLYNOMIAL AT THE NODES, QN(I), I=0,N
-!   DQN = DERIVATIVES OF THE POLYNOMIAL AT THE NODES, DQZ(I), I=0,N
-!***********************************************************************
-   IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-   DIMENSION ET(0:*), VN(0:*), QN(0:*), DQN(0:*)
-       DQN(0) = 0.D0
-   IF (N .EQ. 0) RETURN
+!>  computes the derivative of a polynomial at the legendre gauss-lobatto
+!!  nodes from the values of the polynomial attained at the same points
+subroutine delegl(n,et,vn,qn,dqn)
+   implicit double precision (a-h,o-z)
+   integer, intent(in)           ::  n        !< the degree of the polynomial
+   double precision, intent(in)  ::  et(0:n)  !< vector of the nodes, et(i), i=0,n
+   double precision, intent(out) ::  vn(0:n)  !< values of the legendre polynomial at the nodes, vn(i), i=0,n
+   double precision, intent(out) ::  qn(0:n)  !< values of the polynomial at the nodes, qn(i), i=0,n
+   double precision, intent(out) ::  dqn(0:n) !< derivatives of the polynomial at the nodes, dqz(i), i=0,n
+       
+   dqn(0) = 0.d0
+   if (n .eq. 0) return
 
-   DO 1 I=0,N
-       SU = 0.D0
-       VI = VN(I)
-       EI = ET(I)
-   DO 2 J=0,N 
-   IF (I .EQ. J) GOTO 2
-       VJ = VN(J)
-       EJ = ET(J)
-       SU = SU+QN(J)/(VJ*(EI-EJ))
-2  CONTINUE   
-       DQN(I) = VI*SU
-1  CONTINUE   
+   do i=0,n
+       su = 0.d0
+       vi = vn(i)
+       ei = et(i)
+       do j=0,n 
+           if (i .eq. j) cycle !goto 2
+           vj = vn(j)
+           ej = et(j)
+           su = su+qn(j)/(vj*(ei-ej))
+       enddo !2  continue   
+       dqn(i) = vi*su
+    enddo !1  continue   
 
-       DN = DFLOAT(N)
-       C  = .25D0*DN*(DN+1.D0)
-       DQN(0) = DQN(0)-C*QN(0)
-       DQN(N) = DQN(N)+C*QN(N)
+    dn = dfloat(n)
+    c  = .25d0 * dn * (dn+1.d0)
+    dqn(0) = dqn(0) - c * qn(0)
+    dqn(n) = dqn(n) + c * qn(n)
 
-   RETURN     
-!
- end subroutine delegl
-!--------------------------------
-!
-!dk valepo------------------------------------------------------
-  SUBROUTINE VALEPO(N,X,Y,DY,D2Y)
-  !*************************************************************
-  !   COMPUTES THE VALUE OF THE LEGENDRE POLYNOMIAL OF DEGREE N
-  !   AND ITS FIRST AND SECOND DERIVATIVES AT A GIVEN POINT
-  !   N  = DEGREE OF THE POLYNOMIAL
-  !   X  = POINT IN WHICH THE COMPUTATION IS PERFORMED
-  !   Y  = VALUE OF THE POLYNOMIAL IN X
-  !   DY = VALUE OF THE FIRST DERIVATIVE IN X
-  !   D2Y= VALUE OF THE SECOND DERIVATIVE IN X
-  !*************************************************************
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-
-   Y   = 1.D0
-   DY  = 0.D0
-   D2Y = 0.D0
-  IF (N  ==  0) RETURN
-
-   Y   = X
-   DY  = 1.D0
-   D2Y = 0.D0
-  IF(N  ==  1) RETURN
-
-   YP   = 1.D0
-   DYP  = 0.D0
-   D2YP = 0.D0
-  DO 1 I=2,N
-   C1 = DFLOAT(I)
-   C2 = 2.D0*C1-1.D0
-   C4 = C1-1.D0
-   YM = Y
-   Y  = (C2*X*Y-C4*YP)/C1
-   YP = YM
-   DYM  = DY
-   DY   = (C2*X*DY-C4*DYP+C2*YP)/C1
-   DYP  = DYM
-   D2YM = D2Y
-   D2Y  = (C2*X*D2Y-C4*D2YP+2.D0*C2*DYP)/C1
-   D2YP = D2YM
-  1     CONTINUE
-
-  RETURN
-
-!        
-  end subroutine valepo
-!-----------------------
-!
-  SUBROUTINE INLEGL(N,ET,VN,QN,X,QX)
-  !*********************************************************************
-  !   COMPUTES THE VALUE AT A GIVEN POINT OF A POLYNOMIAL INDIVIDUATED
-  !   BY THE VALUES ATTAINED AT THE LEGENDRE GAUSS-LOBATTO NODES
-  !   N  = THE DEGREE OF THE POLYNOMIAL
-  !   ET = VECTOR OF THE NODES, ET(I), I=0,N
-  !   VN = VALUES OF THE LEGENDRE POLYNOMIAL AT THE NODES, VN(I), I=0,N
-  !   QN = VALUES OF THE POLYNOMIAL AT THE NODES, QN(I), I=0,N
-  !   X  = THE POINT IN WHICH THE COMPUTATION IS PERFORMED
-  !   QX = VALUE OF THE POLYNOMIAL IN X
-  !*********************************************************************
-   IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-   DIMENSION ET(0:*), VN(0:*), QN(0:*)
-   IF (N == 0) RETURN
-
-       EPS = 1.D-14
-   CALL VALEPO(N,X,Y,DY,D2Y)
-       DN = DFLOAT(N)
-       C  = 1.D0/(DN*(DN+1.D0))
-       QX = QN(0)*C*DY*(X-1.D0)/VN(0)
-       QX = QX+QN(N)*C*DY*(X+1.D0)/VN(N)
-   IF (N .EQ. 1) RETURN
-
-   DO 1 J=1,N-1
-       ED = X-ET(J)
-   IF(DABS(ED) < EPS) THEN
-       QX = QN(J)
-   RETURN     
-   ELSE
-       QX = QX+QN(J)*C*DY*(X*X-1.D0)/(VN(J)*ED)
-   ENDIF      
-1  CONTINUE   
-
-   RETURN     
 !----------------------  
-  end subroutine inlegl
-!----------------------
-!
-!dk get_welegl------------------------------------------------------------------
-  subroutine get_welegl(N,xi,wt)
-!	
-!	This routine computes the N+1 weights associated with the
-!Gauss-Lobatto-Legendre quadrature formula of order N.
-!
+end subroutine delegl
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> computes the value of the legendre polynomial of degree n
+!! and its first and second derivatives at a given point
+subroutine valepo(n,x,y,dy,d2y)
+
+  implicit double precision (a-h,o-z)
+
+  integer, intent(in)           ::  n   !< degree of the polynomial
+  double precision, intent(in)  ::  x   !< point in which the computation is performed
+  double precision, intent(out) ::  y   !< value of the polynomial in x
+  double precision, intent(out) ::  dy  !< value of the first derivative in x
+  double precision, intent(out) ::  d2y !< value of the second derivative in x
+
+  y   = 1.d0
+  dy  = 0.d0
+  d2y = 0.d0
+  if(n == 0) return
+
+  y   = x
+  dy  = 1.d0
+  d2y = 0.d0
+  if(n == 1) return
+
+  yp   = 1.d0
+  dyp  = 0.d0
+  d2yp = 0.d0
+  do i = 2, n
+     c1   = dfloat(i)
+     c2   = 2.d0*c1-1.d0
+     c4   = c1-1.d0
+     ym   = y
+     y    = (c2*x*y-c4*yp)/c1
+     yp   = ym
+     dym  = dy
+     dy   = (c2*x*dy-c4*dyp+c2*yp)/c1
+     dyp  = dym
+     d2ym = d2y
+     d2y  = (c2*x*d2y-c4*d2yp+2.d0*c2*dyp)/c1
+     d2yp = d2ym
+  enddo
+
+!----------------------  
+end subroutine valepo
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> Computes the value at a given point of a polynomial individuated
+!! by the values attained at the Legendre Gauss-Lobatto nodes
+subroutine inlegl(n,et,vn,qn,x,qx)
+
+  implicit double precision (a-h,o-z)
+  integer, intent(in)           ::  n       !< the degree of the polynomial
+  double precision, intent(in)  ::  x       !< the point in which the computation is performed
+  double precision, intent(in)  ::  et(0:*) !< vector of the nodes, et(i), i=0,n
+  double precision, intent(out) ::  vn(0:*) !< values of the Legendre polynomial at the nodes, vn(i), i=0,n
+  double precision, intent(out) ::  qn(0:*) !< values of the polynomial at the nodes, qn(i), i=0,n
+  double precision, intent(out) ::  qx      !< value of the polynomial in x
+
+  if (n == 0) return
+
+      eps = 1.d-14
+      call valepo(n,x,y,dy,d2y)
+      dn = dfloat(n)
+      c  = 1.d0/(dn*(dn+1.d0))
+      qx = qn(0)*c*dy*(x-1.d0)/vn(0)
+      qx = qx+qn(n)*c*dy*(x+1.d0)/vn(n)
+  if (n .eq. 1) return
+
+  do j=1,n-1
+    ed = x-et(j)
+    if(dabs(ed) < eps) then
+        qx = qn(j)
+        return     
+    else
+        qx = qx+qn(j)*c*dy*(x*x-1.d0)/(vn(j)*ed)
+    endif      
+  enddo
+
+!----------------------  
+end subroutine inlegl
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> This routine computes the N+1 weights associated with the
+!! Gauss-Lobatto-Legendre quadrature formula of order N.
+subroutine get_welegl(N,xi,wt)
+
+
   implicit none
-!
+
   integer :: N
   double precision ::  xi(0:N),wt(0:N)
   integer :: j
   double precision :: y,dy,d2y,fact 
-!
-  fact = two/(dble(N)*dble(N+1))
-!
-  wt(:) = zero
-!
+
+  fact = 2.0d0/(dble(N*(N+1)))
+
+  wt(:) = 0.0
+
   do j = 0, N
-     call VALEPO(N,xi(j),y,dy,d2y)
+     call valepo(N,xi(j),y,dy,d2y)
      wt(j) =  fact*y**(-2)
   end do
-!
-  end subroutine get_welegl
-!-------------------------------------------------------------------------------
-!
-!dk get_welegl_axial------------------------------------------------------------
-  subroutine get_welegl_axial(N,xi,wt,iflag)
-!
-!       This routine computes the N+1 weights associated with the
-!Gauss-Lobatto-Legendre quadrature formula of order N that one 
-!to apply for elements having a non-zero intersection with the
-!axis of symmetry of the Earth.
-!
-!
-! iflag = 2 : Second  quadrature formula proposed by Bernardi et al.
-!             Formula : (VI.1.12), page 104             
-! iflag = 3 : Third   quadrature formula proposed by Bernardi et al.
-!             Formula : (VI.1.20), page 107            
-!
+
+!----------------------  
+end subroutine get_welegl
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> This routine computes the N+1 weights associated with the
+!! Gauss-Lobatto-Legendre quadrature formula of order N that one 
+!! to apply for elements having a non-zero intersection with the
+!! axis of symmetry of the Earth.
+subroutine get_welegl_axial(N,xi,wt,iflag)
+
   implicit none
 !
-  integer :: N,iflag
-  double precision ::  xi(0:N),wt(0:N)
-  integer :: j
-  double precision :: y,dy,d2y,fact
-!
-  wt(:) = zero
-!
-       if (iflag == 2 ) then 
+  integer, intent(in)           :: N       !< order of GLL quadrature formula
+  integer, intent(in)           :: iflag   !< Selector for quadrature formulae proposed 
+                                           !! by Bernardi et al.
+                                           !! iflag = 2 : Second formula 
+                                           !!             Formula : (VI.1.12), page 104             
+                                           !! iflag = 3 : Third formula
+                                           !!             Formula : (VI.1.20), page 107            
+  double precision, intent(in)  :: xi(0:N) !< Support points
+  double precision, intent(out) :: wt(0:N) !< Weighting factor at support points
+  integer                       :: j
+  double precision              :: y, dy, d2y, fact
 
-          fact = four/(dble(N)*dble(N+2))
-          do j = 0, N
-             call VAmnPO(N,xi(j),y,dy,d2y)
-             wt(j) =  fact*y**(-2)
-             if (j == 0) wt(j) = two*wt(j)
-          end do
+  wt(:) = 0.0 
 
-       elseif ( iflag == 3 ) then 
+  if (iflag == 2 ) then 
 
-          fact = one/(dble(N+1)*dble(N+1))
-          do j = 0, N
-             call valepo(N,xi(j),y,dy,d2y)
-             wt(j) = (fact*(1+xi(j))**2)*y**(-2)
-          end do  
+     fact = 4.0 / dble(N*(N+2)) !four/(dble(N)*dble(N+2))
+     do j = 0, N
+        call vamnpo(N, xi(j), y, dy, d2y)
+        wt(j) =  fact / (y*y)
+        if (j == 0) wt(j) = 2.0 * wt(j)
+     end do
 
-       end if
-!
-  end subroutine get_welegl_axial
-!-------------------------------------------------------------------------------
-!
-!dk vamnpo---------------------------------------------------------
-  SUBROUTINE VAMNPO(N,X,Y,DY,D2Y)
-  !*************************************************************
-  !   COMPUTES THE VALUE OF the "cylindrical" polynomial
-  !   M_n = (L_n + L_{n+1})/(1+x) OF DEGREE N
-  !   AND ITS FIRST AND SECOND DERIVATIVES AT A GIVEN POINT
-  !   N  = DEGREE OF THE POLYNOMIAL 
-  !   X  = POINT IN WHICH THE COMPUTATION IS PERFORMED
-  !   Y  = VALUE OF THE POLYNOMIAL IN X
-  !   DY = VALUE OF THE FIRST DERIVATIVE IN X
-  !   D2Y= VALUE OF THE SECOND DERIVATIVE IN X
-  !
-  !   Implemented after Bernardi et al., page 57, eq. (III.1.10)
-  ! 
-  !*************************************************************
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+  elseif ( iflag == 3 ) then 
+
+     fact = 1.0 / dble((N+1)*(N+1))
+     do j = 0, N
+        call valepo(N, xi(j), y, dy, d2y)
+        wt(j) = (fact * (1+xi(j))**2) / (y*y) 
+     end do  
+
+  end if
+
+!----------------------  
+end subroutine get_welegl_axial
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!>   Computes the value of the "cylindrical" polynomial
+!!   m_n = (l_n + l_{n+1})/(1+x) of degree n
+!!   and its first and second derivatives at a given point
+!!
+!!   implemented after bernardi et al., page 57, eq. (iii.1.10)
+subroutine vamnpo(n,x,y,dy,d2y)
   
-   Y   = 1.D0
-   DY  = 0.D0
-   D2Y = 0.D0
-  IF (N  ==  0) RETURN
+  implicit double precision (a-h,o-z)
+  integer, intent(in)           :: n   !< degree of the polynomial 
+  double precision, intent(in)  :: x   !< point in which the computation is performed
+  double precision, intent(out) :: y   !< value of the polynomial in x
+  double precision, intent(out) :: dy  !< value of the first derivative in x
+  double precision, intent(out) :: d2y !< value of the second derivative in x
+  
+  
+   y   = 1.d0
+   dy  = 0.d0
+   d2y = 0.d0
+  if (n  ==  0) return
 
-   Y   = half*(three*X-one)
-   DY  = half*three
-   D2Y = 0.D0
-  IF(N  ==  1) RETURN
+   y   = 1.5d0*x - 0.5d0 !half*(three*x-one)
+   dy  = 1.5d0 !half*three
+   d2y = 0.d0
+  if(n  ==  1) return
 
-   YP   = 1.D0
-   DYP  = 0.D0
-   D2YP = 0.D0
-  do i=2,N
-      C1 = dble(I-1)
-      YM = Y
-       Y = (X-one/((2*C1+one)*(2*C1+three)) ) * Y &
-          - (C1/(two*C1+one))*YP
-       Y = (two*C1+three)*Y/(c1+two)
-      YP = YM
-     DYM = DY
-      DY = (X-one/((2*C1+one)*(2*C1+three)) ) * DY &
-           +YP - (C1/(two*C1+one))*DYP
-      DY = (two*C1+three)*DY/(c1+two)
-     DYP = DYM
-    D2YM = D2Y
-    D2y  = two*dyp + (X-one/((2*C1+one)*(2*C1+three)) ) * D2Y &
-           - (C1/(two*C1+one))*D2YP
-    D2Y  = (two*C1+three)*D2Y/(c1+two)
-    D2YP = D2YM
+   yp   = 1.d0
+   dyp  = 0.d0
+   d2yp = 0.d0
+  do i=2,n
+      c1 = dble(i-1)
+      ym = y
+       y = (x-one/((2*c1+one)*(2*c1+three)) ) * y &
+          - (c1/(two*c1+one))*yp
+       y = (two*c1+three)*y/(c1+two)
+      yp = ym
+     dym = dy
+      dy = (x-one/((2*c1+one)*(2*c1+three)) ) * dy &
+           +yp - (c1/(two*c1+one))*dyp
+      dy = (two*c1+three)*dy/(c1+two)
+     dyp = dym
+    d2ym = d2y
+    d2y  = two*dyp + (x-one/((2*c1+one)*(2*c1+three)) ) * d2y &
+           - (c1/(two*c1+one))*d2yp
+    d2y  = (two*c1+three)*d2y/(c1+two)
+    d2yp = d2ym
   end do
-!
-  RETURN
-!
-!-----------------------
-  end subroutine vamnpo
-!-----------------------
-!
-!dk welegl----------------------------------------
-      SUBROUTINE WELEGL(N,ET,VN,WT)
+  
+!----------------------  
+end subroutine vamnpo
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine welegl(n,et,vn,wt)
 !**********************************************************************
-!   COMPUTES THE WEIGHTS RELATIVE TO THE LEGENDRE GAUSS-LOBATTO FORMULA
-!   N  = ORDER OF THE FORMULA
-!   ET = JACOBI GAUSS-LOBATTO NODES, ET(I), I=0,N
-!   VN = VALUES OF THE LEGENDRE POLYNOMIAL AT THE NODES, VN(I), I=0,N
-!   WT = VECTOR OF THE WEIGHTS, WT(I), I=0,N
+!   Computes the weights relative to the Legendre Gauss-Lobatto formula
+!   n  = order of the formula
+!   et = Jacobi Gauss-Lobatto nodes, et(i), i=0,n
+!   vn = values of the legendre polynomial at the nodes, vn(i), i=0,n
+!   wt = vector of the weights, wt(i), i=0,n
 !**********************************************************************
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-  DIMENSION ET(0:*), VN(0:*), WT(0:*)
-  IF (N .EQ. 0) RETURN
+  implicit double precision (a-h,o-z)
+  dimension et(0:*), vn(0:*), wt(0:*)
+  
+  if (n .eq. 0) return
 
-      N2 = (N-1)/2
-      DN = DFLOAT(N)
-      C  = 2.D0/(DN*(DN+1.D0))
-  DO 1 I=0,N2
-      X = ET(I)
-      Y = VN(I)
-      WTX = C/(Y*Y)
-      WT(I) = WTX
-      WT(N-I) = WTX
-1 CONTINUE
+  n2 = (n-1)/2
+  dn = dfloat(n)
+  c  = 2.d0/(dn*(dn+1.d0))
+  do i=0,n2
+      x = et(i)
+      y = vn(i)
+      wtx = c/(y*y)
+      wt(i) = wtx
+      wt(n-i) = wtx
+  enddo
 
-  IF(N-1 .EQ. 2*N2) RETURN
-      X = 0.D0
-      Y = VN(N2+1)
-      WT(N2+1) = C/(Y*Y)
+  if(n-1 .eq. 2*n2) return
+  
+  x = 0.d0
+  y = vn(n2+1)
+  wt(n2+1) = c/(y*y)
 
-  RETURN
- end subroutine welegl
-!-------------------------------------------------
-!
-!dk polint-----------------------------------------------------------------
-  subroutine polint(xa,ya,n,x,y,dy)
-!
-! 	This routine computes the Lagrange interpolated value y at point x
-! associated to the function defined by the n values ya at n distinct points
-! xa. dy is the estimate of the error made on the interpolation.
-!
+!----------------------  
+end subroutine welegl
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> This routine computes the Lagrange interpolated value y at point x
+!! associated to the function defined by the n values ya at n distinct points
+!! xa. dy is the estimate of the error made on the interpolation.
+subroutine polint(xa,ya,n,x,y,dy)
 
   implicit none
-!
+
   integer ::  n
   double precision ::  dy,x,y,xa(n),ya(n)
   integer ::  i,m,ns
   double precision :: den,dif,dift,ho,hp,w,c(n),d(n)
-!
-!
+
+
   ns=1
   dif=abs(x-xa(1))
-!
+
   do i=1,n
-!
+
      dift=abs(x-xa(i))
      if (dift < dif) then
        ns=i    
@@ -824,7 +804,7 @@
      endif    
      c(i)=ya(i)       
      d(i)=ya(i)       
-! 
+ 
   end do
  
   y=ya(ns)
@@ -849,10 +829,11 @@
      y=y+dy
 
   end do
-!
-  end subroutine polint
+
+!----------------------  
+end subroutine polint
 !----------------------------------------------------------------------------
 !
 !========================
- end module splib
+end module splib
 !========================
