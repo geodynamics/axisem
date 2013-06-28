@@ -1,10 +1,10 @@
 !======================
+!> Read elastic information of the background model, define precomputable 
+!! matrices for mass, stiffness, boundary terms, pointwise derivatives.
+!! This is the quintessential module of the code...
 module def_precomp_terms
 !======================
 
-  ! Read elastic information of the background model, define precomputable 
-  ! matrices for mass, stiffness, boundary terms, pointwise derivatives.
-  ! This is the quintessential module of the code...
   
   use global_parameters
   use data_mesh
@@ -27,11 +27,10 @@ module def_precomp_terms
 contains
 
 !-----------------------------------------------------------------------------
+!> Wrapper routine to contain globally defined large matrices that are not 
+!! used in the time loop to this module (e.g. rho, lambda, mu).
+!! Also fills up Q with values (which is used in the time loop)
 subroutine read_model_compute_terms
-  ! Wrapper routine to contain globally defined large matrices that are not 
-  ! used in the time loop to this module (e.g. rho, lambda, mu).
-  !
-  ! Also fills up Q with values (which is used in the time loop)
 
   use get_model
   use attenuation,  only: prepare_attenuation
@@ -66,20 +65,20 @@ subroutine read_model_compute_terms
   if (lpr .and. verbose > 1) write(6,*) '   define background model....'
 
   if (ani_true) then
-    if (lpr .and. verbose > 1) write(6,*) '   model is anisotropic....'
-    if (anel_true) then
-      if(lpr .and. verbose > 1) write(6,*)'   ....and anelastic...'
-      call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                          fa_ani_phi, Q_mu, Q_kappa)
-    else
-      call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
-    endif
+     if (lpr .and. verbose > 1) write(6,*) '   model is anisotropic....'
+     if (anel_true) then
+       if(lpr .and. verbose > 1) write(6,*)'   ....and anelastic...'
+       call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+                           fa_ani_phi, Q_mu, Q_kappa)
+     else
+       call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+     endif
   else 
-    if (anel_true) then
-      call read_model(rho, lambda, mu, Q_mu, Q_kappa)
-    else
-      call read_model(rho, lambda, mu)
-    endif
+     if (anel_true) then
+       call read_model(rho, lambda, mu, Q_mu, Q_kappa)
+     else
+       call read_model(rho, lambda, mu)
+     endif
   endif
 
   if (lpr .and. verbose > 1) write(6,*) '   compute Lagrange interpolant derivatives...'
@@ -89,8 +88,8 @@ subroutine read_model_compute_terms
   call def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
    
   if (do_mesh_tests) then
-    if (lpr .and. verbose > 1) write(6,*) '   compute mass of the earth model....'
-    call compute_mass_earth(rho)
+     if (lpr .and. verbose > 1) write(6,*) '   compute mass of the earth model....'
+     call compute_mass_earth(rho)
   endif
 
   if (lpr .and. verbose > 1) write(6,*) &
@@ -98,10 +97,10 @@ subroutine read_model_compute_terms
   call compute_pointwisederiv_matrices
 
   if (do_mesh_tests) then
-    if (lpr .and. verbose > 1) write(6,*)'   test pointwise derivatives & Laplacian in solid....'
-    call test_pntwsdrvtvs_solid
-    if (lpr .and. verbose > 1) write(6,*)'   test pointwise derivatives & Laplacian in fluid....'
-    if (have_fluid) call test_pntwsdrvtvs_fluid
+     if (lpr .and. verbose > 1) write(6,*)'   test pointwise derivatives & Laplacian in solid....'
+     call test_pntwsdrvtvs_solid
+     if (lpr .and. verbose > 1) write(6,*)'   test pointwise derivatives & Laplacian in fluid....'
+     if (have_fluid) call test_pntwsdrvtvs_fluid
   endif
 
   if (anel_true) then
@@ -114,11 +113,11 @@ subroutine read_model_compute_terms
      
   if (lpr .and. verbose > 1) write(6,*) '   define solid stiffness terms....'
   if (ani_true) then
-    call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
-                                   eta_ani, fa_ani_theta, fa_ani_phi)
-    deallocate(xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
+                                    eta_ani, fa_ani_theta, fa_ani_phi)
+     deallocate(xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
   else
-    call def_solid_stiffness_terms(lambda, mu, massmat_kwts2)
+     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2)
   endif
   
   deallocate(lambda,mu)
@@ -151,14 +150,14 @@ end subroutine read_model_compute_terms
 
 !-----------------------------------------------------------------------------
 subroutine lagrange_derivs
-  ! Defines elemental arrays for the derivatives of Lagrange interpolating 
-  ! functions either upon 
-  ! Gauss-Lobatto-Legendre (all eta, and xi direction for non-axial elements) or 
-  ! Gauss-Lobatto-Jacobi (0,1) points (axial xi direction):
-  ! G1(i,j) = \partial_\xi ( \bar{l}_i(\xi_j) )  i.e. axial xi direction
-  ! G2(i,j) = \partial_\eta ( l_i(\eta_j) )  i.e. all eta/non-ax xi directions 
+!< Defines elemental arrays for the derivatives of Lagrange interpolating 
+!! functions either upon 
+!! Gauss-Lobatto-Legendre (all eta, and xi direction for non-axial elements) or 
+!! Gauss-Lobatto-Jacobi (0,1) points (axial xi direction):
+!! G1(i,j) = \partial_\xi ( \bar{l}_i(\xi_j) )  i.e. axial xi direction
+!! G2(i,j) = \partial_\eta ( l_i(\eta_j) )  i.e. all eta/non-ax xi directions 
 
-  use splib, only : hn_jprime,lag_interp_deriv_wgl
+  use splib, only : hn_jprime, lag_interp_deriv_wgl
   
   include 'mesh_params.h'
   
@@ -237,13 +236,13 @@ end subroutine lagrange_derivs
 
 !-----------------------------------------------------------------------------
 subroutine compute_pointwisederiv_matrices
-  ! The 4 necessary global matrices due to pointwise derivatives d/ds and d/dz:
-  ! dzdeta/J, dzdxi/J, dsdeta/J, dsdxi/J (J: Jacobian).
-  ! These are known during the time loop if the strain is computed on-the-fly.
-  ! This is convenient to avoid recomputing these mapping derivatives at each 
-  ! dumping stage and to avoid knowing the grid itself during the time loop
-  ! (hence the additional 4 global variables in exchange for at least 2 for the
-  ! mesh, i.e. only slightly more memory intensive).
+!< The 4 necessary global matrices due to pointwise derivatives d/ds and d/dz:
+!! dzdeta/J, dzdxi/J, dsdeta/J, dsdxi/J (J: Jacobian).
+!! These are known during the time loop if the strain is computed on-the-fly.
+!! This is convenient to avoid recomputing these mapping derivatives at each 
+!! dumping stage and to avoid knowing the grid itself during the time loop
+!! (hence the additional 4 global variables in exchange for at least 2 for the
+!! mesh, i.e. only slightly more memory intensive).
 
   use data_pointwise
   include 'mesh_params.h'
@@ -410,7 +409,7 @@ end subroutine compute_pointwisederiv_matrices
 
 !-----------------------------------------------------------------------------
 subroutine test_pntwsdrvtvs_solid
-  ! Test pointwise derivatives & axisymmetric Laplacian in solid region
+  !< Test pointwise derivatives & axisymmetric Laplacian in solid region
 
   use data_io
   use pointwise_derivatives
@@ -555,7 +554,7 @@ end subroutine test_pntwsdrvtvs_solid
 
 !-----------------------------------------------------------------------------
 subroutine test_pntwsdrvtvs_fluid
-  ! Test pointwise derivatives & axisymmetric Laplacian in fluid
+  !< Test pointwise derivatives & axisymmetric Laplacian in fluid
   
   use data_io
   use pointwise_derivatives
@@ -700,16 +699,16 @@ end subroutine test_pntwsdrvtvs_fluid
 
 !-----------------------------------------------------------------------------
 subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
-  ! This routine computes and stores the coefficients of the diagonal 
-  ! mass matrix, when a weighted Gauss-Lobatto quadrature for axial elements.
-  ! It is built here with a factor of volume equal to s * ds * dz, as required
-  ! by our approach.  we also define in this routine the mass matrix weighted
-  ! by 1/s^2, as required by some components of the Laplacian of the
-  ! fields. Note the special contribution arising in the case of an
-  ! axial element. 
-  ! massmat_k    : The actual mass term:    \sigma_I \sigma_J J^{IJ} s^{IJ} 
-  ! massmat_kwts2: Paper 2, table 1, term A=\sigma_I \sigma_J J^{IJ} / s^{IJ}
-  ! jacob: just defined locally for check on extrema further below....
+!< This routine computes and stores the coefficients of the diagonal 
+!! mass matrix, when a weighted Gauss-Lobatto quadrature for axial elements.
+!! It is built here with a factor of volume equal to s * ds * dz, as required
+!! by our approach.  we also define in this routine the mass matrix weighted
+!! by 1/s^2, as required by some components of the Laplacian of the
+!! fields. Note the special contribution arising in the case of an
+!! axial element. 
+!! massmat_k    : The actual mass term:    \sigma_I \sigma_J J^{IJ} s^{IJ} 
+!! massmat_kwts2: Paper 2, table 1, term A=\sigma_I \sigma_J J^{IJ} / s^{IJ}
+!! jacob: just defined locally for check on extrema further below....
   
   use data_io,          only : need_fluid_displ, dump_energy
   use commun,           only : comm2d
@@ -720,9 +719,9 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   double precision, dimension(0:npol,0:npol,nelem),intent(in)  :: rho,lambda,mu
   double precision, dimension(0:npol,0:npol,nelem),intent(out) :: massmat_kwts2
   
-  double precision, allocatable    :: massmat_k(:,:,:)   ! Mass matrix
-  double precision, allocatable    :: jacob (:,:,:)      ! jacobian array
-  real(kind=realkind), allocatable :: drdxi(:,:,:,:)     ! min/max derivs
+  double precision, allocatable    :: massmat_k(:,:,:)   !< Mass matrix
+  double precision, allocatable    :: jacob (:,:,:)      !< jacobian array
+  real(kind=realkind), allocatable :: drdxi(:,:,:,:)     !< min/max derivs
   
   double precision  :: local_crd_nodes(8,2),s,z,r,theta
   integer           :: iel,inode,iarr(3),ipol,jpol
@@ -1090,13 +1089,13 @@ end subroutine def_mass_matrix_k
 
 !-----------------------------------------------------------------------------
 subroutine compute_mass_earth(rho)
-  ! A straight computation of the mass of the sphere and that of its 
-  ! solid and fluid sub-volumes. This is the same as computing the volume 
-  ! (see def_grid.f90), but with a multiplicative density factor, i.e. the 
-  ! actual mass matrix. The comparison to the exact value is merely 
-  ! done as an indicator and does not cause any error. One should keep an eye 
-  ! on these values when generating any new kind of background model for which 
-  ! one then needs to dig up the total mass...
+!< A straight computation of the mass of the sphere and that of its 
+!! solid and fluid sub-volumes. This is the same as computing the volume 
+!! (see def_grid.f90), but with a multiplicative density factor, i.e. the 
+!! actual mass matrix. The comparison to the exact value is merely 
+!! done as an indicator and does not cause any error. One should keep an eye 
+!! on these values when generating any new kind of background model for which 
+!! one then needs to dig up the total mass...
 
   use def_grid,             only : massmatrix
   use background_models,    only : velocity
@@ -1259,15 +1258,13 @@ end subroutine compute_mass_earth
 
 !-----------------------------------------------------------------------------
 subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
-  ! This routine is a merged version to minimize global work 
-  ! array definitions. The terms alpha_wt_k etc. are now 
-  ! merely elemental arrays, and defined on the fly when 
-  ! computing the global, final precomputable matrices 
-  ! for the solid stiffness term. The loop is over solid elements only.
-  ! Tarje, Sept 2006.
-  !
-  ! Adding optional arguments for anisotropy, MvD
-  
+!< This routine is a merged version to minimize global work 
+!! array definitions. The terms alpha_wt_k etc. are now 
+!! merely elemental arrays, and defined on the fly when 
+!! computing the global, final precomputable matrices 
+!! for the solid stiffness term. The loop is over solid elements only.
+!! Adding optional arguments for anisotropy, MvD
+
   use attenuation, only: att_coarse_grained
   include "mesh_params.h"
   
@@ -2849,10 +2846,10 @@ end subroutine compute_quadrupole_stiff_terms_ani
 !-----------------------------------------------------------------------------
 double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
                                      theta_fa, phi_fa, i, j, k, l)
-  ! returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
-  ! i, j, k and l should be in [1,3]
-  !
-  ! MvD [Anisotropy Notes, p. 13.4]
+!< returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
+!! i, j, k and l should be in [1,3]
+!
+! MvD [Anisotropy Notes, p. 13.4]
   
   
   double precision, intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
@@ -2900,10 +2897,9 @@ end function c_ijkl_ani
 
 !-----------------------------------------------------------------------------
 subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
-  !
-  ! Fluid precomputed matrices definitions for all sources.
-  ! Note that in this routine terms alpha etc. are scalars 
-  ! (as opposed to the solid case of being elemental arrays).
+!< Fluid precomputed matrices definitions for all sources.
+!! Note that in this routine terms alpha etc. are scalars 
+!! (as opposed to the solid case of being elemental arrays).
     
   include "mesh_params.h"
   double precision, intent(in)  :: rho(0:npol,0:npol,nelem)
@@ -3033,17 +3029,16 @@ end subroutine def_fluid_stiffness_terms
 
 !-----------------------------------------------------------------------------
 subroutine def_solid_fluid_boundary_terms
-  ! Defines the 1-d vector-array bdry_matr which acts as the diagonal matrix
-  ! to accomodate the exchange of fields across solid-fluid boundaries 
-  ! in both directions. Take note of the sign conventions in accordance with 
-  ! those used in the time loop.
+!< Defines the 1-d vector-array bdry_matr which acts as the diagonal matrix
+!! to accomodate the exchange of fields across solid-fluid boundaries 
+!! in both directions. Take note of the sign conventions in accordance with 
+!! those used in the time loop.
   
   use commun, only : psum
   use data_io
   
   include 'mesh_params.h'
   
-  !double precision, intent(in) :: rho(0:npol,0:npol,nelem)
   double precision             :: local_crd_nodes(8,2)
   double precision             :: s,z,r,theta,rf,thetaf
   double precision             :: theta1,theta2,r1,r2,delta_th,bdry_sum
@@ -3249,33 +3244,6 @@ subroutine def_solid_fluid_boundary_terms
         bdry_matr(0:npol,iel,1:2) = bdry_matr(0:npol,iel,1:2) * r * r
         solflubdry_radius(iel) = r
 
-        ! Adopt fluid formulation of Chaljub & Valette 2004, Komatitsch et al 2006: 
-        ! u = \nabla \chi (leaving out the 1/rho factor)
-        ! This choice merely results in factors of rho for all boundary terms
-        ! and (supposedly?) allows for density stratification in the fluid
-        !
-        !  write(6,*)'Fluid:',r/1000.,iel,bdry_jpol_fluid(iel)
-        !  write(6,*)'Fluid:',bdry_fluid_el(iel),ielfluid(bdry_fluid_el(iel))
-        !  write(6,*)'Fluid minrho:',minval(rho(0:npol,bdry_jpol_fluid(iel), &
-        !                            ielfluid(bdry_fluid_el(iel))))
-        !  write(6,*)'Fluid maxrho:',maxval(rho(0:npol,bdry_jpol_fluid(iel), &
-        !                            ielfluid(bdry_fluid_el(iel)))) 
-        !  write(6,*)
-        !  write(6,*)'Solid:',r/1000.,theta/pi*180.,iel,bdry_jpol_solid(iel)
-        !  write(6,*)'Solid:',bdry_solid_el(iel),ielsolid(bdry_solid_el(iel))
-        !  write(6,*)'Solid minrho:',minval(rho(0:npol,bdry_jpol_solid(iel), &
-        !                            ielsolid(bdry_solid_el(iel))))
-        !  write(6,*)'Solid maxrho:',maxval(rho(0:npol,bdry_jpol_solid(iel), &
-        !                            ielsolid(bdry_solid_el(iel)))) 
-        !
-        !  if (iel==1) write(6,*)'Chaljub/Komatitsch potential formulation w/o density' 
-        !  do i=1,2
-        !     bdry_matr_fluid(0:npol,iel,i)=bdry_matr(0:npol,iel,i) / &
-        !          rho(0:npol,bdry_jpol_fluid(iel),ielfluid(bdry_fluid_el(iel)))
-        !
-        !     bdry_matr_solid(0:npol,iel,i)=bdry_matr(0:npol,iel,i) * &
-        !          rho(0:npol,bdry_jpol_solid(iel),ielsolid(bdry_solid_el(iel)))
-        !  enddo
 
      enddo ! elements along solid-fluid boundary
 
