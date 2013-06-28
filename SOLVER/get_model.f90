@@ -153,7 +153,7 @@ subroutine read_model(rho, lambda, mu, Q_mu, Q_kappa)
   endif
 
 
-  if (lpr) write(6,*)'    filling mesh with elastic properties...'   
+  if (lpr .and. verbose > 1) write(6,*) '   filling mesh with elastic properties...'   
   call flush(6)
 
   ! solar case: interpolations take too long, therefore reading in model parameters here
@@ -269,7 +269,8 @@ subroutine read_model(rho, lambda, mu, Q_mu, Q_kappa)
       enddo
   endif
 
-  write(6,*)mynum,'done with big mesh loop to define model'
+  if (lpr .and. verbose > 1) write(6,*) '   done with big mesh loop to define model'
+
   if (do_mesh_tests) close(60000+mynum)
 14 format(5(1pe13.4))
 
@@ -277,7 +278,7 @@ subroutine read_model(rho, lambda, mu, Q_mu, Q_kappa)
   if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
 
   !plot final velocity model in vtk
-  write(6,*)mynum,'plotting vtks for the model properties....'
+  if (lpr .and. verbose > 1) write(6,*) '   plotting vtks for the model properties....'
   if (anel_true) then
       call plot_model_vtk(rho, lambda, mu, Q_mu=Q_mu, Q_kappa=Q_kappa) 
   else
@@ -410,7 +411,7 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 10 format(i9,1pe11.3,i3,2(1pe11.3))
 
   if (do_mesh_tests) then
-      if (lpr) write(6,*)'    checking discontinuity discretization...' 
+      if (lpr .and. verbose > 1) write(6,*)'    checking discontinuity discretization...' 
       call check_mesh_discontinuities(ieldom,domcount)
   endif
 
@@ -418,8 +419,7 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   open(unit=5454,file=infopath(1:lfinfo)//'/background_rad_dom_vel.dat'&
                                         //appmynum)
 
-  if (lpr) write(6,*)'    filling mesh with elastic properties...'   
-  call flush(6)
+  if (lpr .and. verbose > 1) write(6,*)'   filling mesh with elastic properties...'   
 
   modelstring = bkgrdmodel
 
@@ -513,7 +513,7 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   endif
 
   close(5454)
-  write(6,*)mynum,'done with big mesh loop to define model'
+  if (lpr .and. verbose > 1) write(6,*) 'done with big mesh loop to define model'
   if (do_mesh_tests) close(60000+mynum)
 
 14 format(5(1pe13.4))
@@ -522,8 +522,7 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                                  eta_ani, fa_ani_theta, fa_ani_phi, ieldom)
 
   ! plot final velocity model in vtk
-  write(6,*)mynum,'plotting vtks for the model properties....'
-
+  if (lpr .and. verbose > 1) write(6,*) 'plotting vtks for the model properties....'
 
   if (anel_true) then
      call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &

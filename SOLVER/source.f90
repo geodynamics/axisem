@@ -101,7 +101,7 @@ subroutine read_sourceparams
      !-----------------------------------------------------------------
      elseif (num_simul == 1 ) then ! moment tensor /single force component
      !-----------------------------------------------------------------
-        if (lpr) then 
+        if (lpr .and. verbose > 1) then 
            write(6,'(/a)')'  One simulation for one source!'
         endif
 
@@ -377,25 +377,25 @@ subroutine read_sourceparams
      end if
   endif
 
-  if (lpr) then
+  if (lpr .and. verbose > 0) then
      write(6,*)  ''
      write(6,*)  '  *****************GIVEN SOURCE PARAMETERS*****************'
-     write(6,11) '   Magnitude [Nm]:       ',magnitude
-     write(6,13) '   Excitation type:         ',src_type(1),src_type(2)
-     write(6,11) '   Depth [km]:           ',src_depth/1000.
-     write(6,11) '   Colat. [deg]:         ',real(srccolat*180./pi)
-     write(6,11) '   Long. [deg]:          ',real(srclon*180./pi)
-     write(6,14) '   Source time function:  ',stf_type
-     write(6,12) '   Dom. period mesh [s]:     ',period
+     write(6,11) '   Magnitude [Nm]:       ', magnitude
+     write(6,13) '   Excitation type:      ', src_type(1),src_type(2)
+     write(6,11) '   Depth [km]:           ', src_depth/1000.
+     write(6,11) '   Colat. [deg]:         ', real(srccolat*180./pi)
+     write(6,11) '   Long. [deg]:          ', real(srclon*180./pi)
+     write(6,14) '   Source time function: ', stf_type
+     write(6,12) '   Dom. period mesh [s]: ', period
      write(6,*)  '  *********************************************************'
      write(6,*)  ''
      call flush(6)
   endif
 
 11 format(a28,1pe15.3)
-12 format(a28,f9.4)
+12 format(a28,f15.4)
 13 format(a28,2(a12))
-14 format(a28,a12)
+14 format(a28,a13)
 
 end subroutine read_sourceparams
 !=============================================================================

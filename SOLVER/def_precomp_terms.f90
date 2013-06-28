@@ -43,9 +43,9 @@ subroutine read_model_compute_terms
   double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
   double precision, dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
 
-  if(lpr) write(6,'(a,/,a)') &
+  if (lpr .and. verbose > 1) write(6,'(a,/,a)') &
             '  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::', &
-            '  allocate elastic fields....'
+            '    allocate elastic fields....'
 
   allocate(rho(0:npol,0:npol,1:nelem),massmat_kwts2(0:npol,0:npol,1:nelem))
   allocate(lambda(0:npol,0:npol,1:nelem),mu(0:npol,0:npol,1:nelem))
@@ -63,12 +63,12 @@ subroutine read_model_compute_terms
   endif
 
   ! load velocity/density model  (velocities in m/s, density in kg/m^3 )
-  if (lpr) write(6,*)'  define background model....'
+  if (lpr .and. verbose > 1) write(6,*) '   define background model....'
 
   if (ani_true) then
-    if (lpr) write(6,*) '  model is anisotropic....'
+    if (lpr .and. verbose > 1) write(6,*) '   model is anisotropic....'
     if (anel_true) then
-      if(lpr) write(6,*)'  ....and anelastic...'
+      if(lpr .and. verbose > 1) write(6,*)'   ....and anelastic...'
       call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
                           fa_ani_phi, Q_mu, Q_kappa)
     else
@@ -82,36 +82,37 @@ subroutine read_model_compute_terms
     endif
   endif
 
-  if (lpr) write(6,*) '  compute Lagrange interpolant derivatives...'
+  if (lpr .and. verbose > 1) write(6,*) '   compute Lagrange interpolant derivatives...'
   call lagrange_derivs
 
-  if (lpr) write(6,*) '  define mass matrix....'
+  if (lpr .and. verbose > 1) write(6,*) '   define mass matrix....'
   call def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
    
   if (do_mesh_tests) then
-    if (lpr) write(6,*) '  compute mass of the earth model....'
+    if (lpr .and. verbose > 1) write(6,*) '   compute mass of the earth model....'
     call compute_mass_earth(rho)
   endif
 
-  if (lpr)write(6,*) '  define precomputed matrices for pointwise derivatives...'
+  if (lpr .and. verbose > 1) write(6,*) &
+        '   define precomputed matrices for pointwise derivatives...'
   call compute_pointwisederiv_matrices
 
   if (do_mesh_tests) then
-    if (lpr) write(6,*)'  test pointwise derivatives & Laplacian in solid....'
+    if (lpr .and. verbose > 1) write(6,*)'   test pointwise derivatives & Laplacian in solid....'
     call test_pntwsdrvtvs_solid
-    if (lpr) write(6,*)'  test pointwise derivatives & Laplacian in fluid....'
+    if (lpr .and. verbose > 1) write(6,*)'   test pointwise derivatives & Laplacian in fluid....'
     if (have_fluid) call test_pntwsdrvtvs_fluid
   endif
 
   if (anel_true) then
-     if (lpr) write(6, '(/,a,/)') '  preparing ATTENUATION model'
+     if (lpr .and. verbose > 1) write(6, '(/,a,/)') '    preparing ATTENUATION model'
      ! this needs to be done before def_solid_stiffness_terms, as it calculates
      ! the unrelaxed moduli from the ones at reference frequency
      call prepare_attenuation(lambda, mu)
-     if (lpr) write(6, '(/,a,/)') '  done preparing ATTENUATION model'
+     if (lpr .and. verbose > 1) write(6, '(/,a,/)') '    done preparing ATTENUATION model'
   endif
      
-  if (lpr) write(6,*)'  define solid stiffness terms....'
+  if (lpr .and. verbose > 1) write(6,*) '   define solid stiffness terms....'
   if (ani_true) then
     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
                                    eta_ani, fa_ani_theta, fa_ani_phi)
@@ -120,17 +121,13 @@ subroutine read_model_compute_terms
     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2)
   endif
   
-  if (lpr) write(6,*)'  deallocating lambda + mu'
-    
   deallocate(lambda,mu)
   
-  if (lpr) write(6,*)'  done deallocating lambda + mu'
-
   if (have_fluid) then
-     if (lpr) write(6,*) '  define fluid stiffness terms....'
+     if (lpr .and. verbose > 1) write(6,*) '   define fluid stiffness terms....'
      call def_fluid_stiffness_terms(rho, massmat_kwts2)
 
-     if (lpr) write(6,*) '  define solid-fluid boundary terms....'
+     if (lpr .and. verbose > 1) write(6,*) '   define solid-fluid boundary terms....'
      call def_solid_fluid_boundary_terms
   else
      M_w_fl = zero
@@ -141,12 +138,12 @@ subroutine read_model_compute_terms
      bdry_matr = zero
   endif
 
-  if (lpr) write(6,*) '  ...defined all precomputed arrays'
+  if (lpr .and. verbose > 1) write(6,*) '   ...defined all precomputed arrays'
   deallocate(rho, massmat_kwts2)
 
-  if (lpr) write(6,*)'  ...deallocated unnecessary elastic arrays'
+  if (lpr .and. verbose > 1) write(6,*) '   ...deallocated unnecessary elastic arrays'
   
-  if (lpr) write(6,*)'  ::::::: END BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
+  if (lpr .and. verbose > 1) write(6,*) ' :::::::DONE BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
   call flush(6)
 
 end subroutine read_model_compute_terms
@@ -834,7 +831,7 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
      end if ! axial?
   end do ! iel
 
-  if (lpr) write(6,*) '  solid mass matrix...'
+  if (lpr .and. verbose > 1) write(6,*) '   solid mass matrix...'
   ! Solid inverse mass term
   do iel=1,nel_solid
      do ipol = 0, npol
@@ -855,10 +852,10 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
 
 
   ! Exchange boundary information
-  if(lpr)write(6,*)'  assemble solid mass matrix...'; call flush(6)
+  if(lpr .and. verbose > 1) write(6,*) '   assemble solid mass matrix...'
   call comm2d(inv_mass_rho,nel_solid,1,'solid')
 
-  if(lpr)write(6,*)'  compute inverse solid mass matrix...'; call flush(6)
+  if(lpr .and. verbose > 1) write(6,*) '   compute inverse solid mass matrix...'
   do iel=1,nel_solid
      do ipol = 0, npol
         do jpol = 0, npol
@@ -876,7 +873,7 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   if (src_type(1)=='dipole') inv_mass_rho = half * inv_mass_rho
 
   ! Fluid inverse mass term
-  if(lpr)write(6,*)'  fluid mass matrix...'; call flush(6)
+  if(lpr .and. verbose > 1) write(6,*) '   fluid mass matrix...'
   do iel=1,nel_fluid
      ! check if fluid element is really fluid throughout
      if (maxval(mu(:,:,ielfluid(iel)))> zero) then
@@ -915,10 +912,10 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
 
 
   ! Exchange boundary information
-  if(lpr)write(6,*)'  assemble fluid mass matrix...'; call flush(6)
+  if(lpr .and. verbose > 1) write(6,*) '   assemble fluid mass matrix...'
   call comm2d(inv_mass_fluid,nel_fluid,1,'fluid')
 
-  if(lpr)write(6,*)'  compute inverse fluid mass matrix...'; call flush(6)
+  if(lpr .and. verbose > 1) write(6,*) '   compute inverse fluid mass matrix...'
   do iel=1,nel_fluid
      do ipol = 0, npol
         do jpol = 0, npol

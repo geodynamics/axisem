@@ -611,7 +611,7 @@ subroutine check_basic_parameters
   endif
 
   if (enforced_period > zero) then
-     if (lpr) then     
+     if (lpr .and. verbose > 1) then     
         write(6,*)
         write(6,14) 'min. source period', enforced_period
      endif

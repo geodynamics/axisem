@@ -143,12 +143,10 @@ subroutine init_grid
         do iel=0, nproc-1
            call barrier
            if (mynum==iel) then 
-              write(6,12) procstrg, 'counted sent/received GLL points:',&
-                   num_send_gll,num_recv_gll
+              write(6,'("   ",a8,a33,2(i6))') procstrg, &
+                 'counted sent/received GLL points:', num_send_gll,num_recv_gll
            endif
         enddo
-
-12      format('   ',a8,a33,2(i6))
         call flush(6) 
         call barrier
         if (lpr) write(6,*)
