@@ -52,7 +52,7 @@ endif
 
 
 # if the mesh has different mesh_params.h, copy here
-if ( `diff mesh_params.h $meshdir/mesh_params.h | wc -l` != "0" ) then
+if ( ! -f mesh_params.h || `diff mesh_params.h $meshdir/mesh_params.h | wc -l` != "0" ) then
   echo 'copying mesh_params.h from ' $meshdir
   cp $meshdir/mesh_params.h .
 endif
