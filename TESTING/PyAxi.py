@@ -77,41 +77,46 @@ def PyAxi(**kwargs):
     global input
     try:
         if sys.argv[1] == '--check':
+            import copy
             print 'Check the Basic, Processing and Visualization requirements:\n'
             p = []
             print repr('Compiler').rjust(20).replace("'", '') + "    |    " +   repr('Installed').rjust(11).replace("'", '')
             print '  ' + 42*'-'
             
-            for compilers in ['gfortran', 'ifort', 'mpif90', 'mpif90.openmpi',
+            for compilers in ['gfortran', 'ifort', 'mpif90.openmpi', 'mpif90',
                                 'gnuplot', 'taup', 'paraview', 'matlab', 'googleearth']:
-                p.append([compilers, subprocess.Popen(['which', compilers],
-                                    stdout = subprocess.PIPE).communicate()])
-            for comp in range(0, len(p)):
-                if p[comp][1][0] != '':
-                    print repr(p[comp][0]).rjust(20).replace("'", '') + "    |    " +  repr('Y').rjust(7).replace("'", '')
-                else:
-                    print repr(p[comp][0]).rjust(20).replace("'", '') + "    |    " +  repr('N').rjust(7).replace("'", '')
+                if manual_which(compilers) == None: p.append([compilers, 'N'])
+                else: p.append([compilers, 'Y'])
+            
+            p_print = copy.deepcopy(p)
+
+            if p_print[3][1] == 'N' and p_print[2][1] != 'N': del p_print[3]
+            elif p_print[3][1] != 'N' and p_print[2][1] == 'N': del p_print[2]
+
+            if p_print[1][1] == 'N' and p_print[0][1] != 'N': del p_print[1]
+            elif p_print[1][1] != 'N' and p_print[0][1] == 'N': del p_print[0]
+
+            for comp in range(0, len(p_print)):
+                print repr(p_print[comp][0]).rjust(20).replace("'", '') + "    |    " +  repr(p_print[comp][1]).rjust(7).replace("'", '')
             
             print '\nSummary:\n'
-            if p[0][1][0] != '' or p[1][1][0] != '':
-                if p[2][1][0] != '' or p[3][1][0] != '':
-                    print 'Basic Functionality...CHECK'
+            if p[0][1] != 'N' or p[1][1] != 'N':
+                if p[2][1] != 'N' or p[3][1] != 'N':
+                    print 'Basic Functionality Requirement...CHECK'
                 else:
-                    print 'Basic Functionality...ERROR'
-            else:
-                print 'Basic Functionality...ERROR'
-            if p[4][1][0] != '' and p[5][1][0] != '': 
-                print 'Processing Req........CHECK'
-            else:
-                print 'Processing Req........ERROR'
-            if p[6][1][0] != '' and p[7][1][0] != '' and p[8][1][0] != '': 
+                    print 'Basic Functionality Requirement...ERROR'
+            else: print 'Basic Functionality Requirement...ERROR'
+            if p[4][1] != 'N' and p[5][1] != 'N': 
+                print 'Processing Requrement........CHECK'
+            else: print 'Processing Requrement........ERROR'
+            if p[6][1] != 'N' and p[7][1] != 'N' and p[8][1] != 'N': 
                 print 'Visualization Tools...CHECK'
-            else:
-                print 'Visualization Tools...ERROR'
+            else: print 'Visualization Tools...ERROR'
             print '\n'
             sys.exit(2) 
     except Exception, error:
         print '',
+        sys.exit(2) 
     
     # ------------------Read INPUT file (Parameters)--------------------
     read_input_file()
@@ -342,21 +347,7 @@ def PyAxi(**kwargs):
         print "SOLVER"
         print "======"
         os.chdir(os.path.join(input['axi_address'], 'SOLVER'))
-        
-        if input['solver_cp'] != 'N':
-            # Copy the mesh_params.h in the main directory
-            if input['verbose'] != 'N':
-                print "\n======================"
-                print "Copy the mesh_params.h"
-                print "======================"
-            else:
-                sys.stdout.write('copy the mesh_params.h...')
-                sys.stdout.flush()
-            output = subprocess.check_call(['cp', '-f', os.path.join('MESHES',
-                        input['mesh_name'], 'mesh_params.h'), '.'])
-            if output != 0: print output_print
-            print 'DONE'
-        
+                
         # Create SOLVER Makefile
         if input['solver_makefile'] != 'N':
             if input['verbose'] != 'N':
@@ -1006,10 +997,10 @@ def PyAxi(**kwargs):
             ax.set_ylabel('l2 - misfit to reference data')
             ax.set_ylim(1e-12, 1.)
 
-            ax.axhline(y=1e-8, color='k', ls='--')
-            if np.max(l2misfit) > 1e-8:
+            ax.axhline(y=1e-5, color='k', ls='--')
+            if np.max(l2misfit) > 1e-5:
                 fwarn = open(os.path.join(folder_new, 'warning.dat'), 'a')
-                fwarn.write("maximum l2 norm misfit larger then 1e-8 in chan %s trace %d\n" 
+                fwarn.write("maximum l2 norm misfit larger then 1e-5 in chan %s trace %d\n" 
                              % (chan, np.argmax(l2misfit)))
                 fwarn.close()
 
@@ -1462,6 +1453,26 @@ def convSTF(st, sigma=30.):
         tr.data = np.fft.irfft(stff * trf)[sigma*10*df:sigma*10*df+len(tr.data)] * df
 
     return 1
+
+########################## manual_which ################################
+def manual_which(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
+
 ########################################################################
 ########################################################################
 ########################################################################
@@ -1505,6 +1516,21 @@ if __name__ == "__main__":
 
 
 # SOLVER:
+
+#if input['solver_cp'] != 'N':
+#    # Copy the mesh_params.h in the main directory
+#    if input['verbose'] != 'N':
+#        print "\n======================"
+#        print "Copy the mesh_params.h"
+#        print "======================"
+#    else:
+#        sys.stdout.write('copy the mesh_params.h...')
+#        sys.stdout.flush()
+#    output = subprocess.check_call(['cp', '-f', os.path.join('MESHES',
+#                input['mesh_name'], 'mesh_params.h'), '.'])
+#    if output != 0: print output_print
+#    print 'DONE'
+
  
 #if input['verbose'] != 'N':
 #    print "\n================"

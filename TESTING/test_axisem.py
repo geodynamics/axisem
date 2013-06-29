@@ -21,9 +21,9 @@ parser.add_argument('-a', help='run all tests', action='store_const',
 args = parser.parse_args()
 
 if not args.a:
-    print '====================================================='
+    print '=========================================='
     test_no = \
-        raw_input('Please provide the number of desired tests: \n' + \
+        raw_input('Please enter the test number(s): \n' + \
             '1. test01: explosion\n' + \
             '2. test02: dipole (mxz)\n' + \
             '3. test03: quadpole (mxz)\n' + \
@@ -34,7 +34,7 @@ if not args.a:
 else:
     test_no = '1,2,3,4,5'
 
-print '====================================================='
+print '=========================================='
 print 'Requested Test numbers:'
 
 for i in range(0, len(test_no.split(','))):
@@ -43,7 +43,7 @@ for i in range(0, len(test_no.split(','))):
     if len(num) == 1:
         num = '0' + num
     print 'test' + num
-print '====================================================='
+print '=========================================='
 
 for i in range(0, len(test_no.split(','))):
     num = test_no.split(',')[i]
@@ -58,4 +58,4 @@ for i in range(0, len(test_no.split(','))):
     address = os.path.join('.', 'automated', 'test_' + num)
     output = subprocess.check_call(['python', 'PyAxi.py', address])
     if output != 0: print output_print
-    print "=============================================="
+    print '=========================================='
