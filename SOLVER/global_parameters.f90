@@ -28,8 +28,8 @@ public
 ! Do not change these.
   double precision, parameter :: zero = 0d0, half = 5d-1, third = 1d0 / 3d0
   double precision, parameter :: quart = 25d-2, one = 1d0, sixth = 1d0 / 6d0
-  double precision, parameter :: two = 2d0, three = 3d0, four = 4d0, five = 5.d0
-  double precision, parameter :: fifth = 2.d-1
+  double precision, parameter :: two = 2d0, three = 3d0, four = 4d0, five = 5d0
+  double precision, parameter :: fifth = 2d-1
   double precision, parameter :: pi = 3.1415926535898D0
   double precision, parameter :: epsi = 1d-30
 

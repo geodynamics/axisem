@@ -1,23 +1,21 @@
-!==============
 !> Core of the spectral method. 
 module splib
-!==============
  
-use global_parameters
+  use global_parameters
+  
+  public :: inlegl, zelegl, zemngl2,               &
+            hn_jprime, lag_interp_deriv_wgl,       &
+            get_welegl,get_welegl_axial
+  private
 
-public :: inlegl, zelegl, zemngl2,               &
-          hn_jprime, lag_interp_deriv_wgl,       &
-          get_welegl,get_welegl_axial
-private
-
- ! include mesh_params.h
   contains
  
-!---------------------------------------------------------------
+!-----------------------------------------------------------------------------
 !> This routine reorders array vin(n) in increasing order and
 !! outputs array vout(n).
 subroutine order(vin,vout,n)
 
+  implicit none
   integer, intent(in)            :: n
   double precision, intent(in)   :: vin(n)
   double precision, intent(out)  :: vout(n)
@@ -50,7 +48,6 @@ end subroutine order
 double precision function hn_j(n,zeta,xi,j)
 
   implicit none
-
   integer, intent(in)          :: n
   integer, intent(in)          :: j
   integer                      :: i 
@@ -58,11 +55,10 @@ double precision function hn_j(n,zeta,xi,j)
   double precision,intent(out) :: zeta
   double precision             :: DX,D2X
   double precision             :: VN (0:n), QN(0:n)
-!
+
   hn_j = 0d0
   VN(:)= 0d0
   QN(:)= 0d0
-
  
   do i = 0, N
      call VALEPO(N,xi(i), VN(i), DX,D2X)
@@ -80,8 +76,6 @@ end function hn_j
 !! point zeta in [-1,1].
 double precision function lag_interp(zeta,xi,j,N,iibeg,iiend)   
 
-
-  implicit none
 
   integer :: j, N,iibeg,iiend
   integer :: i
@@ -107,9 +101,7 @@ double precision function lag_interp(zeta,xi,j,N,iibeg,iiend)
 !! points xi. 
 subroutine lag_interp_deriv(df,xi,j,N)
 
-
   implicit none
-
   integer          :: j, N
   double precision :: xi(0:N), df(0:N)
   integer          :: i,ixi,l
@@ -206,7 +198,7 @@ subroutine lag_interp_deriv_wgl(dl,xi,i,N)
         if (j == N) &
                      dl(j) = (mn_xi_i*(one-xi(i)))**(-1)
      end do
-!
+
   end if
 
 end subroutine lag_interp_deriv_wgl
@@ -219,7 +211,6 @@ end subroutine lag_interp_deriv_wgl
 subroutine hn_jprime(xi,j,N,dhj)
  
   implicit none
- 
   integer,intent(in)            :: N
   integer,intent(in)            :: j
   integer                       :: i
@@ -244,48 +235,54 @@ end subroutine hn_jprime
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!>   computes the nodes relative to the legendre gauss-lobatto formula
-subroutine ZELEGL(N,ET,VN)
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+!> computes the nodes relative to the legendre gauss-lobatto formula
+subroutine zelegl(n,et,vn)
+
+  implicit double precision (a-h,o-z)
   integer, intent(in)            :: n !< Order of the formula
   double precision, intent(out)  :: ET(0:n) ! Vector of the nodes
   double precision, intent(out)  :: VN(0:n) ! Values of the Legendre polynomial at the nodes
   
   if (n  ==  0) return
 
-     n2 = (n-1)/2
-     sn = dfloat(2*n-4*n2-3)
-     et(0) = -1.d0
-     et(n) = 1.d0
-     vn(0) = sn
-     vn(n) = 1.d0
+  n2 = (n-1)/2
+  sn = dfloat(2*n-4*n2-3)
+  et(0) = -1.d0
+  et(n) = 1.d0
+  vn(0) = sn
+  vn(n) = 1.d0
+  
   if (n  ==  1) return
 
-     et(n2+1) = 0.d0
-     x = 0.d0
+  et(n2+1) = 0.d0
+  x = 0.d0
   call valepo(n,x,y,dy,d2y)
-     vn(n2+1) = y
+  
+  vn(n2+1) = y
+  
   if(n  ==  2) return
 
-     c  = pi/dfloat(n)
-  do 1 i=1,n2
+  c  = pi/dfloat(n)
+
+  do i=1, n2
      etx = dcos(c*dfloat(i))
-  do 2 it=1,8
-  call valepo(n,etx,y,dy,d2y)
-     etx = etx-dy/d2y
-2 continue   
+     do it=1, 8
+        call valepo(n,etx,y,dy,d2y)
+        etx = etx-dy/d2y
+     end do
      et(i) = -etx
      et(n-i) = etx
      vn(i) = y*sn
      vn(n-i) = y
-1 continue   
+  end do
 
 end subroutine zelegl
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!>   computes the nodes relative to the legendre gauss-lobatto formula
+!> computes the nodes relative to the legendre gauss-lobatto formula
 subroutine zelegl2(n,et)
+
   implicit double precision (a-h,o-z)
   integer, intent(in)            :: n !< Order of the formula
   double precision, intent(out)  :: ET(0:n) ! Vector of the nodes
@@ -303,7 +300,7 @@ subroutine zelegl2(n,et)
   x = 0.d0
   call valepo(n,x,y,dy,d2y)
 
-  if(n  .gt. 2) then
+  if (n .gt. 2) then
 
      c  = pi/dfloat(n)
       do i=1,n2
@@ -318,8 +315,8 @@ subroutine zelegl2(n,et)
   endif
 
   return
-!
-  end subroutine zelegl2
+
+end subroutine zelegl2
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -347,8 +344,8 @@ subroutine zemngl2(n,et)
      x = 2d-1
   if(n  ==  2) return
 
-! Form the matrix diagonals and subdiagonals according to
-! formulae page 109 of Azaiez, Bernardi, Dauge and Maday.
+  ! Form the matrix diagonals and subdiagonals according to
+  ! formulae page 109 of Azaiez, Bernardi, Dauge and Maday.
 
   do i = 1, n-1
      d(i) = three/(four*(dble(i)+half)*(dble(i)+three*half))
@@ -359,10 +356,10 @@ subroutine zemngl2(n,et)
                       /(two*(dble(i)+three*half))
   end do
 
-! Compute eigenvalues
+  ! Compute eigenvalues
   call tqli(d,e,n-1)
 
-! Sort them in increasing order
+  ! Sort them in increasing order
   call order(d,e,n-1)
 
   ET(1:n-1) = e(1:n-1)
@@ -376,7 +373,8 @@ end subroutine zemngl2
 !!   Relies on computing the eigenvalues of tridiagonal matrix.
 !!   The nodes correspond to the third quadrature formula proposed
 !!   by Azaiez et al.  
-subroutine zemngr(N,ET)
+subroutine zemngr(n,et)
+
   implicit double precision (a-h,o-z)
   integer, intent(in)            :: n       !< Order of the formula
   double precision, intent(out)  :: et(0:n) !< vector of the nodes, et(i), i=0,n.
@@ -386,29 +384,29 @@ subroutine zemngr(N,ET)
   if (n  ==  0) return
 
   et(n) = 1.d0
-!
-! Form the matrix diagonals and subdiagonals according to
-! formulae page 109 of Azaiez, Bernardi, Dauge and Maday.
-!
+
+  ! Form the matrix diagonals and subdiagonals according to
+  ! formulae page 109 of Azaiez, Bernardi, Dauge and Maday.
+
   do i = 1, n
      !d(i) = -one/(four*(dble(i)-half)*(dble(i)+half))
-     d(i) = - 1.0 / (4.0*dble(i*i) - 1.0)
+     d(i) = - 1d0 / (4d0 * dble(i*i) - 1d0)
   end do
 
   do i = 1, n-1
      e(i+1) =   dsqrt(dble(i)*(dble(i)+one)) &
                       /(two*(dble(i)+half))
   end do
-!
-! Compute eigenvalues
+
+  ! Compute eigenvalues
   call tqli(d,e,n)
-!
-! Sort them in increasing order
+
+  ! Sort them in increasing order
   call order(d,e,n)
-!
-  ET(0:n-1) = e(1:n)
-!
-  end subroutine zemngr
+
+  et(0:n-1) = e(1:n)
+
+end subroutine zemngr
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -416,9 +414,8 @@ subroutine zemngr(N,ET)
 !! which diagonal and subdiagonal coefficients are contained in d(1:n) and
 !! e(2:n) respectively. e(1) is free. The eigenvalues are returned in array d
 subroutine tqli(d,e,n)
-  
-  implicit none
 
+  implicit none
   integer, intent(in)             :: n
   double precision, intent(inout) :: d(n)
   double precision, intent(inout) :: e(n)
@@ -477,8 +474,7 @@ end subroutine tqli
 !> L2 norm of a and b  
 double precision function pythag(a,b)
 
-  implicit none  
-
+  implicit none
   double precision, intent(in) :: a, b
   double precision             :: absa,absb
 
@@ -505,6 +501,7 @@ end function pythag
 !>  computes the derivative of a polynomial at the legendre gauss-lobatto
 !!  nodes from the values of the polynomial attained at the same points
 subroutine delegl(n,et,vn,qn,dqn)
+
    implicit double precision (a-h,o-z)
    integer, intent(in)           ::  n        !< the degree of the polynomial
    double precision, intent(in)  ::  et(0:n)  !< vector of the nodes, et(i), i=0,n
@@ -533,7 +530,6 @@ subroutine delegl(n,et,vn,qn,dqn)
     dqn(0) = dqn(0) - c * qn(0)
     dqn(n) = dqn(n) + c * qn(n)
 
-!----------------------  
 end subroutine delegl
 !=============================================================================
 
@@ -578,7 +574,6 @@ subroutine valepo(n,x,y,dy,d2y)
      d2yp = d2ym
   enddo
 
-!----------------------  
 end subroutine valepo
 !=============================================================================
 
@@ -615,7 +610,6 @@ subroutine inlegl(n,et,vn,qn,x,qx)
     endif      
   enddo
 
-!----------------------  
 end subroutine inlegl
 !=============================================================================
 
@@ -624,13 +618,11 @@ end subroutine inlegl
 !! Gauss-Lobatto-Legendre quadrature formula of order N.
 subroutine get_welegl(N,xi,wt)
 
-
   implicit none
-
-  integer :: N
-  double precision ::  xi(0:N),wt(0:N)
-  integer :: j
-  double precision :: y,dy,d2y,fact 
+  integer           :: N
+  double precision  ::  xi(0:N),wt(0:N)
+  integer           :: j
+  double precision  :: y,dy,d2y,fact 
 
   fact = 2.0d0/(dble(N*(N+1)))
 
@@ -641,7 +633,6 @@ subroutine get_welegl(N,xi,wt)
      wt(j) =  fact*y**(-2)
   end do
 
-!----------------------  
 end subroutine get_welegl
 !=============================================================================
 
@@ -653,7 +644,6 @@ end subroutine get_welegl
 subroutine get_welegl_axial(N,xi,wt,iflag)
 
   implicit none
-!
   integer, intent(in)           :: N       !< order of GLL quadrature formula
   integer, intent(in)           :: iflag   !< Selector for quadrature formulae proposed 
                                            !! by Bernardi et al.
@@ -670,7 +660,7 @@ subroutine get_welegl_axial(N,xi,wt,iflag)
 
   if (iflag == 2 ) then 
 
-     fact = 4.0 / dble(N*(N+2)) !four/(dble(N)*dble(N+2))
+     fact = 4d0 / dble(N*(N+2)) !four/(dble(N)*dble(N+2))
      do j = 0, N
         call vamnpo(N, xi(j), y, dy, d2y)
         wt(j) =  fact / (y*y)
@@ -687,7 +677,6 @@ subroutine get_welegl_axial(N,xi,wt,iflag)
 
   end if
 
-!----------------------  
 end subroutine get_welegl_axial
 !=============================================================================
 
@@ -739,19 +728,17 @@ subroutine vamnpo(n,x,y,dy,d2y)
     d2yp = d2ym
   end do
   
-!----------------------  
 end subroutine vamnpo
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Computes the weights relative to the Legendre Gauss-Lobatto formula
+!! n  = order of the formula
+!! et = Jacobi Gauss-Lobatto nodes, et(i), i=0,n
+!! vn = values of the legendre polynomial at the nodes, vn(i), i=0,n
+!! wt = vector of the weights, wt(i), i=0,n
 subroutine welegl(n,et,vn,wt)
-!**********************************************************************
-!   Computes the weights relative to the Legendre Gauss-Lobatto formula
-!   n  = order of the formula
-!   et = Jacobi Gauss-Lobatto nodes, et(i), i=0,n
-!   vn = values of the legendre polynomial at the nodes, vn(i), i=0,n
-!   wt = vector of the weights, wt(i), i=0,n
-!**********************************************************************
+
   implicit double precision (a-h,o-z)
   dimension et(0:*), vn(0:*), wt(0:*)
   
@@ -774,7 +761,6 @@ subroutine welegl(n,et,vn,wt)
   y = vn(n2+1)
   wt(n2+1) = c/(y*y)
 
-!----------------------  
 end subroutine welegl
 !=============================================================================
 
@@ -783,8 +769,6 @@ end subroutine welegl
 !! associated to the function defined by the n values ya at n distinct points
 !! xa. dy is the estimate of the error made on the interpolation.
 subroutine polint(xa,ya,n,x,y,dy)
-
-  implicit none
 
   integer ::  n
   double precision ::  dy,x,y,xa(n),ya(n)
@@ -830,10 +814,7 @@ subroutine polint(xa,ya,n,x,y,dy)
 
   end do
 
-!----------------------  
 end subroutine polint
 !----------------------------------------------------------------------------
-!
-!========================
+
 end module splib
-!========================
