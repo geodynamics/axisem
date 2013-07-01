@@ -339,48 +339,6 @@ end subroutine zemngl2
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!>   Computes the nodes relative to the pseudo-Gauss Radau
-!!   formula along the s-axis
-!!   Relies on computing the eigenvalues of tridiagonal matrix.
-!!   The nodes correspond to the third quadrature formula proposed
-!!   by Azaiez et al.  
-subroutine zemngr(n,et)
-
-  implicit double precision (a-h,o-z)
-  integer, intent(in)            :: n       !< Order of the formula
-  double precision, intent(out)  :: et(0:n) !< vector of the nodes, et(i), i=0,n.
-  double precision, dimension(n) :: d, e
-  integer                        :: i
-
-  if (n  ==  0) return
-
-  et(n) = 1.d0
-
-  ! Form the matrix diagonals and subdiagonals according to
-  ! formulae page 109 of Azaiez, Bernardi, Dauge and Maday.
-
-  do i = 1, n
-     !d(i) = -one/(four*(dble(i)-half)*(dble(i)+half))
-     d(i) = - 1d0 / (4d0 * dble(i*i) - 1d0)
-  end do
-
-  do i = 1, n-1
-     e(i+1) =   dsqrt(dble(i)*(dble(i)+one)) &
-                      /(two*(dble(i)+half))
-  end do
-
-  ! Compute eigenvalues
-  call tqli(d,e,n)
-
-  ! Sort them in increasing order
-  call order(d,e,n)
-
-  et(0:n-1) = e(1:n)
-
-end subroutine zemngr
-!=============================================================================
-
-!-----------------------------------------------------------------------------
 !> This routines returns the eigenvalues of the tridiagonal matrix 
 !! which diagonal and subdiagonal coefficients are contained in d(1:n) and
 !! e(2:n) respectively. e(1) is free. The eigenvalues are returned in array d
