@@ -13,7 +13,7 @@
 # 
 # ak135               AK135 (Isotropic, PREM attenuation)
 # ak135f              AK135 (Isotropic, own attenuation)
-# iasp91:             Isotropic IASP91 model with PREM density
+# iasp91:             Isotropic IASP91 model with PREM density and attenuation
 # external:           Layered external model, give file name in EXT_MODEL, the 
 #                     inner core needs to be big enough, check VTK output.
 

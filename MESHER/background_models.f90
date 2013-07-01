@@ -115,6 +115,8 @@ logical function model_is_anelastic(bkgrdmodel2)
     model_is_anelastic = .true.
   case('prem_light')
     model_is_anelastic = .true.
+  case('iasp91')
+    model_is_anelastic = .true.
   case default
     model_is_anelastic = .false.
   end select
@@ -1224,50 +1226,44 @@ double precision function iasp91_sub(r0, param, idom)
   integer, intent(in)             :: idom
   character(len=3), intent(in)    :: param !rho, vs,vp
   double precision                :: r, x
-  double precision                :: rho, vp, vs
+  double precision                :: rho, vp, vs, Qmu, Qkappa
   
-  double precision                :: RICB, RCMB, RTOPDDOUBLEPRIME, R771, R670, R400, R220
-  double precision                :: R120, RMOHO, RMIDDLE_CRUST, ROCEAN
+  double precision                :: REARTH
+  double precision                :: R120, RMOHO
   double precision                :: x1, x2
 
+  REARTH           = 6371000.
   ! compute real physical radius in meters
-
   r = r0
-  x = r / 6371000.     ! Radius (normalized to x(surface)=1 )
+  x = r / REARTH     ! Radius (normalized to x(surface)=1 )
 
 
   ! IASP91
-  ROCEAN           = 6371000.
-  RMIDDLE_CRUST    = 6351000.
   RMOHO            = 6336000.
   R120             = 6251000.
-  R220             = 6161000.
-  R400             = 5961000.
-  ! there is no d600 discontinuity in IASP91 therefore this value is useless
-  ! but it needs to be there for compatibility with other subroutines
-  ! MvD: comment does not make sense!
-  !    R600 = R_EARTH - 600000.d0
-  R670             = 5711000.
-  R771             = 5611000.
-  RTOPDDOUBLEPRIME = 3631000.
-  RCMB             = 3482000.
-  RICB             = 1217000.
 
-  x1 = R120 / ROCEAN
-  x2 = RMOHO / ROCEAN
+  x1 = R120 / REARTH
+  x2 = RMOHO / REARTH
 
   if(idom==1)then ! upper crust 
      vp  = 5.8
      vs  = 3.36
      rho = 2.72
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==2)then ! lower crust
      vp  = 6.5
      vs  = 3.75
      rho = 2.92
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==3)then ! R120 < r <= RMOHO
      vp = 8.78541 - 0.74953  * x
      vs = 6.706231- 2.248585 * x
      rho = 3.3713 + (3.3198 - 3.3713) * (x - x1) / (x2 - x1)
+     Qmu = 600.0
+     Qkappa = 57827.0
+     
      ! MvD: keeping this test for old bug [18]
      if(rho < 3.319 .or. rho > 3.372) then 
         write(6,*) R120 / 1000., RMOHO / 1000.
@@ -1286,34 +1282,50 @@ double precision function iasp91_sub(r0, param, idom)
      rho =  2.6910  +  0.6924  * x
      vp  = 25.41389 - 17.69722 * x
      vs  =  5.75020 -  1.2742  * x
+     Qmu = 600.0
+     Qkappa = 57827.0
   elseif(idom==5)then ! R400 < r <= R220
      rho =  7.1089  -  3.8045  * x
      vp  = 30.78765 - 23.25415 * x
      vs  = 15.24213 - 11.08552 * x
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==6)then ! R670 < r <= R400
      rho =  5.3197  -  1.4836  * x
      vp  = 29.38896 - 21.40656 * x
      vs  = 17.70732 - 13.50652 * x
+     Qmu = 143.0
+     Qkappa = 57827.0
   elseif(idom==7)then ! R771 < r <= R670
      rho =  7.9565  -  6.4761  *x + 5.5283 * x**2 - 3.0807 * x**3
      vp  = 25.96984 - 16.93412 *x 
      vs  = 20.76890 - 16.53147 *x 
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==8)then ! RTOPDDOUBLEPRIME < r <= R771
      rho =  7.9565 -  6.4761 * x +  5.5283 * x**2 -  3.0807 * x**3
      vp  = 25.1486 - 41.1538 * x + 51.9932 * x**2 - 26.6083 * x**3
      vs  = 12.9303 - 21.2590 * x + 27.8988 * x**2 - 14.1080 * x**3
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==9)then ! RCMB < r <= RTOPDDOUBLEPRIME
      rho =  7.9565  - 6.4761  * x + 5.5283 * x**2 - 3.0807 * x**3
      vp  = 14.49470 - 1.47089 * x 
      vs  =  8.16616 - 1.58206 * x 
+     Qmu = 312.0
+     Qkappa = 57827.0
   elseif(idom==10)then ! RICB < r <= RCMB
      rho = 12.5815  - 1.2638  * x -  3.6426  *x **2 - 5.5281 * x**3
      vp  = 10.03904 + 3.75665 * x - 13.67046 *x **2 
      vs  =  0.0
+     Qmu = 0.0
+     Qkappa = 57827.0
   elseif(idom==11)then ! 0. < r <= RICB
      rho = 13.0885  - 8.8381  * x**2
      vp  = 11.24094 - 4.09689 * x**2
      vs  =  3.56454 - 3.45241 * x**2
+     Qmu = 84.6
+     Qkappa = 1327.7
   else
      write(6,*) 'iasp91_sub: error with domain idom=', idom
      stop
@@ -1335,6 +1347,10 @@ double precision function iasp91_sub(r0, param, idom)
      iasp91_sub = vs * 1000.
   elseif (param=='eta') then
      iasp91_sub = 1.
+  elseif (param=='Qmu') then
+     iasp91_sub = Qmu
+  elseif (param=='Qka') then
+     iasp91_sub = Qkappa
   else
      write(6,*)'ERROR IN IASP91_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
