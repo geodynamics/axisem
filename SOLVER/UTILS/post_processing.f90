@@ -1798,36 +1798,30 @@ subroutine construct_surface_cubed_sphere(npts_surf,npts,rsurf,ind_proc_surf,ind
 ! We therefore want nang=.5*(npts_surf) if npts_surf is even
 !
 !use data_all
-implicit none
-
-integer, intent(in) :: npts_surf,npts,nptstot,n
-double precision, intent(in) :: rsurf,dphi,phi0
-character(len=7), intent(in) :: in_or_out
-integer, dimension(1:npts_surf), intent(in) :: ind_proc_surf,ind_pts_surf
-double precision, dimension(nptstot,2), intent(in) :: coord1
-double precision, dimension(1:n), intent(out) :: xsurf,ysurf,zsurf,azi_phi_surf
-integer, dimension(1:n), intent(out) :: azi_ind_surf
-integer, intent(out) :: kpts
-
-double precision, allocatable,dimension(:) :: xi_el,eta_el,r_el
-integer, allocatable, dimension(:,:,:,:) :: number_el
-double precision, allocatable,dimension(:) :: wt_i,xi_i,xi_j,wt_j,wt_k,dxi,dxk,xi_k
-double precision, allocatable,dimension(:,:,:,:) :: xcol,ycol,zcol
-double precision, allocatable,dimension(:,:,:,:) :: x_el,y_el,z_el
-double precision :: dang,C,D,re,ri,teta,tksi,tr,Xe,Ye,delta
-integer :: npol_cs,ii,iii,izone,nang,nelt,nr,nrpol,iel,nel_surf,jj,ipol,jpol,kpol,j,i
-double precision ::  dist,r_ref,th_ref,th,dr,r,xc,yc,zc,ph
-double precision, parameter :: pi = 3.1415926535898
+    implicit none
+    
+    integer, intent(in) :: npts_surf,npts,nptstot,n
+    double precision, intent(in) :: rsurf,dphi,phi0
+    character(len=7), intent(in) :: in_or_out
+    integer, dimension(1:npts_surf), intent(in) :: ind_proc_surf,ind_pts_surf
+    double precision, dimension(nptstot,2), intent(in) :: coord1
+    double precision, dimension(1:n), intent(out) :: xsurf,ysurf,zsurf,azi_phi_surf
+    integer, dimension(1:n), intent(out) :: azi_ind_surf
+    integer, intent(out) :: kpts
+    
+    double precision, allocatable,dimension(:) :: xi_el,eta_el,r_el
+    integer, allocatable, dimension(:,:,:,:) :: number_el
+    double precision, allocatable,dimension(:) :: xi_i,xi_j,xi_k
+    double precision, allocatable,dimension(:,:,:,:) :: xcol,ycol,zcol
+    double precision, allocatable,dimension(:,:,:,:) :: x_el,y_el,z_el
+    double precision :: dang,C,D,re,ri,teta,tksi,tr,Xe,Ye,delta
+    integer :: npol_cs,ii,iii,izone,nang,nelt,nr,nrpol,iel,nel_surf,jj,ipol,jpol,kpol,j,i
+    double precision ::  dist,r_ref,th_ref,th,dr,r,xc,yc,zc,ph
+    double precision, parameter :: pi = 3.1415926535898
 
     write(6,*)'computing cubed sphere for surface at r=',rsurf
     write(6,*)'pts surf,total:',npts_surf,npts
 
-!     if (mod(npts_surf,4)==0) nang=npts_surf/4
-!     if (mod(npts_surf,4)==1) nang=(npts_surf-1)/4
-!     if (mod(npts_surf,4)==2) nang=(npts_surf-2)/4
-!     if (mod(npts_surf,4)==3) nang=(npts_surf-3)/4
-
-!     nang=floor(real(npts_surf)/2.)
     nang=floor(sqrt(real(n))/6./2.)
     write(6,*)'naang,nang,npts_surf:',n,nang,npts_surf
 
@@ -1847,143 +1841,99 @@ double precision, parameter :: pi = 3.1415926535898
      do i=0,nr
       r_el(i)=ri+dr*dble(i)
      enddo
-!     write(6,*)'allocating element coords...'
      allocate(x_el(0:nang,0:nang,0:nr,1:6))
      allocate(y_el(0:nang,0:nang,0:nr,1:6))
      allocate(z_el(0:nang,0:nang,0:nr,1:6))
      x_el = 0.d0; y_el=0.d0; z_el = 0.d0
      allocate(number_el(0:nang,0:nang,0:nr,1:6))
      number_el = 0
-!     The mapping is defined following Emmanuel Chaljub (PhD thesis, 2000).
-!     write(6,*)'defining element coords...'
-!!$     do iii=0,nr    ! loop over r
-!!$      do ii=0,nang  ! loop over eta
-!!$       do i=0,nang  ! loop over xi
-!!$        Xe=dtan(xi_el(i))
-!!$        Ye=dtan(eta_el(ii))
-!!$        delta=1.d0+Xe**2+Ye**2
-!!$!        zone 1
-!!$        x_el(i,ii,iii,1)=r_el(iii)*delta**(-0.5d0)
-!!$        y_el(i,ii,iii,1)=r_el(iii)*Xe*delta**(-0.5d0)
-!!$        z_el(i,ii,iii,1)=r_el(iii)*Ye*delta**(-0.5d0)
-!!$!        zone 2
-!!$        x_el(i,ii,iii,2)=-r_el(iii)*Xe*delta**(-0.5d0)
-!!$        y_el(i,ii,iii,2)=r_el(iii)*delta**(-0.5d0)
-!!$        z_el(i,ii,iii,2)=r_el(iii)*Ye*delta**(-0.5d0)
-!!$!        zone 3
-!!$        x_el(i,ii,iii,3)=-r_el(iii)*delta**(-0.5d0)
-!!$        y_el(i,ii,iii,3)=-r_el(iii)*Xe*delta**(-0.5d0)
-!!$        z_el(i,ii,iii,3)=r_el(iii)*Ye*delta**(-0.5d0)
-!!$!        zone 4
-!!$        x_el(i,ii,iii,4)=r_el(iii)*Xe*delta**(-0.5d0)
-!!$        y_el(i,ii,iii,4)=-r_el(iii)*delta**(-0.5d0)
-!!$        z_el(i,ii,iii,4)=r_el(iii)*Ye*delta**(-0.5d0)
-!!$!        zone 5
-!!$        x_el(i,ii,iii,5)=-r_el(iii)*Ye*delta**(-0.5d0)
-!!$        y_el(i,ii,iii,5)=r_el(iii)*Xe*delta**(-0.5d0)
-!!$        z_el(i,ii,iii,5)=r_el(iii)*delta**(-0.5d0)
-!!$!        zone 6
-!!$        x_el(i,ii,iii,6)=r_el(iii)*Ye*delta**(-0.5d0)
-!!$        y_el(i,ii,iii,6)=r_el(iii)*Xe*delta**(-0.5d0)
-!!$        z_el(i,ii,iii,6)=-r_el(iii)*delta**(-0.5d0)
-!!$       enddo
-!!$      enddo
-!!$     enddo
-     !write(6,*)' element global numbering (lexicographical ordering)'
      do izone = 1, 6
-     do iii=0,nr-1     ! loop over  r
-      do ii=0,nang-1   ! loop over eta
-       do i=0,nang-1   ! loop over ksi
-        number_el(i,ii,iii,izone) = (izone-1)*(nang*nang*nr)+&
-                              iii*(nang*nang)+((ii*nang)+i+1)
-       end do
-      end do
-     end do
+        do iii=0,nr-1     ! loop over  r
+            do ii=0,nang-1   ! loop over eta
+                do i=0,nang-1   ! loop over ksi
+                 number_el(i,ii,iii,izone) = (izone-1)*(nang*nang*nr)+&
+                                       iii*(nang*nang)+((ii*nang)+i+1)
+                end do
+            end do
+        end do
      end do
      nelt = maxval(number_el)
      nrpol=1
      npol_cs=1
      allocate(xi_i(0:npol_cs),xi_j(0:npol_cs),xi_k(0:nrpol))
-     allocate(wt_i(0:npol_cs),wt_j(0:npol_cs),wt_k(0:nrpol))
-!
-!     dummies needed by spectral library
-     allocate(dxi(0:npol_cs),dxk(0:nrpol))
-!
-     call ZELEGL(npol_cs,xi_i,dxi)
-     call get_welegl(npol_cs,xi_i,wt_i)
-!     xi_i -> npol_cs+1 pts de quadrature pour l'ordre ploynomial npol_cs
-     call ZELEGL(npol_cs,xi_j,dxi)
-     call get_welegl(npol_cs,xi_j,wt_j)
-     call ZELEGL(nrpol,xi_k,dxk)
-     call get_welegl(nrpol,xi_k,wt_k)
-!     get rid of dummies
-     deallocate(dxk,dxi)
-     write(6,*)'Now define collocation points for the SEM-cubed sphere grid'
-      allocate(xcol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
-      allocate(ycol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
-      allocate(zcol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
-      kpts=0
-      nel_surf=0
 
-      write(6,*)'ZONE NANG:',nr,nang,npol_cs,nelt
-      write(6,*)'ZONE NANG 2 nel_surf:',6*nr*nang**2
-      
-      do izone=1,6         ! loop over the chunks
-!         write(6,*)'working on chunk',izone
-       do iii=0,nr-1       ! loop over r   (the global r)
-        do ii=0,nang-1     ! loop over eta (the global eta)
-         do i=0,nang-1     ! loop over xi  (the global xi)
-          iel = number_el(i,ii,iii,izone)
-          nel_surf=nel_surf+1
-          do kpol = 0, 0 ! TNM nrpol  ! loop over the elemental k index (r direction)
-           do jpol = 0, npol_cs  ! loop over the elemental j index (eta direction)
-            do ipol = 0, npol_cs ! loop over the elemental i index (xi direction)
-             tksi= xi_el(  i) +(1.d0+ xi_i(ipol))*.5d0*dang
-             teta=eta_el( ii) +(1.d0 + xi_j(jpol))*.5d0*dang
-             tr=    r_el(iii) +(1.d0 + xi_k(kpol))*.5d0*dr
-             Xe=tan(tksi)
-             Ye=tan(teta)
-             C=(1.d0+Xe**2)**(0.5d0)
-             D=(1.d0+Ye**2)**(0.5d0)
-             delta=1.d0+Xe**2+Ye**2
-             kpts=kpts+1
-             if(izone==1) then
-              Xcol(ipol,jpol,kpol,iel)=tr*delta**(-0.5d0)
-              Ycol(ipol,jpol,kpol,iel)=tr*Xe*delta**(-0.5d0)
-              Zcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
-             endif
-             if(izone==2) then
-              Xcol(ipol,jpol,kpol,iel)=-tr*Xe*delta**(-0.5d0)
-              Ycol(ipol,jpol,kpol,iel)=tr*delta**(-0.5d0)
-              Zcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
-             endif
-             if(izone==3) then
-              Xcol(ipol,jpol,kpol,iel)=-tr*delta**(-0.5d0)
-              Ycol(ipol,jpol,kpol,iel)=-tr*Xe*delta**(-0.5d0)
-              Zcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
-             endif
-             if(izone==4) then
-              Xcol(ipol,jpol,kpol,iel)=tr*Xe*delta**(-0.5d0)
-              Ycol(ipol,jpol,kpol,iel)=-tr*delta**(-0.5d0)
-              Zcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
-             endif
-             if(izone==5) then
-              Xcol(ipol,jpol,kpol,iel)=-tr*Ye*delta**(-0.5d0)
-              Ycol(ipol,jpol,kpol,iel)=tr*Xe*delta**(-0.5d0)
-              Zcol(ipol,jpol,kpol,iel)=tr*delta**(-0.5d0)
-             endif
-             if(izone==6) then
-              Xcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
-              Ycol(ipol,jpol,kpol,iel)=tr*Xe*delta**(-0.5d0)
-              Zcol(ipol,jpol,kpol,iel)=-tr*delta**(-0.5d0)
-             endif
-            end do
+     xi_i(0) = -1
+     xi_i(1) = 1
+     xi_j(0) = -1
+     xi_j(1) = 1
+     xi_k(0) = -1
+     xi_k(1) = 1
+
+     write(6,*)'Now define collocation points for the SEM-cubed sphere grid'
+     allocate(xcol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
+     allocate(ycol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
+     allocate(zcol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
+     kpts=0
+     nel_surf=0
+
+     write(6,*)'ZONE NANG:',nr,nang,npol_cs,nelt
+     write(6,*)'ZONE NANG 2 nel_surf:',6*nr*nang**2
+     
+     do izone=1,6         ! loop over the chunks
+      do iii=0,nr-1       ! loop over r   (the global r)
+       do ii=0,nang-1     ! loop over eta (the global eta)
+        do i=0,nang-1     ! loop over xi  (the global xi)
+         iel = number_el(i,ii,iii,izone)
+         nel_surf=nel_surf+1
+         do kpol = 0, 0 ! TNM nrpol  ! loop over the elemental k index (r direction)
+          do jpol = 0, npol_cs  ! loop over the elemental j index (eta direction)
+           do ipol = 0, npol_cs ! loop over the elemental i index (xi direction)
+            tksi= xi_el(  i) +(1.d0+ xi_i(ipol))*.5d0*dang
+            teta=eta_el( ii) +(1.d0 + xi_j(jpol))*.5d0*dang
+            tr=    r_el(iii) +(1.d0 + xi_k(kpol))*.5d0*dr
+            Xe=tan(tksi)
+            Ye=tan(teta)
+            C=(1.d0+Xe**2)**(0.5d0)
+            D=(1.d0+Ye**2)**(0.5d0)
+            delta=1.d0+Xe**2+Ye**2
+            kpts=kpts+1
+            if(izone==1) then
+             Xcol(ipol,jpol,kpol,iel)=tr*delta**(-0.5d0)
+             Ycol(ipol,jpol,kpol,iel)=tr*Xe*delta**(-0.5d0)
+             Zcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
+            endif
+            if(izone==2) then
+             Xcol(ipol,jpol,kpol,iel)=-tr*Xe*delta**(-0.5d0)
+             Ycol(ipol,jpol,kpol,iel)=tr*delta**(-0.5d0)
+             Zcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
+            endif
+            if(izone==3) then
+             Xcol(ipol,jpol,kpol,iel)=-tr*delta**(-0.5d0)
+             Ycol(ipol,jpol,kpol,iel)=-tr*Xe*delta**(-0.5d0)
+             Zcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
+            endif
+            if(izone==4) then
+             Xcol(ipol,jpol,kpol,iel)=tr*Xe*delta**(-0.5d0)
+             Ycol(ipol,jpol,kpol,iel)=-tr*delta**(-0.5d0)
+             Zcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
+            endif
+            if(izone==5) then
+             Xcol(ipol,jpol,kpol,iel)=-tr*Ye*delta**(-0.5d0)
+             Ycol(ipol,jpol,kpol,iel)=tr*Xe*delta**(-0.5d0)
+             Zcol(ipol,jpol,kpol,iel)=tr*delta**(-0.5d0)
+            endif
+            if(izone==6) then
+             Xcol(ipol,jpol,kpol,iel)=tr*Ye*delta**(-0.5d0)
+             Ycol(ipol,jpol,kpol,iel)=tr*Xe*delta**(-0.5d0)
+             Zcol(ipol,jpol,kpol,iel)=-tr*delta**(-0.5d0)
+            endif
            end do
           end do
          end do
         end do
        end do
       end do
+     end do
 !     At this stage we know Xcol, Ycol, Zcol for the cubed sphere
 !     These arrays are four dimensional (ipol,jpol,kpol,iel)
 !     Their knowledge suffice to define the vtk output that will properly take
@@ -1992,11 +1942,8 @@ double precision, parameter :: pi = 3.1415926535898
 
       write(6,*)'number of surface pts,elems,tot pts:',npts_surf,nel_surf,kpts
       write(6,*)'max ind_proc, ind_pts:',maxval(ind_proc_surf),maxval(ind_pts_surf)
-!      allocate(xsurf(1:kpts),ysurf(1:kpts),zsurf(1:kpts))
       write(6,*)size(xsurf)
       xsurf=0.d0; ysurf=0.;zsurf=0.d0
-!      write(6,*)'allocating azi ind phi...'
-!      allocate(azi_ind_surf(1:kpts),azi_phi_surf(1:kpts))
       iii=0
       write(6,*)'constructing 1d array for surface coordinates...'
       do iel=1,nel_surf
@@ -2289,226 +2236,6 @@ real function prem(r0,param)
 end function prem
 !-------------------------------------------------------------------------------
 
-!-------------------------------------------------------------------------------
-subroutine get_welegl(N,xi,wt)
-  !	
-  !	This routine computes the N+1 weights associated with the
-  ! Gauss-Lobatto-Legendre quadrature formula of order N.
-  !
-
-  use global_par
-  implicit none
-
-  integer :: N
-  double precision ::  xi(0:N),wt(0:N)
-  integer :: j
-  double precision :: y,dy,d2y,fact 
-
-  fact = two/(dble(N)*dble(N+1))
-
-  wt(:) = zero
-
-  do j = 0, N
-     call VALEPO(N,xi(j),y,dy,d2y)
-     wt(j) =  fact*y**(-2)
-  end do
-
-end subroutine get_welegl
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-subroutine get_welegl_axial(N,xi,wt,iflag)
-  !
-  !       This routine computes the N+1 weights associated with the
-  !Gauss-Lobatto-Legendre quadrature formula of order N that one 
-  !to apply for elements having a non-zero intersection with the
-  !axis of symmetry of the Earth.
-  !
-  !
-  ! iflag = 2 : Second  quadrature formula proposed by Bernardi et al.
-  !             Formula : (VI.1.12), page 104             
-  ! iflag = 3 : Third   quadrature formula proposed by Bernardi et al.
-  !             Formula : (VI.1.20), page 107            
-  !
-
-  use global_par
-
-  implicit none
-
-  integer :: N,iflag
-  double precision ::  xi(0:N),wt(0:N)
-  integer :: j
-  double precision :: y,dy,d2y,fact
-
-  wt(:) = zero
-
-  if (iflag == 2 ) then 
-
-     fact = four/(dble(N)*dble(N+2))
-     do j = 0, N
-        call vamnpo(N,xi(j),y,dy,d2y)
-        wt(j) =  fact*y**(-2)
-        if (j == 0) wt(j) = two*wt(j)
-     end do
-
-  elseif ( iflag == 3 ) then 
-
-     fact = one/(dble(N+1)*dble(N+1))
-     do j = 0, N
-        call valepo(N,xi(j),y,dy,d2y)
-        wt(j) = (fact*(1+xi(j))**2)*y**(-2)
-     end do  
-
-  end if
-
-end subroutine get_welegl_axial
-!-------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------
-subroutine zelegl(n,et,vn)
-  !********************************************************************
-  !   COMPUTES THE NODES RELATIVE TO THE LEGENDRE GAUSS-LOBATTO FORMULA
-  !   N  = ORDER OF THE FORMULA
-  !   ET = VECTOR OF THE NODES, ET(I), I=0,N
-  !   VN = VALUES OF THE LEGENDRE POLYNOMIAL AT THE NODES, VN(I), I=0,N
-  !********************************************************************
-  use global_par
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-  DIMENSION ET(0:*), VN(0:*)
-  IF (N  ==  0) RETURN
-
-     N2 = (N-1)/2
-     SN = DFLOAT(2*N-4*N2-3)
-     ET(0) = -1.D0
-     ET(N) = 1.D0
-     VN(0) = SN
-     VN(N) = 1.D0
-  IF (N  ==  1) RETURN
-
-     ET(N2+1) = 0.D0
-     X = 0.D0
-  CALL VALEPO(N,X,Y,DY,D2Y)
-     VN(N2+1) = Y
-  IF(N  ==  2) RETURN
-
-     C  = PI/DFLOAT(N)
-  DO 1 I=1,N2
-     ETX = DCOS(C*DFLOAT(I))
-  DO 2 IT=1,8
-  CALL VALEPO(N,ETX,Y,DY,D2Y)
-     ETX = ETX-DY/D2Y
-2 CONTINUE   
-     ET(I) = -ETX
-     ET(N-I) = ETX
-     VN(I) = Y*SN
-     VN(N-I) = Y
-1 CONTINUE   
-
-  RETURN     
-end subroutine zelegl
-!--------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------
-subroutine valepo(n,x,y,dy,d2y)
-  !*************************************************************
-  !   COMPUTES THE VALUE OF THE LEGENDRE POLYNOMIAL OF DEGREE N
-  !   AND ITS FIRST AND SECOND DERIVATIVES AT A GIVEN POINT
-  !   N  = DEGREE OF THE POLYNOMIAL
-  !   X  = POINT IN WHICH THE COMPUTATION IS PERFORMED
-  !   Y  = VALUE OF THE POLYNOMIAL IN X
-  !   DY = VALUE OF THE FIRST DERIVATIVE IN X
-  !   D2Y= VALUE OF THE SECOND DERIVATIVE IN X
-  !*************************************************************
-  use global_par
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-
-   Y   = 1.D0
-   DY  = 0.D0
-   D2Y = 0.D0
-  IF (N  ==  0) RETURN
-
-   Y   = X
-   DY  = 1.D0
-   D2Y = 0.D0
-  IF(N  ==  1) RETURN
-
-   YP   = 1.D0
-   DYP  = 0.D0
-   D2YP = 0.D0
-  DO 1 I=2,N
-   C1 = DFLOAT(I)
-   C2 = 2.D0*C1-1.D0
-   C4 = C1-1.D0
-   YM = Y
-   Y  = (C2*X*Y-C4*YP)/C1
-   YP = YM
-   DYM  = DY
-   DY   = (C2*X*DY-C4*DYP+C2*YP)/C1
-   DYP  = DYM
-   D2YM = D2Y
-   D2Y  = (C2*X*D2Y-C4*D2YP+2.D0*C2*DYP)/C1
-   D2YP = D2YM
-  1     CONTINUE
-
-  RETURN
-        
-end subroutine valepo
-!--------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------
-subroutine vamnpo(n,x,y,dy,d2y)
-  !*************************************************************
-  !   COMPUTES THE VALUE OF the "cylindrical" polynomial
-  !   M_n = (L_n + L_{n+1})/(1+x) OF DEGREE N
-  !   AND ITS FIRST AND SECOND DERIVATIVES AT A GIVEN POINT
-  !   N  = DEGREE OF THE POLYNOMIAL 
-  !   X  = POINT IN WHICH THE COMPUTATION IS PERFORMED
-  !   Y  = VALUE OF THE POLYNOMIAL IN X
-  !   DY = VALUE OF THE FIRST DERIVATIVE IN X
-  !   D2Y= VALUE OF THE SECOND DERIVATIVE IN X
-  !
-  !   Implemented after Bernardi et al., page 57, eq. (III.1.10)
-  ! 
-  !*************************************************************
-  use global_par
-  IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-  
-   Y   = 1.D0
-   DY  = 0.D0
-   D2Y = 0.D0
-  IF (N  ==  0) RETURN
-
-   Y   = half*(three*X-one)
-   DY  = half*three
-   D2Y = 0.D0
-  IF(N  ==  1) RETURN
-
-   YP   = 1.D0
-   DYP  = 0.D0
-   D2YP = 0.D0
-  do i=2,N
-      C1 = dble(I-1)
-      YM = Y
-       Y = (X-one/((2*C1+one)*(2*C1+three)) ) * Y &
-          - (C1/(two*C1+one))*YP
-       Y = (two*C1+three)*Y/(c1+two)
-      YP = YM
-     DYM = DY
-      DY = (X-one/((2*C1+one)*(2*C1+three)) ) * DY &
-           +YP - (C1/(two*C1+one))*DYP
-      DY = (two*C1+three)*DY/(c1+two)
-     DYP = DYM
-    D2YM = D2Y
-    D2y  = two*dyp + (X-one/((2*C1+one)*(2*C1+three)) ) * D2Y &
-           - (C1/(two*C1+one))*D2YP
-    D2Y  = (two*C1+three)*D2Y/(c1+two)
-    D2YP = D2YM
-  end do
-
-  RETURN
-end subroutine vamnpo
-!--------------------------------------------------------------------------
-
 !-------------------------------------------------------------------------
 subroutine xyz2rthetaphi(r,theta,phi,x,y,z)
   use global_par
@@ -2521,24 +2248,24 @@ subroutine xyz2rthetaphi(r,theta,phi,x,y,z)
   r = dsqrt(x**2+y**2+z**2)
   theta = .5d0*pi-dasin(z/r)
   if (y>0) then
-   if (x>0) then
-    phi = datan(y/(x+1.e-20))
-   else
-    phi = pi+datan(y/(x+1.e-20))
-   endif
+    if (x>0) then
+      phi = datan(y/(x+1.e-20))
+    else
+      phi = pi+datan(y/(x+1.e-20))
+    endif
   else
-   if (x>0) then
-    phi = 2*pi+datan(y/(x+1.e-20))
-   else
-    phi = pi+datan(y/(x+1.e-20))
-   end if
+    if (x>0) then
+      phi = 2*pi+datan(y/(x+1.e-20))
+    else
+      phi = pi+datan(y/(x+1.e-20))
+    end if
   end if
-  if (abs(x)<1.e-20) then
-   if(y>0.d0) then
-    phi = .5d0*pi
-   else
-    phi = 1.5d0*pi
-   end if
+   if (abs(x)<1.e-20) then
+     if(y>0.d0) then
+       phi = .5d0*pi
+     else
+       phi = 1.5d0*pi
+    end if
   endif
 end subroutine xyz2rthetaphi
 !--------------------------------------------------------------------------
