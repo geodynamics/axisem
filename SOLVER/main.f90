@@ -21,7 +21,7 @@ program axisem
   call set_ftz() ! ftz.c, set flush to zero
   call pinit ! commun
   call read_inparam_basic_verbosity ! parameters
-  if (lpr .and. verbose >= 1) write(6,'(a/)') ' MAIN: Welcome to AxiSEM!'
+  if (lpr .and. verbose >= 1) write(6,'(/,a,/)') ' MAIN: Welcome to AxiSEM!'
 
   call define_io_appendix(appmynum,mynum)
   call define_io_appendix(appnproc,nproc)

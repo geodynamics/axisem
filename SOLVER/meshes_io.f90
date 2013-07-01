@@ -1,12 +1,9 @@
-!=========================
+!> This module contains routines that compute and dump the respective meshes
+!! underlying the actual wavefields to be dumped in the time loop
+!! which is done in wavefields_io. This module needs pre-loop variables such
+!! as mesh coordinates and is therefore cut off from the dumping module.
 module meshes_io
-!=========================
-  !
-  ! This module contains routines that compute and dump the respective meshes
-  ! underlying the actual wavefields to be dumped in the time loop
-  ! which is done in wavefields_io. This module needs pre-loop variables such
-  ! as mesh coordinates and is therefore cut off from the dumping module.
-  !
+
   use global_parameters
   use data_mesh
   use data_mesh_preloop, ONLY : ielsolid, ielfluid
@@ -30,16 +27,13 @@ module meshes_io
 contains
 
 !-----------------------------------------------------------------------------
+!> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize global 
+!! snapshots, and additionally the constant factors preceding the displacement
+!! in the fluid, namely rho^{-1} and (rho s)^{-1}.
+!! When reading the fluid wavefield, one therefore needs to multiply all 
+!! components with inv_rho_fluid and the phi component with one/scoord!
+!! Convention for order in the file: First the fluid, then the solid domain.
 subroutine dump_glob_grid_midpoint(ibeg,iend,jbeg,jend)
-  !
-  ! Dumps the mesh (s,z) [m] in ASCII format as needed to visualize global 
-  ! snapshots, and additionally the constant factors preceding the displacement
-  ! in the fluid, namely rho^{-1} and (rho s)^{-1}.
-  ! When reading the fluid wavefield, one therefore needs to multiply all 
-  ! components with inv_rho_fluid and the phi component with one/scoord!
-  ! Convention for order in the file: First the fluid, then the solid domain.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_pointwise, ONLY : inv_rho_fluid
   
@@ -60,17 +54,17 @@ subroutine dump_glob_grid_midpoint(ibeg,iend,jbeg,jend)
            do ipol=0,npol,npol/2
 
            if ( axis_fluid(iel) .and. ipol==0 ) then
-!       Axis s=0! write 1 instead of 1/s and then multiply
-!       with the correct factor dsdchi, obtained by L'Hospital's rule
-!       (see routine glob_snapshot in wavefields_io).
-                 write(26000+mynum,*)inv_rho_fluid(ipol,jpol,iel),one
-              else
-                 write(26000+mynum,*)inv_rho_fluid(ipol,jpol,iel), &
-                                     one/scoord(ipol,jpol,ielfluid(iel))
-              endif
+               ! Axis s=0! write 1 instead of 1/s and then multiply
+               ! with the correct factor dsdchi, obtained by L'Hospital's rule
+               ! (see routine glob_snapshot in wavefields_io).
+               write(26000+mynum,*)inv_rho_fluid(ipol,jpol,iel),one
+           else
+               write(26000+mynum,*)inv_rho_fluid(ipol,jpol,iel), &
+                                   one/scoord(ipol,jpol,ielfluid(iel))
+           endif
 
-              write(25000+mynum,*)scoord(ipol,jpol,ielfluid(iel)), &
-                                  zcoord(ipol,jpol,ielfluid(iel))
+           write(25000+mynum,*)scoord(ipol,jpol,ielfluid(iel)), &
+                               zcoord(ipol,jpol,ielfluid(iel))
            enddo
         enddo
      enddo
@@ -92,298 +86,299 @@ end subroutine dump_glob_grid_midpoint
 
 !-----------------------------------------------------------------------------
 subroutine dump_xdmf_grid()
-use nc_routines,      only: nc_dump_snap_points, nc_dump_snap_grid, nc_make_snapfile
-use data_numbering
 
-    integer              :: iel, ipol, jpol, ipol1, jpol1, i, j, ct, ipt, idest
-    real(4), allocatable :: points(:,:)
-    integer, allocatable :: grid(:,:), mapping(:)
-    logical, allocatable :: check(:), mask_tp_elem(:)
-    character(len=120)   :: fname
-    double precision     :: rmin, rmax, thetamin, thetamax
-    
-    inquire(file="inparam_xdmf", EXIST=file_exists)
+  use nc_routines,      only: nc_dump_snap_points, nc_dump_snap_grid, nc_make_snapfile
+  use data_numbering
 
-    if (.not. file_exists) then 
-       write(6,*) ''
-       write(6,*) 'ERROR: xdmf output set in inparam, but'
-       write(6,*) '       inparam_xdmf does not exist!'
-       stop
-    endif
-
-    open(unit=91, file='inparam_xdmf')
-
-    read(91,*) rmin, rmax
-    read(91,*) thetamin, thetamax
-
-    rmin = rmin * 1000
-    rmax = rmax * 1000
-    
-    thetamin = thetamin * pi / 180.
-    thetamax = thetamax * pi / 180.
-    
-    read(91,*) i_n_xdmf
-    allocate(i_arr_xdmf(1:i_n_xdmf))
-    read(91,*) i_arr_xdmf
-    
-    read(91,*) j_n_xdmf
-    allocate(j_arr_xdmf(1:j_n_xdmf))
-    read(91,*) j_arr_xdmf
-
-    close(91)
-
-    allocate(mask_tp_elem(nelem))
-    mask_tp_elem = .false.
-
-    ct = 0
-
-    do iel=1, nel_fluid
-        if (min(min(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
-                min(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) < rmax &
-            .and. &
-            max(max(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
-                max(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) > rmin &
-            .and. &
-            min(min(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
-                min(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) < thetamax &
-            .and. &
-            max(max(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
-                max(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) > thetamin) &
-            then        
-            ct = ct + 1
-            mask_tp_elem(iel) = .true.
-        endif
-    enddo
-    
-    do iel=1, nel_solid
-        if (min(min(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
-                min(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) < rmax &
-            .and. &
-            max(max(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
-                max(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) > rmin &
-            .and. &
-            min(min(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
-                min(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) < thetamax &
-            .and. &
-            max(max(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
-                max(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) > thetamin) &
-            then        
-            ct = ct + 1
-            mask_tp_elem(iel + nel_fluid) = .true.
-        endif
-    enddo
-    
-    nelem_plot = ct * (i_n_xdmf - 1) * (j_n_xdmf - 1)
-
-    allocate(check(nglob_fluid + nglob_solid))
-    allocate(mapping(nglob_fluid + nglob_solid))
-    allocate(mapping_ijel_iplot(i_n_xdmf, j_n_xdmf, nelem))
-    allocate(plotting_mask(i_n_xdmf, j_n_xdmf, nelem))
-    
-    check = .false.
-    plotting_mask = .false.
-    
-    ct = 0
-
-    if (lpr) write(6,*) '   construction of mapping for xdmf plotting...'
-    if (lpr) write(6,*) '   ...fluid part...'
-
-    do iel=1, nel_fluid
-        if (.not.  mask_tp_elem(iel)) cycle
-        do i=1, i_n_xdmf
-            ipol = i_arr_xdmf(i)
-            do j=1, j_n_xdmf
-                jpol = j_arr_xdmf(j)
-               
-                ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-                idest = igloc_fluid(ipt)
-                
-                if (.not. check(idest)) then
-                    ct = ct + 1
-                    check(idest) = .true.
-                    mapping(idest) = ct
-                    plotting_mask(i,j,iel) = .true.
-                endif
-                mapping_ijel_iplot(i,j,iel) = mapping(idest)
-            enddo
-        enddo
-    enddo
-    
-    if (lpr) write(6,*) '   ...solid part...'
-    
-    do iel=1, nel_solid
-        if (.not.  mask_tp_elem(iel + nel_fluid)) cycle
-        do i=1, i_n_xdmf
-            ipol = i_arr_xdmf(i)
-            do j=1, j_n_xdmf
-                jpol = j_arr_xdmf(j)
-               
-                ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-                idest = igloc_solid(ipt) + nglob_fluid
-                
-                if (.not. check(idest)) then
-                    ct = ct + 1
-                    check(idest) = .true.
-                    mapping(idest) = ct
-                    plotting_mask(i,j,iel + nel_fluid) = .true.
-                endif
-                mapping_ijel_iplot(i,j,iel + nel_fluid) = mapping(idest)
-            enddo
-        enddo
-    enddo
-    
-    deallocate(check, mapping)
-    npoint_plot = ct
-    
-    allocate(points(1:2,1:npoint_plot))
-    
-    if (lpr) write(6,*) '   ...collecting coordinates...'
-
-    points = 0.
+  integer              :: iel, ipol, jpol, ipol1, jpol1, i, j, ct, ipt, idest
+  real(4), allocatable :: points(:,:)
+  integer, allocatable :: grid(:,:), mapping(:)
+  logical, allocatable :: check(:), mask_tp_elem(:)
+  character(len=120)   :: fname
+  double precision     :: rmin, rmax, thetamin, thetamax
   
-    do iel=1, nel_fluid
-    
-        do i=1, i_n_xdmf - 1
-            ipol = i_arr_xdmf(i)
-            ipol1 = i_arr_xdmf(i+1)
+  inquire(file="inparam_xdmf", EXIST=file_exists)
 
-            do j=1, j_n_xdmf - 1
-                jpol = j_arr_xdmf(j)
-                jpol1 = j_arr_xdmf(j+1)
-    
-                if (plotting_mask(i,j,iel)) then
-                    ct = mapping_ijel_iplot(i,j,iel)
-                    points(1,ct) = scoord(ipol,jpol,ielfluid(iel))
-                    points(2,ct) = zcoord(ipol,jpol,ielfluid(iel))
-                endif
-                
-                if (plotting_mask(i+1,j,iel)) then
-                    ct = mapping_ijel_iplot(i+1,j,iel)
-                    points(1,ct) = scoord(ipol1,jpol,ielfluid(iel))
-                    points(2,ct) = zcoord(ipol1,jpol,ielfluid(iel))
-                endif
-                
-                if (plotting_mask(i+1,j+1,iel)) then
-                    ct = mapping_ijel_iplot(i+1,j+1,iel)
-                    points(1,ct) = scoord(ipol1,jpol1,ielfluid(iel))
-                    points(2,ct) = zcoord(ipol1,jpol1,ielfluid(iel))
-                endif
-                
-                if (plotting_mask(i,j+1,iel)) then
-                    ct = mapping_ijel_iplot(i,j+1,iel)
-                    points(1,ct) = scoord(ipol,jpol1,ielfluid(iel))
-                    points(2,ct) = zcoord(ipol,jpol1,ielfluid(iel))
-                endif
-            enddo
-        enddo
-    enddo
-    
-    do iel=1, nel_solid
-    
-        do i=1, i_n_xdmf - 1
-            ipol = i_arr_xdmf(i)
-            ipol1 = i_arr_xdmf(i+1)
+  if (.not. file_exists) then 
+     write(6,*) ''
+     write(6,*) 'ERROR: xdmf output set in inparam, but'
+     write(6,*) '       inparam_xdmf does not exist!'
+     stop
+  endif
 
-            do j=1, j_n_xdmf - 1
-                jpol = j_arr_xdmf(j)
-                jpol1 = j_arr_xdmf(j+1)
-    
-                if (plotting_mask(i,j,iel + nel_fluid)) then
-                    ct = mapping_ijel_iplot(i,j,iel + nel_fluid)
-                    points(1,ct) = scoord(ipol,jpol,ielsolid(iel))
-                    points(2,ct) = zcoord(ipol,jpol,ielsolid(iel))
-                endif
-                
-                if (plotting_mask(i+1,j,iel + nel_fluid)) then
-                    ct = mapping_ijel_iplot(i+1,j,iel + nel_fluid)
-                    points(1,ct) = scoord(ipol1,jpol,ielsolid(iel))
-                    points(2,ct) = zcoord(ipol1,jpol,ielsolid(iel))
-                endif
-                
-                if (plotting_mask(i+1,j+1,iel + nel_fluid)) then
-                    ct = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid)
-                    points(1,ct) = scoord(ipol1,jpol1,ielsolid(iel))
-                    points(2,ct) = zcoord(ipol1,jpol1,ielsolid(iel))
-                endif
-                
-                if (plotting_mask(i,j+1,iel + nel_fluid)) then
-                    ct = mapping_ijel_iplot(i,j+1,iel + nel_fluid)
-                    points(1,ct) = scoord(ipol,jpol1,ielsolid(iel))
-                    points(2,ct) = zcoord(ipol,jpol1,ielsolid(iel))
-                endif
-            enddo
-        enddo
-    enddo
-    
-    if (lpr) write(6,*) '   .... finished construction of mapping for xdmf plotting'
+  open(unit=91, file='inparam_xdmf')
 
-    if (use_netcdf) then
-        call nc_make_snapfile
-        call nc_dump_snap_points(points)
-    else
-        fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
-        open(100, file=trim(fname), access='stream', status='replace', &
-            form='unformatted', convert='little_endian')
-        write(100) points
-        close(100)
-    end if
+  read(91,*) rmin, rmax
+  read(91,*) thetamin, thetamax
 
-    deallocate(points)
+  rmin = rmin * 1000
+  rmax = rmax * 1000
+  
+  thetamin = thetamin * pi / 180.
+  thetamax = thetamax * pi / 180.
+  
+  read(91,*) i_n_xdmf
+  allocate(i_arr_xdmf(1:i_n_xdmf))
+  read(91,*) i_arr_xdmf
+  
+  read(91,*) j_n_xdmf
+  allocate(j_arr_xdmf(1:j_n_xdmf))
+  read(91,*) j_arr_xdmf
 
-    allocate(grid(1:4, 1:nelem_plot))
-    
-    if (lpr) write(6,*) '   .... constructing grid for xdmf plotting'
-    
-    ct = 1
-    
-    do iel=1, nel_fluid
-        if (.not.  mask_tp_elem(iel)) cycle
-        do i=1, i_n_xdmf - 1
-            do j=1, j_n_xdmf - 1
-                grid(1,ct) = mapping_ijel_iplot(i,j,iel) - 1
-                grid(2,ct) = mapping_ijel_iplot(i+1,j,iel) - 1
-                grid(3,ct) = mapping_ijel_iplot(i+1,j+1,iel) - 1
-                grid(4,ct) = mapping_ijel_iplot(i,j+1,iel) - 1
-                ct = ct + 1
-            enddo
-        enddo
-    enddo
-    
-    do iel=1, nel_solid
-        if (.not.  mask_tp_elem(iel + nel_fluid)) cycle
-        do i=1, i_n_xdmf - 1
-            do j=1, j_n_xdmf - 1
-                grid(1,ct) = mapping_ijel_iplot(i,j,iel + nel_fluid) - 1
-                grid(2,ct) = mapping_ijel_iplot(i+1,j,iel + nel_fluid) - 1
-                grid(3,ct) = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid) - 1
-                grid(4,ct) = mapping_ijel_iplot(i,j+1,iel + nel_fluid) - 1
-                ct = ct + 1
-            enddo
-        enddo
-    enddo
-    
-    if (lpr) write(6,*) '   .... writing grid + header of xdmf to file'
-    
-    if (use_netcdf) then
-        call nc_dump_snap_grid(grid)
-    else
-        fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
-        open(100, file=trim(fname), access='stream', status='replace', &
-            form='unformatted', convert='little_endian')
-        write(100) grid
-        close(100)
-    end if
-    
-    fname = datapath(1:lfdata) // '/xdmf_meshonly_' // appmynum // '.xdmf'
-    open(100, file=trim(fname))
-    if (use_netcdf) then
-        write(100, 732) nelem_plot, nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
-                        npoint_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/points'
-    else
-        write(100, 732) nelem_plot, nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
-                        npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
-    endif
-    close(100)
+  close(91)
+
+  allocate(mask_tp_elem(nelem))
+  mask_tp_elem = .false.
+
+  ct = 0
+
+  do iel=1, nel_fluid
+      if (min(min(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
+              min(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) < rmax &
+          .and. &
+          max(max(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
+              max(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) > rmin &
+          .and. &
+          min(min(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
+              min(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) < thetamax &
+          .and. &
+          max(max(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
+              max(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) > thetamin) &
+          then        
+          ct = ct + 1
+          mask_tp_elem(iel) = .true.
+      endif
+  enddo
+  
+  do iel=1, nel_solid
+      if (min(min(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
+              min(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) < rmax &
+          .and. &
+          max(max(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
+              max(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) > rmin &
+          .and. &
+          min(min(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
+              min(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) < thetamax &
+          .and. &
+          max(max(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
+              max(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) > thetamin) &
+          then        
+          ct = ct + 1
+          mask_tp_elem(iel + nel_fluid) = .true.
+      endif
+  enddo
+  
+  nelem_plot = ct * (i_n_xdmf - 1) * (j_n_xdmf - 1)
+
+  allocate(check(nglob_fluid + nglob_solid))
+  allocate(mapping(nglob_fluid + nglob_solid))
+  allocate(mapping_ijel_iplot(i_n_xdmf, j_n_xdmf, nelem))
+  allocate(plotting_mask(i_n_xdmf, j_n_xdmf, nelem))
+  
+  check = .false.
+  plotting_mask = .false.
+  
+  ct = 0
+
+  if (lpr) write(6,*) '   construction of mapping for xdmf plotting...'
+  if (lpr) write(6,*) '   ...fluid part...'
+
+  do iel=1, nel_fluid
+      if (.not.  mask_tp_elem(iel)) cycle
+      do i=1, i_n_xdmf
+          ipol = i_arr_xdmf(i)
+          do j=1, j_n_xdmf
+              jpol = j_arr_xdmf(j)
+             
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+              idest = igloc_fluid(ipt)
+              
+              if (.not. check(idest)) then
+                  ct = ct + 1
+                  check(idest) = .true.
+                  mapping(idest) = ct
+                  plotting_mask(i,j,iel) = .true.
+              endif
+              mapping_ijel_iplot(i,j,iel) = mapping(idest)
+          enddo
+      enddo
+  enddo
+  
+  if (lpr) write(6,*) '   ...solid part...'
+  
+  do iel=1, nel_solid
+      if (.not.  mask_tp_elem(iel + nel_fluid)) cycle
+      do i=1, i_n_xdmf
+          ipol = i_arr_xdmf(i)
+          do j=1, j_n_xdmf
+              jpol = j_arr_xdmf(j)
+             
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+              idest = igloc_solid(ipt) + nglob_fluid
+              
+              if (.not. check(idest)) then
+                  ct = ct + 1
+                  check(idest) = .true.
+                  mapping(idest) = ct
+                  plotting_mask(i,j,iel + nel_fluid) = .true.
+              endif
+              mapping_ijel_iplot(i,j,iel + nel_fluid) = mapping(idest)
+          enddo
+      enddo
+  enddo
+  
+  deallocate(check, mapping)
+  npoint_plot = ct
+  
+  allocate(points(1:2,1:npoint_plot))
+  
+  if (lpr) write(6,*) '   ...collecting coordinates...'
+
+  points = 0.
+  
+  do iel=1, nel_fluid
+  
+      do i=1, i_n_xdmf - 1
+          ipol = i_arr_xdmf(i)
+          ipol1 = i_arr_xdmf(i+1)
+
+          do j=1, j_n_xdmf - 1
+              jpol = j_arr_xdmf(j)
+              jpol1 = j_arr_xdmf(j+1)
+  
+              if (plotting_mask(i,j,iel)) then
+                  ct = mapping_ijel_iplot(i,j,iel)
+                  points(1,ct) = scoord(ipol,jpol,ielfluid(iel))
+                  points(2,ct) = zcoord(ipol,jpol,ielfluid(iel))
+              endif
+              
+              if (plotting_mask(i+1,j,iel)) then
+                  ct = mapping_ijel_iplot(i+1,j,iel)
+                  points(1,ct) = scoord(ipol1,jpol,ielfluid(iel))
+                  points(2,ct) = zcoord(ipol1,jpol,ielfluid(iel))
+              endif
+              
+              if (plotting_mask(i+1,j+1,iel)) then
+                  ct = mapping_ijel_iplot(i+1,j+1,iel)
+                  points(1,ct) = scoord(ipol1,jpol1,ielfluid(iel))
+                  points(2,ct) = zcoord(ipol1,jpol1,ielfluid(iel))
+              endif
+              
+              if (plotting_mask(i,j+1,iel)) then
+                  ct = mapping_ijel_iplot(i,j+1,iel)
+                  points(1,ct) = scoord(ipol,jpol1,ielfluid(iel))
+                  points(2,ct) = zcoord(ipol,jpol1,ielfluid(iel))
+              endif
+          enddo
+      enddo
+  enddo
+  
+  do iel=1, nel_solid
+  
+      do i=1, i_n_xdmf - 1
+          ipol = i_arr_xdmf(i)
+          ipol1 = i_arr_xdmf(i+1)
+
+          do j=1, j_n_xdmf - 1
+              jpol = j_arr_xdmf(j)
+              jpol1 = j_arr_xdmf(j+1)
+  
+              if (plotting_mask(i,j,iel + nel_fluid)) then
+                  ct = mapping_ijel_iplot(i,j,iel + nel_fluid)
+                  points(1,ct) = scoord(ipol,jpol,ielsolid(iel))
+                  points(2,ct) = zcoord(ipol,jpol,ielsolid(iel))
+              endif
+              
+              if (plotting_mask(i+1,j,iel + nel_fluid)) then
+                  ct = mapping_ijel_iplot(i+1,j,iel + nel_fluid)
+                  points(1,ct) = scoord(ipol1,jpol,ielsolid(iel))
+                  points(2,ct) = zcoord(ipol1,jpol,ielsolid(iel))
+              endif
+              
+              if (plotting_mask(i+1,j+1,iel + nel_fluid)) then
+                  ct = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid)
+                  points(1,ct) = scoord(ipol1,jpol1,ielsolid(iel))
+                  points(2,ct) = zcoord(ipol1,jpol1,ielsolid(iel))
+              endif
+              
+              if (plotting_mask(i,j+1,iel + nel_fluid)) then
+                  ct = mapping_ijel_iplot(i,j+1,iel + nel_fluid)
+                  points(1,ct) = scoord(ipol,jpol1,ielsolid(iel))
+                  points(2,ct) = zcoord(ipol,jpol1,ielsolid(iel))
+              endif
+          enddo
+      enddo
+  enddo
+  
+  if (lpr) write(6,*) '   .... finished construction of mapping for xdmf plotting'
+
+  if (use_netcdf) then
+      call nc_make_snapfile
+      call nc_dump_snap_points(points)
+  else
+      fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
+      open(100, file=trim(fname), access='stream', status='replace', &
+          form='unformatted', convert='little_endian')
+      write(100) points
+      close(100)
+  end if
+
+  deallocate(points)
+
+  allocate(grid(1:4, 1:nelem_plot))
+  
+  if (lpr) write(6,*) '   .... constructing grid for xdmf plotting'
+  
+  ct = 1
+  
+  do iel=1, nel_fluid
+      if (.not.  mask_tp_elem(iel)) cycle
+      do i=1, i_n_xdmf - 1
+          do j=1, j_n_xdmf - 1
+              grid(1,ct) = mapping_ijel_iplot(i,j,iel) - 1
+              grid(2,ct) = mapping_ijel_iplot(i+1,j,iel) - 1
+              grid(3,ct) = mapping_ijel_iplot(i+1,j+1,iel) - 1
+              grid(4,ct) = mapping_ijel_iplot(i,j+1,iel) - 1
+              ct = ct + 1
+          enddo
+      enddo
+  enddo
+  
+  do iel=1, nel_solid
+      if (.not.  mask_tp_elem(iel + nel_fluid)) cycle
+      do i=1, i_n_xdmf - 1
+          do j=1, j_n_xdmf - 1
+              grid(1,ct) = mapping_ijel_iplot(i,j,iel + nel_fluid) - 1
+              grid(2,ct) = mapping_ijel_iplot(i+1,j,iel + nel_fluid) - 1
+              grid(3,ct) = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid) - 1
+              grid(4,ct) = mapping_ijel_iplot(i,j+1,iel + nel_fluid) - 1
+              ct = ct + 1
+          enddo
+      enddo
+  enddo
+  
+  if (lpr) write(6,*) '   .... writing grid + header of xdmf to file'
+  
+  if (use_netcdf) then
+      call nc_dump_snap_grid(grid)
+  else
+      fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
+      open(100, file=trim(fname), access='stream', status='replace', &
+          form='unformatted', convert='little_endian')
+      write(100) grid
+      close(100)
+  end if
+  
+  fname = datapath(1:lfdata) // '/xdmf_meshonly_' // appmynum // '.xdmf'
+  open(100, file=trim(fname))
+  if (use_netcdf) then
+      write(100, 732) nelem_plot, nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
+                      npoint_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/points'
+  else
+      write(100, 732) nelem_plot, nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
+                      npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
+  endif
+  close(100)
 
 732 format(&    
     '<?xml version="1.0" ?>',/&
@@ -409,16 +404,16 @@ use data_numbering
     '</Xdmf>')
     
     
-    fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
-    open(100, file=trim(fname))
-    if (use_netcdf) then
-       write(100, 733) nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
-                       npoint_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/points'
-    else
-       write(100, 733) nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
-                       npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
-    endif
-    close(100)
+  fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
+  open(100, file=trim(fname))
+  if (use_netcdf) then
+     write(100, 733) nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
+                     npoint_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/points'
+  else
+     write(100, 733) nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
+                     npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
+  endif
+  close(100)
 
 733 format(&    
     '<?xml version="1.0" ?>',/&
@@ -440,23 +435,23 @@ end subroutine dump_xdmf_grid
 !-----------------------------------------------------------------------------
 subroutine finish_xdmf_xml()
 
-use data_source, ONLY : src_type
+  use data_source, ONLY : src_type
 
-    character(len=120) :: fname
+  character(len=120) :: fname
 
-    fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
-    open(100, file=trim(fname), access='append')
-    write(100, 736) 
+  fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
+  open(100, file=trim(fname), access='append')
+  write(100, 736) 
 
 736 format(&    
     '</Grid>',/&
     '</Domain>',/&
     '</Xdmf>')
-    
-    close(100)
-    close(13100)
-    if (.not. src_type(1)=='monopole') close(13101)
-    close(13102)
+  
+  close(100)
+  close(13100)
+  if (.not. src_type(1)=='monopole') close(13101)
+  close(13102)
 
 end subroutine finish_xdmf_xml
 !=============================================================================
@@ -484,18 +479,15 @@ end subroutine prepare_mesh_memoryvar_vtk
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
+!! in the solid region only.
+!! Convention for order in the file: First the fluid, then the solid domain.
 subroutine dump_solid_grid(ibeg,iend,jbeg,jend)
-!
-! Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
-! in the solid region only.
-! Convention for order in the file: First the fluid, then the solid domain.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-include 'mesh_params.h'
-
-integer, intent(in) :: ibeg,iend,jbeg,jend 
-integer             :: iel, ipol,jpol
+  include 'mesh_params.h'
+  
+  integer, intent(in) :: ibeg,iend,jbeg,jend 
+  integer             :: iel, ipol,jpol
 
   open(unit=2500+mynum,file=datapath(1:lfdata)//'/solid_grid_'&
                             //appmynum//'.dat')
@@ -513,26 +505,23 @@ end subroutine dump_solid_grid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
+!! in the fluid region only, and additionally the constant factors preceding 
+!! the displacement in the fluid, namely rho^{-1} and (rho s)^{-1}.
+!! When reading the fluid wavefield, one therefore needs to multiply all 
+!! components with inv_rho_fluid and the phi component with one/scoord!
+!! Convention for order in the file: First the fluid, then the solid domain.
 subroutine dump_fluid_grid(ibeg,iend,jbeg,jend)
-!
-! Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
-! in the fluid region only, and additionally the constant factors preceding 
-! the displacement in the fluid, namely rho^{-1} and (rho s)^{-1}.
-! When reading the fluid wavefield, one therefore needs to multiply all 
-! components with inv_rho_fluid and the phi component with one/scoord!
-! Convention for order in the file: First the fluid, then the solid domain.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_pointwise, ONLY : inv_rho_fluid
-
-include 'mesh_params.h'
-
-integer, intent(in) :: ibeg,iend,jbeg,jend
-integer             :: iel, ipol,jpol
-
-! When reading the fluid wavefield, one needs to multiply all components 
-! with inv_rho_fluid and the phi component with one/scoord!!
+  use data_pointwise, ONLY : inv_rho_fluid
+  
+  include 'mesh_params.h'
+  
+  integer, intent(in) :: ibeg,iend,jbeg,jend
+  integer             :: iel, ipol,jpol
+  
+  ! When reading the fluid wavefield, one needs to multiply all components 
+  ! with inv_rho_fluid and the phi component with one/scoord!!
 
   open(unit=2500+mynum,file=datapath(1:lfdata)//&
                             '/fluid_grid_'//appmynum//'.dat')
@@ -545,9 +534,9 @@ integer             :: iel, ipol,jpol
            write(2500+mynum,*)scoord(ipol,jpol,ielfluid(iel)), &
                               zcoord(ipol,jpol,ielfluid(iel))
            if ( axis_fluid(iel) .and. ipol==0 ) then
-!           Axis s=0! write 1 instead of 1/s and then multiply 
-!           with the correct factor dsdchi, obtained by L'Hospital's rule 
-!           (see routine fluid_snapshot below).
+              ! Axis s=0! write 1 instead of 1/s and then multiply 
+              ! with the correct factor dsdchi, obtained by L'Hospital's rule 
+              ! (see routine fluid_snapshot below).
               write(2600+mynum,*)inv_rho_fluid(ipol,jpol,iel),one
            else  
               write(2600+mynum,*)inv_rho_fluid(ipol,jpol,iel), &
@@ -562,37 +551,33 @@ integer             :: iel, ipol,jpol
 end subroutine dump_fluid_grid
 !=============================================================================
 
-
 !-----------------------------------------------------------------------------
+!> Dumps the mesh (s,z) [m] and related constant fields in binary format as 
+!! needed to compute waveform kernels from the strain and velocity fields. 
+!! The distinction between different dumping methods is honored here, 
+!! and influences the amount of additional dumpsters (prefactors, derivatives). 
+!! In a nutshell, the end-member dumping methods constitute 
+!! 1) computing strain and velocity on-the-fly, i.e. only dumping the mesh here;
+!! 2) only dumping the already-known fields (displacement, potential) on-the-fly
+!!    and dump a number of constant fields here. 
+!! The latter choice is more memory- and CPU-efficient, but requires 
+!! significant post-processing AND dumping the entire SEM mesh. 
+!! See compute_strain in time_evol_wave.f90 for more info.
+!! 
+!! CURRENTLY HARDCODED TO dump_type=='fullfields'
 subroutine dump_wavefields_mesh_1d
-!
-! Dumps the mesh (s,z) [m] and related constant fields in binary format as 
-! needed to compute waveform kernels from the strain and velocity fields. 
-! The distinction between different dumping methods is honored here, 
-! and influences the amount of additional dumpsters (prefactors, derivatives). 
-! In a nutshell, the end-member dumping methods constitute 
-! 1) computing strain and velocity on-the-fly, i.e. only dumping the mesh here;
-! 2) only dumping the already-known fields (displacement, potential) on-the-fly
-!    and dump a number of constant fields here. 
-! The latter choice is more memory- and CPU-efficient, but requires 
-! significant post-processing AND dumping the entire SEM mesh. 
-! See compute_strain in time_evol_wave.f90 for more info.
-! 
-! CURRENTLY HARDCODED TO dump_type=='fullfields'
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use data_io, ONLY : ibeg,iend,ndumppts_el
-use data_spec, ONLY : G1T,G2T,G2
-use data_pointwise
-use nc_routines, ONLY: nc_dump_mesh_sol, nc_dump_mesh_flu
-
-double precision, dimension(:,:,:), allocatable :: ssol, zsol
-double precision, dimension(:,:,:), allocatable :: sflu, zflu
-
-integer :: iel, ipol,jpol,i
-
-! Dump entire (including duplicate) GLL point grid for displ_only
+  use data_io, ONLY : ibeg,iend,ndumppts_el
+  use data_spec, ONLY : G1T,G2T,G2
+  use data_pointwise
+  use nc_routines, ONLY: nc_dump_mesh_sol, nc_dump_mesh_flu
+  
+  double precision, dimension(:,:,:), allocatable :: ssol, zsol
+  double precision, dimension(:,:,:), allocatable :: sflu, zflu
+  
+  integer :: iel, ipol,jpol,i
+  
+  ! Dump entire (including duplicate) GLL point grid for displ_only
   if (dump_type=='displ_only') then
      
   else ! Free choice for other dumping method
@@ -610,7 +595,7 @@ integer :: iel, ipol,jpol,i
   endif
 
 
-! compute solid grid
+  ! compute solid grid
   do iel=1,nel_solid
       do jpol=ibeg,iend
           do ipol=ibeg,iend
@@ -636,7 +621,7 @@ integer :: iel, ipol,jpol,i
   end if
   deallocate(ssol,zsol)
 
-! compute fluid grid
+  ! compute fluid grid
   if (have_fluid) then
       do iel=1,nel_fluid
           do jpol=ibeg,iend
@@ -661,8 +646,8 @@ integer :: iel, ipol,jpol,i
   endif ! have_fluid
 
 
-! In the following: Only dumping additional arrays if displacements only 
-! are dumped as wavefields to reconstruct the strains.
+  ! In the following: Only dumping additional arrays if displacements only 
+  ! are dumped as wavefields to reconstruct the strains.
 
   select case (dump_type)
   case ('displ_only')
@@ -671,7 +656,7 @@ integer :: iel, ipol,jpol,i
         write(6,*)'  ...now dumping global pointwise deriv. terms, etc....'
      endif
 
-!    Dump pointwise derivative matrices in solid
+     ! Dump pointwise derivative matrices in solid
      open(unit=2600+mynum,file=datapath(1:lfdata)//'/pointwise_deriv_sol_'&
                                //appmynum//'.dat', &
                                FORM="UNFORMATTED",STATUS="REPLACE")
@@ -680,7 +665,7 @@ integer :: iel, ipol,jpol,i
      close(2600+mynum)
 
      if (have_fluid) then
-!    Dump pointwise derivative matrices in fluid
+     ! Dump pointwise derivative matrices in fluid
         open(unit=2600+mynum,file=datapath(1:lfdata)//'/pointwise_deriv_flu_'&
              //appmynum//'.dat', &
              FORM="UNFORMATTED",STATUS="REPLACE")
@@ -688,7 +673,7 @@ integer :: iel, ipol,jpol,i
              DsDeta_over_J_flu,DsDxi_over_J_flu
         close(2600+mynum)
 
-!    Dump inverse density inside fluid
+        ! Dump inverse density inside fluid
         open(unit=2600+mynum,file=datapath(1:lfdata)//'/inv_rho_fluid_'&
              //appmynum//'.dat', &
              FORM="UNFORMATTED",STATUS="REPLACE")
@@ -696,7 +681,7 @@ integer :: iel, ipol,jpol,i
         close(2600+mynum)
      endif
 
-!    Dump Lagrange interpolant derivatives
+     ! Dump Lagrange interpolant derivatives
      open(unit=2600+mynum,file=datapath(1:lfdata)//'/lagrange_derivs_'&
                                //appmynum//'.dat', &
                                FORM="UNFORMATTED",STATUS="REPLACE")
@@ -722,26 +707,23 @@ end subroutine dump_wavefields_mesh_1d
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Dumps the mesh (s,z) [m] along with corresponding field f in ASCII format.
+!! At this point only used in computing the valence. 
+!! Note that for higher-frequency meshes these files can be very large.
+!! flag_norm is to be set to one if the output is to be normalized.
 subroutine fldout_cyl2(fname,nel,f,ibeg,iend,jbeg,jend,flag_norm,domain)
-! 
-! Dumps the mesh (s,z) [m] along with corresponding field f in ASCII format.
-! At this point only used in computing the valence. 
-! Note that for higher-frequency meshes these files can be very large.
-! flag_norm is to be set to one if the output is to be normalized.
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-use utlity, ONLY : compute_coordinates
-
-include 'mesh_params.h'
-
-character(len=80), intent(in)   :: fname
-character(len=5), intent(in)    :: domain
-integer, intent(in)             :: flag_norm,ibeg,iend,jbeg,jend,nel
-real(kind=realkind), intent(in) :: f(ibeg:iend,jbeg:jend,nel)
-integer                         :: lf,ielem, ipol,jpol,iel
-double precision                :: r, theta, s, z
-real(kind=realkind)             :: fnr,afnr
+  use utlity, ONLY : compute_coordinates
+  
+  include 'mesh_params.h'
+  
+  character(len=80), intent(in)   :: fname
+  character(len=5), intent(in)    :: domain
+  integer, intent(in)             :: flag_norm,ibeg,iend,jbeg,jend,nel
+  real(kind=realkind), intent(in) :: f(ibeg:iend,jbeg:jend,nel)
+  integer                         :: lf,ielem, ipol,jpol,iel
+  double precision                :: r, theta, s, z
+  real(kind=realkind)             :: fnr,afnr
   
   lf=index(fname,' ')-1
   open(unit=10000+mynum,file=infopath(1:lfinfo)//'/'//fname(1:lf)//'_'&
@@ -758,7 +740,6 @@ real(kind=realkind)             :: fnr,afnr
         end do
      end do   
   end if
-!  if (nproc > 1) fnr=pmax(dble(fnr))
   afnr = one/fnr
   do ielem = 1, nel
      if (domain=='total') iel=ielem
@@ -776,6 +757,4 @@ real(kind=realkind)             :: fnr,afnr
 end subroutine fldout_cyl2
 !=============================================================================
 
-!================================
 end module meshes_io
-!================================

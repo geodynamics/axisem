@@ -1,11 +1,8 @@
-!=========================
+!> Contains all routines that dump entire wavefields during the time loop. 
+!! Optimization of I/O therefore happens here and nowhere else.
+!! The corresponding meshes are dumped in meshes_io.
 module wavefields_io
-!=========================
-  !
-  ! Contains all routines that dump entire wavefields during the time loop. 
-  ! Optimization of I/O therefore happens here and nowhere else.
-  ! The corresponding meshes are dumped in meshes_io.
-  !
+
   use global_parameters
   use data_mesh
   use data_proc
@@ -30,18 +27,15 @@ module wavefields_io
 contains
 
 !-----------------------------------------------------------------------------------------
+!> Dumps the global displacement snapshots [m] in ASCII format
+!! When reading the fluid wavefield, one needs to multiply all 
+!! components with inv_rho_fluid and the phi component with one/scoord
+!! as dumped by the corresponding routine dump_glob_grid!
+!! Convention for order in the file: First the fluid, then the solid domain.
 subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
-  !
-  ! Dumps the global displacement snapshots [m] in ASCII format
-  ! When reading the fluid wavefield, one needs to multiply all 
-  ! components with inv_rho_fluid and the phi component with one/scoord
-  ! as dumped by the corresponding routine dump_glob_grid!
-  ! Convention for order in the file: First the fluid, then the solid domain.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_source, ONLY : src_type
-  use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
+  use data_source, only : src_type
+  use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
   include 'mesh_params.h'
   
@@ -115,18 +109,16 @@ end subroutine glob_snapshot
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> Dumps the global displacement snapshots [m] in binary  format
+!! When reading the fluid wavefield, one needs to multiply all 
+!! components with inv_rho_fluid and the phi component with one/scoord
+!! as dumped by the corresponding routine dump_glob_grid!
+!! Convention for order in the file: First the fluid, then the solid domain.
+!! MvD: loop increment npol/2 -> what if npol odd?
 subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
-  !
-  ! Dumps the global displacement snapshots [m] in ASCII format
-  ! When reading the fluid wavefield, one needs to multiply all 
-  ! components with inv_rho_fluid and the phi component with one/scoord
-  ! as dumped by the corresponding routine dump_glob_grid!
-  ! Convention for order in the file: First the fluid, then the solid domain.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_source, ONLY : src_type
-  use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
+  use data_source, only : src_type
+  use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
   include 'mesh_params.h'
   
@@ -185,15 +177,12 @@ end subroutine glob_snapshot_midpoint
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> Dumps the global displacement snapshots in binary plus XDMF descriptor
 subroutine glob_snapshot_xdmf(f_sol, chi)
-  !
-  ! Dumps the global displacement snapshots in binary plus XDMF descriptor
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-    use data_source, ONLY : src_type
-    use data_pointwise, ONLY : inv_rho_fluid, prefac_inv_s_rho_fluid
-    use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
+    use data_source, only : src_type
+    use data_pointwise, only : inv_rho_fluid, prefac_inv_s_rho_fluid
+    use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
     use data_time, only : t
     use nc_routines, only: nc_dump_snapshot
     
@@ -631,12 +620,9 @@ end subroutine snapshot_memoryvar_vtk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> Dumps the displacement snapshots [m] in the solid region in ASCII format
+!! Convention for order in the file: First the fluid, then the solid domain.
 subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
-  !
-  ! Dumps the displacement snapshots [m] in the solid region in ASCII format
-  ! Convention for order in the file: First the fluid, then the solid domain.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   include 'mesh_params.h'
   
@@ -665,8 +651,8 @@ end subroutine solid_snapshot
 !-----------------------------------------------------------------------------------------
 subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
 
-  use data_source, ONLY : src_type
-  use pointwise_derivatives, ONLY: axisym_gradient_fluid, dsdf_fluid_axis
+  use data_source, only : src_type
+  use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
   include 'mesh_params.h'
   
@@ -719,8 +705,8 @@ end subroutine fluid_snapshot
 !-----------------------------------------------------------------------------------------
 subroutine dump_field_1d(f, filename, appisnap, n)
 
-  use data_proc,    ONLY : appmynum
-  use data_source,  ONLY : have_src, src_dump_type
+  use data_proc,    only : appmynum
+  use data_source,  only : have_src, src_dump_type
   
   include 'mesh_params.h'
   
@@ -760,7 +746,7 @@ end subroutine dump_field_1d
 !-----------------------------------------------------------------------------------------
 subroutine dump_disp(u, chi)
 
-  use data_source, ONLY : src_type,src_dump_type
+  use data_source, only : src_type,src_dump_type
   
   include 'mesh_params.h'
   
@@ -806,7 +792,7 @@ end subroutine dump_disp
 !-----------------------------------------------------------------------------------------
 subroutine dump_velo_dchi(v, dchi)
 
-  use data_source, ONLY : src_type, src_dump_type
+  use data_source, only : src_type, src_dump_type
   
   include 'mesh_params.h'
   
@@ -852,9 +838,9 @@ end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------------------
 subroutine dump_velo_global(v,dchi)
 
-  use data_pointwise,           ONLY: inv_rho_fluid, prefac_inv_s_rho_fluid
-  use data_source,              ONLY: src_type, src_dump_type
-  use pointwise_derivatives,    ONLY: axisym_gradient_fluid, dsdf_fluid_allaxis
+  use data_pointwise,           only: inv_rho_fluid, prefac_inv_s_rho_fluid
+  use data_source,              only: src_type, src_dump_type
+  use pointwise_derivatives,    only: axisym_gradient_fluid, dsdf_fluid_allaxis
   
   include 'mesh_params.h'
   
@@ -934,14 +920,13 @@ end subroutine dump_velo_global
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> Deletes all entries to vector field u on ALL GLL points inside
+!! elements that have a non-zero source term (i.e. including all 
+!! assembled neighboring elements)
+!! This is a preliminary test for the wavefield dumps.
 subroutine eradicate_src_elem_vec_values(u)
-  !
-  ! Deletes all entries to vector field u on ALL GLL points inside
-  ! elements that have a non-zero source term (i.e. including all 
-  ! assembled neighboring elements)
-  ! This is a preliminary test for the wavefield dumps.
 
-  use data_source, ONLY : nelsrc,ielsrc,have_src
+  use data_source, only : nelsrc,ielsrc,have_src
   
   include 'mesh_params.h'
   
@@ -958,14 +943,13 @@ end subroutine eradicate_src_elem_vec_values
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> Deletes all entries to scalar field u on ALL GLL points inside
+!! elements that have a non-zero source term (i.e. including all 
+!! assembled neighboring elements)
+!! This is a preliminary test for the wavefield dumps.
 subroutine eradicate_src_elem_values(u)
-  !
-  ! Deletes all entries to scalar field u on ALL GLL points inside
-  ! elements that have a non-zero source term (i.e. including all 
-  ! assembled neighboring elements)
-  ! This is a preliminary test for the wavefield dumps.
 
-  use data_source, ONLY : nelsrc,ielsrc,have_src
+  use data_source, only : nelsrc,ielsrc,have_src
  
   include 'mesh_params.h'
 
@@ -981,6 +965,4 @@ subroutine eradicate_src_elem_values(u)
 end subroutine eradicate_src_elem_values
 !-----------------------------------------------------------------------------------------
 
-!================================
 end module wavefields_io
-!================================
