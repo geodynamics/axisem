@@ -1,3 +1,4 @@
+!-----------------------------------------------------------------------------
 module data_all
 
   implicit none
@@ -49,7 +50,9 @@ module data_all
   real, allocatable :: colat(:,:),lon(:,:)
 
 end module data_all
+!=============================================================================
 
+!-----------------------------------------------------------------------------
 module global_par
 
   double precision, parameter :: pi = 3.1415926535898
@@ -64,7 +67,9 @@ module global_par
   real, parameter             :: decay = 3.5d0
   real, parameter             :: shift_fact1 = 1.5d0
 end module global_par
+!=============================================================================
 
+!-----------------------------------------------------------------------------
 program post_processing_seis
 
   use data_all
@@ -416,7 +421,7 @@ program post_processing_seis
 end program post_processing_seis
 !=============================================================================
 
-!--------------------------------------------------------------------
+!-----------------------------------------------------------------------------
 subroutine read_input
 
   use data_all
@@ -1144,7 +1149,6 @@ subroutine define_io_appendix(app,iproc)
 end subroutine define_io_appendix
 !=============================================================================
 
-
 !-----------------------------------------------------------------------------
 subroutine compute_3d_wavefields
 
@@ -1154,25 +1158,36 @@ subroutine compute_3d_wavefields
 
   include 'mesh_params.h'
 
-  integer iproc,npts,npts_top,npts_bot,npts_meri,nphi,snapskip,snap1,snap2
-  real, dimension(:,:), allocatable :: coord,disp,disptot,disptot_sum,azi_xsect2,azi_xsect1
-  real, dimension(:,:,:), allocatable :: azi,fluid_prefact,azi_meri,mij_snap
-  real, dimension(:), allocatable :: vp,x,y,z,vptop,vpbot,vpmeri,xtot,ytot,ztot,azi_phi_meri
-  double precision, dimension(:), allocatable :: xtop,ytop,ztop,xbot,ybot,zbot,azi_phi_top,azi_phi_bot
-  real, dimension(:), allocatable :: xmeri,ymeri,zmeri,longit_snap
-  real :: dphi,phi0,prem,r,theta_meri,smallval_meri,dr,theta0,theta_bot,theta_top,phi
-  integer, dimension(:), allocatable :: ind_proc_top_tmp,ind_pts_top_tmp,ind_proc_bot_tmp,ind_pts_bot_tmp
-  integer, dimension(:), allocatable :: ind_proc_top,ind_pts_top,ind_proc_bot
-  integer, dimension(:), allocatable :: ind_pts_bot,azi_ind_top,azi_ind_bot,azi_ind_meri
-  integer, dimension(:), allocatable :: ind_proc_meri_tmp,ind_pts_meri_tmp,ind_proc_meri,ind_pts_meri
-  real :: smallval_north_top, smallval_south_top,smallval_north_bot, smallval_south_bot,r0,coord9(9,2),disp9(9,3)
-  character(len=200) :: filename1
-  logical :: use_meri,use_top,use_bot
+  integer                               :: iproc, npts, npts_top, npts_bot, npts_meri, &
+                                           nphi, snapskip, snap1, snap2
+  real, dimension(:,:), allocatable     :: coord, disp, disptot, disptot_sum, azi_xsect2, &
+                                           azi_xsect1
+  real, dimension(:,:,:), allocatable   :: azi, fluid_prefact, azi_meri, mij_snap
+  real, dimension(:), allocatable       :: vp, x, y, z, vptop, vpbot, vpmeri, xtot, ytot, &
+                                           ztot, azi_phi_meri
+  double precision, dimension(:), allocatable :: xtop, ytop, ztop, xbot, ybot, zbot, &
+                                                 azi_phi_top, azi_phi_bot
+  real, dimension(:), allocatable       :: xmeri, ymeri, zmeri, longit_snap
+  real                                  :: dphi, phi0, prem, r, theta_meri, smallval_meri, &
+                                           dr, theta0, theta_bot, theta_top, phi
+  integer, dimension(:), allocatable    :: ind_proc_top_tmp, ind_pts_top_tmp, &
+                                           ind_proc_bot_tmp, ind_pts_bot_tmp
+  integer, dimension(:), allocatable    :: ind_proc_top, ind_pts_top, ind_proc_bot
+  integer, dimension(:), allocatable    :: ind_pts_bot, azi_ind_top, azi_ind_bot, &
+                                           azi_ind_meri
+  integer, dimension(:), allocatable    :: ind_proc_meri_tmp, ind_pts_meri_tmp, &
+                                           ind_proc_meri, ind_pts_meri
+  real                                  :: smallval_north_top,  smallval_south_top, &
+                                           smallval_north_bot,  smallval_south_bot, r0, &
+                                           coord9(9, 2), disp9(9, 3)
+  character(len=200)                    :: filename1
+  logical                               :: use_meri, use_top, use_bot
 
-character(len=4) :: appmynum2
- integer :: nptstot,k1,k2,k3,npts_fluid,skipfact,j,naang,npts_read,npts_fluid_read
-real :: rbot,rtop,dtheta,phi_incr,smallval
-double precision :: r8,theta8,phi8
+  character(len=4)                      :: appmynum2
+  integer                               :: nptstot, k1, k2, k3, npts_fluid, skipfact, j, &
+                                           naang, npts_read, npts_fluid_read
+  real                                  :: rbot, rtop, dtheta, phi_incr, smallval
+  double precision                      :: r8, theta8, phi8
 
   skipfact=1
   smallval=10000.
@@ -1180,423 +1195,420 @@ double precision :: r8,theta8,phi8
   ! read snap plot parameters
 
   open(unit=99,file=trim(simdir(1))//'/param_snaps')
-  read(99,*)phi0
-  write(6,*)'starting azimuth/phi for cross section on the right [deg]:',phi0
-  read(99,*)dphi
-  write(6,*)'ending azimuth/phi for cross section on the left [deg]:',dphi
-  read(99,*)rtop
-  write(6,*)'top surface [km]:',rtop
-  read(99,*)rbot
-  write(6,*)'bottom surface [km]:',rbot
-  read(99,*)theta_meri
-  write(6,*)'colatitude of meridional cross section:',theta_meri
-  read(99,*)snap1,snap2,snapskip
-  write(6,*)'1st,last snap, skipfactor:',snap1,snap2,snapskip
-  read(99,*)use_meri
-  write(6,*)'consider meridional cross section?',use_meri
-  read(99,*)use_top
-  write(6,*)'consider top surface?',use_top
-  read(99,*)use_bot
-  write(6,*)'consider bottom surface?',use_bot
+  read(99,*) phi0
+  write(6,*) 'starting azimuth/phi for cross section on the right [deg]:',phi0
+  read(99,*) dphi
+  write(6,*) 'ending azimuth/phi for cross section on the left [deg]:',dphi
+  read(99,*) rtop
+  write(6,*) 'top surface [km]:',rtop
+  read(99,*) rbot
+  write(6,*) 'bottom surface [km]:',rbot
+  read(99,*) theta_meri
+  write(6,*) 'colatitude of meridional cross section:',theta_meri
+  read(99,*) snap1,snap2,snapskip
+  write(6,*) '1st,last snap, skipfactor:',snap1,snap2,snapskip
+  read(99,*) use_meri
+  write(6,*) 'consider meridional cross section?',use_meri
+  read(99,*) use_top
+  write(6,*) 'consider top surface?',use_top
+  read(99,*) use_bot
+  write(6,*) 'consider bottom surface?',use_bot
   close(99)
 
-  phi0=phi0/180.*pi; dphi=dphi/180.*pi; rtop=rtop*1000.; rbot=rbot*1000.
-  theta_meri=theta_meri*pi/180.
+  phi0 = phi0 / 180. * pi
+  dphi = dphi / 180. * pi
+  rtop = rtop * 1000.
+  rbot = rbot * 1000.
+  theta_meri = theta_meri * pi / 180.
 
-!  if (minval(ibeg)/=maxval(ibeg) .or. minval(iend)/=maxval(iend)) then 
-!     write(6,*)'issue with size of dumps via ibeg and iend!'
-!     write(6,*)(ibeg(i),iend(i),i=1,nsim)
-!     stop
-!  endif
+  ! if all the same or not!!!!!
+  if (minval(dt)/=maxval(dt) .or. minval(nt)/=maxval(nt) .or. minval(period)/=maxval(period) .or. &
+      minval(nrec)/=maxval(nrec)  .or. minval(nt_seis)/=maxval(nt_seis)  .or. &
+      minval(dt_seis)/=maxval(dt_seis) .or. minval(nt_strain)/=maxval(nt_strain) .or. &
+      minval(dt_strain)/=maxval(dt_strain) .or. minval(nt_snap)/=maxval(nt_snap) .or. &
+      minval(dt_snap)/=maxval(dt_snap) ) then
+     write(6,*) 'PROBLEM with simulation.info parameters in the respective directories:'
+     write(6,*) ' one or more of the supposedly equal parameters differ!'
+     call flush(6)
+     stop
+  endif
 
-!  write(6,*)'nel,ibeg,iend:',nelem,ibeg(1),iend(1)
-!  npts=nelem*(iend(1)-ibeg(1)+1)**2
+  npts = nelem * 16
+  npts_read = nelem * 9
 
-     ! if all the same or not!!!!!
-if (minval(dt)/=maxval(dt) .or. minval(nt)/=maxval(nt) .or. minval(period)/=maxval(period) .or. &
-    minval(nrec)/=maxval(nrec)  .or. minval(nt_seis)/=maxval(nt_seis)  .or. &
-    minval(dt_seis)/=maxval(dt_seis) .or. minval(nt_strain)/=maxval(nt_strain) .or. &
-    minval(dt_strain)/=maxval(dt_strain) .or. minval(nt_snap)/=maxval(nt_snap) .or. &
-    minval(dt_snap)/=maxval(dt_snap) ) then
-   write(6,*)'PROBLEM with simulation.info parameters in the respective directories:'
-   write(6,*)' one or more of the supposedly equal parameters differ!'
-   stop
-endif
-
-  npts=nelem*16
-  npts_read=nelem*9
-
-  nptstot=npts*nproc_mesh
+  nptstot = npts * nproc_mesh
   write(6,*)'number of points per proc, total points:',npts,nptstot
 
-     ! load and construct global mesh (one semi-disk)
-     write(6,*)'reading partitioned mesh...'
-     allocate(coord(nptstot,2))
-     smallval_north_top = rtop; smallval_south_top = rtop
-     smallval_north_bot = rbot; smallval_south_bot = rbot
+  ! load and construct global mesh (one semi-disk)
+  write(6,*)'reading partitioned mesh...'
+  allocate(coord(nptstot,2))
+  smallval_north_top = rtop; smallval_south_top = rtop
+  smallval_north_bot = rbot; smallval_south_bot = rbot
 
-     write(6,*)'Smallest distance to rtop (North,South) BEFORE [km]:', &
-          real(smallval_north_top/1000.),real(smallval_south_top/1000.)
-     write(6,*)'Smallest distance to rbot (North,South) BEFORE [km]:', &
-          real(smallval_north_bot/1000.),real(smallval_south_bot/1000.)
+  write(6,*)'Smallest distance to rtop (North,South) BEFORE [km]:', &
+       real(smallval_north_top/1000.),real(smallval_south_top/1000.)
+  write(6,*)'Smallest distance to rbot (North,South) BEFORE [km]:', &
+       real(smallval_north_bot/1000.),real(smallval_south_bot/1000.)
 
-     do iproc=0,nproc_mesh-1
-        call define_io_appendix(appmynum,iproc)
-        open(unit=99,file=trim(simdir(1))//'/Data/glob_grid_'//appmynum//'.dat')
-        i=0
-        do ii=1,npts_read/9
-           do iii=1,9
-                 read(99,*)coord9(iii,1),coord9(iii,2)
-            enddo
-            coord(iproc*npts+i+1:iproc*npts+i+2,:) = coord9(1:2,:) ! (0,0), (0,npol/2)
-            coord(iproc*npts+i+3,:) = coord9(5,:)    ! (npol/2,npol/2)
-            coord(iproc*npts+i+4,:) = coord9(4,:)    ! (npol/2,0)
-            coord(iproc*npts+i+5:iproc*npts+i+6,:) = coord9(2:3,:)    ! (0,npol/2),(0,npol)
-            coord(iproc*npts+i+7,:) = coord9(6,:)    ! (npol/2,npol)
-            coord(iproc*npts+i+8,:) = coord9(5,:)    ! (npol/2,npol/2)
-            coord(iproc*npts+i+9:iproc*npts+i+10,:) = coord9(4:5,:)    ! (npol/2,0),(npol/2,npol/2)
-            coord(iproc*npts+i+11,:) = coord9(8,:)    ! (npol,npol/2)
-            coord(iproc*npts+i+12,:) = coord9(7,:)    ! (npol,0)            
-            coord(iproc*npts+i+13:iproc*npts+i+14,:) = coord9(5:6,:)    ! (npol/2,npol/2),(npol/2,npol)
-            coord(iproc*npts+i+15,:) = coord9(9,:)    ! (npol,npol)
-            coord(iproc*npts+i+16,:) = coord9(8,:)    ! (npol,npol/2)            
+  do iproc=0,nproc_mesh-1
+     call define_io_appendix(appmynum,iproc)
+     open(unit=99,file=trim(simdir(1))//'/Data/glob_grid_'//appmynum//'.dat')
+     i=0
+     do ii=1,npts_read/9
+        do iii=1,9
+            read(99,*)coord9(iii,1),coord9(iii,2)
+         enddo
+         coord(iproc*npts+i+1:iproc*npts+i+2,:) = coord9(1:2,:) ! (0,0), (0,npol/2)
+         coord(iproc*npts+i+3,:) = coord9(5,:)    ! (npol/2,npol/2)
+         coord(iproc*npts+i+4,:) = coord9(4,:)    ! (npol/2,0)
+         coord(iproc*npts+i+5:iproc*npts+i+6,:) = coord9(2:3,:)    ! (0,npol/2),(0,npol)
+         coord(iproc*npts+i+7,:) = coord9(6,:)    ! (npol/2,npol)
+         coord(iproc*npts+i+8,:) = coord9(5,:)    ! (npol/2,npol/2)
+         coord(iproc*npts+i+9:iproc*npts+i+10,:) = coord9(4:5,:)    ! (npol/2,0),(npol/2,npol/2)
+         coord(iproc*npts+i+11,:) = coord9(8,:)    ! (npol,npol/2)
+         coord(iproc*npts+i+12,:) = coord9(7,:)    ! (npol,0)            
+         coord(iproc*npts+i+13:iproc*npts+i+14,:) = coord9(5:6,:)    ! (npol/2,npol/2),(npol/2,npol)
+         coord(iproc*npts+i+15,:) = coord9(9,:)    ! (npol,npol)
+         coord(iproc*npts+i+16,:) = coord9(8,:)    ! (npol,npol/2)            
 
-           ! determine minimal distance from rtop and rbot
-            do iii=1,16
-               r0 = sqrt(coord(iproc*npts+i+iii,1)**2+coord(iproc*npts+i+iii,2)**2) 
-               !           write(665,*)r0,coord(iproc*npts+i,1),coord(iproc*npts+i,2)
-               if (coord(iproc*npts+i+iii,2)>0.0 .and. abs(r0-rtop)< smallval_north_top) then ! north
-                  smallval_north_top = abs(r0-rtop)
-                  !              write(666,*)r0,abs(r0-rtop),smallval_north_top
-               elseif (coord(iproc*npts+i+iii,2)<0.0 .and. abs(r0-rtop)< smallval_south_top) then ! south
-                  smallval_south_top = abs(r0-rtop)
-                  !              write(667,*)r0,abs(r0-rtop),smallval_south_top
-               endif
-               
-               if (coord(iproc*npts+i+iii,2)>0.0 .and. abs(r0-rbot)< smallval_north_bot) then ! north            
-                  smallval_north_bot = abs(r0-rbot)
-                  !              write(668,*)r0,abs(r0-rbot),smallval_north_bot
-               elseif (coord(iproc*npts+i+iii,2)<0.0 .and. abs(r0 -rbot)< smallval_south_bot) then ! south
-                  smallval_south_bot = abs(r0-rbot)
-                  !              write(669,*)r0,abs(r0-rbot),smallval_south_bot
-               endif
-
-           enddo
-            i=i+16
-
+         ! determine minimal distance from rtop and rbot
+         do iii=1,16
+            r0 = sqrt(coord(iproc*npts+i+iii,1)**2+coord(iproc*npts+i+iii,2)**2) 
+            if (coord(iproc*npts+i+iii,2)>0.0 &
+                    .and. abs(r0-rtop)< smallval_north_top) then ! north
+               smallval_north_top = abs(r0-rtop)
+            elseif (coord(iproc*npts+i+iii,2)<0.0 &
+                    .and. abs(r0-rtop)< smallval_south_top) then ! south
+               smallval_south_top = abs(r0-rtop)
+            endif
+            
+            if (coord(iproc*npts+i+iii,2)>0.0 &
+                    .and. abs(r0-rbot)< smallval_north_bot) then ! north            
+               smallval_north_bot = abs(r0-rbot)
+            elseif (coord(iproc*npts+i+iii,2)<0.0 &
+                    .and. abs(r0 -rbot)< smallval_south_bot) then ! south
+               smallval_south_bot = abs(r0-rbot)
+            endif
         enddo
-        close(99)
+         i=i+16
+     enddo
+     close(99)
+  enddo
+
+  smallval_north_top = smallval_north_top +epsi_real 
+  smallval_south_top = smallval_south_top +epsi_real 
+  smallval_north_bot = smallval_north_bot +epsi_real 
+  smallval_south_bot = smallval_south_bot +epsi_real 
+
+  write(6,*)'Smallest distance to rtop (North,South) AFTER [km]:', &
+       real(smallval_north_top/1000.),real(smallval_south_top/1000.)
+  write(6,*)'Smallest distance to rbot (North,South) AFTER [km]:', &
+       real(smallval_north_bot/1000.),real(smallval_south_bot/1000.)
+
+  if (use_top .or. use_meri) then
+     allocate(ind_proc_top_tmp(floor(real(nptstot)/10.)))
+     allocate(ind_pts_top_tmp(floor(real(nptstot)/10.)))
+  endif
+  if (use_bot .or. use_meri) then
+     allocate(ind_proc_bot_tmp(floor(real(nptstot)/10.)))
+     allocate(ind_pts_bot_tmp(floor(real(nptstot)/10.)))
+  endif
+
+  k1 = 0
+  k2 = 0 
+
+  do iproc=0,nproc_mesh-1
+     do i=1,npts,skipfact
+        ! check for top and bottom radii
+        r0 = sqrt(coord(iproc*npts+i,1)**2+coord(iproc*npts+i,2)**2) 
+
+        if (use_top .or. use_meri) then
+           if ( (coord(iproc*npts+i,2)>=0.0 .and.  &
+                abs(r0-rtop)<= smallval_north_top) .or. &
+                (coord(iproc*npts+i,2)<0.0 .and.  &
+                abs(r0-rtop) <= smallval_south_top)) then 
+              k1=k1+1         
+              ind_proc_top_tmp(k1) = iproc
+              ind_pts_top_tmp(k1) = i
+           endif
+        endif
+
+        if (use_bot .or. use_meri) then 
+           if ( (coord(iproc*npts+i,2)>=0.0 .and.  &
+                abs(r0-rbot) <= smallval_north_bot) .or. &
+                (coord(iproc*npts+i,2)<0.0 .and.  &
+                abs(r0-rbot) <= smallval_south_bot)) then 
+              k2=k2+1
+              ind_proc_bot_tmp(k2) = iproc
+              ind_pts_bot_tmp(k2) = i
+           endif
+        endif
+
+     enddo
+  enddo
+
+  npts_top=k1
+  npts_bot=k2
+
+  write(6,*)'# points on top,bottom:',npts_top,npts_bot
+
+  write(6,*)'allocating index arrays for surfaces....'
+  if (use_top .or. use_meri) then
+     allocate(ind_proc_top(npts_top),ind_pts_top(npts_top))
+     ind_proc_top=ind_proc_top_tmp(1:npts_top); ind_pts_top=ind_pts_top_tmp(1:npts_top)
+     deallocate(ind_proc_top_tmp,ind_pts_top_tmp)
+  endif
+  if (use_bot .or. use_meri) then
+     allocate(ind_proc_bot(npts_bot),ind_pts_bot(npts_bot))
+     ind_proc_bot=ind_proc_bot_tmp(1:npts_bot); ind_pts_bot=ind_pts_bot_tmp(1:npts_bot)
+     deallocate(ind_proc_bot_tmp,ind_pts_bot_tmp)
+  endif
+
+  !----------------------------------------------------------------------
+  ! MERIDIONAL based on rtop and rbottom
+  if (use_meri) then
+
+     write(6,*)'computing meridional preparameters....'
+
+     ! find closest theta at rbot
+     smallval_meri = 2.d0*pi
+     do i=1,npts_bot
+        r0 = sqrt(coord(ind_proc_bot(i)*npts+ind_pts_bot(i),1)**2 &
+                    + coord(ind_proc_bot(i)*npts+ind_pts_bot(i),2)**2)
+        theta0 = atan(coord(ind_proc_bot(i)*npts+ind_pts_bot(i),1) &
+                        /coord(ind_proc_bot(i)*npts+ind_pts_bot(i),2)+epsi)
+        if ( theta0 <0. ) theta0 = pi + theta0
+        if (theta0==0.0 .and. coord(iproc*npts+i,2)<0.0) theta0=pi
+        if (abs(theta_meri-theta0) < smallval_meri) then 
+           smallval_meri = abs(theta_meri-theta0) 
+           theta_bot = theta0 
+        endif
+     enddo
+     write(6,*)'theta meri,theta closest at rbot:',theta_meri*180./pi,theta_bot*180./pi
+     theta_meri = theta_bot
+
+     ! find theta at rtop closest to theta from rbot
+     smallval_meri = 2.d0*pi
+     do i=1,npts_top
+        r0 = sqrt(coord(ind_proc_top(i)*npts+ind_pts_top(i),1)**2 &
+                    + coord(ind_proc_top(i)*npts+ind_pts_top(i),2)**2)
+        theta0 = atan(coord(ind_proc_top(i)*npts+ind_pts_top(i),1) &
+                        / coord(ind_proc_top(i)*npts+ind_pts_top(i),2)+epsi)
+        if ( theta0 <0. ) theta0 = pi + theta0
+        if (theta0==0.0 .and. coord(iproc*npts+i,2)<0.0) theta0=pi
+        if (abs(theta_bot-theta0) < smallval_meri) then 
+           smallval_meri = abs(theta_bot-theta0) 
+           theta_top = theta0 
+        endif
      enddo
 
-     smallval_north_top = smallval_north_top +epsi_real 
-     smallval_south_top = smallval_south_top +epsi_real 
-     smallval_north_bot = smallval_north_bot +epsi_real 
-     smallval_south_bot = smallval_south_bot +epsi_real 
+     smallval_meri=abs(theta_top-theta_bot)
+     write(6,*)'theta closest at rtop and smallval:',theta_top*180./pi,smallval_meri*180./pi
+     if (theta_top > theta_bot) then 
+        theta_meri = theta_bot+ smallval_meri/2.
+     elseif (theta_top < theta_bot) then
+        theta_meri = theta_bot-smallval_meri/2.
+     else
+        theta_meri = theta_bot
+     endif
+     smallval_meri=smallval_meri*2.5
 
-     write(6,*)'Smallest distance to rtop (North,South) AFTER [km]:', &
-          real(smallval_north_top/1000.),real(smallval_south_top/1000.)
-     write(6,*)'Smallest distance to rbot (North,South) AFTER [km]:', &
-          real(smallval_north_bot/1000.),real(smallval_south_bot/1000.)
-
-     if (use_top .or. use_meri) allocate(ind_proc_top_tmp(floor(real(nptstot)/10.)),ind_pts_top_tmp(floor(real(nptstot)/10.)))
-     if (use_bot .or. use_meri) allocate(ind_proc_bot_tmp(floor(real(nptstot)/10.)),ind_pts_bot_tmp(floor(real(nptstot)/10.)))
-
-     k1=0; k2=0; 
+     k3=0
+     allocate(ind_proc_meri_tmp(floor(real(nptstot)/10.)))
+     allocate(ind_pts_meri_tmp(floor(real(nptstot)/10.)))
 
      do iproc=0,nproc_mesh-1
         do i=1,npts,skipfact
-           ! check for top and bottom radii
            r0 = sqrt(coord(iproc*npts+i,1)**2+coord(iproc*npts+i,2)**2) 
-
-           if (use_top .or. use_meri) then
-              if ( (coord(iproc*npts+i,2)>=0.0 .and.  &
-                   abs(r0-rtop)<= smallval_north_top) .or. &
-                   (coord(iproc*npts+i,2)<0.0 .and.  &
-                   abs(r0-rtop) <= smallval_south_top)) then 
-                 k1=k1+1         
-                 ind_proc_top_tmp(k1) = iproc
-                 ind_pts_top_tmp(k1) = i
-              endif
-           endif
-
-           if (use_bot .or. use_meri) then 
-              if ( (coord(iproc*npts+i,2)>=0.0 .and.  &
-                   abs(r0-rbot) <= smallval_north_bot) .or. &
-                   (coord(iproc*npts+i,2)<0.0 .and.  &
-                   abs(r0-rbot) <= smallval_south_bot)) then 
-                 k2=k2+1
-                 ind_proc_bot_tmp(k2) = iproc
-                 ind_pts_bot_tmp(k2) = i
-              endif
-           endif
-
-        enddo
-     enddo
-
-     npts_top=k1
-     npts_bot=k2
-
-     write(6,*)'# points on top,bottom:',npts_top,npts_bot
-
-     write(6,*)'allocating index arrays for surfaces....'
-     if (use_top .or. use_meri) then
-        allocate(ind_proc_top(npts_top),ind_pts_top(npts_top))
-        ind_proc_top=ind_proc_top_tmp(1:npts_top); ind_pts_top=ind_pts_top_tmp(1:npts_top)
-        deallocate(ind_proc_top_tmp,ind_pts_top_tmp)
-     endif
-     if (use_bot .or. use_meri) then
-        allocate(ind_proc_bot(npts_bot),ind_pts_bot(npts_bot))
-        ind_proc_bot=ind_proc_bot_tmp(1:npts_bot); ind_pts_bot=ind_pts_bot_tmp(1:npts_bot)
-        deallocate(ind_proc_bot_tmp,ind_pts_bot_tmp)
-     endif
-
-     ! MERIDIONAL based on rtop and rbottom-----------------------------------------------------------------------------
-     if (use_meri) then
-
-        write(6,*)'computing meridional preparameters....'
-
-        ! find closest theta at rbot
-        smallval_meri = 2.d0*pi
-        do i=1,npts_bot
-           r0 = sqrt(coord(ind_proc_bot(i)*npts+ind_pts_bot(i),1)**2 + coord(ind_proc_bot(i)*npts+ind_pts_bot(i),2)**2)
-           theta0 = atan(coord(ind_proc_bot(i)*npts+ind_pts_bot(i),1)/coord(ind_proc_bot(i)*npts+ind_pts_bot(i),2)+epsi)
+           theta0=atan(coord(iproc*npts+i,1)/(coord(iproc*npts+i,2)+epsi))
            if ( theta0 <0. ) theta0 = pi + theta0
            if (theta0==0.0 .and. coord(iproc*npts+i,2)<0.0) theta0=pi
-           !   write(6,*)'r theta bot:',r0/1000.,theta0*180./pi
-           if (abs(theta_meri-theta0) < smallval_meri) then 
-              smallval_meri = abs(theta_meri-theta0) 
-              theta_bot = theta0 
-           endif
-        enddo
-        write(6,*)'theta meri,theta closest at rbot:',theta_meri*180./pi,theta_bot*180./pi
-        theta_meri = theta_bot
-
-        ! find theta at rtop closest to theta from rbot
-        smallval_meri = 2.d0*pi
-        do i=1,npts_top
-           r0 = sqrt(coord(ind_proc_top(i)*npts+ind_pts_top(i),1)**2 + coord(ind_proc_top(i)*npts+ind_pts_top(i),2)**2)
-           theta0 = atan(coord(ind_proc_top(i)*npts+ind_pts_top(i),1)/coord(ind_proc_top(i)*npts+ind_pts_top(i),2)+epsi)
-           if ( theta0 <0. ) theta0 = pi + theta0
-           if (theta0==0.0 .and. coord(iproc*npts+i,2)<0.0) theta0=pi
-           !   write(6,*)'r theta top:',r0/1000.,theta0*180./pi
-           if (abs(theta_bot-theta0) < smallval_meri) then 
-              smallval_meri = abs(theta_bot-theta0) 
-              theta_top = theta0 
-           endif
-        enddo
-
-        smallval_meri=abs(theta_top-theta_bot)
-        write(6,*)'theta closest at rtop and smallval:',theta_top*180./pi,smallval_meri*180./pi
-        if (theta_top > theta_bot) then 
-           theta_meri = theta_bot+ smallval_meri/2.
-        elseif (theta_top < theta_bot) then
-           theta_meri = theta_bot-smallval_meri/2.
-        else
-           theta_meri = theta_bot
-        endif
-        smallval_meri=smallval_meri*2.5
-
-        k3=0
-        allocate(ind_proc_meri_tmp(floor(real(nptstot)/10.)),ind_pts_meri_tmp(floor(real(nptstot)/10.)))
-
-        do iproc=0,nproc_mesh-1
-           do i=1,npts,skipfact
-              r0 = sqrt(coord(iproc*npts+i,1)**2+coord(iproc*npts+i,2)**2) 
-              theta0=atan(coord(iproc*npts+i,1)/(coord(iproc*npts+i,2)+epsi))
-              if ( theta0 <0. ) theta0 = pi + theta0
-              if (theta0==0.0 .and. coord(iproc*npts+i,2)<0.0) theta0=pi
-              if ( r0>=rbot .and. abs(theta0-theta_meri) <= smallval_meri ) then
-                 k3=k3+1
-                 ind_proc_meri_tmp(k3) = iproc
-                 ind_pts_meri_tmp(k3) = i
-!                 write(62,*)r0,theta0*180./pi
-              endif
-           enddo
-        enddo
-        npts_meri=k3
-
-        write(6,*)'# points on meridional:',npts_meri
-        allocate(ind_proc_meri(npts_meri),ind_pts_meri(npts_meri))
-        ind_proc_meri=ind_proc_meri_tmp(1:npts_meri); ind_pts_meri=ind_pts_meri_tmp(1:npts_meri)
-        deallocate(ind_proc_meri_tmp,ind_pts_meri_tmp)
-     endif ! use_meri
-
-     ! xyz coordinates---------------------------------------------------------------------------------------------
-     write(6,*)'defining xyz...'
-     allocate(x(1:2*nptstot),y(1:2*nptstot),z(1:2*nptstot));x=0.;y=0.;z=0.
-
-     ! left cross section---------------------------------------------------------------------------------------------
-     call sphi2xy(x(1:nptstot),y(1:nptstot),coord(:,1),phi0,nptstot)
-     z(1:nptstot)=coord(1:nptstot,2)
-     write(6,*)'max s,x,y:',maxval(coord(:,1)),maxval(x),maxval(y)
-
-     ! right cross section---------------------------------------------------------------------------------------------
-     call sphi2xy(x(nptstot+1:2*nptstot),y(nptstot+1:2*nptstot),coord(:,1),phi0+dphi,nptstot)
-     z(nptstot+1:2*nptstot)=coord(1:nptstot,2)
-
-     write(6,*)'max s,x,y:',maxval(coord(:,1)),maxval(x),maxval(y)
-
-     ! save xyz
-     allocate(vp(2*nptstot))
-     !write(6,*)'saving xyz to file Data/xyz_xsections.dat ...'
-     !open(unit=99,file='Data/xyz_xsections.dat')
-     do i=1,2*nptstot  
-        !   write(99,*)x(i),y(i),z(i)
-        r= sqrt(x(i)**2+y(i)**2+z(i)**2)
-        vp(i)=prem(r,'v_p')
-     enddo
-     !close(99)
-
-     ! rescale vp
-     vp=vp/maxval(vp)*0.002-0.001
-
-     filename1=trim(outdir(1))//'/SNAPS/mesh_xsect'
-     call write_VTK_bin_scal(x,y,z,vp,2*nptstot,0,filename1)
-     filename1=trim(outdir(1))//'/SNAPS/mesh_xsect_cell'
-     call write_VTK_bin_scal_topology(x,y,z,vp,2*nptstot/4,filename1)
-
-
-     ! top surface---------------------------------------------------------------------------------------------
-     if (use_top) then
-        k1=0
-        write(6,*)'defining top surface...'
-        dtheta=rtop*pi/npts_top
-
-        naang = floor(real(npts_top)/real(2.))**2*6*4
-        write(6,*)'points on top surface:',naang
-        allocate(xtop(1:naang),ytop(1:naang),ztop(1:naang))
-        allocate(azi_phi_top(1:naang),azi_ind_top(1:naang))
-        call construct_surface_cubed_sphere(npts_top,npts,dble(rtop),ind_proc_top,ind_pts_top,nptstot,dble(coord),k1, &
-                                  dble(dphi),dble(phi0),'outside',naang,xtop,ytop,ztop,azi_phi_top,azi_ind_top)
-
-        ! extract vp
-        write(6,*)'allocating vptop...',k1
-        allocate(vptop(k1))
-        vptop(1:k1) = vp(ind_proc_top(1)*npts+ind_pts_top(1))
-
-!        write(6,*)'save into points vtk...'
-!        filename1=trim(outdir)//'/SNAPS/mesh_top'
-!        call write_VTK_bin_scal(real(xtop(1:k1)),real(ytop(1:k1)),real(ztop(1:k1)),vptop,k1,0,filename1)
-
-        write(6,*)'save into cell vtk...',size(xtop),k1
-        filename1=trim(outdir(1))//'/SNAPS/mesh_top_cell'
-        call write_VTK_bin_scal_topology(real(xtop(1:k1)),real(ytop(1:k1)),real(ztop(1:k1)),vptop(1:k1),k1/4,filename1)
-
-        open(unit=99,file=trim(simdir(1))//'/Data/xyz_top.dat')
-        do i=1,k1
-           write(99,*)xtop(i),ytop(i),ztop(i)
-        enddo
-        close(99)
-
-     endif
-
-     ! bottom surface ---------------------------------------------------------------------------------------------
-     if (use_bot) then
-        k2=0
-        write(6,*)'defining bot surface...'
-        dtheta=rbot*pi/npts_bot
-
-        naang = floor(real(npts_bot)/real(2.))**2*6*4
-        write(6,*)'points on bottom surface:',naang
-        allocate(xbot(1:naang),ybot(1:naang),zbot(1:naang))
-        allocate(azi_phi_bot(1:naang),azi_ind_bot(1:naang))
-
-        call construct_surface_cubed_sphere(npts_bot,npts,dble(rbot),ind_proc_bot,ind_pts_bot,nptstot,dble(coord),k2, &
-                                  dble(dphi),dble(phi0),'innside',naang,xbot,ybot,zbot,azi_phi_bot,azi_ind_bot)
-
-        ! extract vp
-        allocate(vpbot(k2))
-        vpbot(1:k2) = vp(ind_proc_bot(1)*npts+ind_pts_bot(1))
-
- !       ! save into points vtk
- !       filename1=trim(outdir)//'/SNAPS/mesh_bot'
- !       call write_VTK_bin_scal(real(xbot(1:k2)),real(ybot(1:k2)),real(zbot(1:k2)),vpbot,k2,0,filename1)
-
-        ! save into cell vtk
-        filename1=trim(outdir(1))//'/SNAPS/mesh_bot_cell'
-        call write_VTK_bin_scal_topology(real(xbot(1:k2)),real(ybot(1:k2)),real(zbot(1:k2)),vpbot,k2/4,filename1)
-
-        open(unit=99,file=trim(simdir(1))//'/Data/xyz_bot.dat')
-        do i=1,k2
-           write(99,*)xbot(i),ybot(i),zbot(i)
-        enddo
-        close(99)
-
-     endif
-
-     ! meridional cross section ---------------------------------------------------------------------------------------------
-     k3=0
-     if (use_meri) then 
-        write(6,*)'defining meridional cross section...'
-        dr=(6371000.-rbot)/npts_meri
-        write(6,*)'# pts on rmeri and average spacing [km]:',npts_meri,dr/1000.
-        allocate(xmeri(1:7*npts_meri**2),ymeri(1:7*npts_meri**2),zmeri(1:7*npts_meri**2));xmeri=0.;ymeri=0.;zmeri=0.
-        allocate(azi_ind_meri(7*npts_meri**2),azi_phi_meri(7*npts_meri**2))
-        allocate(vpmeri(1:7*npts_meri**2))
-
-        do i=1,npts_meri
-           r0 = sqrt( coord(ind_proc_meri(i)*npts+ind_pts_meri(i),1)**2 + coord(ind_proc_meri(i)*npts+ind_pts_meri(i),2)**2)
-           nphi=max(floor(r0*pi/dr/1.),1)
-           phi_incr = pi/nphi
-           write(6,*)i,'r0,nphi,phi_incr [km]:',r0/1000.,nphi,phi_incr*r0/1000.
-           do j=1,nphi
+           if ( r0>=rbot .and. abs(theta0-theta_meri) <= smallval_meri ) then
               k3=k3+1
-              phi=(j-1)*phi_incr
-              call rthetaphi2xyz(xmeri(k3),ymeri(k3),zmeri(k3),r0,theta_meri,phi)
-              azi_ind_meri(k3) = ind_proc_meri(i)*npts+ind_pts_meri(i)
-              azi_phi_meri(k3) = phi
-              vpmeri(k3) = vp(ind_proc_meri(i)*npts+ind_pts_meri(i))
-           enddo
+              ind_proc_meri_tmp(k3) = iproc
+              ind_pts_meri_tmp(k3) = i
+!              write(62,*)r0,theta0*180./pi
+           endif
         enddo
+     enddo
+     npts_meri=k3
 
-        ! save into AVS
-        write(6,*)'writing vtk bin file...'
-        filename1=trim(outdir(1))//'/SNAPS/mesh_meri'
-        call write_VTK_bin_scal(xmeri,ymeri,zmeri,vpmeri,k3,0,filename1)
+     write(6,*)'# points on meridional:',npts_meri
+     allocate(ind_proc_meri(npts_meri),ind_pts_meri(npts_meri))
+     ind_proc_meri = ind_proc_meri_tmp(1:npts_meri)
+     ind_pts_meri = ind_pts_meri_tmp(1:npts_meri)
+     deallocate(ind_proc_meri_tmp,ind_pts_meri_tmp)
+  endif ! use_meri
 
-     endif !use_meri
+  ! xyz coordinates-----------------------------------------------------------------------
+  write(6,*)'defining xyz...'
+  allocate(x(1:2*nptstot),y(1:2*nptstot),z(1:2*nptstot));x=0.;y=0.;z=0.
 
-     deallocate(coord)
-     deallocate(vp)
+  ! left cross section--------------------------------------------------------------------
+  call sphi2xy(x(1:nptstot),y(1:nptstot),coord(:,1),phi0,nptstot)
+  z(1:nptstot)=coord(1:nptstot,2)
+  write(6,*)'max s,x,y:',maxval(coord(:,1)),maxval(x),maxval(y)
 
-     ! assembling everything to one coordinate array-----------------------------------------------------------------
+  ! right cross section-------------------------------------------------------------------
+  call sphi2xy(x(nptstot+1:2*nptstot),y(nptstot+1:2*nptstot),coord(:,1),phi0+dphi,nptstot)
+  z(nptstot+1:2*nptstot)=coord(1:nptstot,2)
 
-     allocate(xtot(2*nptstot+k1+k2+k3),ytot(2*nptstot+k1+k2+k3),ztot(2*nptstot+k1+k2+k3))
+  write(6,*)'max s,x,y:',maxval(coord(:,1)),maxval(x),maxval(y)
 
-     xtot(1:2*nptstot)=x(1:2*nptstot); ytot(1:2*nptstot)=y(1:2*nptstot); ztot(1:2*nptstot)=z(1:2*nptstot)
-     if (use_top) then 
-        xtot(2*nptstot+1:2*nptstot+k1)=real(xtop(1:k1))
-        ytot(2*nptstot+1:2*nptstot+k1)=real(ytop(1:k1))
-        ztot(2*nptstot+1:2*nptstot+k1)=real(ztop(1:k1))
-     endif
-     if (use_bot) then 
-        xtot(2*nptstot+k1+1:2*nptstot+k1+k2)=real(xbot(1:k2))
-        ytot(2*nptstot+k1+1:2*nptstot+k1+k2)=real(ybot(1:k2))
-        ztot(2*nptstot+k1+1:2*nptstot+k1+k2)=real(zbot(1:k2))
-     endif
-     if (use_meri) then 
-        xtot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3)=xmeri(1:k3)
-        ytot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3)=ymeri(1:k3)
-        ztot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3)=zmeri(1:k3)
-     endif
+  ! save xyz
+  allocate(vp(2*nptstot))
+  do i=1,2*nptstot  
+     !   write(99,*)x(i),y(i),z(i)
+     r= sqrt(x(i)**2+y(i)**2+z(i)**2)
+     vp(i)=prem(r,'v_p')
+  enddo
 
-     ! save mesh for kerner
-     open(unit=99,file=trim(outdir(1))//'/SNAPS/mesh_tot.xyz')
-     do i=1,2*nptstot+k1+k2
+  ! rescale vp
+  vp=vp/maxval(vp)*0.002-0.001
+
+  filename1=trim(outdir(1))//'/SNAPS/mesh_xsect'
+  call write_VTK_bin_scal(x,y,z,vp,2*nptstot,0,filename1)
+  filename1=trim(outdir(1))//'/SNAPS/mesh_xsect_cell'
+  call write_VTK_bin_scal_topology(x,y,z,vp,2*nptstot/4,filename1)
+
+
+  ! top surface--------------------------------------------------------------------------
+  if (use_top) then
+     k1=0
+     write(6,*)'defining top surface...'
+     dtheta=rtop*pi/npts_top
+
+     naang = floor(real(npts_top)/real(2.))**2*6*4
+     write(6,*)'points on top surface:',naang
+     allocate(xtop(1:naang),ytop(1:naang),ztop(1:naang))
+     allocate(azi_phi_top(1:naang),azi_ind_top(1:naang))
+     call construct_surface_cubed_sphere(npts_top,npts,dble(rtop),ind_proc_top, &
+                                         ind_pts_top,nptstot,dble(coord),k1, &
+                                         dble(dphi),dble(phi0),'outside',naang,xtop,&
+                                         ytop,ztop,azi_phi_top,azi_ind_top)
+
+     ! extract vp
+     write(6,*)'allocating vptop...',k1
+     allocate(vptop(k1))
+     vptop(1:k1) = vp(ind_proc_top(1)*npts+ind_pts_top(1))
+
+     write(6,*)'save into cell vtk...',size(xtop),k1
+     call flush(6)
+     filename1=trim(outdir(1))//'/SNAPS/mesh_top_cell'
+     call write_VTK_bin_scal_topology(real(xtop(1:k1)),real(ytop(1:k1)),real(ztop(1:k1)),&
+                                      vptop(1:k1),k1/4,filename1)
+
+  endif
+
+  ! bottom surface -----------------------------------------------------------------------
+  if (use_bot) then
+     k2=0
+     write(6,*)'defining bot surface...'
+     dtheta=rbot*pi/npts_bot
+
+     naang = floor(real(npts_bot)/real(2.))**2*6*4
+     write(6,*)'points on bottom surface:',naang
+     allocate(xbot(1:naang),ybot(1:naang),zbot(1:naang))
+     allocate(azi_phi_bot(1:naang),azi_ind_bot(1:naang))
+
+     call construct_surface_cubed_sphere(npts_bot,npts,dble(rbot),ind_proc_bot, &
+                                         ind_pts_bot,nptstot,dble(coord),k2, &
+                                         dble(dphi),dble(phi0),'innside',naang,xbot,&
+                                         ybot,zbot,azi_phi_bot,azi_ind_bot)
+
+     ! extract vp
+     allocate(vpbot(k2))
+     vpbot(1:k2) = vp(ind_proc_bot(1)*npts+ind_pts_bot(1))
+
+     ! save into cell vtk
+     filename1=trim(outdir(1))//'/SNAPS/mesh_bot_cell'
+     call write_VTK_bin_scal_topology(real(xbot(1:k2)),real(ybot(1:k2)),real(zbot(1:k2)),&
+                                      vpbot,k2/4,filename1)
+
+  endif
+
+  ! meridional cross section -------------------------------------------------------------
+  k3=0
+  if (use_meri) then 
+     write(6,*)'defining meridional cross section...'
+     dr=(6371000.-rbot)/npts_meri
+     write(6,*)'# pts on rmeri and average spacing [km]:',npts_meri,dr/1000.
+     allocate(xmeri(1:7*npts_meri**2))
+     allocate(ymeri(1:7*npts_meri**2))
+     allocate(zmeri(1:7*npts_meri**2))
+     xmeri=0.
+     ymeri=0.
+     zmeri=0.
+     allocate(azi_ind_meri(7*npts_meri**2),azi_phi_meri(7*npts_meri**2))
+     allocate(vpmeri(1:7*npts_meri**2))
+
+     do i=1,npts_meri
+        r0 = sqrt( coord(ind_proc_meri(i)*npts+ind_pts_meri(i),1)**2 &
+                    + coord(ind_proc_meri(i)*npts+ind_pts_meri(i),2)**2)
+        nphi=max(floor(r0*pi/dr/1.),1)
+        phi_incr = pi/nphi
+        write(6,*)i,'r0,nphi,phi_incr [km]:',r0/1000.,nphi,phi_incr*r0/1000.
+        do j=1,nphi
+           k3=k3+1
+           phi=(j-1)*phi_incr
+           call rthetaphi2xyz(xmeri(k3),ymeri(k3),zmeri(k3),r0,theta_meri,phi)
+           azi_ind_meri(k3) = ind_proc_meri(i)*npts+ind_pts_meri(i)
+           azi_phi_meri(k3) = phi
+           vpmeri(k3) = vp(ind_proc_meri(i)*npts+ind_pts_meri(i))
+        enddo
+     enddo
+
+     ! save into AVS
+     write(6,*)'writing vtk bin file...'
+     filename1=trim(outdir(1))//'/SNAPS/mesh_meri'
+     call write_VTK_bin_scal(xmeri,ymeri,zmeri,vpmeri,k3,0,filename1)
+
+  endif !use_meri
+
+  deallocate(coord)
+  deallocate(vp)
+
+  ! assembling everything to one coordinate array-----------------------------------------
+
+  allocate(xtot(2*nptstot+k1+k2+k3),ytot(2*nptstot+k1+k2+k3),ztot(2*nptstot+k1+k2+k3))
+
+  xtot(1:2*nptstot)=x(1:2*nptstot)
+  ytot(1:2*nptstot)=y(1:2*nptstot)
+  ztot(1:2*nptstot)=z(1:2*nptstot)
+
+  if (use_top) then 
+     xtot(2*nptstot+1:2*nptstot+k1)=real(xtop(1:k1))
+     ytot(2*nptstot+1:2*nptstot+k1)=real(ytop(1:k1))
+     ztot(2*nptstot+1:2*nptstot+k1)=real(ztop(1:k1))
+  endif
+  if (use_bot) then 
+     xtot(2*nptstot+k1+1:2*nptstot+k1+k2)=real(xbot(1:k2))
+     ytot(2*nptstot+k1+1:2*nptstot+k1+k2)=real(ybot(1:k2))
+     ztot(2*nptstot+k1+1:2*nptstot+k1+k2)=real(zbot(1:k2))
+  endif
+  if (use_meri) then 
+     xtot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3)=xmeri(1:k3)
+     ytot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3)=ymeri(1:k3)
+     ztot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3)=zmeri(1:k3)
+  endif
+
+  ! save mesh for kerner
+  open(unit=99,file=trim(outdir(1))//'/SNAPS/mesh_tot.xyz')
+  do i=1,2*nptstot+k1+k2
+     write(99,*)xtot(i),ytot(i),ztot(i)
+  enddo
+  close(99)
+
+  if (use_meri) then 
+     open(unit=99,file=trim(outdir(1))//'/SNAPS/mesh_meri.xyz')
+     do i=2*nptstot+k1+k2+1,2*nptstot+k1+k2+k3
         write(99,*)xtot(i),ytot(i),ztot(i)
      enddo
      close(99)
+  endif
 
-     if (use_meri) then 
-        open(unit=99,file=trim(outdir(1))//'/SNAPS/mesh_meri.xyz')
-        do i=2*nptstot+k1+k2+1,2*nptstot+k1+k2+k3
-           write(99,*)xtot(i),ytot(i),ztot(i)
-        enddo
-        close(99)
-     endif
-
-    ! load azimuthal prefactors--------------------------------------------------------------------------------------------
-     if (any_sum_seis_true) then 
+  ! load azimuthal prefactors-------------------------------------------------------------
+  if (any_sum_seis_true) then 
      allocate(longit_snap(2*nptstot+k1+k2))
      longit_snap(1:nptstot) =phi0
      longit_snap(nptstot+1:2*nptstot) = phi0+dphi
@@ -1610,180 +1622,174 @@ endif
         longit_snap(2*nptstot+k1+k2+i) = azi_phi_meri(i)
      enddo
 
-        allocate(mij_snap(2*nptstot+k1+k2+k3,nsim,3)); mij_snap= -1.E30
-        call compute_radiation_prefactor(mij_snap,2*nptstot+k1+k2+k3,nsim,longit_snap)
-        allocate(disptot_sum(2*nptstot+k1+k2+k3,3))
-     endif
+     allocate(mij_snap(2*nptstot+k1+k2+k3,nsim,3))
+     mij_snap= -1.E30
+     call compute_radiation_prefactor(mij_snap,2*nptstot+k1+k2+k3,nsim,longit_snap)
+     allocate(disptot_sum(2*nptstot+k1+k2+k3,3))
+  endif
 
-! FLUID REGION
-     npts_fluid=nel_fluid*16
-     npts_fluid_read=nel_fluid*9
-     write(6,*)'points in fluid:',npts_fluid
-     allocate(fluid_prefact(npts_fluid*nproc_mesh,2,nsim))
+  ! FLUID REGION
+  npts_fluid=nel_fluid*16
+  npts_fluid_read=nel_fluid*9
+  write(6,*)'points in fluid:',npts_fluid
+  allocate(fluid_prefact(npts_fluid*nproc_mesh,2,nsim))
 
-     do isim = 1,nsim
-        ! load fluid prefactors---------------------------------------------------------------------------------------------
-        write(6,*)'loading fluid prefactors...'
+  do isim = 1,nsim
+     ! load fluid prefactors-------------------------------------------------------------
+     write(6,*) 'loading fluid prefactors...'
+     do iproc=0, nproc_mesh-1
+        call define_io_appendix(appmynum,iproc)
+        open(unit=190,file=trim(simdir(isim))//'/Data/inv_rho_s_fluid_globsnaps_'//appmynum//'.dat')
+        i=0
+        do ii=1,npts_fluid_read/9,skipfact
+           do iii=1,9
+              read(190,*)coord9(iii,1),coord9(iii,2)
+           enddo
+           fluid_prefact(iproc*npts_fluid+i+1:iproc*npts_fluid+i+2,:,isim) = coord9(1:2,:)
+                                                                       ! (0,0), (0,npol/2)
+           fluid_prefact(iproc*npts_fluid+i+3,:,isim) = coord9(5,:)    ! (npol/2,npol/2)
+           fluid_prefact(iproc*npts_fluid+i+4,:,isim) = coord9(4,:)    ! (npol/2,0)
+           fluid_prefact(iproc*npts_fluid+i+5:iproc*npts_fluid+i+6,:,isim) = coord9(2:3,:)    
+                                                                       ! (0,npol/2),(0,npol)
+           fluid_prefact(iproc*npts_fluid+i+7,:,isim) = coord9(6,:)    ! (npol/2,npol)
+           fluid_prefact(iproc*npts_fluid+i+8,:,isim) = coord9(5,:)    ! (npol/2,npol/2)
+           fluid_prefact(iproc*npts_fluid+i+9:iproc*npts_fluid+i+10,:,isim) = coord9(4:5,:)    
+                                                                  ! (npol/2,0),(npol/2,npol/2)
+           fluid_prefact(iproc*npts_fluid+i+11,:,isim) = coord9(8,:)   ! (npol,npol/2)
+           fluid_prefact(iproc*npts_fluid+i+12,:,isim) = coord9(7,:)   ! (npol,0)            
+           fluid_prefact(iproc*npts_fluid+i+13:iproc*npts_fluid+i+14,:,isim) = coord9(5:6,:)    
+                                                                  ! (npol/2,npol/2),(npol/2,npol)
+           fluid_prefact(iproc*npts_fluid+i+15,:,isim) = coord9(9,:)   ! (npol,npol)
+           fluid_prefact(iproc*npts_fluid+i+16,:,isim) = coord9(8,:)   ! (npol,npol/2)            
+           i=i+16
+        enddo  ! npts_fluid_read
+        close(190)
+     enddo ! nproc_mesh
+  enddo !isim
+
+  ! compute longitude and radiation pattern for multiple wavefields
+
+  ! load snaps ===============================================================
+  write(6,*)'loading snaps...'
+  allocate(disp(2*nptstot+k1+k2+k3,3))
+
+  do j=snap1,snap2,snapskip
+
+     disp=0.
+     if (any_sum_seis_true) disptot_sum = 0.
+
+     do isim=1,nsim
         do iproc=0,nproc_mesh-1
            call define_io_appendix(appmynum,iproc)
-           open(unit=190,file=trim(simdir(isim))//'/Data/inv_rho_s_fluid_globsnaps_'//appmynum//'.dat')
+           call define_io_appendix(appmynum2,j)      
+           open(unit=99,file=trim(simdir(isim))//'/Data/snap_'//appmynum//'_'//appmynum2//'.dat', &
+                     FORM="UNFORMATTED",STATUS="OLD",POSITION="REWIND")
            i=0
-           do ii=1,npts_fluid_read/9,skipfact
+           do ii=1,npts_read/9,skipfact
               do iii=1,9
-                 read(190,*)coord9(iii,1),coord9(iii,2)
+                 read(99)disp9(iii,1),disp9(iii,2),disp9(iii,3)
               enddo
-              fluid_prefact(iproc*npts_fluid+i+1:iproc*npts_fluid+i+2,:,isim) = coord9(1:2,:) ! (0,0), (0,npol/2)
-              fluid_prefact(iproc*npts_fluid+i+3,:,isim) = coord9(5,:)    ! (npol/2,npol/2)
-              fluid_prefact(iproc*npts_fluid+i+4,:,isim) = coord9(4,:)    ! (npol/2,0)
-              fluid_prefact(iproc*npts_fluid+i+5:iproc*npts_fluid+i+6,:,isim) = coord9(2:3,:)    ! (0,npol/2),(0,npol)
-              fluid_prefact(iproc*npts_fluid+i+7,:,isim) = coord9(6,:)    ! (npol/2,npol)
-              fluid_prefact(iproc*npts_fluid+i+8,:,isim) = coord9(5,:)    ! (npol/2,npol/2)
-              fluid_prefact(iproc*npts_fluid+i+9:iproc*npts_fluid+i+10,:,isim) = coord9(4:5,:)    ! (npol/2,0),(npol/2,npol/2)
-              fluid_prefact(iproc*npts_fluid+i+11,:,isim) = coord9(8,:)    ! (npol,npol/2)
-              fluid_prefact(iproc*npts_fluid+i+12,:,isim) = coord9(7,:)    ! (npol,0)            
-              fluid_prefact(iproc*npts_fluid+i+13:iproc*npts_fluid+i+14,:,isim) = coord9(5:6,:)    ! (npol/2,npol/2),(npol/2,npol)
-              fluid_prefact(iproc*npts_fluid+i+15,:,isim) = coord9(9,:)    ! (npol,npol)
-              fluid_prefact(iproc*npts_fluid+i+16,:,isim) = coord9(8,:)    ! (npol,npol/2)            
+              disp(iproc*npts+i+1:iproc*npts+i+2,:) = disp9(1:2,:) ! (0,0), (0,npol/2)
+              disp(iproc*npts+i+3,:) = disp9(5,:)    ! (npol/2,npol/2)
+              disp(iproc*npts+i+4,:) = disp9(4,:)    ! (npol/2,0)
+              disp(iproc*npts+i+5:iproc*npts+i+6,:) = disp9(2:3,:)    ! (0,npol/2),(0,npol)
+              disp(iproc*npts+i+7,:) = disp9(6,:)    ! (npol/2,npol)
+              disp(iproc*npts+i+8,:) = disp9(5,:)    ! (npol/2,npol/2)
+              disp(iproc*npts+i+9:iproc*npts+i+10,:) = disp9(4:5,:)    ! (npol/2,0),(npol/2,npol/2)
+              disp(iproc*npts+i+11,:) = disp9(8,:)    ! (npol,npol/2)
+              disp(iproc*npts+i+12,:) = disp9(7,:)    ! (npol,0)            
+              disp(iproc*npts+i+13:iproc*npts+i+14,:) = disp9(5:6,:)    ! (npol/2,npol/2),(npol/2,npol)
+              disp(iproc*npts+i+15,:) = disp9(9,:)    ! (npol,npol)
+              disp(iproc*npts+i+16,:) = disp9(8,:)    ! (npol,npol/2)            
               i=i+16
-           enddo  ! npts_fluid_read
-           close(190)
-        enddo ! nproc_mesh
-     enddo !isim
-
-! compute longitude and radiation pattern for multiple wavefields
-!     allocate(mij_snaps(1:),longit_tmp(1:npts_tot))
-!     call compute_radiation_prefactor(mij_snaps,npts,nsim,longit_tmp)
-
-     ! load snaps ===============================================================
-     write(6,*)'loading snaps...'
-     allocate(disp(2*nptstot+k1+k2+k3,3))
-!     allocate(disptot(2*nptstot+k1+k2+k3,3))
-
-     do j=snap1,snap2,snapskip
-
-        disp=0.
-!        disptot=0.
-        if (any_sum_seis_true) disptot_sum=0.
-
-        do isim=1,nsim
-           do iproc=0,nproc_mesh-1
-              call define_io_appendix(appmynum,iproc)
-              call define_io_appendix(appmynum2,j)      
-              open(unit=99,file=trim(simdir(isim))//'/Data/snap_'//appmynum//'_'//appmynum2//'.dat', &
-                        FORM="UNFORMATTED",STATUS="OLD",POSITION="REWIND")
-              i=0
-              do ii=1,npts_read/9,skipfact
-                 do iii=1,9
-                    read(99)disp9(iii,1),disp9(iii,2),disp9(iii,3)
-                 enddo
-                 disp(iproc*npts+i+1:iproc*npts+i+2,:) = disp9(1:2,:) ! (0,0), (0,npol/2)
-                 disp(iproc*npts+i+3,:) = disp9(5,:)    ! (npol/2,npol/2)
-                 disp(iproc*npts+i+4,:) = disp9(4,:)    ! (npol/2,0)
-                 disp(iproc*npts+i+5:iproc*npts+i+6,:) = disp9(2:3,:)    ! (0,npol/2),(0,npol)
-                 disp(iproc*npts+i+7,:) = disp9(6,:)    ! (npol/2,npol)
-                 disp(iproc*npts+i+8,:) = disp9(5,:)    ! (npol/2,npol/2)
-                 disp(iproc*npts+i+9:iproc*npts+i+10,:) = disp9(4:5,:)    ! (npol/2,0),(npol/2,npol/2)
-                 disp(iproc*npts+i+11,:) = disp9(8,:)    ! (npol,npol/2)
-                 disp(iproc*npts+i+12,:) = disp9(7,:)    ! (npol,0)            
-                 disp(iproc*npts+i+13:iproc*npts+i+14,:) = disp9(5:6,:)    ! (npol/2,npol/2),(npol/2,npol)
-                 disp(iproc*npts+i+15,:) = disp9(9,:)    ! (npol,npol)
-                 disp(iproc*npts+i+16,:) = disp9(8,:)    ! (npol,npol/2)            
-                 i=i+16
-              enddo
-              close(99)
-
-              disp(iproc*npts+1:iproc*npts+npts_fluid,1)= &
-                   disp(iproc*npts+1:iproc*npts+npts_fluid,1) * fluid_prefact(:,1,isim)
-              disp(iproc*npts+1:iproc*npts+npts_fluid,2)= &
-                   disp(iproc*npts+1:iproc*npts+npts_fluid,2) * fluid_prefact(:,1,isim) * fluid_prefact(:,2,isim)
-              disp(iproc*npts+1:iproc*npts+npts_fluid,3)= &
-                   disp(iproc*npts+1:iproc*npts+npts_fluid,3) * fluid_prefact(:,1,isim)
            enddo
+           close(99)
 
-           disp(nptstot+1:2*nptstot,1)=disp(1:nptstot,1)
-           disp(nptstot+1:2*nptstot,2)=disp(1:nptstot,2)
-           disp(nptstot+1:2*nptstot,3)=disp(1:nptstot,3)
-
-           do i=1,k1
-              disp(2*nptstot+i,1) = disp(azi_ind_top(i),1)
-              disp(2*nptstot+i,2) = disp(azi_ind_top(i),2)
-              disp(2*nptstot+i,3) = disp(azi_ind_top(i),3)
-           enddo
-           do i=1,k2
-              disp(2*nptstot+k1+i,1) = disp(azi_ind_bot(i),1)
-              disp(2*nptstot+k1+i,2) = disp(azi_ind_bot(i),2)
-              disp(2*nptstot+k1+i,3) = disp(azi_ind_bot(i),3)
-           enddo
-           if (use_meri) then 
-              do i=1,k3
-                 disp(2*nptstot+k1+k2+i,1) = disp(azi_ind_meri(i),1)   
-                 disp(2*nptstot+k1+k2+i,2) = disp(azi_ind_meri(i),2)
-                 disp(2*nptstot+k1+k2+i,3) = disp(azi_ind_meri(i),3)
-              enddo
-           endif
-
-           disp(1:nptstot,1)=disp(1:nptstot,1)
-           disp(1:nptstot,2)=disp(1:nptstot,2)
-           disp(1:nptstot,3)=disp(1:nptstot,3)
-
-! analytical test           
-!           do i=1,2*nptstot+k1+k2
-!              call xyz2rthetaphi(r8,theta8,phi8,dble(xtot(i)),dble(ytot(i)),dble(ztot(i)))
-!              disp(i,:) =  real(r8**4)*cos(real(phi8**3))**2*sin(real(theta8**3))**2
-!           enddo
-
-           filename1=trim(simdir(isim))//'/'//trim(outdir(1))//'/SNAPS/snap_cell_'//trim(src_type(isim,2))//'_'//appmynum2//'_z'
-           write(6,*)'filename out vtk :',filename1
-           call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),ztot(1:2*nptstot+k1+k2), & 
-                disp(1:2*nptstot+k1+k2,3),(2*nptstot+k1+k2)/4,filename1)
-
-!           filename1=trim(simdir(isim))//'/'//trim(outdir(1))//'/SNAPS/snap_'//trim(src_type(isim,2))//'_'//appmynum2//'_z'
-!           write(6,*)'filename out vtk :',filename1
-!           call write_VTK_bin_scal(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),ztot(1:2*nptstot+k1+k2), & 
-!                disp(1:2*nptstot+k1+k2,3),2*nptstot+k1+k2,0,filename1)
-           
-           if (use_meri) then
-              filename1=trim(simdir(isim))//'/'//trim(outdir(1))//'/SNAPS/meri_snap_'//trim(src_type(isim,2))//'_'//appmynum2//'_z'
-              call write_VTK_bin_scal(xtot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3),&
-                   ytot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
-                   ztot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
-                   disp(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3,3),k3,0,filename1)
-           endif
-
-           if (sum_seis_true(isim)) then 
-              disptot_sum(:,1) = disptot_sum(:,1) + mij_snap(:,isim,1)*disp(:,2)
-              disptot_sum(:,2) = disptot_sum(:,2) + mij_snap(:,isim,2)*disp(:,2)
-              disptot_sum(:,3) = disptot_sum(:,3) + mij_snap(:,isim,3)*disp(:,3)
-           endif
-
+           disp(iproc*npts+1:iproc*npts+npts_fluid,1)= &
+                disp(iproc*npts+1:iproc*npts+npts_fluid,1) * fluid_prefact(:,1,isim)
+           disp(iproc*npts+1:iproc*npts+npts_fluid,2)= &
+                disp(iproc*npts+1:iproc*npts+npts_fluid,2) * fluid_prefact(:,1,isim) &
+                    * fluid_prefact(:,2,isim)
+           disp(iproc*npts+1:iproc*npts+npts_fluid,3)= &
+                disp(iproc*npts+1:iproc*npts+npts_fluid,3) * fluid_prefact(:,1,isim)
         enddo
- 
-        if (any_sum_seis_true) then 
 
-!           filename1=trim(outdir(1))//'/SNAPS/snap_mij_'//appmynum2//'_z'
-!           write(6,*)'filename out vtk :',filename1
-!           call write_VTK_bin_scal(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),ztot(1:2*nptstot+k1+k2), & 
-!                disptot_sum(1:2*nptstot+k1+k2,3),2*nptstot+k1+k2,0,filename1)
+        disp(nptstot+1:2*nptstot,1)=disp(1:nptstot,1)
+        disp(nptstot+1:2*nptstot,2)=disp(1:nptstot,2)
+        disp(nptstot+1:2*nptstot,3)=disp(1:nptstot,3)
 
-           filename1=trim(outdir(1))//'/SNAPS/snap_mij_cell_'//appmynum2//'_z'
-           write(6,*)'filename out vtk :',filename1
-           call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),ztot(1:2*nptstot+k1+k2), & 
-                disptot_sum(1:2*nptstot+k1+k2,3),(2*nptstot+k1+k2)/4,filename1)
-           
-           if (use_meri) then
-              filename1=trim(outdir(1))//'/SNAPS/meri_snap_mij_'//appmynum2//'_z'
-              call write_VTK_bin_scal(xtot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3),&
-                   ytot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
-                   ztot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
-                   disptot_sum(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3,3),k3,0,filename1)
-           endif
+        do i=1,k1
+           disp(2*nptstot+i,1) = disp(azi_ind_top(i),1)
+           disp(2*nptstot+i,2) = disp(azi_ind_top(i),2)
+           disp(2*nptstot+i,3) = disp(azi_ind_top(i),3)
+        enddo
+        do i=1,k2
+           disp(2*nptstot+k1+i,1) = disp(azi_ind_bot(i),1)
+           disp(2*nptstot+k1+i,2) = disp(azi_ind_bot(i),2)
+           disp(2*nptstot+k1+i,3) = disp(azi_ind_bot(i),3)
+        enddo
+        if (use_meri) then 
+           do i=1,k3
+              disp(2*nptstot+k1+k2+i,1) = disp(azi_ind_meri(i),1)   
+              disp(2*nptstot+k1+k2+i,2) = disp(azi_ind_meri(i),2)
+              disp(2*nptstot+k1+k2+i,3) = disp(azi_ind_meri(i),3)
+           enddo
         endif
+
+        disp(1:nptstot,1)=disp(1:nptstot,1)
+        disp(1:nptstot,2)=disp(1:nptstot,2)
+        disp(1:nptstot,3)=disp(1:nptstot,3)
+
+        filename1 = trim(simdir(isim))//'/'//trim(outdir(1))//'/SNAPS/snap_cell_'&
+                    //trim(src_type(isim,2))//'_'//appmynum2//'_z'
+        write(6,*)'filename out vtk :',filename1
+        call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),&
+                                         ztot(1:2*nptstot+k1+k2), & 
+                                         disp(1:2*nptstot+k1+k2,3),(2*nptstot+k1+k2)/4,&
+                                         filename1)
+
+        
+        if (use_meri) then
+           filename1 = trim(simdir(isim))//'/'//trim(outdir(1))//'/SNAPS/meri_snap_'&
+                        //trim(src_type(isim,2))//'_'//appmynum2//'_z'
+           call write_VTK_bin_scal(xtot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3),&
+                ytot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
+                ztot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
+                disp(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3,3),k3,0,filename1)
+        endif
+
+        if (sum_seis_true(isim)) then 
+           disptot_sum(:,1) = disptot_sum(:,1) + mij_snap(:,isim,1)*disp(:,2)
+           disptot_sum(:,2) = disptot_sum(:,2) + mij_snap(:,isim,2)*disp(:,2)
+           disptot_sum(:,3) = disptot_sum(:,3) + mij_snap(:,isim,3)*disp(:,3)
+        endif
+
      enddo
+ 
+     if (any_sum_seis_true) then 
 
-   end subroutine compute_3d_wavefields
 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+        filename1=trim(outdir(1))//'/SNAPS/snap_mij_cell_'//appmynum2//'_z'
+        write(6,*)'filename out vtk :',filename1
+        call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),&
+                                         ztot(1:2*nptstot+k1+k2), & 
+                                         disptot_sum(1:2*nptstot+k1+k2,3),&
+                                         (2*nptstot+k1+k2)/4,filename1)
+        
+        if (use_meri) then
+           filename1=trim(outdir(1))//'/SNAPS/meri_snap_mij_'//appmynum2//'_z'
+           call write_VTK_bin_scal(xtot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3),&
+                ytot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
+                ztot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
+                disptot_sum(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3,3),k3,0,filename1)
+        endif
+     endif
+  enddo
 
+end subroutine compute_3d_wavefields
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 subroutine construct_surface_cubed_sphere(npts_surf,npts,rsurf,ind_proc_surf,ind_pts_surf,&
                             nptstot,coord1,kpts,dphi,phi0,in_or_out,n,xsurf,ysurf,zsurf,azi_phi_surf,azi_ind_surf)
 
