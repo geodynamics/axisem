@@ -1510,7 +1510,7 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   cell_type = 9
 
   open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
-       convert='big_endian')
+       convert='big_endian', form='unformatted')
   write(100) '# vtk DataFile Version 4.0'//char(10)
   write(100) 'mittico'//char(10)
   write(100) 'BINARY'//char(10)
