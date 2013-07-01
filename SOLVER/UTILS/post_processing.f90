@@ -1184,13 +1184,10 @@ subroutine compute_3d_wavefields
   logical                               :: use_meri, use_top, use_bot
 
   character(len=4)                      :: appmynum2
-  integer                               :: nptstot, k1, k2, k3, npts_fluid, skipfact, j, &
+  integer                               :: nptstot, k1, k2, k3, npts_fluid, j, &
                                            naang, npts_read, npts_fluid_read
-  real                                  :: rbot, rtop, dtheta, phi_incr, smallval
+  real                                  :: rbot, rtop, phi_incr
   double precision                      :: r8, theta8, phi8
-
-  skipfact=1
-  smallval=10000.
 
   ! read snap plot parameters
 
@@ -1258,41 +1255,45 @@ subroutine compute_3d_wavefields
      i=0
      do ii=1,npts_read/9
         do iii=1,9
-            read(99,*)coord9(iii,1),coord9(iii,2)
+            read(99,*) coord9(iii,1), coord9(iii,2)
          enddo
-         coord(iproc*npts+i+1:iproc*npts+i+2,:) = coord9(1:2,:) ! (0,0), (0,npol/2)
+         coord(iproc*npts+i+1:iproc*npts+i+2,:) = coord9(1:2,:) 
+                                                  ! (0,0), (0,npol/2)
          coord(iproc*npts+i+3,:) = coord9(5,:)    ! (npol/2,npol/2)
          coord(iproc*npts+i+4,:) = coord9(4,:)    ! (npol/2,0)
-         coord(iproc*npts+i+5:iproc*npts+i+6,:) = coord9(2:3,:)    ! (0,npol/2),(0,npol)
+         coord(iproc*npts+i+5:iproc*npts+i+6,:) = coord9(2:3,:)    
+                                                  ! (0,npol/2),(0,npol)
          coord(iproc*npts+i+7,:) = coord9(6,:)    ! (npol/2,npol)
          coord(iproc*npts+i+8,:) = coord9(5,:)    ! (npol/2,npol/2)
-         coord(iproc*npts+i+9:iproc*npts+i+10,:) = coord9(4:5,:)    ! (npol/2,0),(npol/2,npol/2)
-         coord(iproc*npts+i+11,:) = coord9(8,:)    ! (npol,npol/2)
-         coord(iproc*npts+i+12,:) = coord9(7,:)    ! (npol,0)            
-         coord(iproc*npts+i+13:iproc*npts+i+14,:) = coord9(5:6,:)    ! (npol/2,npol/2),(npol/2,npol)
-         coord(iproc*npts+i+15,:) = coord9(9,:)    ! (npol,npol)
-         coord(iproc*npts+i+16,:) = coord9(8,:)    ! (npol,npol/2)            
+         coord(iproc*npts+i+9:iproc*npts+i+10,:) = coord9(4:5,:)    
+                                                  ! (npol/2,0),(npol/2,npol/2)
+         coord(iproc*npts+i+11,:) = coord9(8,:)   ! (npol,npol/2)
+         coord(iproc*npts+i+12,:) = coord9(7,:)   ! (npol,0)            
+         coord(iproc*npts+i+13:iproc*npts+i+14,:) = coord9(5:6,:)
+                                                  ! (npol/2,npol/2),(npol/2,npol)
+         coord(iproc*npts+i+15,:) = coord9(9,:)   ! (npol,npol)
+         coord(iproc*npts+i+16,:) = coord9(8,:)   ! (npol,npol/2)            
 
          ! determine minimal distance from rtop and rbot
          do iii=1,16
-            r0 = sqrt(coord(iproc*npts+i+iii,1)**2+coord(iproc*npts+i+iii,2)**2) 
-            if (coord(iproc*npts+i+iii,2)>0.0 &
-                    .and. abs(r0-rtop)< smallval_north_top) then ! north
+            r0 = sqrt(coord(iproc*npts+i+iii,1)**2 + coord(iproc*npts+i+iii,2)**2) 
+            if (coord(iproc*npts+i+iii,2) > 0.0 &
+                    .and. abs(r0-rtop) < smallval_north_top) then ! north
                smallval_north_top = abs(r0-rtop)
-            elseif (coord(iproc*npts+i+iii,2)<0.0 &
-                    .and. abs(r0-rtop)< smallval_south_top) then ! south
+            elseif (coord(iproc*npts+i+iii,2) < 0.0 &
+                    .and. abs(r0-rtop) < smallval_south_top) then ! south
                smallval_south_top = abs(r0-rtop)
             endif
             
-            if (coord(iproc*npts+i+iii,2)>0.0 &
+            if (coord(iproc*npts+i+iii,2) > 0.0 &
                     .and. abs(r0-rbot)< smallval_north_bot) then ! north            
                smallval_north_bot = abs(r0-rbot)
-            elseif (coord(iproc*npts+i+iii,2)<0.0 &
+            elseif (coord(iproc*npts+i+iii,2) < 0.0 &
                     .and. abs(r0 -rbot)< smallval_south_bot) then ! south
                smallval_south_bot = abs(r0-rbot)
             endif
         enddo
-         i=i+16
+        i=i+16
      enddo
      close(99)
   enddo
@@ -1302,15 +1303,16 @@ subroutine compute_3d_wavefields
   smallval_north_bot = smallval_north_bot + epsi_real 
   smallval_south_bot = smallval_south_bot + epsi_real 
 
-  write(6,*)'Smallest distance to rtop (North,South) AFTER [km]:', &
+  write(6,*) 'Smallest distance to rtop (North,South) AFTER [km]:', &
        real(smallval_north_top/1000.),real(smallval_south_top/1000.)
-  write(6,*)'Smallest distance to rbot (North,South) AFTER [km]:', &
+  write(6,*) 'Smallest distance to rbot (North,South) AFTER [km]:', &
        real(smallval_north_bot/1000.),real(smallval_south_bot/1000.)
 
   if (use_top .or. use_meri) then
      allocate(ind_proc_top_tmp(floor(real(nptstot)/10.)))
      allocate(ind_pts_top_tmp(floor(real(nptstot)/10.)))
   endif
+
   if (use_bot .or. use_meri) then
      allocate(ind_proc_bot_tmp(floor(real(nptstot)/10.)))
      allocate(ind_pts_bot_tmp(floor(real(nptstot)/10.)))
@@ -1319,13 +1321,13 @@ subroutine compute_3d_wavefields
   k1 = 0
   k2 = 0 
 
-  do iproc=0,nproc_mesh-1
-     do i=1,npts,skipfact
+  do iproc=0, nproc_mesh-1
+     do i=1, npts
         ! check for top and bottom radii
-        r0 = sqrt(coord(iproc*npts+i,1)**2+coord(iproc*npts+i,2)**2) 
+        r0 = sqrt(coord(iproc*npts+i,1)**2 + coord(iproc*npts+i,2)**2) 
 
         if (use_top .or. use_meri) then
-           if ( (coord(iproc*npts+i,2) >= 0.0 .and. abs(r0-rtop)<= smallval_north_top) .or. &
+           if ( (coord(iproc*npts+i,2) >= 0.0 .and. abs(r0-rtop) <= smallval_north_top) .or. &
                 (coord(iproc*npts+i,2) < 0.0 .and.  abs(r0-rtop) <= smallval_south_top)) then 
               k1 = k1 + 1         
               ind_proc_top_tmp(k1) = iproc
@@ -1341,7 +1343,6 @@ subroutine compute_3d_wavefields
               ind_pts_bot_tmp(k2) = i
            endif
         endif
-
      enddo
   enddo
   
@@ -1416,7 +1417,7 @@ subroutine compute_3d_wavefields
      allocate(ind_pts_meri_tmp(floor(real(nptstot)/10.)))
 
      do iproc=0,nproc_mesh-1
-        do i=1,npts,skipfact
+        do i=1,npts
            r0 = sqrt(coord(iproc*npts+i,1)**2+coord(iproc*npts+i,2)**2) 
            theta0=atan(coord(iproc*npts+i,1)/(coord(iproc*npts+i,2)+epsi))
            if ( theta0 <0. ) theta0 = pi + theta0
@@ -1425,7 +1426,6 @@ subroutine compute_3d_wavefields
               k3=k3+1
               ind_proc_meri_tmp(k3) = iproc
               ind_pts_meri_tmp(k3) = i
-!              write(62,*)r0,theta0*180./pi
            endif
         enddo
      enddo
@@ -1473,7 +1473,6 @@ subroutine compute_3d_wavefields
   if (use_top) then
      k1 = 0
      write(6,*) 'defining top surface...'
-     dtheta = rtop * pi / npts_top
 
      naang = floor(real(npts_top)/real(2.))**2*6*4
      write(6,*)'points on top surface:',naang
@@ -1502,7 +1501,6 @@ subroutine compute_3d_wavefields
   if (use_bot) then
      k2=0
      write(6,*)'defining bot surface...'
-     dtheta=rbot*pi/npts_bot
 
      naang = floor(real(npts_bot)/real(2.))**2*6*4
      write(6,*)'points on bottom surface:',naang
@@ -1640,7 +1638,7 @@ subroutine compute_3d_wavefields
         call define_io_appendix(appmynum,iproc)
         open(unit=190,file=trim(simdir(isim))//'/Data/inv_rho_s_fluid_globsnaps_'//appmynum//'.dat')
         i=0
-        do ii=1,npts_fluid_read/9,skipfact
+        do ii=1,npts_fluid_read/9
            do iii=1,9
               read(190,*)coord9(iii,1),coord9(iii,2)
            enddo
@@ -1684,7 +1682,7 @@ subroutine compute_3d_wavefields
            open(unit=99,file=trim(simdir(isim))//'/Data/snap_'//appmynum//'_'//appmynum2//'.dat', &
                      FORM="UNFORMATTED",STATUS="OLD",POSITION="REWIND")
            i=0
-           do ii=1,npts_read/9,skipfact
+           do ii=1,npts_read/9
               do iii=1,9
                  read(99)disp9(iii,1),disp9(iii,2),disp9(iii,3)
               enddo
@@ -2002,7 +2000,10 @@ double precision, parameter :: pi = 3.1415926535898
       iii=0
       write(6,*)'constructing 1d array for surface coordinates...'
       do iel=1,nel_surf
-         if ( mod(iel,floor(nel_surf/10.))==0  )write(6,*)'percentage done:',ceiling(real(iel)/real(nel_surf)*100.)
+         if ( mod(iel,floor(nel_surf/10.))==0  ) then
+            write(6,*)'percentage done:',ceiling(real(iel)/real(nel_surf)*100.)
+            call flush(6)
+         endif
          xc=sum(xcol(:,:,0,iel))/4.d0
          yc=sum(ycol(:,:,0,iel))/4.d0
          zc=sum(zcol(:,:,0,iel))/4.d0
