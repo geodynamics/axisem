@@ -1,4 +1,5 @@
 !========================
+!> Contains all functions for the wave propagation. prepare_waves has to be called beforehand and then time_loop is the only allowed entry point to start wave propagation.
 module time_evol_wave
 !========================
 
@@ -150,40 +151,40 @@ end subroutine prepare_waves
 
 !-----------------------------------------------------------------------------
 !! TESTING routine to initialize a plane wave along the equator
-subroutine plane_wave_initial_conditions(disp, velo)
-
-  use utlity,   only: zcoord, scoord
-  use data_mesh_preloop,    only: ielsolid
-  include 'mesh_params.h'
-  
-  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3), intent(inout) :: disp, velo
-  integer           :: iel, ipol, jpol
-  double precision  :: a, c, vp, vs, period
-
-  a = 1e-6
-  vp = 10e3
-  vs = 5.77e3
-  period = 10.
-  !c = vs * period /2.
-  c = vp * period / 2.
-
-
-  do iel=1, nel_solid
-     do ipol=0, npol
-        do jpol=0, npol
-           ! P-wave
-           disp(ipol,jpol,iel,3) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
-           velo(ipol,jpol,iel,3) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
-                        * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vp
-           ! S-wave
-           !disp(ipol,jpol,iel,1) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
-           !velo(ipol,jpol,iel,1) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
-           !             * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vs 
-        enddo
-     enddo
-  enddo
-
-end subroutine plane_wave_initial_conditions
+!subroutine plane_wave_initial_conditions(disp, velo)
+!
+!  use utlity,   only: zcoord, scoord
+!  use data_mesh_preloop,    only: ielsolid
+!  include 'mesh_params.h'
+!  
+!  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3), intent(inout) :: disp, velo
+!  integer           :: iel, ipol, jpol
+!  double precision  :: a, c, vp, vs, period
+!
+!  a = 1e-6
+!  vp = 10e3
+!  vs = 5.77e3
+!  period = 10.
+!  !c = vs * period /2.
+!  c = vp * period / 2.
+!
+!
+!  do iel=1, nel_solid
+!     do ipol=0, npol
+!        do jpol=0, npol
+!           ! P-wave
+!           disp(ipol,jpol,iel,3) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
+!           velo(ipol,jpol,iel,3) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
+!                        * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vp
+!           ! S-wave
+!           !disp(ipol,jpol,iel,1) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
+!           !velo(ipol,jpol,iel,1) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
+!           !             * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vs 
+!        enddo
+!     enddo
+!  enddo
+!
+!end subroutine plane_wave_initial_conditions
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -246,6 +247,7 @@ end subroutine plane_wave_initial_conditions
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Entry point into the module time_evol_wave. Calls specific time loop functions, either for newmark or symplectic time scheme. 
 subroutine time_loop
 
   use clocks_mod, only: tick
@@ -922,7 +924,7 @@ end subroutine symplectic_coefficients
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
-!! coefficients for symmetric compositions of symmetric methods
+!> coefficients for symmetric compositions of symmetric methods
 subroutine SS_scheme(n,a,b,g)
   
   integer, intent(in) :: n
