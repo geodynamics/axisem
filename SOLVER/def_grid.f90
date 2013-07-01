@@ -28,7 +28,7 @@ subroutine init_grid
   use data_numbering, only : igloc_solid, nglob_solid
   use data_comm
   use commun
-  use splib
+  use splib, only: zemngl2, get_welegl_axial, zelegl, get_welegl
   
   include 'mesh_params.h'
   
@@ -40,7 +40,7 @@ subroutine init_grid
 
   ! All elements, z-direction & s-direction non-axial elements: 
   ! Gauss-Lobatto-Legendre quadrature
-  call ZELEGL(npol, eta, dxi)                  
+  call zelegl(npol, eta, dxi)                  
   call get_welegl(npol, eta, wt)        
 
   ! Define logical arrays to determine whether element is on the axis or not.
