@@ -42,73 +42,6 @@ end subroutine order
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!> Computes the value of the j-th Lagrange polynomial
-!! of order N defined by the N+1 points xi at a
-!! point zeta in [-1,1].
-double precision function lag_interp(zeta,xi,j,N,iibeg,iiend)   
-
-
-  integer :: j, N,iibeg,iiend
-  integer :: i
-  double precision :: zeta, adist
-  double precision :: xi(0:N)
-
-  lag_interp = one
-
-
-  do i = iibeg,iiend
-     if ( i /= j) then 
-        adist = 1./(xi(j)-xi(i))
-        lag_interp = lag_interp*(zeta-xi(i))*adist
-     end if
-  end do
-
-  end function lag_interp
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!> Computes the value of the derivative of the j-th Lagrange polynomial
-!! of order N defined by the N+1 points xi at each of these collocation
-!! points xi. 
-subroutine lag_interp_deriv(df,xi,j,N)
-
-  implicit none
-  integer          :: j, N
-  double precision :: xi(0:N), df(0:N)
-  integer          :: i,ixi,l
-  double precision :: dist,fact,prod(0:N,0:N)
-
-  df(:) = zero
-  fact  = one
-
-  do i = 0,N
-     if ( i /= j) then
-        dist = (xi(j)-xi(i))
-        fact = fact*dist 
-     end if
-  end do
-
-  do ixi = 0, N
-     do i = 0, N
-        prod(i,ixi) = one
-        do l = 0, N
-           if ( l /= i .and. l /= j) prod(i,ixi) = prod(i,ixi)*(xi(ixi)-xi(l))
-        end do
-     end do
-  end do
-
-  do  ixi = 0, N
-     do i = 0,N
-        if( i /= j) df(ixi) = df(ixi) + prod(i,ixi)
-     end do
-  end do
-
-  df(:) = df(:)/fact
-  
-end subroutine lag_interp_deriv
-!=============================================================================
-
-!-----------------------------------------------------------------------------
 !> Applies more robust formula to return
 !! value of the derivative of the i-th Lagrangian interpolant
 !! defined over the weighted GLL points computed at these
@@ -622,39 +555,6 @@ subroutine vamnpo(n,x,y,dy,d2y)
   end do
   
 end subroutine vamnpo
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!> Computes the weights relative to the Legendre Gauss-Lobatto formula
-!! n  = order of the formula
-!! et = Jacobi Gauss-Lobatto nodes, et(i), i=0,n
-!! vn = values of the legendre polynomial at the nodes, vn(i), i=0,n
-!! wt = vector of the weights, wt(i), i=0,n
-subroutine welegl(n,et,vn,wt)
-
-  implicit double precision (a-h,o-z)
-  dimension et(0:*), vn(0:*), wt(0:*)
-  
-  if (n .eq. 0) return
-
-  n2 = (n-1)/2
-  dn = dfloat(n)
-  c  = 2.d0/(dn*(dn+1.d0))
-  do i=0,n2
-      x = et(i)
-      y = vn(i)
-      wtx = c/(y*y)
-      wt(i) = wtx
-      wt(n-i) = wtx
-  enddo
-
-  if(n-1 .eq. 2*n2) return
-  
-  x = 0.d0
-  y = vn(n2+1)
-  wt(n2+1) = c/(y*y)
-
-end subroutine welegl
 !=============================================================================
 
 !-----------------------------------------------------------------------------
