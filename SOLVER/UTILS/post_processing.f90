@@ -473,93 +473,93 @@ subroutine read_input
      read(99,*)seistype(isim)
      read(99,*)outdir(isim)
      read(99,*)negative_time(isim)
-  close(99)
-
-  write(6,*)'seismogram type:',seistype(isim)
-  write(6,*)'Output directory:',trim(outdir(isim))
-  write(6,*)'shift time series to negative time (event at zero)?',negative_time(isim)
-
-  ! read standard in, if any
-  inquire(file=trim(outdir(1))//"/param_post_processing_overwrite",exist=file_exist)
-  if (file_exist) then
-     write(6,*)'OVERWRITING generic post processing parameters...'
-     open(unit=99,file=trim(outdir(1))//'/param_post_processing_overwrite')
-     read(99,*)length
-     read(99,*)rec_comp_systmp(1)
-     write(6,*)'overwrite receiver component system:',rec_comp_systmp(1)
-     rec_comp_systmp(:)=rec_comp_systmp(1)
-     if (length>1) then 
-        read(99,*)conv_period(1)
-        write(6,*)'overwrite period:',conv_period(1)
-        conv_period(:)=conv_period(1)
-     endif
-     if (length>2) then 
-        read(99,*)conv_stf(1)
-        write(6,*)'overwrite convolution type:',conv_stf(1)
-        conv_stf(:)=conv_stf(1)
-     endif
-     if (length>3) then 
-        read(99,*)seistype(1)
-        write(6,*)'overwrite seismogram type:',seistype(1)
-        seistype(:)=seistype(1)
-     endif
      close(99)
-  endif
-
-  if (load_snapstmp(isim)) load_snaps=.true.
-
-  if (sum_seis_true(isim)) any_sum_seis_true=.true.
-
-  if ( sum_seis_true(isim) .and. nsim ==2)  then
-     write(6,'(a,/,a)') ' WARNING: You want to sum seismograms but only have two simulations', &
-                        ' ==> are you sure?'
-  elseif (.not. sum_seis_true(isim) .and. nsim == 4)  then
-     write(6,*) '  WARNING: you have 4 simulations but do not want to sum?'
-  endif
-
-  write(6,*)'receiver system:',isim,rec_comp_systmp(isim)
-  if (isim>1) then
-     if (rec_comp_systmp(isim)/=rec_comp_systmp(isim-1) ) then 
-         write(6,*) 'inconsistency with receiver component system:'
-         write(6,*) simdir(isim),rec_comp_systmp(isim)
-         write(6,*) simdir(isim-1),rec_comp_systmp(isim-1)
-         write(6,*) 'make sure these are all identical in the subdirectories'
-         stop
-     end if
-  endif
-  rec_comp_sys = rec_comp_systmp(1)
-
-  write(6,*) 'receiver rotation?',isim,rot_rec_posttmp(isim)
-  if (isim>1) then
-     if (rot_rec_posttmp(isim) .neqv. rot_rec_posttmp(isim-1))  then 
-         write(6,*) 'inconsistency with receiver rotation:'
-         write(6,*) simdir(isim),rot_rec_posttmp(isim)
-         write(6,*) simdir(isim-1),rot_rec_posttmp(isim-1)
-         write(6,*) 'make sure these are all identical in the subdirectories'
-         stop
+   
+     write(6,*)'seismogram type:',seistype(isim)
+     write(6,*)'Output directory:',trim(outdir(isim))
+     write(6,*)'shift time series to negative time (event at zero)?',negative_time(isim)
+   
+     ! read standard in, if any
+     inquire(file=trim(outdir(1))//"/param_post_processing_overwrite",exist=file_exist)
+     if (file_exist) then
+        write(6,*)'OVERWRITING generic post processing parameters...'
+        open(unit=99,file=trim(outdir(1))//'/param_post_processing_overwrite')
+        read(99,*)length
+        read(99,*)rec_comp_systmp(1)
+        write(6,*)'overwrite receiver component system:',rec_comp_systmp(1)
+        rec_comp_systmp(:)=rec_comp_systmp(1)
+        if (length>1) then 
+           read(99,*)conv_period(1)
+           write(6,*)'overwrite period:',conv_period(1)
+           conv_period(:)=conv_period(1)
+        endif
+        if (length>2) then 
+           read(99,*)conv_stf(1)
+           write(6,*)'overwrite convolution type:',conv_stf(1)
+           conv_stf(:)=conv_stf(1)
+        endif
+        if (length>3) then 
+           read(99,*)seistype(1)
+           write(6,*)'overwrite seismogram type:',seistype(1)
+           seistype(:)=seistype(1)
+        endif
+        close(99)
      endif
-  endif
-  rot_rec_post=rot_rec_posttmp(1)
-
-  write(6,*)' Input from param_post_processing:',simdir(isim)
-  write(6,*)'  Rotate receivers?',rot_rec_post
-  if (rot_rec_post) write(6,*)'  component system: ',rec_comp_sys
-  write(6,*)'  sum seismograms to full moment tensor?',sum_seis_true(isim)
-  if (sum_seis_true(isim)) then 
-     write(6,*)'  Moment tensor of individual run:'
-     write(6,3)'','Mrr','Mtt','Mpp','Mtr','Mpr','Mtp'
-     write(6,2)'',(Mij_loc(i,isim),i=1,6)
-2    format(a2,6(1pe12.2))
-3    format(a2,6(a12))
-  endif
-  write(6,*) '  convolution period:',conv_period(isim)
-  write(6,*) '  convolution source time function: ' ,conv_stf(isim)
-  write(6,*) '  source colatitude [deg]:',srccolat(isim)*180./pi
-  write(6,*) '  source longitude:',srclon(isim)*180./pi
-  write(6,*) '  load snaps?',load_snapstmp(isim)
-  write(6,*) '  output directory: ',trim(outdir(isim))
-  write(6,*)
-enddo 
+   
+     if (load_snapstmp(isim)) load_snaps=.true.
+   
+     if (sum_seis_true(isim)) any_sum_seis_true=.true.
+   
+     if ( sum_seis_true(isim) .and. nsim ==2)  then
+        write(6,'(a,/,a)') ' WARNING: You want to sum seismograms but only have two simulations', &
+                           ' ==> are you sure?'
+     elseif (.not. sum_seis_true(isim) .and. nsim == 4)  then
+        write(6,*) '  WARNING: you have 4 simulations but do not want to sum?'
+     endif
+   
+     write(6,*)'receiver system:',isim,rec_comp_systmp(isim)
+     if (isim>1) then
+        if (rec_comp_systmp(isim)/=rec_comp_systmp(isim-1) ) then 
+            write(6,*) 'inconsistency with receiver component system:'
+            write(6,*) simdir(isim),rec_comp_systmp(isim)
+            write(6,*) simdir(isim-1),rec_comp_systmp(isim-1)
+            write(6,*) 'make sure these are all identical in the subdirectories'
+            stop
+        end if
+     endif
+     rec_comp_sys = rec_comp_systmp(1)
+   
+     write(6,*) 'receiver rotation?',isim,rot_rec_posttmp(isim)
+     if (isim>1) then
+        if (rot_rec_posttmp(isim) .neqv. rot_rec_posttmp(isim-1))  then 
+            write(6,*) 'inconsistency with receiver rotation:'
+            write(6,*) simdir(isim),rot_rec_posttmp(isim)
+            write(6,*) simdir(isim-1),rot_rec_posttmp(isim-1)
+            write(6,*) 'make sure these are all identical in the subdirectories'
+            stop
+        endif
+     endif
+     rot_rec_post=rot_rec_posttmp(1)
+   
+     write(6,*)' Input from param_post_processing:',simdir(isim)
+     write(6,*)'  Rotate receivers?',rot_rec_post
+     if (rot_rec_post) write(6,*)'  component system: ',rec_comp_sys
+     write(6,*)'  sum seismograms to full moment tensor?',sum_seis_true(isim)
+     if (sum_seis_true(isim)) then 
+        write(6,*)'  Moment tensor of individual run:'
+        write(6,3)'','Mrr','Mtt','Mpp','Mtr','Mpr','Mtp'
+        write(6,2)'',(Mij_loc(i,isim),i=1,6)
+2       format(a2,6(1pe12.2))
+3       format(a2,6(a12))
+     endif
+     write(6,*) '  convolution period:',conv_period(isim)
+     write(6,*) '  convolution source time function: ' ,conv_stf(isim)
+     write(6,*) '  source colatitude [deg]:',srccolat(isim)*180./pi
+     write(6,*) '  source longitude:',srclon(isim)*180./pi
+     write(6,*) '  load snaps?',load_snapstmp(isim)
+     write(6,*) '  output directory: ',trim(outdir(isim))
+     write(6,*)
+  enddo 
 
   tshift = 0.
 
@@ -1242,8 +1242,10 @@ subroutine compute_3d_wavefields
   ! load and construct global mesh (one semi-disk)
   write(6,*)'reading partitioned mesh...'
   allocate(coord(nptstot,2))
-  smallval_north_top = rtop; smallval_south_top = rtop
-  smallval_north_bot = rbot; smallval_south_bot = rbot
+  smallval_north_top = rtop
+  smallval_south_top = rtop
+  smallval_north_bot = rbot
+  smallval_south_bot = rbot
 
   write(6,*)'Smallest distance to rtop (North,South) BEFORE [km]:', &
        real(smallval_north_top/1000.),real(smallval_south_top/1000.)
@@ -1295,10 +1297,10 @@ subroutine compute_3d_wavefields
      close(99)
   enddo
 
-  smallval_north_top = smallval_north_top +epsi_real 
-  smallval_south_top = smallval_south_top +epsi_real 
-  smallval_north_bot = smallval_north_bot +epsi_real 
-  smallval_south_bot = smallval_south_bot +epsi_real 
+  smallval_north_top = smallval_north_top + epsi_real 
+  smallval_south_top = smallval_south_top + epsi_real 
+  smallval_north_bot = smallval_north_bot + epsi_real 
+  smallval_south_bot = smallval_south_bot + epsi_real 
 
   write(6,*)'Smallest distance to rtop (North,South) AFTER [km]:', &
        real(smallval_north_top/1000.),real(smallval_south_top/1000.)
@@ -1323,22 +1325,18 @@ subroutine compute_3d_wavefields
         r0 = sqrt(coord(iproc*npts+i,1)**2+coord(iproc*npts+i,2)**2) 
 
         if (use_top .or. use_meri) then
-           if ( (coord(iproc*npts+i,2)>=0.0 .and.  &
-                abs(r0-rtop)<= smallval_north_top) .or. &
-                (coord(iproc*npts+i,2)<0.0 .and.  &
-                abs(r0-rtop) <= smallval_south_top)) then 
-              k1=k1+1         
+           if ( (coord(iproc*npts+i,2) >= 0.0 .and. abs(r0-rtop)<= smallval_north_top) .or. &
+                (coord(iproc*npts+i,2) < 0.0 .and.  abs(r0-rtop) <= smallval_south_top)) then 
+              k1 = k1 + 1         
               ind_proc_top_tmp(k1) = iproc
               ind_pts_top_tmp(k1) = i
            endif
         endif
 
         if (use_bot .or. use_meri) then 
-           if ( (coord(iproc*npts+i,2)>=0.0 .and.  &
-                abs(r0-rbot) <= smallval_north_bot) .or. &
-                (coord(iproc*npts+i,2)<0.0 .and.  &
-                abs(r0-rbot) <= smallval_south_bot)) then 
-              k2=k2+1
+           if ( (coord(iproc*npts+i,2) >= 0.0 .and. abs(r0-rbot) <= smallval_north_bot) .or. &
+                (coord(iproc*npts+i,2) < 0.0 .and. abs(r0-rbot) <= smallval_south_bot)) then 
+              k2 = k2 + 1
               ind_proc_bot_tmp(k2) = iproc
               ind_pts_bot_tmp(k2) = i
            endif
@@ -1346,11 +1344,11 @@ subroutine compute_3d_wavefields
 
      enddo
   enddo
+  
+  npts_top = k1
+  npts_bot = k2
 
-  npts_top=k1
-  npts_bot=k2
-
-  write(6,*)'# points on top,bottom:',npts_top,npts_bot
+  write(6,*) '# points on top,bottom:', npts_top, npts_bot
 
   write(6,*)'allocating index arrays for surfaces....'
   if (use_top .or. use_meri) then
@@ -1458,7 +1456,6 @@ subroutine compute_3d_wavefields
   ! save xyz
   allocate(vp(2*nptstot))
   do i=1,2*nptstot  
-     !   write(99,*)x(i),y(i),z(i)
      r= sqrt(x(i)**2+y(i)**2+z(i)**2)
      vp(i)=prem(r,'v_p')
   enddo
@@ -1474,9 +1471,9 @@ subroutine compute_3d_wavefields
 
   ! top surface--------------------------------------------------------------------------
   if (use_top) then
-     k1=0
-     write(6,*)'defining top surface...'
-     dtheta=rtop*pi/npts_top
+     k1 = 0
+     write(6,*) 'defining top surface...'
+     dtheta = rtop * pi / npts_top
 
      naang = floor(real(npts_top)/real(2.))**2*6*4
      write(6,*)'points on top surface:',naang
@@ -1498,6 +1495,7 @@ subroutine compute_3d_wavefields
      call write_VTK_bin_scal_topology(real(xtop(1:k1)),real(ytop(1:k1)),real(ztop(1:k1)),&
                                       vptop(1:k1),k1/4,filename1)
 
+     call flush(6)
   endif
 
   ! bottom surface -----------------------------------------------------------------------
@@ -1525,6 +1523,7 @@ subroutine compute_3d_wavefields
      call write_VTK_bin_scal_topology(real(xbot(1:k2)),real(ybot(1:k2)),real(zbot(1:k2)),&
                                       vpbot,k2/4,filename1)
 
+     call flush(6)
   endif
 
   ! meridional cross section -------------------------------------------------------------
@@ -1766,8 +1765,7 @@ subroutine compute_3d_wavefields
 
      enddo
  
-     if (any_sum_seis_true) then 
-
+     if (any_sum_seis_true .and. nsim > 1) then 
 
         filename1=trim(outdir(1))//'/SNAPS/snap_mij_cell_'//appmynum2//'_z'
         write(6,*)'filename out vtk :',filename1
@@ -2197,24 +2195,27 @@ subroutine write_VTK_bin_scal_topology(x,y,z,u1,elems,filename)
    close(100)
   write(6,*)'...saved ',trim(filename)//'.vtk'
 end subroutine write_vtk_bin_scal_topology
-!-----------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 subroutine rthetaphi2xyz(x,y,z,r,theta,phi)
   real, intent(out) :: x,y,z
   real, intent(in) :: r,theta,phi
-  x=r*sin(theta)*cos(phi)
-  y=r*sin(theta)*sin(phi)
-  z=r*cos(theta)
+
+  x = r * sin(theta) * cos(phi)
+  y = r * sin(theta) * sin(phi)
+  z = r * cos(theta) 
+
 end subroutine rthetaphi2xyz
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 real function prem(r0,param)
-  !
   ! prem model in terms of domains separated by discontinuities
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  ! MvD: - at discontinuities, upper or lower domain is chosen based on numerical
+  !        rounding errors
+  !      - only used for mesh plots, nor physical meaning
+  
   
   real, intent(in) :: r0
   real            :: r,x_prem
