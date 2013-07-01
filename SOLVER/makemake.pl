@@ -12,6 +12,50 @@
 # Written by Michael Wester <wester@math.unm.edu> February 16, 1995
 # Cotopaxi (Consulting), Albuquerque, New Mexico
 #
+
+############ CHOOSE BETWEEN DIFFERENT FORTRAN COMPILERS ###########################
+if ($ARGV[0] eq 'ifort'){
+    if ($ARGV[1] eq 'debug'){
+	$F90_strg = 'mpif90  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -check noarg_temp_created -debug  -check -traceback';
+	$FC_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -check noarg_temp_created -debug  -check -traceback';
+	$CC_strg = 'icc  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -check noarg_temp_created -debug  -check -traceback';
+    } else {
+	$F90_strg = 'mpif90  -vec-report:0 -O3 -xHOST -shared-intel'; 
+	$FC_strg = 'ifort  -vec-report:0 -O3 -xHOST -shared-intel'; 
+	$FC_strg = 'icc  -vec-report:0 -O3 -xHOST -shared-intel'; 
+    }
+}
+if ($ARGV[0] eq 'portland'){
+    if ($ARGV[1] eq 'debug'){
+	$F90_strg = 'mpif90  -g --Mbounds --traceback';
+	$FC_strg = 'mpif90 -g --Mbounds --traceback';
+	$CC_strg = 'pgcc -g --Mbounds --traceback';
+    } else {
+	$F90_strg = 'mpif90  -fast '; 
+	$FC_strg = 'mpif90 -fast';
+	$CC_strg = 'pgcc  -fast';
+    }
+}
+elsif ($ARGV[0] eq '-h'){
+	print "-----------Flags to be used---------- \n";
+    print "Argument 1: Compiler options: gfortran (default), ifort\n";
+    print "Argument 2: debug\n";
+    print "Not specifying debug will create Makefile for optimized compilation \n";
+    exit;
+}
+else {
+	print "Default compiler is gfortran\n";
+	print "If you want another compiler type ./makemake.pl <compiler_name> \n";
+    if ($ARGV[0] eq 'debug' or $ARGV[1] eq 'debug'){
+	$F90_strg = 'mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace -g';
+	$FC_strg =  'gfortran -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace -g';
+	$CC_strg = 'gcc -pedantic -g';
+    } else {
+	$F90_strg = 'mpif90   -O3 ';
+	$FC_strg =  'gfortran -O3 ';	
+	$CC_strg =  'gcc -O3 ';	
+    }
+}
 open(MAKEFILE, "> Makefile");
 
 print MAKEFILE "PROG=xsem\n\n";
@@ -40,45 +84,17 @@ print MAKEFILE " \n\n";
 print MAKEFILE "LIBS = $LIBS \n\n";
 print MAKEFILE "# set unc to compile with netcdf: \n";
 print MAKEFILE "#F90FLAGS = -Dunc \n";
-print MAKEFILE "CC = gcc\n";
 print MAKEFILE "CFLAGS = -O3 -DF_UNDERSCORE\n";
-
-############ CHOOSE BETWEEN DIFFERENT FORTRAN COMPILERS ###########################
-if ($ARGV[0] eq 'ifort'){
-    if ($ARGV[1] eq 'debug'){
-	$F90_strg = 'mpif90  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -check noarg_temp_created -debug  -check -traceback';
-	$FC_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -check noarg_temp_created -debug  -check -traceback';
-    } else {
-	$F90_strg = 'mpif90  -vec-report:0 -O3 -xHOST -shared-intel'; 
-	$FC_strg = 'ifort  -vec-report:0 -O3 -xHOST -shared-intel'; 
-    }
-}
-elsif ($ARGV[0] eq '-h'){
-	print "-----------Flags to be used---------- \n";
-    print "Argument 1: Compiler options: gfortran (default), ifort\n";
-    print "Argument 2: debug\n";
-    print "Not specifying debug will create Makefile for optimized compilation \n";
-    exit;
-}
-else {
-	print "Default compiler is gfortran\n";
-	print "If you want another compiler type ./makemake.pl <compiler_name> \n";
-    if ($ARGV[0] eq 'debug' or $ARGV[1] eq 'debug'){
-	$F90_strg = 'mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace -g';
-	$FC_strg =  'gfortran -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic -fbacktrace -g';
-    } else {
-	$F90_strg = 'mpif90   -O3 ';
-	$FC_strg =  'gfortran -O3 ';	
-    }
-}
 ###################################################################################
 
 $F90_full="F90 = $F90_strg \n";
 $FC_full="FC = $FC_strg \n";
+$CC_full="CC = $CC_strg \n";
 $INCLUDE_full = "INCLUDE = -I /usr/include";
 
 print MAKEFILE $F90_full;
 print MAKEFILE $FC_full;
+print MAKEFILE $CC_full;
 print MAKEFILE $INCLUDE_full; 
 print MAKEFILE " \n";
 print MAKEFILE '# to include local built of netcdf you might want to use sth like this:';
@@ -301,7 +317,6 @@ sub MakeDependsf90 {
       }
    }
 
-#print "\nCheck Makefile to make sure you're happy with it.\n\n";
-system("cowsay Check Makefile to make sure you are happy with it.");
+print "\nCheck Makefile to make sure you're happy with it.\n\n";
 system("vi Makefile -c ':g/kdtree2.o:/d' -c ':wq'");
 
