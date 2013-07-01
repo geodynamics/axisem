@@ -323,7 +323,7 @@ use data_numbering
     else
         fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
         open(100, file=trim(fname), access='stream', status='replace', &
-            convert='little_endian')
+            form='unformatted', convert='little_endian')
         write(100) points
         close(100)
     end if
@@ -369,7 +369,7 @@ use data_numbering
     else
         fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
         open(100, file=trim(fname), access='stream', status='replace', &
-            convert='little_endian')
+            form='unformatted', convert='little_endian')
         write(100) grid
         close(100)
     end if

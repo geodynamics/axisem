@@ -2006,7 +2006,7 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename, varname)
    !if (lpr) print *, 'computing vtk file ', trim(filename),' ...'
 
    open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
-        convert='big_endian')
+        form='unformatted', convert='big_endian')
   
    write(100) '# vtk DataFile Version 4.0'//char(10)
    write(100) 'mittico'//char(10)

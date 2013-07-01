@@ -91,17 +91,17 @@ subroutine prepare_waves
      if (.not. use_netcdf) then
          fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'.dat'
          open(13100, file=trim(fname), access='stream', status='unknown', &
-             convert='little_endian', position='append')
+             form='unformatted', convert='little_endian', position='append')
 
          if (.not. src_type(1)=='monopole') then
              fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'.dat'
              open(13101, file=trim(fname), access='stream', status='unknown', &
-                 convert='little_endian', position='append')
+                 form='unformatted', convert='little_endian', position='append')
          endif
 
          fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'.dat'
          open(13102, file=trim(fname), access='stream', status='unknown', &
-             convert='little_endian', position='append')
+             form='unformatted', convert='little_endian', position='append')
      end if
      call dump_xdmf_grid()
   endif
