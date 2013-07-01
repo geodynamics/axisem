@@ -3,9 +3,9 @@ module splib
  
   use global_parameters
   
-  public :: inlegl, zelegl, zemngl2,               &
-            hn_jprime, lag_interp_deriv_wgl,       &
-            get_welegl,get_welegl_axial
+  public :: zelegl, zemngl2,                  &
+            hn_jprime, lag_interp_deriv_wgl,  &
+            get_welegl, get_welegl_axial
   private
 
   contains
@@ -39,35 +39,6 @@ subroutine order(vin,vout,n)
   end do
 
 end subroutine order
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!> Compute the value of the j-th Lagrange polynomial 
-!! of order N defined by the N+1 GLL points xi at a
-!! point zeta in [-1,1].
-double precision function hn_j(n,zeta,xi,j)
-
-  implicit none
-  integer, intent(in)          :: n
-  integer, intent(in)          :: j
-  integer                      :: i 
-  double precision,intent(in)  :: xi(0:n)
-  double precision,intent(out) :: zeta
-  double precision             :: DX,D2X
-  double precision             :: VN (0:n), QN(0:n)
-
-  hn_j = 0d0
-  VN(:)= 0d0
-  QN(:)= 0d0
- 
-  do i = 0, N
-     call VALEPO(N,xi(i), VN(i), DX,D2X)
-     if (i == j) QN(i) = 1d0
-  end do
- 
-  call inlegl(N,xi,VN,QN,zeta,hn_j)
- 
-end function hn_j
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -578,49 +549,13 @@ end subroutine valepo
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!> Computes the value at a given point of a polynomial individuated
-!! by the values attained at the Legendre Gauss-Lobatto nodes
-subroutine inlegl(n,et,vn,qn,x,qx)
-
-  implicit double precision (a-h,o-z)
-  integer, intent(in)           ::  n       !< the degree of the polynomial
-  double precision, intent(in)  ::  x       !< the point in which the computation is performed
-  double precision, intent(in)  ::  et(0:*) !< vector of the nodes, et(i), i=0,n
-  double precision, intent(out) ::  vn(0:*) !< values of the Legendre polynomial at the nodes, vn(i), i=0,n
-  double precision, intent(out) ::  qn(0:*) !< values of the polynomial at the nodes, qn(i), i=0,n
-  double precision, intent(out) ::  qx      !< value of the polynomial in x
-
-  if (n == 0) return
-
-      eps = 1.d-14
-      call valepo(n,x,y,dy,d2y)
-      dn = dfloat(n)
-      c  = 1.d0/(dn*(dn+1.d0))
-      qx = qn(0)*c*dy*(x-1.d0)/vn(0)
-      qx = qx+qn(n)*c*dy*(x+1.d0)/vn(n)
-  if (n .eq. 1) return
-
-  do j=1,n-1
-    ed = x-et(j)
-    if(dabs(ed) < eps) then
-        qx = qn(j)
-        return     
-    else
-        qx = qx+qn(j)*c*dy*(x*x-1.d0)/(vn(j)*ed)
-    endif      
-  enddo
-
-end subroutine inlegl
-!=============================================================================
-
-!-----------------------------------------------------------------------------
 !> This routine computes the N+1 weights associated with the
 !! Gauss-Lobatto-Legendre quadrature formula of order N.
 subroutine get_welegl(N,xi,wt)
 
   implicit none
   integer           :: N
-  double precision  ::  xi(0:N),wt(0:N)
+  double precision  :: xi(0:N), wt(0:N)
   integer           :: j
   double precision  :: y,dy,d2y,fact 
 
