@@ -596,10 +596,11 @@ subroutine prepare_from_recfile_seis
      endif
 
 
-  if(.not.(use_netcdf))   then
+  !if(.not.(use_netcdf))   then
+  !!@TODO: ASCII seismograms are always written, since netcdf is not enabled in postprocessing.
      if (verbose > 1) write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
      open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
-  endif
+  !endif
  
   enddo
   close(9998+mynum)

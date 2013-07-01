@@ -1,4 +1,4 @@
-!========================
+	!========================
 !> Contains all functions for the wave propagation. prepare_waves has to be called beforehand and then time_loop is the only allowed entry point to start wave propagation.
 module time_evol_wave
 !========================
@@ -345,15 +345,15 @@ subroutine sf_time_loop_newmark
   ! some more reading:
   ! http://stackoverflow.com/questions/9314534/why-does-changing-0-1f-to-0-slow-down-performance-by-10x
 
-  !disp = 1.d-30
-  !velo = 1.d-30
-  !acc0 = 1.d-30
-  !acc1 = 1.d-30
-  !
-  !chi = 1.d-30
-  !dchi = 1.d-30
-  !ddchi0 = 1.d-30
-  !ddchi1 = 1.d-30
+  disp = 1.d-30
+  velo = 1.d-30
+  acc0 = 1.d-30
+  acc1 = 1.d-30
+  
+  chi = 1.d-30
+  dchi = 1.d-30
+  ddchi0 = 1.d-30
+  ddchi1 = 1.d-30
 
   disp = zero
   velo = zero 
@@ -1068,9 +1068,10 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
      iseismo = iseismo + 1
      if (use_netcdf) then
         call nc_compute_recfile_seis_bare(disp)
-     else
-        call compute_recfile_seis_bare(disp)
+     !else @TODO: workaround, since postproc does not support netcdf yet.
      endif
+        call compute_recfile_seis_bare(disp)
+     !endif
   
      time = real(iter)*deltat
      !call compute_recfile_seis_binary(time,disp,velo)
