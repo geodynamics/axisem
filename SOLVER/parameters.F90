@@ -803,14 +803,16 @@ subroutine compute_numerical_parameters
   ! snapshot output, convert from interval given in seconds to 
   ! incremental time steps
   if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu .or. dump_memory_vars) then
-     snap_it=floor(snap_dt/deltat)
-     open(unit=2900+mynum,file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
-     nsnap = floor(real(niter)/real(snap_it))
-     write(2900,*) nsnap 
-     do ielem=1,nsnap
-        write(2900+mynum,*)real(ielem)*snap_dt,ielem*snap_it
+     snap_it = floor(snap_dt / deltat)
+     open(unit=2900+mynum, file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
+     nsnap = floor(real(niter) / real(snap_it))
+     
+     write(2900+mynum,*) nsnap 
+     do ielem=1, nsnap
+        write(2900+mynum,*) real(ielem) * snap_dt, ielem * snap_it
      enddo
      close(2900+mynum)
+
      if (lpr) then
         write(6,*)
         write(6,11)'    Number of snapshots        :',nsnap
