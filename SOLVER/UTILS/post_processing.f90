@@ -1234,25 +1234,25 @@ subroutine compute_3d_wavefields
   npts_read = nelem * 9
 
   nptstot = npts * nproc_mesh
-  write(6,*)'number of points per proc, total points:',npts,nptstot
+  write(6,*) 'number of points per proc, total points:', npts, nptstot
 
   ! load and construct global mesh (one semi-disk)
-  write(6,*)'reading partitioned mesh...'
+  write(6,*) 'reading partitioned mesh...'
   allocate(coord(nptstot,2))
   smallval_north_top = rtop
   smallval_south_top = rtop
   smallval_north_bot = rbot
   smallval_south_bot = rbot
 
-  write(6,*)'Smallest distance to rtop (North,South) BEFORE [km]:', &
-       real(smallval_north_top/1000.),real(smallval_south_top/1000.)
-  write(6,*)'Smallest distance to rbot (North,South) BEFORE [km]:', &
-       real(smallval_north_bot/1000.),real(smallval_south_bot/1000.)
+  write(6,*) 'Smallest distance to rtop (North,South) BEFORE [km]:', &
+             real(smallval_north_top/1000.), real(smallval_south_top/1000.)
+  write(6,*) 'Smallest distance to rbot (North,South) BEFORE [km]:', &
+             real(smallval_north_bot/1000.), real(smallval_south_bot/1000.)
 
-  do iproc=0,nproc_mesh-1
+  do iproc=0, nproc_mesh-1
      call define_io_appendix(appmynum,iproc)
      open(unit=99,file=trim(simdir(1))//'/Data/glob_grid_'//appmynum//'.dat')
-     i=0
+     i = 0
      do ii=1,npts_read/9
         do iii=1,9
             read(99,*) coord9(iii,1), coord9(iii,2)
@@ -1298,10 +1298,11 @@ subroutine compute_3d_wavefields
      close(99)
   enddo
 
-  smallval_north_top = smallval_north_top + epsi_real 
-  smallval_south_top = smallval_south_top + epsi_real 
-  smallval_north_bot = smallval_north_bot + epsi_real 
-  smallval_south_bot = smallval_south_bot + epsi_real 
+  ! add some tolerance (.1% of dist to closest point should be smaller then one element)
+  smallval_north_top = smallval_north_top * 1.001
+  smallval_south_top = smallval_south_top * 1.001
+  smallval_north_bot = smallval_north_bot * 1.001
+  smallval_south_bot = smallval_south_bot * 1.001
 
   write(6,*) 'Smallest distance to rtop (North,South) AFTER [km]:', &
        real(smallval_north_top/1000.),real(smallval_south_top/1000.)
@@ -1353,13 +1354,18 @@ subroutine compute_3d_wavefields
 
   write(6,*)'allocating index arrays for surfaces....'
   if (use_top .or. use_meri) then
-     allocate(ind_proc_top(npts_top),ind_pts_top(npts_top))
-     ind_proc_top=ind_proc_top_tmp(1:npts_top); ind_pts_top=ind_pts_top_tmp(1:npts_top)
-     deallocate(ind_proc_top_tmp,ind_pts_top_tmp)
+     allocate(ind_proc_top(npts_top))
+     allocate(ind_pts_top(npts_top))
+     ind_proc_top = ind_proc_top_tmp(1:npts_top)
+     ind_pts_top = ind_pts_top_tmp(1:npts_top)
+     deallocate(ind_proc_top_tmp, ind_pts_top_tmp)
   endif
+
   if (use_bot .or. use_meri) then
-     allocate(ind_proc_bot(npts_bot),ind_pts_bot(npts_bot))
-     ind_proc_bot=ind_proc_bot_tmp(1:npts_bot); ind_pts_bot=ind_pts_bot_tmp(1:npts_bot)
+     allocate(ind_proc_bot(npts_bot))
+     allocate(ind_pts_bot(npts_bot))
+     ind_proc_bot = ind_proc_bot_tmp(1:npts_bot)
+     ind_pts_bot = ind_pts_bot_tmp(1:npts_bot)
      deallocate(ind_proc_bot_tmp,ind_pts_bot_tmp)
   endif
 
@@ -1684,20 +1690,24 @@ subroutine compute_3d_wavefields
            i=0
            do ii=1,npts_read/9
               do iii=1,9
-                 read(99)disp9(iii,1),disp9(iii,2),disp9(iii,3)
+                 read(99) disp9(iii,1), disp9(iii,2), disp9(iii,3)
               enddo
-              disp(iproc*npts+i+1:iproc*npts+i+2,:) = disp9(1:2,:) ! (0,0), (0,npol/2)
-              disp(iproc*npts+i+3,:) = disp9(5,:)    ! (npol/2,npol/2)
-              disp(iproc*npts+i+4,:) = disp9(4,:)    ! (npol/2,0)
-              disp(iproc*npts+i+5:iproc*npts+i+6,:) = disp9(2:3,:)    ! (0,npol/2),(0,npol)
-              disp(iproc*npts+i+7,:) = disp9(6,:)    ! (npol/2,npol)
-              disp(iproc*npts+i+8,:) = disp9(5,:)    ! (npol/2,npol/2)
-              disp(iproc*npts+i+9:iproc*npts+i+10,:) = disp9(4:5,:)    ! (npol/2,0),(npol/2,npol/2)
-              disp(iproc*npts+i+11,:) = disp9(8,:)    ! (npol,npol/2)
-              disp(iproc*npts+i+12,:) = disp9(7,:)    ! (npol,0)            
-              disp(iproc*npts+i+13:iproc*npts+i+14,:) = disp9(5:6,:)    ! (npol/2,npol/2),(npol/2,npol)
-              disp(iproc*npts+i+15,:) = disp9(9,:)    ! (npol,npol)
-              disp(iproc*npts+i+16,:) = disp9(8,:)    ! (npol,npol/2)            
+              disp(iproc*npts+i+1:iproc*npts+i+2,:) = disp9(1:2,:) 
+                                                    ! (0,0), (0,npol/2)
+              disp(iproc*npts+i+3,:) = disp9(5,:)   ! (npol/2,npol/2)
+              disp(iproc*npts+i+4,:) = disp9(4,:)   ! (npol/2,0)
+              disp(iproc*npts+i+5:iproc*npts+i+6,:) = disp9(2:3,:)    
+                                                    ! (0,npol/2),(0,npol)
+              disp(iproc*npts+i+7,:) = disp9(6,:)   ! (npol/2,npol)
+              disp(iproc*npts+i+8,:) = disp9(5,:)   ! (npol/2,npol/2)
+              disp(iproc*npts+i+9:iproc*npts+i+10,:) = disp9(4:5,:)    
+                                                    ! (npol/2,0),(npol/2,npol/2)
+              disp(iproc*npts+i+11,:) = disp9(8,:)  ! (npol,npol/2)
+              disp(iproc*npts+i+12,:) = disp9(7,:)  ! (npol,0)            
+              disp(iproc*npts+i+13:iproc*npts+i+14,:) = disp9(5:6,:)    
+                                                    ! (npol/2,npol/2),(npol/2,npol)
+              disp(iproc*npts+i+15,:) = disp9(9,:)  ! (npol,npol)
+              disp(iproc*npts+i+16,:) = disp9(8,:)  ! (npol,npol/2)            
               i=i+16
            enddo
            close(99)
@@ -1786,18 +1796,19 @@ end subroutine compute_3d_wavefields
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine construct_surface_cubed_sphere(npts_surf,npts,rsurf,ind_proc_surf,ind_pts_surf,&
-                            nptstot,coord1,kpts,dphi,phi0,in_or_out,n,xsurf,ysurf,zsurf,azi_phi_surf,azi_ind_surf)
+subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf, &
+                                          ind_pts_surf, nptstot, coord1, kpts, &
+                                          dphi, phi0, in_or_out, n, xsurf, ysurf, &
+                                          zsurf, azi_phi_surf, azi_ind_surf)
 
-!!!!! BEG CUBED SPHERE
-! af2tnm: along a great circle, there's the equivalent of two chunks of the cubed
-! sphere. According to the convention we use in defining the mapping in the cubed sphere
-! module, that amounts to 2*nang spectral elements.
-! Assuming we will be using npol_cs=1 in the following, nang has to be even.
-! We therefore want nang=.5*(npts_surf-1) if npts_surf is odd
-! We therefore want nang=.5*(npts_surf) if npts_surf is even
-!
-!use data_all
+    !!!!! BEG CUBED SPHERE
+    ! af2tnm: along a great circle, there's the equivalent of two chunks of the cubed
+    ! sphere. According to the convention we use in defining the mapping in the cubed sphere
+    ! module, that amounts to 2*nang spectral elements.
+    ! Assuming we will be using npol_cs=1 in the following, nang has to be even.
+    ! We therefore want nang=.5*(npts_surf-1) if npts_surf is odd
+    ! We therefore want nang=.5*(npts_surf) if npts_surf is even
+
     implicit none
     
     integer, intent(in) :: npts_surf,npts,nptstot,n
@@ -1849,12 +1860,12 @@ subroutine construct_surface_cubed_sphere(npts_surf,npts,rsurf,ind_proc_surf,ind
      number_el = 0
      do izone = 1, 6
         do iii=0,nr-1     ! loop over  r
-            do ii=0,nang-1   ! loop over eta
-                do i=0,nang-1   ! loop over ksi
+           do ii=0,nang-1   ! loop over eta
+              do i=0,nang-1   ! loop over ksi
                  number_el(i,ii,iii,izone) = (izone-1)*(nang*nang*nr)+&
-                                       iii*(nang*nang)+((ii*nang)+i+1)
-                end do
-            end do
+                                             iii*(nang*nang)+((ii*nang)+i+1)
+              end do
+           end do
         end do
      end do
      nelt = maxval(number_el)
@@ -1873,8 +1884,8 @@ subroutine construct_surface_cubed_sphere(npts_surf,npts,rsurf,ind_proc_surf,ind
      allocate(xcol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
      allocate(ycol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
      allocate(zcol(0:npol_cs,0:npol_cs,0:nrpol,1:nelt))
-     kpts=0
-     nel_surf=0
+     kpts = 0
+     nel_surf = 0
 
      write(6,*)'ZONE NANG:',nr,nang,npol_cs,nelt
      write(6,*)'ZONE NANG 2 nel_surf:',6*nr*nang**2
@@ -1934,11 +1945,11 @@ subroutine construct_surface_cubed_sphere(npts_surf,npts,rsurf,ind_proc_surf,ind
        end do
       end do
      end do
-!     At this stage we know Xcol, Ycol, Zcol for the cubed sphere
-!     These arrays are four dimensional (ipol,jpol,kpol,iel)
-!     Their knowledge suffice to define the vtk output that will properly take
-!     into account the cubed sphere topology (see the paraview.f90 module)
-!!!!! END CUBED SPHERE
+     ! At this stage we know Xcol, Ycol, Zcol for the cubed sphere
+     ! These arrays are four dimensional (ipol,jpol,kpol,iel)
+     ! Their knowledge suffice to define the vtk output that will properly take
+     ! into account the cubed sphere topology (see the paraview.f90 module)
+     !!!!! END CUBED SPHERE
 
       write(6,*)'number of surface pts,elems,tot pts:',npts_surf,nel_surf,kpts
       write(6,*)'max ind_proc, ind_pts:',maxval(ind_proc_surf),maxval(ind_pts_surf)
@@ -1960,21 +1971,21 @@ subroutine construct_surface_cubed_sphere(npts_surf,npts,rsurf,ind_proc_surf,ind
          if ( (in_or_out=='innside' .and. ph>=phi0 .and. ph<=phi0+dphi) .or. &
                (in_or_out=='outside' .and. (ph<=phi0 .or. ph>=phi0+dphi) ) ) then
 
-            xsurf(iii+1)=xcol(0,0,0,iel)
-            ysurf(iii+1)=ycol(0,0,0,iel)
-            zsurf(iii+1)=zcol(0,0,0,iel)
+            xsurf(iii+1) = xcol(0,0,0,iel)
+            ysurf(iii+1) = ycol(0,0,0,iel)
+            zsurf(iii+1) = zcol(0,0,0,iel)
             
-            xsurf(iii+2)=xcol(npol_cs,0,0,iel)
-            ysurf(iii+2)=ycol(npol_cs,0,0,iel)
-            zsurf(iii+2)=zcol(npol_cs,0,0,iel)
+            xsurf(iii+2) = xcol(npol_cs,0,0,iel)
+            ysurf(iii+2) = ycol(npol_cs,0,0,iel)
+            zsurf(iii+2) = zcol(npol_cs,0,0,iel)
             
-            xsurf(iii+3)=xcol(npol_cs,npol_cs,0,iel)
-            ysurf(iii+3)=ycol(npol_cs,npol_cs,0,iel)
-            zsurf(iii+3)=zcol(npol_cs,npol_cs,0,iel)
+            xsurf(iii+3) = xcol(npol_cs,npol_cs,0,iel)
+            ysurf(iii+3) = ycol(npol_cs,npol_cs,0,iel)
+            zsurf(iii+3) = zcol(npol_cs,npol_cs,0,iel)
             
-            xsurf(iii+4)=xcol(0,npol_cs,0,iel)
-            ysurf(iii+4)=ycol(0,npol_cs,0,iel)
-            zsurf(iii+4)=zcol(0,npol_cs,0,iel)
+            xsurf(iii+4) = xcol(0,npol_cs,0,iel)
+            ysurf(iii+4) = ycol(0,npol_cs,0,iel)
+            zsurf(iii+4) = zcol(0,npol_cs,0,iel)
             
             ! determine the corresponding point in the D-shape domain
             do jj=1,4
@@ -2273,15 +2284,15 @@ end subroutine xyz2rthetaphi
 !-------------------------------------------------------------------------
 subroutine get_r_theta(s,z,r,th)
   use global_par
-  double precision, intent(in) :: s,z
-  double precision, intent(out) :: r,th
+  double precision, intent(in)  :: s, z
+  double precision, intent(out) :: r, th
  
-  th=datan(s/(z+epsi))
+  th = datan(s / (z + epsi))
  
   if ( 0.d0 > th ) th = pi + th
   if (th == zero .and. z < 0.d0) th = pi
  
-  r=dsqrt(s**2 + z**2)
+  r = dsqrt(s**2 + z**2)
 
 end subroutine get_r_theta
 !==========================================================================
