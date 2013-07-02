@@ -63,7 +63,6 @@ subroutine readin_parameters
 
   call get_runinfo
 
-
   ! now pre-set. Most of these are to be considered in the post processing stage now.
   sum_seis = .false.
   sum_fields = .false.
@@ -237,7 +236,7 @@ subroutine read_inparam_basic
          select case(trim(simtype))
          case('single')
             src_file_type = 'sourceparams'
-         case('forces')
+         case('force')
             print *, 'FIXME: Forces needs to be checked!'
             stop 2
          case('moment')
@@ -1078,20 +1077,20 @@ subroutine write_parameters
     enddo
 
     if (verbose > 1) write(69,*)'  calculating hmax...'
-    hmax=max(maxval(dis1),maxval(dis2))
+    hmax = max(maxval(dis1),maxval(dis2))
     if (verbose > 1) write(69,*)'  hmaxstuff:',minval(dis1),minval(dis2),hmax
-    hmaxglob=pmax(hmax)
+    hmaxglob = pmax(hmax)
     if (verbose > 1) write(69,*)'  hmaxglob:',hmaxglob
-    hmaxloc1=maxloc(dis1)
+    hmaxloc1 = maxloc(dis1)
     if (maxval(dis2)<maxval(dis1)) hmaxloc1=maxloc(dis2)
     call compute_coordinates(s,z,rmaxglob,thetamaxglob,hmaxloc1(3), &
          hmaxloc1(1)-1,hmaxloc1(2)-1)
     if (verbose > 1) write(69,*)' rmax,thetamax:',rmaxglob,thetamaxglob
 
     if (verbose > 1) write(69,*)'  calculating hmin...'
-    hmin=min(minval(dis1),minval(dis2))
+    hmin = min(minval(dis1),minval(dis2))
     if (verbose > 1) write(69,*)'  hminstuff:',minval(dis1),minval(dis2),hmin
-    hminglob=pmin(hmin)
+    hminglob = pmin(hmin)
     if (verbose > 1) write(69,*)'  hminglob:',hminglob
 
     hminloc1=minloc(dis1)
@@ -1228,7 +1227,6 @@ subroutine write_parameters
         if (dump_wavefields) call create_kernel_header
 
 
-
         ! write generic simulation info file
         open(unit=55,file='simulation.info')
         write(55,23)trim(bkgrdmodel),'background model'
@@ -1285,69 +1283,77 @@ subroutine write_parameters
     if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
         ! write generic simulation info file
         write(6,*) ' Writing simulation info to netcdf file attributes' 
-        call nc_write_att_char(trim(bkgrdmodel),'background model')
+        call nc_write_att_char(trim(bkgrdmodel), 'background model')
         call nc_write_att_char(trim(svn_version), 'SVN revision')
-        call nc_write_att_char(trim(username),'user name')
-        call nc_write_att_char(trim(hostname),'host name')
-        call nc_write_att_char(trim(compiler),'compiler brand')
-        call nc_write_att_char(trim(hostname),'compiler version')
-        call nc_write_att_real(real(deltat),'time step in sec')
-        call nc_write_att_int(niter,'number of time steps')
-        call nc_write_att_char(trim(src_type(1)),'excitation type')
-        call nc_write_att_char(trim(src_type(2)),'source type')
-        call nc_write_att_char(trim(stf_type),'source time function')
-        call nc_write_att_char(trim(src_file_type),'source file type')
-        call nc_write_att_real(real(period),'dominant source period')
-        call nc_write_att_real(real(src_depth/1000.),'source depth in km')
-        call nc_write_att_real(real(magnitude),'scalar source magnitude')
-        call nc_write_att_int(num_rec_tot,'number of receivers')
-        call nc_write_att_int(nseismo,'length of seismogram  in time samples')
-        call nc_write_att_real(real(deltat)*real(seis_it),'seismogram sampling in sec')
+        call nc_write_att_char(trim(username), 'user name')
+        call nc_write_att_char(trim(hostname), 'host name')
+        call nc_write_att_char(trim(compiler), 'compiler brand')
+        call nc_write_att_char(trim(hostname), 'compiler version')
+        call nc_write_att_real(real(deltat), 'time step in sec')
+        call nc_write_att_int(niter, 'number of time steps')
+        call nc_write_att_char(trim(src_type(1)), 'excitation type')
+        call nc_write_att_char(trim(src_type(2)), 'source type')
+        call nc_write_att_char(trim(stf_type), 'source time function')
+        call nc_write_att_char(trim(src_file_type), 'source file type')
+        call nc_write_att_real(real(period), 'dominant source period')
+        call nc_write_att_real(real(src_depth/1000.), 'source depth in km')
+        call nc_write_att_real(real(magnitude), 'scalar source magnitude')
+        call nc_write_att_int(num_rec_tot, 'number of receivers')
+        call nc_write_att_int(nseismo, 'length of seismogram  in time samples')
+        call nc_write_att_real(real(deltat)*real(seis_it), 'seismogram sampling in sec')
         if (dump_wavefields) then
-           call nc_write_att_int(nstrain,'number of strain dumps')
-           call nc_write_att_real(real(period)/real(strain_samp),'strain dump sampling rate in sec')
+           call nc_write_att_int(nstrain, 'number of strain dumps')
+           call nc_write_att_real(real(period)/real(strain_samp), 'strain dump sampling rate in sec')
         else
-           call nc_write_att_int(0,'number of strain dumps')       
-           call nc_write_att_real(0.,'strain dump sampling rate in sec' )
+           call nc_write_att_int(0, 'number of strain dumps')       
+           call nc_write_att_real(0., 'strain dump sampling rate in sec' )
         endif
         if (dump_vtk .or. dump_snaps_solflu) then
-           call nc_write_att_int(nsnap,'number of snapshot dumps')
-           call nc_write_att_real(real(deltat)*real(snap_it),'snapshot dump sampling rate in sec')      
+           call nc_write_att_int(nsnap, 'number of snapshot dumps')
+           call nc_write_att_real(real(deltat)*real(snap_it), 'snapshot dump sampling rate in sec')      
         else
-           call nc_write_att_int(0,'number of snapshot dumps')
-           call nc_write_att_real(0.,'snapshot dump sampling rate in sec')
+           call nc_write_att_int(0, 'number of snapshot dumps')
+           call nc_write_att_real(0., 'snapshot dump sampling rate in sec')
         endif
-        call nc_write_att_char('cyl','receiver components ')
-        call nc_write_att_int(ibeg,'ibeg')
-        call nc_write_att_int(iend,'iend')
-        call nc_write_att_real(shift_fact,'source shift factor in sec')
-        call nc_write_att_int(int(shift_fact/deltat),'source shift factor for deltat')
-        call nc_write_att_int(int(shift_fact/seis_dt),'source shift factor for seis_dt')
-        call nc_write_att_int(int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse')
-        call nc_write_att_char(trim(rec_file_type),'receiver file type')
-        call nc_write_att_real(dtheta_rec,'receiver spacing (0 if not even)')
+        ! just not to cause trouble when reading simulation.info linewise:
+        call nc_write_att_char('cyl', 'receiver components ')
+        call nc_write_att_int(ibeg, 'ibeg')
+        call nc_write_att_int(iend, 'iend')
+        call nc_write_att_real(shift_fact, 'source shift factor in sec')
+        call nc_write_att_int(int(shift_fact/deltat), 'source shift factor for deltat')
+        call nc_write_att_int(int(shift_fact/seis_dt), 'source shift factor for seis_dt')
+        call nc_write_att_int(int(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
+        call nc_write_att_char(trim(rec_file_type), 'receiver file type')
+        call nc_write_att_real(dtheta_rec, 'receiver spacing (0 if not even)')
         write(clogic,*) use_netcdf
-        call nc_write_att_char(clogic,'use netcdf for wavefield output?')
+        call nc_write_att_char(clogic, 'use netcdf for wavefield output?')
     end if
 
 
     ! output for each processor==============================================
 
     ! extract processor location
-    mysmin=router; myzmin=router; mysmax=zero; myzmax=zero
-    myrmin=router; mythetamin=10.*pi; myrmax=zero; mythetamax=zero
+    mysmin = router
+    myzmin = router
+    mysmax = zero
+    myzmax = zero
+    myrmin = router
+    mythetamin = 10.*pi
+    myrmax = zero
+    mythetamax = zero
+
     do iel=1,nelem
         do ipol=0,npol
             do jpol=0,npol
                 call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
-                if (s<mysmin) mysmin=s
-                if (s>mysmax) mysmax=s
-                if (r<myrmin) myrmin=r
-                if (z<myzmin) myzmin=z
-                if (z>myzmax) myzmax=z
-                if (r>myrmax) myrmax=r
-                if (theta<mythetamin) mythetamin=theta
-                if (theta>mythetamax) mythetamax=theta
+                if (s < mysmin) mysmin = s
+                if (s > mysmax) mysmax = s
+                if (r < myrmin) myrmin = r
+                if (z < myzmin) myzmin = z
+                if (z > myzmax) myzmax = z
+                if (r > myrmax) myrmax = r
+                if (theta < mythetamin) mythetamin = theta
+                if (theta > mythetamax) mythetamax = theta
             enddo
         enddo
     enddo
@@ -1406,41 +1412,40 @@ subroutine write_parameters
     ! write post processing file==============================================
     
     if (lpr) then
-        write(6,*)'  Writing post processing input file: param_post_processing'
-        write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
-    
         open(unit=8,file='param_sum_seis') 
         read(8,*) nsim1
         close(8)
     
-        open(unit=9, file="param_post_processing")
-        write(9,222)'.true.','rotate receivers?'
-        write(9,222)"'enz'",'receiver components: enz,sph,cyl,xyz,src'
-        if (trim(src_file_type)=='cmtsolut' .and. nsim1>1) then
-           write(9,222)'.true.','sum to full Mij'
-        elseif (nsim1>1) then 
-           write(9,222)'.true.','sum to full Mij'
-        else 
-           write(9,222)'.true.','sum to full Mij'
+        if (src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') then
+           open(unit=9, file="../param_post_processing")
+        elseif (src_file_type == 'sourceparams') then
+           open(unit=9, file="param_post_processing")
         endif
-        Mij_char = ['Mrr','Mtt','Mpp','Mrt','Mrp','Mtp']
-        do i=1,6
-            write(9,223)Mij(i),Mij_char(i)
-        enddo
-        
-        if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
-            write(9,223)period,'convolve period ( 0. if not to be convolved)'
-        else
-            write(9,223)0.0,'convolve period (0. if not convolved)'
+
+        if ((src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') &
+              .or. src_file_type == 'sourceparams') then
+           write(6,*)'  Writing post processing input file: param_post_processing'
+           write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
+    
+           write(9,222) '.true.', 'rotate receivers?'
+           write(9,222) "'enz'", 'receiver components: enz,sph,cyl,xyz,src'
+           write(9,222) '.true.', 'sum to full Mij'
+           
+           if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
+               write(9,223) period, 'convolve period ( 0. if not to be convolved)'
+           else
+               write(9,223) 0.0, 'convolve period (0. if not convolved)'
+           endif
+           write(9,222) "'gauss_0'", 'source time function type for convolution'
+           write(9,223) srccolat, 'Source colatitude'
+           write(9,223) srclon, 'Source longitude'
+           write(9,221) dump_vtk, 'plot global snaps?'
+           write(9,224) 'disp', 'disp or velo seismograms'
+           write(9,224) "'Data_Postprocessing'", 'Directory for post processed data'
+           write(9,221) .true., 'seismograms at negative time (0 at max. of stf)'
+           close(9)
         endif
-        write(9,222)"'gauss_0'",'source time function type for convolution'
-        write(9,223)srccolat,'Source colatitude'
-        write(9,223)srclon,'Source longitude'
-        write(9,221)dump_vtk,'plot global snaps?'
-        write(9,224)'disp','disp or velo seismograms'
-        write(9,224)"'Data_Postprocessing'",'Directory for post processed data'
-        write(9,221).true.,'seismograms at negative time (0 at max. of stf)'
-        close(9)
+
 221 format(l25,a50)
 222 format(a25,a50)
 223 format(1pe25.6,a50)
@@ -1449,10 +1454,17 @@ subroutine write_parameters
     endif
     
     ! write param_snaps ==============================================
-    if (dump_vtk) then 
-        if (lpr) then
-            write(6,*)'  Writing param_snaps for wavefield visualization'
+    if (dump_vtk .and. lpr) then 
+        if (src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') then
+            open(unit=9,file="../param_snaps")
+        elseif (src_file_type == 'sourceparams') then
             open(unit=9,file="param_snaps")
+        endif
+        
+        if ((src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') &
+              .or. src_file_type == 'sourceparams') then
+            
+            write(6,*)'  Writing param_snaps for wavefield visualization'
     
             write(9,222)"0.","starting phi (right cross section) [deg]"
             write(9,222)"85.", "increment phi (ending,left cross section) [deg]"

@@ -189,7 +189,7 @@ set mainrundir = $PWD
 cp -p $homedir/$srcfile $mainrundir/
 
 # write parameter file for summing seismograms after the simulations
-echo $numsim $num_src |awk '{print ( $1 * $2)}'"             number of simulations" > param_sum_seis
+echo $numsim $num_src |awk '{print ( $1 * $2)}' > param_sum_seis
 
 
 # Prepare and copy relevant files for each simulation

@@ -28,7 +28,8 @@ module data_all
   real, allocatable, dimension(:)     :: thr_orig,phr_orig
   real, dimension(3,3)                :: rot_mat
   character(len=3)                    :: rec_comp_sys
-  logical                             :: rot_rec_post,any_sum_seis_true,load_snaps
+  logical                             :: rot_rec_post, sum_seis_true, load_snaps
+  logical                             :: negative_time
   character(len=12)                   :: src_file_type
 
   ! discrete dirac sources
@@ -36,14 +37,10 @@ module data_all
   integer, allocatable, dimension(:)  :: ishift_deltat, ishift_seisdt, ishift_straindt
 
   ! parameters from param_post_processing
-  logical, dimension(:), allocatable  :: rot_rec_posttmp, sum_seis_true, load_snapstmp, &
-                                         negative_time
-  character(len=3), allocatable       :: rec_comp_systmp(:)
-  real, dimension(:,:), allocatable   :: mij_loc
-  real, dimension(:), allocatable     :: conv_period, srccolat, srclon
-  character(len=7), allocatable       :: conv_stf(:)
-  character(len=100), allocatable     :: outdir(:)
-  character(len=4), allocatable       :: seistype(:)
+  real                                :: conv_period, srccolat, srclon
+  character(len=7)                    :: conv_stf
+  character(len=100)                  :: outdir
+  character(len=4)                    :: seistype
 
   real, allocatable :: period_final(:)
   real, allocatable :: trans_rot_mat(:,:,:)
@@ -130,7 +127,7 @@ program post_processing_seis
   allocate(colat(nrec(1),nsim),lon(nrec(1),nsim))
   do isim=1,nsim
      open(unit=20,file=trim(simdir(isim))//'/Data/receiver_pts.dat')
-     open(unit=21,file=trim(outdir(1))//'/receiver_gll_locs.dat')
+     open(unit=21,file=trim(outdir)//'/receiver_gll_locs.dat')
      write(21,'(4a15)') ' ', 'colat', 'lat', 'lon'
      do i=1,nrec(isim)
         read(20,*) colat(i,isim), lon(i,isim), junk
@@ -143,14 +140,14 @@ program post_processing_seis
         
         ! Rotate to the original (i.e. real src-rec coordinate-based) u_xyz
         rloc_xyz_tmp = rloc_xyz
-        rloc_xyz(1) =   cos(srccolat(1)) * cos(srclon(1)) * rloc_xyz_tmp(1) &
-                    & - sin(srclon(1)) * rloc_xyz_tmp(2) &    
-                    & + sin(srccolat(1)) * cos(srclon(1)) * rloc_xyz_tmp(3) 
-        rloc_xyz(2) =   cos(srccolat(1)) * sin(srclon(1)) * rloc_xyz_tmp(1) &
-                    & + cos(srclon(1)) * rloc_xyz_tmp(2) &
-                    & + sin(srccolat(1)) * sin(srclon(1)) * rloc_xyz_tmp(3)
-        rloc_xyz(3) = - sin(srccolat(1)) * rloc_xyz_tmp(1) &
-                    & + cos(srccolat(1)) * rloc_xyz_tmp(3)
+        rloc_xyz(1) =   cos(srccolat) * cos(srclon) * rloc_xyz_tmp(1) &
+                    & - sin(srclon) * rloc_xyz_tmp(2) &    
+                    & + sin(srccolat) * cos(srclon) * rloc_xyz_tmp(3) 
+        rloc_xyz(2) =   cos(srccolat) * sin(srclon) * rloc_xyz_tmp(1) &
+                    & + cos(srclon) * rloc_xyz_tmp(2) &
+                    & + sin(srccolat) * sin(srclon) * rloc_xyz_tmp(3)
+        rloc_xyz(3) = - sin(srccolat) * rloc_xyz_tmp(1) &
+                    & + cos(srccolat) * rloc_xyz_tmp(3)
 
         if (rloc_xyz(1) > 1.) rloc_xyz(1) = 1.
         if (rloc_xyz(1) < -1.) rloc_xyz(1) = -1.
@@ -187,11 +184,11 @@ program post_processing_seis
      close(20)
      close(21)
   enddo
-  if (maxval(lon) > 0.1) any_sum_seis_true = .true. 
+  if (maxval(lon) > 0.1) sum_seis_true = .true. 
   colat = colat / 180. * pi
   lon = lon / 180. * pi
   
-  if (any_sum_seis_true .or. rot_rec_post) then
+  if (sum_seis_true .or. rot_rec_post) then
      ! calculate moment tensor and azimuth prefactors/radiation patterns for each simulation
      allocate(mij_phi(nrec(1),nsim,3)); mij_phi = -1.E30
      call compute_radiation_prefactor(mij_phi,nrec(1),nsim,lon)
@@ -202,7 +199,7 @@ program post_processing_seis
   allocate(period_final(nsim))
   
   do isim=1,nsim
-     if (conv_period(isim)>0. ) then 
+     if (conv_period > 0. ) then 
         if (stf_type(isim) /= 'dirac_0' .and. stf_type(isim) /= 'quheavi') then 
            write(6,*) ' ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !'
            write(6,*)'    WARNING! You want to convolve although seismograms are upon a ', &
@@ -210,15 +207,15 @@ program post_processing_seis
            write(6,*) ' ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !'
         endif
 
-        if (conv_period(isim) < period(isim)) then
-           write(6,*)'Cannot convolve with a period shorter than allowed by the mesh/simulation!'
-           write(6,*)'convolution period, min. mesh period [s]:',conv_period(isim),period(isim)
-           write(6,*)'Using mesh period instead......'
-           conv_period(isim)=period(isim)
+        if (conv_period < period(isim)) then
+           write(6,*) 'Cannot convolve with a period shorter than allowed by the mesh/simulation!'
+           write(6,*) 'convolution period, min. mesh period [s]:', conv_period, period(isim)
+           write(6,*) 'Using mesh period instead......'
+           conv_period = period(isim)
         endif
 
-        write(6,*)' Convolve with source period [s]:',conv_period(isim)
-        period_final(isim) = conv_period(isim)
+        write(6,*)' Convolve with source period [s]:', conv_period
+        period_final(isim) = conv_period
      else
         period_final(isim) = period(isim)
      endif
@@ -236,16 +233,16 @@ program post_processing_seis
   allocate(outname(nrec(1),nsim), outname2(nrec(1),nsim), rec_full_name(nrec(1),nsim))
   do i=1, nrec(1)
      do isim=1,nsim
-        rec_full_name(i,isim) = trim(recname(i))//'_'//seistype(isim)//'_post'
-        if (sum_seis_true(isim)) rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_mij'
+        rec_full_name(i,isim) = trim(recname(i))//'_'//seistype//'_post'
+        if (sum_seis_true) rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_mij'
 
-        call define_io_appendix(appidur, int(conv_period(isim)))
+        call define_io_appendix(appidur, int(conv_period))
         rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_conv'//appidur//''
-        outname(i,isim) = trim(outdir(isim))//'/SEISMOGRAMS/'//trim(rec_full_name(i,isim))
+        outname(i,isim) = trim(outdir)//'/SEISMOGRAMS/'//trim(rec_full_name(i,isim))
 
         ! if no summation, put output traces in each of the simulation directories
-        outname2(i,isim) = trim(outdir(isim))//'/SEISMOGRAMS/UNPROCESSED/'&
-                            //trim(recname(i))//'_'//seistype(isim)//'_post_'&
+        outname2(i,isim) = trim(outdir)//'/SEISMOGRAMS/UNPROCESSED/'&
+                            //trim(recname(i))//'_'//seistype//'_post_'&
                             //trim(src_type(isim,2))
         
         write(6,*) 'outname: ', i, trim(outname(i,isim))
@@ -253,8 +250,8 @@ program post_processing_seis
      enddo
   enddo
 
-  if (conv_period(1) > 0.)  then 
-    tshift = shift_fact1 * conv_period(1)
+  if (conv_period > 0.)  then 
+    tshift = shift_fact1 * conv_period
   else
      tshift = 0.
   endif
@@ -277,9 +274,9 @@ program post_processing_seis
 
         ! load seismograms from all directories
         open(unit=60,file = trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
-                            //seistype(isim)//'.dat')
+                            //seistype//'.dat')
         write(6,*) 'opened ', trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
-                    //seistype(isim)//'.dat'
+                    //seistype//'.dat'
 
         if (src_type(isim,1) == 'monopole') then 
            do iseis=1, nt_seis(1) 
@@ -292,14 +289,14 @@ program post_processing_seis
         endif
         close(60)
 
-        if (nsim>1 .or. .not. sum_seis_true(isim)) then 
+        if (nsim>1 .or. .not. sum_seis_true) then 
         ! output seismograms into each simulation's  data directory. 
         ! In original rotated cylindrical frame, without azimuthal radiation factor
         open(unit=150,file=trim(outname2(i,isim))//'_s0.dat',status='new')
         open(unit=151,file=trim(outname2(i,isim))//'_ph0.dat',status='new')
         open(unit=152,file=trim(outname2(i,isim))//'_z0.dat',status='new')
 
-        if (negative_time(isim)) then
+        if (negative_time) then
            do it=1,nt_seis(1)
               write(150,*)time(it)-shift_fact(1)-tshift,seis_sglcomp(it,1)
               write(151,*)time(it)-shift_fact(1)-tshift,seis_sglcomp(it,2)
@@ -318,7 +315,7 @@ program post_processing_seis
         ! sum seismograms upon separate moment tensors and include azimuthal radiation factor 
         ! This needs to be done prior to component rotation such that the system is still &
         ! cylindrical.
-        if (sum_seis_true(isim)) then
+        if (sum_seis_true) then
            call sum_individual_wavefields(seis, seis_sglcomp, nt_seis(1), mij_phi(i,isim,:))
         else
            seis = seis_sglcomp
@@ -329,10 +326,10 @@ program post_processing_seis
      !::::::::::::::::::::::::::::::::
 
      ! convolve with a source time function
-     if (conv_period(1)>0.)  then 
-        write(6,*)'conv period:',conv_stf(1)
-        call convolve_with_stf(conv_period(1),dt_seis(1),nt_seis(1),src_type(1,1),conv_stf(1),&
-                                               outdir(1),seis,seis_fil)
+     if (conv_period > 0.)  then 
+        write(6,*) 'conv period:', conv_stf
+        call convolve_with_stf(conv_period, dt_seis(1), nt_seis(1), src_type(1,1), conv_stf,&
+                                               outdir, seis, seis_fil)
      else
         seis_fil=seis
      endif
@@ -342,7 +339,7 @@ program post_processing_seis
      ! this is fine within a Mij set, but NOT for a finite fault: In that case, we will have to 
      ! amend this by another loop over fault points. 
      if (rot_rec_post_array(1)) &
-            call rotate_receiver_comp(1, rec_comp_sys, srccolat(1), srclon(1), &
+            call rotate_receiver_comp(1, rec_comp_sys, srccolat, srclon, &
                                       colat(i,1), lon(i,1), thr_orig(i), phr_orig(i), &
                                       nt_seis(1), seis_fil)
 
@@ -350,7 +347,7 @@ program post_processing_seis
      open(unit=50,file=trim(outname(i,1))//'_'//reccomp(1)//'.dat',status='new')
      open(unit=51,file=trim(outname(i,1))//'_'//reccomp(2)//'.dat',status='new')
      open(unit=52,file=trim(outname(i,1))//'_'//reccomp(3)//'.dat',status='new')
-     if (negative_time(1)) then
+     if (negative_time) then
         write(6,*)' writing seismograms into joint directory: negative time'
         do it=1,nt_seis(1)
            write(50,*)time(it)-shift_fact(1)-tshift,seis_fil(it,1)
@@ -373,29 +370,29 @@ program post_processing_seis
 
   ! plot original source and receiver locations in google earth kml file with link 
   ! to seismogram images
-  call save_google_earth_kml(srccolat(1), srclon(1), src_depth(1), Mij,period_final(1), &
-                             thr_orig,phr_orig, reccomp, src_type(1,1), sum_seis_true(1), &
-                             nsim,nrec(1), outdir(1), rec_full_name(:,1))
+  call save_google_earth_kml(srccolat, srclon, src_depth(1), Mij,period_final(1), &
+                             thr_orig,phr_orig, reccomp, src_type(1,1), sum_seis_true, &
+                             nsim,nrec(1), outdir, rec_full_name(:,1))
   
   write(6,*) 'writing matlab input files for record sections...'
   
-  open(unit=99,file=trim(outdir(1))//'/info_matlab.dat')
+  open(unit=99,file=trim(outdir)//'/info_matlab.dat')
   write(99,*)nrec(1)
-  if (negative_time(1)) then 
+  if (negative_time) then 
      write(99,*)nt_seis(1)
   else
      write(99,*)nt_seis(1)-ishift
   endif
   
   write(99,*)time(2)-time(1)
-  write(99,*)conv_period(1)
+  write(99,*)conv_period
   do i=1,nrec(1)
      write(99,*)colat(i,1)
   enddo
   close(99)
   
-  open(unit=99,file=trim(outdir(1))//'/info_seisnames.dat')
-  open(unit=98,file=trim(outdir(1))//'/info_seisstations.dat')
+  open(unit=99,file=trim(outdir)//'/info_seisnames.dat')
+  open(unit=98,file=trim(outdir)//'/info_seisstations.dat')
   do ii=1,3
      do i=1,nrec(1)
         fname=trim(rec_full_name(i,1))//'_'//reccomp(ii)//".dat"
@@ -406,7 +403,7 @@ program post_processing_seis
   close(99)
   close(98)
   
-  open(unit=99,file=trim(outdir(1))//'/info_seiscomp.dat')
+  open(unit=99,file=trim(outdir)//'/info_seiscomp.dat')
   do i=1,3
        write(99,*)reccomp(i)
   enddo
@@ -427,13 +424,11 @@ subroutine read_input
   use data_all
   use global_par
   implicit none 
-  logical :: file_exist
-  integer :: length
 
   ! read directories for multiple simulations
   open(unit=99,file='param_sum_seis', status='old',position='rewind')
-  read(99,*)nsim
-  if (nsim==1) write(6,*)'no need to sum, one simulation only!'
+  read(99,*) nsim
+  if (nsim==1) write(6,*) 'no need to sum, one simulation only!'
   allocate(simdir(nsim))
   do isim=1,nsim
      read(99,*)simdir(isim)
@@ -442,124 +437,20 @@ subroutine read_input
   close(99)
 
   ! read in post processing input file
-  allocate(rot_rec_posttmp(nsim))
-  allocate(rec_comp_systmp(nsim))
-  allocate(sum_seis_true(nsim))
-  allocate(mij_loc(6,nsim))
-  allocate(conv_period(nsim))
 
-  allocate(conv_stf(nsim))
-  allocate(srccolat(nsim))
-  allocate(srclon(nsim))
-  allocate(load_snapstmp(nsim))
-  allocate(outdir(nsim))
-  allocate(seistype(nsim))
-  allocate(negative_time(nsim))
-
-  any_sum_seis_true = .false.
-  do isim=1,nsim
-     open(unit=99,file=trim(simdir(isim))//'/param_post_processing')
-     read(99,*)rot_rec_posttmp(isim)
-     read(99,*)rec_comp_systmp(isim)
-     read(99,*)sum_seis_true(isim)
-     do i=1,6
-        read(99,*)mij_loc(i,isim)
-     enddo
-     read(99,*)conv_period(isim)
-     read(99,*)conv_stf(isim)
-     read(99,*)srccolat(isim)
-     read(99,*)srclon(isim)
-     read(99,*)load_snapstmp(isim)
-     read(99,*)seistype(isim)
-     read(99,*)outdir(isim)
-     read(99,*)negative_time(isim)
-     close(99)
-   
-     write(6,*)'seismogram type:',seistype(isim)
-     write(6,*)'Output directory:',trim(outdir(isim))
-     write(6,*)'shift time series to negative time (event at zero)?',negative_time(isim)
-   
-     ! read standard in, if any
-     inquire(file=trim(outdir(1))//"/param_post_processing_overwrite",exist=file_exist)
-     if (file_exist) then
-        write(6,*)'OVERWRITING generic post processing parameters...'
-        open(unit=99,file=trim(outdir(1))//'/param_post_processing_overwrite')
-        read(99,*)length
-        read(99,*)rec_comp_systmp(1)
-        write(6,*)'overwrite receiver component system:',rec_comp_systmp(1)
-        rec_comp_systmp(:)=rec_comp_systmp(1)
-        if (length>1) then 
-           read(99,*)conv_period(1)
-           write(6,*)'overwrite period:',conv_period(1)
-           conv_period(:)=conv_period(1)
-        endif
-        if (length>2) then 
-           read(99,*)conv_stf(1)
-           write(6,*)'overwrite convolution type:',conv_stf(1)
-           conv_stf(:)=conv_stf(1)
-        endif
-        if (length>3) then 
-           read(99,*)seistype(1)
-           write(6,*)'overwrite seismogram type:',seistype(1)
-           seistype(:)=seistype(1)
-        endif
-        close(99)
-     endif
-   
-     if (load_snapstmp(isim)) load_snaps=.true.
-   
-     if (sum_seis_true(isim)) any_sum_seis_true=.true.
-   
-     if ( sum_seis_true(isim) .and. nsim ==2)  then
-        write(6,'(a,/,a)') ' WARNING: You want to sum seismograms but only have two simulations', &
-                           ' ==> are you sure?'
-     elseif (.not. sum_seis_true(isim) .and. nsim == 4)  then
-        write(6,*) '  WARNING: you have 4 simulations but do not want to sum?'
-     endif
-   
-     write(6,*)'receiver system:',isim,rec_comp_systmp(isim)
-     if (isim>1) then
-        if (rec_comp_systmp(isim)/=rec_comp_systmp(isim-1) ) then 
-            write(6,*) 'inconsistency with receiver component system:'
-            write(6,*) simdir(isim),rec_comp_systmp(isim)
-            write(6,*) simdir(isim-1),rec_comp_systmp(isim-1)
-            write(6,*) 'make sure these are all identical in the subdirectories'
-            stop
-        end if
-     endif
-     rec_comp_sys = rec_comp_systmp(1)
-   
-     write(6,*) 'receiver rotation?',isim,rot_rec_posttmp(isim)
-     if (isim>1) then
-        if (rot_rec_posttmp(isim) .neqv. rot_rec_posttmp(isim-1))  then 
-            write(6,*) 'inconsistency with receiver rotation:'
-            write(6,*) simdir(isim),rot_rec_posttmp(isim)
-            write(6,*) simdir(isim-1),rot_rec_posttmp(isim-1)
-            write(6,*) 'make sure these are all identical in the subdirectories'
-            stop
-        endif
-     endif
-     rot_rec_post=rot_rec_posttmp(1)
-   
-     write(6,*)' Input from param_post_processing:',simdir(isim)
-     write(6,*)'  Rotate receivers?',rot_rec_post
-     if (rot_rec_post) write(6,*)'  component system: ',rec_comp_sys
-     write(6,*)'  sum seismograms to full moment tensor?',sum_seis_true(isim)
-     if (sum_seis_true(isim)) then 
-        write(6,*)'  Moment tensor of individual run:'
-        write(6,3)'','Mrr','Mtt','Mpp','Mtr','Mpr','Mtp'
-        write(6,2)'',(Mij_loc(i,isim),i=1,6)
-2       format(a2,6(1pe12.2))
-3       format(a2,6(a12))
-     endif
-     write(6,*) '  convolution period:',conv_period(isim)
-     write(6,*) '  convolution source time function: ' ,conv_stf(isim)
-     write(6,*) '  source colatitude [deg]:',srccolat(isim)*180./pi
-     write(6,*) '  source longitude:',srclon(isim)*180./pi
-     write(6,*) '  load snaps?',load_snapstmp(isim)
-     write(6,*) '  output directory: ',trim(outdir(isim))
-     write(6,*)
-  enddo 
+  open(unit=99,file='param_post_processing')
+  read(99,*) rot_rec_post
+  read(99,*) rec_comp_sys
+  read(99,*) sum_seis_true
+  read(99,*) conv_period
+  read(99,*) conv_stf
+  read(99,*) srccolat
+  read(99,*) srclon
+  read(99,*) load_snaps
+  read(99,*) seistype
+  read(99,*) outdir
+  read(99,*) negative_time
+  close(99)
 
   tshift = 0.
 
@@ -604,7 +495,7 @@ subroutine read_input
      close(99)
 
      if (src_type(isim,2)=='vertforce' .or. src_type(isim,2)=='xforce' .or. &
-         src_type(isim,2)=='yforce') sum_seis_true(isim)=.false.
+         src_type(isim,2)=='yforce') sum_seis_true=.false.
 
      write(6,*) 'Simulations: ',isim,trim(simdir(isim))
      write(6,*) '  source type:',src_type(isim,1),' ',src_type(isim,2)
@@ -642,7 +533,7 @@ end subroutine read_input
 subroutine compute_radiation_prefactor(mij_prefact,npts,nsim,longit)
 
   use data_all, only : src_type,magnitude,mij,sum_seis_true,correct_azi,rot_mat
-  use data_all, only : trans_rot_mat,src_file_type,srccolat,srclon,any_sum_seis_true,outdir
+  use data_all, only : trans_rot_mat,src_file_type,srccolat,srclon,sum_seis_true,outdir
   use global_par
   
   implicit none
@@ -662,15 +553,15 @@ subroutine compute_radiation_prefactor(mij_prefact,npts,nsim,longit)
   if (.not. allocated(trans_rot_mat)) allocate(trans_rot_mat(3,3,nsim))
 
   do isim=1,nsim
-     rot_mat(1,1)=cos(srccolat(isim))*cos(srclon(isim))
-     rot_mat(2,2)=cos(srclon(isim))
-     rot_mat(3,3)=cos(srccolat(isim))
-     rot_mat(2,1)=cos(srccolat(isim))*sin(srclon(isim))
-     rot_mat(3,1)=-sin(srccolat(isim))
-     rot_mat(3,2)=0.d0
-     rot_mat(1,2)=-sin(srclon(isim))
-     rot_mat(1,3)=sin(srccolat(isim))*cos(srclon(isim))
-     rot_mat(2,3)=sin(srccolat(isim))*sin(srclon(isim))
+     rot_mat(1,1) = cos(srccolat) * cos(srclon)
+     rot_mat(2,2) = cos(srclon)
+     rot_mat(3,3) = cos(srccolat)
+     rot_mat(2,1) = cos(srccolat) * sin(srclon)
+     rot_mat(3,1) = -sin(srccolat)
+     rot_mat(3,2) = 0.d0
+     rot_mat(1,2) = -sin(srclon)
+     rot_mat(1,3) = sin(srccolat) * cos(srclon)
+     rot_mat(2,3) = sin(srccolat) * sin(srclon)
      do i=1,3
         do j=1,3
            if (abs(rot_mat(i,j))<epsi_real) rot_mat(i,j)=0.0
@@ -712,17 +603,17 @@ subroutine compute_radiation_prefactor(mij_prefact,npts,nsim,longit)
   write(6,*)'magnitudes of each run:'
   write(6,*)(magnitude(isim),isim=1,nsim)
 
-  inquire(file=trim(outdir(1))//"/param_mij",exist=file_exist)
+  inquire(file=trim(outdir)//"/param_mij",exist=file_exist)
   if (file_exist) then
      write(6,*) 'OVERWRITING moment tensor...'
-     open(unit=99,file=trim(outdir(1))//'/param_mij')
+     open(unit=99,file=trim(outdir)//'/param_mij')
      read(99,*) (Mij(i),i=1,6)
      write(6,*) 'overwritten moment tensor:'
      write(6,*) (Mij(i),i=1,6)
      close(99)
   endif
 
-  if (any_sum_seis_true) then
+  if (sum_seis_true) then
      do isim=1,nsim
 
         Mij_scale=Mij/magnitude(isim)
@@ -754,65 +645,54 @@ subroutine compute_radiation_prefactor(mij_prefact,npts,nsim,longit)
            Mij_scale(5) = Mij_matr(1,3)
            Mij_scale(6) = Mij_matr(2,3)
             
-       endif
-
-        if (.not. correct_azi(isim)) then  ! just double checking the above for each simulation....
-           do i=1,npts
-
-              if (src_type(isim,2)=='mzz') then
-                 mij_prefact(i,isim,:) = Mij_scale(1)
-                 mij_prefact(i,isim,2) = 0.
-                 if (i==1) write(6,*) isim, 'Simulation is mzz, prefact:', &
-                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                      mij_prefact(i,isim,3)
-
-              elseif (src_type(isim,2)=='mxx_p_myy') then
-                 mij_prefact(i,isim,:) = Mij_scale(2)+Mij_scale(3)
-                 mij_prefact(i,isim,2) = 0.
-                 if (i==1) write(6,*) isim, 'Simulation is mxx, prefact:', &
-                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                      mij_prefact(i,isim,3)
-
-              elseif (src_type(isim,2)=='mxz' .or. src_type(isim,2)=='myz') then
-                 mij_prefact(i,isim,:) = Mij_scale(4)*cos(longit(i))+Mij_scale(5)*sin(longit(i))
-                 mij_prefact(i,isim,2) = -Mij_scale(4)*sin(longit(i))+Mij_scale(5)*cos(longit(i))
-
-                 if (i==1) write(6,*) isim, 'Simulation is mxz, prefact:', &
-                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                      mij_prefact(i,isim,3)
-
-              elseif (src_type(isim,2)=='mxy' .or. src_type(isim,2)=='mxx_m_myy') then
-                 mij_prefact(i,isim,:) = (Mij_scale(2)-Mij_scale(3))*cos(2.*longit(i))  &
-                                                       +2.*Mij_scale(6)*sin(2.*longit(i)) 
-                 mij_prefact(i,isim,2) = (Mij_scale(3)-Mij_scale(2))*sin(2.*longit(i)) &
-                                                        +2.*Mij_scale(6)*cos(2.*longit(i))
-                 if (i==1) write(6,*) isim, 'Simulation is mxy, prefact:', &
-                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                      mij_prefact(i,isim,3)
-
-              elseif(src_type(isim,2)=='explosion') then 
-                 mij_prefact(i,isim,:) = (Mij_scale(1)+Mij_scale(2)+Mij_scale(3)) / 3.
-                 if (i==1) write(6,*) isim, 'Simulation is explosion, prefact:', &
-                                      mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                      mij_prefact(i,isim,3)
-              endif
-              
-           enddo
-
-           write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
-                      maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
-        else ! correct_azi
-           write(6,'(a,a,/,a,/,a,a)') &
-                ' .... ISSUE: correct azimuth embedded in simulation, ', &
-                'thus various components may be unretrievable!', &
-                ' ..... hence we are NOT summing seismograms!', &
-                ' .... to be sure to obtain correct results, rerun the ', &
-                'solver with correc_azi set to .false. '
-
-           sum_seis_true = .false.
         endif
+
+        do i=1,npts
+
+           if (src_type(isim,2)=='mzz') then
+              mij_prefact(i,isim,:) = Mij_scale(1)
+              mij_prefact(i,isim,2) = 0.
+              if (i==1) write(6,*) isim, 'Simulation is mzz, prefact:', &
+                                   mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                   mij_prefact(i,isim,3)
+
+           elseif (src_type(isim,2)=='mxx_p_myy') then
+              mij_prefact(i,isim,:) = Mij_scale(2)+Mij_scale(3)
+              mij_prefact(i,isim,2) = 0.
+              if (i==1) write(6,*) isim, 'Simulation is mxx, prefact:', &
+                                   mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                   mij_prefact(i,isim,3)
+
+           elseif (src_type(isim,2)=='mxz' .or. src_type(isim,2)=='myz') then
+              mij_prefact(i,isim,:) = Mij_scale(4)*cos(longit(i))+Mij_scale(5)*sin(longit(i))
+              mij_prefact(i,isim,2) = -Mij_scale(4)*sin(longit(i))+Mij_scale(5)*cos(longit(i))
+
+              if (i==1) write(6,*) isim, 'Simulation is mxz, prefact:', &
+                                   mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                   mij_prefact(i,isim,3)
+
+           elseif (src_type(isim,2)=='mxy' .or. src_type(isim,2)=='mxx_m_myy') then
+              mij_prefact(i,isim,:) = (Mij_scale(2)-Mij_scale(3))*cos(2.*longit(i))  &
+                                                    +2.*Mij_scale(6)*sin(2.*longit(i)) 
+              mij_prefact(i,isim,2) = (Mij_scale(3)-Mij_scale(2))*sin(2.*longit(i)) &
+                                                     +2.*Mij_scale(6)*cos(2.*longit(i))
+              if (i==1) write(6,*) isim, 'Simulation is mxy, prefact:', &
+                                   mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                   mij_prefact(i,isim,3)
+
+           elseif(src_type(isim,2)=='explosion') then 
+              mij_prefact(i,isim,:) = (Mij_scale(1)+Mij_scale(2)+Mij_scale(3)) / 3.
+              if (i==1) write(6,*) isim, 'Simulation is explosion, prefact:', &
+                                   mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
+                                   mij_prefact(i,isim,3)
+           endif
+           
+        enddo
+
+        write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
+                   maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
      enddo ! isim
-  endif ! any_sum_seis_true
+  endif ! sum_seis_true
 end subroutine compute_radiation_prefactor
 !------------------------------------------------------------------------
 
@@ -1191,7 +1071,7 @@ subroutine compute_3d_wavefields
 
   ! read snap plot parameters
 
-  open(unit=99,file=trim(simdir(1))//'/param_snaps')
+  open(unit=99,file='param_snaps')
   read(99,*) phi0
   write(6,*) 'starting azimuth/phi for cross section on the right [deg]:',phi0
   read(99,*) dphi
@@ -1469,9 +1349,9 @@ subroutine compute_3d_wavefields
   ! rescale vp
   vp=vp/maxval(vp)*0.002-0.001
 
-  filename1=trim(outdir(1))//'/SNAPS/mesh_xsect'
+  filename1=trim(outdir)//'/SNAPS/mesh_xsect'
   call write_VTK_bin_scal(x,y,z,vp,2*nptstot,0,filename1)
-  filename1=trim(outdir(1))//'/SNAPS/mesh_xsect_cell'
+  filename1=trim(outdir)//'/SNAPS/mesh_xsect_cell'
   call write_VTK_bin_scal_topology(x,y,z,vp,2*nptstot/4,filename1)
 
 
@@ -1496,7 +1376,7 @@ subroutine compute_3d_wavefields
 
      write(6,*)'save into cell vtk...',size(xtop),k1
      call flush(6)
-     filename1=trim(outdir(1))//'/SNAPS/mesh_top_cell'
+     filename1=trim(outdir)//'/SNAPS/mesh_top_cell'
      call write_VTK_bin_scal_topology(real(xtop(1:k1)),real(ytop(1:k1)),real(ztop(1:k1)),&
                                       vptop(1:k1),k1/4,filename1)
 
@@ -1523,7 +1403,7 @@ subroutine compute_3d_wavefields
      vpbot(1:k2) = vp(ind_proc_bot(1)*npts+ind_pts_bot(1))
 
      ! save into cell vtk
-     filename1=trim(outdir(1))//'/SNAPS/mesh_bot_cell'
+     filename1=trim(outdir)//'/SNAPS/mesh_bot_cell'
      call write_VTK_bin_scal_topology(real(xbot(1:k2)),real(ybot(1:k2)),real(zbot(1:k2)),&
                                       vpbot,k2/4,filename1)
 
@@ -1563,7 +1443,7 @@ subroutine compute_3d_wavefields
 
      ! save into AVS
      write(6,*)'writing vtk bin file...'
-     filename1=trim(outdir(1))//'/SNAPS/mesh_meri'
+     filename1=trim(outdir)//'/SNAPS/mesh_meri'
      call write_VTK_bin_scal(xmeri,ymeri,zmeri,vpmeri,k3,0,filename1)
 
   endif !use_meri
@@ -1596,14 +1476,14 @@ subroutine compute_3d_wavefields
   endif
 
   ! save mesh for kerner
-  open(unit=99,file=trim(outdir(1))//'/SNAPS/mesh_tot.xyz')
+  open(unit=99,file=trim(outdir)//'/SNAPS/mesh_tot.xyz')
   do i=1,2*nptstot+k1+k2
      write(99,*)xtot(i),ytot(i),ztot(i)
   enddo
   close(99)
 
   if (use_meri) then 
-     open(unit=99,file=trim(outdir(1))//'/SNAPS/mesh_meri.xyz')
+     open(unit=99,file=trim(outdir)//'/SNAPS/mesh_meri.xyz')
      do i=2*nptstot+k1+k2+1,2*nptstot+k1+k2+k3
         write(99,*)xtot(i),ytot(i),ztot(i)
      enddo
@@ -1611,7 +1491,7 @@ subroutine compute_3d_wavefields
   endif
 
   ! load azimuthal prefactors-------------------------------------------------------------
-  if (any_sum_seis_true) then 
+  if (sum_seis_true) then 
      allocate(longit_snap(2*nptstot+k1+k2))
      longit_snap(1:nptstot) =phi0
      longit_snap(nptstot+1:2*nptstot) = phi0+dphi
@@ -1679,7 +1559,7 @@ subroutine compute_3d_wavefields
   do j=snap1,snap2,snapskip
 
      disp=0.
-     if (any_sum_seis_true) disptot_sum = 0.
+     if (sum_seis_true) disptot_sum = 0.
 
      do isim=1,nsim
         do iproc=0,nproc_mesh-1
@@ -1747,7 +1627,7 @@ subroutine compute_3d_wavefields
         disp(1:nptstot,2)=disp(1:nptstot,2)
         disp(1:nptstot,3)=disp(1:nptstot,3)
 
-        filename1 = trim(simdir(isim))//'/'//trim(outdir(1))//'/SNAPS/snap_cell_'&
+        filename1 = trim(simdir(isim))//'/'//trim(outdir)//'/SNAPS/snap_cell_'&
                     //trim(src_type(isim,2))//'_'//appmynum2//'_z'
         write(6,*)'filename out vtk :',filename1
         call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),&
@@ -1757,7 +1637,7 @@ subroutine compute_3d_wavefields
 
         
         if (use_meri) then
-           filename1 = trim(simdir(isim))//'/'//trim(outdir(1))//'/SNAPS/meri_snap_'&
+           filename1 = trim(simdir(isim))//'/'//trim(outdir)//'/SNAPS/meri_snap_'&
                         //trim(src_type(isim,2))//'_'//appmynum2//'_z'
            call write_VTK_bin_scal(xtot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3),&
                 ytot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
@@ -1765,7 +1645,7 @@ subroutine compute_3d_wavefields
                 disp(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3,3),k3,0,filename1)
         endif
 
-        if (sum_seis_true(isim)) then 
+        if (sum_seis_true) then 
            disptot_sum(:,1) = disptot_sum(:,1) + mij_snap(:,isim,1)*disp(:,2)
            disptot_sum(:,2) = disptot_sum(:,2) + mij_snap(:,isim,2)*disp(:,2)
            disptot_sum(:,3) = disptot_sum(:,3) + mij_snap(:,isim,3)*disp(:,3)
@@ -1773,9 +1653,9 @@ subroutine compute_3d_wavefields
 
      enddo
  
-     if (any_sum_seis_true .and. nsim > 1) then 
+     if (sum_seis_true .and. nsim > 1) then 
 
-        filename1=trim(outdir(1))//'/SNAPS/snap_mij_cell_'//appmynum2//'_z'
+        filename1=trim(outdir)//'/SNAPS/snap_mij_cell_'//appmynum2//'_z'
         write(6,*)'filename out vtk :',filename1
         call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),&
                                          ztot(1:2*nptstot+k1+k2), & 
@@ -1783,7 +1663,7 @@ subroutine compute_3d_wavefields
                                          (2*nptstot+k1+k2)/4,filename1)
         
         if (use_meri) then
-           filename1=trim(outdir(1))//'/SNAPS/meri_snap_mij_'//appmynum2//'_z'
+           filename1=trim(outdir)//'/SNAPS/meri_snap_mij_'//appmynum2//'_z'
            call write_VTK_bin_scal(xtot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3),&
                 ytot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
                 ztot(2*nptstot+k1+k2+1:2*nptstot+k1+k2+k3), &
@@ -2093,7 +1973,7 @@ subroutine write_VTK_bin_scal(x,y,z,u1,rows,nelem_disk,filename1)
   write(100) u1(i)
   enddo
    close(100)
-  write(6,*)'...saved ',trim(outdir(1))//'/'//trim(filename1)//'.vtk'
+  write(6,*)'...saved ',trim(outdir)//'/'//trim(filename1)//'.vtk'
 end subroutine write_vtk_bin_scal
 !-----------------------------------------------------------------------------
 
