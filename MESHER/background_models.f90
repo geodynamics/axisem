@@ -1,31 +1,26 @@
-!========================
+!-----------------------------------------------------------------------------
+!> This module is identical in the mesher and solver.
+!! Function "velocity" retrieves the velocity (or density) of the given 
+!! background model (see different cases and respective routines below)
+!! for radius r0 given its subdomain identification number idom 
+!! (determined respectively in mesher and solver). 
+!!
+!! When adding new background models, one needs to define them both in terms 
+!! of subdomains for this module (e.g. as a polynomial), and in terms of the 
+!! discontinuities and their above/below elastic values for the mesher only 
+!! (see module model_discontinuities).
 module background_models
-!========================
-!
-! This module is identical in the mesher and solver.
-! Function "velocity" retrieves the velocity (or density) of the given 
-! background model (see different cases and respective routines below)
-! for radius r0 given its subdomain identification number idom 
-! (determined respectively in mesher and solver). 
-!
-! When adding new background models, one needs to define them both in terms 
-! of subdomains for this module (e.g. as a polynomial), and in terms of the 
-! discontinuities and their above/below elastic values for the mesher only 
-! (see module model_discontinuities).
 
   implicit none
   
   public :: velocity, model_is_ani, model_is_anelastic
   private
-  contains
+contains
 
 !-----------------------------------------------------------------------------
+!> Wrapper function to call velocities upon different background models 
+!! for a given radius r0 [m], parameter type param (rho,vs,vp) and idom
 double precision function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
-!
-! Wrapper function to call velocities upon different background models 
-! for a given radius r0 [m], parameter type param (rho,vs,vp) and idom
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in)   :: r0
   integer, intent(in)            :: idom
@@ -69,11 +64,8 @@ end function velocity
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> returns true if the model is radially anisotrpoic
 logical function model_is_ani(bkgrdmodel2)
-!
-! returns true if the model is radially anisotrpoic
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   character(len=100), intent(in) :: bkgrdmodel2
 
@@ -92,11 +84,8 @@ end function model_is_ani
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> returns true if the model is radially anisotrpoic
 logical function model_is_anelastic(bkgrdmodel2)
-!
-! returns true if the model is radially anisotrpoic
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   character(len=100), intent(in) :: bkgrdmodel2
 
@@ -125,11 +114,10 @@ end function model_is_anelastic
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> from Montagner and Kennett (1995)
+!! interpolated between discontinuities using matlab's polyfit, use radii!!!
+!! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
 double precision function ak135f(r0, param, idom)
-! from Montagner and Kennett (1995)
-! interpolated between discontinuities using matlab's polyfit, use radii!!!
-! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
     double precision, intent(in) :: r0
     integer, intent(in)          :: idom
@@ -246,11 +234,10 @@ end function ak135f
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> from Kennett, Engdahl and Buland, 1995
+!! interpolated between discontinuities using matlab's polyfit, use radii!!!
+!! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
 double precision function ak135(r0, param, idom)
-! from Kennett, Engdahl and Buland, 1995
-! interpolated between discontinuities using matlab's polyfit, use radii!!!
-! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -259,7 +246,7 @@ double precision function ak135(r0, param, idom)
   double precision             :: Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
-  r =r0 / 1000.
+  r = r0 / 1000.
   x_ak = r / 6371. ! normalized
 
 
@@ -355,11 +342,8 @@ end function ak135
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> isotropic prem model in terms of domains separated by discontinuities
 double precision function prem_sub(r0, param, idom)
-!
-! prem model in terms of domains separated by discontinuities
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -469,11 +453,8 @@ end function prem_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> prem model in terms of domains separated by discontinuities
 double precision function prem_ani_sub(r0, param, idom)
-!
-! prem model in terms of domains separated by discontinuities
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -608,12 +589,9 @@ end function prem_ani_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> isotropic prem model in terms of domains separated by discontinuities
+!! No fluid outer core, but instead vs=vp/sqrt(3)
 double precision function prem_solid_sub(r0,param,idom)
-!
-! prem model in terms of domains separated by discontinuities
-! No fluid outer core, but instead vs=vp/sqrt(3)
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -696,12 +674,9 @@ end function prem_solid_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> isotropic prem model in terms of domains separated by discontinuities
+!! but with lower crust extended to the surface
 double precision function prem_onecrust_sub(r0, param, idom)
-!
-! prem model in terms of domains separated by discontinuities
-! but with lower crust extended to the surface
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -780,11 +755,8 @@ end function prem_onecrust_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-double precision function prem_onecrust_ani_sub(r0, param, idom)
-!
 ! prem model in terms of domains separated by discontinuities
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+double precision function prem_onecrust_ani_sub(r0, param, idom)
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -911,11 +883,8 @@ end function prem_onecrust_ani_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+! isotropic prem_light model (crust removed) in terms of domains separated by disconts.
 double precision function prem_light_sub(r0, param, idom)
-!
-! prem_light model (crust removed) in terms of domains separated by disconts.
-! 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -1013,11 +982,8 @@ end function prem_light_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+! anisotropic prem_light model (crust removed) in terms of domains separated by disconts.
 double precision function prem_light_ani_sub(r0, param, idom)
-!
-! prem model in terms of domains separated by discontinuities
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -1136,12 +1102,9 @@ end function prem_light_ani_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> isotropic prem_light model (crust removed) in terms of domains separated by disconts.
+!! No fluid outer core, but instead vs=vp/sqrt(3)
 double precision function prem_solid_light_sub(r0, param, idom)
-!
-! prem_light model (crust removed) in terms of domains separated by disconts.
-! No fluid outer core, but instead vs=vp/sqrt(3)
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in) :: r0
   integer, intent(in)          :: idom
@@ -1215,13 +1178,11 @@ double precision function prem_solid_light_sub(r0, param, idom)
 end function prem_solid_light_sub
 !=============================================================================
 
-
 !-----------------------------------------------------------------------------
+!> iasp91 model in terms of domains separated by discontinuities
+!! with PREM density and attenuation
 double precision function iasp91_sub(r0, param, idom)
-!
-! iasp91 model in terms of domains separated by discontinuities
-!
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+
   double precision, intent(in)    :: r0
   integer, intent(in)             :: idom
   character(len=3), intent(in)    :: param !rho, vs,vp
@@ -1361,15 +1322,12 @@ end function iasp91_sub
 
 
 !-----------------------------------------------------------------------------
+!> file-based, step-wise model in terms of domains separated by disconts.
+!! format:
+!! ndisc
+!! r vp vs rho qkappa qmu
+!! ...
 double precision function arbitr_sub(param, idom)
-!
-! file-based, step-wise model in terms of domains separated by disconts.
-! format:
-! ndisc
-! r vp vs rho
-! ...
-! 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   integer, intent(in)             :: idom
   integer                         :: idom2
@@ -1436,17 +1394,13 @@ double precision function arbitr_sub(param, idom)
 end function arbitr_sub
 !=============================================================================
 
-
 !-----------------------------------------------------------------------------
+!> file-based, step-wise model in terms of domains separated by disconts.
+!! format:
+!! ndisc
+!! r vp vs rho
+!! ...
 double precision function arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
-!
-! file-based, step-wise model in terms of domains separated by disconts.
-! format:
-! ndisc
-! r vp vs rho
-! ...
-! 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   double precision, intent(in)      :: r0
   integer, intent(in)               :: idom
@@ -1561,6 +1515,4 @@ end subroutine interp_vel
 !=============================================================================
 
 
-!========================
 end module background_models
-!========================

@@ -415,10 +415,6 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
       call check_mesh_discontinuities(ieldom,domcount)
   endif
 
-  ! read in respective velocities and density on domain basis
-  !open(unit=5454,file=infopath(1:lfinfo)//'/background_rad_dom_vel.dat'&
-                                        //appmynum)
-
   if (lpr .and. verbose > 1) write(6,*)'   filling mesh with elastic properties...'   
 
   modelstring = bkgrdmodel
@@ -512,7 +508,6 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
       enddo
   endif
 
-  !close(5454)
   if (lpr .and. verbose > 1) write(6,*) 'done with big mesh loop to define model'
   if (do_mesh_tests) close(60000+mynum)
 
