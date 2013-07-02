@@ -1,13 +1,10 @@
+!-----------------------------------------------------------------------------------------
 !> Miscellaneous variables relevant to any read/write process such as 
 !! paths, logicals describing what to save, sampling rate of dumps
-!=================
 module data_io
-!=================
 
-implicit none
-public 
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  implicit none
+  public 
 
   character(len=200) :: datapath,infopath
   integer           :: lfdata,lfinfo
@@ -30,7 +27,6 @@ public
   character(len=12) :: dump_type
   character(len=8)  :: rec_file_type
   logical           :: sum_seis, sum_fields
-  character(len=3)  :: rot_rec
   logical           :: add_hetero, file_exists, use_netcdf 
   character(len=6)  :: output_format  !< netcdf or binary
   logical           :: force_ani
@@ -40,28 +36,23 @@ public
   integer           :: deflate_level  !< Level of deflate compression in NetCDF. Only used
                                       !! for the XDMF visualization so far.
   
-! indices to limit dumping to select contiguous range of GLL points:
-! 0<=ibeg<=iend<=npol
-! For the time being: dump the same in xeta and eta directions
+  ! indices to limit dumping to select contiguous range of GLL points:
+  ! 0<=ibeg<=iend<=npol
+  ! For the time being: dump the same in xeta and eta directions
   integer           :: ibeg,iend
-! ndumppts_el=(iend-ibeg+1)**2
+  ! ndumppts_el=(iend-ibeg+1)**2
   integer           :: ndumppts_el
 
-! for xdmf dumps
+  ! for xdmf dumps
   integer           :: i_n_xdmf, j_n_xdmf
   integer, allocatable :: i_arr_xdmf(:), j_arr_xdmf(:)
 
-! rotations
+  ! rotations
   double precision :: rot_mat(3,3),trans_rot_mat(3,3)
   double precision, allocatable, dimension(:,:) :: recfac
 
   character(len=80), dimension(:), allocatable :: fname_rec_seis
   character(len=80), dimension(:), allocatable :: fname_rec_velo
 
-
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
-!=====================
 end module data_io
-!=====================
+!-----------------------------------------------------------------------------------------

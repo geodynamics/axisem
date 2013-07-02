@@ -697,7 +697,7 @@ subroutine compute_radiation_prefactor(mij_prefact,npts,nsim,longit)
      read(20000,*)junk,Mij(6) !Mtp
      close(20000)
 
-     Mij=Mij/1.E7 ! CMTSOLUTION given in dyn-cm
+     Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
 
   elseif (src_file_type=='separate' .or. src_file_type=='sourceparams') then 
      open(unit=20000,file='sourceparams.dat',POSITION='REWIND',status='old')

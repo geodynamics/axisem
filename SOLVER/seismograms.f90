@@ -616,7 +616,7 @@ subroutine prepare_from_recfile_seis
   endif
 15 format(i4,' out of',i4,' receivers are located at wrong points.')
 
-  maxreclocerr=pmax(maxreclocerr)
+  maxreclocerr = pmax(maxreclocerr)
   if (lpr) then 
      write(6,*)
      write(6,*)'  maximal receiver location error [m]:',maxreclocerr
@@ -626,41 +626,11 @@ subroutine prepare_from_recfile_seis
   ! define general prefactor for all cases
   allocate(recfac(num_rec,5))
   
-  if (rot_rec=='sph') then ! rotating to r,phi,theta
-     if (lpr) write(6,*) &
-              '  Calculating prefactors for rotating components to spherical...'
-     recfac(:,1) =  sin(recfile_th*pi/180.)
-     recfac(:,2) =  cos(recfile_th*pi/180.)
-     recfac(:,3) =  1.d0
-     recfac(:,4) =  cos(recfile_th*pi/180.)
-     recfac(:,5) = -sin(recfile_th*pi/180.)
-  
-  elseif (rot_rec=='enz') then ! rotating to East North Z
-     if (lpr) write(6,*) &
-              '  Calculating prefactors for rotating components to NEZ...'
-     recfac(:,1) =  sin(recfile_th*pi/180.)
-     recfac(:,2) =  cos(recfile_th*pi/180.)
-     recfac(:,3) =  1.d0
-     recfac(:,4) = -cos(recfile_th*pi/180.)
-     recfac(:,5) =  sin(recfile_th*pi/180.)
-  
-  elseif (rot_rec=='xyz') then ! rotating to Greenwich xyz
-     if (lpr) write(6,*) &
-              '  Calculating prefactors for rotating components to xyz (global)...NOT DONE YET'
-  
-     stop
-  
-  elseif  (rot_rec=='cyl') then ! keeping s,phi,z
-     if (lpr) write(6,*) &
-              '  Calculating prefactors for cylindrical components...'
-     recfac(:,:) = 1.d0
-     recfac(:,2) = 0.d0
-     recfac(:,4) = 0.d0
-  else 
-     write(6,*)'Unkown coordinate system for receiver components:',rot_rec
-     write(6,*)'Please choose from cyl,sph,enz,xyz'
-     stop
-  endif
+  if (lpr) write(6,*) &
+           '  Calculating prefactors for cylindrical components...'
+  recfac(:,:) = 1.d0
+  recfac(:,2) = 0.d0
+  recfac(:,4) = 0.d0
   
   ! no phi component for monopole
   if (src_type(1)=='monopole')  recfac(:,3) = 0.d0

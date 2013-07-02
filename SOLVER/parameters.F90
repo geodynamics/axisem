@@ -67,7 +67,6 @@ subroutine readin_parameters
   ! now pre-set. Most of these are to be considered in the post processing stage now.
   sum_seis = .false.
   sum_fields = .false.
-  rot_rec = 'cyl'
   dump_snaps_solflu = .false.
   dump_type = 'fullfields'
   num_simul = 1
@@ -81,7 +80,7 @@ subroutine readin_parameters
      write(6,20)
      write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
                  enforced_period, trim(src_file_type), rec_file_type, &
-                 sum_seis, sum_fields, rot_rec, time_scheme, seis_dt,  &
+                 sum_seis, sum_fields, time_scheme, seis_dt,  &
                  dump_energy, dump_vtk, dump_snaps_solflu, dump_wavefields, &
                  dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, &
                  add_hetero, do_mesh_tests, output_format
@@ -146,7 +145,6 @@ subroutine readin_parameters
    12x,'Receiver file type:                 ',a8,/                          &
    12x,'Sum seismograms?                    ',l2,/                          &
    12x,'Sum wavefields?                     ',l2,/                          &
-   12x,'Receivers coordinates               ',a3,/                          &
    12x,'Time extrapolation scheme:          ',a8,/                          &
    12x,'Seismogram sampling rate [s]:       ',f7.3,/                        &
    12x,'Dump kin./pot. energy?              ',l2,/                          &
@@ -670,22 +668,6 @@ subroutine compute_numerical_parameters
      write(6,*)'  Computing numerical parameters...'
   endif
 
-  ! If source is not at the axis, then we just rotate receivers to spherical:
-  ! This is done since then the rotation of the source-receiver system 
-  ! is preserved in terms of components for the spherical-coordinate 
-  ! based entries into the moment tensor, and the same for the receivers. 
-  ! Were we to stay cylindrical, then a component rotation on the receiver 
-  ! would be necessary upon rotating the source-receiver system to the north pole. 
-  ! Is this clear? At least to TNM on Jan 30, 2011 ...
-  !  if (srccolat/=0.d0 .or. srclon/=0.d0 ) then 
-  !     if (lpr) then 
-  !        write(6,*)'  WARNING: Since source is not at the pole, we make sure that seismograms'
-  !        write(6,*)'                       are given in spherical coordinate components. Otherwise, this '
-  !        write(6,*)'                      may have necessitated additional rotations. See source code.'     
-  !     endif
-  !     rot_rec = 'sph'
-  !     if (lpr) write(6,*)'  .... changed receiver system to ',trim(rot_rec)
-  !  endif
 
   ! Overwrite time step or source period if demanded by input
   if (enforced_dt>zero) then
@@ -1212,7 +1194,6 @@ subroutine write_parameters
         write(6,*)'  Receiver information___________________________________'
         write(6,12)'     Receiver file type',rec_file_type
         write(6,19)'     Sum seismograms  :',sum_seis
-        write(6,12)'     Components in:',rot_rec
         write(6,*)'  General numerical parameters_________________________'
         write(6,11)'     # elems/wavelength:',pts_wavelngth
         write(6,11)'     Courant number    :',courant
@@ -1277,7 +1258,8 @@ subroutine write_parameters
             write(55,22)0,'number of snapshot dumps'
             write(55,21)0.,'snapshot dump sampling rate [s]'      
         endif
-        write(55,23)rot_rec,'receiver components '
+        ! just not to cause trouble when reading simulation.info linewise:
+        write(55,23)'cyl','receiver components '
         write(55,22)ibeg,'  ibeg: beginning gll index for wavefield dumps'
         write(55,22)iend,'iend: end gll index for wavefield dumps'
         write(55,21)shift_fact,'source shift factor [s]'
@@ -1335,7 +1317,7 @@ subroutine write_parameters
            call nc_write_att_int(0,'number of snapshot dumps')
            call nc_write_att_real(0.,'snapshot dump sampling rate in sec')
         endif
-        call nc_write_att_char(rot_rec,'receiver components ')
+        call nc_write_att_char('cyl','receiver components ')
         call nc_write_att_int(ibeg,'ibeg')
         call nc_write_att_int(iend,'iend')
         call nc_write_att_real(shift_fact,'source shift factor in sec')
@@ -1428,17 +1410,12 @@ subroutine write_parameters
         write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
     
         open(unit=8,file='param_sum_seis') 
-        read(8,*)nsim1
+        read(8,*) nsim1
         close(8)
     
-        open(unit=9,file="param_post_processing")
-        if (rot_rec/='cyl') then
-            write(9,222)'.false.','rotate receivers?'
-            write(9,222)"'"//trim(rot_rec)//"'",'receiver components: enz,sph,cyl,xyz,src'
-        else
-            write(9,222)'.true.','rotate receivers?'
-            write(9,222)"'enz'",'receiver components: enz,sph,cyl,xyz,src'
-        endif
+        open(unit=9, file="param_post_processing")
+        write(9,222)'.true.','rotate receivers?'
+        write(9,222)"'enz'",'receiver components: enz,sph,cyl,xyz,src'
         if (trim(src_file_type)=='cmtsolut' .and. nsim1>1) then
            write(9,222)'.true.','sum to full Mij'
         elseif (nsim1>1) then 
