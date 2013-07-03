@@ -41,6 +41,7 @@ else
     exit
 endif
 
+set bgmodel = `grep BACKGROUND_MODEL $meshdir/inparam_mesh | awk '{print $2}'`
 
 if ( ! -f inparam_hetero) then 
   cp inparam_hetero.TEMPLATE inparam_hetero
@@ -292,7 +293,9 @@ foreach isrc (${num_src_arr})
             ln -s ../../$meshdir/ Mesh
         endif
         
-        cp Mesh/external_model.bm .
+        if ( $bgmodel == 'external' ) then
+            cp Mesh/external_model.bm .
+        endif
         cd $mainrundir
 
         cp $homedir/mesh_params.h .
