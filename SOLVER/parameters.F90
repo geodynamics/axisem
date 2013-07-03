@@ -1459,53 +1459,53 @@ subroutine write_parameters
            
            write(9,'(a,/,a,l1/)') &
                     '# make 3D plots of the wavefield', &
-                    'LOAD_SNAPS     ', dump_vtk
+                    'LOAD_SNAPS      ', dump_vtk
            
            write(9,'(a,/,a,/)') &
                     '# OUTPUT PATH', &
                     'DATA_DIR        "./Data_Postprocessing"'
            
-           write(9,'(a,/,a,/,a)') &
+           write(9,'(a,/,a,/,a,/,/)') &
                     '# output seismograms at negative time', &
                     '# (to correct for finite width of the source time function', &
                     'NEGATIVE_TIME   T'
-    
+   
+           write(9,'(a,/,a,/,a,/,a,/,a,/)') &
+                    '#############################################', &
+                    '# options the 3D wavefield plots', &
+                    '# crossection location, starting and ending phi', &
+                    '3D_PHI_START     0.', &
+                    '3D_PHI_END      85.'
+                    
+           write(9,'(a,/,a,f6.0/,a,/)') &
+                    '# radius of top and bottom layer in km', &
+                    '3D_RTOP        ', router/1000.,&
+                    '3D_RBOT         3190.'
+                    
+           !write(9,'(a,/,a,/)') &
+           !         '# colatitude of meridional cross section', &
+           !         '3D_MERI_COLAT   60.'
+                    
+           !write(9,'(a,/,a,/,a,/,a,/)') &
+           !         '# switches for bottom, top and meridonial surface', &
+           !         '3D_PLOT_TOP     T', &
+           !         '3D_PLOT_BOT     T', &
+           !         '3D_PLOT_MERI    F'
+
+           write(9,'(a,/,a,/,a,/)') &
+                    '# switches for bottom, top and meridonial surface', &
+                    '3D_PLOT_TOP     T', &
+                    '3D_PLOT_BOT     T'
+                    
+           write(9,'(a,/,a,/,a,i5,/,a)') &
+                    '# time snapshot selection:', &
+                    '3D_SNAP_BEG      1', &
+                    '3D_SNAP_END  ', nsnap, &
+                    '3D_SNAP_STRIDE   1'
            close(9)
         endif
 
-221 format(l25,a50)
-222 format(a25,a50)
-223 format(1pe25.6,a50)
-224 format(a25,a50)
         write(6,*)'    ... wrote file param_post_processing'
-    endif
-    
-    ! write param_snaps ==============================================
-    if (dump_vtk .and. lpr) then 
-        if (src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') then
-            open(unit=9,file="../param_snaps")
-        elseif (src_file_type == 'sourceparams') then
-            open(unit=9,file="param_snaps")
-        endif
-        
-        if ((src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') &
-              .or. src_file_type == 'sourceparams') then
-            
-            write(6,*)'  Writing param_snaps for wavefield visualization'
-    
-            write(9,222)"0.","starting phi (right cross section) [deg]"
-            write(9,222)"85.", "increment phi (ending,left cross section) [deg]"
-            write(9,223)router/1000.,"top radius [km]"
-            write(9,222)"3190.","bottom radius [km]"
-            write(9,222)"60. ", "meridional colatitude [deg]"
-            write(9,225)1,nsnap,1, "snap starting number,end number, skipping factor"
-            write(9,222)".false.","consider meridional cross section?"
-            write(9,222)".true.","consider top surface?"
-            write(9,222)".true. ","consider bottom surface?"
-            close(9)
-            write(6,*)'    ... wrote file param_snaps'; call flush(6)
-        endif
-225 format(i8,i8,i8,a50)
     endif
 
 end subroutine write_parameters

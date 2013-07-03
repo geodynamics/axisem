@@ -481,12 +481,12 @@ subroutine read_input
 
 
   ! default values:
-  rec_comp_sys = 'enz'
-  conv_period = 0.
-  conv_stf = 'gauss_0'
-  seistype = 'disp'
-  load_snaps = .false.
-  outdir = './Data_Postprocessing'
+  rec_comp_sys  = 'enz'
+  conv_period   = 0.
+  conv_stf      = 'gauss_0'
+  seistype      = 'disp'
+  load_snaps    = .false.
+  outdir        = './Data_Postprocessing'
   negative_time = .true.
 
   write(6,'(A)', advance='no') '    Reading param_post_processing...'
@@ -508,22 +508,16 @@ subroutine read_input
     
     case('REC_COMP_SYS')
        rec_comp_sys = keyvalue
-
     case('CONV_PERIOD')
        read(keyvalue, *) conv_period
-
     case('CONV_STF')
        read(keyvalue, *) conv_stf
-
     case('SEISTYPE')
        seistype = keyvalue
-
     case('LOAD_SNAPS')
        read(keyvalue, *) load_snaps
-
     case('DATA_DIR')
        outdir = keyvalue
-
     case('NEGATIVE_TIME')
        read(keyvalue, *) negative_time
             
@@ -1171,29 +1165,79 @@ subroutine compute_3d_wavefields
                                            naang, npts_read, npts_fluid_read
   real                                  :: rbot, rtop, phi_incr
   double precision                      :: r8, theta8, phi8
+  
+  integer             :: i_param_post=500, ioerr, nval
+  character(len=256)  :: line
+  character(len=256)  :: keyword, keyvalue
 
   ! read snap plot parameters
+  ! default values
+  phi0       = 0.
+  dphi       = 85.
+  rtop       = 6371
+  rbot       = 3190
+  theta_meri = 60.
+  use_top    = .true.
+  use_bot    = .true.
+  use_meri   = .false.
+  snap1      = 1
+  snap2      = 1
+  snapskip   = 1
 
-  open(unit=99,file='param_snaps')
-  read(99,*) phi0
+  write(6,'(A)', advance='no') '    Reading param_post_processing...'
+  open(unit=i_param_post, file='param_post_processing', status='old', action='read', &
+       iostat=ioerr)
+  if (ioerr /= 0) then
+     write(6,*) 'Check input file ''param_post_processing''! Is it still there?' 
+     stop 2
+  endif
+ 
+  do
+    read(i_param_post, fmt='(a256)', iostat=ioerr) line
+    if (ioerr < 0) exit
+    if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+
+    read(line,*) keyword, keyvalue 
+  
+    parameter_to_read : select case(trim(keyword))
+
+    case('3D_PHI_START')
+       read(keyvalue, *) phi0
+    case('3D_PHI_END')
+       read(keyvalue, *) dphi
+    case('3D_RTOP')
+       read(keyvalue, *) rtop
+    case('3D_RBOT')
+       read(keyvalue, *) rbot
+    case('3D_MERI_COLAT')
+       read(keyvalue, *) theta_meri
+    case('3D_PLOT_TOP')
+       read(keyvalue, *) use_top
+    case('3D_PLOT_BOT')
+       read(keyvalue, *) use_bot
+    case('3D_PLOT_MERI')
+       read(keyvalue, *) use_meri
+    case('3D_SNAP_BEG')
+       read(keyvalue, *) snap1
+    case('3D_SNAP_END')
+       read(keyvalue, *) snap2
+    case('3D_SNAP_STRIDE')
+       read(keyvalue, *) snapskip
+
+    end select parameter_to_read
+
+  end do
+  close(i_param_post)
+  
   write(6,*) 'starting azimuth/phi for cross section on the right [deg]:',phi0
-  read(99,*) dphi
   write(6,*) 'ending azimuth/phi for cross section on the left [deg]:',dphi
-  read(99,*) rtop
   write(6,*) 'top surface [km]:',rtop
-  read(99,*) rbot
   write(6,*) 'bottom surface [km]:',rbot
-  read(99,*) theta_meri
   write(6,*) 'colatitude of meridional cross section:',theta_meri
-  read(99,*) snap1,snap2,snapskip
   write(6,*) '1st,last snap, skipfactor:',snap1,snap2,snapskip
-  read(99,*) use_meri
   write(6,*) 'consider meridional cross section?',use_meri
-  read(99,*) use_top
   write(6,*) 'consider top surface?',use_top
-  read(99,*) use_bot
   write(6,*) 'consider bottom surface?',use_bot
-  close(99)
 
   phi0 = phi0 / 180. * pi
   dphi = dphi / 180. * pi

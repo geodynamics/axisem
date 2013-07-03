@@ -31,7 +31,6 @@ echo $username "USER_NAME        " >> runinfo
 set hostname = `hostname`
 echo $hostname "HOST_NAME        " >> runinfo
 
-
 if ( -d $meshdir) then
     echo "Using mesh " $meshdir
 else
