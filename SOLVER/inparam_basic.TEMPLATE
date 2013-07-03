@@ -1,10 +1,8 @@
 ######## INPUT FILE FOR AXISEM (SOLVER): GLOBAL WAVE PROPAGATION IN
 
 # Choose simulation type, allowed options:
-# single: Simulation of one basic source. Set sourceparams.dat for the
+# single: Simulation of one elemental source. Set sourceparams.dat for the
 #         exact type
-# force:  Vertical force, needs two parallel simulations (and twice the
-#         number of CPUs). Set vertforce.dat for the exact source type
 # moment: Full moment tensor, needs four parallel simulations. Set
 #         CMTSOLUTION for the source mechanism.
 
