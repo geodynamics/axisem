@@ -208,7 +208,7 @@ program post_processing_seis
            write(6,*) 'Cannot convolve with a period shorter than allowed by the mesh/simulation!'
            write(6,*) 'convolution period, min. mesh period [s]:', conv_period, period
            call flush(6)
-           stop
+           stop 2
         endif
 
         write(6,*)' Convolve with source period [s]:', conv_period
@@ -441,16 +441,44 @@ subroutine read_input
   character(len=256)  :: line
   character(len=256)  :: keyword, keyvalue
 
-  ! read directories for multiple simulations
-  open(unit=99, file='param_sum_seis', status='old', position='rewind')
-  read(99,*) nsim
-  if (nsim==1) write(6,*) 'no need to sum, one simulation only!'
-  allocate(simdir(nsim))
-  do isim=1, nsim
-     read(99,*) simdir(isim)
-     write(6,*) 'simulation dir:', trim(simdir(isim))
-  enddo
-  close(99)
+
+  write(6,'(A)', advance='no') '    Reading inparam_basic...'
+  open(unit=i_param_post, file='inparam_basic', status='old', action='read', &
+       iostat=ioerr)
+  if (ioerr /= 0) then
+     write(6,*) 'Check input file ''inparam_basic''! Is it still there?' 
+     stop 2
+  endif
+ 
+  do
+    read(i_param_post, fmt='(a256)', iostat=ioerr) line
+    if (ioerr < 0) exit
+    if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+
+    read(line,*) keyword, keyvalue 
+  
+    select case(trim(keyword))
+    
+    case('SIMULATION_TYPE')
+       if (keyvalue == 'single') then
+          nsim = 1
+          allocate(simdir(nsim))
+          simdir(1) = "./"
+       elseif (keyvalue == 'moment') then
+          nsim = 4
+          allocate(simdir(nsim))
+          simdir(1) = "MZZ"
+          simdir(2) = "MXX_P_MYY"
+          simdir(3) = "MXZ_MYZ"
+          simdir(4) = "MXY_MXX_M_MYY"
+       elseif (keyvalue == 'force') then
+          write(6,*) 'postprocessing for "force" simulation needs work!'
+          stop 2
+       endif
+    end select
+  end do
+  close(i_param_post)
+
 
   ! default values:
   rec_comp_sys = 'enz'
@@ -464,7 +492,10 @@ subroutine read_input
   write(6,'(A)', advance='no') '    Reading param_post_processing...'
   open(unit=i_param_post, file='param_post_processing', status='old', action='read', &
        iostat=ioerr)
-  if (ioerr /= 0) stop 'Check input file ''param_post_processing''! Is it still there?' 
+  if (ioerr /= 0) then
+     write(6,*) 'Check input file ''param_post_processing''! Is it still there?' 
+     stop 2
+  endif
  
   do
     read(i_param_post, fmt='(a256)', iostat=ioerr) line
@@ -501,21 +532,6 @@ subroutine read_input
   end do
   close(i_param_post)
 
-  write(6,*) 'datadir', outdir
-  call flush(6)
-
-
-  ! read in post processing input file
-  !open(unit=99,file='param_post_processing')
-  !read(99,*) rec_comp_sys
-  !read(99,*) conv_period
-  !read(99,*) conv_stf
-  !read(99,*) load_snaps
-  !read(99,*) seistype
-  !read(99,*) outdir
-  !read(99,*) negative_time
-  !close(99)
-     
   tshift = 0.
 
   allocate(bkgrndmodel(nsim), stf_type(nsim))
@@ -561,8 +577,7 @@ subroutine read_input
      if (src_type(isim,2)=='xforce' .or.  src_type(isim,2)=='yforce') then
         write(6,'(a,/,a)') 'ERROR: postprocessing for forces with dipole radiation', &
                            '       pattern not yet implemented'
-        call flush(6)
-        stop
+        stop 2
      endif
 
      write(6,*) 'Simulations: ',isim,trim(simdir(isim))
@@ -593,7 +608,7 @@ subroutine read_input
      write(6,*)'PROBLEM with simulation.info parameters in the respective directories:'
      write(6,*)' one or more of the supposedly equal parameters differ!'
      call flush(6)
-     stop
+     stop 2
   endif
 
   do isim=1, nsim
@@ -601,8 +616,7 @@ subroutine read_input
         write(6,*) 'PROBLEM with simulation.info parameters in the respective directories:'
         write(6,*) '        backgroundmodels differe: ', trim(bkgrndmodel(isim)), &
                    trim(bkgrndmodel(1))
-        call flush(6)
-        stop
+        stop 2
      endif
   enddo
 
@@ -888,7 +902,7 @@ subroutine rotate_receiver_comp(isim, rec_comp_sys, srccolat, srclon, th_rot, ph
   
   else
      write(6,*)'unknown component system',rec_comp_sys
-     stop
+     stop 2
   endif
 
 end subroutine rotate_receiver_comp
@@ -948,7 +962,7 @@ subroutine convolve_with_stf(t_0, dt, nt, src_type, stf, outdir, seis, seis_fil)
           source = source / ( decay / t_0 * sqrt(2.) * exp(-2.) )
        else
           write(6,*) ' other source time function not implemented yet!', stf
-          stop
+          stop 2
        endif
        ! actual time domain convolution
        if (i > j .and. i-j <= nt) seis_fil(i,:) = seis_fil(i,:) + seis(i-j,:) * source * dt
@@ -1700,11 +1714,11 @@ subroutine compute_3d_wavefields
            enddo
         endif
 
-        disp(1:nptstot,1)=disp(1:nptstot,1)
-        disp(1:nptstot,2)=disp(1:nptstot,2)
-        disp(1:nptstot,3)=disp(1:nptstot,3)
+        disp(1:nptstot,1) = disp(1:nptstot,1)
+        disp(1:nptstot,2) = disp(1:nptstot,2)
+        disp(1:nptstot,3) = disp(1:nptstot,3)
 
-        filename1 = trim(simdir(isim))//'/'//trim(outdir)//'/SNAPS/snap_cell_'&
+        filename1 = trim(outdir)//'/SNAPS/snap_cell_'&
                     //trim(src_type(isim,2))//'_'//appmynum2//'_z'
         write(6,*)'filename out vtk :',filename1
         call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),&
@@ -2187,7 +2201,8 @@ real function prem(r0,param)
      vp_prem=11.2622-6.3640*x_prem**2
      vs_prem=3.6678-4.4475*x_prem**2
   ELSE 
-     write(6,*)'wrong radius!',r; stop
+     write(6,*)'wrong radius!',r
+     stop 2
   ENDIF
 
   if (param=='rho') then
@@ -2198,7 +2213,7 @@ real function prem(r0,param)
      prem=vs_prem*1000.
   else
      write(6,*)'ERROR IN PREM FUNCTION:',param,'NOT AN OPTION'
-     stop
+     stop 2
   endif
 
 end function prem

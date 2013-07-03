@@ -89,6 +89,9 @@ endif
 
 # Run make to see whether the code has to be rebuilt and if so, do it.
 # If 'make' returns an Error (something >0), then exit.
+
+# MvD: I do not get this: it checks == 0 where 0 is the status when exited without
+# problems???
 if ( { make -j } == 0 ) then
   echo "Compilation failed, please check the errors."
   exit
@@ -186,8 +189,6 @@ set mainrundir = $PWD
 # make sure moment tensor is copied correctly
 cp -p $homedir/$srcfile $mainrundir/
 
-# write parameter file for summing seismograms after the simulations
-echo $numsim $num_src |awk '{print ( $1 * $2)}' > param_sum_seis
 
 
 # Prepare and copy relevant files for each simulation
@@ -293,10 +294,12 @@ foreach isrc (${num_src_arr})
         
         cp Mesh/external_model.bm .
         cd $mainrundir
-        
-        # write parameter file for summing seismograms after the simulations
-        echo '"'$simdir'"' >> param_sum_seis
 
+        cp $homedir/mesh_params.h .
+        cp $homedir/inparam_basic .
+        cp $homedir/inparam_advanced .
+        cp $homedir/inparam_hetero .
+        cp $homedir/inparam_xdmf .
     end
 end
 
@@ -315,10 +318,6 @@ foreach isrc (${num_src_arr})
             cd $isim
         else 
             cd $isrc"_"$isim
-        endif
-
-        if ( $numsim > 1 ) then 
-            cp $mainrundir/param_sum_seis .
         endif
 
         if ( $multisrc == 'true' ) then
@@ -374,7 +373,7 @@ cp -p $homedir/UTILS/plot_record_section.m .
 echo "To convolve and sum seismograms, run ./post_processing.csh after the simulations in:" 
 echo $mainrundir
 echo ".... the post-processing input files param_post_processing and param_snaps are generated in the solver"
-echo ".... based on guesses. Edit please. Input file param_sum_seis is generated with this submit script"
+echo ".... based on guesses. Edit please."
 echo " ~ ~ ~ ~ ~ ~ ~ h a n g   o n   &   l o o s e ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~"
 
 

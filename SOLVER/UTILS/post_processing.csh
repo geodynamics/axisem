@@ -18,51 +18,37 @@ if ( ${#argv} < 4 ) then
 endif
 
 set homedir = $PWD
-set simdir1 = `/usr/bin/tail -n 1 param_sum_seis |awk '{print $1}' |sed 's/"//g' `
+set simtype = `grep "SIMULATION_TYPE" inparam_basic |awk '{print $2}' `
+
+if ( $simtype == 'single' ) then
+    set simdir1 = './'
+else if ( $simtype == 'moment' ) then
+    set simdir1 = 'MZZ'
+else
+    echo 'postprocessing only implemented for SIMULATION_TYPE single and moment'
+    exit
+endif
 
 set outdir = `grep "DATA_DIR" param_post_processing |awk '{print $2}' |sed 's/"/ /g' `
 echo "All post-processed data in: "$outdir
 
-set nsim = `head -n 1 param_sum_seis |awk '{print $1}'`
-if ( $nsim == 1 ) then 
-    set simlist = "./"
-else
-    set simlist = `/usr/bin/tail -n $nsim param_sum_seis |awk '{print $1}' |sed 's/"//g' ` 
-    if ( $nsim == 4 ) then
-        if ( ! -f param_snaps ) then 
-            cp $simdir1/param_snaps .
-        endif
-    endif
-endif
-
-echo "number of simulations: $nsim"; echo ""
-
 if ( ! -d $outdir ) then
     mkdir $outdir
-    if ( -f param_snaps ) then
-        mkdir $outdir/SNAPS
-    endif
+else
+    echo 'ERROR: Output Directory already exists:'
+    echo $outdir
+    exit
 endif
 
-foreach isimdir (${simlist})
-    echo "working in simulation $isimdir "
-    if ( ! -d $isimdir/$outdir ) then
-        mkdir $isimdir/$outdir
-        if ( -f param_snaps && $nsim > 1 ) then
-           mkdir $isimdir/$outdir/SNAPS
-        endif
-    endif
-    cp -p param_* $outdir 
-    /bin/cp -p -f param_* $outdir
-    cp -p post_processing.csh $outdir
-    cp -p xpost_processing $outdir
-    cp -p post_processing.f90 $outdir 
-end
-    cp -p plot_record_section.m $outdir
+mkdir $outdir/SNAPS
 
-if (! -f mesh_params.h) then 
-    cp -p $simlist[1]/mesh_params.h .
-endif
+cp -p param_* $outdir 
+/bin/cp -p -f param_* $outdir
+cp -p post_processing.csh $outdir
+cp -p xpost_processing $outdir
+cp -p post_processing.f90 $outdir 
+
+cp -p plot_record_section.m $outdir
 
 echo
 echo "%%%%%%%%% PROCESSING seismograms/wavefields %%%%%%%%%"
@@ -70,7 +56,16 @@ mkdir $outdir/SEISMOGRAMS
 mkdir $outdir/SEISMOGRAMS/UNPROCESSED
 
 echo ".... output in "$outdir"/OUTPUT_postprocessing ...."
+
 ./xpost_processing > $outdir/OUTPUT_postprocessing
+
+if ( $status != 0 ) then
+    echo 'xpost_processing exited with error'
+    echo 'check output for details:'
+    echo $outdir'/OUTPUT_postprocessing'
+    exit
+endif
+
 echo "Done with post processing, results in SEISMOGRAMS/ " 
 
 if ( -f param_snaps) then 
@@ -84,16 +79,15 @@ if ( $gnu_query == 1 ) then
     cd $outdir
     set seistype = `grep "SEISTYPE" param_post_processing |awk '{print $2}' |sed 's/"/ /g' `
     echo "seismogram type:" $seistype
-    set reclist = `cat $homedir/$isimdir/Data/receiver_names.dat |awk '{print $1}'`
+    set reclist = `cat $homedir/$simdir1/Data/receiver_names.dat |awk '{print $1}'`
     echo "1st receiver:" $reclist[1]
-    set colat = `cat $homedir/$isimdir/Data/receiver_names.dat |awk '{print $2}' |sed 's/00000/ /g' |awk '{print $1}'`
-    set lon = `cat $homedir/$isimdir/Data/receiver_names.dat |awk '{print $3}' |sed 's/00000/ /g'  |awk '{print $1}'`
-    set epidist = `cat $homedir/$isimdir/Data/receiver_pts.dat |awk '{print $1}'`
+    set colat = `cat $homedir/$simdir1/Data/receiver_names.dat |awk '{print $2}' |sed 's/00000/ /g' |awk '{print $1}'`
+    set lon = `cat $homedir/$simdir1/Data/receiver_names.dat |awk '{print $3}' |sed 's/00000/ /g'  |awk '{print $1}'`
+    set epidist = `cat $homedir/$simdir1/Data/receiver_pts.dat |awk '{print $1}'`
     echo "1st receiver colatitude/longitude/epidist:" $colat[1] " " $lon[1] " " $epidist[1]
 
     set reccomp = `ls SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*.dat |sed 's/mij_/ /g ' |awk '{print $2}' | sed 's/_/ /g' |awk '{print $2}'  |sed 's/\.dat/ /g '`
 
-    #set reccomp = `ls SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*.dat |sed 's/mij_/ /g ' |awk '{print $2}' | sed 's/_/ /g' |awk '{print $2}'  |sed 's/\.dat/ /g ' |awk '{print $1}'`
     set conv = `ls SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*.dat |sed 's/_mij_/ /g '  | sed 's/\.dat/ /g ' |awk '{print $2}' `
     set t2 = `tail -n 1 SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*{$reccomp[1]}.dat |awk '{print $1}' `
     echo "convolution:" $conv
@@ -133,7 +127,6 @@ if ( $taup_query == 1 ) then
 
     if ( $model == 'prem' || $model == 'iasp91' ) then
 	set num_rec = `wc -l $simdir1/Data/receiver_pts.dat |awk '{print $1}'`
-#	set epi_list = `tail -n $num_rec $simdir1/Data/receiver_pts.dat | sed 's/999999/9/g' |  sed 's/000000/ /g' | awk '{print $1}'`
 	set epi_list = `tail -n $num_rec $simdir1/Data/receiver_pts.dat | awk '{print $1}'`
 	set depth_short = `echo $depth |sed 's/\./ /g' |awk '{print $1}'` 
 	echo "Earthquake depth:" $depth_short

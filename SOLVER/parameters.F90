@@ -1420,10 +1420,7 @@ subroutine write_parameters
     ! write post processing file==============================================
     
     if (lpr) then
-        open(unit=8,file='param_sum_seis') 
-        read(8,*) nsim1
-        close(8)
-    
+
         if (src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') then
            open(unit=9, file="../param_post_processing")
         elseif (src_file_type == 'sourceparams') then
@@ -1473,18 +1470,6 @@ subroutine write_parameters
                     '# (to correct for finite width of the source time function', &
                     'NEGATIVE_TIME   T'
     
-           !write(9,222) "'enz'", 'receiver components: enz,sph,cyl,xyz,src'
-           !
-           !if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
-           !    write(9,223) period, 'convolve period ( 0. if not to be convolved)'
-           !else
-           !    write(9,223) 0.0, 'convolve period (0. if not convolved)'
-           !endif
-           !write(9,222) "'gauss_0'", 'source time function type for convolution'
-           !write(9,221) dump_vtk, 'plot global snaps?'
-           !write(9,224) 'disp', 'disp or velo seismograms'
-           !write(9,224) "'Data_Postprocessing'", 'Directory for post processed data'
-           !write(9,221) .true., 'seismograms at negative time (0 at max. of stf)'
            close(9)
         endif
 
