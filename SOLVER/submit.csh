@@ -96,8 +96,6 @@ endif
 
 if ( $src_file_type == 'cmtsolut' ) then
     set srcfile = 'CMTSOLUTION'
-else if ( $src_file_type == 'separate' ) then
-    set srcfile = 'sourceparams.dat'
 else if ( $src_file_type == 'sourceparams' ) then
     set srcfile = 'sourceparams.dat'
 else if ( $src_file_type == 'finfault' ) then
@@ -206,7 +204,7 @@ foreach isrc (${num_src_arr})
         if  ( $multisrc == 'true' ) then
             echo "constructing separate source files for" $isim 
 
-            if ( $src_file_type == 'separate' || $src_file_type == 'sourceparams' ) then
+            if ( $src_file_type == 'sourceparams' ) then
                 set mijtmp = `echo $mij_sourceparams`
                 set mijtmp[$map_mij[$i]] = '1.E20'
                 echo $mijtmp > $srcfile.$isrc.$isim
@@ -273,7 +271,7 @@ foreach isrc (${num_src_arr})
         echo "copying crucial files for the simulation..."
         
         if ( $multisrc == 'true' ) then
-            cp ../$srcfile.$isrc.$isim $srcfile
+            mv ../$srcfile.$isrc.$isim $srcfile
         else 
             cp $homedir/$srcfile $srcfile
         endif
@@ -358,9 +356,11 @@ end
 ######## post processing ##################################################
 
 set F90 = `grep "FC = " $homedir/Makefile |awk '{print $3}'`
+
 cd $homedir/UTILS
 cp $homedir/mesh_params.h .
 $F90 post_processing.f90 -o xpost_processing
+
 cd $homedir
 cd $1
 cp -p $homedir/UTILS/xpost_processing .

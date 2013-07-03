@@ -7,37 +7,21 @@ echo ""
 echo ""
 
 if ( ${#argv} < 4 ) then
-    echo "FYI -- Optional arguments:"
-    echo " Argument 1: Mij"
-    echo " Argument 2-7: Mrr, Mtt, Mpp, Mrt, Mrp, Mtp"
-    echo ""
     if ( $1 == '-h' ) then
         echo " Input for post-processing is retrieved from input file:"
         echo "   1) param_post_processing : contains everything related to summation, convolution, receiver components"
-        echo "   2) param_sum_seis : number of simulations (e.g. if moment, then 4)"
-        echo "   3) param_snaps : if wavefield snaps were computed, this file defines the 3D geometry"
-        echo "   4) <simdir>/simulation.info: parameters from the simulation"
+        echo "   2) param_snaps : if wavefield snaps were computed, this file defines the 3D geometry"
+        echo "   3) <simdir>/simulation.info: parameters from the simulation"
         echo
         exit
     endif
 endif
 
-if ( $1 == 'Mij' ) then 
-    if ( ${#argv} != 7 ) then 
-        echo "wrong number of arguments for Mij!"
-        exit
-    endif
-    set Mij_overwrite = ( $2 $3 $4 $5 $6 $7 ) 
-    echo "Overwritten Mij:" $Mij_overwrite
-endif
-
 set homedir = $PWD
 set simdir1 = `/usr/bin/tail -n 1 param_sum_seis |awk '{print $1}' |sed 's/"//g' `
 
-set outdir = `grep "Directory for" param_post_processing |awk '{print $1}' |sed "s/'/ /g" `
+set outdir = `grep "DATA_DIR" param_post_processing |awk '{print $2}' |sed 's/"/ /g' `
 echo "All post-processed data in: "$outdir
-
-rm -f $outdir/param_mij
 
 set nsim = `head -n 1 param_sum_seis |awk '{print $1}'`
 if ( $nsim == 1 ) then 
@@ -85,10 +69,6 @@ echo "%%%%%%%%% PROCESSING seismograms/wavefields %%%%%%%%%"
 mkdir $outdir/SEISMOGRAMS
 mkdir $outdir/SEISMOGRAMS/UNPROCESSED
 
-if ( $1 == 'Mij' ) then 
-    echo $Mij_overwrite > $outdir/param_mij
-endif
-
 echo ".... output in "$outdir"/OUTPUT_postprocessing ...."
 ./xpost_processing > $outdir/OUTPUT_postprocessing
 echo "Done with post processing, results in SEISMOGRAMS/ " 
@@ -102,7 +82,7 @@ if ( $gnu_query == 1 ) then
     echo
     echo "%%%%%%%%% PLOTTING seismograms (gnuplot) %%%%%%%%%%"
     cd $outdir
-    set seistype = `tail -n 3 $homedir/param_post_processing |head -n 1 | sed "s/'/ /g" | awk '{print $1}'`
+    set seistype = `grep "SEISTYPE" param_post_processing |awk '{print $2}' |sed 's/"/ /g' `
     echo "seismogram type:" $seistype
     set reclist = `cat $homedir/$isimdir/Data/receiver_names.dat |awk '{print $1}'`
     echo "1st receiver:" $reclist[1]

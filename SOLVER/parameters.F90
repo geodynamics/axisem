@@ -1238,6 +1238,10 @@ subroutine write_parameters
         write(55,23)trim(src_file_type),'source file type'
         write(55,21)period,'dominant source period'
         write(55,21)src_depth/1000.,'source depth [km]'
+
+        write(55,21) srccolat, 'Source colatitude'
+        write(55,21) srclon, 'Source longitude'
+
         write(55,25)magnitude,'scalar source magnitude'
         write(55,22)num_rec_tot,'number of receivers'
         write(55,22)nseismo,'length of seismogram [time samples]'
@@ -1297,6 +1301,10 @@ subroutine write_parameters
         call nc_write_att_char(trim(src_file_type), 'source file type')
         call nc_write_att_real(real(period), 'dominant source period')
         call nc_write_att_real(real(src_depth/1000.), 'source depth in km')
+        
+        call nc_write_att_real(real(srccolat), 'Source colatitude')
+        call nc_write_att_real(real(srclon),   'Source longitude' )
+
         call nc_write_att_real(real(magnitude), 'scalar source magnitude')
         call nc_write_att_int(num_rec_tot, 'number of receivers')
         call nc_write_att_int(nseismo, 'length of seismogram  in time samples')
@@ -1426,23 +1434,57 @@ subroutine write_parameters
               .or. src_file_type == 'sourceparams') then
            write(6,*)'  Writing post processing input file: param_post_processing'
            write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
-    
-           write(9,222) '.true.', 'rotate receivers?'
-           write(9,222) "'enz'", 'receiver components: enz,sph,cyl,xyz,src'
-           write(9,222) '.true.', 'sum to full Mij'
+           write(9,'(a,/,a,/,a,/)') &
+                    '# receiver coordinate system', &
+                    '# one of: enz, sph, cyl, xyz, src', &
+                    'REC_COMP_SYS    enz'
            
+           write(9,'(a,/,a,/,a)') &
+                    '# period of source time funtion to be convolved', &
+                    '# should be larger then the mesh period', &
+                    '# 0. to not convolve'
            if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
-               write(9,223) period, 'convolve period ( 0. if not to be convolved)'
+              write(9,'(a,e5.3,/)') &
+                    'CONV_PERIOD     ', period
            else
-               write(9,223) 0.0, 'convolve period (0. if not convolved)'
+              write(9,'(a,/)') &
+                    'CONV_PERIOD     0.'
            endif
-           write(9,222) "'gauss_0'", 'source time function type for convolution'
-           write(9,223) srccolat, 'Source colatitude'
-           write(9,223) srclon, 'Source longitude'
-           write(9,221) dump_vtk, 'plot global snaps?'
-           write(9,224) 'disp', 'disp or velo seismograms'
-           write(9,224) "'Data_Postprocessing'", 'Directory for post processed data'
-           write(9,221) .true., 'seismograms at negative time (0 at max. of stf)'
+           
+           write(9,'(a,/,a,/,a,/)') &
+                    '# source time function', &
+                    '# one of: gauss_0, gauss_1, qheavi', &
+                    'CONV_STF        gauss_0'
+           
+           write(9,'(a,/,a,/)') &
+                    '# displacement or velocity seismograms', &
+                    'SEISTYPE        disp'
+           
+           write(9,'(a,/,a,l1/)') &
+                    '# make 3D plots of the wavefield', &
+                    'LOAD_SNAPS     ', dump_vtk
+           
+           write(9,'(a,/,a,/)') &
+                    '# OUTPUT PATH', &
+                    'DATA_DIR        "./Data_Postprocessing"'
+           
+           write(9,'(a,/,a,/,a)') &
+                    '# output seismograms at negative time', &
+                    '# (to correct for finite width of the source time function', &
+                    'NEGATIVE_TIME   T'
+    
+           !write(9,222) "'enz'", 'receiver components: enz,sph,cyl,xyz,src'
+           !
+           !if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
+           !    write(9,223) period, 'convolve period ( 0. if not to be convolved)'
+           !else
+           !    write(9,223) 0.0, 'convolve period (0. if not convolved)'
+           !endif
+           !write(9,222) "'gauss_0'", 'source time function type for convolution'
+           !write(9,221) dump_vtk, 'plot global snaps?'
+           !write(9,224) 'disp', 'disp or velo seismograms'
+           !write(9,224) "'Data_Postprocessing'", 'Directory for post processed data'
+           !write(9,221) .true., 'seismograms at negative time (0 at max. of stf)'
            close(9)
         endif
 
