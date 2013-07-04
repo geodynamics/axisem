@@ -233,6 +233,8 @@ program post_processing_seis
      do isim=1,nsim
         rec_full_name(i,isim) = trim(recname(i))//'_'//seistype//'_post'
         !if (nsim == 4) rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_mij'
+        ! @TODO just a quick fix for a problem with filenames in
+        ! postprocessing.csh:
         rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_mij'
 
         call define_io_appendix(appidur, int(conv_period))
