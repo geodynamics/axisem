@@ -58,7 +58,7 @@ else {
 }
 open(MAKEFILE, "> Makefile");
 
-print MAKEFILE "PROG=xsem\n\n";
+print MAKEFILE "PROG=axisem\n\n";
 #
 # Source listing
 #
