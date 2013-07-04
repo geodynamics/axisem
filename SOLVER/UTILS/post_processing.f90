@@ -317,12 +317,7 @@ program post_processing_seis
 
         ! sum seismograms upon separate moment tensors and include azimuthal radiation factor 
         ! This needs to be done prior to component rotation such that the system is still &
-        ! cylindrical.
-        if (nsim > 1) then
-           call sum_individual_wavefields(seis, seis_sglcomp, nt_seis, mij_phi(i,isim,:))
-        else
-           seis = seis_sglcomp
-        endif
+        call sum_individual_wavefields(seis, seis_sglcomp, nt_seis, mij_phi(i,isim,:))
 
      !::::::::::::::::::::::::::::::::
      enddo !isim
@@ -771,8 +766,10 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
                                 mij_prefact(i,isim,3)
 
         elseif (src_type(isim,2) == 'mxz' .or. src_type(isim,2)=='myz') then
-           mij_prefact(i,isim,:) = Mij_scale(4) * cos(longit(i)) + Mij_scale(5) * sin(longit(i))
-           mij_prefact(i,isim,2) = -Mij_scale(4) * sin(longit(i)) + Mij_scale(5) * cos(longit(i))
+           mij_prefact(i,isim,:) = Mij_scale(4) * cos(longit(i)) &
+                                + Mij_scale(5) * sin(longit(i))
+           mij_prefact(i,isim,2) = - Mij_scale(4) * sin(longit(i)) &
+                                + Mij_scale(5) * cos(longit(i))
 
            if (i==1) write(6,*) isim, 'Simulation is mxz, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
@@ -780,9 +777,10 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
         elseif (src_type(isim,2) == 'mxy' .or. src_type(isim,2)=='mxx_m_myy') then
            mij_prefact(i,isim,:) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit(i))  &
-                                                 + 2. * Mij_scale(6) * sin(2. * longit(i)) 
+                                     + 2. * Mij_scale(6) * sin(2. * longit(i)) 
            mij_prefact(i,isim,2) = (Mij_scale(3) - Mij_scale(2)) * sin(2. * longit(i)) &
-                                                 + 2. * Mij_scale(6)*cos(2. * longit(i))
+                                     + 2. * Mij_scale(6)*cos(2. * longit(i))
+
            if (i==1) write(6,*) isim, 'Simulation is mxy, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
@@ -812,9 +810,9 @@ subroutine sum_individual_wavefields(field_sum, field_in, n, mij_prefact)
   real, dimension(3), intent(in) :: mij_prefact
   real, dimension(n,3), intent(inout) :: field_sum
 
-  field_sum(:,1) = field_sum(:,1) + mij_prefact(1)*field_in(:,1)
-  field_sum(:,2) = field_sum(:,2) + mij_prefact(2)*field_in(:,2)
-  field_sum(:,3) = field_sum(:,3) + mij_prefact(3)*field_in(:,3)
+  field_sum(:,1) = field_sum(:,1) + mij_prefact(1) * field_in(:,1)
+  field_sum(:,2) = field_sum(:,2) + mij_prefact(2) * field_in(:,2)
+  field_sum(:,3) = field_sum(:,3) + mij_prefact(3) * field_in(:,3)
 
 end subroutine sum_individual_wavefields
 !--------------------------------------------------------------------
