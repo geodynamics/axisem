@@ -96,9 +96,9 @@ subroutine readin_parameters
    08x,'//                                               | |   | |   //',/  &
    08x,'//     3-D seismic wave propagation for          | +---+ |   //',/  &
    08x,'//                                               |   _   |   //',/  &
-   08x,'//    spherically symmetric background models    |_/_\\__|   //',/  &
+   08x,'//    axially symmetric background models        |_/_\\__|   //',/  &
    08x,'//                                               | \\_/  |   //',/  &
-   08x,'//           in a global, 2-D domain             |       |   //',/  &
+   08x,'//          in a global, 2-D domain              |       |   //',/  &
    08x,'//                                               | +---+ |   //',/  &
    08x,'//                                               | |   | |   //',/  &
    08x,'//                                               +-+---+-+   //',/  &
@@ -106,7 +106,10 @@ subroutine readin_parameters
    08x,'//                                                           //',/  &
    08x,'//  Authors : Tarje Nissen-Meyer (tarje@princeton.edu)       //',/  &
    08x,'//            Alexandre Fournier (Grenoble)                  //',/  &
-   08x,'//            Tony Dahlen (Princeton)                        //',/  &
+   08x,'//              Martin van Driel (ETH Zurich)                //',/  &
+   08x,'//                 Simon Stähler (LMU Munich)                //',/  &
+   08x,'//                Kasra Hosseini (LMU Munich)                //',/  &
+   08x,'//                   Tony Dahlen (Princeton)                 //',/  &
    08x,'//                                                           //',/  &
    08x,'//       Comprehensive description of the underlying         //',/  &
    08x,'//           numerical analysis can be found in:             //',/  &
@@ -120,17 +123,20 @@ subroutine readin_parameters
    08x,'//                                                           //',/  &
    08x,'// (2) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  & 
    08x,'//     "A two-dimensional spectral-element method for        //',/  &  
-   08x,'//     spherical-earth seismograms-I. Moment-tensor source"  //',/  & 
+   08x,'//        computing spherical-earth seismograms -            //',/  & 
+   08x,'//        I. Moment-tensor source"                           //',/  & 
    08x,'//     Geophysical Journal International 168(3), 1067-1092.  //',/  & 
    08x,'//     doi:10.1111/j.1365-246X.2006.03121.x                  //',/  &
    08x,'//                                                           //',/  &
    08x,'// (3) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  &
-   08x,'//     "A two-dimensional spectral-element method for        //',/  &
-   08x,'//     spherical-earth seismograms - II. Background models"  //',/  &
-   08x,'//     submitted to Geophysical Journal International.       //',/  &
+   08x,'//     "A two-dimensional spectral-element method for        //',/  &  
+   08x,'//        computing spherical-earth seismograms -            //',/  & 
+   08x,'//        II.  Waves in solid-fluid media"                   //',/  &
+   08x,'//     Geophysical Journal International 174(3), 873-888.    //',/  & 
+   08x,'//     doi:10.1111/j.1365-246X.2008.03813.x                  //',/  &
    08x,'//                                                           //',/  &
    08x,'//                                                           //',/  &
-   08x,'//  May 2007 : Version 1.1, includes a                       //',/  &
+   08x,'//  Juli 2013 : Version 1.2                                  //',/  &
    08x,'//                                                           //',/  &
    08x,'///////////////////////////////////////////////////////////////',// &
    08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
