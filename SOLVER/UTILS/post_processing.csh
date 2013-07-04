@@ -88,6 +88,7 @@ if ( $gnu_query == 1 ) then
 
     set reccomp = `ls SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*.dat |sed 's/mij_/ /g ' |awk '{print $2}' | sed 's/_/ /g' |awk '{print $2}'  |sed 's/\.dat/ /g '`
 
+    #set reccomp = `ls SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*.dat |sed 's/mij_/ /g ' |awk '{print $2}' | sed 's/_/ /g' |awk '{print $2}'  |sed 's/\.dat/ /g ' |awk '{print $1}'`
     set conv = `ls SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*.dat |sed 's/_mij_/ /g '  | sed 's/\.dat/ /g ' |awk '{print $2}' `
     set t2 = `tail -n 1 SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*{$reccomp[1]}.dat |awk '{print $1}' `
     echo "convolution:" $conv

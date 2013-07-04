@@ -232,7 +232,8 @@ program post_processing_seis
   do i=1, nrec
      do isim=1,nsim
         rec_full_name(i,isim) = trim(recname(i))//'_'//seistype//'_post'
-        if (nsim == 4) rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_mij'
+        !if (nsim == 4) rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_mij'
+        rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_mij'
 
         call define_io_appendix(appidur, int(conv_period))
         rec_full_name(i,isim) = trim(rec_full_name(i,isim))//'_conv'//appidur//''
@@ -614,6 +615,13 @@ subroutine read_input
      endif
   enddo
 
+  if (rec_comp_sys /= 'enz' .and. rec_comp_sys /= 'sph' .and. rec_comp_sys /= 'cyl' &
+        .and. rec_comp_sys /= 'xyz' .and. rec_comp_sys /= 'src') then
+     write(6,*) 'ERROR: unknown coordinate system ', rec_comp_sys
+     stop 2
+  endif
+  
+  
   srclon = srclon_tmp(1)
   srccolat = srccolat_tmp(1)
   src_depth = src_depth_tmp(1)
@@ -654,7 +662,6 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
   real, dimension(6)    :: Mij_scale
   character(len=100)    :: junk
   integer               :: isim, i, j
-  logical               :: file_exist
   real                  :: transrottmp(1:3,1:3), Mij_matr(3,3)
   
   ! This is the rotation matrix of Nissen-Meyer, Dahlen, Fournier, GJI 2007
@@ -677,7 +684,7 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
            if (abs(rot_mat(i,j)) < epsi_real) rot_mat(i,j) = 0.0
         enddo
      enddo        
-     trans_rot_mat(:,:,isim)=transpose(rot_mat)
+     trans_rot_mat(:,:,isim) = transpose(rot_mat)
   enddo
 
   if (src_file_type == 'cmtsolut') then
@@ -708,7 +715,7 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
      write(6,*)'unknown source file type!',src_file_type
   endif
 
-  write(6,*) 'Original moment tensor: (Mrr,Mtt,Mpp,Mrt,Mrp,Mtp)'
+  write(6,*) 'Original moment tensor: (Mrr, Mtt, Mpp, Mrt, Mrp, Mtp)'
   write(6,*) (Mij(i),i=1,6)
   write(6,*) 'magnitudes of each run:'
   write(6,*) (magnitude(isim),isim=1,nsim)
@@ -719,7 +726,7 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      write(6,*)'Mij scaled:',Mij_scale
 
-     if ( (src_file_type=='sourceparams') .and. .not. file_exist ) then 
+     if ( (src_file_type=='sourceparams')) then 
         write(6,*)isim, 'rotating moment tensor from sourceparams..'
         transrottmp(1:3,1:3) = trans_rot_mat(:,:,isim)
         Mij_matr(1,1) = Mij_scale(1)
@@ -747,39 +754,39 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      do i=1,npts
 
-        if (src_type(isim,2)=='mzz') then
+        if (src_type(isim,2) == 'mzz') then
            mij_prefact(i,isim,:) = Mij_scale(1)
            mij_prefact(i,isim,2) = 0.
            if (i==1) write(6,*) isim, 'Simulation is mzz, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
 
-        elseif (src_type(isim,2)=='mxx_p_myy') then
-           mij_prefact(i,isim,:) = Mij_scale(2)+Mij_scale(3)
+        elseif (src_type(isim,2) == 'mxx_p_myy') then
+           mij_prefact(i,isim,:) = Mij_scale(2) + Mij_scale(3)
            mij_prefact(i,isim,2) = 0.
            if (i==1) write(6,*) isim, 'Simulation is mxx, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
 
-        elseif (src_type(isim,2)=='mxz' .or. src_type(isim,2)=='myz') then
-           mij_prefact(i,isim,:) = Mij_scale(4)*cos(longit(i))+Mij_scale(5)*sin(longit(i))
-           mij_prefact(i,isim,2) = -Mij_scale(4)*sin(longit(i))+Mij_scale(5)*cos(longit(i))
+        elseif (src_type(isim,2) == 'mxz' .or. src_type(isim,2)=='myz') then
+           mij_prefact(i,isim,:) = Mij_scale(4) * cos(longit(i)) + Mij_scale(5) * sin(longit(i))
+           mij_prefact(i,isim,2) = -Mij_scale(4) * sin(longit(i)) + Mij_scale(5) * cos(longit(i))
 
            if (i==1) write(6,*) isim, 'Simulation is mxz, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
 
-        elseif (src_type(isim,2)=='mxy' .or. src_type(isim,2)=='mxx_m_myy') then
-           mij_prefact(i,isim,:) = (Mij_scale(2)-Mij_scale(3))*cos(2.*longit(i))  &
-                                                 +2.*Mij_scale(6)*sin(2.*longit(i)) 
-           mij_prefact(i,isim,2) = (Mij_scale(3)-Mij_scale(2))*sin(2.*longit(i)) &
-                                                  +2.*Mij_scale(6)*cos(2.*longit(i))
+        elseif (src_type(isim,2) == 'mxy' .or. src_type(isim,2)=='mxx_m_myy') then
+           mij_prefact(i,isim,:) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit(i))  &
+                                                 + 2. * Mij_scale(6) * sin(2. * longit(i)) 
+           mij_prefact(i,isim,2) = (Mij_scale(3) - Mij_scale(2)) * sin(2. * longit(i)) &
+                                                 + 2. * Mij_scale(6)*cos(2. * longit(i))
            if (i==1) write(6,*) isim, 'Simulation is mxy, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
 
-        elseif(src_type(isim,2)=='explosion') then 
-           mij_prefact(i,isim,:) = (Mij_scale(1)+Mij_scale(2)+Mij_scale(3)) / 3.
+        elseif(src_type(isim,2) == 'explosion') then 
+           mij_prefact(i,isim,:) = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
            if (i==1) write(6,*) isim, 'Simulation is explosion, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)

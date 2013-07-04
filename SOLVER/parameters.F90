@@ -1441,7 +1441,7 @@ subroutine write_parameters
                     '# should be larger then the mesh period', &
                     '# 0. to not convolve'
            if (stf_type=='dirac_0' .or. stf_type=='quheavi' ) then
-              write(9,'(a,e5.3,/)') &
+              write(9,'(a,f8.4,/)') &
                     'CONV_PERIOD     ', period
            else
               write(9,'(a,/)') &
@@ -1481,11 +1481,13 @@ subroutine write_parameters
                     '# radius of top and bottom layer in km', &
                     '3D_RTOP        ', router/1000.,&
                     '3D_RBOT         3190.'
-                    
+           
+           ! deactivated because of bug #30 and to avoid confusion in the
+           ! tutorial
            !write(9,'(a,/,a,/)') &
            !         '# colatitude of meridional cross section', &
            !         '3D_MERI_COLAT   60.'
-                    
+           !         
            !write(9,'(a,/,a,/,a,/,a,/)') &
            !         '# switches for bottom, top and meridonial surface', &
            !         '3D_PLOT_TOP     T', &

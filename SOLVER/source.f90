@@ -102,7 +102,7 @@ subroutine read_sourceparams
      elseif (num_simul == 1 ) then ! moment tensor /single force component
      !-----------------------------------------------------------------
         if (lpr .and. verbose > 1) then 
-           write(6,'(/a)')'  One simulation for one source!'
+           write(6,'(/a)') '  One simulation for one source!'
         endif
 
         if (src_type(2) == 'mzz') then           

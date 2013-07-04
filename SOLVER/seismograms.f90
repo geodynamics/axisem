@@ -274,11 +274,11 @@ subroutine prepare_from_recfile_seis
 
   use utlity
   use data_mesh_preloop
-  use data_mesh, only: loc2globrec
-  use data_source, only : src_type,rot_src,srccolat,srclon
+  use data_mesh,    only: loc2globrec
+  use data_source,  only: src_type, rot_src, srccolat, srclon
   use commun
-  use rotations, only : rotate_receivers_recfile,save_google_earth_kml
-  use nc_routines, only: nc_define_outputfile
+  use rotations,    only: rotate_receivers_recfile, save_google_earth_kml
+  use nc_routines,  only: nc_define_outputfile
   
   integer                      :: i,iel,ipol,irec,num_rec_glob
   integer                      :: count_diff_loc,count_procs
@@ -435,10 +435,11 @@ subroutine prepare_from_recfile_seis
 
   ! rotate receiver locations if source is not located at north pole
   if (rot_src ) then 
-     call rotate_receivers_recfile(num_rec_glob,recfile_readth,recfile_readph,receiver_name)
+     call rotate_receivers_recfile(num_rec_glob, recfile_readth, recfile_readph, receiver_name)
   else
+    ! @TODO Why only save the kml if the source is at the northpole?
     if ((lpr).and.(.not.(rec_file_type=='database'))) then
-      call save_google_earth_kml( real(srccolat*180.0/pi), real(srclon*180.d0/pi), &
+      call save_google_earth_kml( real(srccolat * 180.0 / pi), real(srclon * 180.d0 / pi), &
                                   real(recfile_readth), real(recfile_readph), &
                                   num_rec_glob, 'original', receiver_name  )
     end if
@@ -449,7 +450,7 @@ subroutine prepare_from_recfile_seis
 
   ! find closest grid points
 
-  do i=1,num_rec_glob
+  do i=1, num_rec_glob
      if (verbose > 1) write(69,*)'  working on receiver #',i,recfile_readth(i)*180./pi
      recdist=10.d0*router
      do iel=1,maxind
