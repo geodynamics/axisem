@@ -55,7 +55,7 @@ for i in range(0, len(test_no.split(','))):
     print 'test' + num + ' starts!'
     print '======================='
     
-    address = os.path.join('.', 'automated', 'test_' + num)
+    address = os.path.join('.', 'automated', 'test_' + num, 'inpython.cfg')
     output = subprocess.check_call(['python', 'PyAxi.py', address])
     if output != 0: print output_print
     print '=========================================='

@@ -102,16 +102,16 @@ def PyAxi(**kwargs):
             print '\nSummary:\n'
             if p[0][1] != 'N' or p[1][1] != 'N':
                 if p[2][1] != 'N' or p[3][1] != 'N':
-                    print 'Basic Functionality Requirement...CHECK'
+                    print 'Basic functionality requirement...CHECK'
                 else:
-                    print 'Basic Functionality Requirement...ERROR'
-            else: print 'Basic Functionality Requirement...ERROR'
+                    print 'Basic functionality requirement...ERROR'
+            else: print 'Basic functionality requirement...ERROR'
             if p[4][1] != 'N' and p[5][1] != 'N': 
-                print 'Processing Requrement........CHECK'
-            else: print 'Processing Requrement........ERROR'
+                print 'Processing requirement........CHECK'
+            else: print 'Processing requirement........ERROR'
             if p[6][1] != 'N' and p[7][1] != 'N' and p[8][1] != 'N': 
-                print 'Visualization Tools...CHECK'
-            else: print 'Visualization Tools...ERROR'
+                print 'Visualization tools...CHECK'
+            else: print 'Visualization tools...ERROR'
             print '\n'
             sys.exit(2) 
     except Exception, error:
@@ -789,41 +789,42 @@ def PyAxi(**kwargs):
         if input['source_type'] == 'sourceparams':
             os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
             post_process_open = open('./param_post_processing', 'r')
-            post_process_read = post_process_open.readlines()
+            post_process_read_fio = post_process_open.readlines()
+            post_process_read = []
+            for post_r in post_process_read_fio:
+                if not post_r.startswith('#'):
+                    if not post_r.startswith('\n'):
+                        post_process_read.append(post_r)
             # Call edit_param_post_processing to change the post_processing options
             post_process_read = edit_param_post_processing(post_process_read = post_process_read)
             post_process_open.close()
-            
             post_process_open = open('./param_post_processing', 'w')
             for i in range(0, len(post_process_read)):
                 post_process_open.write(post_process_read[i])
                 if input['verbose'] != 'N': print post_process_read[i].split('\n')[0]
             if input['verbose'] != 'N': print 2*"======================================"
             post_process_open.close()
-            
             output = subprocess.check_call(['./post_processing.csh'], stdout = stdout_param)
             if output != 0: print output_print
-            
 
         elif input['source_type'] == 'cmtsolut':
-            for add in ['MXX_P_MYY', 'MXY_MXX_M_MYY', 'MXZ_MYZ', 'MZZ']:
-                os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'], add))
-                post_process_open = open('./param_post_processing', 'r')
-                post_process_read = post_process_open.readlines()
-                
-                post_process_read = edit_param_post_processing(post_process_read = post_process_read)
-                
-                post_process_open.close()
-                post_process_open = open('./param_post_processing', 'w')
-                
-                print '\n' + add + ':'
-                for i in range(0, len(post_process_read)):
-                    post_process_open.write(post_process_read[i])
-                    if input['verbose'] != 'N': print post_process_read[i].split('\n')[0]
-                if input['verbose'] != 'N': print 2*"======================================"
-                post_process_open.close()
-            
             os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
+            post_process_open = open('./param_post_processing', 'r')
+            post_process_read_fio = post_process_open.readlines()
+            post_process_read = []
+            for post_r in post_process_read_fio:
+                if not post_r.startswith('#'):
+                    if not post_r.startswith('\n'):
+                        post_process_read.append(post_r)
+            # Call edit_param_post_processing to change the post_processing options
+            post_process_read = edit_param_post_processing(post_process_read = post_process_read)
+            post_process_open.close()
+            post_process_open = open('./param_post_processing', 'w')
+            for i in range(0, len(post_process_read)):
+                post_process_open.write(post_process_read[i])
+                if input['verbose'] != 'N': print post_process_read[i].split('\n')[0]
+            if input['verbose'] != 'N': print 2*"======================================"
+            post_process_open.close()
             output = subprocess.check_call(['./post_processing.csh'], stdout = stdout_param)
             if output != 0: print output_print
         
@@ -1037,11 +1038,11 @@ def read_input_file():
     config = ConfigParser.RawConfigParser()
     input = {}
     try:
-        config.read(os.path.join(sys.argv[1], 'inpython.cfg'))
-        input['inpython_address'] = os.path.join(sys.argv[1], 'inpython.cfg')
+        config.read(os.path.join(sys.argv[1]))
+        input['inpython_address'] = os.path.join(sys.argv[1])
         print '\n****************************************'
         print 'Read the input file (inpython.cfg) from:'
-        print os.path.join(sys.argv[1], 'inpython.cfg')
+        print os.path.join(sys.argv[1])
     except Exception, error:
         config.read(os.path.join(os.getcwd(), 'inpython.cfg'))
         input['inpython_address'] = os.path.join(os.getcwd(), 'inpython.cfg')
@@ -1178,25 +1179,24 @@ def read_input_file():
     input['cmt_Mrt'] = config.get('SOURCE_INFO', 'CMT_MRT')
     input['cmt_Mrp'] = config.get('SOURCE_INFO', 'CMT_MRP')
     input['cmt_Mtp'] = config.get('SOURCE_INFO', 'CMT_MTP')
-    
-    input['post_components'] = config.get('POST_PROCESSING', 'COMPONENTS')
-    input['post_conv_period'] = config.get('POST_PROCESSING', 'CONVOLUTION_PERIOD')
-    input['post_rotate'] = config.get('POST_PROCESSING', 'ROTATE')
-    input['post_full_Mij'] = config.get('POST_PROCESSING', 'FULL_MIJ')
-    input['post_Mrr'] = config.get('POST_PROCESSING', 'MRR')
-    input['post_Mtt'] = config.get('POST_PROCESSING', 'MTT')
-    input['post_Mpp'] = config.get('POST_PROCESSING', 'MPP')
-    input['post_Mrt'] = config.get('POST_PROCESSING', 'MRT')
-    input['post_Mrp'] = config.get('POST_PROCESSING', 'MRP')
-    input['post_Mtp'] = config.get('POST_PROCESSING', 'MTP')
-    input['post_STF'] = config.get('POST_PROCESSING', 'STF')
-    input['post_Scolat'] = config.get('POST_PROCESSING', 'SOURCE_COLAT')
-    input['post_Slon'] = config.get('POST_PROCESSING', 'SOURCE_LON')
-    input['post_snap'] = config.get('POST_PROCESSING', 'SOURCE_SNAPS')
-    input['post_dv'] = config.get('POST_PROCESSING', 'DISP_VEL')
-    input['post_path'] = config.get('POST_PROCESSING', 'SOURCE_PATH')
-    input['post_negative'] = config.get('POST_PROCESSING', 'SOURCE_NEGATIVE')
-    
+   
+    input['post_rec_comp_sys'] = config.get('POST_PROCESSING', 'REC_COMP_SYS')
+    input['post_conv_period'] = config.get('POST_PROCESSING', 'CONV_PERIOD')
+    input['post_conv_stf'] = config.get('POST_PROCESSING', 'CONV_STF')
+    input['post_seistype'] = config.get('POST_PROCESSING', 'SEISTYPE')
+    input['post_load_snaps'] = config.get('POST_PROCESSING', 'LOAD_SNAPS')
+    input['post_data_dir'] = config.get('POST_PROCESSING', 'DATA_DIR')
+    input['post_negative_time'] = config.get('POST_PROCESSING', 'NEGATIVE_TIME')
+    input['post_3D_phi_start'] = config.get('POST_PROCESSING', '3D_PHI_START')
+    input['post_3D_phi_end'] = config.get('POST_PROCESSING', '3D_PHI_END')
+    input['post_3D_rtop'] = config.get('POST_PROCESSING', '3D_RTOP')
+    input['post_3D_rbot'] = config.get('POST_PROCESSING', '3D_RBOT')
+    input['post_3D_plot_top'] = config.get('POST_PROCESSING', '3D_PLOT_TOP')
+    input['post_3D_plot_bot'] = config.get('POST_PROCESSING', '3D_PLOT_BOT')
+    input['post_3D_snap_beg'] = config.get('POST_PROCESSING', '3D_SNAP_BEG')
+    input['post_3D_snap_end'] = config.get('POST_PROCESSING', '3D_SNAP_END')
+    input['post_3D_snap_stride'] = config.get('POST_PROCESSING', '3D_SNAP_STRIDE')
+       
     input['mseed'] = config.get('MISC', 'MSEED')
     input['mseed_all'] = config.get('MISC', 'MSEED_ALL')
     input['convSTF'] = config.get('MISC', 'CONV_STF')
@@ -1204,7 +1204,6 @@ def read_input_file():
     input['filter'] = config.get('MISC', 'FILTER')
     input['fmin'] = eval(config.get('MISC', 'FMIN'))
     input['fmax'] = eval(config.get('MISC', 'FMAX'))
-   
    
     input['make_flag_mesher'] = config.get('MPI', 'MAKE_FLAG_MESHER')
     input['make_flag_solver'] = config.get('MPI', 'MAKE_FLAG_SOLVER')
@@ -1272,79 +1271,55 @@ def edit_param_post_processing(post_process_read):
     edit param_post_processing file
     """
     global input
-
-    if input['post_rotate'] != 'DNC':
-        post_process_read[0] = '                   ' + \
-        input['post_rotate'] + \
-        '                                 rotate receivers?\n'
-    if input['post_components'] != 'DNC':
-        post_process_read[1] = "                    " + \
-        input['post_components'] + \
-        "          receiver components: enz,sph,cyl,xyz,src\n"
-    if input['post_full_Mij'] != 'DNC':
-        post_process_read[2] = '                   ' + \
-        input['post_full_Mij'] + \
-        '                                   sum to full Mij\n'
-    if input['post_Mrr'] != 'DNC':
-        post_process_read[3] = '             ' + \
-        input['post_Mrr'] + \
-        '                                              Mrr \n'
-    if input['post_Mtt'] != 'DNC':
-        post_process_read[4] = '             ' + \
-        input['post_Mtt'] + \
-        '                                              Mtt \n'
-    if input['post_Mpp'] != 'DNC':
-        post_process_read[5] = '             ' + \
-        input['post_Mpp'] + \
-        '                                              Mpp \n'
-    if input['post_Mrt'] != 'DNC':
-        post_process_read[6] = '             ' + \
-        input['post_Mrt'] + \
-        '                                              Mrt \n'
-    if input['post_Mrp'] != 'DNC':
-        post_process_read[7] = '             ' + \
-        input['post_Mrp'] + \
-        '                                              Mrp \n'
-    if input['post_Mtp'] != 'DNC':
-        post_process_read[8] = '             ' + \
-        input['post_Mtp'] + \
-        '                                              Mtp \n'
+    
+    if input['post_rec_comp_sys'] != 'DNC':
+        post_process_read[0] = \
+            'REC_COMP_SYS    %s\n' %(input['post_rec_comp_sys'])
     if input['post_conv_period'] != 'DNC':
-        if input['post_conv_period'] == '0.':
-            post_process_read[9] = '                       ' + \
-            '0.             convolve period (0. if not convolved)\n'
-        else:
-            post_process_read[9] = '             ' + \
-            input['post_conv_period'] + \
-            '             convolve period (0. if not convolved)\n'
-    if input['post_STF'] != 'DNC':
-        post_process_read[10] = "                " + \
-        input['post_STF'] + \
-        "         source time function type for convolution\n"
-    if input['post_Scolat'] != 'DNC':
-        post_process_read[11] = '             ' + \
-        input['post_Scolat'] + \
-        '                                 Source colatitude\n'
-    if input['post_Slon'] != 'DNC':
-        post_process_read[12] = '             ' + \
-        input['post_Slon'] + \
-        '                                  Source longitude\n'
-    if input['post_snap'] != 'DNC':
-        post_process_read[13] = '                        ' + \
-        input['post_snap'] + \
-        '                                plot global snaps?\n'
-    if input['post_dv'] != 'DNC':
-        post_process_read[14] = '                     ' + \
-        input['post_dv'] + \
-        '                          disp or velo seismograms\n'
-    if input['post_path'] != 'DNC':
-        post_process_read[15] = "    " + \
-        input['post_path'] + \
-        "                 Directory for post processed data\n"
-    if input['post_negative'] != 'DNC':
-        post_process_read[16] = '                        ' + \
-        input['post_negative'] + \
-        '   seismograms at negative time (0 at max. of stf)\n'
+        post_process_read[1] = \
+            'CONV_PERIOD     %s\n' %(input['post_conv_period'])
+    if input['post_conv_stf'] != 'DNC':
+        post_process_read[2] = \
+            'CONV_STF        %s\n' %(input['post_conv_stf'])
+    if input['post_seistype'] != 'DNC':
+        post_process_read[3] = \
+            'SEISTYPE        %s\n' %(input['post_seistype'])
+    if input['post_load_snaps'] != 'DNC':
+        post_process_read[4] = \
+            'LOAD_SNAPS      %s\n' %(input['post_load_snaps'])
+    if input['post_data_dir'] != 'DNC':
+        post_process_read[5] = \
+            'DATA_DIR        %s\n' %(input['post_data_dir'])
+    if input['post_negative_time'] != 'DNC':
+        post_process_read[6] = \
+            'NEGATIVE_TIME   %s\n' %(input['post_negative_time'])
+    if input['post_3D_phi_start'] != 'DNC':
+        post_process_read[7] = \
+            '3D_PHI_START     %s\n' %(input['post_3D_phi_start'])
+    if input['post_3D_phi_end'] != 'DNC':
+        post_process_read[8] = \
+            '3D_PHI_END      %s\n' %(input['post_3D_phi_end'])
+    if input['post_3D_rtop'] != 'DNC':
+        post_process_read[9] = \
+            '3D_RTOP         %s\n' %(input['post_3D_rtop'])
+    if input['post_3D_rbot'] != 'DNC':
+        post_process_read[10] = \
+            '3D_RBOT         %s\n' %(input['post_3D_rbot'])
+    if input['post_3D_plot_top'] != 'DNC':
+        post_process_read[11] = \
+            '3D_PLOT_TOP     %s\n' %(input['post_3D_plot_top'])
+    if input['post_3D_plot_bot'] != 'DNC':
+        post_process_read[12] = \
+            '3D_PLOT_BOT     %s\n' %(input['post_3D_plot_bot'])
+    if input['post_3D_snap_beg'] != 'DNC':
+        post_process_read[13] = \
+            '3D_SNAP_BEG      %s\n' %(input['post_3D_snap_beg'])
+    if input['post_3D_snap_end'] != 'DNC':
+        post_process_read[14] = \
+            '3D_SNAP_END      %s\n' %(input['post_3D_snap_end'])
+    if input['post_3D_snap_stride'] != 'DNC':
+        post_process_read[15] = \
+            '3D_SNAP_STRIDE   %s\n' %(input['post_3D_snap_stride'])
     
     return post_process_read
 
@@ -1550,3 +1525,97 @@ if __name__ == "__main__":
 #
 #print 'DONE'
 
+
+
+# POST_PROCESSING
+
+##if input['post_rotate'] != 'DNC':
+##    post_process_read[0] = '                   ' + \
+##    input['post_rotate'] + \
+##    '                                 rotate receivers?\n'
+##if input['post_components'] != 'DNC':
+##    post_process_read[1] = "                    " + \
+##    input['post_components'] + \
+##    "          receiver components: enz,sph,cyl,xyz,src\n"
+##if input['post_full_Mij'] != 'DNC':
+##    post_process_read[2] = '                   ' + \
+##    input['post_full_Mij'] + \
+##    '                                   sum to full Mij\n'
+##if input['post_Mrr'] != 'DNC':
+##    post_process_read[3] = '             ' + \
+##    input['post_Mrr'] + \
+##    '                                              Mrr \n'
+##if input['post_Mtt'] != 'DNC':
+##    post_process_read[4] = '             ' + \
+##    input['post_Mtt'] + \
+##    '                                              Mtt \n'
+##if input['post_Mpp'] != 'DNC':
+##    post_process_read[5] = '             ' + \
+##    input['post_Mpp'] + \
+##    '                                              Mpp \n'
+##if input['post_Mrt'] != 'DNC':
+##    post_process_read[6] = '             ' + \
+##    input['post_Mrt'] + \
+##    '                                              Mrt \n'
+##if input['post_Mrp'] != 'DNC':
+##    post_process_read[7] = '             ' + \
+##    input['post_Mrp'] + \
+##    '                                              Mrp \n'
+##if input['post_Mtp'] != 'DNC':
+##    post_process_read[8] = '             ' + \
+##    input['post_Mtp'] + \
+##    '                                              Mtp \n'
+##if input['post_conv_period'] != 'DNC':
+##    if input['post_conv_period'] == '0.':
+##        post_process_read[9] = '                       ' + \
+##        '0.             convolve period (0. if not convolved)\n'
+##    else:
+##        post_process_read[9] = '             ' + \
+##        input['post_conv_period'] + \
+##        '             convolve period (0. if not convolved)\n'
+##if input['post_STF'] != 'DNC':
+##    post_process_read[10] = "                " + \
+##    input['post_STF'] + \
+##    "         source time function type for convolution\n"
+##if input['post_Scolat'] != 'DNC':
+##    post_process_read[11] = '             ' + \
+##    input['post_Scolat'] + \
+##    '                                 Source colatitude\n'
+##if input['post_Slon'] != 'DNC':
+##    post_process_read[12] = '             ' + \
+##    input['post_Slon'] + \
+##    '                                  Source longitude\n'
+##if input['post_snap'] != 'DNC':
+##    post_process_read[13] = '                        ' + \
+##    input['post_snap'] + \
+##    '                                plot global snaps?\n'
+##if input['post_dv'] != 'DNC':
+##    post_process_read[14] = '                     ' + \
+##    input['post_dv'] + \
+##    '                          disp or velo seismograms\n'
+##if input['post_path'] != 'DNC':
+##    post_process_read[15] = "    " + \
+##    input['post_path'] + \
+##    "                 Directory for post processed data\n"
+##if input['post_negative'] != 'DNC':
+##    post_process_read[16] = '                        ' + \
+##    input['post_negative'] + \
+##    '   seismograms at negative time (0 at max. of stf)\n'
+ 
+##input['post_components'] = config.get('POST_PROCESSING', 'COMPONENTS')
+##input['post_conv_period'] = config.get('POST_PROCESSING', 'CONVOLUTION_PERIOD')
+##input['post_rotate'] = config.get('POST_PROCESSING', 'ROTATE')
+##input['post_full_Mij'] = config.get('POST_PROCESSING', 'FULL_MIJ')
+##input['post_Mrr'] = config.get('POST_PROCESSING', 'MRR')
+##input['post_Mtt'] = config.get('POST_PROCESSING', 'MTT')
+##input['post_Mpp'] = config.get('POST_PROCESSING', 'MPP')
+##input['post_Mrt'] = config.get('POST_PROCESSING', 'MRT')
+##input['post_Mrp'] = config.get('POST_PROCESSING', 'MRP')
+##input['post_Mtp'] = config.get('POST_PROCESSING', 'MTP')
+##input['post_STF'] = config.get('POST_PROCESSING', 'STF')
+##input['post_Scolat'] = config.get('POST_PROCESSING', 'SOURCE_COLAT')
+##input['post_Slon'] = config.get('POST_PROCESSING', 'SOURCE_LON')
+##input['post_snap'] = config.get('POST_PROCESSING', 'SOURCE_SNAPS')
+##input['post_dv'] = config.get('POST_PROCESSING', 'DISP_VEL')
+##input['post_path'] = config.get('POST_PROCESSING', 'SOURCE_PATH')
+##input['post_negative'] = config.get('POST_PROCESSING', 'SOURCE_NEGATIVE')

@@ -180,7 +180,7 @@ SOURCE_MXY = 0.E20                       ; Moment Tensor MXY (Nm)
 #-----------------------CMTSOLUTION-------------------------------
 # CMTSOLUTION parameters: (valid for "moment" type simulation)
 # Source Time Function
-CMT_STF = dirac_0                        i
+CMT_STF = dirac_0
 # STF choices:
 # 'dirac_0', 'quheavi', 'gauss_0', 
 # 'gauss_1' (1st deriv), 'gauss_2' (2nd), 'heavis' 
