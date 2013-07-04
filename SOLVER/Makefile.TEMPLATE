@@ -1,4 +1,4 @@
-PROG =xsem
+PROG =axisem
 
 SRCS =	analyt_homog_radiation.f90 analytic_mapping.f90 \
 	analytic_semi_mapping.f90 analytic_spheroid_mapping.f90 \

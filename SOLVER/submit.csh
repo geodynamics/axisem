@@ -277,7 +277,7 @@ foreach isrc (${num_src_arr})
             cp $homedir/$srcfile $srcfile
         endif
         
-        cp $homedir/xsem .
+        cp $homedir/axisem .
         cp $homedir/mesh_params.h .
         cp $homedir/runinfo .
         cp $homedir/$recfile . 
@@ -332,7 +332,7 @@ foreach isrc (${num_src_arr})
 
             ########## LSF SCHEDULER ######################
             if ( $queue == 'lsf' ) then 
-                bsub -R "rusage[mem=2048]" -I -n $nodnum mpirun -n $nodnum ./xsem 2>&1 > $outputname &
+                bsub -R "rusage[mem=2048]" -I -n $nodnum mpirun -n $nodnum ./axisem 2>&1 > $outputname &
 
             ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 
@@ -340,13 +340,13 @@ foreach isrc (${num_src_arr})
                 echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
                 echo "ulimit -s unlimited " >> run_solver.pbs
                 echo "cd $PWD " >> run_mesh.pbs
-                echo "mpirun -n $nodnum ./xsem  > OUTPUT " >> run_solver.pbs
+                echo "mpirun -n $nodnum ./axisem  > OUTPUT " >> run_solver.pbs
                 qsub run_solver.pbs
             endif
 
         ######## SUBMIT LOCALLY #######
         else 
-            mpirun.openmpi -n $nodnum ./xsem >& $outputname &
+            mpirun.openmpi -n $nodnum ./axisem >& $outputname &
         endif
 
         echo "Job running in directory $isim"
