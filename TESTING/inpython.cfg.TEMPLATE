@@ -27,7 +27,7 @@
 #******************************************************************
 [GENERAL]
 AXISEM_DIR = ..                          ; Address of AXISEM root directory
-SOLVER_NAME = SOLVER_DEFAULT             ; Solver directory name
+SOLVER_NAME = DEFAULT_SOLVER             ; Solver directory name
 # Choose Mesh (local subdirname in SOLVER/MESHES directory) in MESHER_BASIC
 VERBOSE = Y                              ; For debugging purposes
 
@@ -64,10 +64,10 @@ SOLVER_MAKE = Y                          ; make clean; make for SOLVER
 [MESHER_BASIC]
 # Changing MESHER/inparam_mesh basic parameters
 
-BACKGROUND_MODEL = 'prem_iso'             ; Background model: SEE BELOW in this section
+BACKGROUND_MODEL = 'prem_ani'             ; Background model: SEE BELOW in this section
 EXT_MODEL = layer_solid.bm
-DOMINANT_PERIOD = 40.                     ; DOMINANT period [s]
-NCPU = 2                                  ; Number of processors to be used
+DOMINANT_PERIOD = 50.                     ; DOMINANT period [s]
+NCPU = 1                                  ; Number of processors to be used
 WRITE_VTK = true                          ; Write vtk output
 
 # Nr of coarsening layers
@@ -79,7 +79,7 @@ COARSENING_LAYERS = 3
 #### MODEL / MESH ####
 # Choose Mesh (local subdirname in SOLVER/MESHES directory)
 # N.B. The mesh controls the velocity model and the number of CPUs
-MESHNAME = PREMlight_2CPUs
+MESHNAME = DEFAULT_MESH
 
 #### BACKGROUND MODELS:
 # prem_iso:               Isotropic continental PREM model
@@ -94,7 +94,7 @@ MESHNAME = PREMlight_2CPUs
 # 
 # ak135               AK135 (Isotropic, no attenuation
 # ak135f              AK135 (Isotropic, own attenuation)
-# iasp91:             Isotropic IASP91 model with PREM density
+# iasp91:             Isotropic IASP91 model with PREM density and attenuation
 # external:           Layered external model, give file name in EXT_MODEL, the 
 #                     inner core needs to be big enough, check VTK output.
 
@@ -104,11 +104,8 @@ MESHNAME = PREMlight_2CPUs
 #******************************************************************
 [SOLVER_BASIC]
 # Choose simulation type, allowed options:
-# single: Simulation of one basic source. Set sourceparams.dat for the
+# single: Simulation of one elemental source. Set sourceparams.dat for the
 #         exact type (refer to SOURCE_INFO)
-# forces:  General force, needs two parallel simulations (and twice the
-#         number of CPUs). Set forces.dat for the exact source type
-#         (not working at the moment)
 # moment: Full moment tensor, needs four parallel simulations. Set
 #         CMTSOLUTION for the source mechanism. (refer to SOURCE_INFO)
 SIMULATION_TYPE = single
@@ -161,7 +158,7 @@ SOURCE_STF = 'dirac_0'                   ; Source time function (SEE BELOW)
 
 SOURCE_COLAT = 0.0                       ; Source colatitude [degrees]
 SOURCE_LON = 0.0                         ; Source longitude [ldegrees]
-SOURCE_DEPTH = 10.                      ; Source depth [km]
+SOURCE_DEPTH = 100.                      ; Source depth [km]
 
 SOURCE_MZZ = 1.E20                       ; Moment Tensor MZZ (Nm)
 SOURCE_MXX = 1.E20                       ; Moment Tensor MXX (Nm)
@@ -185,16 +182,16 @@ CMT_STF = dirac_0
 # 'dirac_0', 'quheavi', 'gauss_0', 
 # 'gauss_1' (1st deriv), 'gauss_2' (2nd), 'heavis' 
 
-CMT_LAT = 90                             ; Source latitude [degrees]
-CMT_LON = 0                              ; Source longitude [degrees]
-CMT_DEPTH = 0                            ; Source depth [km]
+CMT_LAT = 70.0                           ; Source latitude [degrees]
+CMT_LON = 50.0                           ; Source longitude [degrees]
+CMT_DEPTH = 100.0                        ; Source depth [km]
 
-CMT_MRR = 1.0e+27                        ; MRR component
-CMT_MTT = 1.0e+27                        ; MTT component
-CMT_MPP = 1.0e+27                        ; MPP component
-CMT_MRT = 0.                             ; MRT component
-CMT_MRP = 0.                             ; MRP component
-CMT_MTP = 0.                             ; MTP component
+CMT_MRR = 1.0000e+27                     ; MRR component
+CMT_MTT = 0.5000e+27                     ; MTT component
+CMT_MPP = 2.5000e+27                     ; MPP component
+CMT_MRT = 2.0000e+27                     ; MRT component
+CMT_MRP = 3.0000e+27                     ; MRP component
+CMT_MTP = 1.5000e+27                     ; MTP component
 
 TIME SHIFT = 0.0000
 HALF DURATION = 20.0000
@@ -217,29 +214,54 @@ RECFILE_TYPE = stations
 #========================= POST_PROCESSING ========================
 #******************************************************************
 [POST_PROCESSING]
-ROTATE = .true.                          ; Rotate receivers?                               
-COMPONENTS = 'enz'                       ; Receiver components: enz,sph,cyl,xyz,src
-FULL_MIJ = .true                         ; Sum to full Mij
-CONVOLUTION_PERIOD = 0.                  ; Convolve period (0. if not convolved)
-STF = 'gauss_0'                          ; Source time function type for convolution
-DISP_VEL = disp                          ; Disp or velo seismograms
-
 # 'DNC' in the following options means Do-Not-Change
 # In this case, it will keep the vaules generated
 # by AXISEM automatically.
-MRR = DNC                                ; MRR
-MTT = DNC                                ; MTT
-MPP = DNC                                ; MPP
-MRT = DNC                                ; MRT
-MRP = DNC                                ; MRP
-MTP = DNC                                ; MTP
-                                                                                         
-SOURCE_COLAT = DNC                       ; Source colatitude
-SOURCE_LON = DNC                         ; Source longitude
-SOURCE_SNAPS = DNC                       ; Plot global snaps?
-SOURCE_PATH = DNC                        ; Directory for post processed data
-SOURCE_NEGATIVE = DNC                    ; Seismograms at negative time (0 at max. of stf)
 
+# receiver coordinate system
+# one of: enz, sph, cyl, xyz, src
+REC_COMP_SYS = enz 
+
+# period of source time funtion to be convolved
+# should be larger then the mesh period
+# 0. to not convolve
+CONV_PERIOD = 0.
+
+# source time function
+# one of: gauss_0, gauss_1, qheavi
+CONV_STF = DNC
+
+# displacement or velocity seismograms
+SEISTYPE = disp
+
+# make 3D plots of the wavefield
+LOAD_SNAPS = DNC
+
+# OUTPUT PATH
+DATA_DIR = DNC
+
+# output seismograms at negative time
+# (to correct for finite width of the source time function
+NEGATIVE_TIME = T
+
+#############################################
+# options the 3D wavefield plots
+# crossection location, starting and ending phi
+3D_PHI_START = DNC
+3D_PHI_END = DNC
+
+# radius of top and bottom layer in km
+3D_RTOP = DNC
+3D_RBOT = DNC
+
+# switches for bottom, top and meridonial surface
+3D_PLOT_TOP = DNC 
+3D_PLOT_BOT = DNC
+
+# time snapshot selection:
+3D_SNAP_BEG = DNC
+3D_SNAP_END = DNC
+3D_SNAP_STRIDE = DNC
 
 #******************************************************************
 #========================= MSEED, Filter, STF =====================
