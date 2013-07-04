@@ -289,6 +289,7 @@ def PyAxi(**kwargs):
             process_name= "xmesh"
             check_process="running"
             t_check = 0
+            time.sleep(2)
             print '--------------------------'
             print 'submit.csh is running for:'
             while check_process=="running":
