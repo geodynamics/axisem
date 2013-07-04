@@ -1767,17 +1767,17 @@ subroutine compute_3d_wavefields
            enddo
         endif
 
-        disp(1:nptstot,1) = disp(1:nptstot,1)
-        disp(1:nptstot,2) = disp(1:nptstot,2)
-        disp(1:nptstot,3) = disp(1:nptstot,3)
-
-        filename1 = trim(outdir)//'/SNAPS/snap_cell_'&
-                    //trim(src_type(isim,2))//'_'//appmynum2//'_z'
-        write(6,*)'filename out vtk :',filename1
-        call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),&
-                                         ztot(1:2*nptstot+k1+k2), & 
-                                         disp(1:2*nptstot+k1+k2,3),(2*nptstot+k1+k2)/4,&
-                                         filename1)
+        ! @TODO only plot summed stuff when summing to avoid large data. should
+        ! be a parameter in param_post_processing at some point
+        if (nsim == 1) then 
+           filename1 = trim(outdir)//'/SNAPS/snap_cell_'&
+                       //trim(src_type(isim,2))//'_'//appmynum2//'_z'
+           write(6,*)'filename out vtk :',filename1
+           call write_VTK_bin_scal_topology(xtot(1:2*nptstot+k1+k2),ytot(1:2*nptstot+k1+k2),&
+                                            ztot(1:2*nptstot+k1+k2), & 
+                                            disp(1:2*nptstot+k1+k2,3),(2*nptstot+k1+k2)/4,&
+                                            filename1)
+        endif
 
         
         if (use_meri) then
