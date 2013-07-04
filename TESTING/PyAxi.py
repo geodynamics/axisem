@@ -665,6 +665,10 @@ def PyAxi(**kwargs):
                     sys.stdout.write('Change the Receiver params (STATIONS)...')
                     sys.stdout.flush()
                 
+                if input['IO_STATION']:
+                    subprocess.check_call(['cp',
+                        os.path.join(input['IO_STATION']),
+                        os.path.join(input['axi_address'], 'SOLVER', 'STATIONS')])
                 if not os.path.isfile('STATIONS'):
                     subprocess.check_call(['cp', 'STATIONS.TEMPLATE', 'STATIONS'])
                 receiver_open = open('./STATIONS', 'r')
@@ -1049,6 +1053,18 @@ def read_input_file():
         print '\n****************************************'
         print 'Read the input file (inpython.cfg) from:'
         print os.path.join(os.getcwd(), 'inpython.cfg')
+   
+    try:
+        input['IO_STATION'] = os.path.join(sys.argv[2])
+        print '\n****************************************'
+        print 'Copy the STATIONS file from:'
+        print os.path.join(sys.argv[2])
+        if not os.path.isabs(input['IO_STATION']):
+            input['IO_STATION'] = os.path.join(os.getcwd(),
+                                          input['IO_STATION'])
+    except Exception, error:
+        print 'STATIONS file is not entered as an input!'
+        input['IO_STATION'] = False
     
     if not os.path.isabs(input['inpython_address']):
         input['inpython_address'] = os.path.join(os.getcwd(),
