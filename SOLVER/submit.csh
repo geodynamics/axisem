@@ -334,7 +334,19 @@ foreach isrc (${num_src_arr})
             if ( $queue == 'lsf' ) then 
                 bsub -R "rusage[mem=2048]" -I -n $nodnum mpirun -n $nodnum ./axisem 2>&1 > $outputname &
 
-            ######## TORQUE/MAUI SCHEDULER #######
+	    ######## slurm  #######
+            else if ( $queue == 'slurmlocal' ) then 
+            	aprun -n $nodnum ./axisem >& $outputname &
+            
+	    else if ( $queue == 'slurm' ) then 
+		echo '#\!/bin/bash' > sbatch.sh
+		echo "#sbatch --ntasks=$nodnum" >> sbatch.sh
+		echo "#sbatch --time=00:59:00" >> sbatch.sh
+		echo "aprun -n $nodnum ./axisem >& $outputname" >> sbatch.sh
+           	
+		sbatch sbatch.sh 
+
+	    ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 
                 echo "# Sample PBS for parallel jobs" > run_solver.pbs
                 echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs

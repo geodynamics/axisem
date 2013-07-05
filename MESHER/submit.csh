@@ -39,8 +39,7 @@ if ( $1 == 'lsf' ) then
   ########## LSF SCHEDULER ######################
   bsub -R "rusage[mem=2048]" -I -n 1 ./xmesh > OUTPUT &
 
-else 
-  if ( $1 == 'torque' ) then 
+else if ( $1 == 'torque' ) then 
     ######## TORQUE/MAUI SCHEDULER #######
     echo "# Sample PBS for serial jobs" > run_mesh.pbs
     echo "#PBS -l nodes=1,walltime=2:00:00" >> run_mesh.pbs
@@ -49,14 +48,16 @@ else
     echo "./xmesh > OUTPUT " >> run_mesh.pbs
     qsub run_mesh.pbs
 
-  else
+else if ( $1 == 'slurmlocal' ) then 
+    ######## slurm #######
+    aprun -n 1 ./xmesh > OUTPUT &
+else
     ######## SUBMIT LOCALLY #######
     nohup ./xmesh > OUTPUT &
     # uncomment the following three lines to monitor memory usage of the mesher
     #cd UTILS
     #python monitor_memory.py > ../memory_output &
     #cd ..
-  endif
 endif
 
 echo 'xmesh submitted, output in "OUTPUT"'
