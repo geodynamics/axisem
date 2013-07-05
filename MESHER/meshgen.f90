@@ -77,7 +77,9 @@ subroutine generate_skeleton
     call donot_generate_southern_hemisphere 
    end if
 
-   write(6,*);write(6,"(10x,' THE TOTAL NUMBER OF ELEMENTS IS ',i10 )"), neltot; write(6,*)
+   write(6,*)
+   write(6,"(10x,' THE TOTAL NUMBER OF ELEMENTS IS ',i10 )") neltot
+   write(6,*)
 
    call generate_serendipity(npointot,neltot,sg,zg)
 
@@ -407,7 +409,8 @@ enddo
 write(6789,*)size(u1),maxval(u1),minval(u1)
 
  write(6,*)'computing vtk file ',trim(filename),' ...'
-open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
+         convert='big_endian', form='unformatted')
 
 write(100) '# vtk DataFile Version 4.0'//char(10)
 write(100) 'mittico'//char(10)

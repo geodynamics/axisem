@@ -514,7 +514,8 @@ subroutine write_VTK_bin_scal_old(u2,mesh,rows,filename)
   !write(6789,*)size(u1),maxval(u1),minval(u1)
   
    write(6,*)'computing vtk file ',trim(filename),' ...'
-  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
+           convert='big_endian', form='unformatted')
   
   write(100) '# vtk DataFile Version 4.0'//char(10)
   write(100) 'mittico'//char(10)
@@ -577,7 +578,8 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   !enddo
   cell_type=9
   ! write(6,*)'computing vtk file ',trim(filename),' ...'
-  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace', &
+           convert='big_endian', form='unformatted')
   write(100) '# vtk DataFile Version 4.0'//char(10)
   write(100) 'mittico'//char(10)
   write(100) 'BINARY'//char(10)
