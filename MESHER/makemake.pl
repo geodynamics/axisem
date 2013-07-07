@@ -51,6 +51,17 @@ if ($ARGV[0] eq 'ifort'){
 	$FC_strg = 'ifort  -vec-report:0 -O3 -xHOST -shared-intel -heap-arrays 10'; 
     }
 }
+if ($ARGV[0] eq 'portland'){
+    if ($ARGV[1] eq 'debug'){
+	$F90_strg = 'mpif90  -g --Mbounds --traceback';
+	$FC_strg = 'mpif90 -g --Mbounds --traceback';
+	$CC_strg = 'pgcc -g --Mbounds --traceback';
+    } else {
+	$F90_strg = 'mpif90  -fast '; 
+	$FC_strg = 'mpif90 -fast';
+	$CC_strg = 'pgcc  -fast';
+    }
+}
 elsif ($ARGV[0] eq 'gfortran'){
     if ($ARGV[1] eq 'debug'){
 	$F90_strg = 'mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic';
