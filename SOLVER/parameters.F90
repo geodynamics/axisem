@@ -87,29 +87,26 @@ subroutine readin_parameters
 20 format(/&
    08x,'///////////////////////////////////////////////////////////////',/  &
    08x,'//                                                           //',/  &
+   08x,'//                  A   x   i   S   E   M                    //',/  &
    08x,'//                                                           //',/  &
-   08x,'//                  A   X   I   S   E   M                    //',/  &
+   08x,'//                                                  	     //',/  &
+   08x,'//         Parallel spectral-element solution to  	     //',/  &
+   08x,'//                                                	     //',/  &
+   08x,'//           3-D seismic wave propagation for         	     //',/  &
    08x,'//                                                           //',/  &
+   08x,'//          axially symmetric background models              //',/  &
    08x,'//                                                           //',/  &
-   08x,'//                                                  +-+      //',/  &
-   08x,'//   Parallel spectral-element computation of    +-+---+-+   //',/  &
-   08x,'//                                               | |   | |   //',/  &
-   08x,'//     3-D seismic wave propagation for          | +---+ |   //',/  &
-   08x,'//                                               |   _   |   //',/  &
-   08x,'//    axially symmetric background models        |_/_\\__|   //',/  &
-   08x,'//                                               | \\_/  |   //',/  &
-   08x,'//          in a global, 2-D domain              |       |   //',/  &
-   08x,'//                                               | +---+ |   //',/  &
-   08x,'//                                               | |   | |   //',/  &
-   08x,'//                                               +-+---+-+   //',/  &
-   08x,'//                                                  +-+      //',/  &
+   08x,'//               in a spherical 2-D domain                   //',/  &
+   08x,'//                                            	             //',/  &
    08x,'//                                                           //',/  &
-   08x,'//  Authors : Tarje Nissen-Meyer (tarje@princeton.edu)       //',/  &
-   08x,'//            Alexandre Fournier (Grenoble)                  //',/  &
+   08x,'// Authors : Tarje Nissen-Meyer (Oxford University)          //',/  &
+   08x,'//            Alexandre Fournier (IPG Paris)                 //',/  &
    08x,'//              Martin van Driel (ETH Zurich)                //',/  &
    08x,'//                 Simon Stähler (LMU Munich)                //',/  &
    08x,'//                Kasra Hosseini (LMU Munich)                //',/  &
-   08x,'//                   Tony Dahlen (Princeton)                 //',/  &
+   08x,'//                   Tony Dahlen (Princeton University)      //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//         Contact: tarje@alumni.princeton.edu               //',/  &  
    08x,'//                                                           //',/  &
    08x,'//       Comprehensive description of the underlying         //',/  &
    08x,'//           numerical analysis can be found in:             //',/  &
