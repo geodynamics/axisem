@@ -106,7 +106,8 @@ subroutine readin_parameters
    08x,'//                Kasra Hosseini (LMU Munich)                //',/  &
    08x,'//                   Tony Dahlen (Princeton University)      //',/  &
    08x,'//                                                           //',/  &
-   08x,'//         Contact: tarje@alumni.princeton.edu               //',/  &  
+   08x,'//   Contact:     tarje@alumni.princeton.edu                 //',/  &  
+   08x,'//   Information: www.axisem.info                            //',/  &
    08x,'//                                                           //',/  &
    08x,'//       Comprehensive description of the underlying         //',/  &
    08x,'//           numerical analysis can be found in:             //',/  &
