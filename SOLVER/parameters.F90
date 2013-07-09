@@ -456,9 +456,10 @@ subroutine read_inparam_advanced
                select case (trim(keyvalue))
                  case('xdmf') 
                      dump_xdmf = .true.
-                     ! @TODO
-                     !dump_vtk = .true.
                  case('vtk')
+                     dump_vtk = .true.
+                 case('both')
+                     dump_xdmf = .true.
                      dump_vtk = .true.
                  case default 
                      write(6,*)'invalid value for snapshots format!'; stop
