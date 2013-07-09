@@ -1,17 +1,12 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.15)  9 JUL 2013 16:59
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.30)  9 JUL 2013 18:03
 entering extended mode
  %&-line parsing enabled.
 **AXISEMTutorial.tex
 (./AXISEMTutorial.tex
 LaTeX2e <2009/09/24>
 Babel <v3.8l> and hyphenation patterns for english, usenglishmax, dumylang, noh
-yphenation, farsi, arabic, croatian, bulgarian, ukrainian, russian, czech, slov
-ak, danish, dutch, finnish, french, basque, ngerman, german, german-x-2009-06-1
-9, ngerman-x-2009-06-19, ibycus, monogreek, greek, ancientgreek, hungarian, san
-skrit, italian, latin, latvian, lithuanian, mongolian2a, mongolian, bokmal, nyn
-orsk, romanian, irish, coptic, serbian, turkish, welsh, esperanto, uppersorbian
-, estonian, indonesian, interlingua, icelandic, kurmanji, slovenian, polish, po
-rtuguese, spanish, galician, catalan, swedish, ukenglish, pinyin, loaded.
+yphenation, ngerman, german, german-x-2009-06-19, ngerman-x-2009-06-19, loaded.
+
 (/usr/share/texmf-texlive/tex/latex/base/article.cls
 Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
 (/usr/share/texmf-texlive/tex/latex/base/size10.clo
@@ -482,33 +477,7 @@ Package ifvtex Info: VTeX not detected.
 \Gm@odd@mp=\dimen109
 \Gm@even@mp=\dimen110
 \Gm@dimlist=\toks19
-
-(/usr/share/texmf-texlive/tex/xelatex/xetexconfig/geometry.cfg))
-(/usr/share/texmf-texlive/tex/latex/listings/listings.sty
-\lst@mode=\count92
-\lst@gtempboxa=\box29
-\lst@token=\toks20
-\lst@length=\count93
-\lst@currlwidth=\dimen111
-\lst@column=\count94
-\lst@pos=\count95
-\lst@lostspace=\dimen112
-\lst@width=\dimen113
-\lst@newlines=\count96
-\lst@lineno=\count97
-\lst@maxwidth=\dimen114
-
-(/usr/share/texmf-texlive/tex/latex/listings/lstmisc.sty
-File: lstmisc.sty 2007/02/22 1.4 (Carsten Heinz)
-\c@lstnumber=\count98
-\lst@skipnumbers=\count99
-\lst@framebox=\box30
 )
-(/usr/share/texmf-texlive/tex/latex/listings/listings.cfg
-File: listings.cfg 2007/02/22 1.4 listings configuration
-))
-Package: listings 2007/02/22 1.4 (Carsten Heinz)
-
 (./AXISEMTutorial.aux)
 \openout1 = `AXISEMTutorial.aux'.
 
@@ -531,18 +500,18 @@ File: ts1cmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    ... okay on input line 29.
 
-(/usr/share/texmf/tex/context/base/supp-pdf.mkii
+(/usr/share/texmf-texlive/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count100
-\scratchdimen=\dimen115
-\scratchbox=\box31
-\nofMPsegments=\count101
-\nofMParguments=\count102
-\everyMPshowfont=\toks21
-\MPscratchCnt=\count103
-\MPscratchDim=\dimen116
-\MPnumerator=\count104
-\everyMPtoPDFconversion=\toks22
+\scratchcounter=\count92
+\scratchdimen=\dimen111
+\scratchbox=\box29
+\nofMPsegments=\count93
+\nofMParguments=\count94
+\everyMPshowfont=\toks20
+\MPscratchCnt=\count95
+\MPscratchDim=\dimen112
+\MPnumerator=\count96
+\everyMPtoPDFconversion=\toks21
 )
 *geometry auto-detecting driver*
 *geometry detected driver: pdftex*
@@ -585,7 +554,6 @@ driver: pdftex
 
 (1in=72.27pt, 1cm=28.45pt)
 -----------------------
-\c@lstlisting=\count105
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
@@ -599,49 +567,31 @@ LaTeX Font Info:    Try loading font information for U+msb on input line 108.
 (/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 )
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
+LaTeX Font Info:    Try loading font information for T1+cmtt on input line 113.
+
+
+(/usr/share/texmf-texlive/tex/latex/base/t1cmtt.fd
+File: t1cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 ) [2]
-<AXISEMTutorial-fig001.png, id=16, 1738.495pt x 829.0975pt>
+<AXISEMTutorial-fig001.png, id=17, 1738.495pt x 829.0975pt>
 File: AXISEMTutorial-fig001.png Graphic file (type png)
 
 <use AXISEMTutorial-fig001.png>
-<AXISEMTutorial-fig002.png, id=18, 1490.56876pt x 524.96124pt>
+<AXISEMTutorial-fig002.png, id=19, 1490.56876pt x 524.96124pt>
 File: AXISEMTutorial-fig002.png Graphic file (type png)
 
 <use AXISEMTutorial-fig002.png>
-<AXISEMTutorial-fig003.png, id=19, 1489.565pt x 523.9575pt>
+<AXISEMTutorial-fig003.png, id=20, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig003.png Graphic file (type png)
 
 <use AXISEMTutorial-fig003.png>
-<AXISEMTutorial-fig004.png, id=20, 1489.565pt x 523.9575pt>
+<AXISEMTutorial-fig004.png, id=21, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig004.png Graphic file (type png)
 
 <use AXISEMTutorial-fig004.png> [3 <./AXISEMTutorial-fig001.png> <./AXISEMTutor
 ial-fig002.png (PNG copy)> <./AXISEMTutorial-fig003.png (PNG copy)> <./AXISEMTu
 torial-fig004.png (PNG copy)>]
-<AXISEMTutorial-fig005.jpg, id=26, 727.71875pt x 790.955pt>
+<AXISEMTutorial-fig005.jpg, id=27, 727.71875pt x 790.955pt>
 File: AXISEMTutorial-fig005.jpg Graphic file (type jpg)
 
 <use AXISEMTutorial-fig005.jpg> [4 <./AXISEMTutorial-fig005.jpg>]
@@ -649,69 +599,40 @@ Underfull \hbox (badness 10000) in paragraph at lines 255--259
 
  []
 
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-) [5]
+[5]
 Underfull \hbox (badness 10000) in paragraph at lines 285--287
 
  []
 
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-<AXISEMTutorial-fig006.png, id=34, 754.82pt x 408.52625pt>
+<AXISEMTutorial-fig006.png, id=35, 754.82pt x 408.52625pt>
 File: AXISEMTutorial-fig006.png Graphic file (type png)
 
 <use AXISEMTutorial-fig006.png>
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-<AXISEMTutorial-fig007.png, id=35, 1750.54pt x 1009.7725pt>
+<AXISEMTutorial-fig007.png, id=36, 1750.54pt x 1009.7725pt>
 File: AXISEMTutorial-fig007.png Graphic file (type png)
 
 <use AXISEMTutorial-fig007.png>
-<AXISEMTutorial-fig008.pdf, id=36, 524.96124pt x 691.58376pt>
+<AXISEMTutorial-fig008.pdf, id=37, 524.96124pt x 691.58376pt>
 File: AXISEMTutorial-fig008.pdf Graphic file (type pdf)
 
 <use AXISEMTutorial-fig008.pdf>
-<AXISEMTutorial-fig009.pdf, id=37, 524.96124pt x 690.58pt>
+<AXISEMTutorial-fig009.pdf, id=38, 524.96124pt x 690.58pt>
 File: AXISEMTutorial-fig009.pdf Graphic file (type pdf)
 
 <use AXISEMTutorial-fig009.pdf>
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-Overfull \hbox (21.72408pt too wide) in paragraph at lines 356--357
-[][][][][][][][][][][][][][][][][][][] 
- []
-
-
-Overfull \hbox (21.72408pt too wide) in paragraph at lines 357--358
-[][][][][][][][][][][][][][][][][][][] 
- []
-
-<AXISEMTutorial-fig010.pdf, id=38, 518.93875pt x 698.61pt>
+<AXISEMTutorial-fig010.pdf, id=39, 518.93875pt x 698.61pt>
 File: AXISEMTutorial-fig010.pdf Graphic file (type pdf)
 
 <use AXISEMTutorial-fig010.pdf>
-<AXISEMTutorial-fig011.pdf, id=39, 521.95pt x 695.59875pt>
+<AXISEMTutorial-fig011.pdf, id=40, 521.95pt x 695.59875pt>
 File: AXISEMTutorial-fig011.pdf Graphic file (type pdf)
 
 <use AXISEMTutorial-fig011.pdf>
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-<AXISEMTutorial-fig012.png, id=40, 757.83125pt x 1003.75pt>
+<AXISEMTutorial-fig012.png, id=41, 757.83125pt x 1003.75pt>
 File: AXISEMTutorial-fig012.png Graphic file (type png)
 
 <use AXISEMTutorial-fig012.png>
-<AXISEMTutorial-fig013.png, id=41, 754.82pt x 1003.75pt>
+<AXISEMTutorial-fig013.png, id=42, 754.82pt x 1003.75pt>
 File: AXISEMTutorial-fig013.png Graphic file (type png)
 
 <use AXISEMTutorial-fig013.png>
@@ -720,35 +641,22 @@ Overfull \hbox (0.57129pt too wide) in paragraph at lines 410--413
 about the source pa-ram-e-ters, re-fer to Appendix-
  []
 
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-<AXISEMTutorial-fig014.png, id=42, 757.83125pt x 1003.75pt>
+<AXISEMTutorial-fig014.png, id=43, 757.83125pt x 1003.75pt>
 File: AXISEMTutorial-fig014.png Graphic file (type png)
 
 <use AXISEMTutorial-fig014.png> [6 <./AXISEMTutorial-fig006.png>] [7 <./AXISEMT
 utorial-fig007.png> <./AXISEMTutorial-fig008.pdf> <./AXISEMTutorial-fig009.pdf>
 ] [8 <./AXISEMTutorial-fig010.pdf> <./AXISEMTutorial-fig011.pdf> <./AXISEMTutor
 ial-fig012.png>] [9 <./AXISEMTutorial-fig013.png> <./AXISEMTutorial-fig014.png>
-] (/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-Overfull \hbox (63.71414pt too wide) in paragraph at lines 435--436
-[][][][][][][][][][][][][][][][][][][] 
- []
-
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-<AXISEMTutorial-fig015.png, id=125, 757.83125pt x 1008.76875pt>
+] <AXISEMTutorial-fig015.png, id=126, 757.83125pt x 1008.76875pt>
 File: AXISEMTutorial-fig015.png Graphic file (type png)
 
 <use AXISEMTutorial-fig015.png>
-<AXISEMTutorial-fig016.png, id=126, 757.83125pt x 1006.76125pt>
+<AXISEMTutorial-fig016.png, id=127, 757.83125pt x 1006.76125pt>
 File: AXISEMTutorial-fig016.png Graphic file (type png)
 
 <use AXISEMTutorial-fig016.png> [10 <./AXISEMTutorial-fig015.png>]
-<AXISEMTutorial-fig017.png, id=131, 994.71625pt x 483.8075pt>
+<AXISEMTutorial-fig017.png, id=132, 994.71625pt x 483.8075pt>
 File: AXISEMTutorial-fig017.png Graphic file (type png)
 
 <use AXISEMTutorial-fig017.png> [11 <./AXISEMTutorial-fig016.png> <./AXISEMTuto
@@ -762,45 +670,29 @@ Underfull \hbox (badness 10000) in paragraph at lines 512--513
 
  []
 
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-)
-(/usr/share/texmf-texlive/tex/latex/base/ansinew.def
-File: ansinew.def 2008/03/30 v1.1d Input encoding file
-) [12]
-(./AXISEMTutorial.aux) ) 
+[12] (./AXISEMTutorial.aux) ) 
 Here is how much of TeX's memory you used:
- 4496 strings out of 493848
- 59788 string characters out of 1152823
- 127284 words of memory out of 3000000
- 7658 multiletter control sequences out of 15000+50000
- 14072 words of font info for 35 fonts, out of 3000000 for 9000
- 714 hyphenation exceptions out of 8191
- 26i,8n,43p,208b,1396s stack positions out of 5000i,500n,10000p,200000b,50000s
-{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-t1.
-enc}{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/share/tex
-mf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf/fonts/ty
-pe1/public/cm-super/sfbx1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/
-sfbx1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1440.pfb></usr/s
-hare/texmf/fonts/type1/public/cm-super/sfcc1728.pfb></usr/share/texmf/fonts/typ
-e1/public/cm-super/sfrm0900.pfb></usr/share/texmf/fonts/type1/public/cm-super/s
-frm1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1200.pfb></usr/sh
-are/texmf/fonts/type1/public/cm-super/sfti1000.pfb>
-Output written on AXISEMTutorial.pdf (12 pages, 3530126 bytes).
+ 2866 strings out of 495021
+ 36882 string characters out of 1181035
+ 84744 words of memory out of 3000000
+ 6004 multiletter control sequences out of 15000+50000
+ 14385 words of font info for 36 fonts, out of 3000000 for 9000
+ 28 hyphenation exceptions out of 8191
+ 25i,8n,43p,208b,276s stack positions out of 5000i,500n,10000p,200000b,50000s
+ </home/vandriel/.texmf-var/fonts/pk/ljfour/jknapp
+en/ec/ecbx1000.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ec
+rm0900.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1000.6
+00pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk> </
+home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200.600pk> </home/van
+driel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1000.600pk> </home/vandriel/.t
+exmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.600pk> </home/vandriel/.texmf-var
+/fonts/pk/ljfour/jknappen/ec/ecbx1440.600pk> </home/vandriel/.texmf-var/fonts/p
+k/ljfour/jknappen/ec/ecrm1200.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour
+/jknappen/ec/eccc1728.600pk></usr/share/texmf-texlive/fonts/type1/public/amsfon
+ts/cm/cmsy10.pfb>
+Output written on AXISEMTutorial.pdf (12 pages, 3499885 bytes).
 PDF statistics:
- 172 PDF objects out of 1000 (max. 8388607)
+ 587 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  86 words of extra memory for PDF output out of 10000 (max. 10000000)
 

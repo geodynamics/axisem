@@ -19,7 +19,7 @@
 \renewcommand{\footrulewidth}{0pt}
 \usepackage{color}
 \usepackage[a4paper,vmargin={20mm,20mm},hmargin={20mm,10mm}]{geometry}
-\usepackage{listings}
+% \usepackage{listings}
 % \lstset{inputencoding=ansinew}
 
 \definecolor{color18}{rgb}{0.07,0.33,0.80}
@@ -34,7 +34,7 @@
 \LARGE{ \textbf{\sc AxiSEM Tutorial}}
 \vspace*{0.1cm}\\
 {\large 
-Kasra Hosseini, Martin v. Driel, Simon St\"{a}hler, 
+Kasra Hosseini, Martin van Driel, Simon St\"{a}hler, 
 Lion Krischer, Tarje Nissen-Meyer \\
 {Fairbanks, Alaska, July 15th 2013}
 %\vspace*{0.1cm}\\ 
@@ -110,42 +110,42 @@ Start from within the $\sim$/Desktop/EVENTS/SCRIPTS directory:
 \begin{enumerate}
 \item Plot one of the events (listed in EVENTS directory, we choose EVENT-1 in this example):
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_station_event_distribution.py EVENTS/EVENT-1
-\end{lstlisting}
+\end{verbatim}
 * For more information on the folder structure of your Virtual-box, refer to Appendix-2.
 
 \item To get an overview on both real data and pre-simulated seismograms: (e.g. PREM\_ANISO 
 for 5 seconds dominant period)
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-\end{lstlisting}
+\end{verbatim}
 
 \item Cut the waveforms for Pdiff and PKiKP seismic phases and plot the seismograms: 
 (compared with real data)
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
-\end{lstlisting}
+\end{verbatim}
 
 \item Change the filter in \textit{plot\_seismograms.py} script and compare the results with 
 \textit{SPECFEM3D}: (for changing the filter, open \textit{plot\_seismograms.py} and change 
 values at top of the file)
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
 specfem3d
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP 
 specfem3d
-\end{lstlisting}
+\end{verbatim}
 
 \item Compare the results of two different background models (\textit{PREM\_ANISO\_5sec} with 
 \textit{IASP91\_5sec)} for Pdiff phase:
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
 EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
-\end{lstlisting}
+\end{verbatim}
 
 \item Change the filter, as explained in step 4, and repeat step 5.
 
@@ -153,26 +153,26 @@ EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
 PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more information about the source 
 parameters, refer to Appendix-1)
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
 EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
-\end{lstlisting}
+\end{verbatim}
 
 \item Change the filter, as explained in step 4, and repeat step 7.
 
 \item Find the time shift between the synthetics and real data, shift the synthetics 
 accordingly and plot the results:
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
 shift_synthetics
-\end{lstlisting}
+\end{verbatim}
 
 \item Map the calculated time shifts in step 9 on the location of stations:
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_travel_time_map.py EVENTS/EVENT-1
-\end{lstlisting}
+\end{verbatim}
 
 \end{enumerate}
 
@@ -259,9 +259,9 @@ done automatically. \\
 
 All you should do to run PyAxi for an input file (inpython.cfg) and station list 
 (STATIONS) is:
-\begin{lstlisting}
+\begin{verbatim}
 $ python PyAxi <inpython.cfg> <STATIONS>
-\end{lstlisting}
+\end{verbatim}
 
 and the rest should be done automatically. inpython.cfg is a conguration file that 
 contains all the AXISEM options. To change the input file, open inpython.cfg with 
@@ -270,13 +270,13 @@ the events in Virtual-box. (refer to APPENDIX-2 for more information, Figure A2
 \textit{INPUT\_FILES}) Therefore, to run the AXISEM for the provided events (EVENT-1 
 and IASP91-5sec as an example), it is enough to replace:
 
-\begin{lstlisting}
+\begin{verbatim}
 <inpython.cfg>: 
 ~/Desktop/EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec/INPUT_FILES/inpython.cfg
 
 <STATIONS>:
 ~/Desktop/EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec/INPUT_FILES/STATIONS
-\end{lstlisting}
+\end{verbatim}
 
 \newpage
 
@@ -288,9 +288,9 @@ and outcomes for each step. For this reason, we focus on one of the events, EVEN
 Start from within the $\sim$/Desktop/EVENTS/SCRIPTS directory:
 
 1. Plot one of the events (listed in EVENTS directory, we choose EVENT-1 in this example):
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_station_event_distribution.py EVENTS/EVENT-1
-\end{lstlisting}
+\end{verbatim}
 * For more information on the folder structure of your Virtual-Box, refer to Appendix-2.
 
 \begin{center}
@@ -306,16 +306,16 @@ $ plot_station_event_distribution.py EVENTS/EVENT-1
 \leftskip=0pt
 2. To get an overview on both real data and pre-simulated seismograms: (e.g. PREM\_ANISO 
 for 5 seconds dominant period) [Figure A3]
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-\end{lstlisting}
+\end{verbatim}
 
 3.Cut the waveforms for Pdiff and PKiKP seismic phases and plot the seismograms: 
 (compared with real data)
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
-\end{lstlisting}
+\end{verbatim}
 
 \begin{figure}
 %%\begin{figure}[htbp]
@@ -352,10 +352,10 @@ values at top of the file) \\
 For this example, ????? we change hfreq (high frequency) in line 34 to 0.05Hz (20sec) and \textit{lfreq }to 0.01Hz: (Figure 
 A5)
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff specfem3d
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP specfem3d
-\end{lstlisting}
+\end{verbatim}
 
 
 \begin{figure}
@@ -379,10 +379,10 @@ Pdiff and PKiKP phases.}
 5. Compare the results of two different background models (\textit{PREM\_ANISO\_5sec} with 
 \textit{IASP91\_5sec)} for Pdiff phase: (Figure A6).
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
 EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
-\end{lstlisting}
+\end{verbatim}
 
 6. Change the filter, as explained in step 4, and repeat step 5. Here, we increase 
 the \textit{hfreq} to 0.2Hz and \textit{lfreq} to 0.05Hz (Figure A7).
@@ -411,10 +411,10 @@ background models (Pdiff).}
 PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more information about the source 
 parameters, refer to Appendix-1) [Figure A8]
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
 EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
-\end{lstlisting}
+\end{verbatim}
 
 \begin{figure}
 \centering
@@ -431,17 +431,17 @@ the \textit{hfreq} to 0.05Hz and \textit{lfreq} to 0.01Hz. (Figure A9)
 9. Find the time shift between the synthetics and real data, shift the synthetics 
 accordingly and plot the results: (Figure A10)
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff shift_synthetics
-\end{lstlisting}
+\end{verbatim}
 
 \vspace{13pt}
 10. Map the calculated time shifts in step 9 on the station locations: (note that 
 it always plots the results of the latest comparison, i.e. Pdiff here) 
 
-\begin{lstlisting}
+\begin{verbatim}
 $ plot_travel_time_map.py EVENTS/EVENT-1
-\end{lstlisting}
+\end{verbatim}
 
 \begin{center}
 %%\begin{figure}[htbp]
@@ -516,52 +516,52 @@ the real data used in this tutorial can be retrieved automatically:
 
 \textbf{Event-1:}
 
-\begin{lstlisting}
+\begin{verbatim}
 ./obspyDMT.py --datapath EVENT-1_real --min_date 2009-07-15 --max_date 2009-07-16 
 --min_mag 7.0 --min_depth 20 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
 --offset 3600 --req_parallel --arc N
-\end{lstlisting}
+\end{verbatim}
 
 \textbf{Event-2:}
 
-\begin{lstlisting}
+\begin{verbatim}
 ./obspyDMT.py --datapath EVENT-2_real --min_date 2009-09-30 --max_date 2009-10-01 
 --min_mag 7.0 --min_depth 70 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
 --offset 3600 --req_parallel --arc N
-\end{lstlisting}
+\end{verbatim}
 
 \textbf{Event-3:}
 
-\begin{lstlisting}
+\begin{verbatim}
 ./obspyDMT.py --datapath EVENT-3_real --min_date 2006-10-15 --max_date 2006-10-16 
 --min_mag 6.0 --min_depth 20 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
 --offset 3600 --req_parallel --arc N
-\end{lstlisting}
+\end{verbatim}
 
 Moreover, the SPECFEM3D seismograms can be also retrieved in the same manner:
 
 \textbf{Event-1:}
 
-\begin{lstlisting}
+\begin{verbatim}
 ./obspyDMT.py --datapath EVENT-1 --min_date 2009-07-15 --max_date 2009-07-16 
 --min_mag 7.0 --min_depth 20 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
 --specfem3D --offset 3600 --req_parallel --arc N
-\end{lstlisting}
+\end{verbatim}
 
 \textbf{Event-2:}
 
-\begin{lstlisting}
+\begin{verbatim}
 ./obspyDMT.py --datapath EVENT-2 --min_date 2009-09-30 --max_date 2009-10-01 
 --min_mag 7.0 --min_depth 70 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
 --specfem3D --offset 3600 --req_parallel --arc N
-\end{lstlisting}
+\end{verbatim}
 
 \textbf{Event-3:}
 
-\begin{lstlisting}
+\begin{verbatim}
 ./obspyDMT.py --datapath EVENT-3 --min_date 2006-10-15 --max_date 2006-10-16 
 --min_mag 6.0 --min_depth 20 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
 --specfem3D --offset 3600 --req_parallel --arc N
-\end{lstlisting}
+\end{verbatim}
 
 \end{document}
