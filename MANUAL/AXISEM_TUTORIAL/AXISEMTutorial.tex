@@ -55,7 +55,7 @@ and not wavefields, 2 settings [different structures, sharpness of boundaries])
 \item installation of AxiSEM, obspy locally
 \end{itemize}
 %
-\section{Tutorial tasks}
+\section{Tutorial Overview}
 %
 \subsection{ObsPy}
 Some of the tools employed in this tutorial use ObsPy but the tutorial
@@ -64,9 +64,9 @@ constraints. The VirtualBox image contains an extensive amount of
 training material for Python, ObsPy and some third party libraries
 intended to get you started. Furthermore one of the core developers of
 ObsPy is present and able to answer any questions you might have. You
-can find all material related to ObsPy at ~/home/Desktop/ObsPy.
+can find all material related to ObsPy at \verb|Desktop/ObsPy|.
 %
-\subsection{Familiarity with AxiSEM}
+\subsection{AxiSEM - Hands On}
 The goal of this initial task is to familiarize users with the basic
 principles behind AxiSEM, its input/output structures and
 peculiarities such as post-processing. An end-to-end approach (meshing to
@@ -76,27 +76,37 @@ settings within the virtual box.
 \subsection{Data versus modeling: Obspy, AxiSEM, SPECFEM}
 The main goal of this part of the tutorial is to use AxiSEM for realistic scenarios, compare the 
 results with real seismograms and explore the effects of source parameters and 
-backgound model on the waveforms. In particular, we will learn how to:\\
-Load data with Obspy and plot seismogram cross sections;\\
-plot data vs. AxiSEM and SPECFEM synthetics (at 20s);\\
-compare data vs. AxiSEM synthetics for various frequencies and background models;\\
-analyze the influence on different source parameters on waveforms.
+backgound model on the waveforms. In particular, we will learn how to:
 
-\section{Virtual Box content}
+\begin{itemize}
+    \item Load data with Obspy and plot seismogram cross sections;
+    \item plot data vs. AxiSEM and SPECFEM synthetics (at 20s);
+    \item compare data vs. AxiSEM synthetics for various frequencies and background
+          models;
+    \item analyze the influence on different source parameters on waveforms.
+\end{itemize}
+
+
+\subsection{Virtual Box content}
 The box is organized into 3 folders: AXISEM, OBSPY, EVENTS. The entire
 data-vs-modeling section is within EVENTS, including all data and pre-computed
 synthetics. AXISEM contains the source code and the precomputed run
 for the long-period section.
 
-\section{AxiSEM familiarity}
+
+
+\section{AxiSEM - Hands On}
 \emph{Low-frequency simulation at period 50/100 s (20min)}
 \begin{enumerate}
-\item change AxiSEM input parameters to run this scenario, submit job
-\item check mesh, background model, source-receiver geometry (google earth)
-\item post processing on 50s run: filter, sum, rotate, movie snapshots
+    \item change AxiSEM input parameters to run this scenario, submit job
+    \item check mesh, background model, source-receiver geometry (google earth)
+    \item post processing on 50s run: filter, sum, rotate, movie snapshots
 \end{enumerate}
 
 \newpage
+
+
+
 
 \section{Data and modeling}
 The main goal of this tutorial is to use AXISEM for real scenarios, 
@@ -108,76 +118,80 @@ For a brief walk-through, follow this:
 Start from within the \verb|Desktop/EVENTS/| directory:
 
 \begin{enumerate}
-\item Plot one of the events (listed in EVENTS directory, we choose EVENT-1 in this example):
-
-\begin{verbatim}
-$ plot_station_event_distribution.py EVENT-1
-\end{verbatim}
-* For more information on the folder structure of your Virtual-box, refer to Appendix-2.
-
-\item To get an overview on both real data and pre-simulated seismograms: (e.g. PREM\_ANISO 
-for 5 seconds dominant period)
-\begin{verbatim}
-$ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-\end{verbatim}
-
-\item Cut the waveforms for Pdiff and PKiKP seismic phases and plot the seismograms: 
-(compared with real data)
-\begin{verbatim}
-$ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
-$ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
-\end{verbatim}
-
-\item Change the filter in \textit{plot\_seismograms.py} script and compare the results with 
-\textit{SPECFEM3D}: (for changing the filter, open \textit{plot\_seismograms.py} and change 
-values at top of the file)
-
-\begin{verbatim}
-$ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
-specfem3d
-$ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP 
-specfem3d
-\end{verbatim}
-
-\item Compare the results of two different background models (\textit{PREM\_ANISO\_5sec} with 
-\textit{IASP91\_5sec)} for Pdiff phase:
-
-\begin{verbatim}
-$ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
-EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
-\end{verbatim}
-
-\item Change the filter, as explained in step 4, and repeat step 5.
-
-\item Compare the seismograms calculated for two different source parameters (PREM\_ANISO\_5sec and \\
-PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more information about the source 
-parameters, refer to Appendix-1)
-
-\begin{verbatim}
-$ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
-EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
-\end{verbatim}
-
-\item Change the filter, as explained in step 4, and repeat step 7.
-
-\item Find the time shift between the synthetics and real data, shift the synthetics 
-accordingly and plot the results:
-
-\begin{verbatim}
-$ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
-shift_synthetics
-\end{verbatim}
-
-\item Map the calculated time shifts in step 9 on the location of stations:
-
-\begin{verbatim}
-$ plot_travel_time_map.py EVENT-1
-\end{verbatim}
+    
+    \item Plot one of the events (listed in EVENTS directory, we choose EVENT-1 in this
+    example):
+    
+    \begin{verbatim}
+    $ plot_station_event_distribution.py EVENT-1
+    \end{verbatim}
+    * For more information on the folder structure of your Virtual-box, refer to
+    Appendix-2.
+    
+    \item To get an overview on both real data and pre-simulated seismograms: 
+    (e.g.  PREM\_ANISO for 5 seconds dominant period)
+    \begin{verbatim}
+    $ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
+    \end{verbatim}
+    
+    \item Cut the waveforms for Pdiff and PKiKP seismic phases and plot the seismograms: 
+    (compared with real data)
+    \begin{verbatim}
+    $ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
+    $ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
+    \end{verbatim}
+    
+    \item Change the filter in \textit{plot\_seismograms.py} script and compare the
+    results with \textit{SPECFEM3D}: (for changing the filter, open
+    \textit{plot\_seismograms.py} and change values at top of the file)
+    
+    \begin{verbatim}
+    $ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+    specfem3d
+    $ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP 
+    specfem3d
+    \end{verbatim}
+    
+    \item Compare the results of two different background models
+    (\textit{PREM\_ANISO\_5sec} with \textit{IASP91\_5sec)} for Pdiff phase:
+    
+    \begin{verbatim}
+    $ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+    EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
+    \end{verbatim}
+    
+    \item Change the filter, as explained in step 4, and repeat step 5.
+    
+    \item Compare the seismograms calculated for two different source parameters
+    (PREM\_ANISO\_5sec and \\ PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more
+    information about the source parameters, refer to Appendix-1)
+    
+    \begin{verbatim}
+    $ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+    EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
+    \end{verbatim}
+    
+    \item Change the filter, as explained in step 4, and repeat step 7.
+    
+    \item Find the time shift between the synthetics and real data, shift the synthetics
+    accordingly and plot the results:
+    
+    \begin{verbatim}
+    $ plot_seismograms.py EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+    shift_synthetics
+    \end{verbatim}
+    
+    \item Map the calculated time shifts in step 9 on the location of stations:
+    
+    \begin{verbatim}
+    $ plot_travel_time_map.py EVENT-1
+    \end{verbatim}
 
 \end{enumerate}
 
 \newpage
-{\large{}\textbf{APPENDIX-1: Events}}
+\appendix
+\section{APPENDIX-1: Events}
 
 Three events are selected for this tutorial (Figure-A1) with the following source 
 characteristics:
@@ -216,7 +230,7 @@ characteristics:
 
 \newpage
 
-{\large{}\textbf{APPENDIX-2: Folder structure}}
+\section{APPENDIX-2: Folder structure}
 
 Figure A2 shows how the events (and their meta-data), waveforms and scripts are 
 organized in the Virtual-box:
@@ -250,7 +264,7 @@ the required input files to re-produce them.
 
 
 \newpage
-{\large{}\textbf{APPENDIX-3: A Quick Guide to PyAxi}}
+\section{APPENDIX-3: A Quick Guide to PyAxi}
 
 PyAxi is a Python script developed as an interface for AXISEM. All the options 
 available in AXISEM are included in only one input file (inpython.cfg). By running 
@@ -280,7 +294,7 @@ and IASP91-5sec as an example), it is enough to replace:
 
 \newpage
 
-{\large{}\textbf{APPENDIX-4: Run AXISEM for EVENT-1}}
+\section{APPENDIX-4: Run AXISEM for EVENT-1}
 
 In this appendix, we follow the steps in the main tutorial and show the commands 
 and outcomes for each step. For this reason, we focus on one of the events, EVENT-1. \\
@@ -476,7 +490,7 @@ that in the synthetic one.}
 \leftskip=0pt
 
 \newpage
-{\large{}\textbf{APPENDIX-5: Retrieving real data and SPECFEM3D seismograms automatically}}
+\section{APPENDIX-5: Retrieving real data and SPECFEM3D seismograms automatically}
 
 {\color{color18} \emph{obspyDMT}} (ObsPy Data Management Tool) is a command line 
 tool for retrieving, processing and management of massive seismological data in 
