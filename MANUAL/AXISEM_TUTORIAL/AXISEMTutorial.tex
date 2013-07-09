@@ -96,12 +96,70 @@ for the long-period section.
 
 
 \section{AxiSEM - Hands On}
-\emph{Low-frequency simulation at period 50/100 s (20min)}
+
+\subsection{MESHER - generate a Mesh}
+
 \begin{enumerate}
-    \item change AxiSEM input parameters to run this scenario, submit job
-    \item check mesh, background model, source-receiver geometry (google earth)
-    \item post processing on 50s run: filter, sum, rotate, movie snapshots
+    \item Open a terminal, go to the \verb|Desktop/axisem/MESHER| folder and open the
+    \verb|inparam_mesh| file with your favourite editor:
+    %
+    \begin{verbatim}
+    $ cd Desktop/axisem/MESHER
+    $ vi inparam_mesh
+    \end{verbatim}
+    %
+    The parameters should be readily set, but you might want to double check and verify:
+    %
+    \begin{verbatim}
+    BACKGROUND_MODEL    'prem_ani_light'
+    DOMINANT_PERIOD     100.0
+    NCPU                1
+    WRITE_VTK           true
+    COARSENING_LAYERS   2
+    \end{verbatim}
+    %
+    The file should be self-explainatory. NB: Models without crust ('light') allow for a
+    larger time step and hence run a lot faster on the box. The virtual box only has a
+    single processor, so parallelization does not speed up the simulation.
+
+    \item Run the mesher, and watch the progress:
+    %
+    \begin{verbatim}
+    $ ./submit
+    $ tailf OUTPUT
+    \end{verbatim}
+    %
+    The meshing should be really quick for the chosen parameters. Wait for 
+    \verb|....DONE WITH MESHER !| to appear.
+
+    \item Take a look at the mesh with paraview
+    \begin{verbatim}
+    $ paraview
+    \end{verbatim}
+    %
+    open one of the vtk files in the subfolder \verb|Diags|, eg \verb|mesh_vp.vtk|
+    and click apply in the properties panel on the left. (you might get an OpenGL Error
+    on the virtual box, which you can ignore). To see the mesh, change the representation
+    from 'surface' to 'surface with edges'. You can open other vtk files to look at other
+    properties of the model and the mesh. You might need to rescale the colorange by
+    clicking on the left-right arrow symbol in the top left.
+    
+    \item Move the mesh to the solver directory and give it a meaningful name:
+    \begin{verbatim}
+    $ ./movmesh prem_ani_light_100s
+    \end{verbatim}
+
 \end{enumerate}
+
+\subsection{SOLVER - solve the elastic wave equation}
+
+\subsection{POSTPROCESSING - rotate and sum seismograms and wavefields}
+%\emph{Low-frequency simulation at period 50/100 s (20min)}
+%\begin{enumerate}
+%    \item change AxiSEM input parameters to run this scenario, submit job
+%    \item check mesh, background model, source-receiver geometry (google earth)
+%    \item post processing on 50s run: filter, sum, rotate, movie snapshots
+%\end{enumerate}
 
 \newpage
 
