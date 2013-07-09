@@ -22,8 +22,28 @@ set simtype = `grep "SIMULATION_TYPE" inparam_basic |awk '{print $2}' `
 
 if ( $simtype == 'single' ) then
     set simdir1 = './'
+    if ( `grep FINISHED OUTPUT_* | wc -l` == 0 ) then
+        echo "SOLVER run not yet finished...hang on a second"
+       exit
+    endif
 else if ( $simtype == 'moment' ) then
     set simdir1 = 'MZZ'
+    if ( `grep FINISHED MZZ/OUTPUT_* | wc -l` == 0 ) then
+        echo "SOLVER run MZZ not yet finished...hang on a second"
+        exit
+    endif
+    if ( `grep FINISHED MXX_P_MYY/OUTPUT_* | wc -l` == 0 ) then
+        echo "SOLVER run MXX_P_MYY not yet finished...hang on a second"
+        exit
+    endif
+    if ( `grep FINISHED MXY_MXX_M_MYY/OUTPUT_* | wc -l` == 0 ) then
+        echo "SOLVER run MXY_MXX_M_MYY not yet finished...hang on a second"
+        exit
+    endif
+    if ( `grep FINISHED MXZ_MYZ/OUTPUT_* | wc -l` == 0 ) then
+        echo "SOLVER run MXZ_MYZ not yet finished...hang on a second"
+        exit
+    endif
 else
     echo 'postprocessing only implemented for SIMULATION_TYPE single and moment'
     exit

@@ -8,7 +8,7 @@ if ( ${#argv} < 1 || "$1" == "-h" ) then
 endif
 
 # test if mesher finished without problems:
-if (`tail -n 1 OUTPUT |grep 'DONE WITH MESHER'|wc -l` != '1') then
+if (`grep 'DONE WITH MESHER' OUTPUT | wc -l` != '1') then
   echo "ERROR: MESHER did not finish yet or encountered a problem."
   echo "       Check 'OUTPUT' file for more details."
   exit
