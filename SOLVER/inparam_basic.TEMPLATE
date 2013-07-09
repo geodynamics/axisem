@@ -9,10 +9,9 @@
 SIMULATION_TYPE   single
 
 #### SIMULATION PARAMETERS ####
-# Choose desired seismogram length and sampling rate in seconds
-# Select 0.0, for SAMPLING_RATE==TIME_STEP (default: 0.0)
+# Choose desired seismogram length 
 
-#SEISMOGRAM_LENGTH  1800.
+SEISMOGRAM_LENGTH  1800.
 
 # Receiver file type, allowed options:
 # colatlon: Colatitude and Longitude for each station.

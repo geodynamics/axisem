@@ -2,6 +2,9 @@
 
 ############### TIME PARAMETERS #################################################
 
+# seismogram sampling rate in seconds
+# Select 0.0, for SAMPLING_RATE==TIME_STEP (default: 0.0)
+# important consideration: aliasing in case of dirac/heaviside sources
 #SAMPLING_RATE       1.0 
 
 # Choose desired simulation time step
