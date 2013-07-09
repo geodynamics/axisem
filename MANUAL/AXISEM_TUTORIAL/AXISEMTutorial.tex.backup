@@ -127,23 +127,21 @@ $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
 \end{lstlisting}
 
-\item Change the filter in \textit{epi\_plot.py} script and compare the results with 
-\textit{SPECFEM3D}: (for changing the filter, open \textit{epi\_plot.py }and change 
-hfreq and lfreq in INPUT section [line 34].)
+\item Change the filter in \textit{plot\_seismograms.py} script and compare the results with 
+\textit{SPECFEM3D}: (for changing the filter, open \textit{plot\_seismograms.py} and change 
+values at top of the file)
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-Pdiff specfem3d
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-PKiKP specfem3d
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff specfem3d
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP specfem3d
 \end{lstlisting}
 
-\item Compare the results of two different background models (PREM\_ANISO\_5sec with 
-IASP91\_5sec) for Pdiff phase:
+\item Compare the results of two different background models (\textit{PREM\_ANISO\_5sec} with 
+\textit{IASP91\_5sec)} for Pdiff phase:
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-Pdiff EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
 \end{lstlisting}
 
 \item Change the filter, as explained in step 4, and repeat step 5.
@@ -153,8 +151,8 @@ PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more information about the source
 parameters, refer to Appendix-1)
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-Pdiff EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
 \end{lstlisting}
 
 \item Change the filter, as explained in step 4, and repeat step 7.
@@ -163,14 +161,13 @@ Pdiff EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
 accordingly and plot the results:
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-Pdiff shift_synthetics 
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff shift_synthetics
 \end{lstlisting}
 
 \item Map the calculated time shifts in step 9 on the location of stations:
 
 \begin{lstlisting}
-$ tt_plot.py EVENTS/EVENT-1
+$ plot_travel_time_map.py EVENTS/EVENT-1
 \end{lstlisting}
 
 \end{enumerate}
@@ -314,11 +311,11 @@ $ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
 \end{lstlisting}
 
 \begin{figure}
-\begin{center}
 %%\begin{figure}[htbp]
 \includegraphics[width=497pt, height=287pt, keepaspectratio=true]{AXISEMTutorial-fig007.png}
 %%\caption{This should be the caption for \texttt{AXISEMTutorial-fig007.png}.}
 %%\end{figure}
+\begin{center}
 {\small{}Figure A3:Real and AXISEM waveforms for EVENT-1}
 \end{center}
 \end{figure}
@@ -353,24 +350,25 @@ $ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff specfem3
 $ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP specfem3d
 \end{lstlisting}
 
-%%\begin{figure}[htbp]
-\includegraphics[width=238pt, height=321pt, keepaspectratio=true]{AXISEMTutorial-fig010.pdf}
-%%\caption{This should be the caption for \texttt{AXISEMTutorial-fig010.pict}.}
-%%\end{figure}
 
-%%\begin{figure}[htbp]
-\includegraphics[width=233pt, height=311pt, keepaspectratio=true]{AXISEMTutorial-fig011.pdf}
-%%\caption{This should be the caption for \texttt{AXISEMTutorial-fig011.pict}.}
-%%\end{figure}
-
+\begin{figure}
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1.\linewidth]{AXISEMTutorial-fig010.pdf}
+  %\includegraphics[width=.4\linewidth]{image1}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=1.\linewidth]{AXISEMTutorial-fig011.pdf}
+%   \includegraphics[width=.4\linewidth]{image1}
+\end{minipage}
 \begin{center}
 {\small{}Figure A5: Comparison between real, AXISEM and SPECFEM3D waveforms for 
 Pdiff and PKiKP phases.}
 \end{center}
+\end{figure}
 
-\vspace{13pt}
-\baselineskip=13pt
-\leftskip=0pt
 5. Compare the results of two different background models (PREM\_ANISO\_5sec with 
 IASP91\_5sec) for Pdiff phase: (Figure A6).
 
@@ -382,26 +380,26 @@ EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
 6. Change the filter, as explained in step 4, and repeat step 5. Here, we increase 
 the \textit{hfreq} to 0.2Hz and \textit{lfreq} to 0.05Hz (Figure A7).
 
-\begin{center}
+\begin{figure}
+\centering
 %%\begin{figure}[htbp]
 \includegraphics[width=234pt, height=310pt, keepaspectratio=true]{AXISEMTutorial-fig012.png}
-%%\caption{This should be the caption for \texttt{AXISEMTutorial-fig012.png}.}
-%%\end{figure}
-
+\begin{center}
 {\small{}Figure A6: Comparison between real and AXISEM waveforms for two different 
 background models (Pdiff).}
+\end{center}
+\end{figure}
 
+\begin{figure}
+\centering
 %%\begin{figure}[htbp]
 \includegraphics[width=241pt, height=320pt, keepaspectratio=true]{AXISEMTutorial-fig013.png}
-%%\caption{This should be the caption for \texttt{AXISEMTutorial-fig013.png}.}
-%%\end{figure}
-
+\begin{center}
 {\small{}Figure A7: Comparison between real and AXISEM waveforms for two different 
-background models (Pdiff).}
+background models (Pdiff).} 
 \end{center}
+\end{figure}
 
-\baselineskip=13pt
-\leftskip=0pt
 7. Compare the seismograms calculated for two different source parameters (PREM\_ANISO\_5sec 
 and PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more information about the source 
 parameters, refer to Appendix-1) [Figure A8]
@@ -411,18 +409,15 @@ $ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
 EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
 \end{lstlisting}
 
-\begin{center}
-%%\begin{figure}[htbp]
+\begin{figure}
+\centering
 \includegraphics[width=234pt, height=310pt, keepaspectratio=true]{AXISEMTutorial-fig014.png}
-%%\caption{This should be the caption for \texttt{AXISEMTutorial-fig014.png}.}
-%%\end{figure}
-
+\begin{center}
 {\small{}Figure A8: Comparison between real and AXISEM waveforms for two different 
 source parameters (Pdiff).}
 \end{center}
+\end{figure}
 
-\baselineskip=13pt
-\leftskip=0pt
 8. Change the filter, as explained in step 4, and repeat step 7. Here, we decrease 
 the \textit{hfreq} to 0.05Hz and \textit{lfreq} to 0.01Hz. (Figure A9)
 
@@ -476,7 +471,7 @@ that in the synthetic one.}
 
 {\color{color18} \emph{obspyDMT}} (ObsPy Data Management Tool) is a command line 
 tool for retrieving, processing and management of massive seismological data in 
-a fully automatic way which could be run in serial or in parallel. 
+a fully automatic way which could be run in serial or in parallel. \\
 
 This tool is developed to mainly address the following tasks automatically:
 
@@ -505,7 +500,7 @@ pair), epicentral-distance plots for all archived waveforms and seismicity maps)
 Here, we use obspyDMT to retrieve both real data and SPECFEM3D seismograms. For 
 more information about this tool please refer to the following webpage:
 
-{\color{color18} \emph{https://github.com/kasra-hosseini/obspyDMT}} 
+{\color{color18} \emph{https://github.com/kasra-hosseini/obspyDMT}}  \\
 
 obspyDMT is installed on your virtual machine. By running the following commands, 
 the real data used in this tutorial can be retrieved automatically:
@@ -513,25 +508,25 @@ the real data used in this tutorial can be retrieved automatically:
 \textbf{Event-1:}
 
 \begin{lstlisting}
-./obspyDMT.py --datapath EVENT-1\_real --min\_date 2009-07-15 --max\_date 2009-07-16 
---min\_depth 20 --list\_stas \textasciitilde{}/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
---offset 3600 --min\_mag 7.0 --req\_parallel --arc N 
+./obspyDMT.py --datapath EVENT-1_real --min_date 2009-07-15 --max_date 2009-07-16 
+--min_mag 7.0 --min_depth 20 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
+--offset 3600 --req_parallel --arc N
 \end{lstlisting}
 
 \textbf{Event-2:}
 
 \begin{lstlisting}
-./obspyDMT.py --datapath EVENT-2\_real --min\_date 2009-09-30 --max\_date 2009-10-01 
---min\_depth 70 --list\_stas \textasciitilde{}/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
---offset 3600 --min\_mag 7.0 --req\_parallel --arc N 
+./obspyDMT.py --datapath EVENT-2_real --min_date 2009-09-30 --max_date 2009-10-01 
+--min_mag 7.0 --min_depth 70 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
+--offset 3600 --req_parallel --arc N
 \end{lstlisting}
 
 \textbf{Event-3:}
 
 \begin{lstlisting}
-./obspyDMT.py --datapath EVENT-3\_real --min\_date 2006-10-15 --max\_date 2006-10-16 
---min\_depth 20 --list\_stas \textasciitilde{}/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
---offset 3600 --min\_mag 6.0 --req\_parallel --arc N 
+./obspyDMT.py --datapath EVENT-3_real --min_date 2006-10-15 --max_date 2006-10-16 
+--min_mag 6.0 --min_depth 20 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
+--offset 3600 --req_parallel --arc N
 \end{lstlisting}
 
 Moreover, the SPECFEM3D seismograms can be also retrieved in the same manner:
@@ -539,25 +534,25 @@ Moreover, the SPECFEM3D seismograms can be also retrieved in the same manner:
 \textbf{Event-1:}
 
 \begin{lstlisting}
-./obspyDMT.py --datapath EVENT-1 --min\_date 2009-07-15 --max\_date 2009-07-16 
---min\_depth 20 --list\_stas \textasciitilde{}/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
---specfem3D --offset 3600 --min\_mag 7.0 --req\_parallel --arc N 
+./obspyDMT.py --datapath EVENT-1 --min_date 2009-07-15 --max_date 2009-07-16 
+--min_mag 7.0 --min_depth 20 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
+--specfem3D --offset 3600 --req_parallel --arc N
 \end{lstlisting}
 
 \textbf{Event-2:}
 
 \begin{lstlisting}
-./obspyDMT.py --datapath EVENT-2 --min\_date 2009-09-30 --max\_date 2009-10-01 
---min\_depth 70 --list\_stas \textasciitilde{}/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
---specfem3D --offset 3600 --min\_mag 7.0 --req\_parallel --arc N 
+./obspyDMT.py --datapath EVENT-2 --min_date 2009-09-30 --max_date 2009-10-01 
+--min_mag 7.0 --min_depth 70 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
+--specfem3D --offset 3600 --req_parallel --arc N
 \end{lstlisting}
 
 \textbf{Event-3:}
 
 \begin{lstlisting}
-./obspyDMT.py --datapath EVENT-3 --min\_date 2006-10-15 --max\_date 2006-10-16 
---min\_depth 20 --list\_stas \textasciitilde{}/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
---specfem3D --offset 3600 --min\_mag 6.0 --req\_parallel --arc N 
+./obspyDMT.py --datapath EVENT-3 --min_date 2006-10-15 --max_date 2006-10-16 
+--min_mag 6.0 --min_depth 20 --list_stas ~/Desktop/EVENTS/EVENT-1/INFO/STATIONS 
+--specfem3D --offset 3600 --req_parallel --arc N
 \end{lstlisting}
 
 \end{document}

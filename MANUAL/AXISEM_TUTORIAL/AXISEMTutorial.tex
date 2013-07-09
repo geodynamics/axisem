@@ -20,6 +20,7 @@
 \usepackage{color}
 \usepackage[a4paper,vmargin={20mm,20mm},hmargin={20mm,10mm}]{geometry}
 \usepackage{listings}
+% \lstset{inputencoding=ansinew}
 
 \definecolor{color18}{rgb}{0.07,0.33,0.80}
 
@@ -127,23 +128,23 @@ $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
 $ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
 \end{lstlisting}
 
-\item Change the filter in \textit{epi\_plot.py} script and compare the results with 
-\textit{SPECFEM3D}: (for changing the filter, open \textit{epi\_plot.py }and change 
-hfreq and lfreq in INPUT section [line 34].)
+\item Change the filter in \textit{plot\_seismograms.py} script and compare the results with 
+\textit{SPECFEM3D}: (for changing the filter, open \textit{plot\_seismograms.py} and change 
+values at top of the file)
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-Pdiff specfem3d
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-PKiKP specfem3d
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+specfem3d
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP 
+specfem3d
 \end{lstlisting}
 
-\item Compare the results of two different background models (PREM\_ANISO\_5sec with 
-IASP91\_5sec) for Pdiff phase:
+\item Compare the results of two different background models (\textit{PREM\_ANISO\_5sec} with 
+\textit{IASP91\_5sec)} for Pdiff phase:
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-Pdiff EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
 \end{lstlisting}
 
 \item Change the filter, as explained in step 4, and repeat step 5.
@@ -153,8 +154,8 @@ PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more information about the source
 parameters, refer to Appendix-1)
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-Pdiff EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
 \end{lstlisting}
 
 \item Change the filter, as explained in step 4, and repeat step 7.
@@ -163,14 +164,14 @@ Pdiff EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
 accordingly and plot the results:
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
-Pdiff shift_synthetics 
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+shift_synthetics
 \end{lstlisting}
 
 \item Map the calculated time shifts in step 9 on the location of stations:
 
 \begin{lstlisting}
-$ tt_plot.py EVENTS/EVENT-1
+$ plot_travel_time_map.py EVENTS/EVENT-1
 \end{lstlisting}
 
 \end{enumerate}
@@ -189,16 +190,19 @@ characteristics:
 
 {\small{}Figure A1: beach ball diagrams of event-1 to event-3 (based on GCMT catalog)}
 
+\vspace{1cm}
 %%\begin{figure}[htbp]
 \includegraphics[width=312pt, height=110pt, keepaspectratio=true]{AXISEMTutorial-fig002.png}
 %%\caption{This should be the caption for \texttt{AXISEMTutorial-fig002.png}.}
 %%\end{figure}
 
+\vspace{1cm}
 %%\begin{figure}[htbp]
 \includegraphics[width=312pt, height=110pt, keepaspectratio=true]{AXISEMTutorial-fig003.png}
 %%\caption{This should be the caption for \texttt{AXISEMTutorial-fig003.png}.}
 %%\end{figure}
 
+\vspace{1cm}
 %%\begin{figure}[htbp]
 \includegraphics[width=312pt, height=110pt, keepaspectratio=true]{AXISEMTutorial-fig004.png}
 %%\caption{This should be the caption for \texttt{AXISEMTutorial-fig004.png}.}
@@ -228,9 +232,9 @@ Figure A2: Folder structure
 In \textit{SCRIPTS} directory, there are three python scripts that we use here:
 
 \begin{enumerate}
- \item \textbf{staev\_plot.py}: maps event and stations of an event directory.
- \item \textbf{epi\_plot.py}: plotting tool for comparison purposes.
- \item \textbf{ tt\_plot.py}: project the time shift derived by cross correlating the AXISEM waveforms and real data.
+ \item \textbf{plot\_station\_event\_distribution.py}: maps event and stations of an event directory.
+ \item \textbf{plot\_seismograms.py}: plotting tool for comparison purposes.
+ \item \textbf{plot\_travel\_time\_map.py}: project the time shift derived by cross correlating the AXISEM waveforms and real data.
 \end{enumerate}
 
 In \textit{EVENTS} directory, there are three events, each with the following sub-directories:
@@ -281,11 +285,11 @@ and IASP91-5sec as an example), it is enough to replace:
 In this appendix, we follow the steps in the main tutorial and show the commands 
 and outcomes for each step. For this reason, we focus on one of the events, EVENT-1. \\
 
-Start from within the EVENTS/SCRIPTS directory:
+Start from within the $\sim$/Desktop/EVENTS/SCRIPTS directory:
 
-1. Plot one of the events (listed in EVENTS directory, EVENT-1 in this example):
+1. Plot one of the events (listed in EVENTS directory, we choose EVENT-1 in this example):
 \begin{lstlisting}
-$ staev_plot.py EVENTS/EVENT-1
+$ plot_station_event_distribution.py EVENTS/EVENT-1
 \end{lstlisting}
 * For more information on the folder structure of your Virtual-Box, refer to Appendix-2.
 
@@ -303,22 +307,22 @@ $ staev_plot.py EVENTS/EVENT-1
 2. To get an overview on both real data and pre-simulated seismograms: (e.g. PREM\_ANISO 
 for 5 seconds dominant period) [Figure A3]
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec
 \end{lstlisting}
 
 3.Cut the waveforms for Pdiff and PKiKP seismic phases and plot the seismograms: 
 (compared with real data)
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP
 \end{lstlisting}
 
 \begin{figure}
-\begin{center}
 %%\begin{figure}[htbp]
 \includegraphics[width=497pt, height=287pt, keepaspectratio=true]{AXISEMTutorial-fig007.png}
 %%\caption{This should be the caption for \texttt{AXISEMTutorial-fig007.png}.}
 %%\end{figure}
+\begin{center}
 {\small{}Figure A3:Real and AXISEM waveforms for EVENT-1}
 \end{center}
 \end{figure}
@@ -342,15 +346,15 @@ PKiKP phases.}
 \end{figure}
 
 
-4. Change the filter in \textit{epi\_plot.py} script and compare the results with 
-\textit{SPECFEM3D}: (for changing the filter, open \textit{epi\_plot.py }and change 
-hfreq and lfreq in INPUT section [line 34]). For this example, we change hfreq 
-(high frequency) in line 34 to 0.05Hz (20sec) and \textit{lfreq }to 0.01Hz: (Figure 
+4. Change the filter in \textit{plot\_seismograms.py} script and compare the results with 
+\textit{SPECFEM3D}: (for changing the filter, open \textit{plot\_seismograms.py} and change 
+values at top of the file) \\
+For this example, ????? we change hfreq (high frequency) in line 34 to 0.05Hz (20sec) and \textit{lfreq }to 0.01Hz: (Figure 
 A5)
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff specfem3d
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP specfem3d
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff specfem3d
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec PKiKP specfem3d
 \end{lstlisting}
 
 
@@ -372,11 +376,11 @@ Pdiff and PKiKP phases.}
 \end{center}
 \end{figure}
 
-5. Compare the results of two different background models (PREM\_ANISO\_5sec with 
-IASP91\_5sec) for Pdiff phase: (Figure A6).
+5. Compare the results of two different background models (\textit{PREM\_ANISO\_5sec} with 
+\textit{IASP91\_5sec)} for Pdiff phase: (Figure A6).
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
 EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/IASP91_5sec
 \end{lstlisting}
 
@@ -403,12 +407,12 @@ background models (Pdiff).}
 \end{center}
 \end{figure}
 
-7. Compare the seismograms calculated for two different source parameters (PREM\_ANISO\_5sec 
-and PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more information about the source 
+7. Compare the seismograms calculated for two different source parameters (PREM\_ANISO\_5sec and \\
+PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more information about the source 
 parameters, refer to Appendix-1) [Figure A8]
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff 
 EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec_GCMT
 \end{lstlisting}
 
@@ -421,14 +425,14 @@ source parameters (Pdiff).}
 \end{center}
 \end{figure}
 
-8. Change the filter, as explained in step 4, and repeat step 7. Here, we decrease 
+8. Change the filter, as explained in step 4, and repeat step 7. ????? Here, we decrease 
 the \textit{hfreq} to 0.05Hz and \textit{lfreq} to 0.01Hz. (Figure A9)
 
 9. Find the time shift between the synthetics and real data, shift the synthetics 
 accordingly and plot the results: (Figure A10)
 
 \begin{lstlisting}
-$ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff shift_synthetics
+$ plot_seismograms.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff shift_synthetics
 \end{lstlisting}
 
 \vspace{13pt}
@@ -436,7 +440,7 @@ $ epi_plot.py EVENTS/EVENT-1/AXISEM_PRE_SIMULATED/PREM_ANISO_5sec Pdiff shift_sy
 it always plots the results of the latest comparison, i.e. Pdiff here) 
 
 \begin{lstlisting}
-$ tt_plot.py EVENTS/EVENT-1
+$ plot_travel_time_map.py EVENTS/EVENT-1
 \end{lstlisting}
 
 \begin{center}
@@ -455,6 +459,8 @@ source parameters (Pdiff).}
 
 {\small{}Figure A10: Comparison between real and AXISEM waveforms for Pdiff. AXISEM 
 waveforms are shifted in order to gain the maximum cross correlation coefficient.}
+
+\vspace{1cm}
 
 %%\begin{figure}[htbp]
 \includegraphics[width=446pt, height=217pt, keepaspectratio=true]{AXISEMTutorial-fig017.png}
