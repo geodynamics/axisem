@@ -137,16 +137,20 @@ for the long-period section.
     $ paraview
     \end{verbatim}
     %
-    open one of the vtk files in the subfolder \verb|Diags|, eg \verb|mesh_vp.vtk|
+    Open one of the vtk files in the subfolder \verb|Diags|, e.g.\ \verb|mesh_vp.vtk|
     and click apply in the properties panel on the left. (you might get an OpenGL Error
     on the virtual box, which you can ignore). To see the mesh, change the representation
     from 'surface' to 'surface with edges'. You can open other vtk files to look at other
     properties of the model and the mesh. You might need to rescale the colorange by
     clicking on the left-right arrow symbol in the top left.
-    
+
+    \begin{center}
+    \includegraphics[width=100mm]{paraview.png}
+    \end{center}
+        
     \item Move the mesh to the solver directory and give it a meaningful name:
     \begin{verbatim}
-    $ ./movmesh prem_ani_light_100s
+    $ ./movemesh prem_ani_light_100s
     \end{verbatim}
 
 \end{enumerate}
