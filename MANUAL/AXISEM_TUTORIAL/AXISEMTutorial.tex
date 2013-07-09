@@ -15,6 +15,9 @@
 \usepackage{ulem}
 \usepackage{amssymb}
 \usepackage{fancyhdr}
+
+\newcommand{\ttilde}[0]{\raise.17ex\hbox{$\scriptstyle\sim$}}
+
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
 \usepackage{color}
@@ -64,7 +67,7 @@ constraints. The VirtualBox image contains an extensive amount of
 training material for Python, ObsPy and some third party libraries
 intended to get you started. Furthermore one of the core developers of
 ObsPy is present and able to answer any questions you might have. You
-can find all material related to ObsPy at \verb|Desktop/ObsPy|.
+can find all material related to ObsPy at \ttilde\verb|/Desktop/ObsPy|.
 %
 \subsection{AxiSEM - Hands On}
 The goal of this initial task is to familiarize users with the basic
@@ -100,7 +103,7 @@ for the long-period section.
 \subsection{MESHER - generate a Mesh}
 
 \begin{enumerate}
-    \item Open a terminal, go to the \verb|Desktop/axisem/MESHER| folder and open the
+    \item Open a terminal, go to the \ttilde\verb|/Desktop/axisem/MESHER| folder and open the
     \verb|inparam_mesh| file with your favourite editor:
     %
     \begin{verbatim}
@@ -145,19 +148,107 @@ for the long-period section.
     clicking on the left-right arrow symbol in the top left.
 
     \begin{center}
-    \includegraphics[width=100mm]{paraview.png}
+    \includegraphics[width=80mm]{paraview.png}
     \end{center}
         
     \item Move the mesh to the solver directory and give it a meaningful name:
     \begin{verbatim}
-    $ ./movemesh prem_ani_light_100s
+    $ ./movemesh.csh prem_ani_light_100s
     \end{verbatim}
 
 \end{enumerate}
 
 \subsection{SOLVER - solve the elastic wave equation}
+    
+\begin{enumerate}
+    \item Go to the \ttilde\verb|/Desktop/axisem/SOLVER| folder and open the
+    \verb|inparam_basic| file with your favourite editor:
+    %
+    \begin{verbatim}
+    $ cd ../SOLVER
+    $ vi inparam_basic
+    \end{verbatim}
+    %
+    The parameters should be readily set, but you might want to double check and verify:
+    %
+    \begin{verbatim}
+    SIMULATION_TYPE     single
+    SEISMOGRAM_LENGTH   1800.
+    RECFILE_TYPE        stations 
+    MESHNAME            prem_ani_light_100s
+    ATTENUATION         true 
+    SAVE_SNAPSHOTS      true  
+    \end{verbatim}
+    %
+    \item First, we are taking a look at a basic sourcetype: a vertical dipole. This is
+    set by \verb|SIMULATION_TYPE single| and defined in the \verb|sourceparams.dat| file.
+    Run the solver, giving the run a meaningful name:
+    %
+    \begin{verbatim}
+    $ ./submit.csh prem_ani_light_100s_mzz
+    \end{verbatim}
+    %
+    This command compiles the code if needed and starts the simulation. You can observe
+    the progress in the outputfile:
+    %
+    \begin{verbatim}
+    $ cd prem_ani_light_100s_mzz
+    $ tailf OUTPUT_prem_ani_light_100s_mzz
+    \end{verbatim}
+    %
+    Once the run is finished, take a look at the wavefield with \verb|paraview|: open
+    the \verb|prem_ani_light_100s_mzz/Data/xdmf_xml_0000.xdmf| file and click apply. Go to
+    the last snapshot and rescale the color range, then click on play to see the wave
+    propagate.  You can also choose different components of the wavefield or the absolute
+    value.  For paraview experienced users: choose absolute value and a logarithmic
+    colorscale (e.g.\ 'black body radiation' looks nice).
+   
+    \begin{center}
+    \includegraphics[width=120mm]{paraview2.png}
+    \end{center}
+
+    \item Now simulate seismograms for a full moment tensor source: the source is defined
+    in the \verb|CMTSOLUTION| file and the one referred to as 'event-1' in the later tasks.
+    Stations are defined in the \verb|STATIONS| file. Go back to the \verb|SOLVER|
+    directory and change the \verb|inparam_basic| file such that:
+    %
+    \begin{verbatim}
+    SIMULATION_TYPE     moment
+    SAVE_SNAPSHOTS      false
+    \end{verbatim}
+    %
+    Run the solver, giving the run a meaningful name:
+    %
+    \begin{verbatim}
+    $ ./submit.csh prem_ani_light_100s_event1
+    \end{verbatim}
+    %
+    This command compiles the code if needed and starts four simulations at once, each
+    simulating a basic source type (two monopoles, a dipole and a quadrupole, for details
+    see Nissen-Meyer et al 2007). You can observe the progress in the outputfiles in
+    each's run subdirectory
+    %
+    \begin{verbatim}
+    $ cd prem_ani_light_100s_event1
+    $ tailf MZZ/OUTPUT_MZZ
+    \end{verbatim}
+    %
+    item Once all the jobs are done (check with \verb|top|), you can proceed with
+    postprocessing.
+    
+\end{enumerate}
+    
 
 \subsection{POSTPROCESSING - rotate and sum seismograms and wavefields}
+
+Postprocessing is a key feature of AxiSEM: the source mechanism can be modified
+without redoing the expensive simulation.
+
+\begin{enumerate}
+    \item
+\end{enumerate}
+
+
 %\emph{Low-frequency simulation at period 50/100 s (20min)}
 %\begin{enumerate}
 %    \item change AxiSEM input parameters to run this scenario, submit job
@@ -177,7 +268,7 @@ In case that you need more information,
 refer to Appendix-4 in which a complete example with all the commands and results is presented.
 For a brief walk-through, follow this:
 
-Start from within the \verb|Desktop/EVENTS/| directory:
+Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
 
 \begin{enumerate}
     
@@ -366,7 +457,7 @@ and IASP91-5sec as an example), it is enough to replace:
 In this appendix, we follow the steps in the main tutorial and show the commands 
 and outcomes for each step. For this reason, we focus on one of the events, EVENT-1. \\
 
-Start from within the \verb|Desktop/EVENTS| directory:
+Start from within the \ttilde\verb|/Desktop/EVENTS| directory:
 
 1. Plot one of the events (listed in EVENTS directory, we choose EVENT-1 in this example):
 \begin{verbatim}
