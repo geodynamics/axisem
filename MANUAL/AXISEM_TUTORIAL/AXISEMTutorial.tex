@@ -336,6 +336,7 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     results with \textit{SPECFEM3D}: (for changing the filter, open
     \textit{plot\_seismograms.py} and change values at top of the file)
     
+    Note: resolution in SPECFEM3D seismograms is 17 - 500 sec.
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff specfem3d
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec PKiKP specfem3d
@@ -350,7 +351,7 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     
     \item Change the filter, as explained in step 4, and repeat step 5.
     
-    \item Compare the seismograms calculated for two different source mechanism
+    \item Compare the seismograms calculated for two different source mechanisms
     (PREM\_ANISO\_5sec and \\ PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more
     information about the source parameters, refer to Appendix-1)
     
@@ -359,7 +360,8 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     EVENT-1/AXISEM/PREM_ANISO_5sec_GCMT
     \end{verbatim}
     
-    \item Change the filter, as explained in step 4, and repeat step 7. Try different filter setting and compare the results.
+    \item Try different filter setting and compare the results.
+    (Note: dominant period in synthetic seismograms is 5 sec.)
     
     \item Find the time shift between the synthetics and real data, shift the synthetics
     accordingly and plot the results:
@@ -445,7 +447,7 @@ sub-directories:
 
 \begin{enumerate}
     \item \textbf{AXISEM}: contains seismograms simulated by AXISEM with
-    the required PyAxi input files to re-produce them.
+    the required PyAxi (Appendix-3) input files (INPUT_FILES) to re-produce them.
     \item \textbf{REAL\_DATA}: seismograms retrieved from \textit{IRIS. }(refer to
     APPENDIX-4)
     \item \textbf{SPECFEM3D}: waveforms simulated by SPECFEM3D for comparison purposes 
@@ -484,6 +486,7 @@ and IASP91-5sec as an example), it is enough to replace:
     ~/Desktop/EVENTS/EVENT-1/AXISEM/IASP91_5sec/INPUT_FILES/STATIONS
 \end{verbatim}
 
+WARNING: this will take ages on the Virtual-box because of the dominant period (5sec).
 
 \newpage
 \section{APPENDIX-4: Retrieving real data and SPECFEM3D seismograms automatically}
