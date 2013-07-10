@@ -343,7 +343,7 @@ compare the results with real seismograms and 3D synthetics, and
 explore the effects of source parameters and backgound model on the waveforms. 
 % In case that you want more information, 
 % refer to Appendix-5 in which a complete example with all the commands and results is presented.
-For a brief walk-through, follow this:
+For a brief walk-through, follow this: \\
 
 Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
 
@@ -359,7 +359,7 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     Appendix-2.
     
     \item To get an overview on both real data and AxiSEM seismograms: 
-    (e.g.  PREM\_ANISO for 5 seconds dominant period) [Figure-1]
+    (e.g.  \textit{PREM\_ANISO} for 5 seconds dominant period) [Figure-1]
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec
     \end{verbatim}
@@ -372,10 +372,10 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     \end{verbatim}
     
     \item Change the filter in \ttilde\verb|/Desktop/EVENTS/SCRIPTS/plot_seismograms.py| script and compare the
-    results with \textit{SPECFEM3D}: (for changing the filter, open
-    \textit{plot\_seismograms.py} and change values at top of the file) [Figure-2] 
+    results with \textit{SPECFEM3D}: [Figure-2] 
     
-    Note: resolution in SPECFEM3D seismograms is 17 - 500 sec.
+    Note: for changing the filter, open \textit{plot\_seismograms.py} and change values at top of the file. \\
+    Note: resolution in \textit{SPECFEM3D} seismograms is 17 - 500 sec.
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff specfem3d
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec PKiKP specfem3d
@@ -391,16 +391,16 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     \item Change the filter, as explained in step 4, and repeat step 5.
     
     \item Compare the seismograms calculated for two different source mechanisms
-    (PREM\_ANISO\_5sec and \\ PREM\_ANSIO\_5sec\_GCMT) for Pdiff phase: (For more 
-    information about the source parameters, refer to Appendix-1) [Figure-3] 
+    (\textit{PREM\_ANISO\_5sec} and \\ \textit{PREM\_ANSIO\_5sec\_GCMT}) for Pdiff phase: [Figure-3] 
     
+    Note: for more information about the source parameters, refer to Appendix-1.\\
     Note: depth and location of the source can not be changed.
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff 
     EVENT-1/AXISEM/PREM_ANISO_5sec_GCMT
     \end{verbatim}
     
-    \item Try different filter setting and compare the results.
+    \item Try different filter settings and compare the results.
     (Note: dominant period in synthetic seismograms is 5 sec.)
     
     \item Find the time shift between the synthetics and real data, shift the synthetics
@@ -410,7 +410,7 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff shift_synthetics
     \end{verbatim}
     
-    \item Map the calculated time shifts in step 9 on the location of stations:
+    \item Map the calculated time shifts in step 9 on the station locations:
     
     \begin{verbatim}
     $ plot_travel_time_map.py EVENT-1
@@ -426,7 +426,7 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
 %%\caption{This should be the caption for \texttt{AXISEMTutorial-fig007.png}.}
 %%\end{figure}
 \begin{center}
-{\small{}Figure 1:Real and AXISEM waveforms for EVENT-1}
+{\small{}Figure 1: Real and AXISEM waveforms for EVENT-1.}
 \end{center}
 \end{figure}
 
@@ -439,7 +439,7 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
   %\includegraphics[width=.4\linewidth]{image1}
 
 {\small{}Figure 2: Comparison between real, AXISEM and SPECFEM3D waveforms for 
-Pdiff and PKiKP phases.}
+Pdiff phase. \\ Filter: 20 - 100 sec.}
 \end{minipage}%
 \begin{minipage}{.5\textwidth}
   \centering
@@ -447,7 +447,7 @@ Pdiff and PKiKP phases.}
 %   \includegraphics[width=.4\linewidth]{image1}
 
 {\small{}Figure 3: Comparison between real and AXISEM waveforms for two different 
-source parameters (Pdiff).}
+source parameters (Pdiff). \\ Filter: 5 - 20 sec.}
 \end{minipage}
 \begin{center}
 \end{center}
@@ -526,10 +526,9 @@ sub-directories:
     the required PyAxi (Appendix-3) input files (INPUT\_FILES) to re-produce them.
     \item \textbf{REAL\_DATA}: seismograms retrieved from \textit{IRIS. }(refer to
     APPENDIX-4)
-    \item \textbf{SPECFEM3D}: waveforms simulated by SPECFEM3D for comparison purposes 
-    (downloaded from\textit{ IRIS}, refer to APPENDIX-4)
-    \item \textbf{INFO}: information about the event and stations: event\_1.xml and
-    STATIONS
+    \item \textbf{SPECFEM3D}: waveforms simulated by \textit{SPECFEM3D} for comparison purposes. (downloaded from\textit{ IRIS}, refer to APPENDIX-4)
+    \item \textbf{INFO}: information about the event and stations: \textit{event\_1.xml} and
+    \textit{STATIONS}.
 \end{enumerate}
 
 
@@ -537,21 +536,22 @@ sub-directories:
 \section{APPENDIX-3: A Quick Guide to PyAxi}
 
 PyAxi is a Python script developed as an interface for AXISEM. All the options 
-available in AXISEM are included in only one input file (inpython.cfg). By running 
+available in AXISEM are included in only one input file (\textit{inpython.cfg}). By running 
 the script, all the necessary steps (MESHER, SOLVER and Post-Processing) will be 
 done automatically. \\
 
-All you should do to run PyAxi for an input file (inpython.cfg) and station list 
+All you should do to run PyAxi for an input file (\textit{inpython.cfg}) and station list 
 (STATIONS) is:
 \begin{verbatim}
     $ python PyAxi <inpython.cfg> <STATIONS>
 \end{verbatim}
 
-and the rest should be done automatically. inpython.cfg is a conguration file that 
-contains all the AXISEM options. To change the input file, open inpython.cfg with 
-an editor. However, you could find some already prepared inpython.cfg files for 
-the events in the Virtual-box. (refer to APPENDIX-2 for more information, Figure A2 
-\textit{INPUT\_FILES}) Therefore, to run AXISEM for the provided events (EVENT-1 
+and the rest should be done automatically. \\
+\textit{inpython.cfg} is a conguration file that 
+contains all the AXISEM options. To change the input file, open \textit{inpython.cfg} with 
+an editor. However, you could find some already prepared \textit{inpython.cfg} files for 
+the events in the Virtual-box. (refer to APPENDIX-2 for more information; \textit{INPUT\_FILES} in Figure A2) 
+Therefore, to run AXISEM for the provided events (EVENT-1 
 and IASP91-5sec as an example), it is enough to replace:
 
 \begin{verbatim}
@@ -562,7 +562,7 @@ and IASP91-5sec as an example), it is enough to replace:
     ~/Desktop/EVENTS/EVENT-1/AXISEM/IASP91_5sec/INPUT_FILES/STATIONS
 \end{verbatim}
 
-WARNING: this will take ages on the Virtual-box because of the dominant period (5sec).
+WARNING: this will take ages on the Virtual-box because of the dominant period (5sec) and available computing resources.
 
 \newpage
 \section{APPENDIX-4: Retrieving real data and SPECFEM3D seismograms automatically}

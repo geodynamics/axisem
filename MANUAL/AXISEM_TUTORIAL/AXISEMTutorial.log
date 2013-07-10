@@ -1,12 +1,17 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.30)  10 JUL 2013 14:08
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.15)  10 JUL 2013 14:26
 entering extended mode
  %&-line parsing enabled.
 **AXISEMTutorial.tex
 (./AXISEMTutorial.tex
 LaTeX2e <2009/09/24>
 Babel <v3.8l> and hyphenation patterns for english, usenglishmax, dumylang, noh
-yphenation, ngerman, german, german-x-2009-06-19, ngerman-x-2009-06-19, loaded.
-
+yphenation, farsi, arabic, croatian, bulgarian, ukrainian, russian, czech, slov
+ak, danish, dutch, finnish, french, basque, ngerman, german, german-x-2009-06-1
+9, ngerman-x-2009-06-19, ibycus, monogreek, greek, ancientgreek, hungarian, san
+skrit, italian, latin, latvian, lithuanian, mongolian2a, mongolian, bokmal, nyn
+orsk, romanian, irish, coptic, serbian, turkish, welsh, esperanto, uppersorbian
+, estonian, indonesian, interlingua, icelandic, kurmanji, slovenian, polish, po
+rtuguese, spanish, galician, catalan, swedish, ukenglish, pinyin, loaded.
 (/usr/share/texmf-texlive/tex/latex/base/article.cls
 Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
 (/usr/share/texmf-texlive/tex/latex/base/size10.clo
@@ -485,7 +490,8 @@ Package ifvtex Info: VTeX not detected.
 \Gm@odd@mp=\dimen109
 \Gm@even@mp=\dimen110
 \Gm@dimlist=\toks21
-)
+
+(/usr/share/texmf-texlive/tex/xelatex/xetexconfig/geometry.cfg))
 (./AXISEMTutorial.aux)
 \openout1 = `AXISEMTutorial.aux'.
 
@@ -508,7 +514,7 @@ File: ts1cmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    ... okay on input line 35.
 
-(/usr/share/texmf-texlive/tex/context/base/supp-pdf.mkii
+(/usr/share/texmf/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count93
 \scratchdimen=\dimen111
@@ -656,8 +662,12 @@ File: google-earth.png Graphic file (type png)
 File: google-earth2.png Graphic file (type png)
 
 <use google-earth2.png> [4 <./paraview2.png (PNG copy)> <./0600.png (PNG copy)>
-] [5 <./google-earth.png (PNG copy)> <./google-earth2.png (PNG copy)>] [6]
-<AXISEMTutorial-fig007.png, id=48, 1750.54pt x 1009.7725pt>
+] [5 <./google-earth.png (PNG copy)> <./google-earth2.png (PNG copy)>]
+Underfull \hbox (badness 10000) in paragraph at lines 341--347
+
+ []
+
+[6] <AXISEMTutorial-fig007.png, id=48, 1750.54pt x 1009.7725pt>
 File: AXISEMTutorial-fig007.png Graphic file (type png)
 
 <use AXISEMTutorial-fig007.png>
@@ -692,7 +702,7 @@ torial-fig004.png (PNG copy)>]
 File: Folder_structure.jpeg Graphic file (type jpg)
 
 <use Folder_structure.jpeg> [9 <./Folder_structure.jpeg>]
-Underfull \hbox (badness 10000) in paragraph at lines 539--543
+Underfull \hbox (badness 10000) in paragraph at lines 538--542
 
  []
 
@@ -708,30 +718,29 @@ Underfull \hbox (badness 10000) in paragraph at lines 601--602
 
 [11] (./AXISEMTutorial.aux) ) 
 Here is how much of TeX's memory you used:
- 2935 strings out of 495021
- 37157 string characters out of 1181035
- 86138 words of memory out of 3000000
- 6065 multiletter control sequences out of 15000+50000
+ 2938 strings out of 493848
+ 37304 string characters out of 1152823
+ 87124 words of memory out of 3000000
+ 6149 multiletter control sequences out of 15000+50000
  16080 words of font info for 40 fonts, out of 3000000 for 9000
- 28 hyphenation exceptions out of 8191
+ 714 hyphenation exceptions out of 8191
  25i,8n,43p,217b,293s stack positions out of 5000i,500n,10000p,200000b,50000s
- </home/vandriel/.texmf-var/fonts/pk/ljfour/jknapp
-en/ec/ecbx1000.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ec
-rm0900.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1000.6
-00pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.600pk> </
-home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk> </home/van
-driel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1000.600pk> </home/vandriel/.t
-exmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200.600pk> </home/vandriel/.texmf-var
-/fonts/pk/ljfour/jknappen/ec/ecbx1440.600pk> </home/vandriel/.texmf-var/fonts/p
-k/ljfour/jknappen/ec/ecrm1200.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour
-/jknappen/ec/eccc1728.600pk></usr/share/texmf-texlive/fonts/type1/public/amsfon
-ts/cm/cmbx10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi1
-0.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/
-share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf
--texlive/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on AXISEMTutorial.pdf (11 pages, 4013542 bytes).
+{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-supe
+r-t1.enc}{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/shar
+e/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texmf-tex
+live/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-texlive/fonts/
+type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-texlive/fonts/type1/public
+/amsfonts/cm/cmsy10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/c
+m/cmsy7.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1000.pfb></usr/sh
+are/texmf/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/texmf/fonts/type
+1/public/cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/public/cm-super/sf
+cc1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0900.pfb></usr/sha
+re/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/fonts/type1
+/public/cm-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sft
+i1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1000.pfb>
+Output written on AXISEMTutorial.pdf (11 pages, 4076009 bytes).
 PDF statistics:
- 560 PDF objects out of 1000 (max. 8388607)
+ 141 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  86 words of extra memory for PDF output out of 10000 (max. 10000000)
 
