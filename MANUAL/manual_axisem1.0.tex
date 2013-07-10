@@ -564,6 +564,21 @@ needed in the solver (in pdb.f90), easily down to periods of about
 3 seconds on typical memory chips ($\sim$ 2GB), and down to 1 second on 
 larger shared memories (e.g. 12GB).
 
+\begin{table}[h]
+\begin{tabular}{ccc}
+period & max  \\
+ T[s]  & nproc & memory [GB] \\
+\hline
+ 50.0 &    8  &  $< 1$  \\
+ 25.0 &   12  &  $< 1$  \\
+ 20.0 &   16  &  $< 1$  \\
+  9.0 &   32  &  $< 1$  \\
+  4.4 &   64  &  $< 1$  \\
+  2.2 &  128  &  $ 3.5 $ \\
+  1.1 &  256  &  $13.0 $ \\
+\end{tabular}
+\end{table}
+
 \subsection{Code structure and components}
 Check {\tt main.f90} for the general code structure. Meshing of the spheroidal is confined to the module 
 {\tt discont\_meshing.f90}. The inner cube contains a coordinate transformation (see Theory section), which 
