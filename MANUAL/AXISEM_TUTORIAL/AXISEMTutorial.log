@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.15)  10 JUL 2013 12:26
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.15)  10 JUL 2013 13:46
 entering extended mode
  %&-line parsing enabled.
 **AXISEMTutorial.tex
@@ -455,6 +455,14 @@ LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 \f@ncyO@olf=\skip51
 \f@ncyO@orf=\skip52
 )
+(/usr/share/texmf-texlive/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count89
+\float@exts=\toks19
+\float@box=\box29
+\@float@everytoks=\toks20
+\@floatcapt=\box30
+)
 (/usr/share/texmf-texlive/tex/latex/graphics/color.sty
 Package: color 2005/11/14 v1.0j Standard LaTeX Color (DPC)
 
@@ -474,50 +482,50 @@ Package ifpdf Info: pdfTeX in pdf mode detected.
 Package: ifvtex 2008/11/04 v1.4 Switches for detecting VTeX and its modes (HO)
 Package ifvtex Info: VTeX not detected.
 )
-\Gm@cnth=\count89
-\Gm@cntv=\count90
-\c@Gm@tempcnt=\count91
+\Gm@cnth=\count90
+\Gm@cntv=\count91
+\c@Gm@tempcnt=\count92
 \Gm@bindingoffset=\dimen107
 \Gm@wd@mp=\dimen108
 \Gm@odd@mp=\dimen109
 \Gm@even@mp=\dimen110
-\Gm@dimlist=\toks19
+\Gm@dimlist=\toks21
 
 (/usr/share/texmf-texlive/tex/xelatex/xetexconfig/geometry.cfg))
 (./AXISEMTutorial.aux)
 \openout1 = `AXISEMTutorial.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 34.
-LaTeX Font Info:    ... okay on input line 34.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 34.
-LaTeX Font Info:    ... okay on input line 34.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 34.
-LaTeX Font Info:    ... okay on input line 34.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 34.
-LaTeX Font Info:    ... okay on input line 34.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 34.
-LaTeX Font Info:    ... okay on input line 34.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 34.
-LaTeX Font Info:    ... okay on input line 34.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 34.
-LaTeX Font Info:    Try loading font information for TS1+cmr on input line 34.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 35.
+LaTeX Font Info:    ... okay on input line 35.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 35.
+LaTeX Font Info:    ... okay on input line 35.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 35.
+LaTeX Font Info:    ... okay on input line 35.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 35.
+LaTeX Font Info:    ... okay on input line 35.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 35.
+LaTeX Font Info:    ... okay on input line 35.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 35.
+LaTeX Font Info:    ... okay on input line 35.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 35.
+LaTeX Font Info:    Try loading font information for TS1+cmr on input line 35.
  (/usr/share/texmf-texlive/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
-LaTeX Font Info:    ... okay on input line 34.
+LaTeX Font Info:    ... okay on input line 35.
 
 (/usr/share/texmf/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count92
+\scratchcounter=\count93
 \scratchdimen=\dimen111
-\scratchbox=\box29
-\nofMPsegments=\count93
-\nofMParguments=\count94
-\everyMPshowfont=\toks20
-\MPscratchCnt=\count95
+\scratchbox=\box31
+\nofMPsegments=\count94
+\nofMParguments=\count95
+\everyMPshowfont=\toks22
+\MPscratchCnt=\count96
 \MPscratchDim=\dimen112
-\MPnumerator=\count96
-\everyMPtoPDFconversion=\toks21
+\MPnumerator=\count97
+\everyMPtoPDFconversion=\toks23
 )
 *geometry auto-detecting driver*
 *geometry detected driver: pdftex*
@@ -560,16 +568,16 @@ driver: pdftex
 
 (1in=72.27pt, 1cm=28.45pt)
 -----------------------
-LaTeX Font Info:    Try loading font information for U+msa on input line 72.
+LaTeX Font Info:    Try loading font information for U+msa on input line 73.
 (/usr/share/texmf-texlive/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2009/06/22 v3.00 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 72.
+LaTeX Font Info:    Try loading font information for U+msb on input line 73.
 
 (/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 )
-LaTeX Font Info:    Try loading font information for T1+cmtt on input line 72.
+LaTeX Font Info:    Try loading font information for T1+cmtt on input line 73.
 
 (/usr/share/texmf-texlive/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
@@ -581,16 +589,16 @@ File: radpat_mono.pdf Graphic file (type pdf)
 
 <use radpat_mono.pdf>
 
-LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 115.
+LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 116.
 
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 115--116
+Underfull \hbox (badness 10000) in paragraph at lines 116--117
 
  []
 
 
-Overfull \hbox (59.75443pt too wide) in paragraph at lines 110--117
+Overfull \hbox (59.75443pt too wide) in paragraph at lines 111--118
 []$$[]$ 
  []
 
@@ -598,16 +606,16 @@ Overfull \hbox (59.75443pt too wide) in paragraph at lines 110--117
 File: radpat_di.pdf Graphic file (type pdf)
  <use radpat_di.pdf>
 
-LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 122.
+LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 123.
 
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 122--123
+Underfull \hbox (badness 10000) in paragraph at lines 123--124
 
  []
 
 
-Overfull \hbox (59.75443pt too wide) in paragraph at lines 118--124
+Overfull \hbox (59.75443pt too wide) in paragraph at lines 119--125
 []$[]$$[]$ 
  []
 
@@ -615,16 +623,16 @@ Overfull \hbox (59.75443pt too wide) in paragraph at lines 118--124
 File: radpat_quad.pdf Graphic file (type pdf)
  <use radpat_quad.pdf>
 
-LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 129.
+LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 130.
 
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 129--130
+Underfull \hbox (badness 10000) in paragraph at lines 130--131
 
  []
 
 
-Overfull \hbox (59.75443pt too wide) in paragraph at lines 125--131
+Overfull \hbox (59.75443pt too wide) in paragraph at lines 126--132
 []$[]$$[]$ 
  []
 
@@ -635,7 +643,7 @@ File: mesh.png Graphic file (type png)
 <paraview.png, id=30, 546.04pt x 170.6375pt>
 File: paraview.png Graphic file (type png)
  <use paraview.png>
-Overfull \hbox (91.54242pt too wide) in paragraph at lines 243--249
+Overfull \hbox (91.54242pt too wide) in paragraph at lines 244--250
 \T1/cmr/m/n/10 Once the run is fin-ished, take a look at the wave-field with []
 \T1/cmtt/m/n/10 paraview\T1/cmr/m/n/10 : open the []\T1/cmtt/m/n/10 prem_ani_li
 ght_100s_mzz/Data/xdmf_xml_0000.xdmf
@@ -648,130 +656,80 @@ File: paraview2.png Graphic file (type png)
 File: google-earth.png Graphic file (type png)
 
 <use google-earth.png> [4 <./paraview2.png (PNG copy)>] [5 <./google-earth.png 
-(PNG copy)>] [6] <AXISEMTutorial-fig001.png, id=46, 1738.495pt x 829.0975pt>
+(PNG copy)>] [6] <AXISEMTutorial-fig007.png, id=46, 1750.54pt x 1009.7725pt>
+File: AXISEMTutorial-fig007.png Graphic file (type png)
+
+<use AXISEMTutorial-fig007.png>
+<AXISEMTutorial-fig010.pdf, id=48, 518.93875pt x 698.61pt>
+File: AXISEMTutorial-fig010.pdf Graphic file (type pdf)
+
+<use AXISEMTutorial-fig010.pdf>
+<AXISEMTutorial-fig014.png, id=49, 757.83125pt x 1003.75pt>
+File: AXISEMTutorial-fig014.png Graphic file (type png)
+
+<use AXISEMTutorial-fig014.png> [7 <./AXISEMTutorial-fig007.png> <./AXISEMTutor
+ial-fig010.pdf> <./AXISEMTutorial-fig014.png>]
+<AXISEMTutorial-fig001.png, id=73, 1738.495pt x 829.0975pt>
 File: AXISEMTutorial-fig001.png Graphic file (type png)
 
 <use AXISEMTutorial-fig001.png>
-<AXISEMTutorial-fig002.png, id=48, 1490.56876pt x 524.96124pt>
+<AXISEMTutorial-fig002.png, id=74, 1490.56876pt x 524.96124pt>
 File: AXISEMTutorial-fig002.png Graphic file (type png)
 
 <use AXISEMTutorial-fig002.png>
-<AXISEMTutorial-fig003.png, id=49, 1489.565pt x 523.9575pt>
+<AXISEMTutorial-fig003.png, id=75, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig003.png Graphic file (type png)
 
 <use AXISEMTutorial-fig003.png>
-<AXISEMTutorial-fig004.png, id=50, 1489.565pt x 523.9575pt>
+<AXISEMTutorial-fig004.png, id=76, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig004.png Graphic file (type png)
 
-<use AXISEMTutorial-fig004.png> [7 <./AXISEMTutorial-fig001.png> <./AXISEMTutor
+<use AXISEMTutorial-fig004.png> [8 <./AXISEMTutorial-fig001.png> <./AXISEMTutor
 ial-fig002.png (PNG copy)> <./AXISEMTutorial-fig003.png (PNG copy)> <./AXISEMTu
 torial-fig004.png (PNG copy)>]
-<Folder_structure.jpeg, id=57, 821.0675pt x 786.94pt>
+<Folder_structure.jpeg, id=81, 821.0675pt x 786.94pt>
 File: Folder_structure.jpeg Graphic file (type jpg)
 
-<use Folder_structure.jpeg> [8 <./Folder_structure.jpeg>]
-Underfull \hbox (badness 10000) in paragraph at lines 507--511
-
- []
-
-[9]
-Underfull \hbox (badness 10000) in paragraph at lines 538--541
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 569--570
+<use Folder_structure.jpeg> [9 <./Folder_structure.jpeg>]
+Underfull \hbox (badness 10000) in paragraph at lines 544--548
 
  []
 
 [10]
-Underfull \hbox (badness 10000) in paragraph at lines 629--631
+Underfull \hbox (badness 10000) in paragraph at lines 575--578
 
  []
 
-<AXISEMTutorial-fig006.png, id=68, 754.82pt x 408.52625pt>
-File: AXISEMTutorial-fig006.png Graphic file (type png)
 
-<use AXISEMTutorial-fig006.png>
-<AXISEMTutorial-fig007.png, id=69, 1750.54pt x 1009.7725pt>
-File: AXISEMTutorial-fig007.png Graphic file (type png)
+Underfull \hbox (badness 10000) in paragraph at lines 606--607
 
-<use AXISEMTutorial-fig007.png>
-<AXISEMTutorial-fig008.pdf, id=70, 524.96124pt x 691.58376pt>
-File: AXISEMTutorial-fig008.pdf Graphic file (type pdf)
-
-<use AXISEMTutorial-fig008.pdf>
-<AXISEMTutorial-fig009.pdf, id=71, 524.96124pt x 690.58pt>
-File: AXISEMTutorial-fig009.pdf Graphic file (type pdf)
-
-<use AXISEMTutorial-fig009.pdf>
-<AXISEMTutorial-fig010.pdf, id=72, 518.93875pt x 698.61pt>
-File: AXISEMTutorial-fig010.pdf Graphic file (type pdf)
-
-<use AXISEMTutorial-fig010.pdf>
-<AXISEMTutorial-fig011.pdf, id=73, 521.95pt x 695.59875pt>
-File: AXISEMTutorial-fig011.pdf Graphic file (type pdf)
-
-<use AXISEMTutorial-fig011.pdf>
-<AXISEMTutorial-fig012.png, id=74, 757.83125pt x 1003.75pt>
-File: AXISEMTutorial-fig012.png Graphic file (type png)
-
-<use AXISEMTutorial-fig012.png>
-<AXISEMTutorial-fig013.png, id=75, 754.82pt x 1003.75pt>
-File: AXISEMTutorial-fig013.png Graphic file (type png)
-
-<use AXISEMTutorial-fig013.png>
-Overfull \hbox (0.57129pt too wide) in paragraph at lines 754--757
-\T1/cmr/m/n/10 PREM_ANSIO_5sec_GCMT) for Pdiff phase: (For more in-for-ma-tion 
-about the source pa-ram-e-ters, re-fer to Appendix-
  []
 
-<AXISEMTutorial-fig014.png, id=76, 757.83125pt x 1003.75pt>
-File: AXISEMTutorial-fig014.png Graphic file (type png)
-
-<use AXISEMTutorial-fig014.png> [11 <./AXISEMTutorial-fig006.png>] [12 <./AXISE
-MTutorial-fig007.png> <./AXISEMTutorial-fig008.pdf> <./AXISEMTutorial-fig009.pd
-f>] [13 <./AXISEMTutorial-fig010.pdf> <./AXISEMTutorial-fig011.pdf> <./AXISEMTu
-torial-fig012.png>]
-<AXISEMTutorial-fig015.png, id=154, 757.83125pt x 1008.76875pt>
-File: AXISEMTutorial-fig015.png Graphic file (type png)
-
-<use AXISEMTutorial-fig015.png> [14 <./AXISEMTutorial-fig013.png>]
-<AXISEMTutorial-fig016.png, id=159, 757.83125pt x 1006.76125pt>
-File: AXISEMTutorial-fig016.png Graphic file (type png)
-
-<use AXISEMTutorial-fig016.png> [15 <./AXISEMTutorial-fig014.png> <./AXISEMTuto
-rial-fig015.png>]
-<AXISEMTutorial-fig017.png, id=165, 994.71625pt x 483.8075pt>
-File: AXISEMTutorial-fig017.png Graphic file (type png)
-
-<use AXISEMTutorial-fig017.png> [16 <./AXISEMTutorial-fig016.png> <./AXISEMTuto
-rial-fig017.png>] (./AXISEMTutorial.aux) ) 
+[11] (./AXISEMTutorial.aux) ) 
 Here is how much of TeX's memory you used:
- 2914 strings out of 493848
- 37691 string characters out of 1152823
- 85757 words of memory out of 3000000
- 6122 multiletter control sequences out of 15000+50000
+ 2928 strings out of 493848
+ 37141 string characters out of 1152823
+ 87124 words of memory out of 3000000
+ 6141 multiletter control sequences out of 15000+50000
  16080 words of font info for 40 fonts, out of 3000000 for 9000
  714 hyphenation exceptions out of 8191
  25i,8n,43p,217b,295s stack positions out of 5000i,500n,10000p,200000b,50000s
-{/usr/share/texmf/fonts/enc/dvips/cm-
-super/cm-super-t1.enc}{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.e
-nc}</usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/sh
-are/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-t
-exlive/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-texlive/fonts
-/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-texlive/fonts/type1/publ
-ic/amsfonts/cm/cmsy7.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1000
-.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/tex
-mf/fonts/type1/public/cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/publi
-c/cm-super/sfcc1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0900.
-pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texm
-f/fonts/type1/public/cm-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public
-/cm-super/sfti1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1000.p
-fb>
-Output written on AXISEMTutorial.pdf (16 pages, 4219486 bytes).
+{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-supe
+r-t1.enc}{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/shar
+e/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texmf-tex
+live/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-texlive/fonts/
+type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-texlive/fonts/type1/public
+/amsfonts/cm/cmsy10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/c
+m/cmsy7.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1000.pfb></usr/sh
+are/texmf/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/texmf/fonts/type
+1/public/cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/public/cm-super/sf
+cc1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0900.pfb></usr/sha
+re/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/fonts/type1
+/public/cm-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sft
+i1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1000.pfb>
+Output written on AXISEMTutorial.pdf (11 pages, 2245631 bytes).
 PDF statistics:
- 218 PDF objects out of 1000 (max. 8388607)
+ 139 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 121 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 76 words of extra memory for PDF output out of 10000 (max. 10000000)
 
