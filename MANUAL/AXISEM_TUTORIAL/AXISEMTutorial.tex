@@ -49,17 +49,6 @@ Lion Krischer, Tarje Nissen-Meyer \\
 }
 \end{center}
 
-\section{Overview}
-\baselineskip=13pt
-%
-\begin{itemize}
-\item 10min intro(what is AXISEM, ObsPy; what we want to do in the tutorial)
-\item 10min big run (maybe drop this, depending on progress next week)(2seconds, seismograms 
-and not wavefields, 2 settings [different structures, sharpness of boundaries])
-\item  60min virtual box: data and AxiSEM
-\item  20min big run post processing
-\item installation of AxiSEM, obspy locally
-\end{itemize}
 %
 \section{Tutorial Overview}
 %
@@ -97,7 +86,7 @@ backgound model on the waveforms. In particular, we will learn how to:
 The box is organized into 3 folders: AXISEM, OBSPY, EVENTS. The entire
 data-vs-modeling section is within EVENTS, including all data and pre-computed
 synthetics. AXISEM contains the source code and the precomputed run
-for the long-period section.
+for the long-period section. ADD A NOTE ON VIDEO / SNAPSHOTS HERE.
 
 
 \newpage
@@ -225,9 +214,9 @@ moment tensor source) are solved numerically using a spectral element approach.
     SAVE_SNAPSHOTS      true  
     \end{verbatim}
     %
-    \item First, we are taking a look at a basic sourcetype: a vertical dipole. This is
-    set by \verb|SIMULATION_TYPE single| and defined in the \verb|sourceparams.dat| file.
-    Run the solver, giving the run a meaningful name:
+    \item First, we are taking a look at a basic sourcetype: a vertical dipole, which has
+    a monopole radiation pattern. This is set by \verb|SIMULATION_TYPE single| and defined
+    in the \verb|sourceparams.dat| file. Run the solver, giving the run a meaningful name:
     %
     \begin{verbatim}
     $ ./submit.csh prem_ani_light_100s_mzz
@@ -247,9 +236,13 @@ moment tensor source) are solved numerically using a spectral element approach.
     propagate.  You can also choose different components of the wavefield or the absolute
     value.  For paraview experienced users: choose absolute value and a logarithmic
     colorscale to see all wave types at once (e.g.\ 'black body radiation' looks nice).
+    You can find a 5s period movie off these snapshots in the \verb|movie| folder on the
+    desktop (use \verb|gpicview| to open the \verb|.png| files and \verb|???| to open the
+    movie).
    
     \begin{center}
-    \includegraphics[width=120mm]{paraview2.png}
+    \includegraphics[width=110mm]{paraview2.png} \hspace{5mm}
+    \includegraphics[width=40mm]{0600.png}
     \end{center}
 
     \item Now simulate seismograms for a full moment tensor source: the source is defined
@@ -271,14 +264,14 @@ moment tensor source) are solved numerically using a spectral element approach.
     This command compiles the code if needed and starts four simulations at once, each
     simulating a basic source type (two monopoles, a dipole and a quadrupole, for details
     see Nissen-Meyer et al 2007). You can observe the progress in the outputfiles in
-    each's run subdirectory
+    each job's subdirectory
     %
     \begin{verbatim}
     $ cd prem_ani_light_100s_event1
     $ tailf MZZ/OUTPUT_MZZ
     \end{verbatim}
     %
-    item Once all the jobs are done (check with \verb|top|), you can proceed with
+    Once all the jobs are done (check with \verb|htop|), you can proceed with
     postprocessing.
     
 \end{enumerate}
@@ -325,7 +318,9 @@ can be modified without redoing the expensive simulation.
     You should now see the earthquake and the receivers in the places menu on the left.
     
     \begin{center}
-    \includegraphics[width=40mm]{google-earth.png}
+    \includegraphics[height=70mm]{google-earth.png}
+    \hspace{5mm}
+    \includegraphics[height=70mm]{google-earth2.png}
     \end{center}
 
     Click on the stations or source to see more...
