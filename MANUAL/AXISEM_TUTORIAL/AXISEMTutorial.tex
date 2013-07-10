@@ -17,6 +17,8 @@
 \usepackage{fancyhdr}
 
 \newcommand{\ttilde}[0]{\raise.17ex\hbox{$\scriptstyle\sim$}}
+\renewcommand{\vec}[1]{\ensuremath{\mathbf{#1}}}
+\newcommand{\evec}[1]{\ensuremath{\mathbf{\hat #1}}}
 
 \renewcommand{\headrulewidth}{0pt}
 \renewcommand{\footrulewidth}{0pt}
@@ -100,6 +102,47 @@ for the long-period section.
 \newpage
 
 \section{AxiSEM - Hands On}
+
+\subsection{The AxiSEM Concept}
+
+\begin{center}
+    \begin{minipage}[t]{0.4\paperwidth}
+        Source Decomposition:\\
+        \begin{minipage}[c]{0.1\paperwidth}
+            \includegraphics[width=\textwidth]{radpat_mono.pdf}%
+        \end{minipage}%
+        \begin{minipage}[c]{0.4\paperwidth}
+            $\scriptsize{\vec u = \vec u (s,z)}$ \\
+        \end{minipage}
+    
+        \begin{minipage}[c]{0.1\paperwidth}
+            \includegraphics[width=\textwidth]{radpat_di.pdf}
+        \end{minipage}%
+        \begin{minipage}[c]{0.4\paperwidth}
+            $\scriptsize{\vec u = \vec u (s,z)} \cdot f(\sin\phi, \cos\phi)$ \\
+        \end{minipage}
+    
+        \begin{minipage}[c]{0.1\paperwidth}
+            \includegraphics[width=\textwidth]{radpat_quad.pdf}
+        \end{minipage}%
+        \begin{minipage}[c]{0.4\paperwidth}
+            $\scriptsize{\vec u = \vec u (s,z)} \cdot f(\sin(2\phi), \cos(2\phi))$ \\
+        \end{minipage}%
+    \end{minipage}%
+    \begin{minipage}[t]{0.25\paperwidth}
+        2D numerical problems:
+    
+        \includegraphics[width=.7\textwidth]{mesh.png}
+    \end{minipage}%
+\end{center}
+
+The basic idea behind AxiSEM is to take advantage of axial symmetry with respect
+to an axis going through the center of the earth and the source. In such models,
+the response to a moment tensor or single force point source can be expanded in a series
+of multipoles (mono-, di- and quadrupole). The dependence of the wavefield on azimuth
+$\phi$ can be solved analytically and the remaining 2D problems (four of them for a full
+moment tensor source) are solved numerically using a spectral element approach.
+
 
 \subsection{MESHER - generate a Mesh}
 
@@ -447,7 +490,7 @@ sub-directories:
 
 \begin{enumerate}
     \item \textbf{AXISEM}: contains seismograms simulated by AXISEM with
-    the required PyAxi (Appendix-3) input files (INPUT_FILES) to re-produce them.
+    the required PyAxi (Appendix-3) input files (INPUT\_FILES) to re-produce them.
     \item \textbf{REAL\_DATA}: seismograms retrieved from \textit{IRIS. }(refer to
     APPENDIX-4)
     \item \textbf{SPECFEM3D}: waveforms simulated by SPECFEM3D for comparison purposes 
