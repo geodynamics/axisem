@@ -135,11 +135,11 @@ for the long-period section. ADD A NOTE ON VIDEO / SNAPSHOTS HERE.
 \end{center}
 
 The basic idea behind AxiSEM is to take advantage of axial symmetry with respect
-to an axis going through the center of the earth and the source. In such models,
-the response to a moment tensor or single force point source can be expanded in a series
-of multipoles (mono-, di- and quadrupole). The dependence of the wavefield on azimuth
-$\phi$ can be solved analytically and the remaining 2D problems (four of them for a full
-moment tensor source) are solved numerically using a spectral element approach.
+to an axis going through the center of the earth and the source. In such axisymmetric 
+models, the response to a moment tensor or single force point source can be expanded in a
+series of multipoles (mono-, di- and quadrupole). The dependence of the wavefield on
+azimuth $\phi$ can be solved analytically and the remaining 2D problems (four of them for
+a full moment tensor source) are solved numerically using a spectral element approach.
 
 
 \subsection{MESHER - generate a Mesh}
@@ -163,7 +163,7 @@ moment tensor source) are solved numerically using a spectral element approach.
     COARSENING_LAYERS   2
     \end{verbatim}
     %
-    The file should be self-explainatory. NB: Models without crust ('light') allow for a
+    The file should be self-explanatory. NB: Models without crust ('light') allow for a
     larger time step and hence run a lot faster on the box. The virtual box only has a
     single processor, so parallelization does not speed up the simulation.
 
@@ -174,7 +174,7 @@ moment tensor source) are solved numerically using a spectral element approach.
     $ tailf OUTPUT
     \end{verbatim}
     %
-    The meshing should be really quick for the chosen parameters. Wait for 
+    The meshing should be really fast for the chosen parameters. Wait for 
     \verb|....DONE WITH MESHER !| to appear.
 
     \item Take a look at the mesh with paraview
@@ -186,7 +186,7 @@ moment tensor source) are solved numerically using a spectral element approach.
     and click apply in the properties panel on the left. (you might get an OpenGL Error
     on the virtual box, which you can ignore). To see the mesh, change the representation
     from 'surface' to 'surface with edges'. You can open other vtk files to look at other
-    properties of the model and the mesh. You might need to rescale the colorange by
+    properties of the model and the mesh. You might need to rescale the color range by
     clicking on the left-right arrow symbol in the top left.
 
     \begin{center}
@@ -244,7 +244,7 @@ moment tensor source) are solved numerically using a spectral element approach.
     propagate.  You can also choose different components of the wavefield or the absolute
     value.  For paraview experienced users: choose absolute value and a logarithmic
     colorscale to see all wave types at once (e.g.\ 'black body radiation' looks nice).
-    You can find a 5s period movie off these snapshots in the \verb|movie| folder on the
+    You can find a 5s period movie of these snapshots in the \verb|movie| folder on the
     desktop (use \verb|gpicview| to open the \verb|.png| files and \verb|???| to open the
     movie).
    
@@ -288,7 +288,7 @@ moment tensor source) are solved numerically using a spectral element approach.
 \subsection{POSTPROCESSING - rotate and sum seismograms and wavefields}
 
 Postprocessing is a key feature of AxiSEM: the source mechanism and source time function
-can be modified without redoing the expensive simulation.
+can be modified without redoing the more expensive simulation.
 
 \begin{enumerate}
     \item For the previous simulation, the contribution of the elemental sources needs

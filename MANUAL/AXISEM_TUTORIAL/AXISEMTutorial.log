@@ -1,17 +1,12 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.15)  10 JUL 2013 14:26
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.30)  10 JUL 2013 15:43
 entering extended mode
  %&-line parsing enabled.
 **AXISEMTutorial.tex
 (./AXISEMTutorial.tex
 LaTeX2e <2009/09/24>
 Babel <v3.8l> and hyphenation patterns for english, usenglishmax, dumylang, noh
-yphenation, farsi, arabic, croatian, bulgarian, ukrainian, russian, czech, slov
-ak, danish, dutch, finnish, french, basque, ngerman, german, german-x-2009-06-1
-9, ngerman-x-2009-06-19, ibycus, monogreek, greek, ancientgreek, hungarian, san
-skrit, italian, latin, latvian, lithuanian, mongolian2a, mongolian, bokmal, nyn
-orsk, romanian, irish, coptic, serbian, turkish, welsh, esperanto, uppersorbian
-, estonian, indonesian, interlingua, icelandic, kurmanji, slovenian, polish, po
-rtuguese, spanish, galician, catalan, swedish, ukenglish, pinyin, loaded.
+yphenation, ngerman, german, german-x-2009-06-19, ngerman-x-2009-06-19, loaded.
+
 (/usr/share/texmf-texlive/tex/latex/base/article.cls
 Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
 (/usr/share/texmf-texlive/tex/latex/base/size10.clo
@@ -490,8 +485,7 @@ Package ifvtex Info: VTeX not detected.
 \Gm@odd@mp=\dimen109
 \Gm@even@mp=\dimen110
 \Gm@dimlist=\toks21
-
-(/usr/share/texmf-texlive/tex/xelatex/xetexconfig/geometry.cfg))
+)
 (./AXISEMTutorial.aux)
 \openout1 = `AXISEMTutorial.aux'.
 
@@ -514,7 +508,7 @@ File: ts1cmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    ... okay on input line 35.
 
-(/usr/share/texmf/tex/context/base/supp-pdf.mkii
+(/usr/share/texmf-texlive/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count93
 \scratchdimen=\dimen111
@@ -568,179 +562,184 @@ driver: pdftex
 
 (1in=72.27pt, 1cm=28.45pt)
 -----------------------
-LaTeX Font Info:    Try loading font information for U+msa on input line 62.
+LaTeX Font Info:    Try loading font information for U+msa on input line 43.
 (/usr/share/texmf-texlive/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2009/06/22 v3.00 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 62.
+LaTeX Font Info:    Try loading font information for U+msb on input line 43.
 
 (/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 )
-LaTeX Font Info:    Try loading font information for T1+cmtt on input line 62.
+<Axisem2png.png, id=1, 1027.6794pt x 770.88pt>
+File: Axisem2png.png Graphic file (type png)
+ <use Axisem2png.png>
+LaTeX Font Info:    Try loading font information for T1+cmtt on input line 70.
 
 (/usr/share/texmf-texlive/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 ) [1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] <radpat_mono.pdf, id=13, 2
-16.81pt x 216.81pt>
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./Axisem2png.png>]
+<radpat_mono.pdf, id=19, 216.81pt x 216.81pt>
 File: radpat_mono.pdf Graphic file (type pdf)
+ <use radpat_mono.pdf>
 
-<use radpat_mono.pdf>
-
-LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 105.
-
+LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 113.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 105--106
+
+Underfull \hbox (badness 10000) in paragraph at lines 113--114
 
  []
 
 
-Overfull \hbox (59.75443pt too wide) in paragraph at lines 100--107
+Overfull \hbox (59.75443pt too wide) in paragraph at lines 108--115
 []$$[]$ 
  []
 
-<radpat_di.pdf, id=15, 216.81pt x 216.81pt>
+<radpat_di.pdf, id=21, 216.81pt x 216.81pt>
 File: radpat_di.pdf Graphic file (type pdf)
  <use radpat_di.pdf>
 
-LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 112.
+LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 120.
 
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 112--113
+Underfull \hbox (badness 10000) in paragraph at lines 120--121
 
  []
 
 
-Overfull \hbox (59.75443pt too wide) in paragraph at lines 108--114
+Overfull \hbox (59.75443pt too wide) in paragraph at lines 116--122
 []$[]$$[]$ 
  []
 
-<radpat_quad.pdf, id=17, 216.81pt x 216.81pt>
+<radpat_quad.pdf, id=23, 216.81pt x 216.81pt>
 File: radpat_quad.pdf Graphic file (type pdf)
  <use radpat_quad.pdf>
 
-LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 119.
+LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 127.
 
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 119--120
+Underfull \hbox (badness 10000) in paragraph at lines 127--128
 
  []
 
 
-Overfull \hbox (59.75443pt too wide) in paragraph at lines 115--121
+Overfull \hbox (59.75443pt too wide) in paragraph at lines 123--129
 []$[]$$[]$ 
  []
 
-<mesh.png, id=19, 754.82pt x 1453.43pt>
+<mesh.png, id=25, 754.82pt x 1453.43pt>
 File: mesh.png Graphic file (type png)
  <use mesh.png> [2 <./radpat_mono.pdf> <./radpat_di.pdf> <./radpat_quad.pdf> <.
 /mesh.png (PNG copy)>]
-<paraview.png, id=30, 546.04pt x 170.6375pt>
+<paraview.png, id=36, 546.04pt x 170.6375pt>
 File: paraview.png Graphic file (type png)
  <use paraview.png>
-Overfull \hbox (91.54242pt too wide) in paragraph at lines 233--242
+Overfull \hbox (91.54242pt too wide) in paragraph at lines 241--250
 \T1/cmr/m/n/10 Once the run is fin-ished, take a look at the wave-field with []
 \T1/cmtt/m/n/10 paraview\T1/cmr/m/n/10 : open the []\T1/cmtt/m/n/10 prem_ani_li
 ght_100s_mzz/Data/xdmf_xml_0000.xdmf
  []
 
-<paraview2.png, id=31, 834.11626pt x 216.81pt>
+<paraview2.png, id=37, 834.11626pt x 216.81pt>
 File: paraview2.png Graphic file (type png)
  <use paraview2.png>
-<0600.png, id=32, 501.875pt x 501.875pt>
+<0600.png, id=38, 501.875pt x 501.875pt>
 File: 0600.png Graphic file (type png)
- <use 0600.png> [3 <./paraview.png (PNG copy)>] <google-earth.png, id=36, 196.7
+ <use 0600.png> [3 <./paraview.png (PNG copy)>] <google-earth.png, id=42, 196.7
 35pt x 279.0425pt>
 File: google-earth.png Graphic file (type png)
 
-<use google-earth.png> <google-earth2.png, id=37, 1419.3025pt x 1045.9075pt>
+<use google-earth.png> <google-earth2.png, id=43, 1419.3025pt x 1045.9075pt>
 File: google-earth2.png Graphic file (type png)
 
 <use google-earth2.png> [4 <./paraview2.png (PNG copy)> <./0600.png (PNG copy)>
 ] [5 <./google-earth.png (PNG copy)> <./google-earth2.png (PNG copy)>]
-Underfull \hbox (badness 10000) in paragraph at lines 341--347
+Underfull \hbox (badness 10000) in paragraph at lines 349--355
 
  []
 
-[6] <AXISEMTutorial-fig007.png, id=48, 1750.54pt x 1009.7725pt>
+[6] <AXISEMTutorial-fig007.png, id=54, 1750.54pt x 1009.7725pt>
 File: AXISEMTutorial-fig007.png Graphic file (type png)
 
 <use AXISEMTutorial-fig007.png>
-<AXISEMTutorial-fig010.pdf, id=50, 518.93875pt x 698.61pt>
+<AXISEMTutorial-fig010.pdf, id=55, 518.93875pt x 698.61pt>
 File: AXISEMTutorial-fig010.pdf Graphic file (type pdf)
 
 <use AXISEMTutorial-fig010.pdf>
-<AXISEMTutorial-fig014.png, id=51, 757.83125pt x 1003.75pt>
+<AXISEMTutorial-fig014.png, id=56, 757.83125pt x 1003.75pt>
 File: AXISEMTutorial-fig014.png Graphic file (type png)
 
 <use AXISEMTutorial-fig014.png> [7 <./AXISEMTutorial-fig007.png> <./AXISEMTutor
 ial-fig010.pdf> <./AXISEMTutorial-fig014.png>]
-<AXISEMTutorial-fig001.png, id=75, 1738.495pt x 829.0975pt>
+<AXISEMTutorial-fig001.png, id=79, 1738.495pt x 829.0975pt>
 File: AXISEMTutorial-fig001.png Graphic file (type png)
 
 <use AXISEMTutorial-fig001.png>
-<AXISEMTutorial-fig002.png, id=76, 1490.56876pt x 524.96124pt>
+<AXISEMTutorial-fig002.png, id=80, 1490.56876pt x 524.96124pt>
 File: AXISEMTutorial-fig002.png Graphic file (type png)
 
 <use AXISEMTutorial-fig002.png>
-<AXISEMTutorial-fig003.png, id=77, 1489.565pt x 523.9575pt>
+<AXISEMTutorial-fig003.png, id=81, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig003.png Graphic file (type png)
 
 <use AXISEMTutorial-fig003.png>
-<AXISEMTutorial-fig004.png, id=78, 1489.565pt x 523.9575pt>
+<AXISEMTutorial-fig004.png, id=82, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig004.png Graphic file (type png)
 
 <use AXISEMTutorial-fig004.png> [8 <./AXISEMTutorial-fig001.png> <./AXISEMTutor
 ial-fig002.png (PNG copy)> <./AXISEMTutorial-fig003.png (PNG copy)> <./AXISEMTu
 torial-fig004.png (PNG copy)>]
-<Folder_structure.jpeg, id=83, 821.0675pt x 786.94pt>
+<Folder_structure.jpeg, id=87, 821.0675pt x 786.94pt>
 File: Folder_structure.jpeg Graphic file (type jpg)
 
 <use Folder_structure.jpeg> [9 <./Folder_structure.jpeg>]
-Underfull \hbox (badness 10000) in paragraph at lines 538--542
+Underfull \hbox (badness 10000) in paragraph at lines 546--550
 
  []
 
 [10]
-Underfull \hbox (badness 10000) in paragraph at lines 570--573
+Underfull \hbox (badness 10000) in paragraph at lines 578--581
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 601--602
+Underfull \hbox (badness 10000) in paragraph at lines 609--610
 
  []
 
 [11] (./AXISEMTutorial.aux) ) 
 Here is how much of TeX's memory you used:
- 2938 strings out of 493848
- 37304 string characters out of 1152823
- 87124 words of memory out of 3000000
- 6149 multiletter control sequences out of 15000+50000
- 16080 words of font info for 40 fonts, out of 3000000 for 9000
- 714 hyphenation exceptions out of 8191
+ 2981 strings out of 495021
+ 37663 string characters out of 1181035
+ 86138 words of memory out of 3000000
+ 6095 multiletter control sequences out of 15000+50000
+ 23800 words of font info for 66 fonts, out of 3000000 for 9000
+ 28 hyphenation exceptions out of 8191
  25i,8n,43p,217b,293s stack positions out of 5000i,500n,10000p,200000b,50000s
-{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-supe
-r-t1.enc}{/usr/share/texmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/shar
-e/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texmf-tex
-live/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texmf-texlive/fonts/
-type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-texlive/fonts/type1/public
-/amsfonts/cm/cmsy10.pfb></usr/share/texmf-texlive/fonts/type1/public/amsfonts/c
-m/cmsy7.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfbx1000.pfb></usr/sh
-are/texmf/fonts/type1/public/cm-super/sfbx1200.pfb></usr/share/texmf/fonts/type
-1/public/cm-super/sfbx1440.pfb></usr/share/texmf/fonts/type1/public/cm-super/sf
-cc1728.pfb></usr/share/texmf/fonts/type1/public/cm-super/sfrm0900.pfb></usr/sha
-re/texmf/fonts/type1/public/cm-super/sfrm1000.pfb></usr/share/texmf/fonts/type1
-/public/cm-super/sfrm1200.pfb></usr/share/texmf/fonts/type1/public/cm-super/sft
-i1000.pfb></usr/share/texmf/fonts/type1/public/cm-super/sftt1000.pfb>
-Output written on AXISEMTutorial.pdf (11 pages, 4076009 bytes).
+ </home/vandriel/.texmf-var/fonts/pk/ljfour/jknapp
+en/ec/ecbx1000.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ec
+ti1000.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
+00pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk> </
+home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1000.600pk> </home/van
+driel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200.600pk> </home/vandriel/.t
+exmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1440.600pk> </home/vandriel/.texmf-var
+/fonts/pk/ljfour/jknappen/ec/ecrm0900.600pk> </home/vandriel/.texmf-var/fonts/p
+k/ljfour/jknappen/ec/ecrm0600.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour
+/jknappen/ec/ecrm0800.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappe
+n/ec/ecrm1200.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecc
+c1728.600pk></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb
+></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/shar
+e/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-texl
+ive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-texlive/fonts/t
+ype1/public/amsfonts/cm/cmsy7.pfb>
+Output written on AXISEMTutorial.pdf (11 pages, 4947507 bytes).
 PDF statistics:
- 141 PDF objects out of 1000 (max. 8388607)
+ 588 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
- 86 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 91 words of extra memory for PDF output out of 10000 (max. 10000000)
 
