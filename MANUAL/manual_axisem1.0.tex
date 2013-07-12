@@ -158,59 +158,59 @@ Simon St\"{a}hler\textsuperscript{1)}} \\
 {snap_cover_red.eps}}\end{picture}}
 
 \vspace*{1.6cm}
-\noindent {\sc AXISEM} is a \textbf{parallel spectral-element method} to 
-solve 3D wave propagation in a sphere with
-axisymmetric or spherically symmetric visco-elastic,
-acoustic, anisotropic structures. Such media allow the computational
-domain to be collapsed to a 2D disk, where the third, azimuthal
-dimension is solved analytically on-the-fly posteriori. This
-leads to extreme speedup by many orders of magnitude with respect to methods that discretize the
-3D domain, and enables a full coverage of the seismic body- and
-surface wave frequency spectrum between 0.001-1Hz. 
-The time-domain code delivers full spatio-temporal wavefields that can be stored on
-disk and transformed to frequency domain. Due to the dimensional reduction, global 
-wave propagation at typical seismic of \textbf{periods down to 5 
-seconds can be tackled on laptops}, and at 1Hz on moderate clusters.
+\noindent {\sc AXISEM} is a \textbf{parallel spectral-element method} to solve
+3D wave propagation in a sphere with axisymmetric or spherically symmetric
+visco-elastic, acoustic, anisotropic structures. Such media allow the
+computational domain to be collapsed to a 2D disk, where the third, azimuthal
+dimension is solved analytically on-the-fly posteriori. This leads to extreme
+speedup by many orders of magnitude with respect to methods that discretize the
+3D domain, and enables a full coverage of the seismic body- and surface wave
+frequency spectrum between 0.001-1Hz.  The time-domain code delivers full
+spatio-temporal wavefields that can be stored on disk and transformed to
+frequency domain. Due to the dimensional reduction, global wave propagation at
+typical seismic of \textbf{periods down to 5 seconds can be tackled on
+laptops}, and at 1Hz on moderate clusters.
 
 %Exploitation 
 %of moment-tensor source and single-force radiation patterns allow the \textbf{computational domain 
 %to be collapsed to a 2D semi-disk}, and the azimuthal third dimension is computed analytically.
 %For each full earthquake moment tensor (single-force vector), 4 (2) simulations are undertaken that account for 
 %tensor (vector) elements separately and are summed subsequently.
-The Fortran 90 code is divided into a \textbf{Mesher}, a \textbf{Solver} utilizing the message-passing interface 
-(MPI) for communication between separate domains, and
-\textbf{extensive post processing} for ease of visualization.
+The Fortran 90 code is divided into a \textbf{Mesher}, a \textbf{Solver}
+utilizing the message-passing interface (MPI) for communication between
+separate domains, and \textbf{extensive post processing} for ease of
+visualization.
 %Radiation pattern symmetries require all sources 
 %to be located along the axis, and any lateral heterogeneities are translated into a 2.5-dimensional
 %ring-like structure.
-The essential raison-d'\^{e}tre of this method is the \textbf{efficient calculation 
-of seismograms, wavefield movies, and those wavefields that underly
-sensitivity kernels} to allow for tomographic inversions of any portion of a seismogram at any relevant 
-frequency. \\
+The essential raison-d'\^{e}tre of this method is the \textbf{efficient
+calculation of seismograms, wavefield movies, and those wavefields that underly
+sensitivity kernels} to allow for tomographic inversions of any portion of a
+seismogram at any relevant frequency. \\
 %We have added methodological foundations directly extracted from the references.
 %Eventually, we will add the sensitivity kernel software as well. \\
 
 \noindent Provisional portal for this code at ETH Zurich:
-\url{https://svn.seismo.ethz.ch/trac/axisem/}\\
-Please contact Tarje (\url{tarjen@ethz.ch}) for login information.
+\url{www.axisem.info}
+%Please contact Tarje (\url{tarjen@ethz.ch}) for login information.
 
 \section{Authors, contributors \& copyright}
 %
-\noindent \textbf{Principal authors:} Tarje Nissen-Meyer, Alexandre
-Fournier, Martin van Driel\\
+\noindent \textbf{Principal authors:} Tarje Nissen-Meyer, Alexandre Fournier, Martin van Driel\\
 \noindent \textbf{Contact:} Tarje Nissen-Meyer (\url{tarje@alumni.princeton.edu})\\
 \noindent \textbf{Contributions:}
- J.-P. Ampuero, E. Chaljub, A. Colombi, F. A. Dahlen, S. Hempel,
- K. Hosseini, D. Komatitsch,
+ J.-P. Ampuero, E. Chaljub, A. Colombi, F. A. Dahlen, S. Hempel, K. Hosseini, D. Komatitsch,
  G. Nolet, K. Sigloch, S. St\"{a}hler, J. Tromp.\\
-\noindent \textbf{Research funding:} Princeton University, NSF (USA), SNF (Switzerland), and 
-ETH Zurich.\\
-\noindent \textbf{Guarantees:} No guarantee whatsoever is given for this software under any circumstances. It may be used freely for 
-academic purposes under the GNU license. Commercial use must be
-discussed with the authors prior to usage.\\
+\noindent \textbf{Research funding:} Princeton University, NSF (USA), SNF (Switzerland), 
+the QUEST initial training network and ETH Zurich.\\
+\noindent \textbf{Guarantees:} No guarantee whatsoever is given for this
+software under any circumstances. It may be used freely for academic purposes
+under the GNU license. Commercial use must be discussed with the authors prior
+to usage.\\
 
 \noindent \copyright  \hspace*{0.1cm} 
 2007-2013 Tarje Nissen-Meyer (\url{tarje@alumni.princeton.edu}), ETH Zurich
+% TODO GPL?
 
 \newpage
 \tableofcontents
@@ -222,15 +222,15 @@ discussed with the authors prior to usage.\\
 
 \textbf{Essential requirements:} 
 \begin{itemize}
-\item \textit{Compilers:} Fortran 90 compiler (tested on ifort, gfortran, pathscale)
+\item \textit{Compilers:} Fortran 90 compiler (tested on ifort, gfortran, portland)
 \item \textit{Libraries:} MPI (tested on OpenMPI, mpich)
-\item \textit{Systems:} Unix-based OS (tested on 32/64 Bit Linux clusters,
-  Dell Nehalem, OS X.4-7,  Cray XT4)
+\item \textit{Systems:} Unix-based OS (tested on 32/64 Bit Linux clusters, Dell Nehalem, OS X.4-7, Cray XT4,
+Cray XE6 and XK7)
 \end{itemize}
 
 \textbf{Optional embedded software/libraries:} netcdf, fftw3, python, taup, gnuplot
 
-\textbf{Optional processing software:} xmgr, matlab, paraview, google earth
+\textbf{Optional processing software:} xmgr, matlab, paraview, google earth, obspy
 \subsection{References}
 
 \noindent \textbf{Directly dealing with this code:}\vspace*{0.2cm}
@@ -261,7 +261,7 @@ Ph.D. thesis, Princeton University
 \textit{High-order conservative time schemes in spectral-element methods 
 for seismic wave propagation.}, To be submitted to Geophys. J. Int.\\
 
-\noindent \textbf{NOTE:} Most important sections of these papers are in the Theory section below.\\
+%\noindent \textbf{NOTE:} Most important sections of these papers are in the Theory section below.\\
 
 \noindent \textbf{Other references:}\vspace*{0.2cm}
 
@@ -276,10 +276,12 @@ Vol. 2, Cambridge monographs on Sppl. \& Comp. Math., Cambridge University Press
 Vol. 3, Series in Appl. Math., Gauthier-Villars, Paris.\\
 
 (9) Chaljub, E. (2000), \textit{Mod{\'{e}}lisation num{\'{e}}rique de la 
-propagation d'ondes sismiques en g{\'{e}}om{\'{e}}trie sph{\'{e}}rique: Application {\`{a}} la sismologie globale}, 
+propagation d'ondes sismiques en g{\'{e}}om{\'{e}}trie sph{\'{e}}rique:
+Application {\`{a}} la sismologie globale}, 
 Ph.D. thesis, Universit{\'{e}} de Paris 7.\\
 
-(10) Komatitsch D., Tromp, J. (2002), \textit{Spectral-element simulations of global seismic wave propagation---{I. V}alidation},
+(10) Komatitsch D., Tromp, J. (2002), \textit{Spectral-element simulations of
+global seismic wave propagation---I. Validation},
 149, 390-412, Geophys. J. Int.
 
 \section{Overview}
@@ -296,157 +298,205 @@ seismograms and wavefield movies upon pre-set parameters.\\
 \begin{enumerate}
 \item {\tt cd MESHER}
 \item {\tt ./makemake.pl} $\Rightarrow$ creates Mesher Makefile.
-\item {\tt make clean; make} $\Rightarrow$ make sure {\tt xmesh} exists.
+%\item {\tt make} $\Rightarrow$ make sure {\tt xmesh} exists.
 \item {\tt ./submit.csh} $\Rightarrow$ Check {\tt OUTPUT}.
 \item Wait for ``{\tt ....DONE WITH MESHER}'' to appear in {\tt OUTPUT}.
 \item {\tt ./movemesh.csh TEST\_MESH} $\Rightarrow$ moves mesh files to {\tt ../SOLVER/MESHES/TEST\_MESH}.
 \item {\tt cd ../SOLVER}
-\item {\tt cp MESHES/TEST\_MESH/mesh\_params.h .} $\Rightarrow$ defines the mesh as a header.
-\item {\tt ./makemake.csh} $\Rightarrow$ creates Solver Makefile.
-\item {\tt make clean; make} $\Rightarrow$ make sure {\tt xsem} exists.
-\item {\tt ./submit.csh TEST\_SOLVER} 
+\item In \verb|inparam_basic| set \verb|MESHNAME| to the meshname from above(\verb|TEST_MESH|)
+\item {\tt ./makemake.pl} $\Rightarrow$ creates Solver Makefile.
+\item {\tt ./submit.csh TEST\_SOLVER}  $\Rightarrow$ compiles and runs the code
 \item {\tt cd TEST\_SOLVER} $\Rightarrow$ Check {\tt OUTPUT\_TEST\_SOLVER}.
-\item Wait for ``{\tt  PROGRAM axisem FINISHED}'' to appear in {\tt OUTPUT\_TEST\_SOLVER}.
+\item \verb|tail -f OUTPUT_TEST_SOLVER| $\Rightarrow$ Wait for ``{\tt  PROGRAM
+        axisem FINISHED}'' to appear in \\ {\tt OUTPUT\_TEST\_SOLVER}.
 \item {\tt ./post\_processing.csh}
 \item {\tt cd Data\_Postprocessing} 
-\item {\tt googleearth}, open {\tt src\_rec\_processed.kml}, click earthquake (info), receivers (seismograms).
+\item {\tt googleearth}, open {\tt googleearth\_src\_rec\_processed.kml}, click
+        earthquake (info), receivers (seismograms).
 \item {\tt matlab}, run {\tt plot\_record\_section.m}, plotting all components of displacement seismograms.
-\item {\tt cd SNAPS; paraview}, load snaps for 3D wavefield movie.
+% \item {\tt cd SNAPS; paraview}, load snaps for 3D wavefield movie.
+% snaps are deacticated in defaulf...
+
 \end{enumerate}
-Once this has been succesfully completed, steps 2., 3., 9. can be omitted. If the Solver is re-run with different parameters but the
-same mesh, you may start at step 11. Changing mesh input is done between 3. and 4., changing solver input between 10. and 11.,
-changing post-processing input between 13. and 14. Using a new mesh requires recompilation of the solver (step 10.). If post
-processing parameters are changed, also change the post processing directory.
+Once this has been succesfully completed, steps 2. and 8. can be omitted. If
+the Solver is re-run with different parameters but the
+same mesh, you may start at step 9. Changing mesh input is done between 2. and
+3., changing solver input between 8. and 9.,
+changing post-processing input between 11. and 12. Using a new mesh requires
+recompilation of the solver (done automatically in step 9.). If post
+processing parameters are changed, also change the post processing directory or
+delete the old one.
 
 \subsection{General remarks on the codes}
+
 \textbf{Overview.} 
-AXISEM is a parallel spectral-element method of the Gauss-Lobatto-Legendre type to 
-solve the 3D solid-fluid equations of motion in a spherically symmetric sphere. The Fortran 90 source 
-code is divided into a Mesher and a Solver utilizing the message-passing interface (MPI) for communication
-between separate domains. Due to symmetries in the earthquake radiation patterns, 
-the 3D wavefield of an earthquake moment tensor is reconstructed from 4 separate simulations
-within a 2D computational domain. This D-shaped cylindrical domain includes a non-physical boundary with
-singularities at the symmetry axis which is accomodated by Gauss-Lobatto-Jacobi discretization and 
-l'Hospital's rule and does not need to invoke any absorbing method. Due to this symmetry, earthquake 
-sources need to be located along this axis, and any lateral heterogeneities in the background model 
-would be seen in an effectively ring-like structure.\\
-The essential raison-d'\^{e}tre of this method is the efficient calculation 
-of seismograms, wavefield movies, and specifically wavefields that constitute the crux for 
-sensitivity kernels to allow for tomographic inversions of any portion of a seismogram at any relevant 
-frequency. The two main parts are the mesher to construct a 2D domain for a given number of processors, 
-resolution and input background model, and the solver which conducts the temporal evolution of the system 
-explicitely at arbitrary spatial and up to sixth-order temporal accuracy.\\
+
+% TODO these 2 block are in large parts repetition of the introduction
+AXISEM is a parallel spectral-element method of the Gauss-Lobatto-Legendre type
+to solve the 3D solid-fluid equations of motion in a spherically symmetric
+sphere. The Fortran 90 source code is divided into a Mesher and a Solver
+utilizing the message-passing interface (MPI) for communication between
+separate domains. Due to symmetries in the earthquake radiation patterns, the
+3D wavefield of an earthquake moment tensor is reconstructed from 4 separate
+simulations within a 2D computational domain. This D-shaped domain
+includes a non-physical boundary with singularities at the symmetry axis which
+is accomodated by Gauss-Lobatto-Jacobi discretization and l'Hospital's rule.
+Due to this symmetry, earthquake
+sources need to be located along this axis, and any lateral heterogeneities in
+the background model would be seen in an effectively ring-like structure.\\
+
+The essential raison-d'\^{e}tre of this method is the efficient calculation of
+seismograms, wavefield movies, and specifically wavefields that constitute the
+crux for sensitivity kernels to allow for tomographic inversions of any portion
+of a seismogram at any relevant frequency. The two main parts are the mesher to
+construct a 2D domain for a given number of processors, resolution and input
+background model, and the solver which conducts the temporal evolution of the
+system explicitely at arbitrary spatial and up to sixth-order temporal
+accuracy.\\
 
 \textbf{Code structure \& coding philosophy}
+
 \begin{itemize}
-\item The $>$40.000 lines of code 
-are very \textbf{modular} in nature, such that vast parts of the code shall never need to be seen by anyone 
-wishing to change/add something. This is particularly the case for the intricate geometrical mapping relations, quadrature, 
-spectral operations, interpolation, index-mapping in the mesher, and some of the I/O.
-\item Check {\tt main.f90} in either code for an overview of the tasks. Most important routines are well documented 
-(at least in the Solver case!)
-\item The codes allow for single or double precision (specified in {\tt global\_parameters.f90}), but in any case, crucial 
-geometric operations are done in double, whereas large wavefield arrays in single can reduce computational cost 
-notably if chosen.
-\item The Mesher allocates memory dynamically, whereas the Solver includes the major array sizes from the mesher into 
-a header ({\tt mesh\_params.h}). This means that each new mesh requires recompilation of the Solver. 
-\item Input options are few and physical: The aim is to streamline as much as possible and leave only those options that 
-relate to practical choices.
-\item All variables and constants that are needed across modules are defined 
-in files named {\tt data\_xxx.f90}; global constants in {\tt global\_parameters.f90}.
-\item Changes in any of the input files do NOT require recompilation, changes in 
-{\tt *.f90} or {\tt *.h} files DO require recompilation. 
-\item Standard output is written to files called 
-{\tt OUTPUT} (mesher) and {\tt OUTPUT\_<solverdir>} (solver), 
-which contain all relevant information regarding either run. 
-\item Optimization: The solver runs fully on unit-stride cache access and unrolled loops for tensor products 
-as well as asynchonous message passing. The relevant routines performing these tasks are few and very 
-general, so any changes in performance should first have a look there.
-\item Everything related to MPI and parallel worlds is confined to the module {\tt commpi.f90}. In order to completely 
-debunk message passing, one simply needs to remove {\tt commpi.f90}, and change a few lines in {\tt commun.f90} (as 
-indicated there), then restart the {\tt makemake.pl; make clean; make} workflow. 
-\item Object-oriented fortran features have been ommitted almost entirely due to their severe negative impact on performance.
+    \item The $>$40.000 lines of code are very \textbf{modular} in nature, such
+    that vast parts of the code shall never need to be seen by anyone wishing
+    to change/add something. This is particularly the case for the intricate
+    geometrical mapping relations, quadrature, spectral operations,
+    interpolation, index-mapping in the mesher, and some of the I/O.
+    
+    \item Check {\tt main.f90} in either code for an overview of the tasks.
+    Most important routines are well documented (at least in the Solver case!)
+
+    %  TODO Is this of relevance for average users?
+    \item The codes allow for single or double precision (specified in {\tt
+    global\_parameters.f90}), but in any case, crucial geometric operations are
+    done in double, whereas large wavefield arrays in single can reduce
+    computational cost notably if chosen.
+
+    \item The Mesher allocates memory dynamically, whereas the Solver includes
+    the major array sizes from the mesher into a header ({\tt mesh\_params.h}).
+    This means that each new mesh requires recompilation of the Solver. 
+
+    \item Input options are few and physical: The aim is to streamline as much
+    as possible and leave only those options that relate to practical choices.
+
+    \item All variables and constants that are needed across modules are
+    defined in files named {\tt data\_xxx.f90}; global constants in {\tt
+    global\_parameters.f90}.
+
+    \item Changes in any of the input files do NOT require recompilation,
+    changes in {\tt *.f90} or {\tt *.h} files DO require recompilation. 
+
+    \item Standard output is written to files called {\tt OUTPUT} (mesher) and
+    {\tt OUTPUT\_<solverdir>} (solver), which contain all relevant information
+    regarding either run. 
+
+    \item Optimization: The solver runs fully on unit-stride cache access and
+    unrolled loops for tensor products as well as asynchronous message passing.
+
+    \item Everything related to MPI and parallel worlds is confined to the
+    module {\tt commpi.f90}. In order to completely debunk message passing, one
+    simply needs to remove {\tt commpi.f90}, and change a few lines in {\tt
+    commun.f90} (as indicated there), then restart the {\tt makemake.pl; make
+    clean; make} workflow. 
+    % TODO this has not been tested in a while
+
+    \item Object-oriented fortran features have been ommitted almost entirely
+    due to their severe negative impact on performance.
 \end{itemize}
 
 \subsection{General workflow}
 The generic workflow for both Mesher and Solver is as follows:
 \begin{enumerate}
-\item {\tt ./makemake.pl <arguments>}
-\item {\tt make clean; make}
-\item Edit input parameters
-\item {\tt ./submit.csh <arguments>}
+    \item {\tt ./makemake.pl <arguments>}
+    \item {\tt make clean; make}
+    \item Edit input parameters
+    \item {\tt ./submit.csh <arguments>}
 \end{enumerate}
 
 \noindent {\tt makemake.pl } generates the respective Makefiles. Argument \#1 options 
 (check available options with {\tt ./makemake.pl -h}) include:
-{\tt gfortran} and {\tt ifort}, argument \#2 is optional and only defined for {\tt debug}. Best is to try some options and 
-check the Makefile to make sure it suits you.\\
+{\tt gfortran} and {\tt ifort}, argument \#2 is optional and only defined for
+{\tt debug}. Best is to try some options and check the Makefile to make sure it suits you.\\
 
 \noindent \textbf{Input parameters: } Input ({\tt vi inparam\_mesh})
 to the Mesher is simple, you should in most cases (of conventional earth models) 
 not need to edit more than the first 3 parameters (earth model, seismic period, and number of processors). 
 Input to the Solver is attempted to be streamlined to the most primitive basis of settings as well. General 
 input parameters are set in {\tt inparam}, source and receiver parameters in separate files (specified 
-in {\tt inparam}). The information from the mesh is confined to the header file {\tt mesh\_params.h} 
-which needs to be copied into the source code directory \textit{prior to compilation}.\\
+in {\tt inparam}). The information from the mesh is confined to the header file {\tt mesh\_params.h} .\\
 
-\noindent {\tt submit.csh} are scripts to submit the jobs, check details with {\tt ./submit.csh -h} for both Mesher and Solver. 
-In both cases, one can choose the queuing system (so far lsf and torque/maui) via arguments. In the Solver case, the 
-source radiation type can also be specified via arguments. Note that in the case of a full moment tensor, 4 jobs will 
-be submitted, and in the case of a full force vector 2. The script for the solver performs a variety of crucial operations 
-for the simulations to succeed, act with sensitive care in case you really need to edit this script! \\
+\noindent {\tt submit.csh} are scripts to submit the jobs, check details with
+{\tt ./submit.csh -h} for both Mesher and Solver. In both cases, one can
+choose the queuing system (so far lsf, slurm and torque/maui) via arguments. In the
+Solver case, the source radiation type can also be specified via arguments.
+Note that in the case of a full moment tensor, 4 jobs will be submitted.
+% TODO: not implemented: , and in the case of a full force vector 2 (). 
+The script for the solver performs a variety
+of crucial operations for the simulations to succeed, act with sensitive care
+in case you really need to edit this script! \\
 
-\noindent Upon successful completion of either job type, several post-processing options are available to indulge in. The 
-mesher contains several vtk files to check the mesh via paraview, the solver contains a comprehensive and important 
-series of operations invoked via {\tt ./post\_processing.csh } from the directory of the run. This includes 
-summation over individual moment-tensor element responses, convolution with source time functions, rotation to 
-actual source-receiver geometry, google-earth plots, seismograms in ascii and graphical formats, 
-traveltime tables, 3D wave propagation snapshot movies, and a matlab script for plotting seismogram record sections.
+\noindent Upon successful completion of either job type, several
+post-processing options are available to indulge in. The mesher contains
+several vtk files to check the mesh via paraview, the solver contains a
+comprehensive and important series of operations invoked via {\tt
+./post\_processing.csh } from the directory of the run. This includes summation
+over individual moment-tensor element responses, convolution with source time
+functions, rotation to actual source-receiver geometry, google-earth plots,
+seismograms in ascii and graphical formats, traveltime tables, 3D wave
+propagation snapshot movies, and a matlab script for plotting seismogram record
+sections.
 
 \subsection{Algorithmic \& technical features}
 \begin{itemize}
-\item Global numbering scheme (P. Fischer \& H. Tufo)
-\item High-order symplectic time integration schemes (co-developed with Jean-Paul Ampuero)
-\item Unit-stride cache access, unrolled matrix products (Deville, Fischer, Mund)
-\item Asynchronous (non-blocking) message passing (Tufo)
-\item Output in VTK cell geometry
-\item netcdf, xdmf file formats
-\item python interface 
+    \item Global numbering scheme (P. Fischer \& H. Tufo)
+    \item High-order symplectic time integration schemes (co-developed with Jean-Paul Ampuero)
+    % TODO: these are not well tested and give different results then newmark atm.
+    \item Unit-stride cache access, unrolled matrix products (Deville, Fischer, Mund)
+    \item Asynchronous (non-blocking) message passing (Tufo)
+    \item Output in VTK cell geometry
+    \item netcdf, xdmf file formats
+    \item python interface 
 \end{itemize}
 
 \subsection{File formats}
+???
 
 \input{automated_testing}
 
-\input{virtual_box_tutorial}
+% \input{virtual_box_tutorial}
+% seperate document by now
 
 \input{pyaxi_input}
 
 \newpage
 \section{Mesher}
-Constructs the spherical 2-D semi-disk of spectral elements based 
-on a given background model, a target resolution as defined by 
-the (dominant) source period, the number of processors, 
-and the polynomail order of the spectral elements. 
-This mesher is NOT well documented and rather involved regarding index mapping, 
-hence subject to future streamlining efforts. Please let us know if you intend to add comments or 
-change code to join forces.
-It invokes a series of dingy, multiply layered bookkeeping index arrays that 
-are not easy to follow (see mind-twisting highlights in {\tt parallelization.f90} and {\tt pdb.f90}). 
-Again, we welcome improvements here but want to caution users to change 
-anything if not entirely sure about all dependencies.\\
+Constructs the spherical 2-D semi-disk of spectral elements based on a given
+background model, a target resolution as defined by the (dominant) source
+period, the number of processors, and the polynomail order of the spectral
+elements. 
+% TODO true, but who cares?
+This mesher is NOT well documented and rather involved regarding
+index mapping, hence subject to future streamlining efforts. Please let us know
+if you intend to add comments or change code to join forces. It invokes a
+series of dingy, multiply layered bookkeeping index arrays that are not easy to
+follow (see mind-twisting highlights in {\tt parallelization.f90} and {\tt
+pdb.f90}). Again, we welcome improvements here but want to caution users to
+change anything if not entirely sure about all dependencies.\\
 
 \noindent NOTE: The mesher is serial but constructs the parallel mesh database 
 needed in the solver (in {\tt pdb.f90}), easily down to periods of about 
-3 seconds on typical shared RAMs ($\sim$ 2GB). 
+3 seconds on typical shared RAMs ($\sim$ 2GB) and to 1Hz on ($\sim$ 14GB). 
 For higher resolutions on such chips, reordering of global variables and/or complete 
 parallelization of the Mesher is a mundane task for $t>{\rm today}$.
+%  TODO ???
 
 \subsection{Installation and compilation}
-Use {\tt ./makemake.pl <arguments>} to create the Makefile when opening for the first time or adding modules. 
-Invoking {\tt ./makemake.pl -h} provides options for different compilers. Always check the resultant {\tt Makefile} to make 
-sure it rocks, compiler- and flag-wise. Compile via {\tt make clean; make}. The executable is called {\tt xmesh}. 
-Changing code without adding modules does not require to recreate the Makefile, only recompilation.
+Use {\tt ./makemake.pl <arguments>} to create the Makefile when opening for the
+first time or adding modules.  Invoking {\tt ./makemake.pl -h} provides options
+for different compilers. Always check the resultant {\tt Makefile} to make sure
+it rocks, compiler- and flag-wise. Compile via {\tt make clean; make}. The
+executable is called {\tt xmesh}.  Changing code without adding modules does
+not require to recreate the Makefile, only recompilation.
 
 \subsection{Input}
 \begin{figure*}[htb]
@@ -457,116 +507,142 @@ Changing code without adding modules does not require to recreate the Makefile, 
 \end{figure*}
 
 \noindent \textit{Basic set of parameters} to be edited:
+% TODO: parameter names as in the input files
+% TODO: new switch: dump_vtk
 \begin{itemize}
-\item \textbf{background models}: Be sure that the string defined here exists in 
-{\tt background\_models.f90}. Adding new background models is explained further below.
+    \item \textbf{background models}: Be sure that the string defined here exists in 
+    {\tt background\_models.f90}. Adding new background models is explained further below.
+    
+    \item \textbf{dominant period:} This is the seismic source period at which dominant parts 
+    of the spectrum are propagated. Note that this is different from other codes in which the 
+    maximal frequency may be specified. 
+    In most applications, the solver should be run using a Dirac 
+    delta function and then convolved a posteriori with the source-time function (STF). In that 
+    case the pure simulation results contain high-frequency numerical noise beyond the mesh 
+    resolution, but the convolution eradicates those (even better than if a non-white spectrum 
+    STF is inserted as the source, since the spatial point source also introduces aliasing, which 
+    can only be taken care of via the above-mentioned posteriori convolution.
+    % TODO: sure? should this not be a linear effect? notes on stf seems a bit
+    % misplaced here, more relevant for SOLVER then MESHER
+    
+    \item \textbf{number of processors}: needs to be 1, 2, 6 or a multiple of
+    4. To get a suggestion for optimal decomposition, run the Mesher with #proc
+    smaller or equal 4 and check the OUTPUT file. Then change the number in the
+    input file and rerun the mesher.
 
-\item \textbf{dominant period:} This is the seismic source period at which dominant parts 
-of the spectrum are propagated. Note that this is different from other codes in which the 
-maximal frequency may be specified. 
-In most applications, the solver should be run using a Dirac 
-delta function and then convolved a posteriori with the source-time function (STF). In that 
-case the pure simulation results contain high-frequency numerical noise beyond the mesh 
-resolution, but the convolution eradicates those (even better than if a non-white spectrum 
-STF is inserted as the source, since the spatial point source also introduces aliasing, which 
-can only be taken care of via the above-mentioned posteriori convolution.
-
-\item \textbf{number of processors}: needs to be a multiple of 2. At this point, the mesher 
-only accomodates meshes up to 16 processors. This is not a serious limit, but 
-merely a matter of having not implemented the central region decomposition 
-for larger numbers (which shall not be necessary considering hardware developments).
+    \item \textbf{coarsening levels}: Keep this at 3 if applied to any typical earth models
+    (2 for 'light' models without crust), as this number reflects the overall
+    change in velocity between the surface and the deep interior.  if the total
+    global variation in wave speed is significantly different, other options
+    may be convenient here. This applies to other spheroidals, homogeneous or
+    simply layered models.
 \end{itemize}
+
 \newpage
 \noindent \textit{Advanced set of parameters} to be edited:
+
 \begin{itemize}
-\item \textbf{resolve inner shear wave:} This should always be set to true. If false, then the inner core 
-is assumed fluid but the saved CPU cost is negligible.
-
-\item \textbf{polynomial order}: The polynomial order $N$ of the Gauss-Lobatto-Legendre (GLL) basis 
-within elements
-is often said to be optimal at 4. However, this can be freely chosen, specifically if convergence tests are needed,
-and Ref (5) suggests that higher polynomial orders may be more cost-effective, depending on the constraints 
-imposed by the element mesh (e.g., thin crustal layers to be accomodated). The ``optimal'' judgment stems 
-from the fact that the minimal spacing of GLL points depends on $1/N^2$, that is, the spectral convergence 
-is counteracted by a possibly quadratic decrease in the critical time step.
-
-\item \textbf{number of elements per wavelength}: This will be used to compute the largest
-allowable grid spacing based on the dominant source period and is intimately 
-tied to the polynomial order $N$. See ref (5) for 
-a comprehensive analysis on how to choose the parameters if necessary.
-If the seismograms contain unreasonable noise (usually high-frequency tails), 
-are inaccurate or otherwise different than a reference solution or data, 
-try to increase this value. This will result in a denser mesh at higher 
-simulation cost (possibly more processors), but deliver more accurate results. 
-The absolute minimum number of grid points per maximum wavelength for S waves 
-is about 4.5 (i.e., this parameter times $N$). See ref (3) and (5) for details.
-
-\item \textbf{Courant number}: Defines the stability criterion to choose the critical time step.
-0.6 is the heuristically determined maximal value for any realistic 
-applications. If the solver explodes, decrease this number. Note that dispersion errors increase 
-with propagation distances (counted in wavelengths), and for large distances one should  
-choose a smaller time step than the critical one (which is the one suggested by 
-the output of the mesher in {\tt mesh\_params.h}).
-
-\item \textbf{outer radius}: This is the same for IASP91 and PREM, but should be changed accordingly 
-if other models necessitate otherwise, or of course if other spheroidals are considered. 
-
-\item \textbf{mesh info files}: These files become extravagantly large for high-resolution meshes 
-and are not needed by the solver, nor by any of the current post-processing tools and as such should 
-be kept .false. unless significant changes or issues within the mesher are emerging.
-
-\item \textbf{mesh info screen}: This is extra output containing some more details on the meshing 
-process, but equally to the large files unnecessary for any normal meshing procedure.
-
-\item \textbf{dump directory:} The directory where most of the output is written. The posteriori 
-{\tt movemesh} script moves all those files to the permanent mesh location.
-
-\item \textbf{coarsening levels}: Keep this at 3 if applied to any typical earth models, as
-this number reflects the overall change in velocity between the surface and the deep interior.
-if the total global variation in wave speed is significantly different, 
-other options may be convenient here. This applies to other spheroidals, homogeneous 
-or simply layered models.
+    \item \textbf{resolve inner shear wave:} This should always be set to true.
+    If false, then the inner core is assumed fluid but the saved CPU cost is negligible.
+    
+    \item \textbf{polynomial order}: The polynomial order $N$ of the
+    Gauss-Lobatto-Legendre (GLL) basis within elements is often said to be
+    optimal at 4. However, this can be freely chosen, specifically if
+    convergence tests are needed, and Ref (5) suggests that higher polynomial
+    orders may be more cost-effective, depending on the constraints imposed by
+    the element mesh (e.g., thin crustal layers to be accomodated). The
+    ``optimal'' judgment stems from the fact that the minimal spacing of GLL
+    points depends on $1/N^2$, that is, the spectral convergence is
+    counteracted by a possibly quadratic decrease in the critical time step.
+    NB: 'Coarse grained' memory variables for efficient attenuation in the solver
+    are only implemented for polynomial order 4.
+    
+    \item \textbf{number of elements per wavelength}: This will be used to
+    compute the largest allowable grid spacing based on the dominant source
+    period and is intimately tied to the polynomial order $N$. See ref (5) for
+    a comprehensive analysis on how to choose the parameters if necessary.  If
+    the seismograms contain unreasonable noise (usually high-frequency tails),
+    are inaccurate or otherwise different than a reference solution or data,
+    try to increase this value. This will result in a denser mesh at higher
+    simulation cost (possibly more processors), but deliver more accurate
+    results. The absolute minimum number of grid points per maximum wavelength
+    for S waves is about 4.5 (i.e., this parameter times $N$). See ref (3) and
+    (5) for details.
+    
+    \item \textbf{Courant number}: Defines the stability criterion to choose
+    the critical time step.  0.6 is the heuristically determined maximal value
+    for any realistic applications. If the solver explodes, decrease this
+    number. Note that dispersion errors increase with propagation distances
+    (counted in wavelengths), and for large distances one should  choose a
+    smaller time step than the critical one (which is the one suggested by the
+    output of the mesher in {\tt mesh\_params.h}).
+    
+    \item \textbf{outer radius}: This is the same for IASP91 and PREM, but
+    should be changed accordingly if other models necessitate otherwise, or of
+    course if other spheroidals are considered. 
+    
+    \item \textbf{mesh info files}: These files become extravagantly large for
+    high-resolution meshes and are not needed by the solver, nor by any of the
+    current post-processing tools and as such should be kept .false. unless
+    significant changes or issues within the mesher are emerging.
+    
+    \item \textbf{mesh info screen}: This is extra output containing some more
+    details on the meshing process, but equally to the large files unnecessary
+    for any normal meshing procedure.
+    
+    \item \textbf{dump directory:} The directory where most of the output is
+    written. The posteriori {\tt movemesh} script moves all those files to the
+    permanent mesh location.
+    
 \end{itemize}
+
 
 \subsection{Running the mesher}
 Job submission is simple:\\
 {\tt ./submit.csh <optional queuing system>},\\
-where {\tt <optional queuing system>} can be {\tt lsf, torque} at this point. Check {\tt ./submit.csh -h} for 
-options.
+where {\tt <optional queuing system>} can be {\tt lsf, torque, slurm,
+slurmlocal} at this point. Check {\tt ./submit.csh -h} for options.
 
 \subsection{Changing the background model}
-This is traditionally the bottleneck of seismic code flexibility (in my very biased view)... so 
-we've given considerable effort to making this task as primitive and decoupled from the 
-rest of the code as possible. In principle, two options for new earth models exist: \\
-(1) Parameterized, polynomial, piecewise continuous representation of wavespeeds $v(r)$,\\
-(2) Discrete radial values of $v(r_i)$.\\
+This is traditionally the bottleneck of seismic code flexibility (in my very
+biased view)... so we've given considerable effort to making this task as
+primitive and decoupled from the rest of the code as possible. In principle,
+two options for new earth models exist: \\ (1) Parameterized, polynomial,
+piecewise continuous representation of wavespeeds $v(r)$,\\ (2) Discrete radial
+values of $v(r_i)$.\\
 
-\noindent In principle, this should be entirely general such that you can dream up multiple fluid layers,
-discretely layered earths or other planets, ridiculous velocity variations, 
-however we have not completed the fully fluid sphere just yet. As soon as your new 
-model affects the overall change in velocity between surface and maximal value at depth, you 
-will have to change the number of expected coarsening levels in {\tt inparam\_mesh} as indicated there.\\
+\noindent In principle, this should be entirely general such that you can dream
+up multiple fluid layers, discretely layered earths or other planets,
+ridiculous velocity variations, however we have not completed the fully fluid
+sphere just yet. As soon as your new model affects the overall change in
+velocity between surface and maximal value at depth, you will have to change
+the number of expected coarsening levels in {\tt inparam\_mesh} as indicated
+there. Also, the innermost layer needs to be thick enough to accommodate the
+inner cube of the mesh. \\
 
-\noindent Two modules will need to be amended: {\tt model\_discontinuities.f90} and {\tt background\_models.f90}.
-Note that {\tt background\_models.f90} is copied to the Solver by {\tt movemesh} 
-such that additions will be automatically accounted for in the Solver. 
+\noindent Two modules will need to be amended: {\tt model\_discontinuities.f90}
+and {\tt background\_models.f90}.  Note that {\tt background\_models.f90} is
+copied to the Solver by {\tt movemesh} such that additions will be
+automatically accounted for in the Solver. 
 
 \subsection{Anisotropy}
+% TODO
 
 \subsection{Attenuation}
+% TODO
 
 \subsection{Computational aspects}
-The simulations should be done within seconds to minutes for meshes above 5 seconds.
-Note that doubling the resolution (half the period) results in a mesh that 
-is 4 times larger and has about half the time step, i.e. the solver takes 
-double the time at 4 times more processors. Increasing the number of 
-processors while keeping resolution constant will slow the mesher insignificantly, 
-but in most cases speed up the solver substantially, but not linearly
-(the more message passing, the slower).
-This mesher is completely serial but constructs the parallel mesh database 
-needed in the solver (in pdb.f90), easily down to periods of about 
-3 seconds on typical memory chips ($\sim$ 2GB), and down to 1 second on 
-larger shared memories (e.g. 12GB).
+The simulations should be done within seconds to minutes for meshes above 5
+seconds.  Note that doubling the resolution (half the period) results in a mesh
+that is 4 times larger and has about half the time step, i.e. the solver takes
+double the time at 4 times more processors. Increasing the number of processors
+while keeping resolution constant will slow the mesher insignificantly, but in
+most cases speed up the solver substantially, but not linearly (the more
+message passing, the slower).  This mesher is completely serial but constructs
+the parallel mesh database needed in the solver (in pdb.f90), easily down to
+periods of about 3 seconds on typical memory chips ($\sim$ 2GB), and down to 1
+second on larger shared memories (e.g. 16GB).
+% TODO: this is a repetition
 
 \begin{table}[h]
 \begin{tabular}{ccc}
@@ -584,31 +660,39 @@ period & max  \\
 \end{table}
 
 \subsection{Code structure and components}
-Check {\tt main.f90} for the general code structure. Meshing of the spheroidal is confined to the module 
-{\tt discont\_meshing.f90}. The inner cube contains a coordinate transformation (see Theory section), which 
-is done in {\tt meshgen.f90}. The domain decomposition is accomodated by {\tt parallelization.f90}, and the 
-parallel database generated in {\tt pdb.f90}. You may wish to avoid diving into these murky modules 
-unless your curiosity exceeds that of an average coding geek, or you encounter an issue.\\
+Check {\tt main.f90} for the general code structure. Meshing of the spheroidal
+is confined to the module {\tt discont\_meshing.f90}. The inner cube contains a
+coordinate transformation (see Theory section), which is done in {\tt
+meshgen.f90}. The domain decomposition is accomodated by {\tt
+parallelization.f90}, and the parallel database generated in {\tt pdb.f90}. You
+may wish to avoid diving into these murky modules unless your curiosity exceeds
+that of an average coding geek, or you encounter an issue.\\
 
 \noindent\textbf{Domain decomposition }\\
-In {\tt parallelization.f90} we have an exactly load-balanced colatitudinal cake-piece decomposition 
-for the outer spherical part of the mesh. The central, rectangular part is trickier. 
-We employ a method that is based on the following principles:
+In {\tt parallelization.f90} we have an exactly load-balanced colatitudinal
+cake-piece decomposition for the outer spherical part of the mesh. The central,
+rectangular part is trickier. We employ a method that is based on the
+following principles:
+
 \begin{itemize}
-\item exact load balancing 
-\item maximally 2 neighboring domains, i.e. each domain touches the axis
-\item at least two elements thickness
-\item spherical cake-piece decomposition as 'boundary condition'
+    \item exact load balancing 
+    \item maximally 2 neighboring domains, i.e. each domain touches the axis
+    \item at least two elements thickness
+    % TODO: isn't this three?
+    \item spherical cake-piece decomposition as 'boundary condition'
 \end{itemize}
-Upon this, we construct the decomposition by approximating polynomials $s(z)$
-of varying degrees. For the time being, this is only implemented up to 
-16 processors, but no hard limitation. See the Theory section in this manual for details.
+
+% TODO: note on new decomposition method
+
+%Upon this, we construct the decomposition by approximating polynomials $s(z)$
+%of varying degrees. For the time being, this is only implemented up to 
+%16 processors, but no hard limitation. See the Theory section in this manual for details.
 
 \subsection{Output}
 \underline{Needed by solver} \\
 {\tt mesh\_params.h}\\
 {\tt meshdb.dat0000,...,meshdb.dat00$<$nproc-1$>$}\\
-{\tt unrolled\_loops.f90}\\
+%{\tt unrolled\_loops.f90}\\
 {\tt background\_models.f90}\\
 
 \noindent\underline{NOT needed by solver }\\
@@ -616,33 +700,32 @@ Everything else (mostly in directory {\tt Diags/}) including various global
 arrays such as valence.\\
 
 \noindent {\tt mesh\_params.h}: \\
-This is a header file that contains all the static array 
-sizes for the solver such that it does not need to allocate (a lot of) 
-memory dynamically. Specifically, it documents all revelant mesh input 
-parameters commented at the top, and some output information such as 
-time step at the bottom.  The inclusion of this header into the solver 
-requires recompilation for each new mesh. This header includes 
-mesh sizes and is identical for each processor due to the exact load balancing.
-The last line is added by {\tt movemesh} and indicates the location of the mesh 
-database. If you move the mesh, make sure to change this line accordingly!!
-\\
+This is a header file that contains all the static array sizes for the solver
+such that it does not need to allocate (a lot of) memory dynamically.
+Specifically, it documents all revelant mesh input parameters commented at the
+top, and some output information such as time step at the bottom.  The
+inclusion of this header into the solver requires recompilation for each new
+mesh. This header includes mesh sizes and is identical for each processor due
+to the exact load balancing.  The last line is added by {\tt movemesh} and
+indicates the location of the mesh database. If you move the mesh, make sure to
+change this line accordingly!!  \\
 
 \noindent {\tt meshdb.dat00*}: \\
-These are the complete databases for each processor of the 
-solver simulations. They contain the skeleton mesh, regions, boundary 
-information (axis, free surface, solid-fluid boundary, processor boundary), 
-and basically everything needed for a full simulation except for the 
-source-receiver specification which is an input for the solver. \\
+These are the complete databases for each processor of the solver simulations.
+They contain the skeleton mesh, regions, boundary information (axis, free
+surface, solid-fluid boundary, processor boundary), and basically everything
+needed for a full simulation except for the source-receiver specification which
+is an input for the solver. \\
 
-\noindent After these two crucial output file types are written, the mesher reloads them as a
-simple test on some of their dependencies. More comprehensive tests are 
-performed in the solver. \\
+\noindent After these two crucial output file types are written, the mesher
+reloads them as a simple test on some of their dependencies. More comprehensive
+tests are performed in the solver. \\
 
 \noindent\textbf{\underline{Prepare files to be used in solver}}\\
 Use the script {\tt movemesh} to transfer all relevant files to the directory ../SOLVER/MESHES. 
-Using this script is crucial since it adds 
-a line to the {\tt mesh\_params.h} header file to indicate the location of the large mesh 
-databases.
+% TODO  I think this is ouddated. double check
+%Using this script is crucial since it adds a line to the {\tt mesh\_params.h}
+%header file to indicate the location of the large mesh databases.
 
 \subsection{Mesher Post-processing/quality control }
 \begin{figure*}[htb]
@@ -654,12 +737,13 @@ central region and crust/upper mantle are added to highlight the topological fea
 \end{center}
 \end{figure*}
 %
-\noindent Generic output includes various {\tt *.vtk} files on the elemental mesh with media properties 
-(see Fig.~\ref{fig:mesh_vp}) as well as a host of other plots with respect to Courant number, 
-points per wavelength, period, time step etc, and domain decomposition.
-All of these files are moved to the permanent mesh location via {\tt movemesh} and can be easily viewed with {\tt paraview}. 
-Turn on the \textit{surface with edges} and \textit{data} features to visualize the element mesh and medium 
-properties, respectively.
+\noindent Generic output includes various {\tt *.vtk} files on the elemental
+mesh with media properties (see Fig.~\ref{fig:mesh_vp}) as well as a host of
+other plots with respect to Courant number, points per wavelength, period, time
+step etc, and domain decomposition.  All of these files are moved to the
+permanent mesh location via {\tt movemesh} and can be easily viewed with {\tt
+paraview}. Turn on the \textit{surface with edges} and \textit{data} features
+to visualize the element mesh and medium properties, respectively.
 
 \subsection{Cautions}
 Fully operational in single or double precision, so please 
