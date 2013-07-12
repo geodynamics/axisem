@@ -185,12 +185,16 @@ a full moment tensor source) are solved numerically using a spectral element app
     Open one of the vtk files in the subfolder \verb|Diags|, e.g.\ \verb|mesh_vp.vtk|
     and click apply in the properties panel on the left. (you might get an OpenGL Error
     on the virtual box, which you can ignore). To see the mesh, change the representation
-    from 'surface' to 'surface with edges'. You can open other vtk files to look at other
-    properties of the model and the mesh. You might need to rescale the color range by
-    clicking on the left-right arrow symbol in the top left.
+    from 'surface' to 'surface with edges' (On some host systsem, the dropdown menu seems
+    to be messed up, in that case go to the 'Display' context in the
+    'Properties' panel on the left). You can open other vtk files to look at
+    other properties of the model and the mesh. You might need to rescale the
+    color range by clicking on the left-right arrow symbol in the top left.
 
     \begin{center}
-    \includegraphics[width=80mm]{paraview.png}
+    \includegraphics[height=30mm]{paraview.png}
+    \hspace{5mm}
+    \includegraphics[height=30mm]{paraview3.png}
     \end{center}
         
     \item Move the mesh to the solver directory and give it a meaningful name:
@@ -239,14 +243,15 @@ a full moment tensor source) are solved numerically using a spectral element app
     \end{verbatim}
     %
     Once the run is finished, take a look at the wavefield with \verb|paraview|: open
-    the \verb|prem_ani_light_100s_mzz/Data/xdmf_xml_0000.xdmf| file and click apply. Go to
-    the last snapshot and rescale the color range, then click on play to see the wave
-    propagate.  You can also choose different components of the wavefield or the absolute
-    value.  For paraview experienced users: choose absolute value and a logarithmic
-    colorscale to see all wave types at once (e.g.\ 'black body radiation' looks nice).
-    You can find a 5s period movie of these snapshots in the \verb|movie| folder on the
-    desktop (use \verb|gpicview| to open the \verb|.png| files and \verb|???| to open the
-    movie).
+    the \verb|prem_ani_light_100s_mzz/| \verb|Datai/xdmf_xml_0000.xdmf|
+    file and click apply. Go to the last snapshot and rescale the color range,
+    then click on play to see the wave propagate.  You can also choose
+    different components of the wavefield or the absolute value.  For paraview
+    experienced users: choose absolute value and a logarithmic colorscale to
+    see all wave types at once (e.g.\ 'black body radiation' looks nice).  You
+    can find a 5s period movie of these snapshots in the \verb|movie| folder on
+    the desktop (use \verb|gpicview| to open the \verb|.png| files and
+    \verb|???| to open the movie).
    
     \begin{center}
     \includegraphics[width=110mm]{paraview2.png} \hspace{5mm}
@@ -411,8 +416,8 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     \item Try different filter settings and compare the results.
     (Note: dominant period in synthetic seismograms is 5 sec.)
     
-    \item Find the time shift between the synthetics and real data, shift the synthetics
-    accordingly and plot the results:
+    \item Find the time shift between the synthetics and real data (maximum of
+    crosscorrelation function), shift the synthetics accordingly and plot the results:
     
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff shift_synthetics

@@ -1,15 +1,15 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=pdflatex 2012.5.30)  10 JUL 2013 15:43
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdflatex 2013.2.28)  12 JUL 2013 08:44
 entering extended mode
+ restricted \write18 enabled.
  %&-line parsing enabled.
 **AXISEMTutorial.tex
 (./AXISEMTutorial.tex
-LaTeX2e <2009/09/24>
-Babel <v3.8l> and hyphenation patterns for english, usenglishmax, dumylang, noh
-yphenation, ngerman, german, german-x-2009-06-19, ngerman-x-2009-06-19, loaded.
-
-(/usr/share/texmf-texlive/tex/latex/base/article.cls
+LaTeX2e <2011/06/27>
+Babel <v3.8m> and hyphenation patterns for english, dumylang, nohyphenation, ng
+erman, german, swissgerman, ngerman-x-2012-05-30, german-x-2012-05-30, loaded.
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2007/10/19 v1.4h Standard LaTeX document class
-(/usr/share/texmf-texlive/tex/latex/base/size10.clo
+(/usr/share/texlive/texmf-dist/tex/latex/base/size10.clo
 File: size10.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
 )
 \c@part=\count79
@@ -24,29 +24,29 @@ File: size10.clo 2007/10/19 v1.4h Standard LaTeX file (size option)
 \belowcaptionskip=\skip42
 \bibindent=\dimen102
 )
-(/usr/share/texmf-texlive/tex/generic/ifxetex/ifxetex.sty
-Package: ifxetex 2009/01/23 v0.5 Provides ifxetex conditional
+(/usr/share/texlive/texmf-dist/tex/generic/ifxetex/ifxetex.sty
+Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 )
-(/usr/share/texmf-texlive/tex/latex/base/fontenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
 Package: fontenc 2005/09/27 v1.99g Standard LaTeX package
 
-(/usr/share/texmf-texlive/tex/latex/base/t1enc.def
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.def
 File: t1enc.def 2005/09/27 v1.99g Standard LaTeX file
 LaTeX Font Info:    Redeclaring font encoding T1 on input line 43.
 ))
-(/usr/share/texmf-texlive/tex/latex/base/inputenc.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty
 Package: inputenc 2008/03/30 v1.1d Input encoding file
 \inpenc@prehook=\toks14
 \inpenc@posthook=\toks15
 
-(/usr/share/texmf-texlive/tex/latex/base/utf8.def
+(/usr/share/texlive/texmf-dist/tex/latex/base/utf8.def
 File: utf8.def 2008/04/05 v1.1m UTF-8 support for inputenc
 Now handling font encoding OML ...
 ... no UTF-8 mapping file for font encoding OML
 Now handling font encoding T1 ...
 ... processing UTF-8 mapping file for font encoding T1
 
-(/usr/share/texmf-texlive/tex/latex/base/t1enc.dfu
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1enc.dfu
 File: t1enc.dfu 2008/04/05 v1.1m UTF-8 support for inputenc
    defining Unicode char U+00A1 (decimal 161)
    defining Unicode char U+00A3 (decimal 163)
@@ -196,7 +196,7 @@ File: t1enc.dfu 2008/04/05 v1.1m UTF-8 support for inputenc
 Now handling font encoding OT1 ...
 ... processing UTF-8 mapping file for font encoding OT1
 
-(/usr/share/texmf-texlive/tex/latex/base/ot1enc.dfu
+(/usr/share/texlive/texmf-dist/tex/latex/base/ot1enc.dfu
 File: ot1enc.dfu 2008/04/05 v1.1m UTF-8 support for inputenc
    defining Unicode char U+00A1 (decimal 161)
    defining Unicode char U+00A3 (decimal 163)
@@ -227,7 +227,7 @@ File: ot1enc.dfu 2008/04/05 v1.1m UTF-8 support for inputenc
 Now handling font encoding OMS ...
 ... processing UTF-8 mapping file for font encoding OMS
 
-(/usr/share/texmf-texlive/tex/latex/base/omsenc.dfu
+(/usr/share/texlive/texmf-dist/tex/latex/base/omsenc.dfu
 File: omsenc.dfu 2008/04/05 v1.1m UTF-8 support for inputenc
    defining Unicode char U+00A7 (decimal 167)
    defining Unicode char U+00B6 (decimal 182)
@@ -251,7 +251,7 @@ Now handling font encoding U ...
    defining Unicode char U+2122 (decimal 8482)
    defining Unicode char U+2423 (decimal 9251)
 ))
-(/usr/share/texmf-texlive/tex/latex/base/textcomp.sty
+(/usr/share/texlive/texmf-dist/tex/latex/base/textcomp.sty
 Package: textcomp 2005/09/27 v1.99g Standard LaTeX package
 Package textcomp Info: Sub-encoding information:
 (textcomp)               5 = only ISO-Adobe without \textcurrency
@@ -266,12 +266,12 @@ Package textcomp Info: Sub-encoding information:
 (textcomp)             See the documentation for details.
 Package textcomp Info: Setting ? sub-encoding to TS1/1 on input line 71.
 
-(/usr/share/texmf-texlive/tex/latex/base/ts1enc.def
+(/usr/share/texlive/texmf-dist/tex/latex/base/ts1enc.def
 File: ts1enc.def 2001/06/05 v3.0e (jk/car/fm) Standard LaTeX file
 Now handling font encoding TS1 ...
 ... processing UTF-8 mapping file for font encoding TS1
 
-(/usr/share/texmf-texlive/tex/latex/base/ts1enc.dfu
+(/usr/share/texlive/texmf-dist/tex/latex/base/ts1enc.dfu
 File: ts1enc.dfu 2008/04/05 v1.1m UTF-8 support for inputenc
    defining Unicode char U+00A2 (decimal 162)
    defining Unicode char U+00A3 (decimal 163)
@@ -375,63 +375,85 @@ Package textcomp Info: Setting pxtt sub-encoding to TS1/0 on input line 307.
 Package textcomp Info: Setting txr sub-encoding to TS1/0 on input line 308.
 Package textcomp Info: Setting txss sub-encoding to TS1/0 on input line 309.
 Package textcomp Info: Setting txtt sub-encoding to TS1/0 on input line 310.
-Package textcomp Info: Setting futs sub-encoding to TS1/4 on input line 311.
-Package textcomp Info: Setting futx sub-encoding to TS1/4 on input line 312.
-Package textcomp Info: Setting futj sub-encoding to TS1/4 on input line 313.
-Package textcomp Info: Setting hlh sub-encoding to TS1/3 on input line 314.
-Package textcomp Info: Setting hls sub-encoding to TS1/3 on input line 315.
-Package textcomp Info: Setting hlst sub-encoding to TS1/3 on input line 316.
-Package textcomp Info: Setting hlct sub-encoding to TS1/5 on input line 317.
-Package textcomp Info: Setting hlx sub-encoding to TS1/5 on input line 318.
-Package textcomp Info: Setting hlce sub-encoding to TS1/5 on input line 319.
-Package textcomp Info: Setting hlcn sub-encoding to TS1/5 on input line 320.
-Package textcomp Info: Setting hlcw sub-encoding to TS1/5 on input line 321.
-Package textcomp Info: Setting hlcf sub-encoding to TS1/5 on input line 322.
-Package textcomp Info: Setting pplx sub-encoding to TS1/3 on input line 323.
-Package textcomp Info: Setting pplj sub-encoding to TS1/3 on input line 324.
-Package textcomp Info: Setting ptmx sub-encoding to TS1/4 on input line 325.
-Package textcomp Info: Setting ptmj sub-encoding to TS1/4 on input line 326.
+Package textcomp Info: Setting lmr sub-encoding to TS1/0 on input line 311.
+Package textcomp Info: Setting lmdh sub-encoding to TS1/0 on input line 312.
+Package textcomp Info: Setting lmss sub-encoding to TS1/0 on input line 313.
+Package textcomp Info: Setting lmssq sub-encoding to TS1/0 on input line 314.
+Package textcomp Info: Setting lmvtt sub-encoding to TS1/0 on input line 315.
+Package textcomp Info: Setting qhv sub-encoding to TS1/0 on input line 316.
+Package textcomp Info: Setting qag sub-encoding to TS1/0 on input line 317.
+Package textcomp Info: Setting qbk sub-encoding to TS1/0 on input line 318.
+Package textcomp Info: Setting qcr sub-encoding to TS1/0 on input line 319.
+Package textcomp Info: Setting qcs sub-encoding to TS1/0 on input line 320.
+Package textcomp Info: Setting qpl sub-encoding to TS1/0 on input line 321.
+Package textcomp Info: Setting qtm sub-encoding to TS1/0 on input line 322.
+Package textcomp Info: Setting qzc sub-encoding to TS1/0 on input line 323.
+Package textcomp Info: Setting qhvc sub-encoding to TS1/0 on input line 324.
+Package textcomp Info: Setting futs sub-encoding to TS1/4 on input line 325.
+Package textcomp Info: Setting futx sub-encoding to TS1/4 on input line 326.
+Package textcomp Info: Setting futj sub-encoding to TS1/4 on input line 327.
+Package textcomp Info: Setting hlh sub-encoding to TS1/3 on input line 328.
+Package textcomp Info: Setting hls sub-encoding to TS1/3 on input line 329.
+Package textcomp Info: Setting hlst sub-encoding to TS1/3 on input line 330.
+Package textcomp Info: Setting hlct sub-encoding to TS1/5 on input line 331.
+Package textcomp Info: Setting hlx sub-encoding to TS1/5 on input line 332.
+Package textcomp Info: Setting hlce sub-encoding to TS1/5 on input line 333.
+Package textcomp Info: Setting hlcn sub-encoding to TS1/5 on input line 334.
+Package textcomp Info: Setting hlcw sub-encoding to TS1/5 on input line 335.
+Package textcomp Info: Setting hlcf sub-encoding to TS1/5 on input line 336.
+Package textcomp Info: Setting pplx sub-encoding to TS1/3 on input line 337.
+Package textcomp Info: Setting pplj sub-encoding to TS1/3 on input line 338.
+Package textcomp Info: Setting ptmx sub-encoding to TS1/4 on input line 339.
+Package textcomp Info: Setting ptmj sub-encoding to TS1/4 on input line 340.
 )
-(/usr/share/texmf-texlive/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
 
-(/usr/share/texmf-texlive/tex/latex/graphics/keyval.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty
 Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
 \KV@toks@=\toks16
 )
-(/usr/share/texmf-texlive/tex/latex/graphics/graphics.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
 Package: graphics 2009/02/05 v1.0o Standard LaTeX Graphics (DPC,SPQR)
 
-(/usr/share/texmf-texlive/tex/latex/graphics/trig.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty
 Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
 )
-(/etc/texmf/tex/latex/config/graphics.cfg
-File: graphics.cfg 2009/08/28 v1.8 graphics configuration of TeX Live
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/graphics.cfg
+File: graphics.cfg 2010/04/23 v1.9 graphics configuration of TeX Live
 )
 Package graphics Info: Driver file: pdftex.def on input line 91.
 
-(/usr/share/texmf-texlive/tex/latex/pdftex-def/pdftex.def
-File: pdftex.def 2010/03/12 v0.04p Graphics/color for pdfTeX
+(/usr/share/texlive/texmf-dist/tex/latex/pdftex-def/pdftex.def
+File: pdftex.def 2011/05/27 v0.06d Graphics/color for pdfTeX
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/infwarerr.sty
+Package: infwarerr 2010/04/08 v1.3 Providing info/warning/error messages (HO)
+)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ltxcmds.sty
+Package: ltxcmds 2011/11/09 v1.22 LaTeX kernel commands for general use (HO)
+)
 \Gread@gobject=\count87
 ))
 \Gin@req@height=\dimen103
 \Gin@req@width=\dimen104
 )
-(/usr/share/texmf-texlive/tex/latex/ltxmisc/ulem.sty
+(/usr/share/texlive/texmf-dist/tex/generic/ulem/ulem.sty
 \UL@box=\box26
 \UL@hyphenbox=\box27
 \UL@skip=\skip43
 \UL@hook=\toks17
+\UL@height=\dimen105
 \UL@pe=\count88
-\UL@pixel=\dimen105
+\UL@pixel=\dimen106
 \ULC@box=\box28
-Package: ulem 2000/05/26
-\ULdepth=\dimen106
+Package: ulem 2012/05/18
+\ULdepth=\dimen107
 )
-(/usr/share/texmf-texlive/tex/latex/amsfonts/amssymb.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amssymb.sty
 Package: amssymb 2009/06/22 v3.00
 
-(/usr/share/texmf-texlive/tex/latex/amsfonts/amsfonts.sty
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/amsfonts.sty
 Package: amsfonts 2009/06/22 v3.00 Basic AMSFonts support
 \@emptytoks=\toks18
 \symAMSa=\mathgroup4
@@ -439,7 +461,7 @@ Package: amsfonts 2009/06/22 v3.00 Basic AMSFonts support
 LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 (Font)                  U/euf/m/n --> U/euf/b/n on input line 96.
 ))
-(/usr/share/texmf-texlive/tex/latex/fancyhdr/fancyhdr.sty
+(/usr/share/texlive/texmf-dist/tex/latex/fancyhdr/fancyhdr.sty
 \fancy@headwidth=\skip44
 \f@ncyO@elh=\skip45
 \f@ncyO@erh=\skip46
@@ -450,7 +472,7 @@ LaTeX Font Info:    Overwriting math alphabet `\mathfrak' in version `bold'
 \f@ncyO@olf=\skip51
 \f@ncyO@orf=\skip52
 )
-(/usr/share/texmf-texlive/tex/latex/float/float.sty
+(/usr/share/texlive/texmf-dist/tex/latex/float/float.sty
 Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \c@float@type=\count89
 \float@exts=\toks19
@@ -458,32 +480,36 @@ Package: float 2001/11/08 v1.3d Float enhancements (AL)
 \@float@everytoks=\toks20
 \@floatcapt=\box30
 )
-(/usr/share/texmf-texlive/tex/latex/graphics/color.sty
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/color.sty
 Package: color 2005/11/14 v1.0j Standard LaTeX Color (DPC)
 
-(/etc/texmf/tex/latex/config/color.cfg
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/color.cfg
 File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
 )
 Package color Info: Driver file: pdftex.def on input line 130.
 )
-(/usr/share/texmf-texlive/tex/latex/geometry/geometry.sty
-Package: geometry 2008/12/21 v4.2 Page Geometry
+(/usr/share/texlive/texmf-dist/tex/latex/geometry/geometry.sty
+Package: geometry 2010/09/12 v5.6 Page Geometry
 
-(/usr/share/texmf-texlive/tex/generic/oberdiek/ifpdf.sty
-Package: ifpdf 2009/04/10 v2.0 Provides the ifpdf switch (HO)
-Package ifpdf Info: pdfTeX in pdf mode detected.
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifpdf.sty
+Package: ifpdf 2011/01/30 v2.3 Provides the ifpdf switch (HO)
+Package ifpdf Info: pdfTeX in PDF mode is detected.
 )
-(/usr/share/texmf-texlive/tex/generic/oberdiek/ifvtex.sty
-Package: ifvtex 2008/11/04 v1.4 Switches for detecting VTeX and its modes (HO)
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifvtex.sty
+Package: ifvtex 2010/03/01 v1.5 Detect VTeX and its facilities (HO)
 Package ifvtex Info: VTeX not detected.
 )
 \Gm@cnth=\count90
 \Gm@cntv=\count91
 \c@Gm@tempcnt=\count92
-\Gm@bindingoffset=\dimen107
-\Gm@wd@mp=\dimen108
-\Gm@odd@mp=\dimen109
-\Gm@even@mp=\dimen110
+\Gm@bindingoffset=\dimen108
+\Gm@wd@mp=\dimen109
+\Gm@odd@mp=\dimen110
+\Gm@even@mp=\dimen111
+\Gm@layoutwidth=\dimen112
+\Gm@layoutheight=\dimen113
+\Gm@layouthoffset=\dimen114
+\Gm@layoutvoffset=\dimen115
 \Gm@dimlist=\toks21
 )
 (./AXISEMTutorial.aux)
@@ -503,87 +529,128 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 35.
 LaTeX Font Info:    ... okay on input line 35.
 LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 35.
 LaTeX Font Info:    Try loading font information for TS1+cmr on input line 35.
- (/usr/share/texmf-texlive/tex/latex/base/ts1cmr.fd
+ (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    ... okay on input line 35.
-
-(/usr/share/texmf-texlive/tex/context/base/supp-pdf.mkii
+(/usr/share/texlive/texmf-dist/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count93
-\scratchdimen=\dimen111
+\scratchdimen=\dimen116
 \scratchbox=\box31
 \nofMPsegments=\count94
 \nofMParguments=\count95
 \everyMPshowfont=\toks22
 \MPscratchCnt=\count96
-\MPscratchDim=\dimen112
+\MPscratchDim=\dimen117
 \MPnumerator=\count97
+\makeMPintoPDFobject=\count98
 \everyMPtoPDFconversion=\toks23
+) (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/pdftexcmds.sty
+Package: pdftexcmds 2011/11/29 v0.20 Utility functions of pdfTeX for LuaTeX (HO
 )
-*geometry auto-detecting driver*
-*geometry detected driver: pdftex*
--------------------- Geometry parameters
-paper: a4paper
-landscape: --
-twocolumn: --
-twoside: --
-asymmetric: --
-h-parts: 56.9055pt, 512.14963pt, 28.45274pt
-v-parts: 56.9055pt, 731.23584pt, 56.9055pt
-hmarginratio: --
-vmarginratio: --
-lines: --
-heightrounded: --
-bindingoffset: 0.0pt
-truedimen: --
-includehead: --
-includefoot: --
-includemp: --
-driver: pdftex
--------------------- Page layout dimensions and switches
-\paperwidth  597.50787pt
-\paperheight 845.04684pt
-\textwidth  512.14963pt
-\textheight 731.23584pt
-\oddsidemargin  -15.36449pt
-\evensidemargin -15.36449pt
-\topmargin  -52.36449pt
-\headheight 12.0pt
-\headsep    25.0pt
-\footskip   30.0pt
-\marginparwidth 65.0pt
-\marginparsep   11.0pt
-\columnsep  10.0pt
-\skip\footins  9.0pt plus 4.0pt minus 2.0pt
-\hoffset 0.0pt
-\voffset 0.0pt
-\mag 1000
 
-(1in=72.27pt, 1cm=28.45pt)
------------------------
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/ifluatex.sty
+Package: ifluatex 2010/03/01 v1.3 Provides the ifluatex switch (HO)
+Package ifluatex Info: LuaTeX not detected.
+)
+Package pdftexcmds Info: LuaTeX not detected.
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
+Package: epstopdf-base 2010/02/09 v2.5 Base part for package epstopdf
+
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grfext.sty
+Package: grfext 2010/08/19 v1.1 Manage graphics extensions (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvdefinekeys.sty
+Package: kvdefinekeys 2011/04/07 v1.3 Define keys (HO)
+))
+(/usr/share/texlive/texmf-dist/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2011/06/30 v3.11 Key value format for package options (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/kvsetkeys.sty
+Package: kvsetkeys 2012/04/25 v1.16 Key value parser (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/oberdiek/etexcmds.sty
+Package: etexcmds 2011/02/16 v1.5 Avoid name clashes with e-TeX commands (HO)
+Package etexcmds Info: Could not find \expanded.
+(etexcmds)             That can mean that you are not using pdfTeX 1.50 or
+(etexcmds)             that some package has redefined \expanded.
+(etexcmds)             In the latter case, load this package earlier.
+)))
+Package grfext Info: Graphics extension search list:
+(grfext)             [.png,.pdf,.jpg,.mps,.jpeg,.jbig2,.jb2,.PNG,.PDF,.JPG,.JPE
+G,.JBIG2,.JB2,.eps]
+(grfext)             \AppendGraphicsExtensions on input line 452.
+
+(/usr/share/texlive/texmf-dist/tex/latex/latexconfig/epstopdf-sys.cfg
+File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
+e
+))
+*geometry* driver: auto-detecting
+*geometry* detected driver: pdftex
+*geometry* verbose mode - [ preamble ] result:
+* driver: pdftex
+* paper: a4paper
+* layout: <same size as paper>
+* layoutoffset:(h,v)=(0.0pt,0.0pt)
+* modes: 
+* h-part:(L,W,R)=(56.9055pt, 512.14963pt, 28.45274pt)
+* v-part:(T,H,B)=(56.9055pt, 731.23584pt, 56.9055pt)
+* \paperwidth=597.50787pt
+* \paperheight=845.04684pt
+* \textwidth=512.14963pt
+* \textheight=731.23584pt
+* \oddsidemargin=-15.36449pt
+* \evensidemargin=-15.36449pt
+* \topmargin=-52.36449pt
+* \headheight=12.0pt
+* \headsep=25.0pt
+* \topskip=10.0pt
+* \footskip=30.0pt
+* \marginparwidth=65.0pt
+* \marginparsep=11.0pt
+* \columnsep=10.0pt
+* \skip\footins=9.0pt plus 4.0pt minus 2.0pt
+* \hoffset=0.0pt
+* \voffset=0.0pt
+* \mag=1000
+* \@twocolumnfalse
+* \@twosidefalse
+* \@mparswitchfalse
+* \@reversemarginfalse
+* (1in=72.27pt=25.4mm, 1cm=28.453pt)
+
 LaTeX Font Info:    Try loading font information for U+msa on input line 43.
-(/usr/share/texmf-texlive/tex/latex/amsfonts/umsa.fd
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2009/06/22 v3.00 AMS symbols A
 )
 LaTeX Font Info:    Try loading font information for U+msb on input line 43.
 
-(/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
+(/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2009/06/22 v3.00 AMS symbols B
 )
 <Axisem2png.png, id=1, 1027.6794pt x 770.88pt>
 File: Axisem2png.png Graphic file (type png)
  <use Axisem2png.png>
+Package pdftex.def Info: Axisem2png.png used on input line 57.
+(pdftex.def)             Requested size: 284.52756pt x 213.42181pt.
 LaTeX Font Info:    Try loading font information for T1+cmtt on input line 70.
 
-(/usr/share/texmf-texlive/tex/latex/base/t1cmtt.fd
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
 File: t1cmtt.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 ) [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./Axisem2png.png>]
-<radpat_mono.pdf, id=19, 216.81pt x 216.81pt>
+<radpat_mono.pdf, id=20, 216.81pt x 216.81pt>
 File: radpat_mono.pdf Graphic file (type pdf)
  <use radpat_mono.pdf>
+Package pdftex.def Info: radpat_mono.pdf used on input line 110.
+(pdftex.def)             Requested size: 59.75443pt x 59.7536pt.
+
 
 LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 113.
 
@@ -601,6 +668,9 @@ Overfull \hbox (59.75443pt too wide) in paragraph at lines 108--115
 <radpat_di.pdf, id=21, 216.81pt x 216.81pt>
 File: radpat_di.pdf Graphic file (type pdf)
  <use radpat_di.pdf>
+Package pdftex.def Info: radpat_di.pdf used on input line 117.
+(pdftex.def)             Requested size: 59.75443pt x 59.7536pt.
+
 
 LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 120.
 
@@ -615,9 +685,12 @@ Overfull \hbox (59.75443pt too wide) in paragraph at lines 116--122
 []$[]$$[]$ 
  []
 
-<radpat_quad.pdf, id=23, 216.81pt x 216.81pt>
+<radpat_quad.pdf, id=22, 216.81pt x 216.81pt>
 File: radpat_quad.pdf Graphic file (type pdf)
  <use radpat_quad.pdf>
+Package pdftex.def Info: radpat_quad.pdf used on input line 124.
+(pdftex.def)             Requested size: 59.75443pt x 59.7536pt.
+
 
 LaTeX Font Warning: Command \scriptsize invalid in math mode on input line 127.
 
@@ -632,34 +705,59 @@ Overfull \hbox (59.75443pt too wide) in paragraph at lines 123--129
 []$[]$$[]$ 
  []
 
-<mesh.png, id=25, 754.82pt x 1453.43pt>
+<mesh.png, id=23, 754.82pt x 1453.43pt>
 File: mesh.png Graphic file (type png)
- <use mesh.png> [2 <./radpat_mono.pdf> <./radpat_di.pdf> <./radpat_quad.pdf> <.
-/mesh.png (PNG copy)>]
-<paraview.png, id=36, 546.04pt x 170.6375pt>
+ <use mesh.png>
+Package pdftex.def Info: mesh.png used on input line 133.
+(pdftex.def)             Requested size: 104.56342pt x 201.32759pt.
+ [2 <./radpat_mono.pdf> <./radpat_di.pdf
+
+pdfTeX warning: pdflatex (file ./radpat_di.pdf): PDF inclusion: multiple pdfs w
+ith page group included in a single page
+> <./radpat_quad.pdf
+
+pdfTeX warning: pdflatex (file ./radpat_quad.pdf): PDF inclusion: multiple pdfs
+ with page group included in a single page
+> <./mesh.png>] <paraview.png, id=35, 546.04pt x 170.6375pt>
 File: paraview.png Graphic file (type png)
- <use paraview.png>
-Overfull \hbox (91.54242pt too wide) in paragraph at lines 241--250
-\T1/cmr/m/n/10 Once the run is fin-ished, take a look at the wave-field with []
-\T1/cmtt/m/n/10 paraview\T1/cmr/m/n/10 : open the []\T1/cmtt/m/n/10 prem_ani_li
-ght_100s_mzz/Data/xdmf_xml_0000.xdmf
- []
 
-<paraview2.png, id=37, 834.11626pt x 216.81pt>
+<use paraview.png>
+Package pdftex.def Info: paraview.png used on input line 195.
+(pdftex.def)             Requested size: 273.15263pt x 85.35826pt.
+ <paraview3.png, id=36, 383.4325pt x 288.07625pt>
+File: paraview3.png Graphic file (type png)
+
+<use paraview3.png>
+Package pdftex.def Info: paraview3.png used on input line 197.
+(pdftex.def)             Requested size: 113.61476pt x 85.35826pt.
+ <paraview2.png, id=37, 834.11626pt x 216.81pt>
 File: paraview2.png Graphic file (type png)
- <use paraview2.png>
-<0600.png, id=38, 501.875pt x 501.875pt>
+
+<use paraview2.png>
+Package pdftex.def Info: paraview2.png used on input line 257.
+(pdftex.def)             Requested size: 312.9803pt x 81.35316pt.
+ <0600.png, id=38, 501.875pt x 501.875pt>
 File: 0600.png Graphic file (type png)
- <use 0600.png> [3 <./paraview.png (PNG copy)>] <google-earth.png, id=42, 196.7
-35pt x 279.0425pt>
+ <use 0600.png>
+Package pdftex.def Info: 0600.png used on input line 258.
+(pdftex.def)             Requested size: 113.81102pt x 113.80533pt.
+
+[3 <./paraview.png> <./paraview3.png (PNG copy)>]
+<google-earth.png, id=42, 196.735pt x 279.0425pt>
 File: google-earth.png Graphic file (type png)
+ <use google-earth.png>
+Package pdftex.def Info: google-earth.png used on input line 334.
+(pdftex.def)             Requested size: 140.42429pt x 199.16928pt.
 
-<use google-earth.png> <google-earth2.png, id=43, 1419.3025pt x 1045.9075pt>
+<google-earth2.png, id=43, 1419.3025pt x 1045.9075pt>
 File: google-earth2.png Graphic file (type png)
+ <use google-earth2.png>
+Package pdftex.def Info: google-earth2.png used on input line 336.
+(pdftex.def)             Requested size: 270.27667pt x 199.16928pt.
 
-<use google-earth2.png> [4 <./paraview2.png (PNG copy)> <./0600.png (PNG copy)>
-] [5 <./google-earth.png (PNG copy)> <./google-earth2.png (PNG copy)>]
-Underfull \hbox (badness 10000) in paragraph at lines 349--355
+[4 <./paraview2.png> <./0600.png>] [5 <./google-earth.png> <./google-earth2.png
+>]
+Underfull \hbox (badness 10000) in paragraph at lines 354--360
 
  []
 
@@ -667,79 +765,102 @@ Underfull \hbox (badness 10000) in paragraph at lines 349--355
 File: AXISEMTutorial-fig007.png Graphic file (type png)
 
 <use AXISEMTutorial-fig007.png>
+Package pdftex.def Info: AXISEMTutorial-fig007.png used on input line 438.
+(pdftex.def)             Requested size: 512.14963pt x 295.43045pt.
+
 <AXISEMTutorial-fig010.pdf, id=55, 518.93875pt x 698.61pt>
 File: AXISEMTutorial-fig010.pdf Graphic file (type pdf)
 
 <use AXISEMTutorial-fig010.pdf>
+Package pdftex.def Info: AXISEMTutorial-fig010.pdf used on input line 451.
+(pdftex.def)             Requested size: 230.46576pt x 310.26752pt.
+
 <AXISEMTutorial-fig014.png, id=56, 757.83125pt x 1003.75pt>
 File: AXISEMTutorial-fig014.png Graphic file (type png)
 
-<use AXISEMTutorial-fig014.png> [7 <./AXISEMTutorial-fig007.png> <./AXISEMTutor
-ial-fig010.pdf> <./AXISEMTutorial-fig014.png>]
+<use AXISEMTutorial-fig014.png>
+Package pdftex.def Info: AXISEMTutorial-fig014.png used on input line 459.
+(pdftex.def)             Requested size: 230.46576pt x 305.24731pt.
+ [7 <./AXISEMTutorial-fig007.png> <./AXISEMTutorial-fig010.pdf> <./AXISEMTutori
+al-fig014.png>]
 <AXISEMTutorial-fig001.png, id=79, 1738.495pt x 829.0975pt>
 File: AXISEMTutorial-fig001.png Graphic file (type png)
 
 <use AXISEMTutorial-fig001.png>
+Package pdftex.def Info: AXISEMTutorial-fig001.png used on input line 479.
+(pdftex.def)             Requested size: 371.99182pt x 177.40488pt.
+
 <AXISEMTutorial-fig002.png, id=80, 1490.56876pt x 524.96124pt>
 File: AXISEMTutorial-fig002.png Graphic file (type png)
 
 <use AXISEMTutorial-fig002.png>
+Package pdftex.def Info: AXISEMTutorial-fig002.png used on input line 487.
+(pdftex.def)             Requested size: 311.98244pt x 109.87663pt.
+
 <AXISEMTutorial-fig003.png, id=81, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig003.png Graphic file (type png)
 
 <use AXISEMTutorial-fig003.png>
+Package pdftex.def Info: AXISEMTutorial-fig003.png used on input line 493.
+(pdftex.def)             Requested size: 311.99963pt x 109.7465pt.
+
 <AXISEMTutorial-fig004.png, id=82, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig004.png Graphic file (type png)
 
-<use AXISEMTutorial-fig004.png> [8 <./AXISEMTutorial-fig001.png> <./AXISEMTutor
-ial-fig002.png (PNG copy)> <./AXISEMTutorial-fig003.png (PNG copy)> <./AXISEMTu
-torial-fig004.png (PNG copy)>]
+<use AXISEMTutorial-fig004.png>
+Package pdftex.def Info: AXISEMTutorial-fig004.png used on input line 499.
+(pdftex.def)             Requested size: 311.99963pt x 109.7465pt.
+ [8 <./AXISEMTutorial-fig001.png> <./AXISEMTutorial-fig002.png (PNG copy)> <./A
+XISEMTutorial-fig003.png (PNG copy)> <./AXISEMTutorial-fig004.png (PNG copy)>]
 <Folder_structure.jpeg, id=87, 821.0675pt x 786.94pt>
 File: Folder_structure.jpeg Graphic file (type jpg)
 
-<use Folder_structure.jpeg> [9 <./Folder_structure.jpeg>]
-Underfull \hbox (badness 10000) in paragraph at lines 546--550
+<use Folder_structure.jpeg>
+Package pdftex.def Info: Folder_structure.jpeg used on input line 518.
+(pdftex.def)             Requested size: 333.99635pt x 320.11386pt.
+ [9 <./Folder_structure.jpeg>]
+Underfull \hbox (badness 10000) in paragraph at lines 551--555
 
  []
 
 [10]
-Underfull \hbox (badness 10000) in paragraph at lines 578--581
+Underfull \hbox (badness 10000) in paragraph at lines 583--586
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 609--610
+Underfull \hbox (badness 10000) in paragraph at lines 614--615
 
  []
 
 [11] (./AXISEMTutorial.aux) ) 
 Here is how much of TeX's memory you used:
- 2981 strings out of 495021
- 37663 string characters out of 1181035
- 86138 words of memory out of 3000000
- 6095 multiletter control sequences out of 15000+50000
+ 3661 strings out of 495007
+ 49068 string characters out of 3179690
+ 104433 words of memory out of 3000000
+ 6748 multiletter control sequences out of 15000+200000
  23800 words of font info for 66 fonts, out of 3000000 for 9000
- 28 hyphenation exceptions out of 8191
- 25i,8n,43p,217b,293s stack positions out of 5000i,500n,10000p,200000b,50000s
- </home/vandriel/.texmf-var/fonts/pk/ljfour/jknapp
-en/ec/ecbx1000.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ec
-ti1000.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.6
-00pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk> </
-home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1000.600pk> </home/van
-driel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200.600pk> </home/vandriel/.t
-exmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1440.600pk> </home/vandriel/.texmf-var
-/fonts/pk/ljfour/jknappen/ec/ecrm0900.600pk> </home/vandriel/.texmf-var/fonts/p
-k/ljfour/jknappen/ec/ecrm0600.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour
-/jknappen/ec/ecrm0800.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappe
-n/ec/ecrm1200.600pk> </home/vandriel/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecc
-c1728.600pk></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmbx10.pfb
-></usr/share/texmf-texlive/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/shar
-e/texmf-texlive/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/texmf-texl
-ive/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texmf-texlive/fonts/t
-ype1/public/amsfonts/cm/cmsy7.pfb>
-Output written on AXISEMTutorial.pdf (11 pages, 4947507 bytes).
+ 14 hyphenation exceptions out of 8191
+ 38i,8n,43p,243b,301s stack positions out of 5000i,500n,10000p,200000b,50000s
+ </home/ex/.texmf-var/fonts/pk/ljfour/jknappen/ec/
+ecbx1000.600pk> </home/ex/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecti1000.600pk
+> </home/ex/.texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1000.600pk> </home/ex/.t
+exmf-var/fonts/pk/ljfour/jknappen/ec/ectt1000.600pk> </home/ex/.texmf-var/fonts
+/pk/ljfour/jknappen/ec/ecrm1000.600pk> </home/ex/.texmf-var/fonts/pk/ljfour/jkn
+appen/ec/ecbx1200.600pk> </home/ex/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1
+440.600pk> </home/ex/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm0900.600pk> </h
+ome/ex/.texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm0600.600pk> </home/ex/.texmf-
+var/fonts/pk/ljfour/jknappen/ec/ecrm0800.600pk> </home/ex/.texmf-var/fonts/pk/l
+jfour/jknappen/ec/ecrm1200.600pk> </home/ex/.texmf-var/fonts/pk/ljfour/jknappen
+/ec/eccc1728.600pk></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmbx10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi
+10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb>
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/
+share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
+Output written on AXISEMTutorial.pdf (11 pages, 5168958 bytes).
 PDF statistics:
- 588 PDF objects out of 1000 (max. 8388607)
+ 590 PDF objects out of 1000 (max. 8388607)
+ 105 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
- 91 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 96 words of extra memory for PDF output out of 10000 (max. 10000000)
 
