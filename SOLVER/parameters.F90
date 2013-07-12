@@ -368,7 +368,7 @@ subroutine read_inparam_advanced
   force_ani = .true.
   snap_dt = 20.
   dump_vtk = .false.
-  dump_xdmf = .false.
+  dump_xdmf = dump_snaps_glob
   use_netcdf = .false.
   
   keyword = ' '
@@ -456,7 +456,9 @@ subroutine read_inparam_advanced
                select case (trim(keyvalue))
                  case('xdmf') 
                      dump_xdmf = .true.
+                     dump_vtk = .false.
                  case('vtk')
+                     dump_xdmf = .false.
                      dump_vtk = .true.
                  case('both')
                      dump_xdmf = .true.
