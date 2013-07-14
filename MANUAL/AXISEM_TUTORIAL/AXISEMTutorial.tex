@@ -11,6 +11,7 @@
 \fi
 \usepackage{textcomp}
 
+\usepackage{tabularx}
 \usepackage{graphicx}
 \usepackage{ulem}
 \usepackage{amssymb}
@@ -34,74 +35,105 @@
 
 \begin{document}
 
-
 \begin{center}
-\title{}
-\LARGE{ \textbf{\sc AxiSEM Tutorial}}
-\vspace*{0.1cm}\\
-{\large 
-Kasra Hosseini\textsuperscript{1)}, Martin van Driel\textsuperscript{2)},
-Simon St\"{a}hler\textsuperscript{1)}, 
-Lion Krischer\textsuperscript{1)}, Tarje Nissen-Meyer\textsuperscript{3)}} \\
-{\small \textsuperscript{1)} LMU Munich, \textsuperscript{2)} ETH Zurich, 
-\textsuperscript{3)} Oxford University \\
-{\large Fairbanks, Alaska, July 15th 2013}}
-%\vspace*{0.1cm}\\ 
-%\textit{tarje@princeton.edu}  
-%\vspace*{0.1cm}\\ 
-
+    \begin{tabularx}{\textwidth}{lX}
+        \begin{minipage}{0.3\textwidth}
+            \begin{center}
+                \includegraphics[width=\textwidth]{Axisem2png.png}
+            \end{center}
+        \end{minipage}
+        &
+        \begin{minipage}{0.6\textwidth}
+            \begin{center}
+                \title{}
+                \LARGE{ \textbf{\sc AxiSEM Tutorial}}
+                \vspace*{0.6cm}\\
+                {\large 
+                Kasra Hosseini\textsuperscript{1)}, 
+                Martin van Driel\textsuperscript{2)},
+                Simon St\"{a}hler\textsuperscript{1)}, \\
+                \vspace*{-0.3cm}
+                Lion Krischer\textsuperscript{1)},
+                Tarje Nissen-Meyer\textsuperscript{3)}}
+                \vspace*{0.3cm}\\
+                {\small \textsuperscript{1)} LMU Munich, \textsuperscript{2)} ETH Zurich, 
+                \textsuperscript{3)} Oxford University \\
+                {\large Fairbanks, Alaska, July 15th 2013}}
+            \end{center}
+        \end{minipage}
+    \end{tabularx}
 \end{center}
    
-
-\begin{center}
-\includegraphics[width=100mm]{Axisem2png.png}
-\end{center}
 
 %
 \section{Tutorial Overview}
 %
-\subsection{ObsPy}
+\subsection*{ObsPy \small{(http://www.obspy.org)}}
+\vspace{1ex}
+\begin{center}
+    \begin{tabularx}{\textwidth}{lX}
+        \begin{minipage}{0.3\textwidth}
+            \begin{center}
+                \includegraphics[width=0.9\columnwidth]{obspy.png}
+            \end{center}
+        \end{minipage}
+        &
+        \begin{minipage}{0.65\textwidth}
+            ObsPy is a community-driven, open-source project dedicated to
+            provide a Python framework for processing seismological data. It
+            provides parsers for common file formats, clients to access data
+            centers and seismological signal processing routines which allow
+            the manipulation of seismological time series. The goal of the
+            ObsPy project is to facilitate rapid application and workflow
+            development for seismology.
+        \end{minipage}
+    \end{tabularx}
+\end{center}
+
+
 Some of the tools employed in this tutorial use ObsPy but the tutorial
 does not have a formal introduction to ObsPy due to temporal
 constraints. The VirtualBox image contains an extensive amount of
 training material for Python, ObsPy and some third party libraries
 intended to get you started. Furthermore one of the core developers of
-ObsPy is present and able to answer any questions you might have. You
-can find all material related to ObsPy at \ttilde\verb|/Desktop/ObsPy|.
+ObsPy is present and available for questions. You can find all material related
+to ObsPy at \ttilde\verb|/Desktop/ObsPy|.
 %
-\subsection{AxiSEM - Hands On}
+\subsection*{AxiSEM - Hands On}
 The goal of this initial task is to familiarize users with the basic
 principles behind AxiSEM, its input/output structures and
 peculiarities such as post-processing. An end-to-end approach (meshing to
 wavefield movie and seismograms) will be conducted for long-period
 settings within the virtual box.
 %
-\subsection{Data versus modeling: Obspy, AxiSEM, SPECFEM}
-The main goal of this part of the tutorial is to use AxiSEM for realistic scenarios, compare the 
-results with real seismograms and explore the effects of source parameters and 
-backgound model on the waveforms. In particular, we will learn how to:
+\subsection*{Data and Synthetics: ObsPy, AxiSEM and SPECFEM}
+The main goal of this part of the tutorial is to use AxiSEM for realistic
+scenarios, compare the results with real seismograms and explore the effects of
+source parameters and background models on the waveforms. In particular, we will
+learn how to:
 
 \begin{itemize}
-    \item Load data with Obspy and plot seismogram cross sections;
-    \item plot data vs. AxiSEM and SPECFEM synthetics (at 20s);
-    \item compare data vs. AxiSEM synthetics for various frequencies and background
-          models;
-    \item analyze the influence on different source parameters on waveforms.
+    \item Load data with ObsPy and plot seismograms.
+    \item compare AxiSEM and SPECFEM synthetics with data including
+        different frequency ranges and background model.
+    \item analyze the influence of different source mechanisms on waveforms.
 \end{itemize}
 
 
-\subsection{Virtual Box content}
-The box is organized into 3 folders: AXISEM, OBSPY, EVENTS. The entire
-data-vs-modeling section is within EVENTS, including all data and pre-computed
-synthetics. AXISEM contains the source code and the precomputed run
-for the long-period section. ADD A NOTE ON VIDEO / SNAPSHOTS HERE.
-
+\subsection*{Virtual Box content}
+On the desktop you find four folders:
+\begin{itemize}
+    \item \verb|ObsPy|: ObsPy training material.
+    \item \verb|axisem|: AxiSEM source code and input files ready for the tutorial.
+    \item \verb|EVENTS|: Data and precomputed synthetics for three events and various background models.
+    \item \verb|VIDEOS|: Illustrative 3D wave propagation video and high-resolution snapshots thereof.
+\end{itemize}
 
 \newpage
 
 \section{AxiSEM - Hands On}
 
-\subsection{The AxiSEM Concept}
+\subsection*{The AxiSEM Concept}
 
 \begin{center}
     \begin{minipage}[t]{0.4\paperwidth}
@@ -142,7 +174,7 @@ azimuth $\phi$ can be solved analytically and the remaining 2D problems (four of
 a full moment tensor source) are solved numerically using a spectral element approach.
 
 
-\subsection{MESHER - generate a Mesh}
+\subsection*{MESHER - generate a Mesh}
 
 \begin{enumerate}
     \item Open a terminal, go to the \ttilde\verb|/Desktop/axisem/MESHER| folder and open
@@ -182,14 +214,16 @@ a full moment tensor source) are solved numerically using a spectral element app
     $ paraview
     \end{verbatim}
     %
-    Open one of the vtk files in the subfolder \verb|Diags|, e.g.\ \verb|mesh_vp.vtk|
-    and click apply in the properties panel on the left. (you might get an OpenGL Error
-    on the virtual box, which you can ignore). To see the mesh, change the representation
-    from 'surface' to 'surface with edges' (On some host systsem, the dropdown menu seems
-    to be messed up, in that case go to the 'Display' context in the
-    'Properties' panel on the left). You can open other vtk files to look at
-    other properties of the model and the mesh. You might need to rescale the
-    color range by clicking on the left-right arrow symbol in the top left.
+    Open one of the vtk files in the subfolder \verb|Diags|, e.g.\
+    \verb|mesh_vp.vtk| and click apply in the properties panel on the left (you
+    might get an OpenGL Error on the virtual box, which you can ignore). To see
+    the mesh, change the representation from 'surface' to 'surface with edges'
+    (On some host systems, the dropdown menu seems to be messed up, in that
+    case go to the 'Display' context in the 'Properties' panel on the left. If
+    the plot appears all yellow, click on play).  You can open other vtk files
+    to look at other properties of the model and the mesh. You might need to
+    rescale the color range by clicking on the left-right arrow symbol in the
+    top left.
 
     \begin{center}
     \includegraphics[height=30mm]{paraview.png}
@@ -204,7 +238,7 @@ a full moment tensor source) are solved numerically using a spectral element app
 
 \end{enumerate}
 
-\subsection{SOLVER - solve the elastic wave equation}
+\subsection*{SOLVER - solve the elastic wave equation}
     
 \begin{enumerate}
     \item Go to the \ttilde\verb|/Desktop/axisem/SOLVER| folder and open the
@@ -243,15 +277,15 @@ a full moment tensor source) are solved numerically using a spectral element app
     \end{verbatim}
     %
     Once the run is finished, take a look at the wavefield with \verb|paraview|: open
-    the \verb|prem_ani_light_100s_mzz/| \verb|Datai/xdmf_xml_0000.xdmf|
+    the \verb|prem_ani_light_100s_mzz/| \verb|Data/xdmf_xml_0000.xdmf|
     file and click apply. Go to the last snapshot and rescale the color range,
     then click on play to see the wave propagate.  You can also choose
     different components of the wavefield or the absolute value.  For paraview
     experienced users: choose absolute value and a logarithmic colorscale to
     see all wave types at once (e.g.\ 'black body radiation' looks nice).  You
-    can find a 5s period movie of these snapshots in the \verb|movie| folder on
+    can find a 5s period movie of these snapshots in the \verb|VIDEOS| folder on
     the desktop (use \verb|gpicview| to open the \verb|.png| files and
-    \verb|???| to open the movie).
+    \verb|gnome-mplayer| to open the movie \verb|SeismicWavePropagation.mov|).
    
     \begin{center}
     \includegraphics[width=110mm]{paraview2.png} \hspace{5mm}
@@ -290,7 +324,7 @@ a full moment tensor source) are solved numerically using a spectral element app
 \end{enumerate}
     
 
-\subsection{POSTPROCESSING - rotate and sum seismograms and wavefields}
+\subsection*{POSTPROCESSING - rotate and sum seismograms and wavefields}
 
 Postprocessing is a key feature of AxiSEM: the source mechanism and source time function
 can be modified without redoing the more expensive simulation.
@@ -350,10 +384,10 @@ can be modified without redoing the more expensive simulation.
 
 \newpage
 
-\section{Data versus modeling: AxiSEM, ObsPy and SPECFEM}
-The main goal of this part of the tutorial is to use AXISEM for realistic scenarios, 
-compare the results with real seismograms and 3D synthetics, and 
-explore the effects of source parameters and backgound model on the waveforms. 
+\section{Data and Synthetics: ObsPy, AxiSEM and SPECFEM}
+The main goal of this part of the tutorial is to use AxiSEM for realistic scenarios, 
+compare the results with real seismograms and 3D synthetics and 
+explore the effects of source parameters and background models on the waveforms. 
 % In case that you want more information, 
 % refer to Appendix-5 in which a complete example with all the commands and results is presented.
 For a brief walk-through, follow this: \\
@@ -362,40 +396,42 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
 
 \begin{enumerate}
     
-    \item Plot one of the events (listed in EVENTS directory, we choose EVENT-1 in this
-    example):
+    \item Plot one of the events (listed in EVENTS directory, we choose EVENT-1
+    in this example):
     
     \begin{verbatim}
     $ plot_station_event_distribution.py EVENT-1
     \end{verbatim}
-    * For more information on the folder structure of your Virtual-box, refer to
-    Appendix-2.
+    * For more information on the folder structure of your VirtualBox image,
+    refer to Appendix-2.
     
-    \item To get an overview on both real data and AxiSEM seismograms: 
-    (e.g.  \textit{PREM\_ANISO} for 5 seconds dominant period) [Figure-1]
+    \item To get an overview of both real data and AxiSEM synthetics 
+    (e.g.\ \textit{PREM\_ANISO} for 5 seconds dominant period) [Figure-1]:
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec
     \end{verbatim}
     
-    \item Window the waveforms for Pdiff and PKiKP seismic phases and plot the seismograms: 
-    (compared with real data)
+    \item Window the waveforms arounf Pdiff and PKiKP seismic phases and plot
+    the seismograms (compared with real data):
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec PKiKP
     \end{verbatim}
     
-    \item Change the filter in \ttilde\verb|/Desktop/EVENTS/SCRIPTS/plot_seismograms.py| script and compare the
-    results with \textit{SPECFEM3D}: [Figure-2] 
+    \item Change the filter in the
+    \ttilde\verb|/Desktop/EVENTS/SCRIPTS/plot_seismograms.py| script and
+    compare the results with SPECFEM3D [Figure-2]:
     
-    Note: for changing the filter, open \textit{plot\_seismograms.py} and change values at top of the file. \\
-    Note: resolution in \textit{SPECFEM3D} seismograms is 17 - 500 sec.
+    Note: for changing the filter, open \textit{plot\_seismograms.py} and
+    change values at top of the file. \\
+    Note: resolution in SPECFEM3D seismograms is 17 - 500 sec.
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff specfem3d
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec PKiKP specfem3d
     \end{verbatim}
     
     \item Compare the results for two different background models
-    (\textit{PREM\_ANISO\_5sec} with \textit{IASP91\_5sec)} e.g. Pdiff phase:
+    (\textit{PREM\_ANISO\_5sec} with \textit{IASP91\_5sec)} e.g.\ Pdiff phase:
     
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff EVENT-1/AXISEM/IASP91_5sec
@@ -403,8 +439,9 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     
     \item Change the filter, as explained in step 4, and repeat step 5.
     
-    \item Compare the seismograms calculated for two different source mechanisms
-    (\textit{PREM\_ANISO\_5sec} and \\ \textit{PREM\_ANSIO\_5sec\_GCMT}) for Pdiff phase: [Figure-3] 
+    \item Compare the seismograms calculated for two different source
+    mechanisms (\textit{PREM\_ANISO\_5sec} and \\
+    \textit{PREM\_ANSIO\_5sec\_GCMT}) for Pdiff phase [Figure-3]:
     
     Note: for more information about the source parameters, refer to Appendix-1.\\
     Note: depth and location of the source can not be changed.
@@ -417,7 +454,7 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
     (Note: dominant period in synthetic seismograms is 5 sec.)
     
     \item Find the time shift between the synthetics and real data (maximum of
-    crosscorrelation function), shift the synthetics accordingly and plot the results:
+    cross-correlation function), shift the synthetics accordingly and plot the results:
     
     \begin{verbatim}
     $ plot_seismograms.py EVENT-1/AXISEM/PREM_ANISO_5sec Pdiff shift_synthetics
@@ -433,37 +470,28 @@ Start from within the \ttilde\verb|/Desktop/EVENTS/| directory:
 
 \newpage
 \begin{figure}[H]
-%%\begin{figure}[htbp]
-\centering
-\includegraphics[width=1.\linewidth]{AXISEMTutorial-fig007.png}
-%%\caption{This should be the caption for \texttt{AXISEMTutorial-fig007.png}.}
-%%\end{figure}
-\begin{center}
-{\small{}Figure 1: Real and AXISEM waveforms for EVENT-1.}
-\end{center}
+    \centering
+    \includegraphics[width=1.\linewidth]{AXISEMTutorial-fig007.png}
+    \begin{center}
+    {\small{}Figure 1: Real and AXISEM waveforms for EVENT-1.}
+    \end{center}
 \end{figure}
 
 
 \begin{figure}[H]
-\centering
-\begin{minipage}{.5\textwidth}
-  \centering
-  \includegraphics[width=0.9\linewidth]{AXISEMTutorial-fig010.pdf}
-  %\includegraphics[width=.4\linewidth]{image1}
-
-{\small{}Figure 2: Comparison between real, AXISEM and SPECFEM3D waveforms for 
-Pdiff phase. \\ Filter: 20 - 100 sec.}
-\end{minipage}%
-\begin{minipage}{.5\textwidth}
-  \centering
-  \includegraphics[width=0.9\linewidth]{AXISEMTutorial-fig014.png}
-%   \includegraphics[width=.4\linewidth]{image1}
-
-{\small{}Figure 3: Comparison between real and AXISEM waveforms for two different 
-source parameters (Pdiff). \\ Filter: 5 - 20 sec.}
-\end{minipage}
-\begin{center}
-\end{center}
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=0.9\linewidth]{AXISEMTutorial-fig010.pdf}
+        {\small{}Figure 2: Comparison between real, AXISEM and SPECFEM3D waveforms for 
+        Pdiff phase. \\ Filter: 20 - 100 sec.}
+    \end{minipage}%
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=0.9\linewidth]{AXISEMTutorial-fig014.png}
+        {\small{}Figure 3: Comparison between real and AXISEM waveforms for two different 
+        source parameters (Pdiff). \\ Filter: 5 - 20 sec.}
+    \end{minipage}
 \end{figure}
 
 
