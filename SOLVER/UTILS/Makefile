@@ -1,5 +1,5 @@
 F90 = gfortran
-F90FLAGS = -g -O3  
+F90FLAGS = -g -fbacktrace -fbounds-check
 LDFLAGS_NETCDF = -lm -lnetcdf -lnetcdff -L/usr/lib
 LDFLAGS = -lm 
 INCLUDE = -I /usr/include
