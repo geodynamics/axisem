@@ -195,14 +195,14 @@ subroutine read_sourceparams
 
      if (trim(stf_type) /= 'gauss_0' .and. trim(stf_type) /= 'gauss_1' &
             .and. trim(stf_type) /= 'gauss_2' .and. &
-            trim(stf_type) /= 'heavis' .and. trim(stf_type) /= 'quheavi' ) then
+            trim(stf_type) /= 'quheavi' ) then
         if (lpr) then 
            write(6,'(a,/,a,/,a,a,/,a,/)') &
               '  ...setting source time function to dirac by default!', &
               '     if you wish to choose another stf, ', &
               '     prepend the first line with the stf name, i.e before: ', &
               trim(stf_type), &
-              '     add gauss_0, gauss_1, gauss_2, heavis, or quheavi.'
+              '     add gauss_0, gauss_1, gauss_2, or quheavi.'
         endif
         stf_type = 'dirac_0'
 
@@ -422,8 +422,6 @@ subroutine compute_stf
   case('quheavi')
      !call quasiheavi
      call delta_src ! done inside the delta routine now
-  case('heavis') ! a wiggly wavelet with a sharp boxcar power spectrum
-    call heavis
   case default
      write(6,*)' source time function non existant:', stf_type
      stop
@@ -483,8 +481,6 @@ subroutine compute_stf_t(nstf_t,t,stf_t)
     call gauss_dd_t(nstf_t,t,stf_t)
   case('quheavi')
     call quasiheavi_t(nstf_t,stf_t)
-  case('heavis')
-    call heavis_t(nstf_t,stf_t)
   case default
      write(6,*)' source time function non existant:', stf_type
      stop
@@ -855,27 +851,6 @@ end subroutine gauss_dd
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine heavis
-  double precision, dimension(:), allocatable :: myt
-  double precision, dimension(:), allocatable :: mystf
-  integer :: it
-  
-  allocate(myt(niter))
-  myt(:) = 0.
-  allocate(mystf(niter))
-  mystf(:) = 0.
-  do it=1, niter
-     myt(it) = real(it) * deltat
-  enddo
-
-  call heavis_t(niter, mystf)
-  
-  stf = real(mystf)
-
-end subroutine heavis
-!=============================================================================
-
-!-----------------------------------------------------------------------------
 !! approximate discrete dirac
 subroutine delta_src
   integer :: i,j
@@ -1030,66 +1005,6 @@ subroutine gauss_dd_t(nstf_t,t,stf_t)
   stf_t=stf_t/( two*((decay/t_0)**2)*exp(-three/two) )*magnitude
 
 end subroutine gauss_dd_t
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine heavis_t(nstf_t,stf_t)
-
-  integer, intent(in)                    :: nstf_t
-  real(8), intent(out)                   :: stf_t(nstf_t)
-  integer                                :: nstep2
-  complex(8), dimension(:), allocatable  :: spectre
-  integer                                :: j, i, istat
-  real(8)                                :: freq, wt, tmax, t1, t2
-  complex(8)                             :: dphi
-  double precision                       :: f1h, f2h, f3h, f4h, timezero
-
-  ! TNM: trying this generically.. 
-  f1h = 0.20E-2
-  f2h = 0.6E-2
-  f3h = 1. / (0.8 * t_0)
-  f4h = 1. / (0.6 * t_0)
-  timezero = 300. 
-  
-  stf_t(:) = 0.
-  nstep2 = int(2.d0**(int(log(dble(nstf_t))/log(2.d0))+1))
-
-  write(6,*) 'nstep2 = ',nstep2
-  allocate(spectre(nstep2))
-  spectre(:) = cmplx(0.,0.) 
-  do j=1, nstep2
-     if (j <= nstep2/2) then
-      freq = (j - 1) / (deltat * nstep2)
-     elseif (j == nstep2/2+1) then
-      freq = 1 / (2.d0 * deltat)
-     else
-      freq = -(nstep2 - j + 1) / (deltat * nstep2)
-     endif
-     dphi = exp(-2.d0 * pi * freq * timezero * cmplx(0.d0,1.d0))
-     call wtcoef(abs(freq), f1h, f2h, f3h, f4h, wt)
-     if (j /= 1) spectre(j) = wt * dphi
-  end do  
-  
-  call dfour1(spectre,nstep2,1)
-  
-  stf_t(:) = real(spectre(1:nstf_t)) / nstep2 / deltat
-  stf_t(:) = magnitude * stf_t / maxval(abs(stf_t))
-  
-  !the first time steps are set to zero
-  tmax = nstep2 * deltat
-  t1 = 0.d0
-  t2 = timezero / 5.d0
-
-  do i=1, nstf_t
-     call wtcoef((i-1) * deltat, t1, t2, tmax, tmax, wt)
-     stf_t(i) = stf_t(i) * wt
-  enddo
-
-  deallocate(spectre,stat=istat)
-  if (istat /= 0) stop 'time_function deallocate error'
-  dt_src_shift=timezero
-
-end subroutine heavis_t
 !=============================================================================
 
 !-----------------------------------------------------------------------------

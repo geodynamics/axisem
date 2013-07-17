@@ -1,38 +1,44 @@
-PROG =axisem
+PROG=axisem
 
-SRCS =	analyt_homog_radiation.f90 analytic_mapping.f90 \
+SRCS =	nc_routines.F90 parameters.F90 analytic_mapping.f90 \
 	analytic_semi_mapping.f90 analytic_spheroid_mapping.f90 \
-	apply_masks.f90 background_models.f90 clocks.f90 commpi.f90 \
-	commun.f90 data_comm.f90 data_dipole.f90 data_heterogeneous.f90 \
+	apply_masks.f90 attenuation.f90 background_models.f90 clocks.f90 \
+	commpi.f90 commun.f90 data_comm.f90 data_heterogeneous.f90 \
 	data_io.f90 data_matr.f90 data_mesh.f90 data_mesh_preloop.f90 \
-	data_monopole.f90 data_numbering.f90 data_pointwise.f90 data_proc.f90 \
-	data_quadrupole.f90 data_source.f90 data_spec.f90 data_time.f90 \
-	def_grid.f90 def_precomp_terms.f90 geom_transf.f90 get_mesh.f90 \
-	get_model.f90 global_parameters.f90 lateral_heterogeneities.f90 \
-	main.f90 meshes_io.f90 parameters.f90 pointwise_derivatives.f90 \
-	rotations.f90 seismograms.f90 source.f90 splib.f90 stiffness.f90 \
-	subpar_mapping.f90 time_evol_wave.f90 unit_stride_colloc.f90 \
-	unrolled_loops.f90 utlity.f90 wavefields_io.f90 dfour1.f
+	data_numbering.f90 data_pointwise.f90 data_proc.f90 data_source.f90 \
+	data_spec.f90 data_time.f90 def_grid.f90 def_precomp_terms.f90 \
+	geom_transf.f90 get_mesh.f90 get_model.f90 global_parameters.f90 \
+	kdtree2.f90 lateral_heterogeneities.f90 main.f90 meshes_io.f90 \
+	pointwise_derivatives.f90 rotations.f90 seismograms.f90 source.f90 \
+	splib.f90 stiffness.f90 subpar_mapping.f90 time_evol_wave.f90 \
+	unrolled_loops.f90 utlity.f90 wavefields_io.f90 ftz.c pthread.c
 
-OBJS =	analyt_homog_radiation.o analytic_mapping.o analytic_semi_mapping.o \
-	analytic_spheroid_mapping.o apply_masks.o background_models.o \
-	clocks.o commpi.o commun.o data_comm.o data_dipole.o \
+OBJS =	nc_routines.o parameters.o analytic_mapping.o analytic_semi_mapping.o \
+	analytic_spheroid_mapping.o apply_masks.o attenuation.o \
+	background_models.o clocks.o commpi.o commun.o data_comm.o \
 	data_heterogeneous.o data_io.o data_matr.o data_mesh.o \
-	data_mesh_preloop.o data_monopole.o data_numbering.o data_pointwise.o \
-	data_proc.o data_quadrupole.o data_source.o data_spec.o data_time.o \
-	def_grid.o def_precomp_terms.o geom_transf.o get_mesh.o get_model.o \
-	global_parameters.o lateral_heterogeneities.o main.o meshes_io.o \
-	parameters.o pointwise_derivatives.o rotations.o seismograms.o \
-	source.o splib.o stiffness.o subpar_mapping.o time_evol_wave.o \
-	unit_stride_colloc.o unrolled_loops.o utlity.o wavefields_io.o \
-	dfour1.o
+	data_mesh_preloop.o data_numbering.o data_pointwise.o data_proc.o \
+	data_source.o data_spec.o data_time.o def_grid.o def_precomp_terms.o \
+	geom_transf.o get_mesh.o get_model.o global_parameters.o kdtree2.o \
+	lateral_heterogeneities.o main.o meshes_io.o pointwise_derivatives.o \
+	rotations.o seismograms.o source.o splib.o stiffness.o \
+	subpar_mapping.o time_evol_wave.o unrolled_loops.o utlity.o \
+	wavefields_io.o ftz.o pthread.o
 
-LIBS = -lm 
-CC = gcc
+#Example to include specific netcdf libraries: 
+#LIBS = -lm -L $(HOME)/local/lib -lnetcdff -Wl,-rpath,$(HOME)/local/lib 
+
+LIBS = 
+
+# set unc to compile with netcdf: 
+#F90FLAGS = -Dunc 
 CFLAGS = -O3 -DF_UNDERSCORE
-F90 = mpif90 
-FC = gfortran 
+F90 = mpif90   -O3  
+FC = gfortran -O3  
+CC = gcc -O3  
 INCLUDE = 
+# to include local built of netcdf you might want to use sth like this: 
+#INCLUDE = -I $(HOME)/local/include -I /usr/include 
 
 
 # cancel m2c implicit rule 
@@ -47,91 +53,100 @@ $(PROG): $(OBJS)
 clean:
 	rm -f $(PROG) $(OBJS) *.M *.mod *.d *.il core 
 
-.SUFFIXES: $(SUFFIXES) .f90
+.SUFFIXES: $(SUFFIXES) .f90 .F90
 
 .f90.o:
 	$(F90) $(F90FLAGS) -c $(INCLUDE) $<
 
-analyt_homog_radiation.o: data_io.o data_mesh.o data_mesh_preloop.o \
-	data_proc.o data_source.o data_time.o global_parameters.o utlity.o \
-	mesh_params.h
+.F90.o:
+	$(F90) $(F90FLAGS) -c $(INCLUDE) $<
+
 analytic_mapping.o: analytic_semi_mapping.o analytic_spheroid_mapping.o \
-	data_mesh.o data_mesh_preloop.o global_parameters.o subpar_mapping.o
-analytic_semi_mapping.o: global_parameters.o
-analytic_spheroid_mapping.o: data_mesh.o global_parameters.o
-apply_masks.o: global_parameters.o mesh_params.h
-commpi.o: data_comm.o data_mesh.o data_numbering.o data_proc.o \
-	global_parameters.o mesh_params.h mpif.h
-commun.o: clocks.o commpi.o data_io.o data_matr.o data_mesh.o \
-	data_numbering.o data_proc.o data_time.o global_parameters.o \
-	meshes_io.o mesh_params.h
-data_comm.o: global_parameters.o
-data_dipole.o: global_parameters.o mesh_params.h
-data_heterogeneous.o: global_parameters.o mesh_params.h
-data_matr.o: global_parameters.o mesh_params.h
-data_mesh.o: global_parameters.o mesh_params.h
-data_mesh_preloop.o: global_parameters.o mesh_params.h
-data_monopole.o: global_parameters.o mesh_params.h
-data_numbering.o: mesh_params.h
-data_pointwise.o: global_parameters.o mesh_params.h
-data_quadrupole.o: global_parameters.o mesh_params.h
-data_source.o: global_parameters.o mesh_params.h
-data_spec.o: global_parameters.o mesh_params.h
-data_time.o: global_parameters.o
+	data_mesh.o data_mesh_preloop.o global_parameters.o subpar_mapping.o Makefile 
+analytic_semi_mapping.o: global_parameters.o Makefile 
+analytic_spheroid_mapping.o: data_mesh.o global_parameters.o Makefile 
+apply_masks.o: global_parameters.o mesh_params.h Makefile 
+attenuation.o: analytic_mapping.o commun.o data_io.o data_matr.o data_mesh.o \
+	data_mesh_preloop.o data_pointwise.o data_proc.o data_source.o \
+	data_spec.o data_time.o geom_transf.o get_mesh.o global_parameters.o \
+	pointwise_derivatives.o utlity.o mesh_params.h Makefile 
+background_models.o:  Makefile 
+clocks.o:  Makefile 
+commpi.o: data_comm.o data_io.o data_mesh.o data_numbering.o data_proc.o \
+	global_parameters.o mesh_params.h Makefile 
+commun.o: clocks.o commpi.o data_matr.o data_mesh.o data_numbering.o \
+	data_proc.o data_time.o global_parameters.o mesh_params.h Makefile 
+data_comm.o: global_parameters.o Makefile 
+data_heterogeneous.o: global_parameters.o mesh_params.h Makefile 
+data_io.o:  Makefile 
+data_matr.o: global_parameters.o mesh_params.h Makefile 
+data_mesh.o: global_parameters.o mesh_params.h Makefile 
+data_mesh_preloop.o: global_parameters.o mesh_params.h Makefile 
+data_numbering.o: mesh_params.h Makefile 
+data_pointwise.o: global_parameters.o Makefile 
+data_proc.o:  Makefile 
+data_source.o: global_parameters.o mesh_params.h Makefile 
+data_spec.o: global_parameters.o mesh_params.h Makefile 
+data_time.o: global_parameters.o Makefile 
 def_grid.o: apply_masks.o commun.o data_comm.o data_io.o data_mesh.o \
 	data_mesh_preloop.o data_numbering.o data_pointwise.o data_proc.o \
-	data_spec.o geom_transf.o get_mesh.o global_parameters.o meshes_io.o \
-	splib.o utlity.o mesh_params.h
-def_precomp_terms.o: analytic_mapping.o background_models.o commun.o \
-	data_dipole.o data_io.o data_matr.o data_mesh.o data_mesh_preloop.o \
-	data_monopole.o data_pointwise.o data_proc.o data_quadrupole.o \
-	data_source.o data_spec.o def_grid.o geom_transf.o get_mesh.o \
-	get_model.o global_parameters.o pointwise_derivatives.o splib.o \
-	utlity.o mesh_params.h
+	data_spec.o geom_transf.o get_mesh.o global_parameters.o splib.o \
+	utlity.o mesh_params.h Makefile 
+def_precomp_terms.o: analytic_mapping.o attenuation.o background_models.o \
+	commun.o data_io.o data_matr.o data_mesh.o data_mesh_preloop.o \
+	data_pointwise.o data_proc.o data_source.o data_spec.o def_grid.o \
+	geom_transf.o get_mesh.o get_model.o global_parameters.o \
+	pointwise_derivatives.o splib.o utlity.o mesh_params.h Makefile 
 geom_transf.o: analytic_mapping.o data_mesh.o data_mesh_preloop.o \
-	subpar_mapping.o
-get_mesh.o: commun.o data_comm.o data_mesh.o data_mesh_preloop.o \
-	data_numbering.o data_proc.o data_time.o global_parameters.o
+	subpar_mapping.o Makefile 
+get_mesh.o: background_models.o commun.o data_comm.o data_io.o data_mesh.o \
+	data_mesh_preloop.o data_numbering.o data_proc.o data_time.o \
+	global_parameters.o Makefile 
 get_model.o: background_models.o commun.o data_io.o data_mesh.o \
-	data_mesh_preloop.o data_proc.o data_time.o def_grid.o \
-	global_parameters.o lateral_heterogeneities.o utlity.o mesh_params.h
+	data_mesh_preloop.o data_proc.o data_source.o data_time.o def_grid.o \
+	global_parameters.o lateral_heterogeneities.o nc_routines.o utlity.o \
+	mesh_params.h Makefile 
+global_parameters.o:  Makefile 
 lateral_heterogeneities.o: background_models.o commun.o data_heterogeneous.o \
 	data_io.o data_mesh.o data_proc.o data_source.o global_parameters.o \
-	utlity.o mesh_params.h
+	kdtree2.o utlity.o mesh_params.h Makefile 
 main.o: clocks.o commun.o data_io.o data_mesh.o data_proc.o data_source.o \
-	data_time.o def_grid.o get_mesh.o global_parameters.o parameters.o \
-	time_evol_wave.o
-meshes_io.o: data_io.o data_mesh.o data_mesh_preloop.o data_pointwise.o \
-	data_proc.o data_spec.o global_parameters.o utlity.o mesh_params.h
-parameters.o: commun.o data_comm.o data_io.o data_mesh.o data_mesh_preloop.o \
-	data_numbering.o data_proc.o data_source.o data_time.o \
-	global_parameters.o utlity.o mesh_params.h
+	data_time.o def_grid.o get_mesh.o meshes_io.o nc_routines.o \
+	parameters.o time_evol_wave.o Makefile 
+meshes_io.o: data_io.o data_matr.o data_mesh.o data_mesh_preloop.o \
+	data_numbering.o data_pointwise.o data_proc.o data_source.o \
+	data_spec.o global_parameters.o nc_routines.o utlity.o mesh_params.h Makefile 
 pointwise_derivatives.o: data_mesh.o data_pointwise.o data_spec.o \
-	global_parameters.o unit_stride_colloc.o unrolled_loops.o \
-	mesh_params.h
+	global_parameters.o unrolled_loops.o mesh_params.h Makefile 
 rotations.o: data_io.o data_mesh.o data_proc.o data_source.o \
-	global_parameters.o
+	global_parameters.o Makefile 
 seismograms.o: commun.o data_io.o data_mesh.o data_mesh_preloop.o \
 	data_pointwise.o data_proc.o data_source.o data_time.o \
-	global_parameters.o pointwise_derivatives.o rotations.o \
-	unit_stride_colloc.o utlity.o wavefields_io.o mesh_params.h
+	global_parameters.o nc_routines.o pointwise_derivatives.o rotations.o \
+	utlity.o mesh_params.h Makefile 
 source.o: apply_masks.o commun.o data_io.o data_mesh.o data_mesh_preloop.o \
 	data_proc.o data_source.o data_spec.o data_time.o global_parameters.o \
-	pointwise_derivatives.o utlity.o
-splib.o: global_parameters.o
-stiffness.o: data_dipole.o data_matr.o data_mesh.o data_monopole.o \
-	data_quadrupole.o data_source.o data_spec.o global_parameters.o \
-	unit_stride_colloc.o unrolled_loops.o mesh_params.h
-subpar_mapping.o: global_parameters.o
-time_evol_wave.o: apply_masks.o clocks.o commun.o data_io.o data_matr.o \
-	data_mesh.o data_pointwise.o data_proc.o data_source.o data_time.o \
-	def_precomp_terms.o global_parameters.o meshes_io.o parameters.o \
-	pointwise_derivatives.o rotations.o seismograms.o source.o \
-	stiffness.o unit_stride_colloc.o wavefields_io.o mesh_params.h
-unit_stride_colloc.o: global_parameters.o
-unrolled_loops.o: global_parameters.o mesh_params.h
+	pointwise_derivatives.o utlity.o Makefile 
+splib.o: global_parameters.o Makefile 
+stiffness.o: attenuation.o data_matr.o data_mesh.o data_source.o data_spec.o \
+	global_parameters.o unrolled_loops.o mesh_params.h Makefile 
+subpar_mapping.o: global_parameters.o Makefile 
+time_evol_wave.o: apply_masks.o attenuation.o clocks.o commun.o data_io.o \
+	data_matr.o data_mesh.o data_pointwise.o data_proc.o data_source.o \
+	data_time.o def_precomp_terms.o global_parameters.o meshes_io.o \
+	parameters.o pointwise_derivatives.o rotations.o seismograms.o \
+	source.o stiffness.o wavefields_io.o mesh_params.h Makefile 
+unrolled_loops.o: global_parameters.o mesh_params.h Makefile 
 utlity.o: data_mesh.o data_mesh_preloop.o data_spec.o geom_transf.o \
-	global_parameters.o
-wavefields_io.o: data_io.o data_mesh.o data_pointwise.o data_proc.o \
-	data_source.o global_parameters.o pointwise_derivatives.o \
-	unit_stride_colloc.o mesh_params.h
+	global_parameters.o Makefile 
+wavefields_io.o: attenuation.o data_io.o data_matr.o data_mesh.o \
+	data_pointwise.o data_proc.o data_source.o data_time.o \
+	global_parameters.o lateral_heterogeneities.o nc_routines.o \
+	pointwise_derivatives.o mesh_params.h Makefile 
+nc_routines.o: clocks.o commun.o data_io.o data_mesh.o data_proc.o \
+	data_source.o data_time.o global_parameters.o mesh_params.h Makefile 
+parameters.o: attenuation.o commun.o data_comm.o data_io.o data_mesh.o \
+	data_mesh_preloop.o data_numbering.o data_proc.o data_source.o \
+	data_time.o global_parameters.o nc_routines.o utlity.o mesh_params.h Makefile 
+ftz.o:  Makefile 
+pthread.o:  Makefile 
