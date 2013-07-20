@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cp SOLVER/Makefile.TEMPLATE SOLVER/Makefile
+cp MESHER/Makefile.TEMPLATE MESHER/Makefile
 cp MESHER/inparam_mesh.TEMPLATE MESHER/inparam_mesh
 cp SOLVER/inparam_basic.TEMPLATE SOLVER/inparam_basic
 cp SOLVER/inparam_advanced.TEMPLATE SOLVER/inparam_advanced

@@ -1,0 +1,51 @@
+#-------------------------------------------------------------------------------
+#       Standard Makefile Macro Setup for NA program and utilities
+#      
+#       Note that you must edit this file to suit your platform 
+#
+#
+
+# Set name of mpirun command
+MPIRUN  = mpirun.openmpi
+
+# Enable NetCDF
+USE_NETCDF = true
+NETCDF_PATH = $(HOME)/local
+
+# GFORTRAN (fast)
+CC      = gcc                                # C compiler
+FC      = mpif90                             # Fortran compiler
+FFLAGS  = -O3 -march=native
+CFLAGS  = -O3 -march=native
+LDFLAGS = -O3
+
+# GFORTRAN (debug)
+#CC      = gcc                                # C compiler
+#FC      = mpif90                             # Fortran compiler
+#FFLAGS  = -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic
+#CFLAGS  = -Wall 
+
+# PORTLAND (fast)
+#CC      = pgcc 
+#FC      = mpif90  
+#FFLAGS  = -fast 
+#CFLAGS  = -fast 
+
+# PORTLAND (debug)
+#CC      = pgcc 
+#FC      = mpif90  
+#FFLAGS  = --Mbounds --traceback -g
+#CFLAGS  = --Mbounds --traceback -g
+
+# Intel Compiler suite (fast)
+#CC = mpiicc
+#FC = mpiifort
+#FFLAGS = -vec-report:0 -shared-intel  -heap-arrays 10 -O3 -xHOST
+#CFLAGS = -O3 -xHost
+
+# Intel Compiler suite (debug)
+#CC = mpiicc
+#FC = mpiifort
+#FFLAGS = -vec-report:0 -g -shared-intel  -mcmodel=medium -check all -traceback -heap-arrays 10
+#CFLAGS = -g -traceback
+	

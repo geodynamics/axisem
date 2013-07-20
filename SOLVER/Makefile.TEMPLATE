@@ -1,25 +1,6 @@
-#
-#    Copyright 2013, Tarje Nissen-Meyer, Alexandre Fournier, Martin van Driel
-#                    Simon Stähler, Kasra Hosseini, Stephanie Hempel
-#
-#    This file is part of AxiSEM.
-#    It is distributed from the webpage <http://www.axisem.info>
-#
-#    AxiSEM is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    AxiSEM is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
-#
+PROG = axisem
 
-PROG=axisem
+include ../make_axisem.macros
 
 SRCS =	nc_routines.F90 parameters.F90 analytic_mapping.f90 \
 	analytic_semi_mapping.f90 analytic_spheroid_mapping.f90 \
@@ -46,20 +27,14 @@ OBJS =	nc_routines.o parameters.o analytic_mapping.o analytic_semi_mapping.o \
 	subpar_mapping.o time_evol_wave.o unrolled_loops.o utlity.o \
 	wavefields_io.o ftz.o pthread.o
 
-#Example to include specific netcdf libraries: 
-#LIBS = -lm -L $(HOME)/local/lib -lnetcdff -Wl,-rpath,$(HOME)/local/lib 
-
-LIBS = 
-
-# set unc to compile with netcdf: 
-#F90FLAGS = -Dunc 
-CFLAGS = -O3 -DF_UNDERSCORE
-F90 = mpif90   -O3  
-FC = gfortran -O3  
-CC = gcc -O3  
-INCLUDE = 
-# to include local built of netcdf you might want to use sth like this: 
-#INCLUDE = -I $(HOME)/local/include -I /usr/include 
+ifeq ($(USE_NETCDF),true)
+   FFLAGS += -Dunc
+   LIBS = -L $(NETCDF_PATH)/lib -lnetcdff -Wl,-rpath,$(NETCDF_PATH)/lib
+   INCLUDE = -I $(NETCDF_PATH)/include
+else
+   LIBS = 
+   INCLUDE =
+endif
 
 
 # cancel m2c implicit rule 
@@ -69,7 +44,7 @@ INCLUDE =
 all: $(PROG)
 
 $(PROG): $(OBJS)
-	$(F90) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+	$(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(PROG) $(OBJS) *.M *.mod *.d *.il core 
@@ -77,97 +52,97 @@ clean:
 .SUFFIXES: $(SUFFIXES) .f90 .F90
 
 .f90.o:
-	$(F90) $(F90FLAGS) -c $(INCLUDE) $<
+	$(FC) $(FFLAGS) -c $(INCLUDE) $<
 
 .F90.o:
-	$(F90) $(F90FLAGS) -c $(INCLUDE) $<
+	$(FC) $(FFLAGS) -c $(INCLUDE) $<
 
 analytic_mapping.o: analytic_semi_mapping.o analytic_spheroid_mapping.o \
-	data_mesh.o data_mesh_preloop.o global_parameters.o subpar_mapping.o Makefile 
-analytic_semi_mapping.o: global_parameters.o Makefile 
-analytic_spheroid_mapping.o: data_mesh.o global_parameters.o Makefile 
-apply_masks.o: global_parameters.o mesh_params.h Makefile 
+	data_mesh.o data_mesh_preloop.o global_parameters.o subpar_mapping.o Makefile ../make_axisem.macros 
+analytic_semi_mapping.o: global_parameters.o Makefile ../make_axisem.macros 
+analytic_spheroid_mapping.o: data_mesh.o global_parameters.o Makefile ../make_axisem.macros 
+apply_masks.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
 attenuation.o: analytic_mapping.o commun.o data_io.o data_matr.o data_mesh.o \
 	data_mesh_preloop.o data_pointwise.o data_proc.o data_source.o \
 	data_spec.o data_time.o geom_transf.o get_mesh.o global_parameters.o \
-	pointwise_derivatives.o utlity.o mesh_params.h Makefile 
-background_models.o:  Makefile 
-clocks.o:  Makefile 
+	pointwise_derivatives.o utlity.o mesh_params.h Makefile ../make_axisem.macros 
+background_models.o:  Makefile ../make_axisem.macros 
+clocks.o:  Makefile ../make_axisem.macros 
 commpi.o: data_comm.o data_io.o data_mesh.o data_numbering.o data_proc.o \
-	global_parameters.o mesh_params.h Makefile 
+	global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
 commun.o: clocks.o commpi.o data_matr.o data_mesh.o data_numbering.o \
-	data_proc.o data_time.o global_parameters.o mesh_params.h Makefile 
-data_comm.o: global_parameters.o Makefile 
-data_heterogeneous.o: global_parameters.o mesh_params.h Makefile 
-data_io.o:  Makefile 
-data_matr.o: global_parameters.o mesh_params.h Makefile 
-data_mesh.o: global_parameters.o mesh_params.h Makefile 
-data_mesh_preloop.o: global_parameters.o mesh_params.h Makefile 
-data_numbering.o: mesh_params.h Makefile 
-data_pointwise.o: global_parameters.o Makefile 
-data_proc.o:  Makefile 
-data_source.o: global_parameters.o mesh_params.h Makefile 
-data_spec.o: global_parameters.o mesh_params.h Makefile 
-data_time.o: global_parameters.o Makefile 
+	data_proc.o data_time.o global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
+data_comm.o: global_parameters.o Makefile ../make_axisem.macros 
+data_heterogeneous.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
+data_io.o:  Makefile ../make_axisem.macros 
+data_matr.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
+data_mesh.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
+data_mesh_preloop.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
+data_numbering.o: mesh_params.h Makefile ../make_axisem.macros 
+data_pointwise.o: global_parameters.o Makefile ../make_axisem.macros 
+data_proc.o:  Makefile ../make_axisem.macros 
+data_source.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
+data_spec.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
+data_time.o: global_parameters.o Makefile ../make_axisem.macros 
 def_grid.o: apply_masks.o commun.o data_comm.o data_io.o data_mesh.o \
 	data_mesh_preloop.o data_numbering.o data_pointwise.o data_proc.o \
 	data_spec.o geom_transf.o get_mesh.o global_parameters.o splib.o \
-	utlity.o mesh_params.h Makefile 
+	utlity.o mesh_params.h Makefile ../make_axisem.macros 
 def_precomp_terms.o: analytic_mapping.o attenuation.o background_models.o \
 	commun.o data_io.o data_matr.o data_mesh.o data_mesh_preloop.o \
 	data_pointwise.o data_proc.o data_source.o data_spec.o def_grid.o \
 	geom_transf.o get_mesh.o get_model.o global_parameters.o \
-	pointwise_derivatives.o splib.o utlity.o mesh_params.h Makefile 
+	pointwise_derivatives.o splib.o utlity.o mesh_params.h Makefile ../make_axisem.macros 
 geom_transf.o: analytic_mapping.o data_mesh.o data_mesh_preloop.o \
-	subpar_mapping.o Makefile 
+	subpar_mapping.o Makefile ../make_axisem.macros 
 get_mesh.o: background_models.o commun.o data_comm.o data_io.o data_mesh.o \
 	data_mesh_preloop.o data_numbering.o data_proc.o data_time.o \
-	global_parameters.o Makefile 
+	global_parameters.o Makefile ../make_axisem.macros 
 get_model.o: background_models.o commun.o data_io.o data_mesh.o \
 	data_mesh_preloop.o data_proc.o data_source.o data_time.o def_grid.o \
 	global_parameters.o lateral_heterogeneities.o nc_routines.o utlity.o \
-	mesh_params.h Makefile 
-global_parameters.o:  Makefile 
+	mesh_params.h Makefile ../make_axisem.macros 
+global_parameters.o:  Makefile ../make_axisem.macros 
 lateral_heterogeneities.o: background_models.o commun.o data_heterogeneous.o \
 	data_io.o data_mesh.o data_proc.o data_source.o global_parameters.o \
-	kdtree2.o utlity.o mesh_params.h Makefile 
+	kdtree2.o utlity.o mesh_params.h Makefile ../make_axisem.macros 
 main.o: clocks.o commun.o data_io.o data_mesh.o data_proc.o data_source.o \
 	data_time.o def_grid.o get_mesh.o meshes_io.o nc_routines.o \
-	parameters.o time_evol_wave.o Makefile 
+	parameters.o time_evol_wave.o Makefile ../make_axisem.macros 
 meshes_io.o: data_io.o data_matr.o data_mesh.o data_mesh_preloop.o \
 	data_numbering.o data_pointwise.o data_proc.o data_source.o \
-	data_spec.o global_parameters.o nc_routines.o utlity.o mesh_params.h Makefile 
+	data_spec.o global_parameters.o nc_routines.o utlity.o mesh_params.h Makefile ../make_axisem.macros 
 pointwise_derivatives.o: data_mesh.o data_pointwise.o data_spec.o \
-	global_parameters.o unrolled_loops.o mesh_params.h Makefile 
+	global_parameters.o unrolled_loops.o mesh_params.h Makefile ../make_axisem.macros 
 rotations.o: data_io.o data_mesh.o data_proc.o data_source.o \
-	global_parameters.o Makefile 
+	global_parameters.o Makefile ../make_axisem.macros 
 seismograms.o: commun.o data_io.o data_mesh.o data_mesh_preloop.o \
 	data_pointwise.o data_proc.o data_source.o data_time.o \
 	global_parameters.o nc_routines.o pointwise_derivatives.o rotations.o \
-	utlity.o mesh_params.h Makefile 
+	utlity.o mesh_params.h Makefile ../make_axisem.macros 
 source.o: apply_masks.o commun.o data_io.o data_mesh.o data_mesh_preloop.o \
 	data_proc.o data_source.o data_spec.o data_time.o global_parameters.o \
-	pointwise_derivatives.o utlity.o Makefile 
-splib.o: global_parameters.o Makefile 
+	pointwise_derivatives.o utlity.o Makefile ../make_axisem.macros 
+splib.o: global_parameters.o Makefile ../make_axisem.macros 
 stiffness.o: attenuation.o data_matr.o data_mesh.o data_source.o data_spec.o \
-	global_parameters.o unrolled_loops.o mesh_params.h Makefile 
-subpar_mapping.o: global_parameters.o Makefile 
+	global_parameters.o unrolled_loops.o mesh_params.h Makefile ../make_axisem.macros 
+subpar_mapping.o: global_parameters.o Makefile ../make_axisem.macros 
 time_evol_wave.o: apply_masks.o attenuation.o clocks.o commun.o data_io.o \
 	data_matr.o data_mesh.o data_pointwise.o data_proc.o data_source.o \
 	data_time.o def_precomp_terms.o global_parameters.o meshes_io.o \
 	parameters.o pointwise_derivatives.o rotations.o seismograms.o \
-	source.o stiffness.o wavefields_io.o mesh_params.h Makefile 
-unrolled_loops.o: global_parameters.o mesh_params.h Makefile 
+	source.o stiffness.o wavefields_io.o mesh_params.h Makefile ../make_axisem.macros 
+unrolled_loops.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
 utlity.o: data_mesh.o data_mesh_preloop.o data_spec.o geom_transf.o \
-	global_parameters.o Makefile 
+	global_parameters.o Makefile ../make_axisem.macros 
 wavefields_io.o: attenuation.o data_io.o data_matr.o data_mesh.o \
 	data_pointwise.o data_proc.o data_source.o data_time.o \
 	global_parameters.o lateral_heterogeneities.o nc_routines.o \
-	pointwise_derivatives.o mesh_params.h Makefile 
+	pointwise_derivatives.o mesh_params.h Makefile ../make_axisem.macros 
 nc_routines.o: clocks.o commun.o data_io.o data_mesh.o data_proc.o \
-	data_source.o data_time.o global_parameters.o mesh_params.h Makefile 
+	data_source.o data_time.o global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
 parameters.o: attenuation.o commun.o data_comm.o data_io.o data_mesh.o \
 	data_mesh_preloop.o data_numbering.o data_proc.o data_source.o \
-	data_time.o global_parameters.o nc_routines.o utlity.o mesh_params.h Makefile 
-ftz.o:  Makefile 
-pthread.o:  Makefile 
+	data_time.o global_parameters.o nc_routines.o utlity.o mesh_params.h Makefile ../make_axisem.macros 
+ftz.o:  Makefile ../make_axisem.macros 
+pthread.o:  Makefile ../make_axisem.macros 

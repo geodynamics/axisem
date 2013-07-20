@@ -23,6 +23,8 @@ endif
 set datapath = `grep "DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"//g'`
 set infopath = `grep "INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
 set meshdir = "MESHES/"`grep "MESHNAME" inparam_basic | awk '{print $2}'`
+set mpiruncmd = `grep "MPIRUN" ../make_axisem.macros | awk '{print $3}'`
+echo $mpiruncmd
 
 set svnrevision = `svnversion`
 echo $svnrevision "SVN_VERSION      " > runinfo
@@ -332,7 +334,7 @@ foreach isrc (${num_src_arr})
 
             ########## LSF SCHEDULER ######################
             if ( $queue == 'lsf' ) then 
-                bsub -R "rusage[mem=2048]" -I -n $nodnum mpirun -n $nodnum ./axisem 2>&1 > $outputname &
+                bsub -R "rusage[mem=2048]" -I -n $nodnum $mpiruncmd -n $nodnum ./axisem 2>&1 > $outputname &
 
 	    ######## slurm  #######
             else if ( $queue == 'slurmlocal' ) then 
@@ -352,13 +354,13 @@ foreach isrc (${num_src_arr})
                 echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
                 echo "ulimit -s unlimited " >> run_solver.pbs
                 echo "cd $PWD " >> run_mesh.pbs
-                echo "mpirun -n $nodnum ./axisem  > OUTPUT " >> run_solver.pbs
+                echo "$mpiruncnd -n $nodnum ./axisem  > OUTPUT " >> run_solver.pbs
                 qsub run_solver.pbs
             endif
 
         ######## SUBMIT LOCALLY #######
         else 
-            mpirun.openmpi -n $nodnum ./axisem >& $outputname &
+            $mpiruncmd -n $nodnum ./axisem >& $outputname &
         endif
 
         echo "Job running in directory $isim"

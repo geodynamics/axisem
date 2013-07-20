@@ -1,29 +1,49 @@
 #! /usr/bin/perl
 #
-# Usage: makemake {<program name> {<F90 compiler or fc or f77 or cc or c>}}
+#    Copyright 2013, Tarje Nissen-Meyer, Alexandre Fournier, Martin van Driel
+#                    Simon Stähler, Kasra Hosseini, Stephanie Hempel
 #
-# Generate a Makefile from the sources in the current directory.  The source
-# files may be in either C, FORTRAN 77, Fortran 90 or some combination of
-# these languages.  If the F90 compiler specified is cray or parasoft, then
-# the Makefile generated will conform to the conventions of these compilers.
-# To run makemake, it will be necessary to modify the first line of this script
-# to point to the actual location of Perl on your system.
+#    This file is part of AxiSEM.
+#    It is distributed from the webpage <http://www.axisem.info>
 #
-# Written by Michael Wester <wester@math.unm.edu> February 16, 1995
-# Cotopaxi (Consulting), Albuquerque, New Mexico
+#    AxiSEM is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
 #
-unlink('mesh_params.h');
-unlink('unrolled_loops.f90');
+#    AxiSEM is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
+#
+#    Generate a Makefile from the sources in the current directory.  The source
+#    files may be in either C, FORTRAN 77, Fortran 90 or some combination of
+#    these languages.  
+#
+#    Original version written by Michael Wester <wester@math.unm.edu> February 16, 1995
+#    Cotopaxi (Consulting), Albuquerque, New Mexico
+#
+#    Modified by Martin van Driel, ETH Zürich and Simon Stähler, 
+#    LMU München to fit the needs of Axisem. The compiler version is
+#    now set in the file ../make_axisem.macros
 
 open(MAKEFILE, "> Makefile");
 
-#print MAKEFILE "PROG =\t$ARGV[0]\n\n";
-print MAKEFILE "PROG =xmesh\n\n";
+print MAKEFILE "PROG = xmesh\n\n";
+
+#
+# Read header file with compiler names etc.
+#
+print MAKEFILE "include ../make_axisem.macros\n\n";
+
 #
 # Source listing
 #
 print MAKEFILE "SRCS =\t";
-@srcs = <*.f90 *.f *.F *.c>;
+@srcs = <*.F90 *.f90 *.f *.F *.c>;
 &PrintWords(8, 0, @srcs);
 print MAKEFILE "\n\n";
 #
@@ -37,63 +57,15 @@ print MAKEFILE "\n\n";
 #
 # Define common macros
 #
-print MAKEFILE "LIBS = -lm \n";
-print MAKEFILE "CC = gcc\n";
-print MAKEFILE "CFLAGS = -O3 -DF_UNDERSCORE\n";
+print MAKEFILE "ifeq (\$(USE_NETCDF),true)\n";
+print MAKEFILE "   FFLAGS += -Dunc\n";
+print MAKEFILE "   LIBS = -L \$(NETCDF_PATH)/lib -lnetcdff -Wl,-rpath,\$(NETCDF_PATH)/lib\n";
+print MAKEFILE "   INCLUDE = -I \$(NETCDF_PATH)/include\n";
+print MAKEFILE "else\n";
+print MAKEFILE "   LIBS = \n";
+print MAKEFILE "   INCLUDE =\n";
+print MAKEFILE "endif\n";
 
-############ CHOOSE BETWEEN DIFFERENT FORTRAN COMPILERS ###########################
-if ($ARGV[0] eq 'ifort'){
-    if ($ARGV[1] eq 'debug'){
-	$F90_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -debug  -check -traceback -heap-arrays 10';
-	$FC_strg = 'ifort  -vec-report:0 -g -O2 -shared-intel  -mcmodel=medium -check all -debug  -check -traceback -heap-arrays 10';
-    } else {
-	$F90_strg = 'ifort  -vec-report:0 -O3 -xHOST -shared-intel -heap-arrays 10'; 
-	$FC_strg = 'ifort  -vec-report:0 -O3 -xHOST -shared-intel -heap-arrays 10'; 
-    }
-}
-if ($ARGV[0] eq 'portland'){
-    if ($ARGV[1] eq 'debug'){
-	$F90_strg = 'mpif90  -g --Mbounds --traceback';
-	$FC_strg = 'mpif90 -g --Mbounds --traceback';
-	$CC_strg = 'pgcc -g --Mbounds --traceback';
-    } else {
-	$F90_strg = 'mpif90  -fast '; 
-	$FC_strg = 'mpif90 -fast';
-	$CC_strg = 'pgcc  -fast';
-    }
-}
-elsif ($ARGV[0] eq 'gfortran'){
-    if ($ARGV[1] eq 'debug'){
-	$F90_strg = 'mpif90 -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic';
-	$FC_strg =  'gfortran -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic';
-    } else {
-	$F90_strg = 'mpif90 -O3';
-	$FC_strg = 'gfortran  -O3';	
-    }
-} 
-elsif ($ARGV[0] eq '-h'){
-	print "-----------Flags to be used---------- \n";
-	print "Argument 1: Compiler options: gfortran (default), ifort\n";
-	print "Argument 2: debug\n";
-	print "Not specifying debug will create Makefile for optimized compilation \n";
-	exit;
-}
-else {
-	print "Default compiler is gfortran\n";
-	print "If you want another compiler type ./makemake.pl <compiler_name> \n";
-	$F90_strg = 'mpif90';
-	$FC_strg = 'gfortran';
-}
-###################################################################################
-
-$F90_full="F90 = $F90_strg \n";
-$FC_full="FC = $FC_strg \n";
-
-print MAKEFILE $F90_full;
-print MAKEFILE $FC_full;
-
-print "\n:::::: F90 compiler & flags ::::::\n $F90_strg \n";
-print "\n:::::: FC compiler & flags  ::::::\n $FC_strg \n";
 
 print MAKEFILE "\n\n";
 print MAKEFILE "# cancel m2c implicit rule \n";
@@ -115,12 +87,14 @@ print MAKEFILE "\trm -f \$(PROG) \$(OBJS) *.M *.mod *.d *.il core \n\n";
 #
 # Make .f90 a valid suffix
 #
-print MAKEFILE ".SUFFIXES: \$(SUFFIXES) .f90\n\n";
+print MAKEFILE ".SUFFIXES: \$(SUFFIXES) .f90 .F90\n\n";
 #
 # .f90 -> .o
 #
 print MAKEFILE ".f90.o:\n";
-print MAKEFILE "\t\$(F90) \$(F90FLAGS) -c \$<\n\n";
+print MAKEFILE "\t\$(FC) \$(FFLAGS) -c \$(INCLUDE) \$<\n\n";
+print MAKEFILE ".F90.o:\n";
+print MAKEFILE "\t\$(FC) \$(FFLAGS) -c \$(INCLUDE) \$<\n\n";
 #
 # Dependency listings
 #
@@ -175,12 +149,12 @@ sub LanguageCompiler {
             do { $compiler = "FC"; last CASE; };
          grep(/^$compiler$/, ("cc", "c"))   &&
             do { $compiler = "CC"; last CASE; };
-         $compiler = "F90";
+         $compiler = "FC";
          }
       }
    else {
       CASE: {
-         grep(/\.f90$/, @srcs)   && do { $compiler = "F90"; last CASE; };
+         grep(/\.(f|F)90$/, @srcs)   && do { $compiler = "FC"; last CASE; };
          grep(/\.(f|F)$/, @srcs) && do { $compiler = "FC";  last CASE; };
          grep(/\.c$/, @srcs)     && do { $compiler = "CC";  last CASE; };
          $compiler = "???";
@@ -225,13 +199,11 @@ sub MakeDepends {
       while (<FILE>) {
          /$pattern/i && push(@incs, $1);
          }
-      if (defined @incs) {
          $file =~ s/\.[^.]+$/.o/;
          print MAKEFILE "$file: ";
          &PrintWords(length($file) + 2, 0, @incs);
-         print MAKEFILE "\n";
+         print MAKEFILE " Makefile ../make_axisem.macros \n";
          undef @incs;
-         }
       }
    }
 
@@ -248,25 +220,24 @@ sub MakeDependsf90 {
    #
    # Associate each module with the name of the file that contains it
    #
-   foreach $file (<*.f90>) {
+   foreach $file (<*.f90 *.F90>) {
       open(FILE, $file) || warn "Cannot open $file: $!\n";
       while (<FILE>) {
          /^\s*module\s+([^\s!]+)/i &&
-            ($filename{&toLower($1)} = $file) =~ s/\.f90$/.o/;
+            ($filename{&toLower($1)} = $file) =~ s/\.(f|F)90$/.o/;
          }
       }
    #
    # Print the dependencies of each file that has one or more include's or
    # references one or more modules
    #
-   foreach $file (<*.f90>) {
+   foreach $file (<*.f90 *.F90>) {
       open(FILE, $file);
       while (<FILE>) {
          /^\s*include\s+["\']([^"\']+)["\']/i && push(@incs,$1);
          /^\s*use\s+([^\s,!]+)/i && push(@modules, &toLower($1));
          }
-      if (defined @incs || defined @modules) {
-         ($objfile = $file) =~ s/\.f90$/.o/;
+      ($objfile = $file) =~ s/\.(f|F)90$/.o/;
          print MAKEFILE "$objfile: ";
          undef @dependencies;
          foreach $module (@modules) {
@@ -275,38 +246,13 @@ sub MakeDependsf90 {
          @dependencies = &uniq(sort(@dependencies));
          &PrintWords(length($objfile) + 2, 0,
                      @dependencies, &uniq(sort(@incs)));
-         print MAKEFILE "\n";
+      print MAKEFILE " Makefile ../make_axisem.macros \n";
          undef @incs;
          undef @modules;
          #
-         # Cray F90 compiler
-         #
-         if ($compiler eq "cray") {
-            print MAKEFILE "\t\$(F90) \$(F90FLAGS) -c ";
-            foreach $depend (@dependencies) {
-               push(@modules, "-p", $depend);
-               }
-            push(@modules, $file);
-            &PrintWords(30, 1, @modules);
-            print MAKEFILE "\n";
-            undef @modules;
-            }
-         #
-         # ParaSoft F90 compiler
-         #
-         if ($compiler eq "parasoft") {
-            print MAKEFILE "\t\$(F90) \$(F90FLAGS) -c ";
-            foreach $depend (@dependencies) {
-               $depend =~ s/\.o$/.f90/;
-               push(@modules, "-module", $depend);
-               }
-            push(@modules, $file);
-            &PrintWords(30, 1, @modules);
-            print MAKEFILE "\n";
-            undef @modules;
-            }
          }
       }
-   }
+   
 
 print "\nCheck Makefile to make sure you're happy with it.\n\n";
+system("vi Makefile -c ':g/kdtree2.o:/d' -c ':wq'");
