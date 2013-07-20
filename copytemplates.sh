@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cp make_axisem.macros.TEMPLATE make_axisem.macros
 cp SOLVER/Makefile.TEMPLATE SOLVER/Makefile
 cp MESHER/Makefile.TEMPLATE MESHER/Makefile
 cp MESHER/inparam_mesh.TEMPLATE MESHER/inparam_mesh
