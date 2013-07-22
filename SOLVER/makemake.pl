@@ -255,4 +255,4 @@ sub MakeDependsf90 {
    
 
 print "\nCheck Makefile to make sure you're happy with it.\n\n";
-system("vi Makefile -c ':g/kdtree2.o:/d' -c ':wq'");
+system("perl -ni -e 'print unless /^kdtree2.o/' Makefile ");
