@@ -9,7 +9,7 @@
 MPIRUN  = mpirun.openmpi
 
 # Enable NetCDF
-USE_NETCDF = true
+USE_NETCDF = false
 NETCDF_PATH = $(HOME)/local
 
 # GFORTRAN (fast)
