@@ -28,8 +28,33 @@ therefore, for other compilers, it should be done manually.\\
 
 \begin{figure*}[htb]
 \begin{center}
-\includegraphics[scale=0.32]{PYAXI/check_pyaxi.eps}
-%\caption{\textit{}}
+\begin{verbatim}
+ 
+   -----------------------------------------
+		   PyAxi
+	   Python interface for Axisem
+   -----------------------------------------
+
+Check the Basic, Processing and Visualization requirements:
+
+          Compiler    |    Installed
+  ------------------------------------------
+          gfortran    |        Y
+             ifort    |        Y
+    mpif90.openmpi    |        Y
+            mpif90    |        Y
+           gnuplot    |        Y
+              taup    |        Y
+          paraview    |        Y
+            matlab    |        Y
+       googleearth    |        Y
+
+Summary:
+
+Basic functionality requirement...CHECK
+Processing requirement........CHECK
+Visualization tools...CHECK
+\end{verbatim}
 \end{center}
 \caption{\textit{Checking all the relevant compilers and tools required to run AXISEM.}}
 \label{check_pyaxi}

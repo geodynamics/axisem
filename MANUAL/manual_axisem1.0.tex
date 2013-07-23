@@ -2,20 +2,22 @@
 \usepackage{a4}
 \usepackage{babel}
 % \usepackage{german}
-\usepackage[dvips]{rotating}
+% \usepackage[dvips]{rotating}
 % \usepackage{umlaute}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{natbib}
-\usepackage[dvips]{graphics}
+% \usepackage[dvips]{graphics}
 \usepackage{setspace}
 \usepackage{geometry}
-\usepackage{epsfig}
-\usepackage[dvips]{color}
+% \usepackage{epsfig}
+% \usepackage[dvips]{color}
+\usepackage{graphicx}
 \usepackage{eucal}
 \usepackage{fancyhdr}
 \usepackage{url}
 \usepackage{watermark}
+\usepackage{listings}
 %
 \lhead[\fancyplain{}{\emph{A X I S E M}}] {\fancyplain{}{\emph{A X I S E M}}}
 \chead[\fancyplain{}{}]                 {\fancyplain{}{}}
@@ -80,7 +82,8 @@
 
 \newcommand{\bsfzero}{\mbox{\boldmath $\bf {\mathsf 0}$}}
 \newcommand{\bsfone}{\mbox{\boldmath $\bf {\mathsf 1}$}}
-\newcommand{\sP}{\mbox{$\cal P$}} \newcommand{\sR}{\mbox{$\cal R$}}
+\newcommand{\sP}{\mbox{$\cal P$}} 
+\newcommand{\sR}{\mbox{$\cal R$}}
 \newcommand{\sS}{\mbox{$\cal S$}}
 \newcommand{\bkh}{\mbox{$\hat{\mbox{${\bf k}$}}$}}
 \newcommand{\blh}{\mbox{$\hat{\mbox{${\bf l}$}}$}}
@@ -96,8 +99,8 @@
 \newcommand{\bphih}{\mbox{$\hat{\mbox{\boldmath $\bf \phi$}}$}}
 \newcommand{\bplh}{\mbox{$\hat{\mbox{\boldmath $\bf +$}}$}}
 \newcommand{\bmih}{\mbox{$\hat{\mbox{\boldmath $\bf -$}}$}}
-\newcommand{\ssR}{\mbox{${\sf R}$}} \newcommand{\sszero}{\mbox{${\sf
-0}$}} 
+\newcommand{\ssR}{\mbox{${\sf R}$}} 
+\newcommand{\sszero}{\mbox{${\sf0}$}} 
 
 \newcommand{\uto}{\mbox{${\bf u}^{\hspace{-1.6ex}\raisebox{0.5ex}{$\scriptscriptstyle\rightarrow$}}$}} 
 \newcommand{\vto}{\mbox{${\bf v}^{\hspace{-1.6ex}\raisebox{0.5ex}{$\scriptscriptstyle\rightarrow$}}$}} 
@@ -155,7 +158,7 @@ Simon St\"{a}hler\textsuperscript{1)}} \\
 \today}
 \end{center}
 \thiswatermark{\begin{picture}(0,0) \put(-20,-190){\hspace{1.5cm}\includegraphics[width=0.9\linewidth]
-{snap_cover_red.eps}}\end{picture}}
+{snap_cover_red.pdf}}\end{picture}}
 
 \vspace*{1.6cm}
 \noindent {\sc AXISEM} is a \textbf{parallel spectral-element method} to solve
@@ -209,8 +212,13 @@ under the GNU license. Commercial use must be discussed with the authors prior
 to usage.\\
 
 \noindent \copyright  \hspace*{0.1cm} 
-2007-2013 Tarje Nissen-Meyer (\url{tarje@alumni.princeton.edu}), ETH Zurich
-% TODO GPL?
+Copyright 2013, Tarje Nissen-Meyer (\url{tarje@alumni.princeton.edu}), Alexandre Fournier, Martin van Driel, Simon Stähler, Kasra Hosseini, Stephanie Hempel
+
+AxiSEM is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or any later version.
+
+AxiSEM is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+A copy of the GPL can be found in the file COPYING
 
 \newpage
 \tableofcontents
@@ -556,12 +564,14 @@ executable is called {\tt xmesh}.  Changing code without adding modules does
 not require to recreate the Makefile, only recompilation.
 
 \subsection{Input}
-\begin{figure*}[htb]
-\begin{center}
-\includegraphics[scale=0.6]{inparam_mesh.eps}
-\caption{\textit{{\tt inparam\_mesh}: defines all relevant parameters, mostly self-explanatory. }}
-\end{center}
-\end{figure*}
+% \begin{figure*}[htb]
+% \begin{center}
+% \includegraphics[scale=0.6]{inparam_mesh.eps}
+% \caption{\textit{{\tt inparam\_mesh}: defines all relevant parameters, mostly self-explanatory. }}
+% \end{center}
+\lstset{frame=single,basicstyle=\footnotesize, breaklines=true }
+\lstinputlisting{../MESHER/inparam_mesh.TEMPLATE}
+% \end{figure*}
 
 \noindent \textit{Basic set of parameters} to be edited:
 % TODO: parameter names as in the input files
@@ -790,7 +800,7 @@ Use the script {\tt movemesh} to transfer all relevant files to the directory
 \subsection{Mesher Post-processing/quality control }
 \begin{figure*}[htb]
     \begin{center}\label{fig:mesh_vp}
-        \includegraphics[scale=0.45]{mesh_vp_fig.eps}
+        \includegraphics[scale=0.45]{mesh_vp_fig.pdf}
         \caption{\textit{The elemental mesh (blue lines) for IASP91 at 20
         seconds superimposed on the $v_p$ velocity.  The plot is derived
         straight from the file {\tt mesh\_vp.vtk} produced by the mesher. Zoom
@@ -882,12 +892,14 @@ length of this section.... the input is fairly easy to understand and manipulate
 we simply intend to comment as much as possible on all options!\\
 
 % TODO update!!!
-\begin{figure*}[htb]
-\begin{center}
-\includegraphics[scale=0.6]{inparam.eps}
-\caption{\textit{{\tt inparam}: defines all relevant parameters, mostly self-explanatory. }}
-\end{center}
-\end{figure*}
+% \begin{figure*}[htb]
+% \begin{center}
+% \includegraphics[scale=0.6]{inparam.eps}
+\lstset{frame=single,basicstyle=\footnotesize, breaklines=true }
+\lstinputlisting{../SOLVER/inparam_basic.TEMPLATE}
+% \caption{\textit{{\tt inparam}: defines all relevant parameters, mostly self-explanatory. }}
+% \end{center}
+% \end{figure*}
 %
 \noindent {\tt inparam}:
 \begin{itemize}
@@ -1038,12 +1050,13 @@ location. Mislocation errors are given in OUTPUT\_$<$dir$>$.\\
 
 % TODO Note on sourceparams only with single mode
 \noindent {\tt sourceparams.dat}
-\begin{figure*}[htb]
-    \begin{center}
-        \includegraphics[scale=0.6]{sourceparams.eps}
-        \caption{\textit{{\tt sourceparams.dat}: Specifies source properties using its own format.}}
-    \end{center}
-\end{figure*}
+% \begin{figure*}[htb]
+%     \begin{center}
+\lstset{frame=single,basicstyle=\footnotesize, breaklines=true }
+\lstinputlisting{../SOLVER/sourceparams.dat.TEMPLATE}
+%         \caption{\textit{{\tt sourceparams.dat}: Specifies source properties using its own format.}}
+%     \end{center}
+% \end{figure*}
 
 \begin{itemize}
     \item  \textbf{magnitude}: The code runs in SI units, and the moment tensor
@@ -1079,13 +1092,14 @@ location. Mislocation errors are given in OUTPUT\_$<$dir$>$.\\
 \end{itemize}
 
 \noindent {\tt CMTSOLUTION}\\
-\begin{figure*}[htb]
-    \begin{center}
-        \includegraphics[scale=0.6]{CMTSOLUTION.eps}
-        \caption{\textit{{\tt CMTSOLUTION}: Specifies source properties using the Harvard CMT format. Note that the source-time function
-        is added as the first string in the first line, if none is added, then a Dirac delta distribution is assumed.}}
-    \end{center}
-\end{figure*}
+% \begin{figure*}[htb]
+%     \begin{center}
+\lstset{frame=single,basicstyle=\footnotesize, breaklines=true }
+\lstinputlisting{../SOLVER/CMTSOLUTION.TEMPLATE}
+%         \caption{\textit{{\tt CMTSOLUTION}: Specifies source properties using the Harvard CMT format. Note that the source-time function
+%         is added as the first string in the first line, if none is added, then a Dirac delta distribution is assumed.}}
+%     \end{center}
+% \end{figure*}
 
 \noindent If {\tt CMTSOLUTION} is specified, the moment tensor elements adhere
 to the spherical system (or what is called the ``local'' {\tt (x,y,z)}), i.e.
@@ -1113,23 +1127,23 @@ $300 s$ due to its very long wavelength components. These time shifts are
 recorded and saved into post processing, but it is crucial that users are aware
 of these shifts when comparing to data or other methods. \\
 
-\begin{figure*}[htb]
-    \begin{center}
-        \includegraphics[scale=0.45]{stfs.eps}
-        \caption{\textit{The smooth source time functions for a period of
-            $T_0=20$s. Note the shifted center for each function ($1.5 T_0$ for
-            all except the wiggly wavelet which is shifted by $300s$). The
-            amplitude includes the scalar moment of the source. }}
-    \end{center}
-\end{figure*}
-
-\begin{figure*}[htb]
-    \begin{center}
-        \includegraphics[scale=0.45]{power_spectrum_stf.eps}
-        \caption{\textit{Power spectra of the source time functions from the
-            previous Figure.}}
-    \end{center}
-\end{figure*}
+% \begin{figure*}[htb]
+%     \begin{center}
+%         \includegraphics[scale=0.45]{stfs.eps}
+%         \caption{\textit{The smooth source time functions for a period of
+%             $T_0=20$s. Note the shifted center for each function ($1.5 T_0$ for
+%             all except the wiggly wavelet which is shifted by $300s$). The
+%             amplitude includes the scalar moment of the source. }}
+%     \end{center}
+% \end{figure*}
+% 
+% \begin{figure*}[htb]
+%     \begin{center}
+%         \includegraphics[scale=0.45]{power_spectrum_stf.eps}
+%         \caption{\textit{Power spectra of the source time functions from the
+%             previous Figure.}}
+%     \end{center}
+% \end{figure*}
 
 \noindent \textbf{Discrete Dirac distributions.}\\
 Hidden in the code are several crucial decisions upon how to approximate Dirac
@@ -1202,14 +1216,16 @@ are transfered to the output seismograms in {\tt Data}, see section on output
 for more details.
 
 \subsection{Adding lateral heterogeneities}
-\begin{figure*}[htb]
-    \begin{center}
-        \includegraphics[scale=0.5]{inparam_hetero.eps}
-        \caption{\textit{{\tt inparam\_hetero}: defines the region of lateral
-            heterogeneities and medium variations.}}
-    \end{center}
-\end{figure*}
-\noindent 
+% \begin{figure*}[htb]
+%     \begin{center}
+\lstset{frame=single,basicstyle=\footnotesize, breaklines=true }
+\lstinputlisting{../SOLVER/inparam_hetero.TEMPLATE}
+%                 \includegraphics[scale=0.5]{inparam_hetero.eps}
+%         \caption{\textit{{\tt inparam\_hetero}: defines the region of lateral
+%             heterogeneities and medium variations.}}
+%     \end{center}
+% \end{figure*}
+% \noindent 
 
 \textbf{NOTE:} This section has been heavily expanded and used most recently
 (fall 2011), but not yet tested in full extent. Everything concerning lateral
@@ -1511,12 +1527,8 @@ for post processing that were automatically generated by the Solver based on
 assumptions about what you might be interested in:\\
 
 % TODO new param_postprocessing file
-\begin{figure*}[htb]
-    \begin{center}
-        \includegraphics[scale=0.65]{param_post_processing.eps}
-        \caption{\textit{{\tt param\_post\_processing}: Automatically generated input file for post processing.}}
-    \end{center}
-\end{figure*}
+\lstset{frame=single,basicstyle=\footnotesize, breaklines=true }
+\lstinputlisting{../SOLVER/UTILS/param_post_processing}
 
 \noindent {\tt param\_post\_processing}\\
 This file is automatically generated by the Solver but should always be checked
@@ -1555,7 +1567,7 @@ components, convolved, summed to a full moment tensor) are located in subfolder
 \noindent \textbf{Google earth source-receiver geometry}\\
 \begin{figure*}[htb]
     \begin{center}
-        \includegraphics[scale=0.65]{googleearth_src_rec.eps}
+        \includegraphics[scale=0.65]{googleearth_src_rec.pdf}
         \caption{\textit{The kml file output from post processing. It contains
         the rotated, original source-receiver geometry. Mouse-clicks on
         earthquake location provide source information, mouse-clicks on

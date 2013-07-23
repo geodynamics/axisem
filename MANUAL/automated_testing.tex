@@ -7,21 +7,27 @@ The whole procedure (running the code, compare the results and plot) is automati
 
 Start from within the {\tt AXISEM} directory:
  \begin{enumerate}
- \itemsep0em
  \item {\tt cd TESTING}
  \item {\tt python test\_axisem.py}
  \end{enumerate}
 
 Enter test number(s) and this is all you should do! \\
 
-\noindent As an example, we want to run the \textit{test\_axisem.py} for test number 5. (Figure~\ref{test_axisem})
+\noindent As an example, we want to run the script \textit{test\_axisem.py} for test number 5. (Figure~\ref{test_axisem})
 
 \begin{figure*}[htb]
-\begin{center}
-\includegraphics[scale=0.4]{PYAXI/test_axisem.eps}
-\caption{\textit{Screenshot while running test\_axisem.py}}
-%\caption{\textit{}}
-\end{center}
+  \begin{verbatim}
+   ==========================================
+  Please enter the test number(s): 
+  1. test01: explosion
+  2. test02: dipole (mxz)
+  3. test03: quadpole (mxy)
+  4. test04: CMT (location: north pole)
+  5. test05: CMT (location: 70°N 50°E)
+
+  (format = 01,02 OR 1,2,3)
+  \end{verbatim}
+  \caption{\textit{Screenshot while running test\_axisem.py}}
 \label{test_axisem}
 \end{figure*}
 
@@ -30,21 +36,18 @@ in which the new AXISEM waveforms are compared with both the original ones and \
 %In Figure~\ref{channel_Z}, only the Z channel has been plotted.
 It should be noted that these tests are designed for rough comparison purposes (in terms of the pulse shape and sign) and they should not be considered as a detailed benchmark with respect to YSPEC. \\
 
-\begin{figure*}[htb]
-\begin{center}
-\includegraphics[scale=0.3]{PYAXI/record_section_Z.eps}
-\caption{\textit{Comparing new AXISEM results with the reference solution and \textit{yspec} waveforms. (Z channel)}}
-\end{center}
-\label{channel_Z}
-\end{figure*}
+\begin{figure}
+  \includegraphics[width=0.48\textwidth]{./PYAXI/record_section_Z.png}
+  \includegraphics[width=0.48\textwidth]{./PYAXI/l2_misfit.png}
+  \caption{\textit{Comparing new AXISEM results with the reference solution and \textit{yspec} waveforms. (Z channel)}}
+  \label{channel_Z}
+\end{figure}
 
-\noindent Another output is the \textit{l2} misfit (Figure~\ref{l2_misfit}) between the new and reference data 
+\noindent Another output is the RMS misfit (Figure~\ref{l2_misfit}) between the new and reference data 
 in which the traces can be compared in a quantitative sense.
 
-\begin{figure*}[htb]
-\begin{center}
-\includegraphics[width=0.8\textwidth]{PYAXI/l2_misfit.eps}
-\caption{\textit{l2 misfit between the new and reference data.}}
-\end{center}
-\label{l2_misfit}
-\end{figure*}
+% \begin{figure}
+% 
+%   \caption{\textit{RMS misfit between the new and reference data.}}
+%   \label{l2_misfit}
+% \end{figure}
