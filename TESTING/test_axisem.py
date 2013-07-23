@@ -26,9 +26,9 @@ if not args.a:
         raw_input('Please enter the test number(s): \n' + \
             '1. test01: explosion\n' + \
             '2. test02: dipole (mxz)\n' + \
-            '3. test03: quadpole (mxz)\n' + \
-            '4. test04: CMT (source: north pole)\n' + \
-            '5. test05: CMT (source: 70-50)\n' + \
+            '3. test03: quadpole (mxy)\n' + \
+            '4. test04: CMT (location: north pole)\n' + \
+            '5. test05: CMT (location: 70N 50E)\n' + \
             '\n(format = 01,02 OR 1,2,3)' + \
             '\n')
 else:
