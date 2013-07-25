@@ -39,9 +39,11 @@ program gllmesh
 
   implicit none
 
+  integer tock, tick
 !-----------------------------
 ! Global stage
 
+  tick = time()
 !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! Need to load/predefine:
 ! 1) points per wavelength
@@ -96,9 +98,10 @@ program gllmesh
 !-----------------------------
 ! clean up
   call empty_data_mesh
+  tock = time()
 write(6,*)''
 write(6,*)'....DONE WITH MESHER !'
- 
+write(6,*)'    Runtime: ', tock-tick, ' s'
 !===================
 end program gllmesh
 !===================
