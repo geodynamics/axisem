@@ -272,20 +272,21 @@ subroutine get_global(nspec2,xp,yp,iglob2,loc2,ifseg2,nglob2,npointot2,NGLLCUBE2
 
   ! leave sorting subroutines in same source file to allow for inlining
 
+!$  use omp_lib     
   implicit none
 
-  !  include "constants.h"
-
   integer, intent(in) ::  nspec2,npointot2,NGLLCUBE2,NDIM2
-  double precision, intent(in) ::  xp(npointot2),yp(npointot2)
+  double precision, intent(inout) ::  xp(npointot2),yp(npointot2)
   integer, intent(out) :: iglob2(npointot2),loc2(npointot2),nglob2
   logical, intent(out) :: ifseg2(npointot2)
 
-  integer ispec,i,j
-  integer ieoff,ilocnum,nseg,ioff,iseg,ig
+  integer              :: ioffs(npointot2)
 
-  integer, dimension(:), allocatable :: ind,ninseg,iwork
-  double precision, dimension(:), allocatable :: work
+  integer ispec,i,j,nthreads, inttemp
+  integer ieoff,ilocnum,nseg,ioff,iseg,ig
+  double precision :: realtemp
+
+  integer, dimension(:), allocatable :: ind,ninseg
 
 ! TNM: that's what I had
 ! double precision, parameter :: SMALLVALTOL = 1.d-15
@@ -307,49 +308,93 @@ subroutine get_global(nspec2,xp,yp,iglob2,loc2,ifseg2,nglob2,npointot2,NGLLCUBE2
 ! dynamically allocate arrays
   allocate(ind(npointot2))
   allocate(ninseg(npointot2))
-  allocate(iwork(npointot2))
-  allocate(work(npointot2))
+
+  ninseg = 0
+  ind = 0
 
   nseg=1
   ifseg2(1)=.true.
   ninseg(1)=npointot2
 
+  !open(23106, file='ninseg.txt', position='append')
+
 !==========================================
   do j=1,NDIM2
 !==========================================
 
-! sort within each segment
+!    print*, 'j: ', j,' nseg: ', nseg
+    ! sort within each segment
      ioff=1
-     do iseg=1,nseg
-        if(j == 1) then
-           call rank(xp(ioff),ind,ninseg(iseg))
-        else
-           call rank(yp(ioff),ind,ninseg(iseg))
-        endif
-!af
-        call swap_all(loc2(ioff),xp(ioff),yp(ioff),iwork,work,ind,ninseg(iseg))
-!end af
-        ioff=ioff+ninseg(iseg)
-     enddo
 
-! check for jumps in current coordinate
-! compare the coordinates of the points within a small tolerance
+     if(j == 1) then
+          !call rank_x(xp(ioff:ioff+ninseg(iseg)-1), ind, ninseg(iseg))
+          call mergesort(xp, npointot2, &
+                         yp, &
+                         loc2)
+     else
+!$         nthreads = min(OMP_get_max_threads(),8)
+!!$         print *, 'Using ', nthreads, ' threads!'
+        ioffs(1) = 1
+        do iseg=2,nseg
+           ioffs(iseg) = ioffs(iseg-1) + ninseg(iseg)
+           !write(23106,*) ninseg(iseg)
+        end do
+!!!$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
+        do iseg=1,nseg
+            ioff = ioffs(iseg)
+        ! First ordered by xp (j==1), then by yp (j==1)
+          !call mergesort_serial(xp(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1), ninseg(iseg), &
+          !               yp(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1), &
+          !               loc2(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1))
+           if (ninseg(iseg)==2) then
+               if (yp(ioff).gt.yp(ioff+1)) then
+                   realtemp   = yp(ioff)
+                   yp(ioff)   = yp(ioff+1)
+                   yp(ioff+1) = realtemp
+                   realtemp   = xp(ioff)
+                   xp(ioff)   = xp(ioff+1)
+                   xp(ioff+1) = realtemp
+                   !yp(ioff:ioff+1) = yp([ioff+1, ioff])
+                   !xp(ioff:ioff+1) = xp([ioff+1, ioff])
+                   inttemp    = loc2(ioff)
+                   loc2(ioff) = loc2(ioff+1)
+                   loc2(ioff+1) = inttemp
+                   !loc2(ioff:ioff+1) = loc2([ioff+1, ioff])
+               end if
+           elseif (ninseg(iseg)==4) then
+               call rank_4(yp(ioff), ind)
+               call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
+!               loc2(ioff:ioff+ninseg(iseg)-1) = loc2(ioff - 1 + ind(1:ninseg(iseg)))
+!               xp(ioff:ioff+ninseg(iseg)-1) = xp(ioff - 1 + ind(1:ninseg(iseg)))
+!               yp(ioff:ioff+ninseg(iseg)-1) = yp(ioff - 1 + ind(1:ninseg(iseg)))
+           else
+               call rank_y(yp(ioff), ind, ninseg(iseg))
+               call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
+!               loc2(ioff:ioff+ninseg(iseg)-1) = loc2(ioff - 1 + ind(1:ninseg(iseg)))
+!               xp(ioff:ioff+ninseg(iseg)-1) = xp(ioff - 1 + ind(1:ninseg(iseg)))
+!               yp(ioff:ioff+ninseg(iseg)-1) = yp(ioff - 1 + ind(1:ninseg(iseg)))
+           end if
+        enddo
+!!!$omp end parallel do        
+     endif
+        
+
+
+
+    ! check for jumps in current coordinate
+    ! compare the coordinates of the points within a small tolerance
      if(j == 1) then
         do i=2,npointot2
            if(dabs(xp(i)-xp(i-1)) > SMALLVALTOL) ifseg2(i)=.true.
-!          if(dabs(xp(i)-xp(i-1)) > SMALLVALTOL) write(6666,*)'DISTANCE X:',i,loc2(i),dabs(xp(i)-xp(i-1))
-!          if(dabs(xp(i)-xp(i-1)) < SMALLVALTOL) write(6667,*)'DISTANCE X:',i,loc2(i),dabs(xp(i)-xp(i-1))
         enddo
      else
         do i=2,npointot2
            if(dabs(yp(i)-yp(i-1)) > SMALLVALTOL) ifseg2(i)=.true.
-!          if(dabs(yp(i)-yp(i-1)) > SMALLVALTOL) write(6666,*)'DISTANCE Y:',i,loc2(i),dabs(yp(i)-yp(i-1))
-!          if(dabs(yp(i)-yp(i-1)) < SMALLVALTOL) write(6667,*)'DISTANCE Y:',i,loc2(i),dabs(yp(i)-yp(i-1))
         enddo
 
      endif
 
-! count up number of different segments
+    ! count up number of different segments
      nseg=0
      do i=1,npointot2
         if(ifseg2(i)) then
@@ -364,11 +409,9 @@ subroutine get_global(nspec2,xp,yp,iglob2,loc2,ifseg2,nglob2,npointot2,NGLLCUBE2
 !==========================================
   enddo ! NDIM2 loop
 !==========================================
-
+!  close(23106)
 ! deallocate arrays
   deallocate(ind)
-  deallocate(iwork)
-  deallocate(work)
   deallocate(ninseg)
 
 ! assign global node numbers (now sorted lexicographically)
@@ -384,8 +427,64 @@ end subroutine get_global
 !-------------------------------------------------------------------------
 
 ! sorting routines put in same file to allow for inlining
+subroutine rank_4(A,IND)
+  !
+  ! Use Heap Sort (Numerical Recipes)
+  !
+  implicit none
 
-subroutine rank(A,IND,N)
+  integer, parameter :: n = 4
+  double precision A(n)
+  integer IND(n)
+
+  integer i,j,l,ir,indx
+  double precision q
+
+  do j=1,n
+     IND(j)=j
+  enddo
+
+  L= 3 
+  ir = 4
+100 CONTINUE
+  IF (l>1) THEN
+     l=l-1
+     indx=ind(l)
+     q=a(indx)
+  ELSE
+     indx=ind(ir)
+     q=a(indx)
+     ind(ir)=ind(1)
+     ir=ir-1
+     if (ir == 1) then
+        ind(1)=indx
+
+        return
+     endif
+  ENDIF
+  i=l
+  j=l+l
+200 CONTINUE
+  IF (J <= IR) THEN
+     IF (J<IR) THEN
+        IF ( A(IND(j))<A(IND(j+1)) ) j=j+1
+     ENDIF
+     IF (q<A(IND(j))) THEN
+        IND(I)=IND(J)
+        I=J
+        J=J+J
+     ELSE
+        J=IR+1
+     ENDIF
+     goto 200
+  ENDIF
+  IND(I)=INDX
+  goto 100
+
+end subroutine rank_4
+
+
+subroutine rank_y(A,IND,N)
   !
   ! Use Heap Sort (Numerical Recipes)
   !
@@ -441,40 +540,225 @@ subroutine rank(A,IND,N)
   IND(I)=INDX
   goto 100
 
-end subroutine rank
+end subroutine rank_y
 
 ! ------------------------------------------------------------------
 
-subroutine swap_all(IA,A,B,IW,W,ind,n)
+subroutine swapall(IA,A,B,ind,n)
   !
   ! swap arrays IA, A, B and C according to addressing in array IND
   !
   implicit none
 
-  integer n
-
-  integer IND(n)
-  integer IA(n),IW(n)
-  double precision A(n),B(n),W(n)
+  integer, intent(in)             :: n
+  integer, intent(in)             :: IND(n)
+  integer, intent(inout)          :: IA(n)
+  double precision,intent(inout)  :: A(n),B(n)
+  double precision                :: W(n)
+  integer                         :: IW(n)
 
   integer i
 
   IW(:) = IA(:)
   W(:) = A(:)
+  W(:) = B(:)
 
   do i=1,n
      IA(i)=IW(ind(i))
      A(i)=W(ind(i))
-  enddo
-
-  W(:) = B(:)
-
-  do i=1,n
      B(i)=W(ind(i))
   enddo
 
-end subroutine swap_all
+end subroutine swapall
 
+!##############################################################################
+
+subroutine mergesort(A, N, D, E)
+!$  use omp_lib     
+    integer, intent(in)    :: N
+    double precision, intent(inout) :: A(N), D(N)
+    integer, intent(inout) :: E(N)
+    integer                :: T(N)
+    integer                :: nthreads
+
+!$  call omp_set_nested(.true.)
+!$  nthreads = min(OMP_get_max_threads(), 8)
+!!$  print *, 'Using ', nthreads, ' threads!'
+
+!$  call MergeSort_parallel(A,N,D,E,nthreads)
+!$  if(.false.) then
+    call MergeSort_serial(A, N, D, E)
+!$  endif
+
+end subroutine mergesort
+
+recursive subroutine MergeSort_parallel(A, N, D, E, Threads)
+ 
+   integer, intent(in)                  :: N, Threads
+   double precision, intent(inout)      :: A(N), D(N)
+   integer, intent(inout)               :: E(N)
+   real(8), dimension(N)                :: Dtemp
+   integer, dimension(N)                :: Etemp
+   integer, dimension((N+1)/2)          :: INDA, INDB
+   double precision, dimension((N+1)/2) :: T
+ 
+   integer                              :: NA,NB, Vint, i
+   real(8)                              :: V
+
+!   print *, 'In MergeSort_parallel, N=', N, ', Threads=', Threads
+   if (N < 2) return
+   if (N == 2) then
+      if (A(1) > A(2)) then
+         V = A(1)
+         A(1) = A(2)
+         A(2) = V
+         V = D(1)
+         D(1) = D(2)
+         D(2) = V
+         Vint = E(1)
+         E(1) = E(2)
+         E(2) = Vint
+      endif
+      return
+   endif      
+   NA=(N+1)/2
+   NB=N-NA
+
+   if (Threads==1) then
+       call MergeSort_serial(A(1)  , NA, D(1),   E(1)  )
+       call MergeSort_serial(A(NA+1), NB, D(NA+1), E(NA+1))
+   elseif(Threads>1) then
+!$omp parallel sections shared(A, D, E) 
+!$omp section
+       call MergeSort_parallel(A(1),   NA, D(1),   E(1),   Threads/2)
+!$omp section
+       call MergeSort_parallel(A(NA+1), NB, D(NA+1), E(NA+1), Threads/2)
+!$omp end parallel sections
+   end if
+   if (A(NA) > A(NA+1)) then
+      T(1:NA)=A(1:NA)
+      call Merge(T, NA, A(NA+1), NB, A(1), INDA, INDB)
+   
+      Dtemp = D
+      !D(INDA(1:NA)) = Dtemp(1:NA)
+      !D(INDB(1:NB)) = Dtemp(NA+1:N)
+      Etemp = E
+      !Etemp(INDA(1:NA)) = Etemp(1:NA)
+      !Etemp(INDB(1:NB)) = Etemp(NA+1:N)
+      do i=1,NA
+          D(inda(i)) = Dtemp(i)
+          E(inda(i)) = Etemp(i)
+      end do
+      do i=1,NB
+          D(indb(i)) = Dtemp(NA+i)
+          E(indb(i)) = Etemp(NA+i)
+      end do
+      
+   endif
+   return
+ 
+end subroutine MergeSort_parallel
+
+!##############################################################################
+
+recursive subroutine MergeSort_serial(A,N,D,E)
+ 
+   integer, intent(in) :: N
+   double precision, intent(inout) :: A(N), D(N)
+   integer, intent(inout) :: E(N)
+   real(8), dimension(N)                 :: Dtemp
+   integer, dimension(N)                 :: Etemp
+   integer, dimension((N+1)/2)           :: INDA,INDB
+   double precision, dimension((N+1)/2)  :: T
+ 
+   integer :: NA,NB,Vint,i
+   double precision                      :: V
+ 
+   if (N < 2) return
+   if (N == 2) then
+      if (A(1) > A(2)) then
+         V = A(1)
+         A(1) = A(2)
+         A(2) = V
+         V = D(1)
+         D(1) = D(2)
+         D(2) = V
+         Vint = E(1)
+         E(1) = E(2)
+         E(2) = Vint
+      endif
+      return
+   endif      
+   NA=(N+1)/2
+   NB=N-NA
+
+   call MergeSort_serial(A(1)  , NA, D(1),   E(1)  )
+   call MergeSort_serial(A(NA+1), NB, D(NA+1), E(NA+1))
+ 
+   if (A(NA) > A(NA+1)) then
+      T(1:NA)=A(1:NA)
+      call Merge(T, NA, A(NA+1), NB, A, INDA, INDB)
+   
+      Dtemp = D
+      Etemp = E
+      do i=1,NA
+          D(inda(i)) = Dtemp(i)
+          E(inda(i)) = Etemp(i)
+      end do
+      do i=1,NB
+          D(indb(i)) = Dtemp(NA+i)
+          E(indb(i)) = Etemp(NA+i)
+      end do
+      !D(INDA(1:NA)) = Dtemp(1:NA)
+      !D(INDB(1:NB)) = Dtemp(NA+1:N)
+      !Etemp(INDA(1:NA)) = Etemp(1:NA)
+      !Etemp(INDB(1:NB)) = Etemp(NA+1:N)
+   endif
+   return
+ 
+end subroutine MergeSort_serial
+
+!##############################################################################
+
+subroutine Merge(A,NA,B,NB,C,INDA,INDB)
+ 
+   integer, intent(in)           :: NA,NB         ! Normal usage: NA+NB = NC
+   double precision, intent(in)  :: A(NA)        ! B overlays C(NA+1:NC)
+   double precision, intent(in)  :: B(NB)
+   double precision, intent(out) :: C(NA+NB)
+   integer, intent(out)          :: INDA(NA)
+   integer, intent(out)          :: INDB(NB)
+ 
+   integer                       :: I,J,K
+
+   I = 1; J = 1; K = 1;
+   do while(I <= NA .and. J <= NB)
+      if (A(I) <= B(J)) then
+         C(K) = A(I)
+         INDA(I) = K
+         I = I+1
+      else
+         C(K) = B(J)
+         INDB(J) = K
+         J = J+1
+      endif
+      K = K + 1
+   enddo
+   do while (I <= NA)
+      C(K) = A(I)
+      INDA(I) = K
+      I = I + 1
+      K = K + 1
+   enddo
+   do while (J <= NB)
+      C(K) = B(J)
+      INDB(J) = K
+      J = J + 1
+      K = K + 1
+   enddo
+   return
+ 
+end subroutine merge
 
 !=========================
   end module numbering
