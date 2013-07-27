@@ -53,41 +53,12 @@ subroutine define_global_global_numbering
    write(6,*) 
    write(6,*) 'NPOINTOT GLOBAL IS ' , npointot
   end if
-  
-  !@TODO check this
-  !if (dump_mesh_info_files) then
-  !   open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
-  !   write(2) sgll
-  !   write(2) zgll
-  !   close(2)
-  !endif 
 
-  !@TODO you know pack()?
   allocate(sgtmp(npointot))
-  sgtmp(:) = 0. 
-  do iel = 1, neltot
-     do jpol = 0, npol
-       do ipol = 0, npol
-          ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-          sgtmp(ipt) = sgll(ipol,jpol,iel)
-       end do
-     end do
-  end do
-  !sgtmp = pack(sgll, .true.)
+  sgtmp = pack(sgll, .true.)
 
-  !if (dump_mesh_info_files) deallocate(sgll)
   allocate(zgtmp(npointot))
-  zgtmp(:) = 0.d0 
-  
-  do iel = 1, neltot
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           zgtmp(ipt) = zgll(ipol,jpol,iel)
-        end do
-     end do
-  end do
-  !if (dump_mesh_info_files)  deallocate(zgll)
+  sgtmp = pack(zgll, .true.)
 
   allocate(iglob(npointot))
   iglob(:) = 0
@@ -101,15 +72,6 @@ subroutine define_global_global_numbering
   deallocate(loc)
   deallocate(sgtmp)
   deallocate(zgtmp)
-
-  !if (dump_mesh_info_files) then
-  !   allocate(zgll(0:npol,0:npol,neltot))
-  !   allocate(sgll(0:npol,0:npol,neltot))
-  !   open(2,file=diagpath(1:lfdiag)//'/crds',form="unformatted")
-  !   read(2) sgll
-  !   read(2) zgll
-  !   close(2)
-  !endif
 
   if (dump_mesh_info_screen) write(6,*) 'NGLOBGLOB IS ' , NGLOBGLOB
 
@@ -131,34 +93,12 @@ subroutine define_global_flobal_numbering
      write(6,*) 'NPOINTOT FLOBAL IS ' , npointot
   end if
 
-  !@TODO does not help without deallocating, useless anyway
-  !if (dump_mesh_info_files) then
-  !   open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
-  !   write(2) sgll_fluid
-  !   write(2) zgll_fluid
-  !   close(2)
-  !endif
-
   allocate(sgtmp(npointot))
-  do iel = 1, neltot_fluid
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           sgtmp(ipt) = sgll_fluid(ipol,jpol,iel)
-        end do
-     end do
-  end do
-
+  sgtmp = pack(sgll_fluid, .true.)
   deallocate(sgll_fluid)
+
   allocate(zgtmp(npointot))
-  do iel = 1, neltot_fluid
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           zgtmp(ipt) = zgll_fluid(ipol,jpol,iel)
-        end do
-     end do
-  end do
+  zgtmp = pack(zgll_fluid, .true.)
   deallocate(zgll_fluid)
 
   allocate(iglob_fluid(npointot))
@@ -174,15 +114,6 @@ subroutine define_global_flobal_numbering
   deallocate(loc_fluid)
   deallocate(zgtmp)
   deallocate(sgtmp)
-
-  !if (dump_mesh_info_files) then
-  !   allocate(zgll_fluid(0:npol,0:npol,neltot_fluid))
-  !   allocate(sgll_fluid(0:npol,0:npol,neltot_fluid))
-  !   open(2,file='crds',form="UNFORMATTED")
-  !   read(2) sgll_fluid
-  !   read(2) zgll_fluid
-  !   close(2)
-  !endif
 
   if (dump_mesh_info_screen) write(6,*) 'NGLOBFLOB IS ' , NGLOBFLOB
 
@@ -206,36 +137,12 @@ subroutine define_global_slobal_numbering
      write(6,*) 'NPOINTOT SLOBAL IS ' , npointot
   end if
 
-  !@TODO check this
-  !! To save some memory 
-  !if (dump_mesh_info_files) then
-  !   open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
-  !   write(2) sgll
-  !   write(2) zgll
-  !   close(2)
-  !  deallocate(sgll,zgll)
-  !endif
-  
   allocate(sgtmp(npointot))
-  do iel = 1, neltot_solid
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           sgtmp(ipt) = sgll_solid(ipol,jpol,iel)
-        end do
-     end do
-  end do
+  sgtmp = pack(sgll_solid, .true.)
   deallocate(sgll_solid) ! not needed anymore 
   
   allocate(zgtmp(npointot))
-  do iel = 1, neltot_solid
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           zgtmp(ipt) = zgll_solid(ipol,jpol,iel)
-        end do
-     end do
-  end do
+  zgtmp = pack(zgll_solid, .true.)
   deallocate(zgll_solid) ! not needed anymore
 
   allocate(iglob_solid(npointot))
@@ -251,17 +158,6 @@ subroutine define_global_slobal_numbering
   deallocate(loc_solid)
   deallocate(zgtmp)
   deallocate(sgtmp)
-
-  !@TODO check this
-  !! now load global coordinate arrays back in
-  !if (dump_mesh_info_files) then
-  !  allocate(zgll(0:npol,0:npol,neltot))
-  !  allocate(sgll(0:npol,0:npol,neltot))
-  !  open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
-  !   read(2) sgll
-  !   read(2) zgll
-  !  close(2)
-  !endif
 
   if (dump_mesh_info_screen) write(6,*) 'NGLOBSLOB IS ' , NGLOBSLOB 
 
