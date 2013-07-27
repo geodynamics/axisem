@@ -19,7 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-  module numbering
+module numbering
 
   use data_gllmesh
   use data_numbering
@@ -34,217 +34,240 @@
   public :: define_global_slobal_numbering
   public :: get_global
   private
-  contains
+
+contains
 
 !--------------------------------------------------------------------------
-! dk define_global_global_numbering----------------------------------------
 subroutine define_global_global_numbering
 
-  integer npointot
-  double precision, dimension(:), allocatable :: sgtmp,zgtmp
-  logical, dimension(:), allocatable ::   ifseg
-  integer, dimension(:), allocatable :: loc
-  integer :: iel, jpol,ipol, ipt
-!
-  ngllcube = (npol+1)**2 
+  double precision, dimension(:), allocatable   :: sgtmp, zgtmp
+  logical, dimension(:), allocatable            :: ifseg
+  integer, dimension(:), allocatable            :: loc
+  integer   :: iel, jpol,ipol, ipt
+  integer   :: npointot
+
+  ngllcube = (npol + 1)**2 
   npointot = neltot * (npol+1)**2
 
   if (dump_mesh_info_screen) then
    write(6,*) 
    write(6,*) 'NPOINTOT GLOBAL IS ' , npointot
   end if
-!  
-if (dump_mesh_info_files) then
-  open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
-   write(2) sgll
-   write(2) zgll
-  close(2)
-endif 
+  
+  !@TODO check this
+  !if (dump_mesh_info_files) then
+  !   open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
+  !   write(2) sgll
+  !   write(2) zgll
+  !   close(2)
+  !endif 
 
-  allocate(sgtmp(npointot)) ; sgtmp(:) = 0. 
+  !@TODO you know pack()?
+  allocate(sgtmp(npointot))
+  sgtmp(:) = 0. 
   do iel = 1, neltot
-   do jpol = 0, npol
-    do ipol = 0, npol
-     ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-     sgtmp(ipt) = sgll(ipol,jpol,iel)
-    end do
-   end do
+     do jpol = 0, npol
+       do ipol = 0, npol
+          ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+          sgtmp(ipt) = sgll(ipol,jpol,iel)
+       end do
+     end do
   end do
-  if (dump_mesh_info_files)  deallocate(sgll)
-  allocate(zgtmp(npointot)) ; zgtmp(:) = 0.d0 
-  do iel = 1, neltot
-   do jpol = 0, npol
-    do ipol = 0, npol
-     ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-     zgtmp(ipt) = zgll(ipol,jpol,iel)
-    end do
-   end do
-  end do
-  if (dump_mesh_info_files)  deallocate(zgll)
+  !sgtmp = pack(sgll, .true.)
 
-  allocate(iglob(npointot)); iglob(:) = 0
-  allocate(loc(npointot)); loc(:) = 0
+  !if (dump_mesh_info_files) deallocate(sgll)
+  allocate(zgtmp(npointot))
+  zgtmp(:) = 0.d0 
+  
+  do iel = 1, neltot
+     do jpol = 0, npol
+        do ipol = 0, npol
+           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+           zgtmp(ipt) = zgll(ipol,jpol,iel)
+        end do
+     end do
+  end do
+  !if (dump_mesh_info_files)  deallocate(zgll)
+
+  allocate(iglob(npointot))
+  iglob(:) = 0
+  allocate(loc(npointot))
+  loc(:) = 0
   allocate(ifseg(npointot))
-  call get_global(neltot,sgtmp,zgtmp,iglob,loc,ifseg,nglobglob,npointot,ngllcube,NDIM)
+
+  call get_global(neltot, sgtmp, zgtmp, iglob, loc, ifseg, nglobglob, npointot, ngllcube, NDIM)
+
   deallocate(ifseg)
   deallocate(loc)
   deallocate(sgtmp)
   deallocate(zgtmp)
 
-  if (dump_mesh_info_files) then
-  allocate(zgll(0:npol,0:npol,neltot))
-  allocate(sgll(0:npol,0:npol,neltot))
-  open(2,file=diagpath(1:lfdiag)//'/crds',form="unformatted")
-   read(2) sgll
-   read(2) zgll
-  close(2)
-endif
+  !if (dump_mesh_info_files) then
+  !   allocate(zgll(0:npol,0:npol,neltot))
+  !   allocate(sgll(0:npol,0:npol,neltot))
+  !   open(2,file=diagpath(1:lfdiag)//'/crds',form="unformatted")
+  !   read(2) sgll
+  !   read(2) zgll
+  !   close(2)
+  !endif
 
   if (dump_mesh_info_screen) write(6,*) 'NGLOBGLOB IS ' , NGLOBGLOB
 
 end subroutine define_global_global_numbering
 !--------------------------------------------------------------------------
-!
-!dk define_global_flobal_numbering-----------------------------------------
-  subroutine define_global_flobal_numbering
+
+!--------------------------------------------------------------------------
+subroutine define_global_flobal_numbering
   integer npointot
   double precision, dimension(:), allocatable :: sgtmp,zgtmp
   integer, dimension(:), allocatable :: loc_fluid
   logical, dimension(:), allocatable ::   ifseg
   integer :: iel, jpol,ipol, ipt
-!
 
   npointot = neltot_fluid * (npol+1)**2
-!
+
   if (dump_mesh_info_screen) then 
-   write(6,*) 
-   write(6,*) 'NPOINTOT FLOBAL IS ' , npointot
+     write(6,*) 
+     write(6,*) 'NPOINTOT FLOBAL IS ' , npointot
   end if
-!
-if (dump_mesh_info_files) then
-  open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
-   write(2) sgll_fluid
-   write(2) zgll_fluid
-  close(2)
-endif
+
+  !@TODO does not help without deallocating, useless anyway
+  !if (dump_mesh_info_files) then
+  !   open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
+  !   write(2) sgll_fluid
+  !   write(2) zgll_fluid
+  !   close(2)
+  !endif
 
   allocate(sgtmp(npointot))
   do iel = 1, neltot_fluid
-   do jpol = 0, npol
-    do ipol = 0, npol
-     ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-     sgtmp(ipt) = sgll_fluid(ipol,jpol,iel)
-    end do
-   end do
+     do jpol = 0, npol
+        do ipol = 0, npol
+           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+           sgtmp(ipt) = sgll_fluid(ipol,jpol,iel)
+        end do
+     end do
   end do
 
   deallocate(sgll_fluid)
   allocate(zgtmp(npointot))
   do iel = 1, neltot_fluid
-   do jpol = 0, npol
-    do ipol = 0, npol
-     ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-     zgtmp(ipt) = zgll_fluid(ipol,jpol,iel)
-    end do
-   end do
+     do jpol = 0, npol
+        do ipol = 0, npol
+           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+           zgtmp(ipt) = zgll_fluid(ipol,jpol,iel)
+        end do
+     end do
   end do
   deallocate(zgll_fluid)
-!
-  allocate(iglob_fluid(npointot)) ; iglob_fluid(:) = 0
-  allocate(loc_fluid(npointot)) ;   loc_fluid(:) = 0
+
+  allocate(iglob_fluid(npointot))
+  iglob_fluid(:) = 0
+  allocate(loc_fluid(npointot))
+  loc_fluid(:) = 0
   allocate(ifseg(npointot))
-!
-  call get_global(neltot_fluid,sgtmp,zgtmp,iglob_fluid,loc_fluid,ifseg,nglobflob,npointot,NGLLcube,NDIM)
-!
+
+  call get_global(neltot_fluid, sgtmp, zgtmp, iglob_fluid, loc_fluid, ifseg, &
+                  nglobflob, npointot, NGLLcube, NDIM)
+
   deallocate(ifseg)
   deallocate(loc_fluid)
   deallocate(zgtmp)
   deallocate(sgtmp)
-!
-! allocate(zgll_fluid(0:npol,0:npol,neltot_fluid))
-! allocate(sgll_fluid(0:npol,0:npol,neltot_fluid))
-! open(2,file='crds',form="UNFORMATTED")
-!  read(2) sgll_fluid
-!  read(2) zgll_fluid
-! close(2)
+
+  !if (dump_mesh_info_files) then
+  !   allocate(zgll_fluid(0:npol,0:npol,neltot_fluid))
+  !   allocate(sgll_fluid(0:npol,0:npol,neltot_fluid))
+  !   open(2,file='crds',form="UNFORMATTED")
+  !   read(2) sgll_fluid
+  !   read(2) zgll_fluid
+  !   close(2)
+  !endif
 
   if (dump_mesh_info_screen) write(6,*) 'NGLOBFLOB IS ' , NGLOBFLOB
 
-  end subroutine define_global_flobal_numbering
-!
+end subroutine define_global_flobal_numbering
 !-------------------------------------------------------------------------
-! dk define_global_slobal_numbering---------------------------------------
-  subroutine define_global_slobal_numbering
-  integer npointot
-  double precision, dimension(:), allocatable :: sgtmp,zgtmp
-  integer, dimension(:), allocatable :: loc_solid
-  logical, dimension(:), allocatable ::   ifseg
-!
+
+!-------------------------------------------------------------------------
+subroutine define_global_slobal_numbering
+
+  double precision, dimension(:), allocatable   :: sgtmp, zgtmp
+  integer, dimension(:), allocatable            :: loc_solid
+  logical, dimension(:), allocatable            :: ifseg
+
+  integer :: npointot
   integer :: iel, jpol,ipol, ipt
-!
-! test 
-!  double precision, dimension(:), allocatable :: utest, uglob
 
   npointot = neltot_solid * (npol+1)**2
-!
+
   if (dump_mesh_info_screen) then 
-   write(6,*) 
-   write(6,*) 'NPOINTOT SLOBAL IS ' , npointot
+     write(6,*) 
+     write(6,*) 'NPOINTOT SLOBAL IS ' , npointot
   end if
-! To save some memory 
-if (dump_mesh_info_files) then
-  open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
-   write(2) sgll
-   write(2) zgll
-  close(2)
-  deallocate(sgll,zgll)
-endif
-!
+
+  !@TODO check this
+  !! To save some memory 
+  !if (dump_mesh_info_files) then
+  !   open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
+  !   write(2) sgll
+  !   write(2) zgll
+  !   close(2)
+  !  deallocate(sgll,zgll)
+  !endif
+  
   allocate(sgtmp(npointot))
   do iel = 1, neltot_solid
-   do jpol = 0, npol
-    do ipol = 0, npol
-     ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-     sgtmp(ipt) = sgll_solid(ipol,jpol,iel)
-    end do
-   end do
+     do jpol = 0, npol
+        do ipol = 0, npol
+           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+           sgtmp(ipt) = sgll_solid(ipol,jpol,iel)
+        end do
+     end do
   end do
   deallocate(sgll_solid) ! not needed anymore 
+  
   allocate(zgtmp(npointot))
   do iel = 1, neltot_solid
-   do jpol = 0, npol
-    do ipol = 0, npol
-     ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-     zgtmp(ipt) = zgll_solid(ipol,jpol,iel)
-    end do
-   end do
+     do jpol = 0, npol
+        do ipol = 0, npol
+           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+           zgtmp(ipt) = zgll_solid(ipol,jpol,iel)
+        end do
+     end do
   end do
   deallocate(zgll_solid) ! not needed anymore
-!
-  allocate(iglob_solid(npointot)) ; iglob_solid(:) = 0
-  allocate(loc_solid(npointot)) ;   loc_solid(:) = 0
+
+  allocate(iglob_solid(npointot))
+  iglob_solid(:) = 0
+  allocate(loc_solid(npointot))
+  loc_solid(:) = 0
   allocate(ifseg(npointot))
 
-  call get_global(neltot_solid,sgtmp,zgtmp,iglob_solid,loc_solid,ifseg,nglobslob,npointot,NGLLcube,NDIM)
+  call get_global(neltot_solid, sgtmp, zgtmp, iglob_solid, loc_solid, ifseg, nglobslob, &
+                  npointot, NGLLcube, NDIM)
 
   deallocate(ifseg)
   deallocate(loc_solid)
   deallocate(zgtmp)
   deallocate(sgtmp)
-! now load global coordinate arrays back in
-if (dump_mesh_info_files) then
-  allocate(zgll(0:npol,0:npol,neltot))
-  allocate(sgll(0:npol,0:npol,neltot))
-  open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
-   read(2) sgll
-   read(2) zgll
-  close(2)
-endif
-!
+
+  !@TODO check this
+  !! now load global coordinate arrays back in
+  !if (dump_mesh_info_files) then
+  !  allocate(zgll(0:npol,0:npol,neltot))
+  !  allocate(sgll(0:npol,0:npol,neltot))
+  !  open(2,file=diagpath(1:lfdiag)//'/crds',form="UNFORMATTED")
+  !   read(2) sgll
+  !   read(2) zgll
+  !  close(2)
+  !endif
+
   if (dump_mesh_info_screen) write(6,*) 'NGLOBSLOB IS ' , NGLOBSLOB 
-!
-  end subroutine define_global_slobal_numbering
-!
+
+end subroutine define_global_slobal_numbering
+!-------------------------------------------------------------------------
+
 
 !=====================================================================
 !
@@ -272,81 +295,67 @@ subroutine get_global(nspec2,xp,yp,iglob2,loc2,ifseg2,nglob2,npointot2,NGLLCUBE2
 
   ! leave sorting subroutines in same source file to allow for inlining
 
-!$  use omp_lib     
+  !$ use omp_lib     
   implicit none
 
-  integer, intent(in) ::  nspec2,npointot2,NGLLCUBE2,NDIM2
-  double precision, intent(inout) ::  xp(npointot2),yp(npointot2)
-  integer, intent(out) :: iglob2(npointot2),loc2(npointot2),nglob2
-  logical, intent(out) :: ifseg2(npointot2)
+  integer, intent(in)               :: nspec2, npointot2, NGLLCUBE2, NDIM2
+  double precision, intent(inout)   ::  xp(npointot2), yp(npointot2)
+  integer, intent(out)              :: iglob2(npointot2), loc2(npointot2), nglob2
+  logical, intent(out)              :: ifseg2(npointot2)
 
-  integer              :: ioffs(npointot2)
+  integer :: ioffs(npointot2)
 
-  integer ispec,i,j,nthreads, inttemp
-  integer ieoff,ilocnum,nseg,ioff,iseg,ig
+  integer :: ispec, i, j,nthreads, inttemp
+  integer :: ieoff, ilocnum, nseg, ioff, iseg, ig
   double precision :: realtemp
 
-  integer, dimension(:), allocatable :: ind,ninseg
+  integer, dimension(:), allocatable :: ind, ninseg
 
-! TNM: that's what I had
-! double precision, parameter :: SMALLVALTOL = 1.d-15
   double precision, parameter :: SMALLVALTOL = 1.d-08
 
-! write(6,*)'GLOBAL NUMBERING npointot2,nspec2,NGLLCUBE2:',npointot2,nspec2,NGLLCUBE2
-! write(6,*)'GLOBAL NUMBERING xp yp max:', maxval(abs(xp)),maxval(abs(yp))
-
-! establish initial pointers
-  do ispec=1,nspec2
-     ieoff=NGLLCUBE2*(ispec-1)
-     do ilocnum=1,NGLLCUBE2
-        loc2(ilocnum+ieoff)=ilocnum+ieoff
+  ! establish initial pointers
+  do ispec=1, nspec2
+     ieoff = NGLLCUBE2 * (ispec - 1)
+     do ilocnum=1, NGLLCUBE2
+        loc2(ilocnum + ieoff) = ilocnum + ieoff
      enddo
   enddo
 
   ifseg2(:)=.false.
 
-! dynamically allocate arrays
   allocate(ind(npointot2))
   allocate(ninseg(npointot2))
 
   ninseg = 0
   ind = 0
 
-  nseg=1
-  ifseg2(1)=.true.
-  ninseg(1)=npointot2
+  nseg = 1
+  ifseg2(1) = .true.
+  ninseg(1) = npointot2
 
-  !open(23106, file='ninseg.txt', position='append')
+  do j=1, NDIM2
 
-!==========================================
-  do j=1,NDIM2
-!==========================================
-
-!    print*, 'j: ', j,' nseg: ', nseg
     ! sort within each segment
-     ioff=1
+     ioff = 1
 
      if(j == 1) then
-          !call rank_x(xp(ioff:ioff+ninseg(iseg)-1), ind, ninseg(iseg))
-          call mergesort(xp, npointot2, &
-                         yp, &
-                         loc2)
+          call mergesort(xp, npointot2, yp, loc2)
      else
-!$         nthreads = min(OMP_get_max_threads(),8)
-!!$         print *, 'Using ', nthreads, ' threads!'
+        !$ nthreads = min(OMP_get_max_threads(),8)
+        !!$ print *, 'Using ', nthreads, ' threads!'
         ioffs(1) = 1
         do iseg=2,nseg
            ioffs(iseg) = ioffs(iseg-1) + ninseg(iseg)
            !write(23106,*) ninseg(iseg)
         end do
-!!!$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
-        do iseg=1,nseg
-            ioff = ioffs(iseg)
-        ! First ordered by xp (j==1), then by yp (j==1)
-          !call mergesort_serial(xp(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1), ninseg(iseg), &
-          !               yp(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1), &
-          !               loc2(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1))
-           if (ninseg(iseg)==2) then
+        !!!$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
+        do iseg=1, nseg
+           ioff = ioffs(iseg)
+           ! First ordered by xp (j==1), then by yp (j==1)
+           !call mergesort_serial(xp(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1), ninseg(iseg), &
+           !               yp(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1), &
+           !               loc2(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1))
+           if (ninseg(iseg) == 2) then
                if (yp(ioff).gt.yp(ioff+1)) then
                    realtemp   = yp(ioff)
                    yp(ioff)   = yp(ioff+1)
@@ -361,129 +370,67 @@ subroutine get_global(nspec2,xp,yp,iglob2,loc2,ifseg2,nglob2,npointot2,NGLLCUBE2
                    loc2(ioff+1) = inttemp
                    !loc2(ioff:ioff+1) = loc2([ioff+1, ioff])
                end if
-           elseif (ninseg(iseg)==4) then
-               call rank_4(yp(ioff), ind)
+           elseif (ninseg(iseg) == 4) then
+               call rank_y(yp(ioff), ind, 4)
                call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
-!               loc2(ioff:ioff+ninseg(iseg)-1) = loc2(ioff - 1 + ind(1:ninseg(iseg)))
-!               xp(ioff:ioff+ninseg(iseg)-1) = xp(ioff - 1 + ind(1:ninseg(iseg)))
-!               yp(ioff:ioff+ninseg(iseg)-1) = yp(ioff - 1 + ind(1:ninseg(iseg)))
+               !loc2(ioff:ioff+ninseg(iseg)-1) = loc2(ioff - 1 + ind(1:ninseg(iseg)))
+               !xp(ioff:ioff+ninseg(iseg)-1) = xp(ioff - 1 + ind(1:ninseg(iseg)))
+               !yp(ioff:ioff+ninseg(iseg)-1) = yp(ioff - 1 + ind(1:ninseg(iseg)))
            else
                call rank_y(yp(ioff), ind, ninseg(iseg))
                call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
-!               loc2(ioff:ioff+ninseg(iseg)-1) = loc2(ioff - 1 + ind(1:ninseg(iseg)))
-!               xp(ioff:ioff+ninseg(iseg)-1) = xp(ioff - 1 + ind(1:ninseg(iseg)))
-!               yp(ioff:ioff+ninseg(iseg)-1) = yp(ioff - 1 + ind(1:ninseg(iseg)))
+               !loc2(ioff:ioff+ninseg(iseg)-1) = loc2(ioff - 1 + ind(1:ninseg(iseg)))
+               !xp(ioff:ioff+ninseg(iseg)-1) = xp(ioff - 1 + ind(1:ninseg(iseg)))
+               !yp(ioff:ioff+ninseg(iseg)-1) = yp(ioff - 1 + ind(1:ninseg(iseg)))
            end if
         enddo
-!!!$omp end parallel do        
+        !!!$omp end parallel do        
      endif
         
-
-
 
     ! check for jumps in current coordinate
     ! compare the coordinates of the points within a small tolerance
      if(j == 1) then
-        do i=2,npointot2
-           if(dabs(xp(i)-xp(i-1)) > SMALLVALTOL) ifseg2(i)=.true.
+        do i=2, npointot2
+           if (dabs(xp(i)-xp(i-1)) > SMALLVALTOL) ifseg2(i) = .true.
         enddo
      else
         do i=2,npointot2
-           if(dabs(yp(i)-yp(i-1)) > SMALLVALTOL) ifseg2(i)=.true.
+           if (dabs(yp(i)-yp(i-1)) > SMALLVALTOL) ifseg2(i) = .true.
         enddo
 
      endif
 
     ! count up number of different segments
-     nseg=0
-     do i=1,npointot2
+     nseg = 0
+     do i=1, npointot2
         if(ifseg2(i)) then
-           nseg=nseg+1
-           ninseg(nseg)=1
+           nseg = nseg + 1
+           ninseg(nseg) = 1
         else
-           ninseg(nseg)=ninseg(nseg)+1
+           ninseg(nseg) = ninseg(nseg) + 1
         endif
 
      enddo
-
-!==========================================
   enddo ! NDIM2 loop
-!==========================================
-!  close(23106)
-! deallocate arrays
+
+  !close(23106)
   deallocate(ind)
   deallocate(ninseg)
 
-! assign global node numbers (now sorted lexicographically)
-  ig=0
-  do i=1,npointot2
-     if(ifseg2(i)) ig=ig+1
-     iglob2(loc2(i))=ig
+  ! assign global node numbers (now sorted lexicographically)
+  ig = 0
+  do i=1, npointot2
+     if(ifseg2(i)) ig = ig + 1
+     iglob2(loc2(i)) = ig
   enddo
-  nglob2=ig
+  nglob2 = ig
 
 end subroutine get_global
 !-------------------------------------------------------------------------
-!-------------------------------------------------------------------------
 
 ! sorting routines put in same file to allow for inlining
-subroutine rank_4(A,IND)
-  !
-  ! Use Heap Sort (Numerical Recipes)
-  !
-  implicit none
-
-  integer, parameter :: n = 4
-  double precision A(n)
-  integer IND(n)
-
-  integer i,j,l,ir,indx
-  double precision q
-
-  do j=1,n
-     IND(j)=j
-  enddo
-
-  L= 3 
-  ir = 4
-100 CONTINUE
-  IF (l>1) THEN
-     l=l-1
-     indx=ind(l)
-     q=a(indx)
-  ELSE
-     indx=ind(ir)
-     q=a(indx)
-     ind(ir)=ind(1)
-     ir=ir-1
-     if (ir == 1) then
-        ind(1)=indx
-
-        return
-     endif
-  ENDIF
-  i=l
-  j=l+l
-200 CONTINUE
-  IF (J <= IR) THEN
-     IF (J<IR) THEN
-        IF ( A(IND(j))<A(IND(j+1)) ) j=j+1
-     ENDIF
-     IF (q<A(IND(j))) THEN
-        IND(I)=IND(J)
-        I=J
-        J=J+J
-     ELSE
-        J=IR+1
-     ENDIF
-     goto 200
-  ENDIF
-  IND(I)=INDX
-  goto 100
-
-end subroutine rank_4
-
-
+!-------------------------------------------------------------------------
 subroutine rank_y(A,IND,N)
   !
   ! Use Heap Sort (Numerical Recipes)
@@ -541,9 +488,9 @@ subroutine rank_y(A,IND,N)
   goto 100
 
 end subroutine rank_y
+!-------------------------------------------------------------------------
 
-! ------------------------------------------------------------------
-
+!-------------------------------------------------------------------------
 subroutine swapall(IA,A,B,ind,n)
   !
   ! swap arrays IA, A, B and C according to addressing in array IND
@@ -570,9 +517,9 @@ subroutine swapall(IA,A,B,ind,n)
   enddo
 
 end subroutine swapall
+!-------------------------------------------------------------------------
 
-!##############################################################################
-
+!-------------------------------------------------------------------------
 subroutine mergesort(A, N, D, E)
 !$  use omp_lib     
     integer, intent(in)    :: N
@@ -591,7 +538,9 @@ subroutine mergesort(A, N, D, E)
 !$  endif
 
 end subroutine mergesort
+!-------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------
 recursive subroutine MergeSort_parallel(A, N, D, E, Threads)
  
    integer, intent(in)                  :: N, Threads
@@ -658,9 +607,9 @@ recursive subroutine MergeSort_parallel(A, N, D, E, Threads)
    return
  
 end subroutine MergeSort_parallel
+!-------------------------------------------------------------------------
 
-!##############################################################################
-
+!-------------------------------------------------------------------------
 recursive subroutine MergeSort_serial(A,N,D,E)
  
    integer, intent(in) :: N
@@ -717,9 +666,10 @@ recursive subroutine MergeSort_serial(A,N,D,E)
    return
  
 end subroutine MergeSort_serial
+!-------------------------------------------------------------------------
 
-!##############################################################################
-
+!-------------------------------------------------------------------------
+!@TODO merge is a bad name
 subroutine Merge(A,NA,B,NB,C,INDA,INDB)
  
    integer, intent(in)           :: NA,NB         ! Normal usage: NA+NB = NC
@@ -759,7 +709,8 @@ subroutine Merge(A,NA,B,NB,C,INDA,INDB)
    return
  
 end subroutine merge
+!-------------------------------------------------------------------------
 
 !=========================
-  end module numbering
+end module numbering
 !=========================
