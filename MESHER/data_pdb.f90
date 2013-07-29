@@ -20,7 +20,7 @@
 !
 
 !==================
-  module data_pdb
+module data_pdb
 !==================
 
   implicit none
@@ -40,28 +40,28 @@
   integer, dimension(:,:), allocatable      :: lprocb
   integer, dimension(:), allocatable        :: el2proc 
 
-! Glocal message passing...redundant eventually!
+  ! Glocal message passing...redundant eventually!
   integer, dimension(:), allocatable        :: sizerecvp, sizesendp
   integer, dimension(:,:), allocatable      :: listrecvp, listsendp
   integer, dimension(:,:), allocatable      :: sizemsgrecvp, sizemsgsendp
   integer, dimension(:,:,:), allocatable    :: glocal_index_msg_recvp
   integer, dimension(:,:,:), allocatable    :: glocal_index_msg_sendp
 
-! Slocal - Solid message passing, these all go into the database
+  ! Slocal - Solid message passing, these all go into the database
   integer, dimension(:), allocatable        :: sizerecvp_solid, sizesendp_solid
   integer, dimension(:,:), allocatable      :: listrecvp_solid, listsendp_solid
   integer, dimension(:,:), allocatable      :: sizemsgrecvp_solid, sizemsgsendp_solid
   integer, dimension(:,:,:), allocatable    :: glocal_index_msg_recvp_solid
   integer, dimension(:,:,:), allocatable    :: glocal_index_msg_sendp_solid
 
-! Flocal - Fluid message passing, these all go into the database
+  ! Flocal - Fluid message passing, these all go into the database
   integer, dimension(:), allocatable        :: sizerecvp_fluid, sizesendp_fluid
   integer, dimension(:,:), allocatable      :: listrecvp_fluid, listsendp_fluid
   integer, dimension(:,:), allocatable      :: sizemsgrecvp_fluid, sizemsgsendp_fluid
   integer, dimension(:,:,:), allocatable    :: glocal_index_msg_recvp_fluid
   integer, dimension(:,:,:), allocatable    :: glocal_index_msg_sendp_fluid
 
-! Solid-fluid
+  ! Solid-fluid
   integer, dimension(:), allocatable        :: nbelong_solid, nbelong_fluid
   integer, dimension(:), allocatable        :: nprocb_solid, nprocb_fluid
   integer, dimension(:,:), allocatable      :: lprocb_solid, lprocb_fluid
@@ -74,18 +74,18 @@
   character(len=6), dimension(:,:), allocatable :: eltypep_solid, eltypep_fluid
 
 
-! Solid-fluid boundary
+  ! Solid-fluid boundary
   integer, allocatable                      :: nbdry_el(:)
   integer, allocatable                      :: belemp(:,:)
   integer, allocatable                      :: bdry_solid_elp(:,:), bdry_fluid_elp(:,:)
   integer, dimension(:,:), allocatable      :: bdry_jpol_solidp, bdry_jpol_fluidp
   logical, allocatable                      :: have_bdry_elemp(:)
 
-! glocal arrays
+  ! glocal arrays
   integer, dimension(:,:), allocatable      :: igloc
   integer, dimension(:), allocatable        :: nglobp
 
-! Serendipity arrays
+  ! Serendipity arrays
   integer, dimension(:), allocatable        :: nglobmeshp
   double precision, dimension(:,:), allocatable :: scpp, zcpp
   integer, dimension(:,:), allocatable      :: iglobcp
@@ -95,9 +95,9 @@
 
   double precision, dimension(:), allocatable :: theta_min_proc, theta_max_proc
 
-! global to glocal mapping
+  ! global to glocal mapping
   integer, dimension(:,:), allocatable      :: glob2gloc
 
 !======================
-  end module data_pdb
+end module data_pdb
 !======================
