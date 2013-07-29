@@ -66,7 +66,8 @@ subroutine define_global_global_numbering
   loc(:) = 0
   allocate(ifseg(npointot))
 
-  call get_global(neltot, sgtmp, zgtmp, iglob, loc, ifseg, nglobglob, npointot, ngllcube, NDIM)
+  call get_global(neltot, sgtmp, zgtmp, iglob, loc, ifseg, nglobglob, npointot, &
+                  ngllcube, NDIM)
 
   deallocate(ifseg)
   deallocate(loc)
@@ -182,7 +183,8 @@ end subroutine define_global_slobal_numbering
 !
 !=====================================================================
 
-subroutine get_global(nspec2,xp,yp,iglob2,loc2,ifseg2,nglob2,npointot2,NGLLCUBE2,NDIM2)
+subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
+                      NGLLCUBE2, NDIM2)
 
   ! this routine MUST be in double precision to avoid sensitivity
   ! to roundoff errors in the coordinates of the points
@@ -192,10 +194,9 @@ subroutine get_global(nspec2,xp,yp,iglob2,loc2,ifseg2,nglob2,npointot2,NGLLCUBE2
   ! leave sorting subroutines in same source file to allow for inlining
 
   !$ use omp_lib     
-  implicit none
 
   integer, intent(in)               :: nspec2, npointot2, NGLLCUBE2, NDIM2
-  double precision, intent(inout)   ::  xp(npointot2), yp(npointot2)
+  double precision, intent(inout)   :: xp(npointot2), yp(npointot2)
   integer, intent(out)              :: iglob2(npointot2), loc2(npointot2), nglob2
   logical, intent(out)              :: ifseg2(npointot2)
 
@@ -266,12 +267,6 @@ subroutine get_global(nspec2,xp,yp,iglob2,loc2,ifseg2,nglob2,npointot2,NGLLCUBE2
                    loc2(ioff+1) = inttemp
                    !loc2(ioff:ioff+1) = loc2([ioff+1, ioff])
                end if
-           elseif (ninseg(iseg) == 4) then
-               call rank_y(yp(ioff), ind, 4)
-               call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
-               !loc2(ioff:ioff+ninseg(iseg)-1) = loc2(ioff - 1 + ind(1:ninseg(iseg)))
-               !xp(ioff:ioff+ninseg(iseg)-1) = xp(ioff - 1 + ind(1:ninseg(iseg)))
-               !yp(ioff:ioff+ninseg(iseg)-1) = yp(ioff - 1 + ind(1:ninseg(iseg)))
            else
                call rank_y(yp(ioff), ind, ninseg(iseg))
                call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
@@ -331,7 +326,6 @@ subroutine rank_y(A,IND,N)
   !
   ! Use Heap Sort (Numerical Recipes)
   !
-  implicit none
 
   integer n
   double precision A(n)
@@ -391,7 +385,6 @@ subroutine swapall(IA,A,B,ind,n)
   !
   ! swap arrays IA, A, B and C according to addressing in array IND
   !
-  implicit none
 
   integer, intent(in)             :: n
   integer, intent(in)             :: IND(n)
