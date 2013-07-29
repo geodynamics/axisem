@@ -220,8 +220,6 @@ double precision function betak_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 
-  implicit none
-
   integer :: ielem0
   double precision :: xil, etal, nodes_crd(8,2)
   double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
@@ -359,8 +357,6 @@ double precision function beta_anal(xil, etal, nodes_crd, ielem0)
 ! operator. alpha is defined within an element, and s(xi,eta) is 
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
-
-  implicit none
 
   integer :: ielem0
   double precision :: xil, etal, nodes_crd(8,2)
@@ -668,8 +664,6 @@ subroutine mgrad_pointwise_anal(mg, xil, etal, nodes_crd, ielem0)
 !       This 2*2 matrix is needed when defining and storing
 !gradient/divergence related arrays.
 
-  implicit none
-
   integer :: ielem0
   double precision :: mg(2,2) 
   double precision :: xil, etal, nodes_crd(8,2)
@@ -699,10 +693,8 @@ subroutine mgrad_pointwisek_anal(mg, xil, etal, nodes_crd, ielem0)
 !    mg =   | ---------|--------- |(xi,eta)
 !           |(dz/dxi ) | (dz/deta)|
 !           +                     +
-!       This 2*2 matrix is needed when defining and storing
-!gradient/divergence related arrays.
-
-  implicit none
+! This 2*2 matrix is needed when defining and storing
+! gradient/divergence related arrays.
 
   integer,intent(in)           :: ielem0
   double precision,intent(in)  :: xil, etal, nodes_crd(8,2)
