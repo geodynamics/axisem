@@ -9,14 +9,14 @@
 MPIRUN  = mpirun
 
 # Enable NetCDF
-USE_NETCDF = false 
+USE_NETCDF =false
 NETCDF_PATH = $(HOME)/local
 
 # GFORTRAN (fast)
 CC      = gcc                                # C compiler
 FC      = mpif90                             # Fortran compiler
-FFLAGS  = -O3 -march=native
-CFLAGS  = -O3 -march=native
+FFLAGS  = -O3 #-march=native
+CFLAGS  = -O3 #-march=native
 LDFLAGS = -O3
 
 # GFORTRAN (debug)
