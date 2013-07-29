@@ -46,5 +46,5 @@ ATTENUATION         true
 # Set verbosity of the code, allowed values:
 # 0: only errors
 # 1: errors plus some information (default)
-# 2: tells funny stories about his time in Princeton
+# 2: extra stories for spare time
 VERBOSITY               1
