@@ -232,7 +232,6 @@ subroutine bkgrdmodel_testing
      s1 = sgll(npol/2,npol/2,iel)
      z1 = zgll(npol/2,npol/2,iel)
   
-  
      ! check if grid spacing is within (numerically) allowable limits
      if (hmax(iel) > period/(pts_wavelngth*dble(npol))) then
         if (dump_mesh_info_files) then 

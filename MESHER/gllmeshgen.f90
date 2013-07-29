@@ -61,18 +61,22 @@ subroutine create_gllmesh
 
   ! In the z-direction and in the s-direction for any other element
 
-  call ZELEGL(npol,eta,dxi)                 ! Gauss-Lobatto Points
+  call zelegl(npol,eta,dxi)                 ! Gauss-Lobatto Points
   call get_welegl(npol,eta,wt)              !
-
 
   do iel = 1, neltot
   
      ! define dummy coordinate arrays
      crd_nodes(:,:) = 0.d0
-     crd_nodes(1,1) = sg(lnodesg(1,iel)) ; crd_nodes(1,2) = zg(lnodesg(1,iel))
-     crd_nodes(3,1) = sg(lnodesg(2,iel)) ; crd_nodes(3,2) = zg(lnodesg(2,iel))
-     crd_nodes(5,1) = sg(lnodesg(3,iel)) ; crd_nodes(5,2) = zg(lnodesg(3,iel))
-     crd_nodes(7,1) = sg(lnodesg(4,iel)) ; crd_nodes(7,2) = zg(lnodesg(4,iel))
+     crd_nodes(1,1) = sg(lnodesg(1,iel))
+     crd_nodes(1,2) = zg(lnodesg(1,iel))
+     crd_nodes(3,1) = sg(lnodesg(2,iel))
+     crd_nodes(3,2) = zg(lnodesg(2,iel))
+     crd_nodes(5,1) = sg(lnodesg(3,iel))
+     crd_nodes(5,2) = zg(lnodesg(3,iel))
+     crd_nodes(7,1) = sg(lnodesg(4,iel))
+     crd_nodes(7,2) = zg(lnodesg(4,iel))
+     
      crd_nodes(2,:) = .5d0 * ( crd_nodes(1,:) + crd_nodes(3,:) )  ! midpoints are necessary
      crd_nodes(4,:) = .5d0 * ( crd_nodes(3,:) + crd_nodes(5,:) )  ! for subparametric mapping
      crd_nodes(6,:) = .5d0 * ( crd_nodes(5,:) + crd_nodes(7,:) )  ! (Serendipity elements).
