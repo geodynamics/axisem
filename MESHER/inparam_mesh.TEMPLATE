@@ -5,7 +5,7 @@
 # prem_iso_solid:         like 'prem_iso', replace fluid outer core with vs=vp/sqrt(3)
 # prem_iso_onecrust:      like 'prem_iso' but extend lower crust to surface
 # prem_iso_light:         like 'prem_iso' but with mantle material extended to surface
-# prem_iso_solid_light:   like 'prem_light', but in fluid outer core vs=vp/sqrt(3)
+# prem_iso_solid_light:   like 'prem_iso_light', but in fluid outer core vs=vp/sqrt(3)
 #
 # prem_ani:               Isotropic continental PREM model
 # prem_ani_onecrust:      like 'prem_ani' but extend lower crust to surface
