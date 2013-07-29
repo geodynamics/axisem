@@ -19,9 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!=============================
 module test_bkgrdmodel
-!=============================
 
   use data_gllmesh
   use data_mesh
@@ -36,9 +34,9 @@ module test_bkgrdmodel
   public :: bkgrdmodel_testing, write_VTK_bin_scal_old, write_VTK_bin_scal
   private 
 
-  contains
+contains
 
-!-----------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine bkgrdmodel_testing
 
   use background_models
@@ -46,9 +44,9 @@ subroutine bkgrdmodel_testing
   double precision, dimension(:,:,:), allocatable   :: h, hmin2
   double precision, dimension(:,:), allocatable     :: crit, crit_max
   double precision, dimension(:), allocatable       :: hmin, hmax
+  double precision,allocatable, dimension(:,:,:)    :: v_p, v_s, rho
   integer               :: iel, ipol, jpol, ntoobig, ntoosmall, j
   double precision      :: s1, z1, s2, z2, h1, h2, r, velo, velo_max, theta
-  double precision,allocatable, dimension(:,:,:)    :: v_p, v_s, rho
   
   ! vtk
   real, dimension(:,:), allocatable     :: mesh2
@@ -195,8 +193,6 @@ subroutine bkgrdmodel_testing
                     velo = v_p(ipol,jpol,iel)
   
               else 
-                 !r=dble(int(r*1.d10))*1.d-10 ! TNM: ADDED BACK IN JAN 2011... NOT SURE IF NECESSARY !!!!!
-  
                  if ( solid_domain(region(iel)) ) then 
                     velo = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
                  else
@@ -205,17 +201,6 @@ subroutine bkgrdmodel_testing
                  write(62,*) r*router, velo; call flush(62)
               endif
            endif
-  
-           ! DANGEROUS STUFF HAPPENING RIGHT HERE!
-           ! at ICB, some values are 1221.4999999, some 1221.5 ....
-           ! hence we cap the accuracy of the radius
-  
-           !   velo = velocity(r*router,'v_s',region(iel),bkgrdmodel,lfbkgrdmodel)
-           !   if (velo < 2.d3 ) velo = velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
-           !   if (.not. resolve_inner_shear .and. region(iel)==ndisc) & 
-           !        velo = velocity(r*router,'v_p',region(iel),bkgrdmodel,lfbkgrdmodel)
-  
-  !         if (dump_mesh_info_files ) then ! .and. ipol==2 .and. jpol==2) then !!! should be for ALL ipol/jpol!!! Just slow for the sun...
   
            if (bkgrdmodel=='solar') then 
               velo = v_p(ipol,jpol,iel)
@@ -238,8 +223,6 @@ subroutine bkgrdmodel_testing
            theta = datan(dble(s1 / (z1 + 1.d-30)))
            if ( 0.d0 > theta ) theta = pi + theta
            if (theta == 0.d0 .and. z1 < 0.d0) theta = pi
-  
-  !         endif
         end do
      end do
   
@@ -356,8 +339,6 @@ subroutine bkgrdmodel_testing
      endif
 
      ct = ct + 4
-  
-     !=======================================
   
   end do ! iel
   
@@ -503,38 +484,38 @@ subroutine bkgrdmodel_testing
   deallocate(h, hmin2, crit, crit_max, hmin, hmax)
 
 end subroutine bkgrdmodel_testing 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine write_VTK_bin_scal_old(u2,mesh,rows,filename)
 
   implicit none
-  integer*4 :: i,rows
-  real, dimension(1:rows), intent(in) :: u2
-  real, dimension(1:rows) :: u1
+  integer*4                             :: i,rows
+  real, dimension(1:rows), intent(in)   :: u2
+  real, dimension(1:rows)               :: u1
   real, dimension(1:rows,2), intent(in) :: mesh
-  integer, dimension(:),allocatable :: cell
-  integer, dimension(:),allocatable :: cell_type
+  integer, dimension(:),allocatable     :: cell
+  integer, dimension(:),allocatable     :: cell_type
   character (len=55) :: filename;
-  character (len=50) :: ss; !stream
+  character (len=50) :: ss
  
   !points structure
   allocate(cell(rows*2),cell_type(rows))
+
   do i=2,rows*2,2
-   cell(i-1)=1;
-   cell(i)=(i/2)-1;
+   cell(i-1) = 1
+   cell(i) = (i/2)-1
   enddo
   do i=1,rows
-   cell_type(i)=1
+   cell_type(i) = 1
   enddo
   
   u1=real(u2)
   do i=1,rows
       if (abs(u1(i))<1.e-25) u1(i)=0.0
   enddo
-  !write(6789,*)size(u1),maxval(u1),minval(u1)
   
-   write(6,*)'computing vtk file ',trim(filename),' ...'
+  write(6,*)'computing vtk file ',trim(filename),' ...'
   open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
            convert='big_endian', form='unformatted')
   
@@ -544,61 +525,63 @@ subroutine write_VTK_bin_scal_old(u2,mesh,rows,filename)
   write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
   write(ss,fmt='(A6,I10,A5)') 'POINTS',rows,'float'
   write(100) ss//char(10)
+  
   !points
   do i=1,rows
   write(100) mesh(i,1),mesh(i,2),0.0
   enddo
   write(100) char(10)
+  
   !cell topology
   write(ss,fmt='(A5,2I10)') 'CELLS',rows,rows*2
   write(100) char(10)//ss//char(10)
   write(100) cell
   write(100) char(10)
+  
   !cell type
   write(ss,fmt='(A10,2I10)') 'CELL_TYPES',rows
   write(100) char(10)//ss//char(10)
   write(100) cell_type
   write(100) char(10)
+  
   !data
   write(ss,fmt='(A10,I10)') 'CELL_DATA',rows
   write(100) char(10)//ss//char(10)
   write(100) 'SCALARS '//trim(filename)//' float 1'//char(10)
   write(100) 'LOOKUP_TABLE default'//char(10) !color table?
   write(100) real(u1)
-   close(100)
+  close(100)
   write(6,*)'...saved ',trim(filename)//'.vtk'
 end subroutine write_VTK_bin_scal_old
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   implicit none
-  integer*4 :: i,t,elems
-  real*4, dimension(1:elems*4), intent(in) :: x,y,z,u1
-  integer, dimension(:),allocatable :: cell
-  integer, dimension(:),allocatable :: cell_type
+  integer*4                                :: i, t, elems
+  real*4, dimension(1:elems*4), intent(in) :: x, y, z, u1
+  integer, dimension(:),allocatable        :: cell
+  integer, dimension(:),allocatable        :: cell_type
+
   character (len=55) :: filename
-  character (len=50) :: ss; !stream
+  character (len=50) :: ss
+  
   !points structure
   allocate(cell(elems*5),cell_type(elems))
   do i=5,elems*5,5
-   cell(i-4)=4;
-   enddo
+     cell(i-4)=4
+  enddo
   t=0
+  
   do i=5,elems*5,5
-  t=t+4
-  cell(i-3)=t-4;
-  cell(i-2)=t-3;
-  cell(i-1)=t-2;
-  cell(i)=t-1;
+    t=t+4
+    cell(i-3)=t-4;
+    cell(i-2)=t-3;
+    cell(i-1)=t-2;
+    cell(i)=t-1;
   enddo
   
-  !do i=1,elems
-  ! cell_type(i)=9
-  !enddo
   cell_type=9
-  ! write(6,*)'computing vtk file ',trim(filename),' ...'
   open(100,file=trim(filename)//'.vtk',access='stream',status='replace', &
            convert='big_endian', form='unformatted')
   write(100) '# vtk DataFile Version 4.0'//char(10)
@@ -607,32 +590,35 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
   write(ss,fmt='(A6,I10,A5)') 'POINTS',elems*4,'float'
   write(100) ss//char(10)
+  
   !points
   write(100) (x(i),y(i),z(i),i=1,elems*4)
   write(100) char(10)
+  
   !cell topology
   write(ss,fmt='(A5,2I10)') 'CELLS',elems,elems*5
   write(100) char(10)//ss//char(10)
   write(100) cell
   write(100) char(10)
+  
   !cell type
   write(ss,fmt='(A10,2I10)') 'CELL_TYPES',elems
   write(100) char(10)//ss//char(10)
   write(100) cell_type
   write(100) char(10)
+  
   !data
   write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
   write(100) char(10)//ss//char(10)
   write(100) 'SCALARS data float 1'//char(10)
   write(100) 'LOOKUP_TABLE default'//char(10) !color table?
   write(100) u1
-   close(100)
+  close(100)
   write(6,*)'...saved ',trim(filename)//'.vtk'
 end subroutine write_VTK_bin_scal
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine arbitr_sub_solar_arr(s, z, v_p, v_s, rho, bkgrdmodel2)
 !
 ! file-based, step-wise model in terms of domains separated by disconts.
@@ -640,8 +626,7 @@ subroutine arbitr_sub_solar_arr(s, z, v_p, v_s, rho, bkgrdmodel2)
 ! ndisc
 ! r vp vs rho
 ! ...
-! 
-!-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  
   double precision, intent(in)    :: s(0:npol,0:npol,1:neltot), z(0:npol,0:npol,1:neltot)
   character(len=100), intent(in)  :: bkgrdmodel2
   double precision, dimension(:,:,:), intent(out) :: rho(0:npol,0:npol,1:neltot)
@@ -683,10 +668,9 @@ subroutine arbitr_sub_solar_arr(s, z, v_p, v_s, rho, bkgrdmodel2)
   endif
 
 end subroutine arbitr_sub_solar_arr
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine interp_vel(r0, r, n, ind, w, wsum)
 
   implicit none
@@ -700,8 +684,6 @@ subroutine interp_vel(r0, r, n, ind, w, wsum)
   p = 1
 
   i = minloc(dabs(r-r0),1)
-!  write(6,*)'INTERP;',r0,i
-!  write(6,*)'INTERP:',r(i)
 
   if (r0>0.d0) then
      if ((r(i)-r0)/r0> 1.d-8) then ! closest discont. at larger radius
@@ -751,9 +733,6 @@ subroutine interp_vel(r0, r, n, ind, w, wsum)
   wsum=1.d0/sum(w)
 
 end subroutine interp_vel
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-
-!=============================
 end module test_bkgrdmodel
-!=============================
