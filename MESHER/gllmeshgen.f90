@@ -52,12 +52,9 @@ subroutine create_gllmesh
 
   ! QUADRATURE POINTS and weights
   allocate (eta(0:npol))
-  allocate (xi(0:npol),dxi(0:npol))
-  allocate (wt(0:npol),wt_axial(0:npol))
+  allocate (dxi(0:npol))
+  allocate (wt(0:npol))
   allocate(xi_k(0:npol), wt_axial_k(0:npol))
-
-  call zemngr(npol,xi)                      ! Pseudo Gauss-Radau quadrature
-  call get_welegl_axial(npol,xi,wt_axial,3) !
 
   call zemngl2(npol,xi_k)                       ! Gauss-Jacobi(0,1) quadrature
   call get_welegl_axial(npol,xi_k,wt_axial_k,2) !
@@ -147,9 +144,6 @@ subroutine test_mapping
 
   ! QUADRATURE POINTS 
   
-  call zemngr(npol,xi)                      ! Pseudo Gauss-Radau quadrature
-  call get_welegl_axial(npol,xi,wt_axial,3) !
-
   call zemngl2(npol,xi_k)                       ! Gauss-Jacobi(0,1) quadrature
   call get_welegl_axial(npol,xi_k,wt_axial_k,2) !
 
@@ -223,7 +217,7 @@ subroutine test_mapping
   close(23)
   close(21)
 
-  deallocate(sglltmp,zglltmp,eta,xi,dxi,wt,wt_axial,xi_k,wt_axial_k)
+  deallocate(sglltmp, zglltmp, eta, dxi, wt, xi_k, wt_axial_k)
 
 end subroutine test_mapping
 !-----------------------------------------------------------------------------------------
