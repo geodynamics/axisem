@@ -370,8 +370,7 @@ end
 
 ######## post processing ##################################################
 
-set F90 = `grep "FC = " $homedir/Makefile |awk '{print $3}'`
-
+set F90 = `grep "FC     " $homedir/../make_axisem.macros  |grep -v "#F" | awk '{print $3}'`
 cd $homedir/UTILS
 cp $homedir/mesh_params.h .
 $F90 post_processing.f90 -o xpost_processing
