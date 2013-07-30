@@ -193,6 +193,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
 
   ! leave sorting subroutines in same source file to allow for inlining
 
+  use sorting
   !$ use omp_lib     
 
   integer, intent(in)               :: nspec2, npointot2, NGLLCUBE2, NDIM2
@@ -202,7 +203,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
 
   integer :: ioffs(npointot2)
 
-  integer :: ispec, i, j,nthreads, inttemp
+  integer :: ispec, i, nthreads, inttemp
   integer :: ieoff, ilocnum, nseg, ioff, iseg, ig
   double precision :: realtemp
 
@@ -218,7 +219,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
      enddo
   enddo
 
-  ifseg2(:)=.false.
+  ifseg2(:) = .false.
 
   allocate(ind(npointot2))
   allocate(ninseg(npointot2))
@@ -230,82 +231,62 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ifseg2(1) = .true.
   ninseg(1) = npointot2
 
-  do j=1, NDIM2
+  call mergesort(xp, npointot2, yp, loc2)
+  !call mergesort_3(xp, yp, loc2, 1)
 
-    ! sort within each segment
-     ioff = 1
+  ! check for jumps in current coordinate
+  ! compare the coordinates of the points within a small tolerance
+  do i=2, npointot2
+     if (dabs(xp(i)-xp(i-1)) > SMALLVALTOL) ifseg2(i) = .true.
+  enddo
 
-     if(j == 1) then
-          call mergesort(xp, npointot2, yp, loc2)
+  ! count up number of different segments
+  nseg = 0
+  do i=1, npointot2
+     if(ifseg2(i)) then
+        nseg = nseg + 1
+        ninseg(nseg) = 1
      else
-        !$ nthreads = min(OMP_get_max_threads(),8)
-        !!$ print *, 'Using ', nthreads, ' threads!'
-        ioffs(1) = 1
-        do iseg=2,nseg
-           ioffs(iseg) = ioffs(iseg-1) + ninseg(iseg)
-           !write(23106,*) ninseg(iseg)
-        end do
-        !!!$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
-        do iseg=1, nseg
-           ioff = ioffs(iseg)
-           ! First ordered by xp (j==1), then by yp (j==1)
-           !call mergesort_serial(xp(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1), ninseg(iseg), &
-           !               yp(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1), &
-           !               loc2(ioffs(iseg):ioffs(iseg)+ninseg(iseg)-1))
-           if (ninseg(iseg) == 2) then
-               if (yp(ioff).gt.yp(ioff+1)) then
-                   realtemp   = yp(ioff)
-                   yp(ioff)   = yp(ioff+1)
-                   yp(ioff+1) = realtemp
-                   realtemp   = xp(ioff)
-                   xp(ioff)   = xp(ioff+1)
-                   xp(ioff+1) = realtemp
-                   !yp(ioff:ioff+1) = yp([ioff+1, ioff])
-                   !xp(ioff:ioff+1) = xp([ioff+1, ioff])
-                   inttemp    = loc2(ioff)
-                   loc2(ioff) = loc2(ioff+1)
-                   loc2(ioff+1) = inttemp
-                   !loc2(ioff:ioff+1) = loc2([ioff+1, ioff])
-               end if
-           else
-               call rank_y(yp(ioff), ind, ninseg(iseg))
-               call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
-               !loc2(ioff:ioff+ninseg(iseg)-1) = loc2(ioff - 1 + ind(1:ninseg(iseg)))
-               !xp(ioff:ioff+ninseg(iseg)-1) = xp(ioff - 1 + ind(1:ninseg(iseg)))
-               !yp(ioff:ioff+ninseg(iseg)-1) = yp(ioff - 1 + ind(1:ninseg(iseg)))
-           end if
-        enddo
-        !!!$omp end parallel do        
-     endif
-        
-
-    ! check for jumps in current coordinate
-    ! compare the coordinates of the points within a small tolerance
-     if(j == 1) then
-        do i=2, npointot2
-           if (dabs(xp(i)-xp(i-1)) > SMALLVALTOL) ifseg2(i) = .true.
-        enddo
-     else
-        do i=2,npointot2
-           if (dabs(yp(i)-yp(i-1)) > SMALLVALTOL) ifseg2(i) = .true.
-        enddo
-
+        ninseg(nseg) = ninseg(nseg) + 1
      endif
 
-    ! count up number of different segments
-     nseg = 0
-     do i=1, npointot2
-        if(ifseg2(i)) then
-           nseg = nseg + 1
-           ninseg(nseg) = 1
-        else
-           ninseg(nseg) = ninseg(nseg) + 1
-        endif
+  enddo
+  
+  ! sort within each segment
+  ioff = 1
 
-     enddo
-  enddo ! NDIM2 loop
+  !$ nthreads = min(OMP_get_max_threads(),8)
+  !!$ print *, 'Using ', nthreads, ' threads!'
+  ioffs(1) = 1
+  do iseg=2, nseg
+     ioffs(iseg) = ioffs(iseg-1) + ninseg(iseg)
+  end do
+  !!!$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
+  do iseg=1, nseg
+     ioff = ioffs(iseg)
+     call rank_y(yp(ioff), ind, ninseg(iseg))
+     call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
+  enddo
+  !!!$omp end parallel do        
 
-  !close(23106)
+  ! check for jumps in current coordinate
+  ! compare the coordinates of the points within a small tolerance
+  do i=2,npointot2
+     if (dabs(yp(i)-yp(i-1)) > SMALLVALTOL) ifseg2(i) = .true.
+  enddo
+
+  ! count up number of different segments
+  nseg = 0
+  do i=1, npointot2
+     if(ifseg2(i)) then
+        nseg = nseg + 1
+        ninseg(nseg) = 1
+     else
+        ninseg(nseg) = ninseg(nseg) + 1
+     endif
+
+  enddo
+
   deallocate(ind)
   deallocate(ninseg)
 
