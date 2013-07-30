@@ -25,7 +25,7 @@ BACKGROUND_MODEL    'prem_iso'
 DOMINANT_PERIOD     20.0
 
 # Number of processors to be used
-NCPU                2
+NCPU                1
 
 # write vtk output
 WRITE_VTK           true
