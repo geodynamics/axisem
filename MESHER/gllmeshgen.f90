@@ -41,13 +41,15 @@ subroutine create_gllmesh
   use data_diag
 
   double precision :: crd_nodes(8,2)
-  integer npoin
 
   integer iel,jpol,ipol
   double precision stest
 
+
+  !integer tock, tick
+
+  !tick = time()
   ! Generate collocation points in the two directions of space
-  npoin = neltot*(npol+1)**2
   allocate(sgll(0:npol,0:npol,neltot),zgll(0:npol,0:npol,neltot))
 
   ! QUADRATURE POINTS and weights
@@ -63,7 +65,11 @@ subroutine create_gllmesh
 
   call zelegl(npol,eta,dxi)                 ! Gauss-Lobatto Points
   call get_welegl(npol,eta,wt)              !
+  !tock = time()
+  !write(6,*)'    Runtime: ', tock-tick, ' s'
+  !tick = time()
 
+  !$omp parallel do shared(sgll, zgll) private(crd_nodes, jpol, ipol, stest)
   do iel = 1, neltot
   
      ! define dummy coordinate arrays
@@ -99,7 +105,9 @@ subroutine create_gllmesh
         end do
      end if
   end do
-
+  !$omp end parallel do
+  !tock = time()
+  !write(6,*)'    Runtime: ', tock-tick, ' s'
 end subroutine create_gllmesh
 !-----------------------------------------------------------------------------------------
 
