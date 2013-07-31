@@ -202,7 +202,7 @@ a full moment tensor source) are solved numerically using a spectral element app
     \item Run the mesher, and watch the progress:
     %
     \begin{verbatim}
-    $ ./submit
+    $ ./submit.csh
     $ tailf OUTPUT
     \end{verbatim}
     %
@@ -342,9 +342,8 @@ can be modified without redoing the more expensive simulation.
     CONV_STF        gauss_0
     \end{verbatim}
     %
-    The source mechanism (and only the mechanism, depth and location cannot be changed
-    in postprocessing) is read from the \verb|CMTSOLUTION| file in the same directory.
-    Start the postprocessing:
+    The source mechanism (depth and location cannot be changed in postprocessing) is read
+    from the \verb|CMTSOLUTION| file in the same directory. Start the postprocessing:
     %
     \begin{verbatim}
     $ ./postprocessing.csh
