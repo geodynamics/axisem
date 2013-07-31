@@ -686,12 +686,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )
         call check( nf90_put_att(ncid_recout, nc_disp_varid, '_FillValue', 0.0) )
 
-        call check( nf90_def_var(ncid_recout, "Lat_req", NF90_FLOAT, (/nc_rec_dimid/), &
-                                 nc_latr_varid) )
-        call check( nf90_def_var(ncid_recout, "Lon", NF90_FLOAT, (/nc_rec_dimid/), &
-                                 nc_lon_varid) )
-        call check( nf90_def_var(ncid_recout, "Lat", NF90_FLOAT, (/nc_rec_dimid/), &
-                                 nc_lat_varid) )
+        !call check( nf90_def_var(ncid_recout, "Lat_req", NF90_FLOAT, (/nc_rec_dimid/), &
+        !                         nc_latr_varid) )
+        !call check( nf90_def_var(ncid_recout, "Lon", NF90_FLOAT, (/nc_rec_dimid/), &
+        !                         nc_lon_varid) )
+        !call check( nf90_def_var(ncid_recout, "Lat", NF90_FLOAT, (/nc_rec_dimid/), &
+        !                         nc_lat_varid) )
         call check( nf90_def_var(ncid_recout, "azimuths", NF90_FLOAT, (/nc_rec_dimid/),  &
                                  nc_ph_varid) )
         call check( nf90_def_var(ncid_recout, "distances_requested", NF90_FLOAT, &

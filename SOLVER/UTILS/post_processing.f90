@@ -29,7 +29,7 @@ module data_all
   character(len=100)                :: stf_file, rot_rec_file, filename, fname
 
   character(len=7),allocatable, dimension(:)        :: stf_type
-  character(len=100),allocatable, dimension(:)      :: recname
+  character(len=040),allocatable, dimension(:)      :: recname
   character(len=100),allocatable, dimension(:,:)    :: outname, outname2, rec_full_name
   character(len=10),allocatable, dimension(:,:)     :: src_type
   integer                                           :: nrec, nt_seis
@@ -51,6 +51,7 @@ module data_all
   logical                             :: load_snaps
   logical                             :: negative_time
   character(len=12)                   :: src_file_type
+  logical                             :: use_netcdf
 
   ! discrete dirac sources
   real                                :: shift_fact
@@ -90,10 +91,15 @@ program post_processing_seis
 
   use data_all
   use global_par
+  use nc_routines, only : ncparamtype, nc_open, nc_read_recnames, nc_read_seismograms
   implicit none 
-  double precision :: arg1
+  double precision     :: arg1
+  type(ncparamtype)    :: ncparams
+  real(4), allocatable :: nc_seis(:,:,:,:)
 
   call read_input
+  !use_netcdf = .true.
+  if (use_netcdf) call nc_open(ncparams, nsim, simdir)
 
   if (rec_comp_sys == 'sph') then
      reccomp(1) = 'th'
@@ -125,20 +131,26 @@ program post_processing_seis
   allocate(thr_orig(nrec))
   allocate(phr_orig(nrec))
   
-  ! these are the original receiver coordinates, having the source at the actual location
-  open(unit=61, file=trim(simdir(1))//'/Data/receiver_names.dat')
-  do i=1, nrec
-     read(61,*) recname(i), thr_orig(i), phr_orig(i)
-     ! @TODO == on a float? maybe > 360 -> - 360
-     if (phr_orig(i) >= 360.) phr_orig(i) = phr_orig(i) - 360.
-  enddo
-  close(61)
-  thr_orig = thr_orig / 180. * pi 
-  phr_orig = phr_orig / 180. * pi
-
   ! these are the rotated receiver coordinates, having the source at the north pole
   allocate(colat(nrec,nsim))
   allocate(lon(nrec,nsim))
+
+  
+  ! these are the original receiver coordinates, having the source at the actual location
+  if (use_netcdf) then
+      call nc_read_recnames(ncparams, nrec, recname, thr_orig, phr_orig)
+      ! @TODO
+  else
+      open(unit=61, file=trim(simdir(1))//'/Data/receiver_names.dat')
+      do i=1, nrec
+         read(61,*) recname(i), thr_orig(i), phr_orig(i)
+         ! @TODO == on a float? maybe > 360 -> - 360
+         if (phr_orig(i) >= 360.) phr_orig(i) = phr_orig(i) - 360.
+      enddo
+      close(61)
+  end if
+  thr_orig = thr_orig / 180. * pi 
+  phr_orig = phr_orig / 180. * pi
 
   ! compute exact receiver locations (GLL points they are mapped to) and write
   ! to file, should be the same for all subfolders
@@ -282,6 +294,11 @@ program post_processing_seis
   write(6,*) 'ishift:', (shift_fact+tshift)/(time(2)-time(1)),int((shift_fact+tshift)/(time(2)-time(1)))
 
   ! ----------------- Start actual post processing -------------------------
+  if (use_netcdf) then
+      allocate(nc_seis(nt_seis, 3, nrec, nsim))
+      call nc_read_seismograms(ncparams, nt_seis, nrec, nsim, nc_seis)
+  end if
+
   !=================
   do i=1, nrec
   !=================
@@ -294,22 +311,26 @@ program post_processing_seis
      do isim=1,nsim
      !::::::::::::::::::::::::::::::::
 
-        ! load seismograms from all directories
-        open(unit=60,file = trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
-                            //seistype//'.dat')
-        write(6,*) 'opened ', trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
-                    //seistype//'.dat'
+        if (use_netcdf) then
+            seis_sglcomp(:,:) = nc_seis(:,:,i,isim)
+        else
+            ! load seismograms from all directories
+            open(unit=60,file = trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
+                                //seistype//'.dat')
+            write(6,*) 'opened ', trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
+                        //seistype//'.dat'
 
-        if (src_type(isim,1) == 'monopole') then 
-           do iseis=1, nt_seis 
-              read(60,*) seis_sglcomp(iseis,1), seis_sglcomp(iseis,3)
-           enddo
-        else 
-           do iseis=1, nt_seis
-              read(60,*) seis_sglcomp(iseis,1), seis_sglcomp(iseis,2), seis_sglcomp(iseis,3)
-           enddo
-        endif
-        close(60)
+            if (src_type(isim,1) == 'monopole') then 
+               do iseis=1, nt_seis 
+                  read(60,*) seis_sglcomp(iseis,1), seis_sglcomp(iseis,3)
+               enddo
+            else 
+               do iseis=1, nt_seis
+                  read(60,*) seis_sglcomp(iseis,1), seis_sglcomp(iseis,2), seis_sglcomp(iseis,3)
+               enddo
+            endif
+            close(60)
+        end if
 
         if (nsim > 1) then 
            ! output seismograms for individual runs into UNPROCESSED/ folder
@@ -585,6 +606,9 @@ subroutine read_input
      read(99,*) ishift_deltat(isim)
      read(99,*) ishift_seisdt(isim)
      read(99,*) ishift_straindt(isim)
+     read(99,*) 
+     read(99,*)
+     read(99,*) use_netcdf
      close(99)
      
      if (src_type(isim,2)=='xforce' .or.  src_type(isim,2)=='yforce') then
