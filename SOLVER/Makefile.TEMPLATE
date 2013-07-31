@@ -27,7 +27,7 @@ OBJS =	nc_routines.o parameters.o analytic_mapping.o analytic_semi_mapping.o \
 	subpar_mapping.o time_evol_wave.o unrolled_loops.o utlity.o \
 	wavefields_io.o ftz.o pthread.o
 
-ifeq ($(USE_NETCDF),true)
+ifeq ($(strip $(USE_NETCDF)),true)
    FFLAGS += -Dunc
    LIBS = -L $(NETCDF_PATH)/lib -lnetcdff -Wl,-rpath,$(NETCDF_PATH)/lib
    INCLUDE = -I $(NETCDF_PATH)/include

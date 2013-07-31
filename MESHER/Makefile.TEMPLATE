@@ -21,7 +21,7 @@ OBJS =	analytic_mapping.o analytic_semi_mapping.o \
 	parallelization.o pdb.o sorting.o splib.o subpar_mapping.o \
 	test_bkgrdmodel.o
 
-ifeq ($(USE_NETCDF),true)
+ifeq ($(strip $(USE_NETCDF)),true)
    FFLAGS += -Dunc
    LIBS = -L $(NETCDF_PATH)/lib -lnetcdff -Wl,-rpath,$(NETCDF_PATH)/lib
    INCLUDE = -I $(NETCDF_PATH)/include

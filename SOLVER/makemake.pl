@@ -57,7 +57,7 @@ print MAKEFILE "\n\n";
 #
 # Define common macros
 #
-print MAKEFILE "ifeq (\$(USE_NETCDF),true)\n";
+print MAKEFILE "ifeq (\$(strip \$(USE_NETCDF)),true)\n";
 print MAKEFILE "   FFLAGS += -Dunc\n";
 print MAKEFILE "   LIBS = -L \$(NETCDF_PATH)/lib -lnetcdff -Wl,-rpath,\$(NETCDF_PATH)/lib\n";
 print MAKEFILE "   INCLUDE = -I \$(NETCDF_PATH)/include\n";
