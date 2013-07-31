@@ -53,8 +53,8 @@ else if ( $1 == 'slurmlocal' ) then
     aprun -n 1 ./xmesh > OUTPUT &
 else
     ######## SUBMIT LOCALLY #######
-    #setenv OMP_NUM_THREADS 1
-    nohup ./xmesh > OUTPUT 
+    #setenv OMP_NUM_THREADS 4
+    nohup ./xmesh > OUTPUT &
     # uncomment the following three lines to monitor memory usage of the mesher
     #cd UTILS
     #python monitor_memory.py > ../memory_output &

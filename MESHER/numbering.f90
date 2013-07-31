@@ -184,7 +184,7 @@ end subroutine define_global_slobal_numbering
 !=====================================================================
 
 subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
-                      NGLLCUBE2, NDIM2)
+                      NGLLCUBE2, NDIM2, nmax_threads_in)
 
   ! this routine MUST be in double precision to avoid sensitivity
   ! to roundoff errors in the coordinates of the points
@@ -193,13 +193,16 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
 
   ! leave sorting subroutines in same source file to allow for inlining
 
-  use sorting
+  use sorting,      only: mergesort_3
   !$ use omp_lib     
 
   integer, intent(in)               :: nspec2, npointot2, NGLLCUBE2, NDIM2
   double precision, intent(inout)   :: xp(npointot2), yp(npointot2)
   integer, intent(out)              :: iglob2(npointot2), loc2(npointot2), nglob2
   logical, intent(out)              :: ifseg2(npointot2)
+  integer, intent(in), optional     :: nmax_threads_in
+
+  integer :: nmax_threads
 
   integer :: ioffs(npointot2)
 
@@ -210,6 +213,13 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   integer, dimension(:), allocatable :: ind, ninseg
 
   double precision, parameter :: SMALLVALTOL = 1.d-08
+
+  if (present(nmax_threads_in)) then
+     nmax_threads = nmax_threads_in
+  else
+     nmax_threads = 1
+     !$ nmax_threads = omp_get_max_threads()
+  endif
 
   ! establish initial pointers
   do ispec=1, nspec2
@@ -231,7 +241,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ifseg2(1) = .true.
   ninseg(1) = npointot2
 
-  call mergesort_3(xp, yp, loc2, 1)
+  call mergesort_3(xp, yp, loc2, nmax_threads)
 
   ! check for jumps in current coordinate
   ! compare the coordinates of the points within a small tolerance
@@ -254,12 +264,14 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ! sort within each segment
   ioff = 1
 
-  !$ nthreads = min(OMP_get_max_threads(),8)
-  !!$ print *, 'Using ', nthreads, ' threads!'
   ioffs(1) = 1
   do iseg=2, nseg
      ioffs(iseg) = ioffs(iseg-1) + ninseg(iseg-1)
   end do
+  
+  !$ nthreads = min(min(omp_get_max_threads(),8), nmax_threads)
+  !$ call omp_set_num_threads(nthreads)
+  !$ print *, 'Using ', nthreads, ' threads for sorting in get_global!'
   !$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
   do iseg=1, nseg
      ioff = ioffs(iseg)
