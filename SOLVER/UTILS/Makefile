@@ -13,16 +13,10 @@ all: xpost_processing
 xpost_processing: post_processing.o nc_postroutines.o
 	$(FC) $(LDFLAGS) post_processing.o nc_postroutines.o -o xpost_processing $(LIBS) 
 
-xfind_receiver: find_receiver.o nc_postroutines_dead.o
-	$(FC) $(FFLAGS) $(LDFLAGS) find_receiver.o nc_postroutines_.o -o xfind_receiver
+post_processing.o: post_processing.f90 nc_postroutines.o ../../make_axisem.macros
+	$(FC) -c $(FFLAGS) $(INCLUDE) post_processing.f90 
 
-find_receiver.o: find_receiver.f90
-	$(FC) -c $(FFLAGS) find_receiver.f90
-
-post_processing.o: post_processing.f90 nc_postroutines.o
-	$(FC) -c $(FFLAGS) $(INCLUDE) post_processing.f90
-
-nc_postroutines.o: nc_postroutines.F90
+nc_postroutines.o: nc_postroutines.F90 ../../make_axisem.macros
 	$(FC) -c $(FFLAGS) $(INCLUDE) nc_postroutines.F90
 
 

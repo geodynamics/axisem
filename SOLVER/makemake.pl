@@ -75,7 +75,7 @@ print MAKEFILE "\n\n";
 #
 # make
 #
-print MAKEFILE "all: \$(PROG)\n\n";
+print MAKEFILE "all: \$(PROG) utils\n\n";
 print MAKEFILE "\$(PROG): \$(OBJS)\n";
 print MAKEFILE "\t\$(", &LanguageCompiler($ARGV[1], @srcs);
 print MAKEFILE ") \$(LDFLAGS) -o \$@ \$(OBJS) \$(LIBS)\n\n";
@@ -84,6 +84,11 @@ print MAKEFILE ") \$(LDFLAGS) -o \$@ \$(OBJS) \$(LIBS)\n\n";
 #
 print MAKEFILE "clean:\n";
 print MAKEFILE "\trm -f \$(PROG) \$(OBJS) *.M *.mod *.d *.il core \n\n";
+#
+# make utils (postprocessing and alike)
+# 
+print MAKEFILE "utils :\n";
+print MAKEFILE "\tcd UTILS; make -f Makefile\n\n";
 #
 # Make .f90 a valid suffix
 #

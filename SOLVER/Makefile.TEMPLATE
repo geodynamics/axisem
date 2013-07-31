@@ -41,13 +41,16 @@ endif
 %.o : %.mod 
  
 
-all: $(PROG)
+all: $(PROG) utils
 
 $(PROG): $(OBJS)
 	$(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(PROG) $(OBJS) *.M *.mod *.d *.il core 
+
+utils :
+	cd UTILS; make -f Makefile
 
 .SUFFIXES: $(SUFFIXES) .f90 .F90
 
