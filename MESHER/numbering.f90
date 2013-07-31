@@ -219,7 +219,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
      enddo
   enddo
 
-  ifseg2(:) = .false.
+  ifseg2 = .false.
 
   allocate(ind(npointot2))
   allocate(ninseg(npointot2))
@@ -231,8 +231,8 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ifseg2(1) = .true.
   ninseg(1) = npointot2
 
-  call mergesort(xp, npointot2, yp, loc2)
-  !call mergesort_3(xp, yp, loc2, 1)
+  !call mergesort(xp, npointot2, yp, loc2)
+  call mergesort_3(xp, yp, loc2, 1)
 
   ! check for jumps in current coordinate
   ! compare the coordinates of the points within a small tolerance
@@ -251,6 +251,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
      endif
 
   enddo
+  !print *, 'dim: ', 1, ', nseg: ', nseg !, 'sum(ifseg):', sum(ifseg2)
   
   ! sort within each segment
   ioff = 1
@@ -259,21 +260,22 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   !!$ print *, 'Using ', nthreads, ' threads!'
   ioffs(1) = 1
   do iseg=2, nseg
-     ioffs(iseg) = ioffs(iseg-1) + ninseg(iseg)
+     ioffs(iseg) = ioffs(iseg-1) + ninseg(iseg-1)
   end do
-  !!!$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
+  !$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
   do iseg=1, nseg
      ioff = ioffs(iseg)
      call rank_y(yp(ioff), ind, ninseg(iseg))
      call swapall(loc2(ioff), xp(ioff), yp(ioff), ind, ninseg(iseg))
   enddo
-  !!!$omp end parallel do        
+  !$omp end parallel do        
 
   ! check for jumps in current coordinate
   ! compare the coordinates of the points within a small tolerance
   do i=2,npointot2
      if (dabs(yp(i)-yp(i-1)) > SMALLVALTOL) ifseg2(i) = .true.
   enddo
+
 
   ! count up number of different segments
   nseg = 0
@@ -286,17 +288,22 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
      endif
 
   enddo
-
+    
+  !print *, 'dim: ', 2, ', nseg: ', nseg !, 'sum(ifseg):', sum(ifseg2)
   deallocate(ind)
   deallocate(ninseg)
 
   ! assign global node numbers (now sorted lexicographically)
   ig = 0
   do i=1, npointot2
+    ! write(23106,*) xp(i), yp(i), loc2(i)
      if(ifseg2(i)) ig = ig + 1
+   !  if(ifseg2(i)) write(23106,*) '--------------------------------------'
      iglob2(loc2(i)) = ig
   enddo
   nglob2 = ig
+  !print *, 'nglob2: ', nglob2
+  !read(*,*)
 
 end subroutine get_global
 !-------------------------------------------------------------------------
@@ -371,19 +378,19 @@ subroutine swapall(IA,A,B,ind,n)
   integer, intent(in)             :: IND(n)
   integer, intent(inout)          :: IA(n)
   double precision,intent(inout)  :: A(n),B(n)
-  double precision                :: W(n)
+  double precision                :: W(n), W2(n)
   integer                         :: IW(n)
 
   integer i
 
   IW(:) = IA(:)
   W(:) = A(:)
-  W(:) = B(:)
+  W2(:) = B(:)
 
   do i=1,n
      IA(i)=IW(ind(i))
      A(i)=W(ind(i))
-     B(i)=W(ind(i))
+     B(i)=W2(ind(i))
   enddo
 
 end subroutine swapall
