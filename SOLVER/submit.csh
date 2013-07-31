@@ -25,7 +25,7 @@ endif
 
 set datapath = `grep "DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"//g'`
 set infopath = `grep "INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
-set meshdir = "MESHES/"`grep "MESHNAME" inparam_basic | awk '{print $2}'`
+set meshdir = "MESHES/"`grep "^MESHNAME" inparam_basic | awk '{print $2}'`
 set mpiruncmd = `grep "MPIRUN" ../make_axisem.macros | awk '{print $3}'`
 echo $mpiruncmd
 
@@ -372,11 +372,6 @@ foreach isrc (${num_src_arr})
 end 
 
 ######## post processing ##################################################
-
-set F90 = `grep "FC     " $homedir/../make_axisem.macros  |grep -v "#F" | awk '{print $3}'`
-cd $homedir/UTILS
-cp $homedir/mesh_params.h .
-$F90 post_processing.f90 -o xpost_processing
 
 cd $homedir
 cd $1
