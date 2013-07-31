@@ -1,5 +1,8 @@
 #!/bin/csh -f
 
+set pwd_noblank = `echo $PWD | sed 's/ //g'`
+test "$pwd_noblank" != "$PWD" && echo "ERROR: your path contains a blank, please rename" && exit
+
 set homedir = $PWD
 
 if ( ${#argv} < 1 || "$1" == "-h" ) then
