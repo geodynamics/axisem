@@ -148,16 +148,12 @@ subroutine start_clock
 
   call clocks_init(0)
 
-  !idold01 = clock_id('create_subregions')
+  idold01 = clock_id('mergesort')
   idold02 = clock_id('generate_skeleton')
   idold03 = clock_id('create_gllmesh')
   idold04 = clock_id('define_global_global_numbering')
-  !idold05 = clock_id('define_regions')
   idold06 = clock_id('bkgrdmodel_testing')
-  !idold07 = clock_id('define subregions')
   idold08 = clock_id('glob-slob/flob numbering')
-  !idold09 = clock_id('define_boundaries')
-  !idold10 = clock_id('create_domain_decomposition')
   idold11 = clock_id('create_pdb')
 
 end subroutine start_clock

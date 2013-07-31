@@ -194,6 +194,8 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ! leave sorting subroutines in same source file to allow for inlining
 
   use sorting,      only: mergesort_3
+  use data_time
+  use clocks_mod
   !$ use omp_lib     
 
   integer, intent(in)               :: nspec2, npointot2, NGLLCUBE2, NDIM2
@@ -241,7 +243,9 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ifseg2(1) = .true.
   ninseg(1) = npointot2
 
+  iclock01 = tick()
   call mergesort_3(xp, yp, loc2, nmax_threads)
+  iclock01 = tick(id=idold01, since=iclock01)
 
   ! check for jumps in current coordinate
   ! compare the coordinates of the points within a small tolerance
@@ -272,6 +276,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   !$ nthreads = min(min(omp_get_max_threads(),8), nmax_threads)
   !$ call omp_set_num_threads(nthreads)
   !$ print *, 'Using ', nthreads, ' threads for sorting in get_global!'
+  !$ call flush(6)
   !$omp parallel do shared(xp,yp,loc2,ninseg) private(ind,ioff)
   do iseg=1, nseg
      ioff = ioffs(iseg)
