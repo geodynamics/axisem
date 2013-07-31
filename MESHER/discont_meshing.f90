@@ -525,7 +525,7 @@ subroutine gll_spacing(npol, minh, maxh, aveh)
 
   integer :: i
 
-  call ZELEGL(npol,eta,dxi)       
+  call zelegl(npol,eta,dxi)       
   call zemngl2(npol,xi_k)   
 
   ! spacing within [0,1]
