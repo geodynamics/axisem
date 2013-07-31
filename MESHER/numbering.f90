@@ -231,7 +231,6 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ifseg2(1) = .true.
   ninseg(1) = npointot2
 
-  !call mergesort(xp, npointot2, yp, loc2)
   call mergesort_3(xp, yp, loc2, 1)
 
   ! check for jumps in current coordinate
@@ -251,7 +250,6 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
      endif
 
   enddo
-  !print *, 'dim: ', 1, ', nseg: ', nseg !, 'sum(ifseg):', sum(ifseg2)
   
   ! sort within each segment
   ioff = 1
@@ -276,34 +274,16 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
      if (dabs(yp(i)-yp(i-1)) > SMALLVALTOL) ifseg2(i) = .true.
   enddo
 
-
-  ! count up number of different segments
-  nseg = 0
-  do i=1, npointot2
-     if(ifseg2(i)) then
-        nseg = nseg + 1
-        ninseg(nseg) = 1
-     else
-        ninseg(nseg) = ninseg(nseg) + 1
-     endif
-
-  enddo
-    
-  !print *, 'dim: ', 2, ', nseg: ', nseg !, 'sum(ifseg):', sum(ifseg2)
   deallocate(ind)
   deallocate(ninseg)
 
   ! assign global node numbers (now sorted lexicographically)
   ig = 0
   do i=1, npointot2
-    ! write(23106,*) xp(i), yp(i), loc2(i)
      if(ifseg2(i)) ig = ig + 1
-   !  if(ifseg2(i)) write(23106,*) '--------------------------------------'
      iglob2(loc2(i)) = ig
   enddo
   nglob2 = ig
-  !print *, 'nglob2: ', nglob2
-  !read(*,*)
 
 end subroutine get_global
 !-------------------------------------------------------------------------
@@ -394,198 +374,6 @@ subroutine swapall(IA,A,B,ind,n)
   enddo
 
 end subroutine swapall
-!-------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------
-subroutine mergesort(A, N, D, E)
-!$  use omp_lib     
-    integer, intent(in)    :: N
-    double precision, intent(inout) :: A(N), D(N)
-    integer, intent(inout) :: E(N)
-    integer                :: T(N)
-    integer                :: nthreads
-
-!$  call omp_set_nested(.true.)
-!$  nthreads = min(OMP_get_max_threads(), 8)
-!!$  print *, 'Using ', nthreads, ' threads!'
-
-!$  call MergeSort_parallel(A,N,D,E,nthreads)
-!$  if(.false.) then
-    call MergeSort_serial(A, N, D, E)
-!$  endif
-
-end subroutine mergesort
-!-------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------
-recursive subroutine MergeSort_parallel(A, N, D, E, Threads)
- 
-   integer, intent(in)                  :: N, Threads
-   double precision, intent(inout)      :: A(N), D(N)
-   integer, intent(inout)               :: E(N)
-   real(8), dimension(N)                :: Dtemp
-   integer, dimension(N)                :: Etemp
-   integer, dimension((N+1)/2)          :: INDA, INDB
-   double precision, dimension((N+1)/2) :: T
- 
-   integer                              :: NA,NB, Vint, i
-   real(8)                              :: V
-
-!   print *, 'In MergeSort_parallel, N=', N, ', Threads=', Threads
-   if (N < 2) return
-   if (N == 2) then
-      if (A(1) > A(2)) then
-         V = A(1)
-         A(1) = A(2)
-         A(2) = V
-         V = D(1)
-         D(1) = D(2)
-         D(2) = V
-         Vint = E(1)
-         E(1) = E(2)
-         E(2) = Vint
-      endif
-      return
-   endif      
-   NA=(N+1)/2
-   NB=N-NA
-
-   if (Threads==1) then
-       call MergeSort_serial(A(1)  , NA, D(1),   E(1)  )
-       call MergeSort_serial(A(NA+1), NB, D(NA+1), E(NA+1))
-   elseif(Threads>1) then
-!$omp parallel sections shared(A, D, E) 
-!$omp section
-       call MergeSort_parallel(A(1),   NA, D(1),   E(1),   Threads/2)
-!$omp section
-       call MergeSort_parallel(A(NA+1), NB, D(NA+1), E(NA+1), Threads/2)
-!$omp end parallel sections
-   end if
-   if (A(NA) > A(NA+1)) then
-      T(1:NA)=A(1:NA)
-      call Merge(T, NA, A(NA+1), NB, A(1), INDA, INDB)
-   
-      Dtemp = D
-      !D(INDA(1:NA)) = Dtemp(1:NA)
-      !D(INDB(1:NB)) = Dtemp(NA+1:N)
-      Etemp = E
-      !Etemp(INDA(1:NA)) = Etemp(1:NA)
-      !Etemp(INDB(1:NB)) = Etemp(NA+1:N)
-      do i=1,NA
-          D(inda(i)) = Dtemp(i)
-          E(inda(i)) = Etemp(i)
-      end do
-      do i=1,NB
-          D(indb(i)) = Dtemp(NA+i)
-          E(indb(i)) = Etemp(NA+i)
-      end do
-      
-   endif
-   return
- 
-end subroutine MergeSort_parallel
-!-------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------
-recursive subroutine MergeSort_serial(A,N,D,E)
- 
-   integer, intent(in) :: N
-   double precision, intent(inout) :: A(N), D(N)
-   integer, intent(inout) :: E(N)
-   real(8), dimension(N)                 :: Dtemp
-   integer, dimension(N)                 :: Etemp
-   integer, dimension((N+1)/2)           :: INDA,INDB
-   double precision, dimension((N+1)/2)  :: T
- 
-   integer :: NA,NB,Vint,i
-   double precision                      :: V
- 
-   if (N < 2) return
-   if (N == 2) then
-      if (A(1) > A(2)) then
-         V = A(1)
-         A(1) = A(2)
-         A(2) = V
-         V = D(1)
-         D(1) = D(2)
-         D(2) = V
-         Vint = E(1)
-         E(1) = E(2)
-         E(2) = Vint
-      endif
-      return
-   endif      
-   NA=(N+1)/2
-   NB=N-NA
-
-   call MergeSort_serial(A(1)  , NA, D(1),   E(1)  )
-   call MergeSort_serial(A(NA+1), NB, D(NA+1), E(NA+1))
- 
-   if (A(NA) > A(NA+1)) then
-      T(1:NA)=A(1:NA)
-      call Merge(T, NA, A(NA+1), NB, A, INDA, INDB)
-   
-      Dtemp = D
-      Etemp = E
-      do i=1,NA
-          D(inda(i)) = Dtemp(i)
-          E(inda(i)) = Etemp(i)
-      end do
-      do i=1,NB
-          D(indb(i)) = Dtemp(NA+i)
-          E(indb(i)) = Etemp(NA+i)
-      end do
-      !D(INDA(1:NA)) = Dtemp(1:NA)
-      !D(INDB(1:NB)) = Dtemp(NA+1:N)
-      !Etemp(INDA(1:NA)) = Etemp(1:NA)
-      !Etemp(INDB(1:NB)) = Etemp(NA+1:N)
-   endif
-   return
- 
-end subroutine MergeSort_serial
-!-------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------
-!@TODO merge is a bad name
-subroutine Merge(A,NA,B,NB,C,INDA,INDB)
- 
-   integer, intent(in)           :: NA,NB         ! Normal usage: NA+NB = NC
-   double precision, intent(in)  :: A(NA)        ! B overlays C(NA+1:NC)
-   double precision, intent(in)  :: B(NB)
-   double precision, intent(out) :: C(NA+NB)
-   integer, intent(out)          :: INDA(NA)
-   integer, intent(out)          :: INDB(NB)
- 
-   integer                       :: I,J,K
-
-   I = 1; J = 1; K = 1;
-   do while(I <= NA .and. J <= NB)
-      if (A(I) <= B(J)) then
-         C(K) = A(I)
-         INDA(I) = K
-         I = I+1
-      else
-         C(K) = B(J)
-         INDB(J) = K
-         J = J+1
-      endif
-      K = K + 1
-   enddo
-   do while (I <= NA)
-      C(K) = A(I)
-      INDA(I) = K
-      I = I + 1
-      K = K + 1
-   enddo
-   do while (J <= NB)
-      C(K) = B(J)
-      INDB(J) = K
-      J = J + 1
-      K = K + 1
-   enddo
-   return
- 
-end subroutine merge
 !-------------------------------------------------------------------------
 
 !=========================

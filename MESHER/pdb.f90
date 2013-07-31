@@ -447,9 +447,7 @@ subroutine define_sflocal_numbering
   nglobp_solid(:) = 0
   nglobp_fluid(:) = 0
 
-  !-----------------------
   do iproc = 0, nproc-1
-  !-----------------------
 
      nelp_solid = nel_solid(iproc) 
      nelp_fluid = nel_fluid(iproc) 
@@ -828,16 +826,17 @@ subroutine define_search_sflobal_index
   allocate(nbelong2_solid(1:2,nglobslob))
 
   nbelong2_solid(:,:) = -1 
-  nbelong_solid(:)    = 0
-  nprocbmax_solid     = 1
+  nbelong_solid(:)    =  0
+  nprocbmax_solid     =  1
 
   ! solid
   do iproc = 0, nproc - 1 
      do iel = 1, nel_solid(iproc)
-        ielg = procel_solid(iel,iproc) ! global element number
+        ielg = procel_solid(iel, iproc) ! global element number
         do jpol = 0, npol
            do ipol = 0, npol
-               ipt = (inv_ielem_solid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+               ipt = (inv_ielem_solid(ielg) - 1) * (npol + 1)**2 &
+                        + jpol * (npol + 1) + ipol + 1
                nbelong_solid(iglob_solid(ipt)) = nbelong_solid(iglob_solid(ipt)) + 1 
 
                if (nbelong2_solid(1,iglob_solid(ipt)) == -1) then
