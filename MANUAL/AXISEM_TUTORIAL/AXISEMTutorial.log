@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdflatex 2013.2.28)  13 JUL 2013 14:33
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdflatex 2013.2.28)  1 AUG 2013 12:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -767,18 +767,18 @@ Package pdftex.def Info: 0600.png used on input line 292.
 <google-earth.png, id=45, 196.735pt x 279.0425pt>
 File: google-earth.png Graphic file (type png)
  <use google-earth.png>
-Package pdftex.def Info: google-earth.png used on input line 368.
+Package pdftex.def Info: google-earth.png used on input line 367.
 (pdftex.def)             Requested size: 140.42429pt x 199.16928pt.
 
 <google-earth2.png, id=46, 1419.3025pt x 1045.9075pt>
 File: google-earth2.png Graphic file (type png)
  <use google-earth2.png>
-Package pdftex.def Info: google-earth2.png used on input line 370.
+Package pdftex.def Info: google-earth2.png used on input line 369.
 (pdftex.def)             Requested size: 270.27667pt x 199.16928pt.
 
 [4 <./paraview2.png> <./0600.png>] [5 <./google-earth.png> <./google-earth2.png
 >]
-Underfull \hbox (badness 10000) in paragraph at lines 388--394
+Underfull \hbox (badness 10000) in paragraph at lines 387--393
 
  []
 
@@ -786,21 +786,21 @@ Underfull \hbox (badness 10000) in paragraph at lines 388--394
 File: AXISEMTutorial-fig007.png Graphic file (type png)
 
 <use AXISEMTutorial-fig007.png>
-Package pdftex.def Info: AXISEMTutorial-fig007.png used on input line 474.
+Package pdftex.def Info: AXISEMTutorial-fig007.png used on input line 473.
 (pdftex.def)             Requested size: 512.14963pt x 295.43045pt.
 
 <AXISEMTutorial-fig010.pdf, id=58, 518.93875pt x 698.61pt>
 File: AXISEMTutorial-fig010.pdf Graphic file (type pdf)
 
 <use AXISEMTutorial-fig010.pdf>
-Package pdftex.def Info: AXISEMTutorial-fig010.pdf used on input line 485.
+Package pdftex.def Info: AXISEMTutorial-fig010.pdf used on input line 484.
 (pdftex.def)             Requested size: 230.46576pt x 310.26752pt.
 
 <AXISEMTutorial-fig014.png, id=59, 757.83125pt x 1003.75pt>
 File: AXISEMTutorial-fig014.png Graphic file (type png)
 
 <use AXISEMTutorial-fig014.png>
-Package pdftex.def Info: AXISEMTutorial-fig014.png used on input line 491.
+Package pdftex.def Info: AXISEMTutorial-fig014.png used on input line 490.
 (pdftex.def)             Requested size: 230.46576pt x 305.24731pt.
  [7 <./AXISEMTutorial-fig007.png> <./AXISEMTutorial-fig010.pdf> <./AXISEMTutori
 al-fig014.png>]
@@ -808,28 +808,28 @@ al-fig014.png>]
 File: AXISEMTutorial-fig001.png Graphic file (type png)
 
 <use AXISEMTutorial-fig001.png>
-Package pdftex.def Info: AXISEMTutorial-fig001.png used on input line 507.
+Package pdftex.def Info: AXISEMTutorial-fig001.png used on input line 506.
 (pdftex.def)             Requested size: 371.99182pt x 177.40488pt.
 
 <AXISEMTutorial-fig002.png, id=83, 1490.56876pt x 524.96124pt>
 File: AXISEMTutorial-fig002.png Graphic file (type png)
 
 <use AXISEMTutorial-fig002.png>
-Package pdftex.def Info: AXISEMTutorial-fig002.png used on input line 515.
+Package pdftex.def Info: AXISEMTutorial-fig002.png used on input line 514.
 (pdftex.def)             Requested size: 311.98244pt x 109.87663pt.
 
 <AXISEMTutorial-fig003.png, id=84, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig003.png Graphic file (type png)
 
 <use AXISEMTutorial-fig003.png>
-Package pdftex.def Info: AXISEMTutorial-fig003.png used on input line 521.
+Package pdftex.def Info: AXISEMTutorial-fig003.png used on input line 520.
 (pdftex.def)             Requested size: 311.99963pt x 109.7465pt.
 
 <AXISEMTutorial-fig004.png, id=85, 1489.565pt x 523.9575pt>
 File: AXISEMTutorial-fig004.png Graphic file (type png)
 
 <use AXISEMTutorial-fig004.png>
-Package pdftex.def Info: AXISEMTutorial-fig004.png used on input line 527.
+Package pdftex.def Info: AXISEMTutorial-fig004.png used on input line 526.
 (pdftex.def)             Requested size: 311.99963pt x 109.7465pt.
  [8 <./AXISEMTutorial-fig001.png> <./AXISEMTutorial-fig002.png (PNG copy)> <./A
 XISEMTutorial-fig003.png (PNG copy)> <./AXISEMTutorial-fig004.png (PNG copy)>]
@@ -837,20 +837,20 @@ XISEMTutorial-fig003.png (PNG copy)> <./AXISEMTutorial-fig004.png (PNG copy)>]
 File: Folder_structure.jpeg Graphic file (type jpg)
 
 <use Folder_structure.jpeg>
-Package pdftex.def Info: Folder_structure.jpeg used on input line 546.
+Package pdftex.def Info: Folder_structure.jpeg used on input line 545.
 (pdftex.def)             Requested size: 333.99635pt x 320.11386pt.
  [9 <./Folder_structure.jpeg>]
-Underfull \hbox (badness 10000) in paragraph at lines 579--583
+Underfull \hbox (badness 10000) in paragraph at lines 578--582
 
  []
 
 [10]
-Underfull \hbox (badness 10000) in paragraph at lines 611--614
+Underfull \hbox (badness 10000) in paragraph at lines 610--613
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 642--643
+Underfull \hbox (badness 10000) in paragraph at lines 641--642
 
  []
 
@@ -879,7 +879,7 @@ jfour/jknappen/ec/ecrm0800.600pk> </home/ex/.texmf-var/fonts/pk/ljfour/jknappen
 hare/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/share/te
 xlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/share/texlive/
 texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-Output written on AXISEMTutorial.pdf (11 pages, 5259774 bytes).
+Output written on AXISEMTutorial.pdf (11 pages, 5259745 bytes).
 PDF statistics:
  606 PDF objects out of 1000 (max. 8388607)
  109 compressed objects within 2 object streams
