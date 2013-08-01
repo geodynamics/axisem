@@ -294,22 +294,23 @@ subroutine define_glocal_numbering
   logical, dimension(:), allocatable :: wifseg
 
   ! valence test
-  double precision, dimension(:), allocatable :: uglob2
-  double precision, dimension(:), allocatable :: val(:,:,:)
+  double precision, dimension(:), allocatable     :: uglob2
+  double precision, dimension(:,:,:), allocatable :: val
   integer :: idest,i
   integer :: valnum_cent(6),totvalnum_cent
   integer :: valnum_semi(6),totvalnum_semi
-  character(len=4) :: appiproc
   integer          :: nthreads = 1
 
   nelmax = maxval(nel)
   allocate(igloc(nelmax*(npol+1)**2,0:nproc-1))
   allocate(nglobp(0:nproc-1))
+  
 
-  !!$ nthreads = max(OMP_get_max_threads() / nproc, 1)
-  !!$omp parallel do private(iproc, nelp, npointotp, wsgll, wzgll, iel, ielg, ipol, jpol, ipt, &
-  !!$omp                     wigloc, wifseg, wloc, wnglob, uglob2, val, valnum_cent, valnum_semi, &
-  !!$omp                     idest, i, totvalnum_semi, totvalnum_cent) 
+  !$ nthreads = max(OMP_get_max_threads() / nproc, 1)
+  !$omp parallel do private(iproc, nelp, npointotp, wsgll, wzgll, iel, ielg, ipol, jpol, ipt, &
+  !$omp                     wigloc, wifseg, wloc, wnglob, uglob2, val, valnum_cent, valnum_semi, &
+  !$omp                     idest, i, totvalnum_semi, totvalnum_cent) 
+  !$omp             shared(nglobp, igloc)
   do iproc = 0, nproc-1
 
      nelp = nel(iproc)  
@@ -402,7 +403,6 @@ subroutine define_glocal_numbering
         totvalnum_semi = totvalnum_semi + valnum_semi(i)/i
      enddo
   
-     !!omp single
      if (dump_mesh_info_screen) then 
       write(6,*)
       write(6,*)iproc,'glocal number      :',nglobp(iproc)
@@ -411,9 +411,8 @@ subroutine define_glocal_numbering
       write(6,*)iproc,'everywhere else    :',nglobp(iproc)-&
                                              totvalnum_cent-totvalnum_semi
      end if
-     !!omp end single
   end do
-  !!$omp end parallel do 
+  !$omp end parallel do 
 
   if (dump_mesh_info_screen) then
     do iproc = 0, nproc-1
@@ -451,13 +450,13 @@ subroutine define_sflocal_numbering
   ! valence test
   integer :: idest,i
   character(len=4) :: appiproc
-  double precision, dimension(:), allocatable :: uglob2_solid
-  double precision, dimension(:), allocatable :: val_solid(:,:,:)
+  double precision, dimension(:), allocatable     :: uglob2_solid
+  double precision, dimension(:,:,:), allocatable :: val_solid
   integer :: valnum_cent_solid(6),totvalnum_cent_solid
   integer :: valnum_semi_solid(6),totvalnum_semi_solid
 
-  double precision, dimension(:), allocatable :: uglob2_fluid
-  double precision, dimension(:), allocatable :: val_fluid(:,:,:)
+  double precision, dimension(:), allocatable     :: uglob2_fluid
+  double precision, dimension(:,:,:), allocatable :: val_fluid
   integer :: valnum_fluid(6),totvalnum_fluid
 
   nelmax_solid = maxval(nel_solid)
@@ -1248,7 +1247,7 @@ subroutine partition_sflobal_index
   integer :: idest, iel, ipol, jpol
   character(len=4) :: appiproc
   integer, dimension(:), allocatable :: uglob2_solid
-  integer, dimension(:), allocatable :: val_solid(:,:,:)
+  integer, dimension(:,:,:), allocatable :: val_solid
 
   if (dump_mesh_info_screen) then 
    write(6,*)
