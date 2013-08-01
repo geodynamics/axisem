@@ -50,7 +50,9 @@ subroutine create_pdb
   ! accordingly for fluid: flobal, flocal, and colloquially for sflobal, sflocal.
   
   use data_gllmesh, only : sgll, zgll
-
+  use data_time
+  use clocks_mod
+  
   integer   :: nelmax
   if (dump_mesh_info_screen) then
     write(6,*)
@@ -61,7 +63,9 @@ subroutine create_pdb
   if (allocated(iglob)) deallocate(iglob)
 
   write(6,*) '  define glocal numbering....'; call flush(6)
+  iclock12 = tick()
   call define_glocal_numbering ! needs sgll,zgll, creates igloc
+  iclock12 = tick(id=idold12, since=iclock12)
 
   ! Solid-fluid distinction
   write(6,*) '  define solflu coordinates....'; call flush(6)
@@ -74,8 +78,10 @@ subroutine create_pdb
   call define_axial_elem ! needs sgll, sgll_solid, sgll_fluid
 
   write(6,*) '  define solflu numbering....'; call flush(6)
+  iclock13 = tick()
   call define_sflocal_numbering   ! needs sgll, zgll
                                   ! creates igloc_solid, igloc_fluid
+  iclock13 = tick(id=idold13, since=iclock13)
   deallocate(sgll,zgll)
 
   write(6,*) '  define search sflobal index....'; call flush(6)
@@ -90,7 +96,9 @@ subroutine create_pdb
 
   ! For compliance with solver, we need the control points info for each process
   write(6,*) '  generate processor serendipity....'; call flush(6)
+  iclock14 = tick()
   call generate_serendipity_per_proc(sg,zg) ! needs sgp, zgp
+  iclock14 = tick(id=idold14, since=iclock14)
 
   write(6,*) '  define element type....'; call flush(6)
   call define_element_type ! 
@@ -272,12 +280,17 @@ subroutine define_glocal_numbering
 ! as we only need solid and fluid global numbers.
 !
   use numbering 
-  use data_gllmesh, only : sgll,zgll
-  integer :: nelmax,nelp
-  integer :: npointotp,wnglob
+  use data_gllmesh, only : sgll, zgll
+  use data_time
+  use clocks_mod
+  
+  !$ use omp_lib     
+  
+  integer :: nelmax, nelp
+  integer :: npointotp, wnglob
   integer :: iproc,ipol,jpol,iel,ipt,ielg
-  double precision, dimension(:), allocatable :: wsgll,wzgll
-  integer, dimension(:), allocatable :: wigloc,wloc
+  double precision, dimension(:), allocatable :: wsgll, wzgll
+  integer, dimension(:), allocatable :: wigloc, wloc
   logical, dimension(:), allocatable :: wifseg
 
   ! valence test
@@ -287,17 +300,23 @@ subroutine define_glocal_numbering
   integer :: valnum_cent(6),totvalnum_cent
   integer :: valnum_semi(6),totvalnum_semi
   character(len=4) :: appiproc
+  integer          :: nthreads = 1
 
   nelmax = maxval(nel)
   allocate(igloc(nelmax*(npol+1)**2,0:nproc-1))
   allocate(nglobp(0:nproc-1))
 
+  !!$ nthreads = max(OMP_get_max_threads() / nproc, 1)
+  !!$omp parallel do private(iproc, nelp, npointotp, wsgll, wzgll, iel, ielg, ipol, jpol, ipt, &
+  !!$omp                     wigloc, wifseg, wloc, wnglob, uglob2, val, valnum_cent, valnum_semi, &
+  !!$omp                     idest, i, totvalnum_semi, totvalnum_cent) 
   do iproc = 0, nproc-1
 
      nelp = nel(iproc)  
      npointotp = nelp*(npol+1)**2
      allocate(wsgll(npointotp))
      allocate(wzgll(npointotp))
+  
 
      do iel = 1, nelp
        ielg = procel(iel,iproc)
@@ -309,12 +328,12 @@ subroutine define_glocal_numbering
          end do
        end do
      end do
-
+  
      allocate(wigloc(npointotp))
      allocate(wifseg(npointotp))
      allocate(wloc(npointotp))
-     call get_global(nelp,wsgll,wzgll,wigloc,wloc,wifseg,wnglob,&
-                     npointotp,NGLLCUBE,NDIM)
+     call get_global(nelp, wsgll, wzgll, wigloc, wloc, wifseg, wnglob, &
+                     npointotp, NGLLCUBE, 2, nthreads)
      do ipt = 1, npointotp
        igloc(ipt,iproc) = wigloc(ipt)
      end do
@@ -323,15 +342,15 @@ subroutine define_glocal_numbering
      ! valence: test global numbering
      allocate(uglob2(nglobp(iproc))) 
      allocate(val(0:npol,0:npol,nel(iproc)))
-
+  
      ! valence test, equivalent to how assembly is used in the solver
      ! use script plot_proc_valence.csh to generate GMT valence grids for each proc
      ! glocally and zoomed into r<0.2 ( denoted as *_central )
      val(:,:,:) = 1.0
 
-     valnum_cent=0
-     valnum_semi=0
-
+     valnum_cent = 0
+     valnum_semi = 0
+  
      uglob2(:) = 0.d0
      do iel = 1, nel(iproc)
        do ipol = 0, npol
@@ -342,8 +361,8 @@ subroutine define_glocal_numbering
          end do
        end do
      end do
-     
-     !QT
+
+  
      do iel = 1, nel(iproc)
        do ipol = 0, npol
          do jpol = 0, npol
@@ -369,6 +388,7 @@ subroutine define_glocal_numbering
        end do
      end do
      deallocate(uglob2,val)
+  
 
      deallocate(wloc)
      deallocate(wifseg)
@@ -381,7 +401,8 @@ subroutine define_glocal_numbering
         totvalnum_cent = totvalnum_cent + valnum_cent(i)/i
         totvalnum_semi = totvalnum_semi + valnum_semi(i)/i
      enddo
-
+  
+     !!omp single
      if (dump_mesh_info_screen) then 
       write(6,*)
       write(6,*)iproc,'glocal number      :',nglobp(iproc)
@@ -390,7 +411,9 @@ subroutine define_glocal_numbering
       write(6,*)iproc,'everywhere else    :',nglobp(iproc)-&
                                              totvalnum_cent-totvalnum_semi
      end if
+     !!omp end single
   end do
+  !!$omp end parallel do 
 
   if (dump_mesh_info_screen) then
     do iproc = 0, nproc-1
@@ -412,6 +435,8 @@ subroutine define_sflocal_numbering
 !
   use numbering 
   use data_gllmesh, only : sgll, zgll
+  use data_time
+  use clocks_mod
   
   integer :: nelmax_solid, nelmax_fluid, nelp_solid, nelp_fluid
   integer :: npointotp_solid, npointotp_fluid, wnglob_solid, wnglob_fluid
@@ -480,8 +505,10 @@ subroutine define_sflocal_numbering
         allocate(wigloc_solid(npointotp_solid))
         allocate(wifseg_solid(npointotp_solid))
         allocate(wloc_solid(npointotp_solid))
+        iclock09 = tick()
         call get_global(nelp_solid,wsgll_solid,wzgll_solid,wigloc_solid, &
              wloc_solid,wifseg_solid,wnglob_solid,npointotp_solid,NGLLCUBE,NDIM)
+        iclock09 = tick(id=idold09, since=iclock09)
         do ipt = 1, npointotp_solid
            igloc_solid(ipt,iproc) = wigloc_solid(ipt)
         end do
@@ -562,8 +589,12 @@ subroutine define_sflocal_numbering
         allocate(wigloc_fluid(npointotp_fluid))
         allocate(wifseg_fluid(npointotp_fluid))
         allocate(wloc_fluid(npointotp_fluid))
+        
+        iclock09 = tick()
         call get_global(nelp_fluid,wsgll_fluid,wzgll_fluid,wigloc_fluid, &
              wloc_fluid,wifseg_fluid,wnglob_fluid,npointotp_fluid,NGLLCUBE,NDIM)
+        iclock09 = tick(id=idold09, since=iclock09)
+        
         do ipt = 1, npointotp_fluid
            igloc_fluid(ipt,iproc) = wigloc_fluid(ipt)
         end do
@@ -2103,6 +2134,9 @@ end subroutine define_axial_elem
 subroutine generate_serendipity_per_proc(sg, zg)
   
   use numbering
+  use data_time
+  use clocks_mod
+
   double precision, dimension(4,neltot), intent(in) :: sg, zg
 
   integer :: iproc,nelp,iel,ielg
@@ -2169,7 +2203,9 @@ subroutine generate_serendipity_per_proc(sg, zg)
      wiglob(1:npointotp) = 0 
      wloc(1:npointotp) = 0
 
+     iclock09 = tick()
      call get_global(nelp,sgpw,zgpw,wiglob,wloc,wifseg,wnglob,npointotp,ncp,ndim)
+     iclock09 = tick(id=idold09, since=iclock09)
 
      nglobmeshp(iproc) = wnglob
      if (dump_mesh_info_screen) write(6,*) ' iproc = ', iproc, ' nglobmesh = ', nglobmeshp(iproc)

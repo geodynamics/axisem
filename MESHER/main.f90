@@ -40,12 +40,8 @@ program gllmesh
 
   implicit none
 
-  !integer tock, tick
-  
   call start_clock !clocks
 
-  !tick = time()
-  
   !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   ! Need to load/predefine:
   ! 1) points per wavelength
@@ -53,7 +49,6 @@ program gllmesh
   ! 3) bkgrdmodel & discontinuity radii
   call read_params ! input
   !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
   
   write(6,*)'MAIN: creating subregions/discontinuity model..........'; call flush(6)
   call create_subregions ! discont_meshing
@@ -114,13 +109,11 @@ program gllmesh
   ! clean up
   call empty_data_mesh
   
-  !tock = time()
-  !write(6,*)''
-  !write(6,*)'    Runtime: ', tock-tick, ' s'
-  
   call end_clock ! clocks
-
+  
+  write(6,*)''
   write(6,*)'....DONE WITH MESHER !'
+
 end program gllmesh
 !-----------------------------------------------------------------------------
 
@@ -149,12 +142,20 @@ subroutine start_clock
   call clocks_init(0)
 
   idold01 = clock_id('mergesort')
+  idold05 = clock_id('mergesort - ind')
   idold02 = clock_id('generate_skeleton')
   idold03 = clock_id('create_gllmesh')
   idold04 = clock_id('define_global_global_numbering')
   idold06 = clock_id('bkgrdmodel_testing')
   idold08 = clock_id('glob-slob/flob numbering')
+  idold07 = clock_id('get_global no loop')
+  idold09 = clock_id('get_global in loop')
   idold11 = clock_id('create_pdb')
+  
+  idold12 = clock_id('define_glocal_numbering')
+  idold13 = clock_id('define_sflocal_numbering')
+  idold14 = clock_id('generate_serendipity_per_proc')
+
 
 end subroutine start_clock
 !=============================================================================

@@ -37,5 +37,8 @@ use global_parameters
   integer             :: iclock09, idold09
   integer             :: iclock10, idold10
   integer             :: iclock11, idold11
+  integer             :: iclock12, idold12
+  integer             :: iclock13, idold13
+  integer             :: iclock14, idold14
 
 end module data_time

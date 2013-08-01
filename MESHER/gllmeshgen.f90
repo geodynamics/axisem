@@ -42,13 +42,9 @@ subroutine create_gllmesh
 
   double precision :: crd_nodes(8,2)
 
-  integer iel,jpol,ipol
-  double precision stest
+  integer           :: iel, jpol, ipol
+  double precision  :: stest
 
-
-  !integer tock, tick
-
-  !tick = time()
   ! Generate collocation points in the two directions of space
   allocate(sgll(0:npol,0:npol,neltot),zgll(0:npol,0:npol,neltot))
 
@@ -65,9 +61,6 @@ subroutine create_gllmesh
 
   call zelegl(npol,eta,dxi)                 ! Gauss-Lobatto Points
   call get_welegl(npol,eta,wt)              !
-  !tock = time()
-  !write(6,*)'    Runtime: ', tock-tick, ' s'
-  !tick = time()
 
   !$omp parallel do shared(sgll, zgll) private(crd_nodes, jpol, ipol, stest)
   do iel = 1, neltot
@@ -106,8 +99,6 @@ subroutine create_gllmesh
      end if
   end do
   !$omp end parallel do
-  !tock = time()
-  !write(6,*)'    Runtime: ', tock-tick, ' s'
 end subroutine create_gllmesh
 !-----------------------------------------------------------------------------------------
 

@@ -40,6 +40,9 @@ contains
 !--------------------------------------------------------------------------
 subroutine define_global_global_numbering
 
+  use data_time
+  use clocks_mod
+  
   double precision, dimension(:), allocatable   :: sgtmp, zgtmp
   logical, dimension(:), allocatable            :: ifseg
   integer, dimension(:), allocatable            :: loc
@@ -58,7 +61,7 @@ subroutine define_global_global_numbering
   sgtmp = pack(sgll, .true.)
 
   allocate(zgtmp(npointot))
-  sgtmp = pack(zgll, .true.)
+  zgtmp = pack(zgll, .true.)
 
   allocate(iglob(npointot))
   iglob(:) = 0
@@ -66,8 +69,10 @@ subroutine define_global_global_numbering
   loc(:) = 0
   allocate(ifseg(npointot))
 
+  iclock07 = tick()
   call get_global(neltot, sgtmp, zgtmp, iglob, loc, ifseg, nglobglob, npointot, &
                   ngllcube, NDIM)
+  iclock07 = tick(id=idold07, since=iclock07)
 
   deallocate(ifseg)
   deallocate(loc)
@@ -81,11 +86,15 @@ end subroutine define_global_global_numbering
 
 !--------------------------------------------------------------------------
 subroutine define_global_flobal_numbering
-  integer npointot
+  
+  use data_time
+  use clocks_mod
+  
   double precision, dimension(:), allocatable :: sgtmp,zgtmp
   integer, dimension(:), allocatable :: loc_fluid
   logical, dimension(:), allocatable ::   ifseg
   integer :: iel, jpol,ipol, ipt
+  integer :: npointot
 
   npointot = neltot_fluid * (npol+1)**2
 
@@ -108,8 +117,10 @@ subroutine define_global_flobal_numbering
   loc_fluid(:) = 0
   allocate(ifseg(npointot))
 
+  iclock07 = tick()
   call get_global(neltot_fluid, sgtmp, zgtmp, iglob_fluid, loc_fluid, ifseg, &
                   nglobflob, npointot, NGLLcube, NDIM)
+  iclock07 = tick(id=idold07, since=iclock07)
 
   deallocate(ifseg)
   deallocate(loc_fluid)
@@ -124,6 +135,9 @@ end subroutine define_global_flobal_numbering
 !-------------------------------------------------------------------------
 subroutine define_global_slobal_numbering
 
+  use data_time
+  use clocks_mod
+  
   double precision, dimension(:), allocatable   :: sgtmp, zgtmp
   integer, dimension(:), allocatable            :: loc_solid
   logical, dimension(:), allocatable            :: ifseg
@@ -152,8 +166,10 @@ subroutine define_global_slobal_numbering
   loc_solid(:) = 0
   allocate(ifseg(npointot))
 
+  iclock07 = tick()
   call get_global(neltot_solid, sgtmp, zgtmp, iglob_solid, loc_solid, ifseg, nglobslob, &
                   npointot, NGLLcube, NDIM)
+  iclock07 = tick(id=idold07, since=iclock07)
 
   deallocate(ifseg)
   deallocate(loc_solid)
@@ -194,8 +210,6 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ! leave sorting subroutines in same source file to allow for inlining
 
   use sorting,      only: mergesort_3
-  use data_time
-  use clocks_mod
   !$ use omp_lib     
 
   integer, intent(in)               :: nspec2, npointot2, NGLLCUBE2, NDIM2
@@ -243,9 +257,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ifseg2(1) = .true.
   ninseg(1) = npointot2
 
-  iclock01 = tick()
   call mergesort_3(xp, yp, loc2, nmax_threads)
-  iclock01 = tick(id=idold01, since=iclock01)
 
   ! check for jumps in current coordinate
   ! compare the coordinates of the points within a small tolerance

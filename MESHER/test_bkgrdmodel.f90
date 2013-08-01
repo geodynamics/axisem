@@ -110,8 +110,8 @@ subroutine bkgrdmodel_testing
   
   ! find smallest/largest grid spacing
   tick = time()
-  !$omp parallel shared(hmax, hmin, x, y, z, vp1, vs1, rho1, Qmu, Qka, mesh2) & 
-  !$omp          private(s1, z1, r, h1, s2, z2, h2, iel, jpol, ipol, velo, crit, crit_max, theta, ct) 
+  !!$omp parallel shared(hmax, hmin, x, y, z, vp1, vs1, rho1, Qmu, Qka, mesh2) & 
+  !!$omp          private(s1, z1, r, h1, s2, z2, h2, iel, jpol, ipol, velo, crit, crit_max, theta, ct) 
   do iel = 1, neltot
   
      do jpol = 0, npol-1
@@ -156,7 +156,7 @@ subroutine bkgrdmodel_testing
   
   end do ! elements
 
-  !$omp single
+  !!$omp single
   tock = time()
   write(6,*)'    Runtime: ', tock-tick, ' s'
   write(6,*)'calculate GLL spacing...'
@@ -186,8 +186,8 @@ subroutine bkgrdmodel_testing
   
   write(6,*) 'starting big loop....'
   tick = time()
-  !$omp end single 
-  !$omp do 
+  !!$omp end single 
+  !!$omp do 
   do iel = 1, neltot
      do jpol = 0, npol
         do ipol = 0,npol
@@ -347,86 +347,70 @@ subroutine bkgrdmodel_testing
 
   
   end do ! iel
-  !$omp end do 
-  !$omp end parallel
+  !!$omp end do 
+  !!$omp end parallel
   tock = time()
   write(6,*)'    Runtime after ''big loop'': ', tock-tick, ' s'
   if (bkgrdmodel=='solar') deallocate(v_p, v_s, rho)
  
 
   if (dump_mesh_vtk) then
-    ! Had the idea to parallelize this IO, but it reduces performance.
-    !!$omp sections private(fname, h_real)
-    !!$omp section
     fname = trim(diagpath)//'/mesh_vp'
     call write_VTK_bin_scal(x, y, z, vp1, npts_vtk/4, fname)
     deallocate(vp1)
     
-    !!$omp section
     fname = trim(diagpath)//'/mesh_vs'
     call write_VTK_bin_scal(x, y, z, vs1, npts_vtk/4, fname)
     deallocate(vs1)
     
-    !!$omp section
     fname = trim(diagpath)//'/mesh_rho'
     call write_VTK_bin_scal(x, y, z, rho1, npts_vtk/4, fname)
     deallocate(rho1)
            
-      
-  
-    !!$omp section
+    
     h_real = real(hmax/(period/(pts_wavelngth*real(npol))))
     write(6,*) 'minmax hmax:', minval(h_real), maxval(h_real)
     fname = trim(diagpath)//'/mesh_hmax'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
   
-    !!$omp section
     h_real = real(hmin/(dt/courant))
     write(6,*) 'minmax hmin:', minval(h_real), maxval(h_real)
     fname = trim(diagpath)//'/mesh_hmin'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
   
-    !!$omp section
     h_real = real(period/hmax)
     write(6,*) 'minmax pts wavelngth:', minval(h_real), maxval(h_real)
     fname = trim(diagpath)//'/mesh_pts_wavelength'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
   
-    !!$omp section
     h_real = real(dt/hmin)
     write(6,*) 'minmax courant:',minval(h_real),maxval(h_real)
     fname=trim(diagpath)//'/mesh_courant'
     call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
   
-    !!$omp section
     h_real = real(courant*hmin)
     write(6,*) 'minmax dt:', minval(h_real), maxval(h_real)
     fname = trim(diagpath)//'/mesh_dt'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
   
-    !!$omp section
     h_real = real(pts_wavelngth*real(npol)*hmax)
     write(6,*)'minmax period:', minval(h_real), maxval(h_real)
     fname = trim(diagpath)//'/mesh_period'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
     
-    !!$omp section
     if (model_is_anelastic(bkgrdmodel)) then
        fname = trim(diagpath)//'/mesh_Qmu'
        call write_VTK_bin_scal(x, y, z, Qmu, npts_vtk/4, fname)
     endif
     
-    !!$omp section
     if (model_is_anelastic(bkgrdmodel)) then
        fname = trim(diagpath)//'/mesh_Qka'
        call write_VTK_bin_scal(x, y, z, Qka, npts_vtk/4, fname)
     endif
-    !!$omp end sections
   endif
   
   tock = time()
   write(6,*)'    Runtime after VTK dump: ', tock-tick, ' s'
-  !!$omp end parallel
 
   if (dump_mesh_vtk) then
       deallocate(x, y, z)

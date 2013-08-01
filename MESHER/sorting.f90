@@ -250,6 +250,10 @@ end subroutine
 !-------------------------------------------------------------------------
 subroutine mergesort_3(a, b, il, p)
     
+  use data_time
+  use clocks_mod
+  !$ use omp_lib     
+  
   double precision, intent(inout) :: a(:)
   double precision, intent(inout) :: b(size(a))
   integer, intent(inout)          :: il(size(a))
@@ -259,6 +263,7 @@ subroutine mergesort_3(a, b, il, p)
   integer, allocatable            :: ibuff(:)
   integer                         :: na, i
   integer, allocatable            :: ind(:)
+  !$ integer                      :: nthreads
   
 
   na = size(a)
@@ -268,21 +273,39 @@ subroutine mergesort_3(a, b, il, p)
      ind(i) = i
   enddo
   
+  iclock01 = tick()
   call pmsort(a, ind, p) 
+  iclock01 = tick(id=idold01, since=iclock01)
 
+  iclock05 = tick()
   allocate(ibuff(na))
+  allocate(bbuff(na))
+  
+  !$ nthreads = min(OMP_get_max_threads(), p)
+  !$ call omp_set_num_threads(nthreads)
+  !$omp parallel shared (il, ibuff, b, bbuff)
+  
+  !$omp workshare
   ibuff(:) = il(:)
+  bbuff(:) = b(:)
+  !$omp end workshare
+  
+  !$omp do
   do i=1, na
      il(i) = ibuff(ind(i))
   enddo
-  deallocate(ibuff)
+  !$omp end do
   
-  allocate(bbuff(na))
-  bbuff(:) = b(:)
+  !$omp do
   do i=1, na
      b(i) = bbuff(ind(i))
   enddo
+  !$omp end do
+  !$omp end parallel
+  
+  deallocate(ibuff)
   deallocate(bbuff)
+  iclock05 = tick(id=idold05, since=iclock05)
 
 end subroutine
 
