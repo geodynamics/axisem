@@ -869,7 +869,7 @@ subroutine rotate_receiver_comp(isim, rec_comp_sys, srccolat, srclon, th_rot, ph
   use data_all,     only : nsim, trans_rot_mat
   use global_par
   implicit none
-  include 'mesh_params.h'
+  include '../mesh_params.h'
   
   character(len=3)      :: rec_comp_sys
   real, intent(in)      :: th_rot, ph_rot ! coordinates in the rotated (src at pole) system
@@ -1185,7 +1185,7 @@ subroutine compute_3d_wavefields
   use global_par
   implicit none
 
-  include 'mesh_params.h'
+  include '../mesh_params.h'
 
   integer                               :: iproc, npts, npts_top, npts_bot, npts_meri, &
                                            nphi, snapskip, snap1, snap2
