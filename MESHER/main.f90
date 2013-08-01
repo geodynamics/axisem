@@ -116,11 +116,11 @@ program gllmesh
   
   !tock = time()
   !write(6,*)''
-  !write(6,*)'....DONE WITH MESHER !'
   !write(6,*)'    Runtime: ', tock-tick, ' s'
   
   call end_clock ! clocks
 
+  write(6,*)'....DONE WITH MESHER !'
 end program gllmesh
 !-----------------------------------------------------------------------------
 
