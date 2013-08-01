@@ -291,7 +291,6 @@ subroutine define_glocal_numbering
   integer :: iproc, ipol, jpol, iel, ipt, ielg
   double precision, dimension(:), allocatable :: wsgll, wzgll
   integer, dimension(:), allocatable :: wloc, wigloc
-  !integer, dimension(:), allocatable :: wigloc
   logical, dimension(:), allocatable :: wifseg
 
   ! valence test
@@ -381,7 +380,6 @@ subroutine define_glocal_numbering
      !open(unit=1100+iproc, file=trim(filename))
      !write(1100+iproc,*) uglob2
      !close(1100+iproc)
-
   
      do iel = 1, nel(iproc)
        do ipol = 0, npol
@@ -436,6 +434,7 @@ subroutine define_glocal_numbering
         write(6,*) iproc, 'semicurved els only:', totvalnum_semi
         write(6,*) iproc, 'everywhere else    :', &
                     nglobp(iproc) - totvalnum_cent-totvalnum_semi
+        call flush(6)
      end if
 
   end do
@@ -448,7 +447,7 @@ subroutine define_glocal_numbering
 
   if (dump_mesh_info_screen) then
     do iproc = 0, nproc-1
-     write(6,*) 'proc.,nglob:', iproc, nglobp(iproc)
+       write(6,*) 'proc.,nglob:', iproc, nglobp(iproc)
     end do
     write(6,*) 'SUM = ',SUM(nglobp(0:nproc-1))
     write(6,*)
@@ -468,6 +467,7 @@ subroutine define_sflocal_numbering
   use data_gllmesh, only : sgll, zgll
   use data_time
   use clocks_mod
+  !$ use omp_lib     
   
   integer :: nelmax_solid, nelmax_fluid, nelp_solid, nelp_fluid
   integer :: npointotp_solid, npointotp_fluid, wnglob_solid, wnglob_fluid
@@ -490,6 +490,7 @@ subroutine define_sflocal_numbering
   double precision, dimension(:), allocatable     :: uglob2_fluid
   double precision, dimension(:,:,:), allocatable :: val_fluid
   integer :: valnum_fluid(6),totvalnum_fluid
+  integer             :: nthreads = 1
 
   nelmax_solid = maxval(nel_solid)
   nelmax_fluid = maxval(nel_fluid)
@@ -503,25 +504,26 @@ subroutine define_sflocal_numbering
   nglobp_solid(:) = 0
   nglobp_fluid(:) = 0
 
+  !!$ nthreads = max(OMP_get_max_threads() / nproc, 1)
+  !!$omp parallel do private(iproc, nelp_solid, nelp_fluid, npointotp_solid, npointotp_fluid, &
+  !!$omp                     wsgll_solid, wsgll_fluid, wzgll_solid, wzgll_fluid, &
+  !!$omp                     iel, ielg, ipol, jpol, ipt, &
+  !!$omp                     wigloc_solid, wigloc_fluid, wifseg_solid, wifseg_fluid, &
+  !!$omp                     wloc_solid, wloc_fluid, wnglob_solid, wnglob_fluid, &
+  !!$omp                     uglob2_solid, val_solid, valnum_cent_solid, valnum_semi_solid, &
+  !!$omp                     uglob2_fluid, val_fluid, valnum_fluid, &
+  !!$omp                     idest, i, totvalnum_semi_solid, totvalnum_cent_solid, &
+  !!$omp                     totvalnum_fluid) &
+  !!$omp             shared(nglobp_solid, nglobp_fluid, igloc_solid, igloc_fluid)
   do iproc = 0, nproc-1
-
-     nelp_solid = nel_solid(iproc) 
-     nelp_fluid = nel_fluid(iproc) 
-     npointotp_solid = nelp_solid*(npol+1)**2
-     npointotp_fluid = nelp_fluid*(npol+1)**2
-     
-     if (have_solid) then 
-         allocate(wsgll_solid(npointotp_solid))
-         allocate(wzgll_solid(npointotp_solid))
-     end if
-
-     if (have_fluid) then
-         allocate(wsgll_fluid(npointotp_fluid))
-         allocate(wzgll_fluid(npointotp_fluid))
-     end if
 
      ! Solid
      if (have_solid) then
+        nelp_solid = nel_solid(iproc) 
+        npointotp_solid = nelp_solid*(npol+1)**2
+        allocate(wsgll_solid(npointotp_solid))
+        allocate(wzgll_solid(npointotp_solid))
+
         do iel = 1, nelp_solid
            ielg = procel_solid(iel,iproc)
            do jpol = 0, npol
@@ -536,10 +538,17 @@ subroutine define_sflocal_numbering
         allocate(wigloc_solid(npointotp_solid))
         allocate(wifseg_solid(npointotp_solid))
         allocate(wloc_solid(npointotp_solid))
+  
         iclock09 = tick()
-        call get_global(nelp_solid,wsgll_solid,wzgll_solid,wigloc_solid, &
-             wloc_solid,wifseg_solid,wnglob_solid,npointotp_solid,NGLLCUBE,NDIM)
+        call get_global(nelp_solid, wsgll_solid, wzgll_solid, wigloc_solid,  &
+                        wloc_solid, wifseg_solid, wnglob_solid, npointotp_solid, &
+                        NGLLCUBE, NDIM, nthreads)
         iclock09 = tick(id=idold09, since=iclock09)
+        
+        deallocate(wzgll_solid, wsgll_solid)
+        deallocate(wloc_solid)
+        deallocate(wifseg_solid)
+        
         do ipt = 1, npointotp_solid
            igloc_solid(ipt,iproc) = wigloc_solid(ipt)
         end do
@@ -548,14 +557,14 @@ subroutine define_sflocal_numbering
         ! SOLID valence: test slocal numbering
         allocate(uglob2_solid(nglobp_solid(iproc))) 
         allocate(val_solid(0:npol,0:npol,nel_solid(iproc)))
-
+  
         ! valence test, equivalent to how assembly is used in the solver
         ! use script plot_proc_valence.csh to generate GMT valence grids for each proc
         ! glocally and zoomed into r<0.2 ( denoted as *_central )
         val_solid(:,:,:) = 1.0d0
 
-        valnum_cent_solid=0
-        valnum_semi_solid=0
+        valnum_cent_solid = 0
+        valnum_semi_solid = 0
 
         uglob2_solid(:) = 0.d0
         do iel = 1, nel_solid(iproc)
@@ -567,45 +576,45 @@ subroutine define_sflocal_numbering
               end do
            end do
         end do
-        !QT
+
         do iel = 1, nel_solid(iproc)
-           do ipol = 0, npol
-              do jpol = 0, npol
-                 ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-                 idest = wigloc_solid(ipt)
-                 val_solid(ipol,jpol,iel) = uglob2_solid(idest)
+          do ipol = 0, npol
+             do jpol = 0, npol
+                ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+                idest = wigloc_solid(ipt)
+                val_solid(ipol,jpol,iel) = uglob2_solid(idest)
                
-               ! Check valence/global number inside central region
-               if (eltypeg(procel_solid(iel,iproc))=='linear') then 
-                  do i=1,6 !possible valences
-                     if (val_solid(ipol,jpol,iel)==i) &
-                          valnum_cent_solid(i)=valnum_cent_solid(i)+1
-                  enddo
-               endif
-               
-               if (eltypeg(procel_solid(iel,iproc))=='semino' .or. &
-                    eltypeg(procel_solid(iel,iproc))=='semiso') then 
-                  do i=1,6 !possible valences
-                     if (val_solid(ipol,jpol,iel)==i) &
-                          valnum_semi_solid(i)=valnum_semi_solid(i)+1
-                  enddo
-               endif
-               
-            end do
-         end do
+                ! Check valence/global number inside central region
+                if (eltypeg(procel_solid(iel,iproc))=='linear') then 
+                   do i=1,6 !possible valences
+                      if (val_solid(ipol,jpol,iel)==i) &
+                           valnum_cent_solid(i)=valnum_cent_solid(i)+1
+                   enddo
+                endif
+                
+                if (eltypeg(procel_solid(iel,iproc))=='semino' .or. &
+                     eltypeg(procel_solid(iel,iproc))=='semiso') then 
+                   do i=1,6 !possible valences
+                      if (val_solid(ipol,jpol,iel)==i) &
+                           valnum_semi_solid(i)=valnum_semi_solid(i)+1
+                   enddo
+                endif
+             end do
+          end do
         end do
         
-        deallocate(uglob2_solid,val_solid)
-
-        deallocate(wloc_solid)
-        deallocate(wifseg_solid)
+        deallocate(uglob2_solid, val_solid)
         deallocate(wigloc_solid)
-        deallocate(wzgll_solid,wsgll_solid)
         
      endif ! have_solid
      
      ! Fluid
      if (have_fluid) then
+        nelp_fluid = nel_fluid(iproc) 
+        npointotp_fluid = nelp_fluid*(npol+1)**2
+        allocate(wsgll_fluid(npointotp_fluid))
+        allocate(wzgll_fluid(npointotp_fluid))
+
         do iel = 1, nelp_fluid
            ielg = procel_fluid(iel,iproc)
            do jpol = 0, npol
@@ -622,9 +631,13 @@ subroutine define_sflocal_numbering
         allocate(wloc_fluid(npointotp_fluid))
         
         iclock09 = tick()
-        call get_global(nelp_fluid,wsgll_fluid,wzgll_fluid,wigloc_fluid, &
-             wloc_fluid,wifseg_fluid,wnglob_fluid,npointotp_fluid,NGLLCUBE,NDIM)
+        call get_global(nelp_fluid, wsgll_fluid, wzgll_fluid, wigloc_fluid,  &
+             wloc_fluid, wifseg_fluid, wnglob_fluid, npointotp_fluid, NGLLCUBE, NDIM)
         iclock09 = tick(id=idold09, since=iclock09)
+        
+        deallocate(wzgll_fluid, wsgll_fluid)
+        deallocate(wloc_fluid)
+        deallocate(wifseg_fluid)
         
         do ipt = 1, npointotp_fluid
            igloc_fluid(ipt,iproc) = wigloc_fluid(ipt)
@@ -640,43 +653,37 @@ subroutine define_sflocal_numbering
         ! glocally and zoomed into r<0.2 ( denoted as *_central )
         val_fluid(:,:,:) = 1.0d0
      
-        valnum_fluid=0
+        valnum_fluid = 0
      
         uglob2_fluid(:) = 0.d0
         do iel = 1, nel_fluid(iproc)      
-         do ipol = 0, npol
-          do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           idest = wigloc_fluid(ipt)
-           uglob2_fluid(idest) = uglob2_fluid(idest) + val_fluid(ipol,jpol,iel)
+          do ipol = 0, npol
+            do jpol = 0, npol
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+              idest = wigloc_fluid(ipt)
+              uglob2_fluid(idest) = uglob2_fluid(idest) + val_fluid(ipol,jpol,iel)
+            end do
           end do
-         end do
         end do
         !QT
         do iel = 1, nel_fluid(iproc)
-         do ipol = 0, npol
-          do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           idest = wigloc_fluid(ipt)
-           val_fluid(ipol,jpol,iel) = uglob2_fluid(idest)
+          do ipol = 0, npol
+            do jpol = 0, npol
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+              idest = wigloc_fluid(ipt)
+              val_fluid(ipol,jpol,iel) = uglob2_fluid(idest)
      
               ! Check valence/global number inside central region
               do i=1,6 !possible valences
-                 if (val_fluid(ipol,jpol,iel)==i) &
+                 if (val_fluid(ipol,jpol,iel) == i) &
                       valnum_fluid(i)=valnum_fluid(i)+1
               enddo
-     
+            end do
           end do
-         end do
-     
         end do
      
-        deallocate(uglob2_fluid,val_fluid)
-     
-        deallocate(wloc_fluid)
-        deallocate(wifseg_fluid)
+        deallocate(uglob2_fluid, val_fluid)
         deallocate(wigloc_fluid)
-        deallocate(wzgll_fluid,wsgll_fluid)     
      
      endif ! have_fluid
      
@@ -690,11 +697,11 @@ subroutine define_sflocal_numbering
      
         if (dump_mesh_info_screen) then 
            write(6,*)
-           write(6,*)' SOLID VALENCE & GLOBAL NUMBERING:'
-           write(6,*)iproc,'slocal number      :',nglobp_solid(iproc)
-           write(6,*)iproc,'scentral region only:',totvalnum_cent_solid
-           write(6,*)iproc,'ssemicurved els only:',totvalnum_semi_solid
-           write(6,*)iproc,'severywhere else    :',nglobp_solid(iproc)-&
+           write(6,*) ' SOLID VALENCE & GLOBAL NUMBERING:'
+           write(6,*) iproc,'slocal number      :',nglobp_solid(iproc)
+           write(6,*) iproc,'scentral region only:',totvalnum_cent_solid
+           write(6,*) iproc,'ssemicurved els only:',totvalnum_semi_solid
+           write(6,*) iproc,'severywhere else    :',nglobp_solid(iproc)-&
                 totvalnum_cent_solid-totvalnum_semi_solid
         end if      
      endif ! have_solid
@@ -707,10 +714,10 @@ subroutine define_sflocal_numbering
         enddo
      
         if (dump_mesh_info_screen) then 
-         write(6,*)' FLUID VALENCE & GLOBAL NUMBERING:'
-         write(6,*)iproc,'flocal number      :',nglobp_fluid(iproc)
-         write(6,*)iproc,'fluid region only  :',totvalnum_fluid
-         write(6,*)iproc,'feverywhere else   :',nglobp_fluid(iproc)-&
+         write(6,*) ' FLUID VALENCE & GLOBAL NUMBERING:'
+         write(6,*) iproc,'flocal number      :',nglobp_fluid(iproc)
+         write(6,*) iproc,'fluid region only  :',totvalnum_fluid
+         write(6,*) iproc,'feverywhere else   :',nglobp_fluid(iproc)-&
                                                  totvalnum_fluid
         end if
      endif ! have_fluid
@@ -738,6 +745,7 @@ subroutine define_sflocal_numbering
                                  2*(npol+1)+(sum(nbelem)/2-nbcnd)*(npol)
 
   end if
+  !!$omp end parallel do 
 
   ! This test is not valid for nproc>1 since the proc boundaries are singular 
   ! global points for each proc and hence one would need to subtract the 
