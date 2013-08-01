@@ -288,9 +288,10 @@ subroutine define_glocal_numbering
   
   integer :: nelmax, nelp
   integer :: npointotp, wnglob
-  integer :: iproc,ipol,jpol,iel,ipt,ielg
+  integer :: iproc, ipol, jpol, iel, ipt, ielg
   double precision, dimension(:), allocatable :: wsgll, wzgll
-  integer, dimension(:), allocatable :: wigloc, wloc
+  integer, dimension(:), allocatable :: wloc, wigloc
+  !integer, dimension(:), allocatable :: wigloc
   logical, dimension(:), allocatable :: wifseg
 
   ! valence test
@@ -299,7 +300,8 @@ subroutine define_glocal_numbering
   integer :: idest,i
   integer :: valnum_cent(6),totvalnum_cent
   integer :: valnum_semi(6),totvalnum_semi
-  integer          :: nthreads = 1
+  integer             :: nthreads = 1
+  character(len=1024) :: filename
 
   nelmax = maxval(nel)
   allocate(igloc(nelmax*(npol+1)**2,0:nproc-1))
@@ -309,7 +311,7 @@ subroutine define_glocal_numbering
   !$ nthreads = max(OMP_get_max_threads() / nproc, 1)
   !$omp parallel do private(iproc, nelp, npointotp, wsgll, wzgll, iel, ielg, ipol, jpol, ipt, &
   !$omp                     wigloc, wifseg, wloc, wnglob, uglob2, val, valnum_cent, valnum_semi, &
-  !$omp                     idest, i, totvalnum_semi, totvalnum_cent) 
+  !$omp                     idest, i, totvalnum_semi, totvalnum_cent, filename) &
   !$omp             shared(nglobp, igloc)
   do iproc = 0, nproc-1
 
@@ -333,10 +335,22 @@ subroutine define_glocal_numbering
      allocate(wigloc(npointotp))
      allocate(wifseg(npointotp))
      allocate(wloc(npointotp))
+     
      call get_global(nelp, wsgll, wzgll, wigloc, wloc, wifseg, wnglob, &
-                     npointotp, NGLLCUBE, 2, nthreads)
+                     npointotp, NGLLCUBE, ndim, nthreads)
+     
+     deallocate(wzgll,wsgll)
+     deallocate(wifseg)
+     deallocate(wloc)
+
+     !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/wigloc.dat', iproc
+     !open(unit=1100+iproc, file=trim(filename))
+     !write(1100+iproc,*) wnglob
+     !write(1100+iproc,*) wigloc
+     !close(1100+iproc)
+     
      do ipt = 1, npointotp
-       igloc(ipt,iproc) = wigloc(ipt)
+        igloc(ipt,iproc) = wigloc(ipt)
      end do
      nglobp(iproc) = wnglob
 
@@ -362,6 +376,11 @@ subroutine define_glocal_numbering
          end do
        end do
      end do
+     
+     !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/uglob2.dat', iproc
+     !open(unit=1100+iproc, file=trim(filename))
+     !write(1100+iproc,*) uglob2
+     !close(1100+iproc)
 
   
      do iel = 1, nel(iproc)
@@ -388,13 +407,14 @@ subroutine define_glocal_numbering
          end do
        end do
      end do
-     deallocate(uglob2,val)
-  
+     deallocate(uglob2, val)
+     
+     !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/val.dat', iproc
+     !open(unit=1100+iproc, file=trim(filename))
+     !write(1100+iproc,*) val
+     !close(1100+iproc)
 
-     deallocate(wloc)
-     deallocate(wifseg)
      deallocate(wigloc)
-     deallocate(wzgll,wsgll)
 
      totvalnum_cent = 0
      totvalnum_semi = 0
@@ -402,17 +422,29 @@ subroutine define_glocal_numbering
         totvalnum_cent = totvalnum_cent + valnum_cent(i)/i
         totvalnum_semi = totvalnum_semi + valnum_semi(i)/i
      enddo
+     
+     !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/totval.dat', iproc
+     !open(unit=1100+iproc, file=trim(filename))
+     !write(1100+iproc,*) totvalnum_semi
+     !write(1100+iproc,*) totvalnum_cent
+     !close(1100+iproc)
   
      if (dump_mesh_info_screen) then 
-      write(6,*)
-      write(6,*)iproc,'glocal number      :',nglobp(iproc)
-      write(6,*)iproc,'central region only:',totvalnum_cent
-      write(6,*)iproc,'semicurved els only:',totvalnum_semi
-      write(6,*)iproc,'everywhere else    :',nglobp(iproc)-&
-                                             totvalnum_cent-totvalnum_semi
+        write(6,*)
+        write(6,*) iproc, 'glocal number      :', nglobp(iproc)
+        write(6,*) iproc, 'central region only:', totvalnum_cent
+        write(6,*) iproc, 'semicurved els only:', totvalnum_semi
+        write(6,*) iproc, 'everywhere else    :', &
+                    nglobp(iproc) - totvalnum_cent-totvalnum_semi
      end if
+
   end do
   !$omp end parallel do 
+     
+  !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/igloc.dat'
+  !open(unit=1100, file=trim(filename))
+  !write(1100,*) igloc
+  !close(1100)
 
   if (dump_mesh_info_screen) then
     do iproc = 0, nproc-1

@@ -40,6 +40,7 @@ echo "Moving mesh to" $meshpath
 mv meshdb.dat0* $meshpath
 mv mesh_params.h* $meshpath
 mv OUTPUT $meshpath
+#mv Diags $meshpath
 cp -p inparam_mesh $meshpath
 cp -p background_models.f90 $meshpath
 
