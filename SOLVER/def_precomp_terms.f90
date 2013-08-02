@@ -59,9 +59,9 @@ subroutine read_model_compute_terms
   
   include 'mesh_params.h'
   
-  double precision, dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
-  double precision, dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
-  double precision, dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
+  real(kind=dp)    , dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
+  real(kind=dp)    , dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
+  real(kind=dp)    , dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
 
   if (lpr .and. verbose > 1) write(6,'(a,/,a)') &
             '  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::', &
@@ -182,7 +182,7 @@ subroutine lagrange_derivs
   
   include 'mesh_params.h'
   
-  double precision  :: df(0:npol),dg(0:npol)
+  real(kind=dp)      :: df(0:npol),dg(0:npol)
   integer           :: ishp,jpol
   character(len=16) :: fmt1
   logical           :: tensorwrong
@@ -269,8 +269,8 @@ subroutine compute_pointwisederiv_matrices
   include 'mesh_params.h'
 
   integer          :: iel,inode,ipol,jpol
-  double precision :: dsdxi,dzdxi,dsdeta,dzdeta
-  double precision :: local_crd_nodes(8,2)
+  real(kind=dp)     :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=dp)     :: local_crd_nodes(8,2)
 
   ! fluid pointwise derivatives     
   allocate(DsDeta_over_J_flu(0:npol,0:npol,1:nel_fluid))
@@ -441,8 +441,8 @@ subroutine test_pntwsdrvtvs_solid
   real(kind=realkind),allocatable :: tmpsolfieldcomp(:,:,:,:)
   real(kind=realkind),allocatable :: tmpsolfielddiff(:,:,:,:)
   real(kind=realkind)             :: meandiff(2)
-  double precision,allocatable    :: elderiv(:,:)
-  double precision                :: s,z,r,theta
+  real(kind=dp)    ,allocatable    :: elderiv(:,:)
+  real(kind=dp)                    :: s,z,r,theta
   integer                         :: iel,ipol,jpol,iarr(3)
   character(len=16)               :: fmt1
 
@@ -586,8 +586,8 @@ subroutine test_pntwsdrvtvs_fluid
   real(kind=realkind),allocatable :: tmpflufieldcomp(:,:,:,:)
   real(kind=realkind),allocatable :: tmpflufielddiff(:,:,:,:)
   real(kind=realkind)             :: meandiff(2)
-  double precision,allocatable    :: elderiv(:,:)
-  double precision                :: s,z,r,theta
+  real(kind=dp)    ,allocatable    :: elderiv(:,:)
+  real(kind=dp)                    :: s,z,r,theta
   integer                         :: iel,ipol,jpol,iarr(3)
   character(len=16)               :: fmt1
 
@@ -737,17 +737,17 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   
   include "mesh_params.h"
   
-  double precision, dimension(0:npol,0:npol,nelem),intent(in)  :: rho,lambda,mu
-  double precision, dimension(0:npol,0:npol,nelem),intent(out) :: massmat_kwts2
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem),intent(in)  :: rho,lambda,mu
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem),intent(out) :: massmat_kwts2
   
-  double precision, allocatable    :: massmat_k(:,:,:)   !< Mass matrix
-  double precision, allocatable    :: jacob (:,:,:)      !< jacobian array
+  real(kind=dp)    , allocatable    :: massmat_k(:,:,:)   !< Mass matrix
+  real(kind=dp)    , allocatable    :: jacob (:,:,:)      !< jacobian array
   real(kind=realkind), allocatable :: drdxi(:,:,:,:)     !< min/max derivs
   
-  double precision  :: local_crd_nodes(8,2),s,z,r,theta
+  real(kind=dp)      :: local_crd_nodes(8,2),s,z,r,theta
   integer           :: iel,inode,iarr(3),ipol,jpol
   character(len=16) :: fmt1
-  double precision  :: dsdxi,dzdeta,dzdxi,dsdeta
+  real(kind=dp)      :: dsdxi,dzdeta,dzdxi,dsdeta
 
   allocate(massmat_k(0:npol,0:npol,1:nelem),jacob(0:npol,0:npol,1:nelem))
   allocate(drdxi(0:npol,0:npol,1:nelem,1:4))
@@ -1125,14 +1125,14 @@ subroutine compute_mass_earth(rho)
   
   include 'mesh_params.h'
   
-  double precision, intent(in)     :: rho(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in)     :: rho(0:npol,0:npol,nelem)
   integer                          :: iel,ipol,jpol,idom,iidom,idisc
   integer                          :: count_solid,count_fluid,count_sic
-  double precision                 :: mass_glob,mass_solid,mass_fluid,mass_sic
-  double precision                 :: mass_glob_num,mass_solid_num
-  double precision                 :: mass_fluid_num,mass_sic_num
-  double precision                 :: mass_layer(ndisc)
-  double precision                 :: r,density,vs,dr
+  real(kind=dp)                     :: mass_glob,mass_solid,mass_fluid,mass_sic
+  real(kind=dp)                     :: mass_glob_num,mass_solid_num
+  real(kind=dp)                     :: mass_fluid_num,mass_sic_num
+  real(kind=dp)                     :: mass_layer(ndisc)
+  real(kind=dp)                     :: r,density,vs,dr
   real(kind=realkind), allocatable :: massmat(:,:,:),massmat_solid(:,:,:)
   real(kind=realkind), allocatable :: massmat_fluid(:,:,:)
   character(len=100)               :: modelstring
@@ -1289,32 +1289,32 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
   use attenuation, only: att_coarse_grained
   include "mesh_params.h"
   
-  double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
-  double precision, dimension(0:npol,0:npol,nelem), intent(in) :: massmat_kwts2
-  double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in) :: massmat_kwts2
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in), optional :: xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
   
-  double precision :: local_crd_nodes(8,2)
+  real(kind=dp)     :: local_crd_nodes(8,2)
   integer          :: ielem,ipol,jpol,inode
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta
   
-  double precision :: alpha_wt_k(0:npol,0:npol)
-  double precision :: beta_wt_k(0:npol,0:npol)
-  double precision :: gamma_wt_k(0:npol,0:npol)
-  double precision :: delta_wt_k(0:npol,0:npol)
-  double precision :: epsil_wt_k(0:npol,0:npol)
-  double precision :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: zeta_wt_k(0:npol,0:npol)
   
-  double precision :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  double precision :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  double precision :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  double precision :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-  double precision :: M_s_xi_wt_k(0:npol,0:npol)
-  double precision :: M_z_xi_wt_k(0:npol,0:npol)
-  double precision :: M_z_eta_wt_k(0:npol,0:npol)
-  double precision :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)     :: M_s_eta_wt_k(0:npol,0:npol)
   
   ! non-diagfact
-  double precision, allocatable :: non_diag_fact(:,:)
+  real(kind=dp)    , allocatable :: non_diag_fact(:,:)
   
   ! Allocate Global Stiffness Arrays depending on source type:
   select case (src_type(1))
@@ -1748,32 +1748,32 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
   
   integer, intent(in) :: ielem,jpol
   
-  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
   
-  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-  double precision, intent(in) :: local_crd_nodes(8,2)
+  real(kind=dp)    , intent(in) :: non_diag_fact(0:npol,nel_solid)
+  real(kind=dp)    , intent(in) :: local_crd_nodes(8,2)
   
-  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: zeta_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
   
   integer          :: ipol
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta
   
   ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
@@ -1859,40 +1859,40 @@ subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
   
   integer, intent(in) :: ielem, jpol
   
-  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-  double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
-  double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
-  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: xi_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: phi_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: eta_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
   
-  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-  double precision, intent(in) :: local_crd_nodes(8,2)
+  real(kind=dp)    , intent(in) :: non_diag_fact(0:npol,nel_solid)
+  real(kind=dp)    , intent(in) :: local_crd_nodes(8,2)
   
-  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: zeta_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
   
   integer          :: ipol
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
-  double precision :: fa_ani_thetal, fa_ani_phil
-  double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
-  double precision :: lambdal, mul, xil, phil, etal
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta
+  real(kind=dp)     :: fa_ani_thetal, fa_ani_phil
+  real(kind=dp)     :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
+  real(kind=dp)     :: lambdal, mul, xil, phil, etal
   
   ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
@@ -2038,32 +2038,32 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
   
   integer, intent(in) :: ielem,jpol
   
-  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
   
-  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-  double precision, intent(in) :: local_crd_nodes(8,2)
+  real(kind=dp)    , intent(in) :: non_diag_fact(0:npol,nel_solid)
+  real(kind=dp)    , intent(in) :: local_crd_nodes(8,2)
   
-  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: zeta_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
   
   integer          :: ipol
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta
   
   ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
   if ( ielem==1 .and. jpol==0 ) then
@@ -2216,40 +2216,40 @@ subroutine compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
   
   integer, intent(in) :: ielem,jpol
   
-  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-  double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
-  double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
-  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: xi_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: phi_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: eta_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
   
-  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-  double precision, intent(in) :: local_crd_nodes(8,2)
+  real(kind=dp)    , intent(in) :: non_diag_fact(0:npol,nel_solid)
+  real(kind=dp)    , intent(in) :: local_crd_nodes(8,2)
   
-  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: zeta_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
   
   integer          :: ipol
-  double precision :: dsdxi, dzdeta, dzdxi, dsdeta
-  double precision :: fa_ani_thetal, fa_ani_phil
-  double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
-  double precision :: lambdal, mul, xil, phil, etal
+  real(kind=dp)     :: dsdxi, dzdeta, dzdxi, dsdeta
+  real(kind=dp)     :: fa_ani_thetal, fa_ani_phil
+  real(kind=dp)     :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
+  real(kind=dp)     :: lambdal, mul, xil, phil, etal
 
   if ( ielem==1 .and. jpol==0 ) then
      M0_w1(0:npol,1:nel_solid) = zero
@@ -2469,32 +2469,32 @@ subroutine compute_quadrupole_stiff_terms(ielem,jpol,local_crd_nodes, &
 
   integer, intent(in) :: ielem,jpol
 
-  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
 
-  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-  double precision, intent(in) :: local_crd_nodes(8,2)
+  real(kind=dp)    , intent(in) :: non_diag_fact(0:npol,nel_solid)
+  real(kind=dp)    , intent(in) :: local_crd_nodes(8,2)
 
-  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: zeta_wt_k(0:npol,0:npol)
 
-  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
 
-  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
 
   integer          :: ipol
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta
   
   if ( ielem==1 .and. jpol==0 ) then
      M0_w1(0:npol,1:nel_solid) = zero
@@ -2658,38 +2658,38 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol, &
   
   integer, intent(in)          :: ielem, jpol
   
-  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
-  double precision, intent(in) :: xi_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: phi_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: eta_ani(0:npol,0:npol,nelem)
-  double precision, intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
-  double precision, intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
-  double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: xi_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: phi_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: eta_ani(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
   
-  double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
+  real(kind=dp)    , intent(in) :: non_diag_fact(0:npol,nel_solid)
   
-  double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: gamma_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: delta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: epsil_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: zeta_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
   
-  double precision, intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp)    , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
   
   integer          :: ipol
-  double precision :: fa_ani_thetal, fa_ani_phil
-  double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
-  double precision :: lambdal, mul, xil, phil, etal
+  real(kind=dp)     :: fa_ani_thetal, fa_ani_phil
+  real(kind=dp)     :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
+  real(kind=dp)     :: lambdal, mul, xil, phil, etal
   
   if ( ielem==1 .and. jpol==0 ) then
      M0_w1(0:npol,1:nel_solid) = zero
@@ -2863,7 +2863,7 @@ end subroutine compute_quadrupole_stiff_terms_ani
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
+real(kind=dp)     function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
                                      theta_fa, phi_fa, i, j, k, l)
 !< returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
 !! i, j, k and l should be in [1,3]
@@ -2871,11 +2871,11 @@ double precision function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
 ! MvD [Anisotropy Notes, p. 13.4]
   
   
-  double precision, intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
-  double precision, intent(in) :: theta_fa, phi_fa
+  real(kind=dp)    , intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
+  real(kind=dp)    , intent(in) :: theta_fa, phi_fa
   integer, intent(in) :: i, j, k, l
-  double precision, dimension(1:3, 1:3) :: deltaf
-  double precision, dimension(1:3) :: s
+  real(kind=dp)    , dimension(1:3, 1:3) :: deltaf
+  real(kind=dp)    , dimension(1:3) :: s
   
   deltaf = zero
   deltaf(1,1) = one
@@ -2921,13 +2921,13 @@ subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
 !! (as opposed to the solid case of being elemental arrays).
     
   include "mesh_params.h"
-  double precision, intent(in)  :: rho(0:npol,0:npol,nelem)
-  double precision, intent(in)  :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in)  :: rho(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in)  :: massmat_kwts2(0:npol,0:npol,nelem)
   
-  double precision, allocatable :: non_diag_fact(:,:)
-  double precision              :: local_crd_nodes(8,2)
-  double precision              :: alpha_wt_k,beta_wt_k,gamma_wt_k
-  double precision              :: delta_wt_k,epsil_wt_k,zeta_wt_k
+  real(kind=dp)    , allocatable :: non_diag_fact(:,:)
+  real(kind=dp)                  :: local_crd_nodes(8,2)
+  real(kind=dp)                  :: alpha_wt_k,beta_wt_k,gamma_wt_k
+  real(kind=dp)                  :: delta_wt_k,epsil_wt_k,zeta_wt_k
   integer                       :: iel,ipol,jpol,inode
 
   allocate(non_diag_fact(0:npol,1:nel_fluid))
@@ -3058,9 +3058,9 @@ subroutine def_solid_fluid_boundary_terms
   
   include 'mesh_params.h'
   
-  double precision             :: local_crd_nodes(8,2)
-  double precision             :: s,z,r,theta,rf,thetaf
-  double precision             :: theta1,theta2,r1,r2,delta_th,bdry_sum
+  real(kind=dp)                 :: local_crd_nodes(8,2)
+  real(kind=dp)                 :: s,z,r,theta,rf,thetaf
+  real(kind=dp)                 :: theta1,theta2,r1,r2,delta_th,bdry_sum
   integer                      :: iel,ielglob,ipol,inode,idom
   integer                      :: count_lower_disc,count_upper_disc
 

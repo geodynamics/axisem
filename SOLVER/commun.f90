@@ -331,7 +331,7 @@ subroutine assembmass_sum_solid(f1,res)
   include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid)
-  double precision, intent(out)     :: res
+  real(kind=dp)    , intent(out)     :: res
   integer                           :: ipt, idest, iel, ipol, jpol
 
   res = 0.d0 
@@ -617,7 +617,7 @@ subroutine assembmass_sum_fluid(f1,res)
   include 'mesh_params.h' 
   
   real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_fluid)
-  double precision, intent(out)     :: res
+  real(kind=dp)    , intent(out)     :: res
   integer ipt, idest
   integer iel, ipol, jpol
 
@@ -860,7 +860,7 @@ end subroutine broadcast_int
 subroutine broadcast_dble(input_dble,input_proc)
 
   integer, intent(in)             :: input_proc
-  double precision, intent(inout) :: input_dble
+  real(kind=dp)    , intent(inout) :: input_dble
 
   if (nproc>1) call pbroadcast_dble(input_dble,input_proc) ! comment for serial
 
@@ -868,9 +868,9 @@ end subroutine broadcast_dble
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-double precision function pmin(scal)
+real(kind=dp)     function pmin(scal)
 
-  double precision :: scal
+  real(kind=dp)     :: scal
   
   pmin = scal
   if (nproc>1) pmin = ppmin(scal) ! comment for serial
@@ -879,9 +879,9 @@ end function pmin
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-double precision function pmax(scal)
+real(kind=dp)     function pmax(scal)
 
-  double precision :: scal
+  real(kind=dp)     :: scal
 
   pmax = scal
   if (nproc>1) pmax = ppmax(scal)  ! comment for serial
@@ -923,9 +923,9 @@ end function psum_int
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-double precision function psum_dble(scal)
+real(kind=dp)     function psum_dble(scal)
 
-  double precision :: scal
+  real(kind=dp)     :: scal
 
   psum_dble = scal
   if (nproc>1) psum_dble = ppsum_dble(scal) ! comment for serial

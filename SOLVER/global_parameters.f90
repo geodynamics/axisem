@@ -36,8 +36,9 @@ public
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-  integer, parameter         :: sp = kind(0.0)
-  integer, parameter         :: dp = kind(0.0d0)
+  integer, parameter         :: sp = selected_real_kind(6, 37)
+  integer, parameter         :: dp = selected_real_kind(15, 307)
+  integer, parameter         :: qp = selected_real_kind(33, 4931)
   integer, parameter         :: realkind = sp  !< Choose solver precision here
 
 ! Do not change these unless problems with any of the accuracy tests arise.

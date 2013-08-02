@@ -39,13 +39,13 @@ module analytic_spheroid_mapping
 contains
 
 !-----------------------------------------------------------------------------------------
-double precision function map_spheroid(xil, etal, nodes_crd, idir)
+real(kind=dp)     function map_spheroid(xil, etal, nodes_crd, idir)
 ! The mapping for type (A) in paper 2.
 
-  double precision,intent(in)       :: xil, etal
-  double precision, dimension(8,2),intent(in) :: nodes_crd
+  real(kind=dp)    ,intent(in)       :: xil, etal
+  real(kind=dp)    , dimension(8,2),intent(in) :: nodes_crd
   integer,intent(in)                :: idir
-  double precision, dimension(8)    :: theta_ser,r_ser
+  real(kind=dp)    , dimension(8)    :: theta_ser,r_ser
 
   map_spheroid = zero
   call compute_theta_r(theta_ser, r_ser, nodes_crd)
@@ -74,10 +74,10 @@ subroutine compute_partial_d_spheroid(dsdxi, dzdxi, dsdeta, dzdeta, xil, etal, n
 ! The partial derivatives \partial(s,z) / \partial(\xi,\eta)
 ! following the definitions for Type (A) in paper 2, App. A1.
 
-  double precision, intent(out)                :: dsdxi, dzdxi, dsdeta, dzdeta
-  double precision, intent(in)                 :: xil, etal
-  double precision, dimension(8,2), intent(in) :: nodes_crd
-  double precision, dimension(8)               :: theta_ser, r_ser
+  real(kind=dp)    , intent(out)                :: dsdxi, dzdxi, dsdeta, dzdeta
+  real(kind=dp)    , intent(in)                 :: xil, etal
+  real(kind=dp)    , dimension(8,2), intent(in) :: nodes_crd
+  real(kind=dp)    , dimension(8)               :: theta_ser, r_ser
 
   call compute_theta_r(theta_ser,r_ser,nodes_crd)
 
@@ -116,8 +116,8 @@ end subroutine compute_partial_d_spheroid
 !-----------------------------------------------------------------------------------------
 subroutine compute_theta_r(theta_ser,r_ser,nodes_crd)
   
-  double precision, dimension(8,2), intent(in) :: nodes_crd
-  double precision, dimension(8), intent(out)  :: theta_ser,r_ser
+  real(kind=dp)    , dimension(8,2), intent(in) :: nodes_crd
+  real(kind=dp)    , dimension(8), intent(out)  :: theta_ser,r_ser
   integer                                      :: i
   
   do i=1,8
@@ -153,8 +153,8 @@ end subroutine compute_theta_r
 !-----------------------------------------------------------------------------------------
 subroutine compute_sz_xi(s, z, xil, a, b, thetabar, dtheta)
 
-  double precision, intent(out) :: s,z
-  double precision, intent(in)  :: xil, a, b, thetabar,dtheta
+  real(kind=dp)    , intent(out) :: s,z
+  real(kind=dp)    , intent(in)  :: xil, a, b, thetabar,dtheta
   
   s = a*dcos(thetabar+xil*half*dtheta)
   z = b*dsin(thetabar+xil*half*dtheta)
@@ -165,8 +165,8 @@ end subroutine compute_sz_xi
 !-----------------------------------------------------------------------------------------
 subroutine compute_dsdxi_dzdxi(dsdxi, dzdxi, xil, a, b, thetabar, dtheta)
 
-  double precision, intent(out) :: dsdxi,dzdxi
-  double precision, intent(in)  :: xil, a, b, thetabar, dtheta 
+  real(kind=dp)    , intent(out) :: dsdxi,dzdxi
+  real(kind=dp)    , intent(in)  :: xil, a, b, thetabar, dtheta 
 
   dsdxi =-a*half*dtheta*dsin(thetabar+xil*half*dtheta)
   dzdxi = b*half*dtheta*dcos(thetabar+xil*half*dtheta)  
@@ -178,12 +178,12 @@ end subroutine compute_dsdxi_dzdxi
 subroutine compute_parameters_sph(nodes_crd, abot, bbot, atop, btop, thetabarbot, & 
                                   dthetabot, thetabartop, dthetatop)
 
-  double precision, dimension(8,2),intent(in) :: nodes_crd
-  double precision,intent(out) :: abot, bbot, atop, btop
-  double precision,intent(out) :: thetabarbot, dthetabot
-  double precision,intent(out) :: thetabartop, dthetatop
-  double precision :: s1, z1, s3, z3, s5, z5, s7, z7
-  double precision :: theta1, theta3, theta5, theta7
+  real(kind=dp)    , dimension(8,2),intent(in) :: nodes_crd
+  real(kind=dp)    ,intent(out) :: abot, bbot, atop, btop
+  real(kind=dp)    ,intent(out) :: thetabarbot, dthetabot
+  real(kind=dp)    ,intent(out) :: thetabartop, dthetatop
+  real(kind=dp)     :: s1, z1, s3, z3, s5, z5, s7, z7
+  real(kind=dp)     :: theta1, theta3, theta5, theta7
   
   s1 = nodes_crd(1,1)
   z1 = nodes_crd(1,2)
@@ -216,8 +216,8 @@ end subroutine compute_parameters_sph
 !-----------------------------------------------------------------------------------------
 subroutine compute_ab(a, b, s1, z1, s2, z2)
 
-  double precision, intent(out) :: a,b
-  double precision, intent(in) :: s1,z1,s2,z2
+  real(kind=dp)    , intent(out) :: a,b
+  real(kind=dp)    , intent(in) :: s1,z1,s2,z2
 
   a = dsqrt(dabs((s2**2*z1**2-z2**2*s1**2)/(z1**2-z2**2)))
   b = dsqrt(dabs((z1**2*s2**2-z2**2*s1**2)/(s2**2-s1**2))) 
@@ -228,8 +228,8 @@ end subroutine compute_ab
 subroutine compute_theta(theta, s, z, a, b)
 !	This routine returns the latitude theta, given s and z.
 
-  double precision, intent(out) :: theta
-  double precision,  intent(in) :: s, z, a, b
+  real(kind=dp)    , intent(out) :: theta
+  real(kind=dp)    ,  intent(in) :: s, z, a, b
 
   if (s /= zero) then
      theta=datan(z*a/(s*b))  

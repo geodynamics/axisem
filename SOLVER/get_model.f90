@@ -86,16 +86,16 @@ subroutine read_model(rho, lambda, mu, Q_mu, Q_kappa)
   include 'mesh_params.h'
 
 
-  double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rho
-  double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(out) :: rho
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
 
   real(kind=realkind), dimension(nel_solid), intent(out), optional :: Q_mu, Q_kappa
 
-  double precision :: s,z,r,theta,r1,vptmp,vstmp
+  real(kind=dp)     :: s,z,r,theta,r1,vptmp,vstmp
   integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count
   logical :: foundit
   character(len=100) :: modelstring
-  double precision, dimension(0:npol,0:npol,nelem) :: stmp,ztmp,v_p,v_s
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem) :: stmp,ztmp,v_p,v_s
 
   if (make_homo ) then 
       if (.not. have_fluid) then
@@ -374,15 +374,15 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 
   include 'mesh_params.h'
 
-  double precision, dimension(0:npol,0:npol,nelem), intent(out) :: rho
-  double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
-  double precision, dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
-  double precision, dimension(0:npol,0:npol,nelem), intent(out) :: fa_ani_theta, fa_ani_phi
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(out) :: rho
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(out) :: fa_ani_theta, fa_ani_phi
 
   real(kind=realkind), dimension(nel_solid), intent(out), optional :: Q_mu, Q_kappa
 
-  double precision :: s,z,r,theta,r1
-  double precision :: vphtmp, vpvtmp, vshtmp, vsvtmp
+  real(kind=dp)     :: s,z,r,theta,r1
+  real(kind=dp)     :: vphtmp, vpvtmp, vshtmp, vsvtmp
   integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count
   logical :: foundit
   character(len=100) :: modelstring
@@ -613,15 +613,15 @@ end subroutine read_model_ani
 !! r vp vs rho
 subroutine arbitr_sub_solar_arr(s,z,v_p,v_s,rho,bkgrdmodel2)
 
-  double precision, intent(in) :: s(0:npol,0:npol,1:nelem),z(0:npol,0:npol,1:nelem)
+  real(kind=dp)    , intent(in) :: s(0:npol,0:npol,1:nelem),z(0:npol,0:npol,1:nelem)
   character(len=100), intent(in) :: bkgrdmodel2
-  double precision, dimension(:,:,:), intent(out) :: rho(0:npol,0:npol,1:nelem)
-  double precision, dimension(:,:,:), intent(out) :: v_s(0:npol,0:npol,1:nelem)
-  double precision, dimension(:,:,:), intent(out) :: v_p(0:npol,0:npol,1:nelem)
-  double precision, allocatable, dimension(:) :: disconttmp,rhotmp,vstmp,vptmp
+  real(kind=dp)    , dimension(:,:,:), intent(out) :: rho(0:npol,0:npol,1:nelem)
+  real(kind=dp)    , dimension(:,:,:), intent(out) :: v_s(0:npol,0:npol,1:nelem)
+  real(kind=dp)    , dimension(:,:,:), intent(out) :: v_p(0:npol,0:npol,1:nelem)
+  real(kind=dp)    , allocatable, dimension(:) :: disconttmp,rhotmp,vstmp,vptmp
   integer :: ndisctmp,i,ind(2),ipol,jpol,iel
   logical :: bkgrdmodelfile_exists
-  double precision :: w(2),wsum,r0
+  real(kind=dp)     :: w(2),wsum,r0
 
   ! Does the file bkgrdmodel".bm" exist?
   !@TODO: Change to new name convention scheme. Should start in the MESHER.
@@ -663,13 +663,13 @@ end subroutine arbitr_sub_solar_arr
 subroutine interp_vel(r0,r,n,ind,w,wsum)
 
   integer, intent(in)           :: n      !< number of supporting points
-  double precision, intent(in)  :: r(1:n) !< supporting points in depth
-  double precision, intent(in)  :: r0     !< Target depth
+  real(kind=dp)    , intent(in)  :: r(1:n) !< supporting points in depth
+  real(kind=dp)    , intent(in)  :: r0     !< Target depth
   integer, intent(out)          :: ind(2) !< Indizes of supporting points 
                                           !! between which r0 is found
-  double precision, intent(out) :: w(2),wsum !< Weighting factors
+  real(kind=dp)    , intent(out) :: w(2),wsum !< Weighting factors
   integer                       :: i,p
-  double precision              :: dr1,dr2
+  real(kind=dp)                  :: dr1,dr2
 
   p = 1
 
@@ -733,7 +733,7 @@ subroutine check_mesh_discontinuities(ieldom,domcount)
   integer, intent(in)  :: ieldom(:)
   integer, intent(out) :: domcount(ndisc)
   integer              :: iel,ipol,jpol,iidom,eldomcount
-  double precision     :: s,z,r,theta
+  real(kind=dp)         :: s,z,r,theta
 
   domcount(:) = 0
   ! Count points on discontinuities and check whether right domains are assigned
@@ -810,17 +810,17 @@ subroutine check_elastic_discontinuities(ieldom,domcount,lambda,mu,rho)
   include 'mesh_params.h'
 
   integer, intent(in)          :: ieldom(nelem),domcount(ndisc)
-  double precision, intent(in) :: rho(0:npol,0:npol,nelem)
-  double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: rho(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in) :: mu(0:npol,0:npol,nelem)
   integer                      :: iel,jpol,iidom
-  double precision             :: minvpdomabove(ndisc),maxvpdomabove(ndisc)
-  double precision             :: minvsdomabove(ndisc),maxvsdomabove(ndisc)
-  double precision             :: minrodomabove(ndisc),maxrodomabove(ndisc)
-  double precision             :: minvpdombelow(ndisc),maxvpdombelow(ndisc)
-  double precision             :: minvsdombelow(ndisc),maxvsdombelow(ndisc)
-  double precision             :: minrodombelow(ndisc),maxrodombelow(ndisc)
-  double precision             :: s,z,r,theta
+  real(kind=dp)                 :: minvpdomabove(ndisc),maxvpdomabove(ndisc)
+  real(kind=dp)                 :: minvsdomabove(ndisc),maxvsdomabove(ndisc)
+  real(kind=dp)                 :: minrodomabove(ndisc),maxrodomabove(ndisc)
+  real(kind=dp)                 :: minvpdombelow(ndisc),maxvpdombelow(ndisc)
+  real(kind=dp)                 :: minvsdombelow(ndisc),maxvsdombelow(ndisc)
+  real(kind=dp)                 :: minrodombelow(ndisc),maxrodombelow(ndisc)
+  real(kind=dp)                 :: s,z,r,theta
 
   ! count points on discontinuities and check whether right domains are assigned
 
@@ -1048,14 +1048,14 @@ subroutine check_background_model(lambda,mu,rho)
 
   include 'mesh_params.h'
 
-  double precision, intent(in)  :: rho(0:npol,0:npol,nelem) 
-  double precision, intent(in)  :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in)  :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in)  :: rho(0:npol,0:npol,nelem) 
+  real(kind=dp)    , intent(in)  :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in)  :: mu(0:npol,0:npol,nelem)
   integer                       :: iel,ipol,jpol,i
   integer, dimension (2)        :: rhominloc,lamminloc,muminloc
   integer, dimension (2)        :: rhomaxloc,lammaxloc,mumaxloc
-  double precision, allocatable :: maxdiffrho(:)
-  double precision, allocatable :: maxdifflam(:),maxdiffmu(:)
+  real(kind=dp)    , allocatable :: maxdiffrho(:)
+  real(kind=dp)    , allocatable :: maxdifflam(:),maxdiffmu(:)
 
   allocate(maxdiffrho(nelem),maxdifflam(nelem),maxdiffmu(nelem))
 
@@ -1248,17 +1248,17 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
 
   include 'mesh_params.h'
 
-  double precision, intent(in)  :: rho(0:npol,0:npol,nelem)
-  double precision, intent(in)  :: lambda(0:npol,0:npol,nelem)
-  double precision, intent(in)  :: mu(0:npol,0:npol,nelem)
-  double precision, allocatable :: fp(:,:,:),fs(:,:,:)
-  double precision, allocatable :: mass(:,:,:)
-  double precision              :: intp_num,ints_num
-  double precision              :: intp_ana,ints_ana,arg
+  real(kind=dp)    , intent(in)  :: rho(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in)  :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp)    , intent(in)  :: mu(0:npol,0:npol,nelem)
+  real(kind=dp)    , allocatable :: fp(:,:,:),fs(:,:,:)
+  real(kind=dp)    , allocatable :: mass(:,:,:)
+  real(kind=dp)                  :: intp_num,ints_num
+  real(kind=dp)                  :: intp_ana,ints_ana,arg
   integer                       :: iel,ipol,jpol,i,irad,iirad,iidom
-  double precision              :: tmpradii(naxel,2)
-  double precision              :: vptmp,vstmp
-  double precision, allocatable :: radii(:,:),vel(:,:)
+  real(kind=dp)                  :: tmpradii(naxel,2)
+  real(kind=dp)                  :: vptmp,vstmp
+  real(kind=dp)    , allocatable :: radii(:,:),vel(:,:)
 
   allocate(fp(0:npol,0:npol,nelem),fs(0:npol,0:npol,nelem))
   allocate(mass(0:npol,0:npol,nelem))
@@ -1506,9 +1506,9 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   !> Number of points
   integer, intent(in)                       :: elems
   !> Point coordinates
-  real(4), dimension(1:elems*4), intent(in) :: x,y,z 
+  real(sp), dimension(1:elems*4), intent(in) :: x,y,z 
   !> Values at coordinates x,y,z
-  real(4), dimension(1:elems*4), intent(in) :: u1 
+  real(sp), dimension(1:elems*4), intent(in) :: u1 
   !> Filename of produced VTK file
   character (len=200), intent(in)           :: filename
   integer, dimension(1:elems*5)             :: cell
@@ -1580,11 +1580,11 @@ subroutine plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 
   use data_mesh_preloop,  ONLY : ielsolid
 
-  double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho 
-  double precision, dimension(0:npol,0:npol,nelem), intent(in) :: lambda, mu
-  double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in) :: rho 
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in) :: lambda, mu
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in), optional :: &
                                           xi_ani, phi_ani, eta_ani
-  double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+  real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in), optional :: &
                                           fa_ani_theta, fa_ani_phi
 
   real(kind=realkind), dimension(nel_solid), intent(in), optional :: Q_mu, Q_kappa

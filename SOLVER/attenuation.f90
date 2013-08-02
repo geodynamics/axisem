@@ -22,7 +22,7 @@
 module attenuation
 !< Variables and routines for viscoelastic wave propagation
 
-  use global_parameters,    only: realkind, third
+  use global_parameters,    only: realkind, third, sp, dp
   use data_io,              only: verbose
   implicit none
   include 'mesh_params.h'
@@ -35,9 +35,9 @@ module attenuation
   public :: time_step_memvars_cg4
   public :: att_coarse_grained
 
-  double precision, allocatable   :: y_j_attenuation(:)
-  double precision, allocatable   :: w_j_attenuation(:), exp_w_j_deltat(:)
-  double precision, allocatable   :: ts_fac_t(:), ts_fac_tm1(:)
+  real(kind=dp)    , allocatable   :: y_j_attenuation(:)
+  real(kind=dp)    , allocatable   :: w_j_attenuation(:), exp_w_j_deltat(:)
+  real(kind=dp)    , allocatable   :: ts_fac_t(:), ts_fac_tm1(:)
   integer                         :: n_sls_attenuation
   logical                         :: do_corr_lowq, dump_memory_vars = .false.
   logical                         :: att_coarse_grained = .true.
@@ -67,10 +67,10 @@ subroutine time_step_memvars_cg4(memvar, disp)
   real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j
-  double precision      :: yp_j_mu(n_sls_attenuation)
-  double precision      :: yp_j_kappa(n_sls_attenuation)
-  double precision      :: a_j_mu(n_sls_attenuation)
-  double precision      :: a_j_kappa(n_sls_attenuation)
+  real(kind=dp)          :: yp_j_mu(n_sls_attenuation)
+  real(kind=dp)          :: yp_j_kappa(n_sls_attenuation)
+  real(kind=dp)          :: a_j_mu(n_sls_attenuation)
+  real(kind=dp)          :: a_j_kappa(n_sls_attenuation)
 
   real(kind=realkind)   :: grad_t_cg4(1:4,6)
 
@@ -199,10 +199,10 @@ subroutine time_step_memvars(memvar, disp)
   real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j, ipol, jpol
-  double precision      :: yp_j_mu(n_sls_attenuation)
-  double precision      :: yp_j_kappa(n_sls_attenuation)
-  double precision      :: a_j_mu(n_sls_attenuation)
-  double precision      :: a_j_kappa(n_sls_attenuation)
+  real(kind=dp)          :: yp_j_mu(n_sls_attenuation)
+  real(kind=dp)          :: yp_j_kappa(n_sls_attenuation)
+  real(kind=dp)          :: a_j_mu(n_sls_attenuation)
+  real(kind=dp)          :: a_j_kappa(n_sls_attenuation)
 
   real(kind=realkind)   :: grad_t(0:npol,0:npol,6)
 
@@ -486,30 +486,30 @@ subroutine prepare_attenuation(lambda, mu)
 
   include 'mesh_params.h'
 
-  double precision, intent(inout)   :: lambda(0:npol,0:npol,1:nelem)
-  double precision, intent(inout)   :: mu(0:npol,0:npol,1:nelem)
+  real(kind=dp)    , intent(inout)   :: lambda(0:npol,0:npol,1:nelem)
+  real(kind=dp)    , intent(inout)   :: mu(0:npol,0:npol,1:nelem)
 
-  double precision                  :: mu_w1(0:npol,0:npol)
+  real(kind=dp)                      :: mu_w1(0:npol,0:npol)
 
-  double precision                  :: delta_mu_0(0:npol,0:npol)
-  double precision                  :: kappa_w1(0:npol,0:npol)
-  double precision                  :: delta_kappa_0(0:npol,0:npol)
+  real(kind=dp)                      :: delta_mu_0(0:npol,0:npol)
+  real(kind=dp)                      :: kappa_w1(0:npol,0:npol)
+  real(kind=dp)                      :: delta_kappa_0(0:npol,0:npol)
   
-  double precision                  :: kappa_fac, mu_fac
+  real(kind=dp)                      :: kappa_fac, mu_fac
 
-  double precision                  :: f_min, f_max, w_1, w_0
+  real(kind=dp)                      :: f_min, f_max, w_1, w_0
   integer                           :: nfsamp, max_it, i, iel, j
-  double precision                  :: Tw, Ty, d
+  real(kind=dp)                      :: Tw, Ty, d
   logical                           :: fixfreq
-  double precision, allocatable     :: w_samp(:), q_fit(:), chil(:)
-  double precision, allocatable     :: yp_j_mu(:)
-  double precision, allocatable     :: yp_j_kappa(:)
+  real(kind=dp)    , allocatable     :: w_samp(:), q_fit(:), chil(:)
+  real(kind=dp)    , allocatable     :: yp_j_mu(:)
+  real(kind=dp)    , allocatable     :: yp_j_kappa(:)
   
-  double precision                  :: local_crd_nodes(8,2)
-  double precision                  :: gamma_w_l(0:npol,0:npol)
+  real(kind=dp)                      :: local_crd_nodes(8,2)
+  real(kind=dp)                      :: gamma_w_l(0:npol,0:npol)
   integer                           :: inode, ipol, jpol
-  double precision                  :: dsdxi, dzdxi, dsdeta, dzdeta
-  double precision                  :: weights_cg(0:npol,0:npol)
+  real(kind=dp)                      :: dsdxi, dzdxi, dsdeta, dzdeta
+  real(kind=dp)                      :: weights_cg(0:npol,0:npol)
     
   integer                           :: iinparam_advanced=500, ioerr
   character(len=256)                :: line
@@ -943,15 +943,15 @@ end subroutine
 !! linearized version (exact = false) is eq 22 in E&K
 subroutine q_linear_solid(y_j, w_j, w, exact, Qls)
   
-  double precision, intent(in)    :: y_j(:), w_j(:), w(:)
-  double precision, intent(out)   :: Qls(size(w))
+  real(kind=dp)    , intent(in)    :: y_j(:), w_j(:), w(:)
+  real(kind=dp)    , intent(out)   :: Qls(size(w))
   integer                         :: j
   
   logical, optional, intent(in)           :: exact
   !f2py logical, optional, intent(in)     :: exact = 0 
   logical                                 :: exact_loc = .false.
   
-  double precision                :: Qls_denom(size(w))
+  real(kind=dp)                    :: Qls_denom(size(w))
   
   if (present(exact)) exact_loc = exact
   
@@ -977,10 +977,10 @@ end subroutine
 !! MvD Attenuation Notes, p. 17.3 bottom
 subroutine fast_correct(y_j, yp_j)
 
-  double precision, intent(in)    :: y_j(:)
-  double precision, intent(out)   :: yp_j(size(y_j))
+  real(kind=dp)    , intent(in)    :: y_j(:)
+  real(kind=dp)    , intent(out)   :: yp_j(size(y_j))
   
-  double precision                :: dy_j(size(y_j))
+  real(kind=dp)                    :: dy_j(size(y_j))
   integer                         :: k
 
   dy_j(1) = 1 + .5 * y_j(1)
@@ -998,14 +998,14 @@ end subroutine
 !> returns l2 misfit between constant Q and fitted Q using standard linear solids
 subroutine l2_error(Q, Qls, lognorm, lse)
  
-  double precision, intent(in)    :: Q, Qls(:)
+  real(kind=dp)    , intent(in)    :: Q, Qls(:)
   
   logical, optional, intent(in)   :: lognorm
   ! optional argument with default value (a bit nasty in f2py)
   !f2py logical, optional, intent(in) :: lognorm = 1
   logical :: lognorm_loc = .true.
   
-  double precision, intent(out)   :: lse
+  real(kind=dp)    , intent(out)   :: lse
   integer                         :: nfsamp, i
   
   if (present(lognorm)) lognorm_loc = lognorm
@@ -1068,13 +1068,13 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   use data_proc,            only: lpr, mynum
   ! use ifport
 
-  double precision, intent(in)            :: Q, f_min, f_max
+  real(kind=dp)    , intent(in)            :: Q, f_min, f_max
   integer, intent(in)                     :: N, nfsamp, max_it
 
-  double precision, optional, intent(in)          :: Tw, Ty, d
-  !f2py double precision, optional, intent(in)    :: Tw=.1, Ty=.1, d=.99995
-  double precision                                :: Tw_loc = .1, Ty_loc = .1
-  double precision                                :: d_loc = .99995
+  real(kind=dp)    , optional, intent(in)          :: Tw, Ty, d
+  !f2py real(kind=dp)    , optional, intent(in)    :: Tw=.1, Ty=.1, d=.99995
+  real(kind=dp)                                    :: Tw_loc = .1, Ty_loc = .1
+  real(kind=dp)                                    :: d_loc = .99995
 
   logical, optional, intent(in)           :: fixfreq, verbose, exact
   !f2py logical, optional, intent(in)     :: fixfreq = 0, verbose = 0
@@ -1086,17 +1086,17 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   !f2py character(len=7), optional, intent(in) :: mode = 'maxwell'
   character(len=7)                        :: mode_loc = 'maxwell'
 
-  double precision, intent(out)   :: w_j(N)
-  double precision, intent(out)   :: y_j(N)
-  double precision, intent(out)   :: w(nfsamp) 
-  double precision, intent(out)   :: q_fit(nfsamp) 
-  double precision, intent(out)   :: chil(max_it) 
+  real(kind=dp)    , intent(out)   :: w_j(N)
+  real(kind=dp)    , intent(out)   :: y_j(N)
+  real(kind=dp)    , intent(out)   :: w(nfsamp) 
+  real(kind=dp)    , intent(out)   :: q_fit(nfsamp) 
+  real(kind=dp)    , intent(out)   :: chil(max_it) 
 
-  double precision                :: w_j_test(N)
-  double precision                :: y_j_test(N)
-  double precision                :: expo
-  double precision                :: chi, chi_test
-  double precision                :: randnr
+  real(kind=dp)                    :: w_j_test(N)
+  real(kind=dp)                    :: y_j_test(N)
+  real(kind=dp)                    :: expo
+  real(kind=dp)                    :: chi, chi_test
+  real(kind=dp)                    :: randnr
 
   integer             :: j, it, last_it_print
 

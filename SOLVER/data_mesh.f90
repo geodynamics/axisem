@@ -55,20 +55,20 @@ module data_mesh
   real(kind=realkind)   :: mean_rad_colat_fluid(nel_fluid,2)
   
   ! Global mesh informations
-  double precision      :: router ! Outer radius (surface)
+  real(kind=dp)          :: router ! Outer radius (surface)
 
   ! critical mesh parameters (spacing/velocity, characteristic lead time etc)
-  double precision      :: pts_wavelngth
-  double precision      :: hmin_glob, hmax_glob
-  double precision      :: min_distance_dim, min_distance_nondim
-  double precision      :: char_time_max
+  real(kind=dp)          :: pts_wavelngth
+  real(kind=dp)          :: hmin_glob, hmax_glob
+  real(kind=dp)          :: min_distance_dim, min_distance_nondim
+  real(kind=dp)          :: char_time_max
   integer               :: char_time_max_globel
-  double precision      :: char_time_max_rad, char_time_max_theta
-  double precision      :: char_time_min
+  real(kind=dp)          :: char_time_max_rad, char_time_max_theta
+  real(kind=dp)          :: char_time_min
   integer               :: char_time_min_globel
-  double precision      :: char_time_min_rad, char_time_min_theta
-  double precision      :: vpmin, vsmin, vpmax, vsmax
-  double precision      :: vpminr, vsminr, vpmaxr, vsmaxr
+  real(kind=dp)          :: char_time_min_rad, char_time_min_theta
+  real(kind=dp)          :: vpmin, vsmin, vpmax, vsmax
+  real(kind=dp)          :: vpminr, vsminr, vpmaxr, vsmaxr
   integer, dimension(3) :: vpminloc, vsminloc, vpmaxloc, vsmaxloc
 
   !----------------------------------------------------------------------
@@ -102,12 +102,12 @@ module data_mesh
   character(len=100)          :: bkgrdmodel
   character(len=100)          :: meshname
   logical                     :: resolve_inner_shear, have_fluid
-  double precision            :: discont(ndisc)
+  real(kind=dp)                :: discont(ndisc)
   logical                     :: solid_domain(ndisc)
   integer                     :: idom_fluid(ndisc)
-  double precision            :: rmin, minh_ic, maxh_ic, maxh_icb
+  real(kind=dp)                :: rmin, minh_ic, maxh_ic, maxh_icb
   logical                     :: make_homo
-  double precision            :: vphomo, vshomo, rhohomo
+  real(kind=dp)                :: vphomo, vshomo, rhohomo
   logical                     :: ani_true  ! anisotropic model?
   logical                     :: anel_true ! anelastic model?
   !--------------------------------------------------------------------------

@@ -44,14 +44,14 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
     include 'mesh_params.h'
 
     integer :: ij
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout) :: rho
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
            xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
     integer, dimension(nelem), intent(in), optional :: ieldom
 
-    double precision, dimension(0:npol,0:npol,nelem) :: rhopost,lambdapost,mupost
-    double precision, dimension(:,:,:), allocatable :: &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem) :: rhopost,lambdapost,mupost
+    real(kind=dp)    , dimension(:,:,:), allocatable :: &
            xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
 
     if (lpr) then
@@ -338,8 +338,8 @@ end subroutine read_param_hetero
 !-----------------------------------------------------------------------------------------
 subroutine rotate_hetero(r,th)
 
-    double precision,intent(inout) :: r,th
-    double precision :: x_vec(3), x_vec_rot(3), r_r, arg1
+    real(kind=dp)    ,intent(inout) :: r,th
+    real(kind=dp)     :: x_vec(3), x_vec_rot(3), r_r, arg1
 
     x_vec(1) = r * dsin(th)
     x_vec(2) = 0.d0
@@ -364,15 +364,15 @@ subroutine load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, &
     use utlity,     only: thetacoord, rcoord
     use data_mesh,  only: discont
 
-    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
-    double precision, dimension(0:npol,0:npol,nelem), intent(out) :: lambdapost, &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(out) :: lambdapost, &
            xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
     integer, dimension(nelem), intent(in) :: ieldom
 
-    double precision, dimension(1:3) :: fast_axis_np
+    real(kind=dp)    , dimension(1:3) :: fast_axis_np
     integer :: hetind
-    double precision, allocatable :: fast_axis_src(:,:)
-    double precision :: vptmp, vstmp, arg1
+    real(kind=dp)    , allocatable :: fast_axis_src(:,:)
+    real(kind=dp)     :: vptmp, vstmp, arg1
     integer :: iel, ipol, jpol, i
     
     allocate(fast_axis_src(num_slices,1:3))
@@ -464,34 +464,34 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                            eta_ani_post, fa_ani_theta_post, fa_ani_phi_post)
     use kdtree2_module
 
-    double precision, dimension(0:npol,0:npol,nelem), intent(in)    :: rho
-    double precision, dimension(0:npol,0:npol,nelem), intent(in)    :: lambda,mu
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in)    :: rho
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in)    :: lambda,mu
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
                                                             lambdapost, mupost
 
-    double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in), optional :: &
                                                             xi_ani, phi_ani, eta_ani
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
                                                xi_ani_post, phi_ani_post, eta_ani_post
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
                                                fa_ani_theta_post, fa_ani_phi_post
 
     integer                         :: hetind
-    double precision, allocatable   :: w(:)
+    real(kind=dp)    , allocatable   :: w(:)
     integer                         :: iel, ipol, jpol, i, j
     integer                         :: num_het_pts
-    double precision                :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
-    double precision                :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
-    double precision                :: fa_theta_tmp, fa_phi_tmp
-    double precision                :: rmin, rmax, thetamin, thetamax
-    double precision, allocatable   :: szhet(:,:)
-    double precision, allocatable   :: rhet2(:), thhet2(:)
-    double precision, allocatable   :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
-    double precision, allocatable   :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
+    real(kind=dp)                    :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
+    real(kind=dp)                    :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
+    real(kind=dp)                    :: fa_theta_tmp, fa_phi_tmp
+    real(kind=dp)                    :: rmin, rmax, thetamin, thetamax
+    real(kind=dp)    , allocatable   :: szhet(:,:)
+    real(kind=dp)    , allocatable   :: rhet2(:), thhet2(:)
+    real(kind=dp)    , allocatable   :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
+    real(kind=dp)    , allocatable   :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
                                        delta_vsv2(:), delta_eta2(:)
-    double precision, allocatable   :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
-    double precision, allocatable   :: fa_theta2(:), fa_phi2(:)
-    double precision, allocatable   :: rho2(:), vp2(:), vs2(:)
+    real(kind=dp)    , allocatable   :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
+    real(kind=dp)    , allocatable   :: fa_theta2(:), fa_phi2(:)
+    real(kind=dp)    , allocatable   :: rho2(:), vp2(:), vs2(:)
 
     type(kdtree2), pointer          :: tree
     
@@ -881,12 +881,12 @@ end subroutine load_het_discr
 subroutine inverse_distance_weighting(s0, z0, tree, w, hetind)
     use kdtree2_module
 
-    double precision, intent(in)    :: s0, z0
+    real(kind=dp)    , intent(in)    :: s0, z0
     type(kdtree2), pointer          :: tree
-    double precision, intent(out)   :: w(1:tree%n)
+    real(kind=dp)    , intent(out)   :: w(1:tree%n)
     integer, intent(in)             :: hetind
 
-    double precision                :: d2d
+    real(kind=dp)                    :: d2d
     integer                         :: i, nfound
     real(kdkind), dimension(2)      :: qv
 
@@ -944,13 +944,13 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
     use data_mesh,          only : discont, bkgrdmodel
 
     integer, intent(in)                     :: hetind, num_het_pts
-    double precision, intent(in)            :: rhet2(:), thhet2(:)
-    double precision, intent(in), optional  :: delta_vp2(:), delta_vs2(:), delta_rho2(:)
-    double precision, intent(in), optional  :: delta_vpv2(:), delta_vsv2(:), &
+    real(kind=dp)    , intent(in)            :: rhet2(:), thhet2(:)
+    real(kind=dp)    , intent(in), optional  :: delta_vp2(:), delta_vs2(:), delta_rho2(:)
+    real(kind=dp)    , intent(in), optional  :: delta_vpv2(:), delta_vsv2(:), &
                                                delta_vph2(:), delta_vsh2(:), delta_eta2(:)
-    double precision, intent(in), optional  :: vpv2(:), vsv2(:), vph2(:), vsh2(:), eta2(:)
-    double precision, intent(in), optional  :: vp2(:), vs2(:), rho2(:)
-    double precision, intent(in), optional  :: fa_theta2(:), fa_phi2(:)
+    real(kind=dp)    , intent(in), optional  :: vpv2(:), vsv2(:), vph2(:), vsh2(:), eta2(:)
+    real(kind=dp)    , intent(in), optional  :: vp2(:), vs2(:), rho2(:)
+    real(kind=dp)    , intent(in), optional  :: fa_theta2(:), fa_phi2(:)
 
     integer                             :: j, idom
     real, allocatable, dimension(:,:)   :: meshtmp
@@ -1114,9 +1114,9 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     use data_mesh, only : naxel, ax_el
     use utlity, only :  thetacoord, rcoord, zcoord
 
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
-    double precision, dimension(0:npol,0:npol,nelem), intent(out)   :: rhopost, &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout) :: rho
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(out)   :: rhopost, &
                                                                        lambdapost, mupost
     integer         :: hetind
     real(kind=8)    :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
@@ -1323,30 +1323,30 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
     use background_models, only : velocity
     use data_mesh, only : discont, bkgrdmodel
 
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rho
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
-    double precision, dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout) :: rho
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
                                                                        lambdapost, mupost
     integer, intent(in)                                             :: hetind
 
-    double precision :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
-    double precision :: vptmp, vstmp, rhotmp, s, z, r, th, gauss_val
-    double precision :: r_center_gauss, th_center_gauss
-    double precision :: s_center_gauss, z_center_gauss, halfwidth_r, halfwidth_th
-    double precision, allocatable :: rhet(:), thhet(:), phhet(:) 
+    real(kind=dp)     :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
+    real(kind=dp)     :: vptmp, vstmp, rhotmp, s, z, r, th, gauss_val
+    real(kind=dp)     :: r_center_gauss, th_center_gauss
+    real(kind=dp)     :: s_center_gauss, z_center_gauss, halfwidth_r, halfwidth_th
+    real(kind=dp)    , allocatable :: rhet(:), thhet(:), phhet(:) 
 
     ! start elastic property values
-    double precision :: vpst, vsst, rhost
+    real(kind=dp)     :: vpst, vsst, rhost
     integer :: iel, ipol, jpol, icount, jj, ij, iel_count, idom
     logical :: foundit
-    double precision :: r1, r2, r3, r4, th1, th2, th3, th4
-    double precision :: rmin, rmax, thetamin, thetamax
+    real(kind=dp)     :: r1, r2, r3, r4, th1, th2, th3, th4
+    real(kind=dp)     :: rmin, rmax, thetamin, thetamax
 
     ! for gradient
-    double precision :: grad_halfwidth_r, grad_halfwidth_th
-    double precision :: grad_r_het, grad_th_het2, grad_th_het1
-    double precision :: dr_outer, dr_inner, dth_outer, dth_inner
-    double precision :: val, dro, dru, grad_th_val, gradwidth, grad_val
+    real(kind=dp)     :: grad_halfwidth_r, grad_halfwidth_th
+    real(kind=dp)     :: grad_r_het, grad_th_het2, grad_th_het1
+    real(kind=dp)     :: dr_outer, dr_inner, dth_outer, dth_inner
+    real(kind=dp)     :: val, dro, dru, grad_th_val, gradwidth, grad_val
 
     if (het_funct_type(hetind) == 'gauss') then 
        decay = 3.5d0
@@ -1849,8 +1849,8 @@ end subroutine load_het_funct
 subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                   fa_ani_theta, fa_ani_phi)
     
-    double precision, dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
-    double precision, dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
+    real(kind=dp)    , dimension(0:npol,0:npol,nelem), intent(in), optional :: &
                                     xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
 
     real, dimension(:), allocatable     :: vp_all, vs_all, rho_all
@@ -1858,7 +1858,7 @@ subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
     real, dimension(:), allocatable     :: xi_all, phi_all, fa_theta_all, fa_phi_all
     real, dimension(:,:), allocatable   :: mesh2
     character(len=200)                  :: fname
-    double precision                    :: s, z, r, th
+    real(kind=dp)                        :: s, z, r, th
     integer                             :: iel, ipol, jpol, icount
 
     write(6,*) 'plotting heterogeneous region in pointwise vtk'

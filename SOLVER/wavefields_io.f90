@@ -214,7 +214,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     character(len=4)                :: appisnap
     integer                         :: iel, iidim, ct, ipol, jpol, ipol1, jpol1, i, j
     real(kind=realkind)             :: dsdchi, prefac
-    real(4), allocatable            :: u(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
+    real(sp), allocatable           :: u(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
     real(kind=realkind)             :: f_sol_spz(0:npol,0:npol,1:nel_solid,3)
     character(len=120)              :: fname
 

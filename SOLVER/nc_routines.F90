@@ -35,21 +35,21 @@ module nc_routines
     private 
 
     !> Buffer variable for recorder 
-    real, allocatable   :: recdumpvar(:,:,:)
+    real(sp), allocatable   :: recdumpvar(:,:,:)
     !> Buffer variable for displacement at surface
-    real, allocatable   :: surfdumpvar_disp(:,:,:)
+    real(sp), allocatable   :: surfdumpvar_disp(:,:,:)
     !> Buffer variable for velocity at surface 
-    real, allocatable   :: surfdumpvar_velo(:,:,:)
+    real(sp), allocatable   :: surfdumpvar_velo(:,:,:)
     !> Buffer variable for strain at surface
-    real, allocatable   :: surfdumpvar_strain(:,:,:)
+    real(sp), allocatable   :: surfdumpvar_strain(:,:,:)
     !> Buffer variable for source displacement at surface
-    real, allocatable   :: surfdumpvar_srcdisp(:,:,:)
+    real(sp), allocatable   :: surfdumpvar_srcdisp(:,:,:)
 !    real, allocatable   :: oneddumpvar_flu(:,:,:)    !< Buffer variable for everything fluid dumped in nc_dump_field_1d
 !    real, allocatable   :: oneddumpvar_sol(:,:,:)    !< Buffer variable for everything solid dumped in nc_dump_field_1d
 
     !> Buffer variable for everything dumped in nc_dump_field_1d
-    real, allocatable   :: oneddumpvar(:,:,:)
-    real, allocatable   :: scoord1d(:), zcoord1d(:)
+    real(sp), allocatable   :: oneddumpvar(:,:,:)
+    real(sp), allocatable   :: scoord1d(:), zcoord1d(:)
     
     !> Number of steps before kernel specific stuff is dumped 
     integer             :: dumpstepsnap
@@ -381,7 +381,7 @@ end subroutine nc_dump_strain_to_disk
 subroutine nc_dump_rec(recfield)
     use data_mesh, ONLY: num_rec
     use data_io,   ONLY: iseismo
-    real, intent(in), dimension(3,num_rec) :: recfield
+    real(sp), intent(in), dimension(3,num_rec) :: recfield
 #ifdef unc
     
     recdumpvar(iseismo,:,:) = recfield(:,:)
@@ -459,7 +459,7 @@ subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
     use data_io, ONLY : ndumppts_el
     include    'mesh_params.h'
-    real, intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
+    real(sp), intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
 #ifdef unc
 
     npts_sol = size(scoord_sol)
@@ -485,7 +485,7 @@ end subroutine nc_dump_mesh_sol
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
 
-    real, intent(in), dimension(:,:,:) :: scoord_flu, zcoord_flu 
+    real(sp), intent(in), dimension(:,:,:) :: scoord_flu, zcoord_flu 
 #ifdef unc
 
     npts_flu = size(scoord_flu)
@@ -542,25 +542,25 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     include 'mesh_params.h'
 
-    integer, intent(in)                 :: nrec              !< Number of receivers
-    character(len=40),intent(in)        :: rec_names(nrec)   !< Receiver names
-    real(8), dimension(nrec),intent(in) :: rec_th            !< Receiver theta 
-    real(8), dimension(nrec),intent(in) :: rec_th_req        !< Requested receiver theta
-    real(8), dimension(nrec),intent(in) :: rec_ph            !< Receiver phi
-    integer, dimension(nrec),intent(in) :: rec_proc          !< Receiver processor
+    integer, intent(in)                  :: nrec              !< Number of receivers
+    character(len=40),intent(in)         :: rec_names(nrec)   !< Receiver names
+    real(dp), dimension(nrec),intent(in) :: rec_th            !< Receiver theta 
+    real(dp), dimension(nrec),intent(in) :: rec_th_req        !< Requested receiver theta
+    real(dp), dimension(nrec),intent(in) :: rec_ph            !< Receiver phi
+    integer, dimension(nrec),intent(in)  :: rec_proc          !< Receiver processor
 #ifdef unc
-    real(8), dimension(nstrain)         :: time
-    character(len=16), allocatable      :: varname(:)
-    integer                             :: ivar, i
-    integer                             :: irec, iproc, nmode
-    integer                             :: nc_latr_varid, nc_lon_varid 
-    integer                             :: nc_lat_varid, nc_ph_varid
-    integer                             :: nc_thr_varid, nc_th_varid 
-    integer                             :: nc_proc_varid, nc_recnam_dimid
-    integer                             :: nc_recnam_varid, nc_surf_dimid
-    integer                             :: nc_pt_dimid
-    integer                             :: nc_mesh_s_varid, nc_mesh_z_varid   
-    integer                             :: nc_disc_dimid, nc_disc_varid
+    real(dp), dimension(nstrain)         :: time
+    character(len=16), allocatable       :: varname(:)
+    integer                              :: ivar, i
+    integer                              :: irec, iproc, nmode
+    integer                              :: nc_latr_varid, nc_lon_varid 
+    integer                              :: nc_lat_varid, nc_ph_varid
+    integer                              :: nc_thr_varid, nc_th_varid 
+    integer                              :: nc_proc_varid, nc_recnam_dimid
+    integer                              :: nc_recnam_varid, nc_surf_dimid
+    integer                              :: nc_pt_dimid
+    integer                              :: nc_mesh_s_varid, nc_mesh_z_varid   
+    integer                              :: nc_disc_dimid, nc_disc_varid
 
     if ((mynum == 0) .and. (verbose > 1)) then
         write(6,*)
@@ -925,8 +925,8 @@ end subroutine nc_write_att_char
 !-----------------------------------------------------------------------------------------
 !> Write NetCDF attribute of type Real
 subroutine nc_write_att_real(attribute_value, attribute_name)
-  character(len=*),  intent(in)     :: attribute_name
-  real, intent(in)                  :: attribute_value
+  character(len=*),  intent(in)      :: attribute_name
+  real(sp), intent(in)               :: attribute_value
 
 #ifdef unc
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
@@ -1125,7 +1125,7 @@ subroutine nc_dump_snapshot(u)
     use data_io,        only: isnap, nsnap
     use data_source,    only: src_type
 
-    real, dimension(3,npoint_plot), intent(in)       :: u
+    real(kind=realkind), dimension(3,npoint_plot), intent(in)       :: u
 
 #ifdef unc
     if (src_type(1) == 'monopole') then
@@ -1169,7 +1169,7 @@ end subroutine nc_dump_snapshot
 subroutine nc_dump_snap_points(points)
 
     use data_mesh, only: npoint_plot
-    real, dimension(2,npoint_plot), intent(in)       :: points
+    real(sp), dimension(2,npoint_plot), intent(in)       :: points
 
 #ifdef unc
     call check(nf90_put_var(ncid   = ncid_out_snap, &

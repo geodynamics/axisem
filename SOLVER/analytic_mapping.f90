@@ -51,13 +51,13 @@ module analytic_mapping
 contains
 
 !-----------------------------------------------------------------------------------------
-double precision function mapping_anal(xil, etal, nodes_crd, iaxis, ielem0)
+real(kind=dp)     function mapping_anal(xil, etal, nodes_crd, iaxis, ielem0)
 ! This routine computes the coordinates along the iaxis axis 
 ! of the image of any point in the reference domain in the physical domain
 ! using the implicit assumption that the domain is spheroidal.
 
   integer,intent(in)          :: iaxis,ielem0
-  double precision,intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    ,intent(in) :: xil, etal, nodes_crd(8,2)
   
   if (eltype(ielem0) == 'curved') &
      mapping_anal = map_spheroid(xil,etal,nodes_crd,iaxis)
@@ -72,12 +72,12 @@ end function mapping_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function quadfunc_map_anal(p, s, z, nodes_crd, ielem0)
+real(kind=dp)     function quadfunc_map_anal(p, s, z, nodes_crd, ielem0)
 ! This routines computes the quadratic functional 
 ! (s-s(xi,eta))**2 + (z-z(xi,eta))**2
 
   integer :: ielem0
-  double precision :: p(2), xil,etal,s,z, nodes_crd(8,2)
+  real(kind=dp)     :: p(2), xil,etal,s,z, nodes_crd(8,2)
 
   xil  = p(1)
   etal = p(2)
@@ -94,8 +94,8 @@ subroutine grad_quadfunc_map_anal(grd, p, s, z, nodes_crd, ielem0)
 ! associated with the mapping.
 
   integer :: ielem0
-  double precision :: grd(2),p(2),xil, etal, s,z, nodes_crd(8,2)
-  double precision :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=dp)     :: grd(2),p(2),xil, etal, s,z, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdxi,dsdeta,dzdeta
 
   xil  = p(1)
   etal = p(2)
@@ -112,7 +112,7 @@ end subroutine grad_quadfunc_map_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function s_over_oneplusxi_axis_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function s_over_oneplusxi_axis_anal(xil, etal, nodes_crd, ielem0)
 ! This routine returns the value of the quantity
 !  
 !              s/(1+xi) 
@@ -121,8 +121,8 @@ double precision function s_over_oneplusxi_axis_anal(xil, etal, nodes_crd, ielem
 ! symmetry, in the case of an analytical transformation. 
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdxi,dsdeta,dzdeta
 
   if ( xil == -one ) then 
      ! Apply L'Hopital's rule
@@ -138,14 +138,14 @@ end function s_over_oneplusxi_axis_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function jacobian_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function jacobian_anal(xil, etal, nodes_crd, ielem0)
 ! This function returns the value of the jacobian of the
 ! analytical mapping between the reference square [-1,1]^2 and
 ! the deformed element in the spheroid. 
 
   integer,intent(in)          :: ielem0
-  double precision,intent(in) :: xil, etal, nodes_crd(8,2)
-  double precision            :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=dp)    ,intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)                :: dsdxi,dzdxi,dsdeta,dzdeta
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -155,7 +155,7 @@ end function jacobian_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function jacobian_srf_anal(xil, crdedge)
+real(kind=dp)     function jacobian_srf_anal(xil, crdedge)
 ! This routine computes the Jacobian of the transformation
 ! that maps [-1,+1] into a portion of the boundary of domain.  
 !
@@ -163,10 +163,10 @@ double precision function jacobian_srf_anal(xil, crdedge)
 !        ---->
 ! 1 - - - 2 - - - 3 .
 
-  double precision :: xil, crdedge(3,2)
-  double precision :: dsdxi,dzdxi,s1,s2,s3,z1,z2,z3
-  double precision :: thetabar,deltatheta,a,b
-  double precision :: arg,dist
+  real(kind=dp)     :: xil, crdedge(3,2)
+  real(kind=dp)     :: dsdxi,dzdxi,s1,s2,s3,z1,z2,z3
+  real(kind=dp)     :: thetabar,deltatheta,a,b
+  real(kind=dp)     :: arg,dist
 
   s1 = crdedge(1,1) ; s2 = crdedge(2,1) ; s3 = crdedge(3,1)
   z1 = crdedge(1,2) ; z2 = crdedge(2,2) ; z3 = crdedge(3,2)
@@ -187,7 +187,7 @@ end function jacobian_srf_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function alphak_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function alphak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    alphak =  ( -ds/dxi ) * ( ds/deta) / J(xi,eta),
@@ -198,8 +198,8 @@ double precision function alphak_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -210,7 +210,7 @@ end function alphak_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function betak_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function betak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    betak =  ( ds/dxi ) * ( ds/dxi) / J(xi,eta),
@@ -221,8 +221,8 @@ double precision function betak_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &     
                                    nodes_crd,ielem0)
@@ -233,7 +233,7 @@ double precision function betak_anal(xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function gammak_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function gammak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    gammak =  ( ds/deta ) * ( ds/deta) / J(xi,eta),
@@ -244,8 +244,8 @@ double precision function gammak_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 !
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -256,7 +256,7 @@ end function gammak_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function deltak_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function deltak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    deltak = -( dz/dxi ) * ( dz/deta) / J(xi,eta),
@@ -267,8 +267,8 @@ double precision function deltak_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 !
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -279,7 +279,7 @@ end function deltak_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function epsilonk_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function epsilonk_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    epsilonk = ( dz/dxi ) * ( dz/dxi) / J(xi,eta),
@@ -290,8 +290,8 @@ double precision function epsilonk_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 !
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -302,7 +302,7 @@ end function epsilonk_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function zetak_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function zetak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    zetak_anal = ( dz/deta ) * ( dz/deta) / J(xi,eta),
@@ -313,8 +313,8 @@ double precision function zetak_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 !
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -325,7 +325,7 @@ end function zetak_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function alpha_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function alpha_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    alpha = s(xi,eta) * ( -ds/dxi ) * ( ds/deta) / J(xi,eta),
@@ -336,8 +336,8 @@ double precision function alpha_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 !
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -348,7 +348,7 @@ double precision function alpha_anal(xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function beta_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function beta_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    beta =  s(xi,eta) * ( ds/dxi ) * ( ds/dxi) / J(xi,eta),
@@ -359,8 +359,8 @@ double precision function beta_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -371,7 +371,7 @@ double precision function beta_anal(xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function gamma_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function gamma_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    gamma = s(xi,eta) * ( ds/deta ) * ( ds/deta) / J(xi,eta),
@@ -382,8 +382,8 @@ double precision function gamma_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -394,7 +394,7 @@ end function gamma_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function delta_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function delta_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    delta = -s(xi,eta) * ( dz/dxi ) * ( dz/deta) / J(xi,eta),
@@ -405,8 +405,8 @@ double precision function delta_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 !
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -417,7 +417,7 @@ end function delta_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function epsilon_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function epsilon_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    epsilon = s(xi,eta) * ( dz/dxi ) * ( dz/dxi) / J(xi,eta),
@@ -428,8 +428,8 @@ double precision function epsilon_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 !
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -440,7 +440,7 @@ end function epsilon_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function zeta_anal(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function zeta_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    zeta_anal = s(xi,eta) * ( dz/deta ) * ( dz/deta) / J(xi,eta),
@@ -451,8 +451,8 @@ double precision function zeta_anal(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 !
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal,&
                                    nodes_crd,ielem0)
@@ -463,7 +463,7 @@ double precision function zeta_anal(xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function Ms_z_eta_s_xi(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function Ms_z_eta_s_xi(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_eta_s_xi = s(xi,eta) / J(xi,eta) * ( ds/dxi ) * ( dz/deta)
@@ -476,8 +476,8 @@ double precision function Ms_z_eta_s_xi(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -488,7 +488,7 @@ end function Ms_z_eta_s_xi
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function Ms_z_eta_s_eta(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function Ms_z_eta_s_eta(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_eta_s_eta = - s(xi,eta) / J(xi,eta) * ( ds/deta ) * ( dz/deta)
@@ -498,8 +498,8 @@ double precision function Ms_z_eta_s_eta(xil, etal, nodes_crd, ielem0)
 !          in the SECOND TERM OF dzds_0
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -510,7 +510,7 @@ end function Ms_z_eta_s_eta
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function Ms_z_xi_s_eta(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function Ms_z_xi_s_eta(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_xi_s_eta = s(xi,eta) / J(xi,eta) * ( ds/deta ) * ( dz/xi)
@@ -520,8 +520,8 @@ double precision function Ms_z_xi_s_eta(xil, etal, nodes_crd, ielem0)
 !          in the FIRST TERM OF dzds_0
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -532,7 +532,7 @@ end function Ms_z_xi_s_eta
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function Ms_z_xi_s_xi(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function Ms_z_xi_s_xi(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_xi_s_xi = - s(xi,eta) / J(xi,eta) * ( ds/dxi ) * ( dz/xi)
@@ -542,8 +542,8 @@ double precision function Ms_z_xi_s_xi(xil, etal, nodes_crd, ielem0)
 !          in the FOURTH TERM OF dzds_0
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -557,7 +557,7 @@ end function Ms_z_xi_s_xi
 !**********BEGIN axial part of M_* definitions**********************
 !*******************************************************************
 !-----------------------------------------------------------------------------------------
-double precision function Ms_z_eta_s_xi_k(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function Ms_z_eta_s_xi_k(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_eta_s_xi_k = 1 / J(xi,eta) * ( ds/dxi ) * ( dz/deta)
@@ -570,8 +570,8 @@ double precision function Ms_z_eta_s_xi_k(xil, etal, nodes_crd, ielem0)
 ! the Jacobian matrix of the transformation.
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal,nodes_crd,ielem0)
   inv_jacob  = one/(dsdxi*dzdeta - dsdeta*dzdxi)
@@ -581,7 +581,7 @@ end function Ms_z_eta_s_xi_k
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function Ms_z_eta_s_eta_k(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function Ms_z_eta_s_eta_k(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_eta_s_eta_k = - 1 / J(xi,eta) * ( ds/deta ) * ( dz/deta)
@@ -591,8 +591,8 @@ double precision function Ms_z_eta_s_eta_k(xil, etal, nodes_crd, ielem0)
 !          in the SECOND TERM OF dzds_0
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -603,7 +603,7 @@ end function Ms_z_eta_s_eta_k
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function Ms_z_xi_s_eta_k(xil, etal, nodes_crd, ielem0)
+real(kind=dp)     function Ms_z_xi_s_eta_k(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_xi_s_eta_k = 1 / J(xi,eta) * ( ds/deta ) * ( dz/xi)
@@ -613,8 +613,8 @@ double precision function Ms_z_xi_s_eta_k(xil, etal, nodes_crd, ielem0)
 !          in the FIRST TERM OF dzds_0
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -625,7 +625,7 @@ end function Ms_z_xi_s_eta_k
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function Ms_z_xi_s_xi_k(xil,etal,nodes_crd,ielem0)
+real(kind=dp)     function Ms_z_xi_s_xi_k(xil,etal,nodes_crd,ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_xi_s_xi = - 1 / J(xi,eta) * ( ds/dxi ) * ( dz/xi)
@@ -635,8 +635,8 @@ double precision function Ms_z_xi_s_xi_k(xil,etal,nodes_crd,ielem0)
 !          in the FOURTH TERM OF dzds_0
 
   integer :: ielem0
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -665,10 +665,10 @@ subroutine mgrad_pointwise_anal(mg, xil, etal, nodes_crd, ielem0)
 !gradient/divergence related arrays.
 
   integer :: ielem0
-  double precision :: mg(2,2) 
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: dsdxi,dsdeta,dzdxi,dzdeta
-  double precision :: sloc
+  real(kind=dp)     :: mg(2,2) 
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: dsdxi,dsdeta,dzdxi,dzdeta
+  real(kind=dp)     :: sloc
 
   mg(:,:) = zero
 
@@ -697,9 +697,9 @@ subroutine mgrad_pointwisek_anal(mg, xil, etal, nodes_crd, ielem0)
 ! gradient/divergence related arrays.
 
   integer,intent(in)           :: ielem0
-  double precision,intent(in)  :: xil, etal, nodes_crd(8,2)
-  double precision,intent(out) :: mg(2,2) 
-  double precision             :: dsdxi,dsdeta,dzdxi,dzdeta
+  real(kind=dp)    ,intent(in)  :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    ,intent(out) :: mg(2,2) 
+  real(kind=dp)                 :: dsdxi,dsdeta,dzdxi,dzdeta
 
   mg(:,:) = zero
 
@@ -720,8 +720,8 @@ subroutine compute_partial_derivatives(dsdxi, dzdxi, dsdeta, dzdeta, xil, etal, 
 ! of the analytic spheroidal mapping. 
 !
   integer,intent(in)            :: ielem0
-  double precision,intent(in)   :: xil, etal, nodes_crd(8,2)
-  double precision ,intent(out) :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=dp)    ,intent(in)   :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     ,intent(out) :: dsdxi,dzdxi,dsdeta,dzdeta
 
   if (eltype(ielem0) == 'curved') & 
   call compute_partial_d_spheroid(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal,nodes_crd)
@@ -737,9 +737,9 @@ end subroutine compute_partial_derivatives
 
 !-----------------------------------------------------------------------------------------
 subroutine compute_parameters(nodes_crd, a1, a2, b1, b2, deltatheta, thetabar)
-  double precision :: nodes_crd(8,2)
-  double precision :: a1,a2,b1,b2,deltatheta,thetabar,theta3,theta1
-  double precision ::  s1,z1,s3,z3,s5,z5,s7,z7
+  real(kind=dp)     :: nodes_crd(8,2)
+  real(kind=dp)     :: a1,a2,b1,b2,deltatheta,thetabar,theta3,theta1
+  real(kind=dp)     ::  s1,z1,s3,z3,s5,z5,s7,z7
 
   s1 = nodes_crd(1,1)
   z1 = nodes_crd(1,2)
@@ -777,10 +777,10 @@ end subroutine compute_parameters
 subroutine compute_parameters_new(nodes_crd, a1, a2, b1, b2, deltatheta1, &
                                   thetabar1, deltatheta2, thetabar2)
   
-  double precision :: nodes_crd(8,2)
-  double precision :: a1,a2,b1,b2,deltatheta1,thetabar1,deltatheta2,thetabar2
-  double precision :: theta3,theta1,theta5,theta7
-  double precision ::  s1,z1,s3,z3,s5,z5,s7,z7
+  real(kind=dp)     :: nodes_crd(8,2)
+  real(kind=dp)     :: a1,a2,b1,b2,deltatheta1,thetabar1,deltatheta2,thetabar2
+  real(kind=dp)     :: theta3,theta1,theta5,theta7
+  real(kind=dp)     ::  s1,z1,s3,z3,s5,z5,s7,z7
 
   s1 = nodes_crd(1,1) 
   z1 = nodes_crd(1,2)
@@ -825,9 +825,9 @@ end subroutine compute_parameters_new
 !-----------------------------------------------------------------------------------------
 subroutine compute_parameters_srf(s1, s3, z1, z3, a, b, deltatheta, thetabar)
 
-  double precision,intent(out) :: a,b,deltatheta,thetabar
-  double precision :: theta3,theta1
-  double precision,intent(in) ::  s1,z1,s3,z3
+  real(kind=dp)    ,intent(out) :: a,b,deltatheta,thetabar
+  real(kind=dp)     :: theta3,theta1
+  real(kind=dp)    ,intent(in) ::  s1,z1,s3,z3
  
   a= zero
   b = zero

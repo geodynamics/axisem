@@ -43,7 +43,7 @@ module subpar_mapping
 contains
 
 !-----------------------------------------------------------------------------------------
-double precision function mapping_subpar(xil,etal,nodes_crd,iaxis)
+real(kind=dp)     function mapping_subpar(xil,etal,nodes_crd,iaxis)
 ! This routines computes the coordinates along the iaxis axis of the image of
 ! any point in the reference domain in the physical domain.
 !
@@ -61,9 +61,9 @@ double precision function mapping_subpar(xil,etal,nodes_crd,iaxis)
 ! iaxis = 2 : along the vertical(rotation) axis
   
   integer          :: iaxis
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer          :: inode
-  double precision :: shp(8)
+  real(kind=dp)     :: shp(8)
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -80,10 +80,10 @@ end function mapping_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function quadfunc_map_subpar(p, s, z, nodes_crd)
+real(kind=dp)     function quadfunc_map_subpar(p, s, z, nodes_crd)
 ! This routines computes the quadratic functional (s-s(xi,eta))**2 + (z-z(xi,eta))**2
 
-  double precision :: p(2),xil,etal,s,z,nodes_crd(8,2)
+  real(kind=dp)     :: p(2),xil,etal,s,z,nodes_crd(8,2)
   
   xil  = p(1)
   etal = p(2)
@@ -99,8 +99,8 @@ subroutine grad_quadfunc_map_subpar(grd, p, s, z, nodes_crd)
 ! This routine returns the gradient of the quadratic functional associated with
 ! the mapping.
 
-  double precision :: grd(2),p(2),xil, etal, s,z, nodes_crd(8,2)
-  double precision :: shpder(8,2),a,d,b,c
+  real(kind=dp)     :: grd(2),p(2),xil, etal, s,z, nodes_crd(8,2)
+  real(kind=dp)     :: shpder(8,2),a,d,b,c
   integer          :: inode
 
   xil  = p(1)
@@ -131,10 +131,10 @@ end subroutine grad_quadfunc_map_subpar
 !-----------------------------------------------------------------------------------------
 subroutine compute_partial_d_subpar(dsdxi, dzdxi, dsdeta, dzdeta, xil, etal, nodes_crd)
 
-  double precision, intent(out) :: dsdxi,dzdxi,dsdeta,dzdeta
-  double precision, intent(in) :: xil,etal,nodes_crd(8,2)
+  real(kind=dp)    , intent(out) :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=dp)    , intent(in) :: xil,etal,nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2)
+  real(kind=dp)     :: shpder(8,2)
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -153,7 +153,7 @@ end subroutine compute_partial_d_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function s_over_oneplusxi_axis_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function s_over_oneplusxi_axis_subpar(xil, etal, nodes_crd)
 ! This routine returns the value of the quantity
 !  
 !              s/(1+xi) 
@@ -173,8 +173,8 @@ double precision function s_over_oneplusxi_axis_subpar(xil, etal, nodes_crd)
 ! 1 - - - 2 - - - 3 .
  
   
-  double precision :: xil, etal, nodes_crd(8,2)
-  double precision :: shp(2:6)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: shp(2:6)
   integer :: inode 
  
   s_over_oneplusxi_axis_subpar = zero
@@ -194,7 +194,7 @@ end function s_over_oneplusxi_axis_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function jacobian_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function jacobian_subpar(xil, etal, nodes_crd)
 ! This routines the value of the Jacobian (that is, 
 ! the determinant of the Jacobian matrix), for any point
 ! inside a given element. IT ASSUMES 8 nodes 2D isoparametric
@@ -212,9 +212,9 @@ double precision function jacobian_subpar(xil, etal, nodes_crd)
 !     |               |
 !     1 - - - 2 - - - 3 .
 !
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2),a,d,b,c
+  real(kind=dp)     :: shpder(8,2),a,d,b,c
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -240,7 +240,7 @@ end function jacobian_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function jacobian_srf_subpar(xil, crdedge)
+real(kind=dp)     function jacobian_srf_subpar(xil, crdedge)
 ! This routine computes the Jacobian of the transformation
 ! that maps [-1,+1] into a portion of the boundary of domain.  
 !
@@ -248,8 +248,8 @@ double precision function jacobian_srf_subpar(xil, crdedge)
 !        ---->
 ! 1 - - - 2 - - - 3 .
 !
-  double precision :: xil, crdedge(3,2)
-  double precision :: dsdxi,dzdxi,s1,s2,s3,z1,z2,z3 
+  real(kind=dp)     :: xil, crdedge(3,2)
+  real(kind=dp)     :: dsdxi,dzdxi,s1,s2,s3,z1,z2,z3 
 
   s1 = crdedge(1,1) ; s2 = crdedge(2,1) ; s3 = crdedge(3,1) 
   z1 = crdedge(1,2) ; z2 = crdedge(2,2) ; z3 = crdedge(3,2) 
@@ -264,7 +264,7 @@ end function jacobian_srf_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function alphak_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function alphak_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of 
 !
@@ -276,9 +276,9 @@ double precision function alphak_subpar(xil, etal, nodes_crd)
 ! nodes.J is the determinant of the Jacobian matrix of the
 ! transformation.
 
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer          :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -305,7 +305,7 @@ end function alphak_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function betak_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function betak_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -317,9 +317,9 @@ double precision function betak_subpar(xil, etal, nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the 
 ! transformation.
 
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer          :: inode
-  double precision :: shpder(8,2), a, d, b, c, inv_jacob
+  real(kind=dp)     :: shpder(8,2), a, d, b, c, inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -346,7 +346,7 @@ end function betak_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function gammak_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function gammak_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -358,9 +358,9 @@ double precision function gammak_subpar(xil, etal, nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the
 ! transformation.
 !
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -387,7 +387,7 @@ end function gammak_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function deltak_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function deltak_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -399,9 +399,9 @@ double precision function deltak_subpar(xil, etal, nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the
 ! transformation.
   
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -428,7 +428,7 @@ end function deltak_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function epsilonk_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function epsilonk_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -440,9 +440,9 @@ double precision function epsilonk_subpar(xil, etal, nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the
 ! transformation.
 
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -469,7 +469,7 @@ end function epsilonk_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function zetak_subpar(xil,etal,nodes_crd)
+real(kind=dp)     function zetak_subpar(xil,etal,nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -481,9 +481,9 @@ double precision function zetak_subpar(xil,etal,nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the
 ! transformation.
 
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode 
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
  
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -510,7 +510,7 @@ end function zetak_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function alpha_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function alpha_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of 
 !
@@ -522,9 +522,9 @@ double precision function alpha_subpar(xil, etal, nodes_crd)
 ! nodes.J is the determinant of the Jacobian matrix of the
 ! transformation.
 
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer          :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -551,7 +551,7 @@ end function alpha_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function  beta_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function  beta_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -563,9 +563,9 @@ double precision function  beta_subpar(xil, etal, nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the 
 ! transformation.
 !
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -592,7 +592,7 @@ end function beta_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function  gamma_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function  gamma_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -604,9 +604,9 @@ double precision function  gamma_subpar(xil, etal, nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the
 ! transformation.
 !
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -633,7 +633,7 @@ end function gamma_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function delta_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function delta_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -645,9 +645,9 @@ double precision function delta_subpar(xil, etal, nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the
 ! transformation.
 
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -674,7 +674,7 @@ end function delta_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function epsilon_subpar(xil, etal, nodes_crd)
+real(kind=dp)     function epsilon_subpar(xil, etal, nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -686,9 +686,9 @@ double precision function epsilon_subpar(xil, etal, nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the
 ! transformation.
 
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -715,7 +715,7 @@ end function epsilon_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function zeta_subpar(xil,etal,nodes_crd)
+real(kind=dp)     function zeta_subpar(xil,etal,nodes_crd)
 !
 ! This routines returns the value of
 !
@@ -727,9 +727,9 @@ double precision function zeta_subpar(xil,etal,nodes_crd)
 ! nodes. J is the determinant of the Jacobian matrix of the
 ! transformation.
 
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer :: inode 
-  double precision :: shpder(8,2),a,d,b,c,inv_jacob
+  real(kind=dp)     :: shpder(8,2),a,d,b,c,inv_jacob
 
   ! Compute the appropriate derivatives of the shape
   ! functions
@@ -768,10 +768,10 @@ subroutine mgrad_pointwise_subpar(mg, xil, etal, nodes_crd)
 ! gradient/divergence related arrays.
 
 
-  double precision :: mg(2,2)
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: mg(2,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer          :: inode
-  double precision :: shpder(8,2),a,d,b,c
+  real(kind=dp)     :: shpder(8,2),a,d,b,c
 
   mg(:,:) = zero
 
@@ -808,10 +808,10 @@ subroutine mgrad_pointwisek_subpar(mg, xil, etal, nodes_crd)
 ! This 2*2 matrix is needed when defining and storing
 ! gradient/divergence related arrays.
 
-  double precision :: mg(2,2)
-  double precision :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)     :: mg(2,2)
+  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
   integer          :: inode
-  double precision :: shpder(8,2),a,d,b,c
+  real(kind=dp)     :: shpder(8,2),a,d,b,c
 
   mg(:,:) = zero
 
@@ -856,9 +856,9 @@ subroutine shp8(xil,etal,shp)
 ! 1 - - - 2 - - - 3
 !
 
-  double precision :: xil, etal
-  double precision :: shp(8)
-  double precision :: xip,xim,etap,etam,xixi,etaeta
+  real(kind=dp)     :: xil, etal
+  real(kind=dp)     :: shp(8)
+  real(kind=dp)     :: xip,xim,etap,etam,xixi,etaeta
 
   shp(:) = zero
 
@@ -908,9 +908,9 @@ subroutine shp8der(xil,etal,shpder)
 ! shpder(:,1) : derivative wrt xi
 ! shpder(:,2) : derivative wrt eta
 
-  double precision :: xil, etal
-  double precision :: shpder(8,2)
-  double precision :: xip,xim,etap,etam,xixi,etaeta
+  real(kind=dp)     :: xil, etal
+  real(kind=dp)     :: shpder(8,2)
+  real(kind=dp)     :: xip,xim,etap,etam,xixi,etaeta
  
   shpder(:,:) = zero
  

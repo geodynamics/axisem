@@ -24,6 +24,7 @@
 !! paths, logicals describing what to save, sampling rate of dumps
 module data_io
 
+  use global_parameters
   implicit none
   public 
 
@@ -38,7 +39,7 @@ module data_io
   !! istrain
   logical           :: dump_wavefields 
   logical           :: need_fluid_displ
-  double precision  :: strain_samp
+  real(kind=dp)     :: strain_samp
   integer           :: iseismo  !< current seismogram sample
   integer           :: istrain  !< current kernel wavefield sample
   integer           :: isnap    !< current wavefield sample for movies
@@ -69,8 +70,8 @@ module data_io
   integer, allocatable :: i_arr_xdmf(:), j_arr_xdmf(:)
 
   ! rotations
-  double precision :: rot_mat(3,3),trans_rot_mat(3,3)
-  double precision, allocatable, dimension(:,:) :: recfac
+  real(kind=dp)     :: rot_mat(3,3),trans_rot_mat(3,3)
+  real(kind=dp), allocatable, dimension(:,:) :: recfac
 
   character(len=80), dimension(:), allocatable :: fname_rec_seis
   character(len=80), dimension(:), allocatable :: fname_rec_velo

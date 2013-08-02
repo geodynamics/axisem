@@ -91,14 +91,14 @@ module data_matr
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr_fluid
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr_solid
-  double precision, dimension(nel_bdry)                :: solflubdry_radius
+  real(kind=dp)    , dimension(nel_bdry)                :: solflubdry_radius
   
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   !	Attenuation
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! Q_mu and Q_kappa, assumed to be homogeneous within an element
   real(kind=realkind), allocatable :: Q_mu(:), Q_kappa(:)
-  real(4), allocatable             :: points_solid(:,:,:,:) ! for memory variable output
+  real(sp), allocatable            :: points_solid(:,:,:,:) ! for memory variable output
   real(kind=realkind), allocatable :: delta_mu(:,:,:), delta_kappa(:,:,:)
   real(kind=realkind), allocatable :: delta_mu_cg4(:,:), delta_kappa_cg4(:,:)
 
