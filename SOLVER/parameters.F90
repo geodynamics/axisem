@@ -608,10 +608,10 @@ subroutine check_basic_parameters
      stop 2
   endif
 
-  if (realkind /= 4 .and. realkind /= 8) then
+  if (realkind /= sp .and. realkind /= dp) then
      if (lpr) then
-        write(6,'(a/a/ai4/a)') 'PROBLEM with REAL data kind!', &
-                               '... can only handle real kinds 4 or 8.', &
+        write(6,'(a/a,i4,i4/a,i4/a)') 'PROBLEM with REAL data kind!', &
+                               '... can only handle real kinds', sp, ' or ',dp,'.', &
                                'real kind here:', realkind, &
                                'change parameter realkind in global_parameters.f90'
      endif
