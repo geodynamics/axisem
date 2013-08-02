@@ -35,7 +35,7 @@ module unrolled_loops
 !-------------------------------------------------------------
 !> Multiplies matrizes a and b to have c.
 !! Size is fixed to npol x npol
-subroutine mxm(a,b,c)
+pure subroutine mxm(a,b,c)
 
   use global_parameters, only: realkind
   include "mesh_params.h" 
@@ -56,7 +56,7 @@ end subroutine mxm
 !-------------------------------------------------------------
 !> Multiplies vector a leftwise to matrix b to have vector c.
 !! Size is fixed to npol x npol
-subroutine vxm(a,b,c)
+pure subroutine vxm(a,b,c)
   
   use global_parameters, only: realkind
   include "mesh_params.h" 

@@ -226,7 +226,6 @@ subroutine mpi_asynch_messaging_test_solid
   real(kind=realkind),allocatable   :: vec(:,:,:,:)
   real(kind=realkind),allocatable   :: gvec_solid2(:,:)
   integer                           :: ic, iel, jpol, ipol, idest, ipt
-  character(len=80)                 :: fname 
 
   allocate(vec(0:npol,0:npol,nel_solid,3))
   allocate(gvec_solid2(nglob_solid,3))
@@ -290,7 +289,6 @@ subroutine mpi_asynch_messaging_test_fluid
   
   real(kind=realkind),allocatable :: vec(:,:,:)
   integer                         :: iel,jpol,ipol,idest,ipt
-  character(len=80)               :: fname 
 
   allocate(vec(0:npol,0:npol,nel_fluid))
 

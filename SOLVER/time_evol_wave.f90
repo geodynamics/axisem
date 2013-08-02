@@ -330,8 +330,6 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
-  integer   :: dumppoint_ids(3,2)
-  integer   :: myunit
   
   integer :: iter
 
@@ -1114,7 +1112,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   !^-^-^-^-^-^ Wavefield snapshots-^-^^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   if (dump_vtk) then
-    if (mod(iter,snap_it)==0) then
+    if (mod(iter, snap_it)==0) then
        isnap = isnap + 1
        if (lpr) then
           write(6,*)
@@ -1126,7 +1124,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   endif
   
   if (dump_xdmf) then
-    if (mod(iter,snap_it)==0) then
+    if (mod(iter, snap_it)==0) then
         if (.not.(dump_vtk)) isnap=isnap+1
         if (lpr) then
            write(6,*)

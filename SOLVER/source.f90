@@ -174,7 +174,7 @@ subroutine read_sourceparams
      !-----------------------------------------------------------------
 
      if (magnitude < smallval) then 
-        write(6,'(a,/,a,/,a,a,e4.2,/,a,6e4.2)') &
+        write(6,'(a,/,a,/,a,a,f10.2,/,a,6f10.2)') &
             ' .... ERROR: Inconsistency between magnitude given by moment tensor and source type!', &
             ' .... check sourceparams.dat and make sure that the source type has a non-zero moment tensor entry.', &
             ' .... source type & magnitude:', src_type(2), magnitude, &
@@ -770,7 +770,7 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
      endif
 
      if (thetacoord(ipol_src, jpol_src, ielsolid(iel_src)) /= zero) then
-        write(6,'(a,/,i7,2i2,/,a,3e4.2)') &
+        write(6,'(a,/,i7,2i2,/,a,3e10.2)') &
                 'PROBLEM: Source should be on the axis, hence theta = 0, but:', &
                 'Source indices ielem,ipol,jpol:', &
                 ielsolid(iel_src), ipol_src, jpol_src, &
@@ -1293,7 +1293,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
            if (eltype(ielsolid(iel_src)) /= 'curved') then 
               call compute_coordinates(s, z, r, theta, ielsolid(iel_src),  lipol_src, &
                                        ljpol_src)
-              write(6,'(/,a,/,a,/,a,i7,a,i2,e5.3)') &
+              write(6,'(/,a,/,a,/,a,i7,a,i2,e11.3)') &
                     'source is in (partly linear) element', &
                     'PROBLEM: mapping derivatives at axis only analytical with "new way"', &
                     'source location iel, type, jpol, r:', &

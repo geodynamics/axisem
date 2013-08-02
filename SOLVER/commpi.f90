@@ -69,7 +69,6 @@ subroutine ppcheck(test, errmsg)
   logical, intent(in)            :: test
   character(len=*), intent(in)   :: errmsg
 
-  character(len=len(errmsg)+100) :: msg
   integer :: err, errsum, ierror
   
   if (test) then 

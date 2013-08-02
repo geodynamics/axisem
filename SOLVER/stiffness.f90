@@ -43,7 +43,7 @@ module stiffness
 contains
 
 !-----------------------------------------------------------------------------
-function outerprod(a,b) 
+pure function outerprod(a,b) 
   ! outer product (dyadic) from numerical recipes
   
   real(kind=realkind), dimension(:), intent(in)     :: a, b
@@ -54,12 +54,12 @@ end function outerprod
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
-subroutine mxm_cg4_sparse_a(a,b,c)
+pure subroutine mxm_cg4_sparse_a(a,b,c)
    ! mxm for sparse a as found for coarse grained memory variables cg4
 
    real(kind=realkind), intent(in)  :: a(1:4), b(0:4,0:4)
    real(kind=realkind), intent(out) :: c(0:4,0:4)
-   integer j
+   integer                          :: j
 
    ! c ist sparse, so initialization does matter
    c = 0
@@ -78,7 +78,7 @@ end subroutine mxm_cg4_sparse_a
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine mxm_cg4_sparse_b(a,b,c)
+pure subroutine mxm_cg4_sparse_b(a,b,c)
    ! mxm for sparse b as found for coarse grained memory variables cg4
 
    real(kind=realkind), intent(in)  :: a(0:4,0:4), b(1:4)
@@ -356,10 +356,6 @@ subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
   real(kind=realkind), dimension(1:4) :: S1s, S2s
   real(kind=realkind), dimension(1:4) :: S1z, S2z
   real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4
-  
-  real(kind=realkind), dimension(0:4) :: y0l
-  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
-  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
   
   integer :: ielem, j
 
@@ -779,10 +775,6 @@ subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
   real(kind=realkind), dimension(1:4) :: S1z, S2z
   real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4, X5, X6
   
-  real(kind=realkind), dimension(0:4) :: y0l
-  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
-  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
-  
   integer :: ielem, j
 
   do ielem = 1, nel_solid
@@ -1193,10 +1185,6 @@ subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
   real(kind=realkind), dimension(1:4) :: S1p, S2p
   real(kind=realkind), dimension(1:4) :: S1z, S2z
   real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4, X5, X6
-  
-  real(kind=realkind), dimension(0:4) :: y0l
-  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
-  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
   
   integer :: ielem, j
 

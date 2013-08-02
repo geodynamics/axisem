@@ -60,7 +60,7 @@ subroutine read_db
   use commun,             only : barrier, psum, pmax, pmin
   use background_models,  only : model_is_ani, model_is_anelastic
   
-  integer             :: iptp, ipsrc, ipdes, imsg, ipt, inode, iptcp, iel, idom, i
+  integer             :: iptp, ipsrc, ipdes, imsg, inode, iptcp, iel, idom, i
   character(len=120)  :: dbname
   integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
   

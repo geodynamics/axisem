@@ -511,7 +511,7 @@ subroutine prepare_attenuation(lambda, mu)
   double precision                  :: dsdxi, dzdxi, dsdeta, dzdeta
   double precision                  :: weights_cg(0:npol,0:npol)
     
-  integer                           :: iinparam_advanced=500, ioerr, nval
+  integer                           :: iinparam_advanced=500, ioerr
   character(len=256)                :: line
   character(len=256)                :: keyword, keyvalue
 

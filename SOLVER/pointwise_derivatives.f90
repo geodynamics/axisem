@@ -52,7 +52,7 @@ MODULE pointwise_derivatives
 contains
 
 !-----------------------------------------------------------------------------------------
-function f_over_s_solid_el_cg4(f, iel)
+pure function f_over_s_solid_el_cg4(f, iel)
   !
   ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
   !
@@ -77,7 +77,7 @@ end function
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-function f_over_s_solid_el(f, iel)
+pure function f_over_s_solid_el(f, iel)
   !
   ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
   !
@@ -105,7 +105,7 @@ end function
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-function f_over_s_solid(f)
+pure function f_over_s_solid(f)
   !
   ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
   !
@@ -132,7 +132,7 @@ end function
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-function f_over_s_fluid(f)
+pure function f_over_s_fluid(f)
   !
   ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
   !
@@ -159,7 +159,7 @@ end function
 !-----------------------------------------------------------------------------------------
 
 !----------------------------------------------------------------------------
-subroutine axisym_dsdf_solid(f, dsdf)
+pure subroutine axisym_dsdf_solid(f, dsdf)
   !
   ! Computes the partial derivative
   ! dsdf = \partial_s(f)
@@ -196,7 +196,7 @@ end subroutine
 !=============================================================================
 
 !----------------------------------------------------------------------------
-subroutine axisym_gradient_solid_el_cg4(f,grad,iel)
+pure subroutine axisym_gradient_solid_el_cg4(f,grad,iel)
   !
   ! Computes the axisymmetric gradient of scalar field f in the solid region:
   ! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
@@ -259,7 +259,7 @@ end subroutine axisym_gradient_solid_el_cg4
 !=============================================================================
  
 !-------------------------------------------------------------
-subroutine mxm_cg4_sparse_c(a,b,c)
+pure subroutine mxm_cg4_sparse_c(a,b,c)
 
   include "mesh_params.h" 
 
@@ -298,7 +298,7 @@ end subroutine mxm_cg4_sparse_c
 !=============================================================================
 
 !----------------------------------------------------------------------------
-subroutine axisym_gradient_solid_el(f,grad,iel)
+pure subroutine axisym_gradient_solid_el(f,grad,iel)
   !
   ! Computes the axisymmetric gradient of scalar field f in the solid region:
   ! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
@@ -340,7 +340,7 @@ end subroutine axisym_gradient_solid_el
 !=============================================================================
 
 !----------------------------------------------------------------------------
-subroutine axisym_gradient_solid(f,grad)
+pure subroutine axisym_gradient_solid(f,grad)
   !
   ! Computes the axisymmetric gradient of scalar field f in the solid region:
   ! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
@@ -383,7 +383,7 @@ end subroutine axisym_gradient_solid
 !=============================================================================
 
 !----------------------------------------------------------------------------
-subroutine axisym_gradient_solid_add(f,grad)
+pure subroutine axisym_gradient_solid_add(f,grad)
   !
   ! Computes the axisymmetric gradient of scalar field f in the solid region:
   ! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
@@ -436,7 +436,7 @@ end subroutine axisym_gradient_solid_add
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine dsdf_elem_solid(dsdf,f,iel)
+pure subroutine dsdf_elem_solid(dsdf,f,iel)
   !
   ! Computes the elemental s-derivative of scalar field f in the solid region.
   ! This is used to compute the source term within the source element only.
@@ -470,7 +470,7 @@ end subroutine dsdf_elem_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine dzdf_elem_solid(dzdf,f,iel)
+pure subroutine dzdf_elem_solid(dzdf,f,iel)
   !
   ! Computes the elemental z-derivative of scalar field f in the solid region.
   ! This is used to compute the source term within the source element only.
@@ -503,7 +503,7 @@ end subroutine dzdf_elem_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine dsdf_solid_allaxis(f,dsdf)
+pure subroutine dsdf_solid_allaxis(f,dsdf)
   !
   ! Computes the pointwise derivative of scalar f in the s-direction 
   ! within the solid region, ONLY AT THE AXIS (needed for solid displacement)
@@ -535,7 +535,7 @@ end subroutine dsdf_solid_allaxis
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine axisym_gradient_fluid(f,grad)
+pure subroutine axisym_gradient_fluid(f,grad)
   !
   ! Computes the axisymmetric gradient of scalar field f in the fluid region:
   ! grad = \nabla {f}  = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
@@ -577,7 +577,7 @@ end subroutine axisym_gradient_fluid
 !=============================================================================
 
 !----------------------------------------------------------------------------
-subroutine axisym_gradient_fluid_add(f,grad)
+pure subroutine axisym_gradient_fluid_add(f,grad)
   !
   ! Computes the axisymmetric gradient of scalar field f in the fluid region:
   ! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
@@ -630,7 +630,7 @@ end subroutine axisym_gradient_fluid_add
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine dsdf_fluid_axis(f, iel, jpol, dsdf)
+pure subroutine dsdf_fluid_axis(f, iel, jpol, dsdf)
   !
   ! Computes the pointwise derivative of scalar f in the s-direction 
   ! within the fluid region, ONLY AT THE AXIS (needed for fluid displacement)
@@ -660,7 +660,7 @@ end subroutine dsdf_fluid_axis
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine dsdf_fluid_allaxis(f,dsdf)
+pure subroutine dsdf_fluid_allaxis(f,dsdf)
   !
   ! Computes the pointwise derivative of scalar f in the s-direction 
   ! within the fluid region, ONLY AT THE AXIS (needed for fluid displacement)

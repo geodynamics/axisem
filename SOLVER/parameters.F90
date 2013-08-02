@@ -75,8 +75,6 @@ end subroutine
 subroutine readin_parameters
 
   include 'mesh_params.h'
-  character(len=100)  :: junk
-  integer             :: i
 
   call read_inparam_basic
   
@@ -221,7 +219,7 @@ subroutine read_inparam_basic
   use data_mesh,   only: meshname
   use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
-  integer             :: iinparam_basic=500, ioerr, nval
+  integer             :: iinparam_basic=500, ioerr
   character(len=256)  :: line
   character(len=256)  :: keyword, keyvalue
   character(len=16)   :: simtype
@@ -318,10 +316,9 @@ subroutine read_inparam_basic_verbosity
 
   use data_mesh,   only: meshname
   use commun,      only: broadcast_int
-  integer             :: iinparam_basic=500, ioerr, nval
+  integer             :: iinparam_basic=500, ioerr
   character(len=256)  :: line
   character(len=256)  :: keyword, keyvalue
-  character(len=16)   :: simtype
 
   ! Default value
   verbose = 1
@@ -359,7 +356,7 @@ subroutine read_inparam_advanced
   use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
   include 'mesh_params.h'
 
-  integer               :: iinparam_advanced=500, ioerr, nval
+  integer               :: iinparam_advanced=500, ioerr
   character(len=256)    :: line
   character(len=256)    :: keyword, keyvalue
 
@@ -1047,18 +1044,17 @@ subroutine write_parameters
     
     include 'mesh_params.h'
 
-    integer          :: iel,curvel,linel,seminoel,semisoel,num_rec_glob
+    integer          :: iel,curvel,linel,seminoel,semisoel
     integer          :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
     integer          :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid
-    integer          :: ipol,jpol,hmaxloc1(3),hminloc1(3),i,j
+    integer          :: ipol,jpol,hmaxloc1(3),hminloc1(3)
     integer          :: maxprocssend_solid,maxprocsrecv_solid 
-    integer          :: maxprocssend_fluid,maxprocsrecv_fluid,nsim1
+    integer          :: maxprocssend_fluid,maxprocsrecv_fluid
     double precision :: dis1(0:npol-1,0:npol-1,nelem),dis2(0:npol-1,0:npol-1,nelem)
     double precision :: s,z,r,theta,rminglob,thetaminglob,rmaxglob,thetamaxglob
     double precision :: mysmin,myzmin,mysmax,myzmax
     double precision :: myrmin,mythetamin,myrmax,mythetamax
     double precision :: hmax,hmaxglob,hmin,hminglob
-    character(len=4) :: Mij_char(6)
     character(len=7) :: clogic
 
     if (verbose > 1) then

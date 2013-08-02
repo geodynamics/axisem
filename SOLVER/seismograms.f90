@@ -1078,7 +1078,6 @@ subroutine nc_compute_recfile_seis_bare(disp)
   include "mesh_params.h"
   real(kind=realkind), intent(in)  :: disp(0:npol,0:npol,nel_solid,3)
   real(kind=realkind)              :: disp_rec(3,num_rec)
-  character(len=50)                :: filename
   integer                          :: i
 
 
@@ -1234,7 +1233,6 @@ subroutine compute_surfelem_strain(u)
   real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
   real(kind=realkind)             :: dumpvar(maxind, 6)
   real(kind=realkind)             :: strain(0:npol,nel_solid,6)
-  character(len=5)                :: appisnap
 
   integer :: i, jj, j
 

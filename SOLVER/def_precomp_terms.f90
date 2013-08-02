@@ -1651,7 +1651,7 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
 
        case('quadpole') 
          if (ani_true) then
-            call compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes,&
+            call compute_quadrupole_stiff_terms_ani(ielem,jpol,&
                                        lambda,mu,xi_ani,phi_ani,eta_ani, &
                                        fa_ani_theta, fa_ani_phi, &
                                        massmat_kwts2,&
@@ -2643,7 +2643,7 @@ end subroutine compute_quadrupole_stiff_terms
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol, &
                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
                                       fa_ani_theta, fa_ani_phi, &
                                       massmat_kwts2, &
@@ -2656,7 +2656,7 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
 
   include "mesh_params.h"
   
-  integer, intent(in) :: ielem,jpol
+  integer, intent(in)          :: ielem, jpol
   
   double precision, intent(in) :: lambda(0:npol,0:npol,nelem)
   double precision, intent(in) :: mu(0:npol,0:npol,nelem)
@@ -2668,7 +2668,6 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
   double precision, intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
   
   double precision, intent(in) :: non_diag_fact(0:npol,nel_solid)
-  double precision, intent(in) :: local_crd_nodes(8,2)
   
   double precision, intent(in) :: alpha_wt_k(0:npol,0:npol)
   double precision, intent(in) :: beta_wt_k(0:npol,0:npol)
@@ -2688,7 +2687,6 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
   double precision, intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
   
   integer          :: ipol
-  double precision :: dsdxi, dzdeta, dzdxi, dsdeta
   double precision :: fa_ani_thetal, fa_ani_phil
   double precision :: C11, C22, C33, C12, C13, C23, C15, C25, C35, C44, C46, C55, C66, Ctmp
   double precision :: lambdal, mul, xil, phil, etal
