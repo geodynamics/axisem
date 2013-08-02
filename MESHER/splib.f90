@@ -388,8 +388,8 @@ subroutine delegl(n,et,vn,qn,dqn)
    implicit double precision (a-h,o-z)
    integer, intent(in)           ::  n        !< the degree of the polynomial
    double precision, intent(in)  ::  et(0:n)  !< vector of the nodes, et(i), i=0,n
-   double precision, intent(out) ::  vn(0:n)  !< values of the legendre polynomial at the nodes, vn(i), i=0,n
-   double precision, intent(out) ::  qn(0:n)  !< values of the polynomial at the nodes, qn(i), i=0,n
+   double precision, intent(in)  ::  vn(0:n)  !< values of the legendre polynomial at the nodes, vn(i), i=0,n
+   double precision, intent(in)  ::  qn(0:n)  !< values of the polynomial at the nodes, qn(i), i=0,n
    double precision, intent(out) ::  dqn(0:n) !< derivatives of the polynomial at the nodes, dqz(i), i=0,n
        
    dqn(0) = 0.d0
