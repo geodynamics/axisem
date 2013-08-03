@@ -18,7 +18,7 @@ module kdtree2_precision_module
   ! of the two lines.  If you comment
   ! out kdkind = sp then you get single precision
   ! and if you comment out kdkind = dp 
-  ! you get real(kind=dp)    .
+  ! you get double precision. 
   !
 
   integer, parameter :: kdkind = sp  
