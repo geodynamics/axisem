@@ -21,12 +21,13 @@
 
 module meshgen
    
+  use global_parameters, only: sp, dp
   implicit none
   
   public :: generate_skeleton
   private
   
-  double precision, dimension(:), allocatable :: aspect_ratio
+  real(kind=dp)   , dimension(:), allocatable :: aspect_ratio
 
   !REGION BY REGION PARAMETERS
   integer, dimension(:,:), allocatable          :: lnodeso   ! OUTER SHELL
@@ -34,23 +35,23 @@ module meshgen
   logical, dimension(:), allocatable            :: coarsingo
   
   integer                                       :: nelo
-  double precision, dimension(:), allocatable   :: so,zo
+  real(kind=dp)   , dimension(:), allocatable   :: so,zo
 
   integer, dimension(:,:), allocatable          :: lnodesi   ! INNER SHELL
   character(len=6), dimension(:), allocatable   :: eltypei
   logical, dimension(:), allocatable            :: coarsingi
   integer                                       :: neli
-  double precision, dimension(:), allocatable   :: si,zi
+  real(kind=dp)   , dimension(:), allocatable   :: si,zi
 
   integer, dimension(:,:), allocatable          :: lnodessq  ! INNER SQUARE
   character(len=6), dimension(:), allocatable   :: eltypesq
   integer                                       :: nelsq
-  double precision, dimension(:), allocatable   :: ssq,zsq
+  real(kind=dp)   , dimension(:), allocatable   :: ssq,zsq
 
   integer, dimension(:,:), allocatable          :: lnodesbuf ! BUFFER SHELL
   character(len=6), dimension(:), allocatable   :: eltypebuf
   integer                                       :: nelbuf
-  double precision, dimension(:), allocatable   :: sbuf,zbuf
+  real(kind=dp)   , dimension(:), allocatable   :: sbuf,zbuf
   
 contains
 
@@ -115,8 +116,8 @@ subroutine generate_serendipity(npoin, nel, sg, zg)
   use data_diag
 
   integer, intent(in)                           :: npoin, nel
-  double precision, intent(in)                  :: sg(4,nel),zg(4,nel)
-  double precision, dimension(:,:), allocatable :: sg2,zg2
+  real(kind=dp)   , intent(in)                  :: sg(4,nel),zg(4,nel)
+  real(kind=dp)   , dimension(:,:), allocatable :: sg2,zg2
   integer, dimension(:,:), allocatable          :: lnods
   integer                                       :: iel, inode, ipt,npoin2
   
@@ -211,7 +212,7 @@ subroutine write_serendipity_meshes(nel,sg2,zg2)
   use data_grid, only: ri,router
   
   integer, intent(in)           :: nel
-  double precision, intent(in)  :: sg2(8,nel),zg2(8,nel)
+  real(kind=dp)   , intent(in)  :: sg2(8,nel),zg2(8,nel)
   integer                       :: iel
 
   write(6,*)'writing all elements....'
@@ -352,8 +353,8 @@ subroutine def_reference_spherical_grid_discont
   use data_diag
   use analytic_spheroid_mapping
 
-  double precision, dimension(8,2)              :: crd_control_nodes(8,2)
-  double precision, dimension(:), allocatable   :: dz
+  real(kind=dp)   , dimension(8,2)              :: crd_control_nodes(8,2)
+  real(kind=dp)   , dimension(:), allocatable   :: dz
   integer :: npts
   integer :: iz
 
@@ -407,8 +408,8 @@ end subroutine def_reference_spherical_grid_discont
 !-----------------------------------------------------------------------------------------
 subroutine def_global_coordinates(npts, s, z, ns1, nz1, crd)
   integer, intent(in)                                        :: npts, ns1, nz1
-  double precision, dimension(1:npts), intent(out)           :: s, z
-  double precision, dimension(1:ns1+1,1:nz1+1,2), intent(in) :: crd
+  real(kind=dp)   , dimension(1:npts), intent(out)           :: s, z
+  real(kind=dp)   , dimension(1:ns1+1,1:nz1+1,2), intent(in) :: crd
 
   integer :: ipt, is, iz
 
@@ -429,12 +430,12 @@ subroutine def_mapped_coordinates(ns1, nz1, crds, crdc, crd_cont)
 
   integer, intent(in) :: ns1, nz1
 
-  double precision, dimension(1:ns1+1,1:nz1+1,2), intent(out) :: crds
-  double precision, dimension(1:ns1+1,1:nz1+1,2), intent(in)  :: crdc
-  double precision, dimension(8,2), intent(in)                :: crd_cont
+  real(kind=dp)   , dimension(1:ns1+1,1:nz1+1,2), intent(out) :: crds
+  real(kind=dp)   , dimension(1:ns1+1,1:nz1+1,2), intent(in)  :: crdc
+  real(kind=dp)   , dimension(8,2), intent(in)                :: crd_cont
 
   integer           :: is, iz 
-  double precision  :: xi, eta
+  real(kind=dp)     :: xi, eta
 
   do iz = 1,nz1+1
      do is = 1,ns1+1
@@ -449,8 +450,8 @@ end subroutine def_mapped_coordinates
 
 !-----------------------------------------------------------------------------------------
 subroutine def_control_nodes(crd, ri1, ro1)
-  double precision, intent(in) :: ri1, ro1
-  double precision, dimension(8,2), intent(out) :: crd
+  real(kind=dp)   , intent(in) :: ri1, ro1
+  real(kind=dp)   , dimension(8,2), intent(out) :: crd
   !hemispherical case
   crd(1,1) = 0.d0
   crd(1,2) = ri1    
@@ -475,7 +476,7 @@ end subroutine def_control_nodes
 subroutine estimate_aspect_ratio
   use data_grid
   use data_diag
-  double precision  :: s1, z1, s2, z2, hr
+  real(kind=dp)     :: s1, z1, s2, z2, hr
   integer           :: iz
 
   allocate(aspect_ratio(nz))
@@ -862,18 +863,18 @@ subroutine define_central_region
   use data_spec
   use data_mesh
 
-  double precision, dimension(:,:,:), allocatable :: crd_cyl
-  double precision, dimension(:,:,:), allocatable :: crd_cent
-  double precision, dimension(8,2)                :: crd_control_nodes
-  double precision, dimension(:), allocatable     :: scc,zcc
+  real(kind=dp)   , dimension(:,:,:), allocatable :: crd_cyl
+  real(kind=dp)   , dimension(:,:,:), allocatable :: crd_cent
+  real(kind=dp)   , dimension(8,2)                :: crd_control_nodes
+  real(kind=dp)   , dimension(:), allocatable     :: scc,zcc
   integer           :: nr, nex, nzs, nzss
-  double precision  :: ric, roc
+  real(kind=dp)     :: ric, roc
   integer           :: npts, nelc, nelctot, nptscc
   integer           :: ipt, inode, iel, is, iz, ipti, iptsq, iptbuf, ieltest
-  double precision  :: test
+  real(kind=dp)     :: test
 
   integer           :: ix, iy, maxy
-  double precision  :: rad, angle, p, x, y
+  real(kind=dp)     :: rad, angle, p, x, y
 
   ! number of latitude slices at shell - central region boundary (termed ib)
   ns_ib = ns / 2**nc  
@@ -1287,11 +1288,11 @@ end subroutine define_central_region
 subroutine def_ref_cart_coordinates(nst, nzt, crd, inner_shell)
   use data_grid
   integer, intent(in)   :: nst, nzt
-  double precision, dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
+  real(kind=dp)   , dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
   logical, optional     :: inner_shell
 
   integer               :: is, iz 
-  double precision      :: ds, dz
+  real(kind=dp)         :: ds, dz
   
   ! uniform grid in s and z 
   if (nst/=0 .and. nzt/=0) then
@@ -1317,11 +1318,11 @@ end subroutine def_ref_cart_coordinates
 subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
   use data_grid
   integer, intent(in) :: nst, nzt
-  double precision, dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
-  double precision, dimension(1:nzt) :: dz
+  real(kind=dp)   , dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
+  real(kind=dp)   , dimension(1:nzt) :: dz
 
   integer           :: is, iz 
-  double precision  :: ds
+  real(kind=dp)     :: ds
   
   ds = 2./dble(nst)
   do is = 1, nst+1
@@ -1420,7 +1421,7 @@ subroutine generate_southern_hemisphere
   use data_diag
   
   integer                                     :: neltot2, npointot2, ipt, iel,inode
-  double precision, dimension(:), allocatable :: sg2,zg2
+  real(kind=dp)   , dimension(:), allocatable :: sg2,zg2
   integer, dimension(:,:), allocatable        :: lnodesg2
   character(len=6), dimension(:), allocatable :: eltypeg2
   logical, dimension(:), allocatable          :: coarsing2
@@ -1484,7 +1485,7 @@ subroutine donot_generate_southern_hemisphere
   use data_mesh
   use data_diag
   
-  double precision, dimension(:), allocatable   :: sg2, zg2
+  real(kind=dp)   , dimension(:), allocatable   :: sg2, zg2
   integer, dimension(:,:), allocatable          :: lnodesg2
   character(len=6), dimension(:), allocatable   :: eltypeg2
   integer :: neltot2

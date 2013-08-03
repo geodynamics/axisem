@@ -41,21 +41,21 @@ subroutine bkgrdmodel_testing
 
   use background_models
   
-  double precision, dimension(:,:,:), allocatable   :: h, hmin2
-  double precision, dimension(:,:), allocatable     :: crit, crit_max
-  double precision, dimension(:), allocatable       :: hmin, hmax
-  double precision,allocatable, dimension(:,:,:)    :: v_p, v_s, rho
+  real(kind=dp)   , dimension(:,:,:), allocatable   :: h, hmin2
+  real(kind=dp)   , dimension(:,:), allocatable     :: crit, crit_max
+  real(kind=dp)   , dimension(:), allocatable       :: hmin, hmax
+  real(kind=dp)   ,allocatable, dimension(:,:,:)    :: v_p, v_s, rho
   integer               :: iel, ipol, jpol, ntoobig, ntoosmall, j
-  double precision      :: s1, z1, s2, z2, h1, h2, r, velo, velo_max, theta
+  real(kind=dp)         :: s1, z1, s2, z2, h1, h2, r, velo, velo_max, theta
   
   ! vtk
-  real, dimension(:,:), allocatable     :: mesh2
-  real, dimension(:), allocatable       :: vp1, vs1, h_real, rho1
-  real, dimension(:), allocatable       :: Qmu, Qka
-  real, allocatable                     :: x(:), y(:), z(:)
-  character(len=200)                    :: fname
-  integer                               :: npts_vtk, ct
-  integer                               :: tock, tick
+  real(kind=sp), dimension(:,:), allocatable        :: mesh2
+  real(kind=sp), dimension(:), allocatable          :: vp1, vs1, h_real, rho1
+  real(kind=sp), dimension(:), allocatable          :: Qmu, Qka
+  real(kind=sp), allocatable                        :: x(:), y(:), z(:)
+  character(len=200)                                :: fname
+  integer                                           :: npts_vtk, ct
+  integer                                           :: tock, tick
 
   allocate(crit(0:npol,0:npol))
   crit(:,:) = 0.d0 
@@ -109,7 +109,7 @@ subroutine bkgrdmodel_testing
   endif
   
   ! find smallest/largest grid spacing
-  tick = time()
+  !tick = time()
   !!$omp parallel shared(hmax, hmin, x, y, z, vp1, vs1, rho1, Qmu, Qka, mesh2) & 
   !!$omp          private(s1, z1, r, h1, s2, z2, h2, iel, jpol, ipol, velo, crit, crit_max, theta, ct) 
   do iel = 1, neltot
@@ -157,7 +157,7 @@ subroutine bkgrdmodel_testing
   end do ! elements
 
   !!$omp single
-  tock = time()
+  !tock = time()
   write(6,*)'    Runtime: ', tock-tick, ' s'
   write(6,*)'calculate GLL spacing...'
   
@@ -185,7 +185,7 @@ subroutine bkgrdmodel_testing
   open(unit=62, file=diagpath(1:lfdiag)//'/radial_velocity.dat')  
   
   write(6,*) 'starting big loop....'
-  tick = time()
+  !tick = time()
   !!$omp end single 
   !!$omp do 
   do iel = 1, neltot
@@ -349,8 +349,8 @@ subroutine bkgrdmodel_testing
   end do ! iel
   !!$omp end do 
   !!$omp end parallel
-  tock = time()
-  write(6,*)'    Runtime after ''big loop'': ', tock-tick, ' s'
+  !tock = time()
+  !write(6,*)'    Runtime after ''big loop'': ', tock-tick, ' s'
   if (bkgrdmodel=='solar') deallocate(v_p, v_s, rho)
  
 
@@ -409,8 +409,8 @@ subroutine bkgrdmodel_testing
     endif
   endif
   
-  tock = time()
-  write(6,*)'    Runtime after VTK dump: ', tock-tick, ' s'
+  !tock = time()
+  !write(6,*)'    Runtime after VTK dump: ', tock-tick, ' s'
 
   if (dump_mesh_vtk) then
       deallocate(x, y, z)
@@ -509,14 +509,15 @@ end subroutine bkgrdmodel_testing
 subroutine write_VTK_bin_scal_old(u2,mesh,rows,filename)
 
   implicit none
-  integer*4                             :: i,rows
-  real, dimension(1:rows), intent(in)   :: u2
-  real, dimension(1:rows)               :: u1
-  real, dimension(1:rows,2), intent(in) :: mesh
-  integer, dimension(:),allocatable     :: cell
-  integer, dimension(:),allocatable     :: cell_type
-  character (len=55) :: filename;
-  character (len=50) :: ss
+  integer, intent(in)                            :: rows
+  real(kind=sp), dimension(1:rows), intent(in)   :: u2
+  real(kind=sp), dimension(1:rows)               :: u1
+  real(kind=sp), dimension(1:rows,2), intent(in) :: mesh
+  integer, dimension(:),allocatable              :: cell
+  integer, dimension(:),allocatable              :: cell_type
+  character (len=55)                             :: filename
+  character (len=50)                             :: ss
+  integer                                        :: i
  
   !points structure
   allocate(cell(rows*2),cell_type(rows))
@@ -646,15 +647,15 @@ subroutine arbitr_sub_solar_arr(s, z, v_p, v_s, rho, bkgrdmodel2)
 ! r vp vs rho
 ! ...
   
-  double precision, intent(in)    :: s(0:npol,0:npol,1:neltot), z(0:npol,0:npol,1:neltot)
+  real(kind=dp)   , intent(in)    :: s(0:npol,0:npol,1:neltot), z(0:npol,0:npol,1:neltot)
   character(len=100), intent(in)  :: bkgrdmodel2
-  double precision, dimension(:,:,:), intent(out) :: rho(0:npol,0:npol,1:neltot)
-  double precision, dimension(:,:,:), intent(out) :: v_s(0:npol,0:npol,1:neltot)
-  double precision, dimension(:,:,:), intent(out) :: v_p(0:npol,0:npol,1:neltot)
-  double precision, allocatable, dimension(:)     :: disconttmp, rhotmp, vstmp, vptmp
+  real(kind=dp)   , dimension(:,:,:), intent(out) :: rho(0:npol,0:npol,1:neltot)
+  real(kind=dp)   , dimension(:,:,:), intent(out) :: v_s(0:npol,0:npol,1:neltot)
+  real(kind=dp)   , dimension(:,:,:), intent(out) :: v_p(0:npol,0:npol,1:neltot)
+  real(kind=dp)   , allocatable, dimension(:)     :: disconttmp, rhotmp, vstmp, vptmp
   integer             :: ndisctmp, i, ndisctmp2, ind(2), ipol, jpol, iel
   logical             :: bkgrdmodelfile_exists
-  double precision    :: w(2), wsum, r0
+  real(kind=dp)       :: w(2), wsum, r0
   
   ! Does the file bkgrdmodel".bm" exist?
   inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
@@ -694,11 +695,11 @@ subroutine interp_vel(r0, r, n, ind, w, wsum)
 
   implicit none
   integer, intent(in)           :: n
-  double precision, intent(in)  :: r0, r(1:n)
+  real(kind=dp)   , intent(in)  :: r0, r(1:n)
   integer, intent(out)          :: ind(2)
-  double precision, intent(out) :: w(2),wsum
+  real(kind=dp)   , intent(out) :: w(2),wsum
   integer                       :: i, p
-  double precision              :: dr1, dr2
+  real(kind=dp)                 :: dr1, dr2
   
   p = 1
 

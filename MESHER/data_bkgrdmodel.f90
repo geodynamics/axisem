@@ -23,28 +23,29 @@
 module data_bkgrdmodel
 !===================
 
+  use global_parameters, only : dp, sp
   implicit none
-  
-  integer                       :: ndisc, nfluidregions
-  integer, allocatable          :: idom_fluid(:)
-  double precision, allocatable :: discont(:)
-  double precision, allocatable :: vp(:,:), vs(:,:), rho(:,:)
-  logical, allocatable          :: solid_domain(:)
-  integer                       :: lfbkgrdmodel
-  character(len=100)            :: bkgrdmodel, fnam_ext_model
-  logical                       :: resolve_inner_shear, have_fluid, have_solid
-  double precision              :: pts_wavelngth
-  double precision              :: period, courant
-  double precision              :: dt
-  integer                       :: nc_init, nproc_target
+
+  integer                    :: ndisc, nfluidregions
+  integer, allocatable       :: idom_fluid(:)
+  real(kind=dp), allocatable :: discont(:)
+  real(kind=dp), allocatable :: vp(:,:), vs(:,:), rho(:,:)
+  logical, allocatable       :: solid_domain(:)
+  integer                    :: lfbkgrdmodel
+  character(len=100)         :: bkgrdmodel, fnam_ext_model
+  logical                    :: resolve_inner_shear, have_fluid, have_solid
+  real(kind=dp)              :: pts_wavelngth
+  real(kind=dp)              :: period, courant
+  real(kind=dp)              :: dt
+  integer                    :: nc_init, nproc_target
   
   ! the sole quantities to be created in create_subregions
   ! that are needed by the rest of the mesher
-  integer                       :: nz_glob, ns_glob, nc_glob
-  integer, allocatable          :: iclev_glob(:)
-  double precision, allocatable :: dz_glob(:)
-  double precision              :: rmin, minh_ic, maxh_ic, maxh_icb
-  double precision              :: minhvp, maxhvs, maxhnsicb
+  integer                    :: nz_glob, ns_glob, nc_glob
+  integer, allocatable       :: iclev_glob(:)
+  real(kind=dp), allocatable :: dz_glob(:)
+  real(kind=dp)              :: rmin, minh_ic, maxh_ic, maxh_icb
+  real(kind=dp)              :: minhvp, maxhvs, maxhnsicb
 
 !===================
 end module data_bkgrdmodel

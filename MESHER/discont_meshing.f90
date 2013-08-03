@@ -38,10 +38,10 @@ module discont_meshing
 !-----------------------------------------------------------------------------------------
 subroutine create_subregions
 
-  double precision, allocatable                 :: rdisc_top(:), rdisc_bot(:)
-  double precision, dimension(:), allocatable   :: ds_glob, radius_arr
-  double precision, dimension(:), allocatable   :: vp_arr, vs_arr
-  double precision  :: ds, minh, maxh, aveh, dz, current_radius
+  real(kind=dp)   , allocatable                 :: rdisc_top(:), rdisc_bot(:)
+  real(kind=dp)   , dimension(:), allocatable   :: ds_glob, radius_arr
+  real(kind=dp)   , dimension(:), allocatable   :: vp_arr, vs_arr
+  real(kind=dp)     :: ds, minh, maxh, aveh, dz, current_radius
   integer           :: idom, ic, icount_glob, iz_glob
   integer           :: ns_ref,  ndisc_stop,  ns_ref_icb1, ns_ref_icb, ns_ref_surf
   logical           :: memorydz, current
@@ -398,14 +398,14 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
                          icount_glob, ic, ns_ref)
 
   integer, intent(in)    :: idom
-  double precision, intent(in)      :: rdisc_bot(ndisc)
-  double precision, intent(inout)   :: current_radius, dz, ds
+  real(kind=dp)   , intent(in)      :: rdisc_bot(ndisc)
+  real(kind=dp)   , intent(inout)   :: current_radius, dz, ds
   logical, intent(inout) :: current, memorydz
   integer, intent(inout) :: icount_glob, ic
   integer, intent(inout) :: ns_ref
   
-  double precision :: dz_trial
-  double precision :: velo
+  real(kind=dp)    :: dz_trial
+  real(kind=dp)    :: velo
   integer:: nz_trial,ns_trial
   
   current = .false.
@@ -450,9 +450,9 @@ end subroutine compute_dz_nz
 !-----------------------------------------------------------------------------------------
 integer function estimate_ns(el_per_lambda,r,v,period)
 
-  double precision,intent(in) :: el_per_lambda,r
-  double precision :: v, period
-  double precision :: minh, maxh, aveh
+  real(kind=dp)   ,intent(in) :: el_per_lambda,r
+  real(kind=dp)    :: v, period
+  real(kind=dp)    :: minh, maxh, aveh
   
   ! scaling for irregular GLL spacing
   call gll_spacing(npol,minh,maxh,aveh)
@@ -467,9 +467,9 @@ subroutine spacing_info(npol)
   use splib
   
   integer, intent(in) :: npol
-  double precision :: minh,maxh,aveh
-  double precision,allocatable,dimension(:) :: eta,xi_k,dxi
-  double precision,allocatable,dimension(:) :: spacing_eta,spacing_xi
+  real(kind=dp)    :: minh,maxh,aveh
+  real(kind=dp)   ,allocatable,dimension(:) :: eta,xi_k,dxi
+  real(kind=dp)   ,allocatable,dimension(:) :: spacing_eta,spacing_xi
   
   integer :: i
   
@@ -519,9 +519,9 @@ subroutine gll_spacing(npol, minh, maxh, aveh)
   use splib
   
   integer, intent(in) :: npol
-  double precision, intent(out) :: minh,maxh,aveh
-  double precision :: spacing_eta(npol),spacing_xi(npol)
-  double precision :: eta(0:npol),xi_k(0:npol),dxi(0:npol)
+  real(kind=dp)   , intent(out) :: minh,maxh,aveh
+  real(kind=dp)    :: spacing_eta(npol),spacing_xi(npol)
+  real(kind=dp)    :: eta(0:npol),xi_k(0:npol),dxi(0:npol)
 
   integer :: i
 
@@ -542,14 +542,14 @@ end subroutine gll_spacing
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-double precision function max_spacing(npol)
+real(kind=dp)    function max_spacing(npol)
 
   use splib
   
   integer, intent(in) :: npol
-  double precision :: minh,maxh,aveh
-  double precision :: spacing_eta(npol),spacing_xi(npol)
-  double precision :: eta(0:npol),xi_k(0:npol),dxi(0:npol)
+  real(kind=dp)    :: minh,maxh,aveh
+  real(kind=dp)    :: spacing_eta(npol),spacing_xi(npol)
+  real(kind=dp)    :: eta(0:npol),xi_k(0:npol),dxi(0:npol)
   
   integer :: i
 

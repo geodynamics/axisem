@@ -35,10 +35,10 @@ module analytic_mapping
 contains
 
 !-----------------------------------------------------------------------------------------
-double precision function mapping_anal(xi,eta,nodes_crd,iaxis,ielem0)
+real(kind=dp)    function mapping_anal(xi,eta,nodes_crd,iaxis,ielem0)
   
   integer           :: iaxis,ielem0
-  double precision  :: xi, eta, nodes_crd(8,2)
+  real(kind=dp)     :: xi, eta, nodes_crd(8,2)
   if (eltypeg(ielem0) == 'curved') mapping_anal = map_spheroid(xi,eta,nodes_crd,iaxis)
   if (eltypeg(ielem0) == 'linear') mapping_anal = mapping_subpar(xi,eta,nodes_crd,iaxis)
   if (eltypeg(ielem0) == 'semino') mapping_anal = map_semino(xi,eta,nodes_crd,iaxis)

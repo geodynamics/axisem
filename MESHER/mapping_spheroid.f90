@@ -20,7 +20,7 @@
 !
 
 module mapping_spheroid
-
+  use global_parameters, only : sp, dp
   implicit none
   public :: map_spheroid
   private
@@ -28,20 +28,20 @@ module mapping_spheroid
 contains
 
 !-----------------------------------------------------------------------------------------
-double precision function map_spheroid(xi, eta, crd_nodes, idir)
+real(kind=dp) function map_spheroid(xi, eta, crd_nodes, idir)
 ! We are working in polar coordinates here: theta
 ! is the latitude.
 ! idir = 1 : returns cylindrical radius s
 ! idir = 2 : returns axial coordinate z
 !
-  double precision :: xi, eta
-  double precision, dimension(8,2),intent(in) :: crd_nodes
-  integer :: idir
-  double precision :: abot,bbot,atop,btop
-  double precision :: thetabarbot,dthetabot
-  double precision :: thetabartop,dthetatop
-  double precision :: sbot,zbot,stop,ztop
-  double precision :: sbar,ds,slope,intersect
+  real(kind=dp), intent(in)                :: xi, eta
+  real(kind=dp), dimension(8,2),intent(in) :: crd_nodes
+  integer                                  :: idir
+  real(kind=dp)                            :: abot, bbot, atop, btop
+  real(kind=dp)                            :: thetabarbot, dthetabot
+  real(kind=dp)                            :: thetabartop, dthetatop
+  real(kind=dp)                            :: sbot, zbot, stop, ztop
+  real(kind=dp)                            :: sbar, ds, slope, intersect
 
   write(61,*)'map_spheroid!'
 
@@ -80,14 +80,14 @@ end function map_spheroid
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_parameters_sph(crd_nodes, abot, bbot, atop, btop, &
+pure subroutine compute_parameters_sph(crd_nodes, abot, bbot, atop, btop, &
                               thetabarbot, dthetabot, thetabartop, dthetatop)
-  double precision , dimension(8,2),intent(in) :: crd_nodes
-  double precision ,intent(out) :: abot,bbot,atop,btop
-  double precision ,intent(out) :: thetabarbot,dthetabot
-  double precision ,intent(out) :: thetabartop,dthetatop
-  double precision  :: s1,z1,s3,z3,s5,z5,s7,z7
-  double precision  :: theta1,theta3,theta5,theta7
+  real(kind=dp), dimension(8,2),intent(in) :: crd_nodes
+  real(kind=dp), intent(out) :: abot,bbot,atop,btop
+  real(kind=dp), intent(out) :: thetabarbot,dthetabot
+  real(kind=dp), intent(out) :: thetabartop,dthetatop
+  real(kind=dp) :: s1,z1,s3,z3,s5,z5,s7,z7
+  real(kind=dp) :: theta1,theta3,theta5,theta7
 
   s1 = crd_nodes(1,1)
   z1 = crd_nodes(1,2)
@@ -118,10 +118,10 @@ end subroutine compute_parameters_sph
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_ab(a, b, s1, z1, s2, z2)
+pure subroutine compute_ab(a, b, s1, z1, s2, z2)
   
-  double precision , intent(out) :: a,b
-  double precision , intent(in) :: s1,z1,s2,z2
+  real(kind=dp), intent(out) :: a,b
+  real(kind=dp), intent(in) :: s1,z1,s2,z2
 
   a = sqrt(abs((s2**2*z1**2-z2**2*s1**2)/(z1**2-z2**2)))
   b = sqrt(abs((z1**2*s2**2-z2**2*s1**2)/(s2**2-s1**2)))
@@ -130,12 +130,12 @@ end subroutine compute_ab
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_theta(theta,s,z,a,b)
+pure subroutine compute_theta(theta,s,z,a,b)
 ! This routine returns the latitude theta, given s and z.
   
-  double precision , intent(out) :: theta
-  double precision , intent(in) :: s, z, a, b
-  double precision :: pi
+  real(kind=dp), intent(out) :: theta
+  real(kind=dp), intent(in) :: s, z, a, b
+  real(kind=dp)    :: pi
   
   pi = 2.*asin(1.)
   
@@ -150,10 +150,10 @@ end subroutine compute_theta
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_sz_xi(s,z,xi,a,b,thetabar,dtheta)
+pure subroutine compute_sz_xi(s,z,xi,a,b,thetabar,dtheta)
 
-  double precision , intent(out) :: s,z
-  double precision , intent(in) :: xi, a, b, thetabar,dtheta
+  real(kind=dp), intent(out) :: s,z
+  real(kind=dp), intent(in) :: xi, a, b, thetabar,dtheta
 
   s = a*cos(thetabar+xi*.5*dtheta)
   z = b*sin(thetabar+xi*.5*dtheta)

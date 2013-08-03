@@ -20,21 +20,22 @@
 !
 
 module data_gllmesh
+  use global_parameters, only: sp,dp
   implicit none
   public 
-  double precision, dimension(:,:,:), allocatable :: sgll,zgll
-  double precision, dimension(:,:,:), allocatable :: sgll_fluid,zgll_fluid
-  double precision, dimension(:,:,:), allocatable :: sgll_solid,zgll_solid
+  real(kind=dp), dimension(:,:,:), allocatable :: sgll,zgll
+  real(kind=dp), dimension(:,:,:), allocatable :: sgll_fluid,zgll_fluid
+  real(kind=dp), dimension(:,:,:), allocatable :: sgll_solid,zgll_solid
 
-  double precision :: hmin_glob, hmax_glob ! global min/max gll spacing
-  double precision :: min_distance_dim     ! 0.1*hmin_glob [in meters]
-  double precision :: min_distance_nondim  ! 0.1*hmin_glob [referenced to 1]
+  real(kind=dp)    :: hmin_glob, hmax_glob ! global min/max gll spacing
+  real(kind=dp)    :: min_distance_dim     ! 0.1*hmin_glob [in meters]
+  real(kind=dp)    :: min_distance_nondim  ! 0.1*hmin_glob [referenced to 1]
   
-  double precision :: char_time_max
+  real(kind=dp)    :: char_time_max
   integer          :: char_time_max_globel
-  double precision :: char_time_max_rad, char_time_max_theta
-  double precision :: char_time_min
+  real(kind=dp)    :: char_time_max_rad, char_time_max_theta
+  real(kind=dp)    :: char_time_min
   integer          :: char_time_min_globel
-  double precision :: char_time_min_rad, char_time_min_theta
+  real(kind=dp)    :: char_time_min_rad, char_time_min_theta
 
 end module data_gllmesh

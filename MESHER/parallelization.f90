@@ -187,12 +187,12 @@ subroutine plot_dd_vtk
   use test_bkgrdmodel, only : write_VTK_bin_scal_old, write_VTK_bin_scal
 
   real(kind=realkind), dimension(:), allocatable :: wel2proc
-  real, allocatable, dimension(:,:)   :: mesh1
-  integer                             :: iel
-  character(len=200)                  :: fname
+  real(kind=sp),   allocatable, dimension(:,:)   :: mesh1
+  integer                                        :: iel
+  character(len=200)                             :: fname
 
-  integer                             :: ct
-  real, allocatable                   ::  x(:), y(:), z(:)
+  integer                                        :: ct
+  real(kind=sp), allocatable, dimension(:)       :: x, y, z
 
   ! write VTK with point data
 
@@ -253,9 +253,9 @@ subroutine domain_decomposition_theta
 
   integer               :: iproc, iiproc, iel
   integer               :: iel0_solid, iel0_fluid, mycount
-  double precision      :: deltatheta
+  real(kind=dp)         :: deltatheta
   integer, allocatable  :: central_count(:)
-  double precision      :: pi2
+  real(kind=dp)         :: pi2
   pi2 = two*dasin(one)
 
   write(6,*)'     THETA-SLICING as domain decomposition....'
@@ -412,7 +412,7 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count)
   integer,allocatable :: proc_central(:,:),num_columns(:),upper_boundary_el(:)
   integer,allocatable :: num_columns_hi(:),num_columns_lo(:),num_el(:)
   integer,allocatable :: count_assi(:)
-  double precision :: a,b
+  real(kind=dp)    :: a,b
   integer :: nproc_opt, nproc_opt_buff, nn
 
   if (dump_mesh_info_screen) then 
@@ -864,16 +864,16 @@ end subroutine check_nproc
 !-----------------------------------------------------------------------------------------
 subroutine decompose_inner_cube_opt(central_count)
   implicit none
-  integer, intent(out)    :: central_count(0:nproc-1)
-  integer                 :: nproc2, nlinsteps, ndivsppx0, ip, &
-                             ncorrections = 0, npart, is, iz, sign_buff, n, &
-                             ids, idz
-  real                    :: r1, r2, stepsize, dphi
-  real, allocatable       :: x0(:), x1(:), x2(:), x3(:), z0(:), z1(:), z2(:), &
+  integer, intent(out)       :: central_count(0:nproc-1)
+  integer                    :: nproc2, nlinsteps, ndivsppx0, ip, &
+                                ncorrections = 0, npart, is, iz, sign_buff, n, &
+                                ids, idz
+  real(kind=sp)              :: r1, r2, stepsize, dphi
+  real(kind=sp), allocatable :: x0(:), x1(:), x2(:), x3(:), z0(:), z1(:), z2(:), &
                              z3(:), phi(:)
-  integer, allocatable    :: proc(:,:), nelem(:)
-  logical, allocatable    :: proc_iq_min(:,:), proc_iq_max(:,:), elems(:,:)
-  logical                 :: exit_buff
+  integer, allocatable       :: proc(:,:), nelem(:)
+  logical, allocatable       :: proc_iq_min(:,:), proc_iq_max(:,:), elems(:,:)
+  logical                    :: exit_buff
   
   if (dump_mesh_info_screen) then 
       write(6,*)
@@ -1281,10 +1281,10 @@ end function test_decomp
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-logical function below(x0, y0, x1, y1, xp, yp)
+pure logical function below(x0, y0, x1, y1, xp, yp)
   implicit none
-  real, intent(in) :: x0, y0, x1, y1, xp, yp
-  real :: m, b
+  real(kind=sp), intent(in) :: x0, y0, x1, y1, xp, yp
+  real(kind=sp)             :: m, b
   
   m = (y1 - y0) / (x1 - x0)
   b = (x1*y0 - x0*y1) / (x1 - x0)
@@ -1298,10 +1298,10 @@ end function below
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-logical function rightof(x0, y0, x1, y1, xp, yp)
+pure logical function rightof(x0, y0, x1, y1, xp, yp)
   implicit none
-  real, intent(in) :: x0, y0, x1, y1, xp, yp
-  real :: m, b
+  real(kind=sp), intent(in) :: x0, y0, x1, y1, xp, yp
+  real(kind=sp)             :: m, b
   
   m = (y1 - y0) / (x1 - x0)
   b = (x1*y0 - x0*y1) / (x1 - x0)
@@ -1315,16 +1315,16 @@ end function rightof
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine nelem_under(ndivs, x0, x1, x2, x3, z0, z1, z2, z3, proc_max, &
-      proc_min, nelem, proc)
+pure subroutine nelem_under(ndivs, x0, x1, x2, x3, z0, z1, z2, z3, proc_max, &
+                            proc_min, nelem, proc)
   implicit none
-  real, intent(in)        :: x0, x1, x2, x3, z0, z1, z2, z3
-  logical, intent(in)     :: proc_max(0:ndivs-1,0:ndivs-1), &
-                             proc_min(0:ndivs-1,0:ndivs-1)
-  integer, intent(in)     :: ndivs
-  integer, intent(out)    :: nelem
-  logical, intent(out)    :: proc(0:ndivs-1,0:ndivs-1)
-  integer                 :: is, iz
+  real(kind=sp), intent(in) :: x0, x1, x2, x3, z0, z1, z2, z3
+  logical, intent(in)       :: proc_max(0:ndivs-1,0:ndivs-1), &
+                               proc_min(0:ndivs-1,0:ndivs-1)
+  integer, intent(in)       :: ndivs
+  integer, intent(out)      :: nelem
+  logical, intent(out)      :: proc(0:ndivs-1,0:ndivs-1)
+  integer                   :: is, iz
 
   nelem = 0
 

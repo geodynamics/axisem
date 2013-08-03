@@ -38,20 +38,20 @@
 !//////////////////////////////////////////
 
 !dk map_spheroid------------------------------------------------------
-  double precision function map_spheroid(xi,eta,crd_nodes,idir)
+  real(kind=dp)    function map_spheroid(xi,eta,crd_nodes,idir)
 !
 !	We are working in polar coordinates here: theta
 ! is the latitude. 
 !
-  double precision :: xi, eta
-  double precision, dimension(8,2),intent(in) :: crd_nodes
+  real(kind=dp)    :: xi, eta
+  real(kind=dp)   , dimension(8,2),intent(in) :: crd_nodes
   integer :: idir
 
-  double precision :: abot,bbot,atop,btop
-  double precision :: thetabarbot,dthetabot 
-  double precision :: thetabartop,dthetatop 
-  double precision :: sbot,zbot,stop,ztop
-  double precision :: sbar,ds,slope,intersect
+  real(kind=dp)    :: abot,bbot,atop,btop
+  real(kind=dp)    :: thetabarbot,dthetabot 
+  real(kind=dp)    :: thetabartop,dthetatop 
+  real(kind=dp)    :: sbot,zbot,stop,ztop
+  real(kind=dp)    :: sbar,ds,slope,intersect
 
 !  write(61,*)'map_spheroid!'
 
@@ -94,20 +94,20 @@
   subroutine comp_partial_deriv_spheroid(dsdxi,dzdxi,dsdeta,dzdeta,xi,eta,&
                                          nodes_crd)
 
-  double precision, intent(out) :: dsdxi,dzdxi,dsdeta,dzdeta
-  double precision, intent(in) :: xi,eta
-  double precision, dimension(8,2),intent(in) :: nodes_crd
+  real(kind=dp)   , intent(out) :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=dp)   , intent(in) :: xi,eta
+  real(kind=dp)   , dimension(8,2),intent(in) :: nodes_crd
 
-  double precision :: abot,bbot,atop,btop
-  double precision :: thetabarbot,dthetabot
-  double precision :: thetabartop,dthetatop
-  double precision :: sbot,zbot,stop,ztop
-  double precision :: sbar,ds,dz,slope,intersect,sxieta
-  double precision :: dsbotdxi,dzbotdxi
-  double precision :: dstopdxi,dztopdxi
-  double precision :: dsbardxi,ddsdxi
-  double precision :: dzbardxi,ddzdxi
-  double precision :: dslopedxi,dintersectdxi
+  real(kind=dp)    :: abot,bbot,atop,btop
+  real(kind=dp)    :: thetabarbot,dthetabot
+  real(kind=dp)    :: thetabartop,dthetatop
+  real(kind=dp)    :: sbot,zbot,stop,ztop
+  real(kind=dp)    :: sbar,ds,dz,slope,intersect,sxieta
+  real(kind=dp)    :: dsbotdxi,dzbotdxi
+  real(kind=dp)    :: dstopdxi,dztopdxi
+  real(kind=dp)    :: dsbardxi,ddsdxi
+  real(kind=dp)    :: dzbardxi,ddzdxi
+  real(kind=dp)    :: dslopedxi,dintersectdxi
 !
   call compute_parameters_sph(nodes_crd,abot,bbot,atop,btop,&
                               thetabarbot,dthetabot,thetabartop,dthetatop)
@@ -156,8 +156,8 @@
 !dk compute_sz_xi------------------------------------------------------
   subroutine compute_sz_xi(s,z,xi,a,b,thetabar,dtheta)
 
-  double precision, intent(out) :: s,z
-  double precision, intent(in) :: xi, a, b, thetabar,dtheta
+  real(kind=dp)   , intent(out) :: s,z
+  real(kind=dp)   , intent(in) :: xi, a, b, thetabar,dtheta
   
   s = a*dcos(thetabar+xi*half*dtheta)
   z = b*dsin(thetabar+xi*half*dtheta)
@@ -168,8 +168,8 @@
 !dk compute_dsdxi_dzdxi---------------------------
   subroutine compute_dsdxi_dzdxi(dsdxi,dzdxi,xi,a,b,thetabar,dtheta)
 
-  double precision, intent(out) :: dsdxi,dzdxi
-  double precision, intent(in) :: xi,a,b,thetabar,dtheta 
+  real(kind=dp)   , intent(out) :: dsdxi,dzdxi
+  real(kind=dp)   , intent(in) :: xi,a,b,thetabar,dtheta 
 
   dsdxi =-a*half*dtheta*dsin(thetabar+xi*half*dtheta)
   dzdxi = b*half*dtheta*dcos(thetabar+xi*half*dtheta)  
@@ -181,12 +181,12 @@
   subroutine compute_parameters_sph(crd_nodes,abot,bbot,atop,btop,&
                               thetabarbot,dthetabot,thetabartop,dthetatop)
 
-  double precision, dimension(8,2),intent(in) :: crd_nodes
-  double precision,intent(out) :: abot,bbot,atop,btop
-  double precision,intent(out) :: thetabarbot,dthetabot
-  double precision,intent(out) :: thetabartop,dthetatop
-  double precision :: s1,z1,s3,z3,s5,z5,s7,z7
-  double precision :: theta1,theta3,theta5,theta7
+  real(kind=dp)   , dimension(8,2),intent(in) :: crd_nodes
+  real(kind=dp)   ,intent(out) :: abot,bbot,atop,btop
+  real(kind=dp)   ,intent(out) :: thetabarbot,dthetabot
+  real(kind=dp)   ,intent(out) :: thetabartop,dthetatop
+  real(kind=dp)    :: s1,z1,s3,z3,s5,z5,s7,z7
+  real(kind=dp)    :: theta1,theta3,theta5,theta7
 !  
   s1 = crd_nodes(1,1) ; z1 = crd_nodes(1,2)
   s3 = crd_nodes(3,1) ; z3 = crd_nodes(3,2)
@@ -212,8 +212,8 @@
 !dk compute_ab--------------------------------------
   subroutine compute_ab(a,b,s1,z1,s2,z2)
 
-  double precision, intent(out) :: a,b
-  double precision, intent(in) :: s1,z1,s2,z2
+  real(kind=dp)   , intent(out) :: a,b
+  real(kind=dp)   , intent(in) :: s1,z1,s2,z2
 !
   a = dsqrt(dabs((s2**2*z1**2-z2**2*s1**2)/(z1**2-z2**2)))
   b = dsqrt(dabs((z1**2*s2**2-z2**2*s1**2)/(s2**2-s1**2))) 
@@ -228,10 +228,10 @@ subroutine compute_theta(theta,s,z,a,b)
 !       This routine returns the latitude theta, given s and z.
 !
   implicit none
-  double precision , intent(out) :: theta
-  double precision , intent(in) :: s,z,a,b
+  real(kind=dp)    , intent(out) :: theta
+  real(kind=dp)    , intent(in) :: s,z,a,b
 !
-  double precision :: pi2
+  real(kind=dp)    :: pi2
 !
   pi2 = two*dasin(one) ! TNM has no clue why it doesnt work with the pre-set parameter pi.....
 

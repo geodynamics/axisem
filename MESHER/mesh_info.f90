@@ -43,8 +43,8 @@ subroutine define_regions
   ! belong to each region of the radial earth model of interest
   ! by considering the position of its center of mass
   integer                        :: iel, i, ipol, jpol, count
-  double precision               :: s1, z1, theta
-  double precision, dimension(4) :: rtmp
+  real(kind=dp)                  :: s1, z1, theta
+  real(kind=dp)   , dimension(4) :: rtmp
   
   ! define center of mass for each element
   allocate(scom(neltot))
@@ -138,8 +138,8 @@ end subroutine define_regions
 subroutine assign_region(ireg, s, z)
   
   integer, intent(out)          :: ireg
-  double precision, intent(in)  :: s, z
-  double precision              :: r 
+  real(kind=dp)   , intent(in)  :: s, z
+  real(kind=dp)                 :: r 
   integer                       :: idisc
 
   r = router*dsqrt(s**2+z**2) ! s and z are nondimensionalized by outer rad.
@@ -258,9 +258,9 @@ subroutine define_boundaries
 ! are computed in define_my_boundary_neighbour.
 
   integer           :: j,ipol,ibelem
-  double precision  :: dmax, rbound
+  real(kind=dp)     :: dmax, rbound
   integer           :: nbelemmax
-  double precision, allocatable :: bdry_radius(:)
+  real(kind=dp)   , allocatable :: bdry_radius(:)
 
   if (neltot_fluid>0 .and. neltot_solid>0 ) then 
      nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
@@ -520,9 +520,9 @@ subroutine define_my_boundary_neighbour
   integer :: ibelem,jbelem,ipol
   integer :: myel,herel
   integer :: j,abovecount,belowcount
-  double precision :: mytheta, hertheta 
-  double precision :: tolerance,rbound
-  double precision :: rup,thetaup,rdown,thetadown
+  real(kind=dp)    :: mytheta, hertheta 
+  real(kind=dp)    :: tolerance,rbound
+  real(kind=dp)    :: rup,thetaup,rdown,thetadown
 
   ! respective global numbers
   integer :: ipt_glob_ab,ipt_glob_be
@@ -530,7 +530,7 @@ subroutine define_my_boundary_neighbour
   integer :: ipt_flob_ab,ipt_flob_be
 
   integer :: jbelemmin
-  double precision :: distmin, dist
+  real(kind=dp)    :: distmin, dist
 
   logical :: foundone
 
@@ -815,9 +815,9 @@ subroutine belem_count_new(dmax, j, rbound)
 ! container case.
 !
   integer, intent(in)           :: j
-  double precision, intent(in)  :: dmax, rbound
+  real(kind=dp)   , intent(in)  :: dmax, rbound
   integer                       :: ibd, ielem, ipol, jpol, itest
-  double precision              :: s, z
+  real(kind=dp)                 :: s, z
 
   do ielem = 1, neltot
      ibd = 0
@@ -843,9 +843,9 @@ subroutine belem_list_new(dmax, j, rbound)
 ! container case.
 
   integer, intent(in)           :: j
-  double precision, intent(in)  :: dmax, rbound
+  real(kind=dp)   , intent(in)  :: dmax, rbound
   integer                       :: ibd, ielem, ipol, jpol, itest, icount
-  double precision              :: s, z
+  real(kind=dp)                 :: s, z
   
   icount = 0 
   do ielem = 1, neltot
@@ -870,7 +870,7 @@ end subroutine belem_list_new
 subroutine check_boundary(itest, s, z, dmax, rbound)
 
   integer, intent(out) :: itest
-  double precision, intent(in) :: s,z,dmax,rbound
+  real(kind=dp)   , intent(in) :: s,z,dmax,rbound
 
   itest = 0
   

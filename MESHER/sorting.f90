@@ -20,6 +20,7 @@
 !
 
 module sorting
+  use global_parameters, only: sp, dp
   implicit none
 
   private
@@ -33,11 +34,11 @@ subroutine smerge(a, b, c, ind1, ind2, ind)
 ! (starting with smallest elements)
 ! carry on index arrays
  
-  integer                       :: na, nb
-  double precision, intent(in)  :: a(:)
-  double precision, intent(in)  :: b(:)
+  integer                    :: na, nb
+  real(kind=dp), intent(in)  :: a(:)
+  real(kind=dp), intent(in)  :: b(:)
 
-  double precision, intent(out) :: c(size(a)+size(b))
+  real(kind=dp), intent(out) :: c(size(a)+size(b))
   
   integer, dimension(size(a)), intent(in)           :: ind1
   integer, dimension(size(b)), intent(in)           :: ind2
@@ -92,10 +93,10 @@ subroutine pmerge(a, b, c, ind1, ind2, ind, p)
   
   !$ use omp_lib     
  
-  integer                       :: na, nb
-  double precision, intent(in)  :: a(:)
-  double precision, intent(in)  :: b(:)
-  double precision, intent(out) :: c(size(a)+size(b))
+  integer                    :: na, nb
+  real(kind=dp), intent(in)  :: a(:)
+  real(kind=dp), intent(in)  :: b(:)
+  real(kind=dp), intent(out) :: c(size(a)+size(b))
   
   integer, dimension(size(a)), intent(in)           :: ind1
   integer, dimension(size(b)), intent(in)           :: ind2
@@ -187,16 +188,16 @@ recursive subroutine pmsort(a, ind, p)
 ! parallel mergesort parallalizing both splitting (in the largest power of 2 smaller 
 ! or equal p) and merging (exactly p threads) using merge path
 
-  double precision, intent(inout)   :: a(:)
+  real(kind=dp), intent(inout)      :: a(:)
   integer, intent(inout)            :: ind(size(a))
   integer, intent(in)               :: p
   integer                           :: na, n1, n2
-  double precision                  :: buf
+  real(kind=dp)                     :: buf
   integer                           :: ibuf
-  double precision, dimension((size(a)+1)/2)            :: t1
-  double precision, dimension(size(a) - (size(a)+1)/2)  :: t2
-  integer, dimension((size(a)+1)/2)            :: ind1
-  integer, dimension(size(a) - (size(a)+1)/2)  :: ind2
+  real(kind=dp), dimension((size(a)+1)/2)            :: t1
+  real(kind=dp), dimension(size(a) - (size(a)+1)/2)  :: t2
+  integer, dimension((size(a)+1)/2)                  :: ind1
+  integer, dimension(size(a) - (size(a)+1)/2)        :: ind2
  
   na = size(a)
 
@@ -254,16 +255,16 @@ subroutine mergesort_3(a, b, il, p)
   use clocks_mod
   !$ use omp_lib     
   
-  double precision, intent(inout) :: a(:)
-  double precision, intent(inout) :: b(size(a))
-  integer, intent(inout)          :: il(size(a))
-  integer, intent(in)             :: p
+  real(kind=dp), intent(inout) :: a(:)
+  real(kind=dp), intent(inout) :: b(size(a))
+  integer, intent(inout)       :: il(size(a))
+  integer, intent(in)          :: p
   
-  double precision, allocatable   :: bbuff(:)
-  integer, allocatable            :: ibuff(:)
-  integer                         :: na, i
-  integer, allocatable            :: ind(:)
-  !$ integer                      :: nthreads
+  real(kind=dp), allocatable   :: bbuff(:)
+  integer, allocatable         :: ibuff(:)
+  integer                      :: na, i
+  integer, allocatable         :: ind(:)
+  !$ integer                   :: nthreads
   
 
   na = size(a)

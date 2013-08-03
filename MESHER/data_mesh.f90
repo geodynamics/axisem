@@ -29,14 +29,14 @@ module data_mesh
   !skeleton parameters
   integer :: neltot
   integer :: npointot
-  double precision, dimension(:), allocatable   :: sg,zg
+  real(kind=dp)   , dimension(:), allocatable   :: sg,zg
   integer, dimension(:,:), allocatable          :: lnodesg
   character(len=6), dimension(:), allocatable   :: eltypeg
   logical, dimension(:), allocatable            :: coarsing
   
   !Region to which the element pertains, in the case of a stratified bkgrd model
   integer, dimension(:), allocatable            :: region, nel_region
-  double precision, dimension(:), allocatable   :: scom, zcom, thetacom, rcom 
+  real(kind=dp)   , dimension(:), allocatable   :: scom, zcom, thetacom, rcom 
                                                    ! com = center of mass
   
   ! axial elements
@@ -63,7 +63,7 @@ module data_mesh
   integer, dimension(:,:),allocatable  :: bdry_above_el, bdry_below_el 
   integer, dimension(:,:),allocatable  :: bdry_solid_el, bdry_fluid_el 
   
-  double precision, dimension(:,:,:), allocatable :: bdry_s,bdry_z
+  real(kind=dp)   , dimension(:,:,:), allocatable :: bdry_s,bdry_z
   integer, dimension(:,:,:),allocatable  :: bdry_globnum_above
   integer, dimension(:,:,:),allocatable  :: bdry_globnum_below
   integer, dimension(:,:,:),allocatable  :: bdry_locnum_above
@@ -77,10 +77,10 @@ module data_mesh
   integer, dimension(:,:), allocatable   :: bdry_jpol_solid, bdry_jpol_fluid
   
   !real(kind=realkind) :: smallval
-  double precision :: smallval
+  real(kind=dp)    :: smallval
   
   ! central region
-  double precision, allocatable :: s_arr(:,:), z_arr(:,:)
+  real(kind=dp)   , allocatable :: s_arr(:,:), z_arr(:,:)
   integer, allocatable          :: central_is_iz_to_globiel(:,:)
 contains
 

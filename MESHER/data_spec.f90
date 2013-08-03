@@ -21,14 +21,15 @@
 
 module data_spec
 
+  use global_parameters, only                   : sp, dp
   implicit none
 
   public 
 
   integer :: npol
-  double precision, dimension(:),allocatable   :: xi_k, eta
-  double precision, dimension(:),allocatable   :: dxi
-  double precision, dimension (:), allocatable :: wt          !Quadrature weights
-  double precision, dimension (:), allocatable :: wt_axial_k  !Quad. wgts for the 
+  real(kind=dp)   , dimension(:),allocatable   :: xi_k, eta
+  real(kind=dp)   , dimension(:),allocatable   :: dxi
+  real(kind=dp)   , dimension (:), allocatable :: wt          !Quadrature weights
+  real(kind=dp)   , dimension (:), allocatable :: wt_axial_k  !Quad. wgts for the 
                                                               !nonaxisymmetric components
 end module data_spec

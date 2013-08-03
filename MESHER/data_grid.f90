@@ -21,24 +21,25 @@
 
 module data_grid
 
+  use global_parameters, only: sp, dp
   implicit none
   public
   
   integer           :: ns, nz
-  double precision  :: ri, ro
-  double precision, dimension(:,:,:),allocatable :: crd_grdc, crd_grds
-  double precision, dimension(:), allocatable    :: s_unif, z_unif
-  double precision, dimension(:), allocatable    :: radius
-  double precision, dimension(:), allocatable    :: ndeta
+  real(kind=dp)     :: ri, ro
+  real(kind=dp), dimension(:,:,:),allocatable :: crd_grdc, crd_grds
+  real(kind=dp), dimension(:), allocatable    :: s_unif, z_unif
+  real(kind=dp), dimension(:), allocatable    :: radius
+  real(kind=dp), dimension(:), allocatable    :: ndeta
   
   !number of subdivisions for central square
   integer            :: ndivs 
-  double precision   :: lsq
+  real(kind=dp)      :: lsq
   
-  double precision   :: router,lsq_fac
+  real(kind=dp)      :: router,lsq_fac
   integer            :: ngllcube
   integer, parameter :: ndim = 2
   
-  double precision, dimension(:), allocatable :: rmax_el, rmin_el
+  real(kind=dp), dimension(:), allocatable :: rmax_el, rmin_el
   logical :: southern
 end module data_grid

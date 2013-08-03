@@ -40,10 +40,10 @@ subroutine create_gllmesh
 
   use data_diag
 
-  double precision :: crd_nodes(8,2)
+  real(kind=dp)    :: crd_nodes(8,2)
 
   integer           :: iel, jpol, ipol
-  double precision  :: stest
+  real(kind=dp)     :: stest
 
   ! Generate collocation points in the two directions of space
   allocate(sgll(0:npol,0:npol,neltot),zgll(0:npol,0:npol,neltot))
@@ -133,11 +133,11 @@ end subroutine extract_fluid_solid_submeshes
 
 !-----------------------------------------------------------------------------------------
 subroutine test_mapping
-  double precision  :: crd_nodes(8,2)
+  real(kind=dp)     :: crd_nodes(8,2)
   integer           :: npoin
   integer           :: iel,jpol,ipol
-  double precision  ::  stest
-  double precision, dimension(:,:,:), allocatable :: sglltmp,zglltmp
+  real(kind=dp)     ::  stest
+  real(kind=dp)   , dimension(:,:,:), allocatable :: sglltmp,zglltmp
 
   write(6,*)'Test mapping...'; call flush(6)
 

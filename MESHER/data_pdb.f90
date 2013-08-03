@@ -23,6 +23,7 @@
 module data_pdb
 !==================
 
+  use global_parameters, only                : sp, dp
   implicit none
   public
 
@@ -86,17 +87,17 @@ module data_pdb
   integer, dimension(:), allocatable        :: nglobp
 
   ! Serendipity arrays
-  integer, dimension(:), allocatable        :: nglobmeshp
-  double precision, dimension(:,:), allocatable :: scpp, zcpp
-  integer, dimension(:,:), allocatable      :: iglobcp
-  integer, dimension(:,:,:), allocatable    :: lnodescp
+  integer, dimension(:), allocatable         :: nglobmeshp
+  real(kind=dp), dimension(:,:), allocatable :: scpp, zcpp
+  integer, dimension(:,:), allocatable       :: iglobcp
+  integer, dimension(:,:,:), allocatable     :: lnodescp
   character(len=6), dimension(:,:), allocatable :: eltypep
-  logical, dimension(:,:), allocatable      :: coarsingp
+  logical, dimension(:,:), allocatable       :: coarsingp
 
-  double precision, dimension(:), allocatable :: theta_min_proc, theta_max_proc
+  real(kind=dp), dimension(:), allocatable   :: theta_min_proc, theta_max_proc
 
   ! global to glocal mapping
-  integer, dimension(:,:), allocatable      :: glob2gloc
+  integer, dimension(:,:), allocatable       :: glob2gloc
 
 !======================
 end module data_pdb

@@ -1107,7 +1107,7 @@ subroutine arbitr_discont
 
   integer :: idom, junk
   logical :: bkgrdmodelfile_exists
-  double precision :: disc1, disc2, rho2, vp2, vs2
+  real(kind=dp)    :: disc1, disc2, rho2, vp2, vs2
   
   
   ! Does the file bkgrdmodel".bm" exist?
@@ -1183,9 +1183,9 @@ subroutine solar_discont
   
   integer :: idom,ndisctmp,ii,ind
   logical :: bkgrdmodelfile_exists
-  double precision :: disc1,disc2,rho2,vp2,vs2
-  double precision, allocatable :: vptmp(:,:),vstmp(:,:),rhotmp(:,:),disconttmp(:)
-  double precision ::  ddisc
+  real(kind=dp)    :: disc1,disc2,rho2,vp2,vs2
+  real(kind=dp)   , allocatable :: vptmp(:,:),vstmp(:,:),rhotmp(:,:),disconttmp(:)
+  real(kind=dp)    ::  ddisc
   
   ! Does the file bkgrdmodel".bm" exist?
   inquire(file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm', &

@@ -43,7 +43,7 @@ subroutine define_global_global_numbering
   use data_time
   use clocks_mod
   
-  double precision, dimension(:), allocatable   :: sgtmp, zgtmp
+  real(kind=dp)   , dimension(:), allocatable   :: sgtmp, zgtmp
   logical, dimension(:), allocatable            :: ifseg
   integer, dimension(:), allocatable            :: loc
   integer   :: iel, jpol,ipol, ipt
@@ -90,7 +90,7 @@ subroutine define_global_flobal_numbering
   use data_time
   use clocks_mod
   
-  double precision, dimension(:), allocatable :: sgtmp,zgtmp
+  real(kind=dp)   , dimension(:), allocatable :: sgtmp,zgtmp
   integer, dimension(:), allocatable :: loc_fluid
   logical, dimension(:), allocatable ::   ifseg
   integer :: iel, jpol,ipol, ipt
@@ -138,7 +138,7 @@ subroutine define_global_slobal_numbering
   use data_time
   use clocks_mod
   
-  double precision, dimension(:), allocatable   :: sgtmp, zgtmp
+  real(kind=dp)   , dimension(:), allocatable   :: sgtmp, zgtmp
   integer, dimension(:), allocatable            :: loc_solid
   logical, dimension(:), allocatable            :: ifseg
 
@@ -202,7 +202,7 @@ end subroutine define_global_slobal_numbering
 subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
                       NGLLCUBE2, NDIM2, nmax_threads_in)
 
-  ! this routine MUST be in double precision to avoid sensitivity
+  ! this routine MUST be in real(kind=dp)    to avoid sensitivity
   ! to roundoff errors in the coordinates of the points
 
   ! non-structured global numbering software provided by Paul F. Fischer
@@ -213,7 +213,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   !$ use omp_lib     
 
   integer, intent(in)               :: nspec2, npointot2, NGLLCUBE2, NDIM2
-  double precision, intent(inout)   :: xp(npointot2), yp(npointot2)
+  real(kind=dp)   , intent(inout)   :: xp(npointot2), yp(npointot2)
   integer, intent(out)              :: iglob2(npointot2), loc2(npointot2), nglob2
   logical, intent(out)              :: ifseg2(npointot2)
   integer, intent(in), optional     :: nmax_threads_in
@@ -224,11 +224,11 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
 
   integer :: ispec, i, nthreads, inttemp
   integer :: ieoff, ilocnum, nseg, ioff, iseg, ig
-  double precision :: realtemp
+  real(kind=dp)    :: realtemp
 
   integer, dimension(:), allocatable :: ind, ninseg
 
-  double precision, parameter :: SMALLVALTOL = 1.d-08
+  real(kind=dp)   , parameter :: SMALLVALTOL = 1.d-08
 
   if (present(nmax_threads_in)) then
      nmax_threads = nmax_threads_in
@@ -325,11 +325,11 @@ subroutine rank_y(A,IND,N)
   !
 
   integer n
-  double precision A(n)
+  real(kind=dp)    A(n)
   integer IND(n)
 
   integer i,j,l,ir,indx
-  double precision q
+  real(kind=dp)    q
 
   do j=1,n
      IND(j)=j
@@ -386,8 +386,8 @@ subroutine swapall(IA,A,B,ind,n)
   integer, intent(in)             :: n
   integer, intent(in)             :: IND(n)
   integer, intent(inout)          :: IA(n)
-  double precision,intent(inout)  :: A(n),B(n)
-  double precision                :: W(n), W2(n)
+  real(kind=dp)   ,intent(inout)  :: A(n),B(n)
+  real(kind=dp)                   :: W(n), W2(n)
   integer                         :: IW(n)
 
   integer i

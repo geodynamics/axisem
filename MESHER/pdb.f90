@@ -131,7 +131,7 @@ subroutine define_sflocal_coordinates
   use data_gllmesh
   integer           :: iproc, iel, ielg, jpol, ipol
   integer           :: nelmax_solid, nelmax_fluid
-  double precision  :: rsol_min, rsol_max, rflu_min, rflu_max
+  real(kind=dp)     :: rsol_min, rsol_max, rflu_min, rflu_max
 
   nelmax_solid = maxval(nel_solid)
   nelmax_fluid = maxval(nel_fluid)
@@ -289,13 +289,13 @@ subroutine define_glocal_numbering
   integer :: nelmax, nelp
   integer :: npointotp, wnglob
   integer :: iproc, ipol, jpol, iel, ipt, ielg
-  double precision, dimension(:), allocatable :: wsgll, wzgll
+  real(kind=dp)   , dimension(:), allocatable :: wsgll, wzgll
   integer, dimension(:), allocatable :: wloc, wigloc
   logical, dimension(:), allocatable :: wifseg
 
   ! valence test
-  double precision, dimension(:), allocatable     :: uglob2
-  double precision, dimension(:,:,:), allocatable :: val
+  real(kind=dp)   , dimension(:), allocatable     :: uglob2
+  real(kind=dp)   , dimension(:,:,:), allocatable :: val
   integer :: idest,i
   integer :: valnum_cent(6),totvalnum_cent
   integer :: valnum_semi(6),totvalnum_semi
@@ -472,8 +472,8 @@ subroutine define_sflocal_numbering
   integer :: nelmax_solid, nelmax_fluid, nelp_solid, nelp_fluid
   integer :: npointotp_solid, npointotp_fluid, wnglob_solid, wnglob_fluid
   integer :: iproc, ipol, jpol, iel, ipt,  ielg
-  double precision, dimension(:), allocatable :: wsgll_solid, wzgll_solid
-  double precision, dimension(:), allocatable :: wsgll_fluid, wzgll_fluid
+  real(kind=dp)   , dimension(:), allocatable :: wsgll_solid, wzgll_solid
+  real(kind=dp)   , dimension(:), allocatable :: wsgll_fluid, wzgll_fluid
 
   integer, dimension(:), allocatable :: wigloc_solid,wigloc_fluid
   integer, dimension(:), allocatable :: wloc_solid,wloc_fluid
@@ -482,13 +482,13 @@ subroutine define_sflocal_numbering
   ! valence test
   integer :: idest,i
   character(len=4) :: appiproc
-  double precision, dimension(:), allocatable     :: uglob2_solid
-  double precision, dimension(:,:,:), allocatable :: val_solid
+  real(kind=dp)   , dimension(:), allocatable     :: uglob2_solid
+  real(kind=dp)   , dimension(:,:,:), allocatable :: val_solid
   integer :: valnum_cent_solid(6),totvalnum_cent_solid
   integer :: valnum_semi_solid(6),totvalnum_semi_solid
 
-  double precision, dimension(:), allocatable     :: uglob2_fluid
-  double precision, dimension(:,:,:), allocatable :: val_fluid
+  real(kind=dp)   , dimension(:), allocatable     :: uglob2_fluid
+  real(kind=dp)   , dimension(:,:,:), allocatable :: val_fluid
   integer :: valnum_fluid(6),totvalnum_fluid
   integer             :: nthreads = 1
 
@@ -1889,13 +1889,13 @@ subroutine define_local_bdry_elem
 
   integer ::iel,ielg,iproc,j,solid_count(0:nproc-1),fluid_count(0:nproc-1)
   integer, allocatable, dimension(:,:) :: tmpsolid,tmpfluid,jpolsol,jpolflu
-  double precision :: rbound
+  real(kind=dp)    :: rbound
   integer :: myproc,herproc,myielglob,herielglob
   
   ! test parameters
   integer count,ipol,jpol
-  double precision, allocatable :: tmpsolfield(:,:,:,:), tmpflufield(:,:,:,:)
-  double precision :: rtmp
+  real(kind=dp)   , allocatable :: tmpsolfield(:,:,:,:), tmpflufield(:,:,:,:)
+  real(kind=dp)    :: rtmp
 
   allocate(nbdry_el(0:nproc-1))
   allocate(have_bdry_elemp(0:nproc-1))
@@ -2176,15 +2176,15 @@ subroutine generate_serendipity_per_proc(sg, zg)
   use data_time
   use clocks_mod
 
-  double precision, dimension(4,neltot), intent(in) :: sg, zg
+  real(kind=dp)   , dimension(4,neltot), intent(in) :: sg, zg
 
   integer :: iproc,nelp,iel,ielg
   integer :: npointotp,nelpmax,nglobmeshpmax
   integer :: ncp
   integer :: wnglob, iptcp, inode
   
-  double precision, dimension(:,:,:), allocatable   :: sgp, zgp
-  double precision, dimension(:,:), allocatable     :: sgpw, zgpw
+  real(kind=dp)   , dimension(:,:,:), allocatable   :: sgp, zgp
+  real(kind=dp)   , dimension(:,:), allocatable     :: sgpw, zgpw
   integer, dimension(:), allocatable                :: wiglob, wloc
   logical, dimension(:), allocatable                :: wifseg
   character(len=4) :: appiproc
