@@ -300,7 +300,6 @@ subroutine define_glocal_numbering
   integer :: valnum_cent(6),totvalnum_cent
   integer :: valnum_semi(6),totvalnum_semi
   integer             :: nthreads = 1
-  character(len=1024) :: filename
 
   nelmax = maxval(nel)
   allocate(igloc(nelmax*(npol+1)**2,0:nproc-1))
@@ -481,7 +480,6 @@ subroutine define_sflocal_numbering
 
   ! valence test
   integer :: idest,i
-  character(len=4) :: appiproc
   real(kind=dp)   , dimension(:), allocatable     :: uglob2_solid
   real(kind=dp)   , dimension(:,:,:), allocatable :: val_solid
   integer :: valnum_cent_solid(6),totvalnum_cent_solid
@@ -1887,16 +1885,12 @@ subroutine define_local_bdry_elem
   use global_parameters
   use data_gllmesh, only : sgll, zgll
 
-  integer ::iel,ielg,iproc,j,solid_count(0:nproc-1),fluid_count(0:nproc-1)
-  integer, allocatable, dimension(:,:) :: tmpsolid,tmpfluid,jpolsol,jpolflu
-  real(kind=dp)    :: rbound
-  integer :: myproc,herproc,myielglob,herielglob
+  integer                              :: iel, iproc, j
+  integer, dimension(0:nproc-1)        :: solid_count, fluid_count
+  integer, allocatable, dimension(:,:) :: tmpsolid, tmpfluid, jpolsol, jpolflu
+  real(kind=dp)                        :: rbound
+  integer                              :: myproc, herproc, myielglob, herielglob
   
-  ! test parameters
-  integer count,ipol,jpol
-  real(kind=dp)   , allocatable :: tmpsolfield(:,:,:,:), tmpflufield(:,:,:,:)
-  real(kind=dp)    :: rtmp
-
   allocate(nbdry_el(0:nproc-1))
   allocate(have_bdry_elemp(0:nproc-1))
   allocate(belemp(sum(nbelem),0:nproc-1))
@@ -2187,7 +2181,6 @@ subroutine generate_serendipity_per_proc(sg, zg)
   real(kind=dp)   , dimension(:,:), allocatable     :: sgpw, zgpw
   integer, dimension(:), allocatable                :: wiglob, wloc
   logical, dimension(:), allocatable                :: wifseg
-  character(len=4) :: appiproc
 
   if (dump_mesh_info_screen) then 
     write(6,*) 
@@ -2335,7 +2328,7 @@ subroutine write_db
 
   use data_gllmesh
   
-  integer :: iproc,iptp,npointotp,ipsrc,ipdes,imsg,iptcp,iel,inode,ielg,idom,i
+  integer :: iproc,iptp,npointotp,ipsrc,ipdes,imsg,iel,inode,ielg,idom
   character(len=4) :: appiproc
   character(len=80) :: dbname
   integer :: lfdbname
