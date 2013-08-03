@@ -26,8 +26,7 @@ endif
 set datapath = `grep "DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"//g'`
 set infopath = `grep "INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
 set meshdir = "MESHES/"`grep "^MESHNAME" inparam_basic | awk '{print $2}'`
-set mpiruncmd = `grep "MPIRUN" ../make_axisem.macros | awk '{print $3}'`
-echo $mpiruncmd
+set mpiruncmd = `grep "^MPIRUN" ../make_axisem.macros | awk '{print $3}'`
 
 set svnrevision = `svnversion`
 echo $svnrevision "SVN_VERSION      " > runinfo
@@ -35,6 +34,12 @@ set username = `whoami`
 echo $username "USER_NAME        " >> runinfo
 set hostname = `hostname`
 echo $hostname "HOST_NAME        " >> runinfo
+set FFLAGS = `grep "^FFLAGS" ../make_axisem.macros`
+echo $FFLAGS  >> runinfo 
+set CFLAGS = `grep "^CFLAGS" ../make_axisem.macros`
+echo $CFLAGS >> runinfo 
+set LDFLAGS = `grep "^LDFLAGS" ../make_axisem.macros`
+echo $LDFLAGS >> runinfo 
 
 if ( -d $meshdir) then
     echo "Using mesh " $meshdir

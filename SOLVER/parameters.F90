@@ -38,6 +38,8 @@ module parameters
 
     character(len=100)  :: hostname, username, svn_version
     character(len=100)  :: compiler, compilerversion 
+    character(len=255)  :: fflags, cflags, ldflags
+    character(len=3)    :: openmp
 
     public :: open_local_output_file, readin_parameters, read_inparam_basic_verbosity
     public :: compute_numerical_parameters, write_parameters
@@ -534,7 +536,7 @@ subroutine read_inparam_advanced
 end subroutine
 !-----------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!----------------------------------------------------------------------------
 !> Getting information like code revision, username and hostname
 subroutine get_runinfo
   integer  :: iget_runinfo = 500, ioerr
@@ -552,10 +554,19 @@ subroutine get_runinfo
      read(iget_runinfo,*) svn_version
      read(iget_runinfo,*) username
      read(iget_runinfo,*) hostname 
+     read(iget_runinfo,'(A)') fflags
+     read(iget_runinfo,'(A)') cflags
+     read(iget_runinfo,'(A)') ldflags
      if(lpr .and. verbose > 1) print *, 'done'
   end if
   close(iget_runinfo)
-
+  openmp = 'no'
+  !$ openmp = 'yes'
+  !>@TODO: Include support for more compilers. Also, Fortran2008 has the 
+  !!       intrinsic procedures: COMPILER_OPTIONS and COMPILER_VERSION.
+  !!       Alas, they are only supported for gcc>4.6 and some ifort>13.
+  !!       At a later stage, this whole module here could be simplified 
+  !!       using them.
 #if defined(__GFORTRAN__)
    compiler = 'gfortran'
 #define gfortranversion __VERSION__
@@ -1147,6 +1158,10 @@ subroutine write_parameters
         write(6,12)'     hostname          :', hostname
         write(6,12)'     compiler          :', compiler
         write(6,12)'     compilerversion   :', compilerversion
+        write(6,20)'     FFLAGS            :', fflags
+        write(6,20)'     CFLAGS            :', cflags
+        write(6,20)'     LDFLAGS           :', ldflags
+        write(6,12)'     OpenMP            :', openmp
         write(6,*)'  Global mesh information______________________________'
         write(6,12)'     Background model  :',bkgrdmodel
         write(6,10)'     # discontinuities :',ndisc
@@ -1311,54 +1326,57 @@ subroutine write_parameters
     if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
         ! write generic simulation info file
         write(6,*) ' Writing simulation info to netcdf file attributes' 
-        call nc_write_att_char(trim(bkgrdmodel), 'background model')
-        call nc_write_att_char(trim(svn_version), 'SVN revision')
-        call nc_write_att_char(trim(username), 'user name')
-        call nc_write_att_char(trim(hostname), 'host name')
-        call nc_write_att_char(trim(compiler), 'compiler brand')
-        call nc_write_att_char(trim(hostname), 'compiler version')
-        call nc_write_att_real(real(deltat), 'time step in sec')
-        call nc_write_att_int(niter, 'number of time steps')
-        call nc_write_att_char(trim(src_type(1)), 'excitation type')
-        call nc_write_att_char(trim(src_type(2)), 'source type')
-        call nc_write_att_char(trim(stf_type), 'source time function')
-        call nc_write_att_char(trim(src_file_type), 'source file type')
-        call nc_write_att_real(real(period), 'dominant source period')
-        call nc_write_att_real(real(src_depth/1000.), 'source depth in km')
+        call nc_write_att_char( trim(bkgrdmodel),      'background model')
+        call nc_write_att_char( trim(svn_version),     'SVN revision')
+        call nc_write_att_char( trim(username),        'user name')
+        call nc_write_att_char( trim(hostname),        'host name')
+        call nc_write_att_char( trim(compiler),        'compiler brand')
+        call nc_write_att_char( trim(compilerversion), 'compiler version')
+        call nc_write_att_char( trim(fflags),          'FFLAGS')
+        call nc_write_att_char( trim(cflags),          'CFLAGS')
+        call nc_write_att_char( trim(ldflags),         'LDFLAGS')
+        call nc_write_att_char( trim(openmp),          'OpenMP')
+        call nc_write_att_real( real(deltat),          'time step in sec')
+        call nc_write_att_int(  niter,                 'number of time steps')
+        call nc_write_att_char( trim(src_type(1)),     'excitation type')
+        call nc_write_att_char( trim(src_type(2)),     'source type')
+        call nc_write_att_char( trim(stf_type),        'source time function')
+        call nc_write_att_char( trim(src_file_type),   'source file type')
+        call nc_write_att_real( real(period),          'dominant source period')
+        call nc_write_att_real( real(src_depth/1000.), 'source depth in km')
         
-        call nc_write_att_real(real(srccolat), 'Source colatitude')
-        call nc_write_att_real(real(srclon),   'Source longitude' )
+        call nc_write_att_real( real(srccolat),        'Source colatitude')
+        call nc_write_att_real( real(srclon),          'Source longitude' )
 
-        call nc_write_att_real(real(magnitude), 'scalar source magnitude')
-        call nc_write_att_int(num_rec_tot, 'number of receivers')
-        call nc_write_att_int(nseismo, 'length of seismogram  in time samples')
-        call nc_write_att_real(real(deltat)*real(seis_it), 'seismogram sampling in sec')
+        call nc_write_att_real( real(magnitude),       'scalar source magnitude')
+        call nc_write_att_int(  num_rec_tot,           'number of receivers')
+        call nc_write_att_int(  nseismo,               'length of seismogram  in time samples')
+        call nc_write_att_real( real(deltat)*real(seis_it), 'seismogram sampling in sec')
         if (dump_wavefields) then
-           call nc_write_att_int(nstrain, 'number of strain dumps')
+           call nc_write_att_int(nstrain,              'number of strain dumps')
            call nc_write_att_real(real(period)/real(strain_samp), 'strain dump sampling rate in sec')
         else
-           call nc_write_att_int(0, 'number of strain dumps')       
-           call nc_write_att_real(0., 'strain dump sampling rate in sec' )
+           call nc_write_att_int(0,                    'number of strain dumps')       
+           call nc_write_att_real(0.,                  'strain dump sampling rate in sec' )
         endif
         if (dump_vtk .or. dump_snaps_solflu) then
-           call nc_write_att_int(nsnap, 'number of snapshot dumps')
+           call nc_write_att_int(nsnap,                'number of snapshot dumps')
            call nc_write_att_real(real(deltat)*real(snap_it), 'snapshot dump sampling rate in sec')      
         else
-           call nc_write_att_int(0, 'number of snapshot dumps')
-           call nc_write_att_real(0., 'snapshot dump sampling rate in sec')
+           call nc_write_att_int(0,                    'number of snapshot dumps')
+           call nc_write_att_real(0.,                  'snapshot dump sampling rate in sec')
         endif
-        ! just not to cause trouble when reading simulation.info linewise:
-        call nc_write_att_char('cyl', 'receiver components ')
-        call nc_write_att_int(ibeg, 'ibeg')
-        call nc_write_att_int(iend, 'iend')
-        call nc_write_att_real(shift_fact, 'source shift factor in sec')
-        call nc_write_att_int(int(shift_fact/deltat), 'source shift factor for deltat')
-        call nc_write_att_int(int(shift_fact/seis_dt), 'source shift factor for seis_dt')
-        call nc_write_att_int(int(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
-        call nc_write_att_char(trim(rec_file_type), 'receiver file type')
-        call nc_write_att_real(dtheta_rec, 'receiver spacing (0 if not even)')
+        call nc_write_att_char( 'cyl',                 'receiver components ')
+        call nc_write_att_int(  ibeg,                  'ibeg')
+        call nc_write_att_int(  iend,                  'iend')
+        call nc_write_att_real( shift_fact,            'source shift factor in sec')
+        call nc_write_att_int(  int(shift_fact/deltat),  'source shift factor for deltat')
+        call nc_write_att_int(  int(shift_fact/seis_dt), 'source shift factor for seis_dt')
+        call nc_write_att_int(  int(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
+        call nc_write_att_char( trim(rec_file_type),   'receiver file type')
+        call nc_write_att_real( dtheta_rec,            'receiver spacing (0 if not even)')
         write(clogic,*) use_netcdf
-        call nc_write_att_char(clogic, 'use netcdf for wavefield output?')
+        call nc_write_att_char( clogic,                'use netcdf for wavefield output?')
     end if
 
 
@@ -1440,6 +1458,7 @@ subroutine write_parameters
 17  format(a25,2(1pe13.3))
 18  format(a25,2(L14))
 19  format(a25,L14)
+20  format(a25,'   ', a51)
 
     ! write post processing file==============================================
     
