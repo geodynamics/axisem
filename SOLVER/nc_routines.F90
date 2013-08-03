@@ -384,10 +384,10 @@ end subroutine nc_dump_strain_to_disk
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_stf(stf)
-#ifdef unc
     use data_io,  only                       : nseismo
     use data_time, only                      : seis_it, niter
     real(kind=sp), intent(in), dimension(:) :: stf   
+#ifdef unc
     integer                                 :: it, i
 
     allocate(stf_dumpvar(niter))
