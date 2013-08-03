@@ -27,10 +27,17 @@
 #TIME_SCHEME     newmark2
 
 
-
+##################### OUTPUT OPTIONS ##########################################
 # OUTPUT PATHS
 DATA_DIR        "./Data"
 INFO_DIR        "./Info"
+
+# Extra diagnostic output? (default: false)
+# Prints VTK files of the actual velocity model (including lateral heterogenei-
+# ties), several ASCII files about the Mesh and Seismograms at certain special
+# points, like the epicenter, antipode and equator. Not needed for 
+# postprocessing, takes several megabytes and produces around 10 files per CPU.
+DIAGNOSTIC_FILE_OUTPUT false
 
 
 ######################## MESH TEST ############################################
@@ -51,7 +58,10 @@ MESH_TEST           false
 # options for values: xdmf, vtk, both
 #SNAPSHOTS_FORMAT     xdmf  
 
-# Use NetCDF for heavy output  (default false)
+# Use NetCDF for output  (default false)
+# Enabling this option will put all seismograms and wavefields into one file
+# axisem_output.nc4 in the $DATA directory. Postprocessing will automatically
+# read and process this file.
 #USE_NETCDF          true
 
 

@@ -370,7 +370,8 @@ subroutine read_inparam_advanced
   
   datapath = './Data'
   infopath = './Info'
-  
+ 
+  diagfiles = .false.
   do_mesh_tests = .false.
   dump_wavefields = .false.
   strain_samp = 8
@@ -424,6 +425,9 @@ subroutine read_inparam_advanced
 
          case('INFO_DIR')
              infopath = keyvalue
+
+         case('DIAGNOSTIC_FILE_OUTPUT')
+             read(keyvalue,*) diagfiles
 
          case('MESH_TEST')
              read(keyvalue,*) do_mesh_tests
@@ -986,58 +990,60 @@ subroutine compute_numerical_parameters
   isnap = 0
   iseismo=0
 
-  ! mesh info: coordinates of elements and collocation points               
-  open(2222+mynum,file=infopath(1:lfinfo)//'/axial_points.dat'//appmynum)
-  open(3333+mynum,file=infopath(1:lfinfo)//'/axial_ds_dz.dat'//appmynum)
   s_max=zero
 
   ! Set some parameters for faster access in time loop
   half_dt=half*deltat
   half_dt_sq=half*deltat**2
 
-122 format(i8,i3,4(1pe15.5))
+  ! mesh info: coordinates of elements and collocation points               
+  if (diagfiles) then
+      open(2222+mynum,file=infopath(1:lfinfo)//'/axial_points.dat'//appmynum)
+      open(3333+mynum,file=infopath(1:lfinfo)//'/axial_ds_dz.dat'//appmynum)
 
-  do ielem = 1, nelem
+      do ielem = 1, nelem
 
-     ! write out axial points
-     if (axis(ielem)) then
-        call compute_coordinates(s,z,r,theta,ielem,0,npol)
-        do jpol=0,npol
-           call compute_coordinates(s,z,r,theta,ielem,0,jpol)
-           write(2222+mynum,122)ielem,jpol,s,z,r,theta/pi*180.
-        enddo
+         ! write out axial points
+         if (axis(ielem)) then
+            call compute_coordinates(s,z,r,theta,ielem,0,npol)
+            do jpol=0,npol
+               call compute_coordinates(s,z,r,theta,ielem,0,jpol)
+               write(2222+mynum,122)ielem,jpol,s,z,r,theta/pi*180.
+            enddo
 
-        ! write out profile of grid spacing along Northern axis
-        if (north(ielem)) then
+            ! write out profile of grid spacing along Northern axis
+            if (north(ielem)) then
 
-           do jpol=0,npol
-              do ipol=0,npol-1
-                 dsaxis(ipol,jpol) = dsqrt((scoord(ipol,jpol,ielem)-&
-                      scoord(ipol+1,jpol,ielem))**2+&
-                      (zcoord(ipol,jpol,ielem)-&
-                      zcoord(ipol+1,jpol,ielem))**2 )
-              enddo
-           enddo
+               do jpol=0,npol
+                  do ipol=0,npol-1
+                     dsaxis(ipol,jpol) = dsqrt((scoord(ipol,jpol,ielem)-&
+                          scoord(ipol+1,jpol,ielem))**2+&
+                          (zcoord(ipol,jpol,ielem)-&
+                          zcoord(ipol+1,jpol,ielem))**2 )
+                  enddo
+               enddo
 
-           do jpol=0,npol-1
-              dzaxis(jpol) = dsqrt( (scoord(0,jpol,ielem) - &
-                   scoord(0,jpol+1,ielem) )**2 + &
-                   (zcoord(0,jpol,ielem) - &
-                   zcoord(0,jpol+1,ielem))**2 )
-           enddo
-           minds(naxel) = minval(dsaxis)
-           maxds(naxel) = maxval(dsaxis)
-           mindz(naxel) = minval(dzaxis)
-           maxdz(naxel) = maxval(dzaxis)
-           call compute_coordinates(s,z,r,theta,ielem,0,npol/2)        
-           write(3333+mynum,123)ielem,r,minds(naxel),maxds(naxel), &
-                mindz(naxel),maxdz(naxel),maxds(naxel)/minds(naxel)
-        endif
-     endif
-  enddo
-123 format(i7,1pe14.3,5(1pe14.3))
-  close(2222+mynum)
-  close(3333+mynum)
+               do jpol=0,npol-1
+                  dzaxis(jpol) = dsqrt( (scoord(0,jpol,ielem) - &
+                       scoord(0,jpol+1,ielem) )**2 + &
+                       (zcoord(0,jpol,ielem) - &
+                       zcoord(0,jpol+1,ielem))**2 )
+               enddo
+               minds(naxel) = minval(dsaxis)
+               maxds(naxel) = maxval(dsaxis)
+               mindz(naxel) = minval(dzaxis)
+               maxdz(naxel) = maxval(dzaxis)
+               call compute_coordinates(s,z,r,theta,ielem,0,npol/2)        
+               write(3333+mynum,123)ielem,r,minds(naxel),maxds(naxel), &
+                    mindz(naxel),maxdz(naxel),maxds(naxel)/minds(naxel)
+            endif
+         endif
+      enddo
+122   format(i8,i3,4(1pe15.5))
+123   format(i7,1pe14.3,5(1pe14.3))
+      close(2222+mynum)
+      close(3333+mynum)
+  end if
 
   if (lpr) write(6,*)
 

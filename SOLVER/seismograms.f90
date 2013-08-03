@@ -73,7 +73,7 @@ subroutine prepare_seismograms
   num_surf_el = ind
   allocate(surfelem(num_surf_el))
 
-  open(1000+mynum,file=datapath(1:lfdata)//'/surfelem_'//appmynum//'.dat') 
+  if (diagfiles) open(1000+mynum,file=datapath(1:lfdata)//'/surfelem_'//appmynum//'.dat') 
   ind=0
   do iel=1,nel_solid
      ielem=ielsolid(iel)
@@ -86,7 +86,7 @@ subroutine prepare_seismograms
      if ( dabs(r-router)< min_distance_dim ) then
         ind=ind+1
         surfelem(ind)=iel
-        write(1000+mynum,*)ind,iel,r,theta*180./pi
+        if(diagfiles) write(1000+mynum,*)ind,iel,r,theta*180./pi
 
         ! find epicenter
         if (north(ielem)) then
@@ -141,7 +141,7 @@ subroutine prepare_seismograms
   enddo
   maxind=ind
 
-  close(1000+mynum)
+  if(diagfiles) close(1000+mynum)
 
   ! make sure only one processor has each location
   if (lpr) &
@@ -229,29 +229,35 @@ subroutine prepare_seismograms
         call barrier
         if (mynum==iproc) then 
            call barrier
-           open(33333,file=datapath(1:lfdata)// &
-                            '/surfelem_coords.dat',position='append')
-           open(33334,file=datapath(1:lfdata)// &
-                            '/surfelem_coords_jpol.dat',position='append')
-           if (mynum==0) write(33334,*)maxind_glob
-           if (mynum==0) write(33333,*)maxind_glob
+           if (diagfiles) then
+               open(33333,file=datapath(1:lfdata)// &
+                                '/surfelem_coords.dat',position='append')
+               open(33334,file=datapath(1:lfdata)// &
+                                '/surfelem_coords_jpol.dat',position='append')
+               if (mynum==0) write(33334,*)maxind_glob
+               if (mynum==0) write(33333,*)maxind_glob
+           end if
+
            do iel=1,maxind
               if (thetacoord(npol/2,npol/2,ielsolid(surfelem(iel)))<=pi/2) then
                  jsurfel(iel)=npol
               else
                  jsurfel(iel)=0
               endif
-              write(33333,*) 180./pi* &
-                   thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
 
               surfcoord(iel) = 180. / pi * &
                                thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
-
-              write(33334,11) 180./pi* &
-                   thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),&
-                   (rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
+              if (diagfiles) then
+                  write(33333,*) surfcoord(iel) 
+                  write(33334,11) 180./pi* &
+                       thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),&
+                       (rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
+              end if
            enddo
-           close(33333); close(33334)
+           if (diagfiles) then
+               close(33333)
+               close(33334)
+           end if
            call barrier
         endif
         call barrier
@@ -261,7 +267,8 @@ subroutine prepare_seismograms
 
   if (dump_wavefields) then
     if(use_netcdf)   then
-
+       print *, ' General wavefield dump with NetCDF is not yet implemented!'
+       stop
     else 
 
        do iel=1,maxind
@@ -573,24 +580,30 @@ subroutine prepare_from_recfile_seis
 
   ! Output colatitudes globally (this is the file needed to plot seismograms)
   ! NOTE: recfile_th is in degrees!!!
-  if (lpr) then
-     open(99997,file=datapath(1:lfdata)//'/receiver_pts.dat')
-     do i=1,num_rec_glob
-        write(99997,*)recfile_th_glob(i),recfile_readph(i),rec2proc(i)
-     enddo
-     close(99997)
-  endif
+  !@TODO: The gnuplot scripts in postprocessing.csh still need it.
+  !if ((.not.use_netcdf).or.(diagfiles)) then
+     if (lpr) then
+        open(99997,file=datapath(1:lfdata)//'/receiver_pts.dat')
+        do i=1,num_rec_glob
+           write(99997,*)recfile_th_glob(i),recfile_readph(i),rec2proc(i)
+        enddo
+        close(99997)
+     end if
+  !endif
 
   ! Output colatitudes locally to infopath (this file is for info purposes!)
 
   maxreclocerr=zero
-  open(9998+mynum,file=infopath(1:lfinfo)//'/receiver_pts_'//appmynum//'.dat')
-  write(9998+mynum,*)num_rec
+  if (diagfiles) then
+      open(9998+mynum,file=infopath(1:lfinfo)//'/receiver_pts_'//appmynum//'.dat')
+      write(9998+mynum,*)num_rec
+  end if
   do i=1,num_rec ! Only over newly found local receiver locations
 
-     write(9998+mynum,13) i, recfile_readth(loc2globrec(i)), recfile_th(i), &
-                          recfile_ph_loc(i),                                &
-                          recfile_el(i,1), recfile_el(i,2), recfile_el(i,3)
+     if (diagfiles) write(9998+mynum,13) i, recfile_readth(loc2globrec(i)), &
+                                         recfile_th(i), recfile_ph_loc(i),  &
+                                         recfile_el(i,1), recfile_el(i,2),  &
+                                         recfile_el(i,3)
 
      call define_io_appendix(appielem,loc2globrec(i))
 
@@ -618,14 +631,13 @@ subroutine prepare_from_recfile_seis
      endif
 
 
-  !if(.not.(use_netcdf))   then
-  !!@TODO: ASCII seismograms are always written, since netcdf is not enabled in postprocessing.
-     if (verbose > 1) write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
-     open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
-  !endif
+     if(.not.(use_netcdf))   then
+         if (verbose > 1) write(6,*)'  ',procstrg,'opening receiver file:',i,appielem
+         open(100000+i,file=datapath(1:lfdata)//'/'//trim(receiver_name(loc2globrec(i)))//'_disp.dat')
+     endif
  
   enddo
-  close(9998+mynum)
+  if (diagfiles) close(9998+mynum)
   if (use_netcdf) then
     call nc_define_outputfile(num_rec_glob, receiver_name, recfile_th_glob, &
                               recfile_readth, recfile_readph, rec2proc)
@@ -657,13 +669,15 @@ subroutine prepare_from_recfile_seis
   ! no phi component for monopole
   if (src_type(1)=='monopole')  recfac(:,3) = 0.d0
   
-  open(300+mynum,file=infopath(1:lfinfo)//'/receiver_recfac_'//appmynum//'.dat')
-  do i=1,num_rec
-     write(300+mynum,*)recfile_th(i),recfile_ph_loc(i)*180./pi,recfac(i,3)
-     write(300+mynum,*)recfac(i,1),recfac(i,2),recfac(i,4),recfac(i,5)
-     write(300+mynum,*)
-  enddo
-  close(300+mynum)
+  if (diagfiles) then
+      open(300+mynum,file=infopath(1:lfinfo)//'/receiver_recfac_'//appmynum//'.dat')
+      do i=1,num_rec
+         write(300+mynum,*)recfile_th(i),recfile_ph_loc(i)*180./pi,recfac(i,3)
+         write(300+mynum,*)recfac(i,1),recfac(i,2),recfac(i,4),recfac(i,5)
+         write(300+mynum,*)
+      enddo
+      close(300+mynum)
+  end if
 
 13 format(i3,3(1pe12.4),i8,2(i2))
 

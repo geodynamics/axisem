@@ -423,6 +423,7 @@ end subroutine read_sourceparams
 
 !-----------------------------------------------------------------------------
 subroutine compute_stf
+  use nc_routines, only: nc_dump_stf
 
   integer :: i
 
@@ -464,19 +465,23 @@ subroutine compute_stf
       stop
    endif
 
-  if (lpr) then
-     open(299, file=datapath(1:lfdata)//'/stf.dat', status='replace', action='write')
-     open(298, file=datapath(1:lfdata)//'/stf_seis.dat', status='replace', action='write')
-     open(297, file=datapath(1:lfdata)//'/stf_strain.dat', status='replace', action='write')
-     do i=1, niter
-        write(299,*) real(i) * real(deltat), real(stf(i))
-        if ( mod(i,seis_it) == 0) write(298,*) real(i) * real(deltat), real(stf(i))
-        if ( mod(i,strain_it) == 0) write(297,*) real(i) * real(deltat), real(stf(i))
-     enddo
-     close(299)
-     close(298)
-     close(297)
-  endif
+   if (use_netcdf.and.(mynum.eq.0)) call nc_dump_stf(stf(1:niter))
+
+   if (lpr) then
+      if(.not.(use_netcdf)) then
+          open(299, file=datapath(1:lfdata)//'/stf.dat', status='replace', action='write')
+          open(298, file=datapath(1:lfdata)//'/stf_seis.dat', status='replace', action='write')
+          open(297, file=datapath(1:lfdata)//'/stf_strain.dat', status='replace', action='write')
+          do i=1, niter
+             write(299,*) real(i) * real(deltat), real(stf(i))
+             if ( mod(i,seis_it) == 0) write(298,*) real(i) * real(deltat), real(stf(i))
+             if ( mod(i,strain_it) == 0) write(297,*) real(i) * real(deltat), real(stf(i))
+          enddo
+          close(299)
+          close(298)
+          close(297)
+      end if
+   end if
 
 end subroutine compute_stf
 !=============================================================================
@@ -617,7 +622,7 @@ subroutine compute_src
   endif
  
   ! write all elements containing non-zero source term components to file
-  if (have_src) then
+  if (diagfiles.and.have_src) then
      open(619, file=infopath(1:lfinfo)//'/src_term.dat'//appmynum) 
      open(621, file=infopath(1:lfinfo)//'/src_term_norm1.dat'//appmynum) 
      open(622, file=infopath(1:lfinfo)//'/src_term_norm2.dat'//appmynum) 
@@ -640,14 +645,14 @@ subroutine compute_src
            enddo
         endif
      enddo
-12 format(i9,2(i2),3(1pe12.4))
-13 format(3(1pe12.4))
-  endif !have_src
+12  format(i9,2(i2),3(1pe12.4))
+13  format(3(1pe12.4))
 
-  close(619)
-  close(621)
-  close(622)
-  close(623)
+    close(619)
+    close(621)
+    close(622)
+    close(623)
+  endif !have_src
 
   ! construct source term array that only lives on nonzero elements (max. 8)
   source_term_el = zero
@@ -890,7 +895,9 @@ subroutine delta_src
      signal = 0.
      if (lpr .and. trim(discrete_choice)==trim(dirac_approx(j))) &
               write(6,*)' Approximation type:',trim(dirac_approx(j))
-     if (lpr) open(unit=60,file=infopath(1:lfinfo)//'/discrete_dirac_'//trim(dirac_approx(j))//'.dat')
+     if (lpr.and.diagfiles) then
+         open(unit=60,file=infopath(1:lfinfo)//'/discrete_dirac_'//trim(dirac_approx(j))//'.dat')
+     end if
 
      do i=1,niter
         t=dble(i)*deltat
@@ -930,10 +937,10 @@ subroutine delta_src
          stop
       endif
 
-        if (lpr)   write(60,*)t,magnitude*signal(i)   
+        if (lpr.and.diagfiles)   write(60,*)t,magnitude*signal(i)   
      enddo
 
-     if (lpr)  close(60)
+     if (lpr.and.diagfiles)  close(60)
      if (trim(discrete_choice)==trim(dirac_approx(j)) ) then
         if (lpr) write(6,*)'  dirac type and max amp before:',trim(dirac_approx(j)),maxval(signal)
         integral = sum(signal)*deltat
@@ -952,7 +959,7 @@ subroutine delta_src
 
   stf = stf * magnitude
   
-  if (lpr)  then 
+  if (lpr.and.diagfiles)  then 
      open(unit=61,file=infopath(1:lfinfo)//'/discrete_chosen_dirac_'//trim(discrete_choice)//'.dat')
      open(unit=62,file=infopath(1:lfinfo)//'/discrete_chosen_heavi_'//trim(discrete_choice)//'.dat')
      int_stf(1:niter)=0.

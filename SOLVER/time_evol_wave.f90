@@ -138,7 +138,7 @@ subroutine prepare_waves
 
   ! Various seismogram output preparations...
   call prepare_seismograms
-  call open_hyp_epi_equ_anti
+  if (diagfiles) call open_hyp_epi_equ_anti
 
   ! allow for different types of receiver files
   call prepare_from_recfile_seis
@@ -1087,10 +1087,9 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
      iseismo = iseismo + 1
      if (use_netcdf) then
         call nc_compute_recfile_seis_bare(disp)
-     !else @TODO: workaround, since postproc does not support netcdf yet.
-     endif
+     else 
         call compute_recfile_seis_bare(disp)
-     !endif
+     endif
   
      time = real(iter)*deltat
      !call compute_recfile_seis_binary(time,disp,velo)
@@ -1100,8 +1099,9 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
      ! cmbrec locations read in from file (only velocity & tr(E))
      !    call dump_velo_straintrace_cmb(disp,velo)
      
+     
      ! Generic synthetics at hypo-/epicenter, equator, antipode (including time)
-     call compute_hyp_epi_equ_anti(t,disp)
+     if (diagfiles) call compute_hyp_epi_equ_anti(t,disp)
 
   endif
 

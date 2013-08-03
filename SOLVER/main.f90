@@ -25,7 +25,7 @@ program axisem
 
   use data_proc,      only : nproc, mynum, appnproc, appmynum, lpr, procstrg
   use data_io,        only : dump_xdmf, use_netcdf, verbose
-  use nc_routines,    only : nc_end_output, nc_open_parallel 
+  use nc_routines,    only : nc_end_output, nc_finish_prepare
   use data_source,    only : isim,num_simul
   use data_mesh,      only : do_mesh_tests
   use parameters,     only : open_local_output_file, readin_parameters, &
@@ -82,8 +82,8 @@ program axisem
      call deallocate_preloop_arrays ! def_grid
  
      if (use_netcdf) then
-        if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Opening Netcdf file for parallel output.............'
-        call nc_open_parallel()
+        if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Finish preparation of NetCDF file...................'
+        call nc_finish_prepare
      endif
     
      call barrier ! Just making sure we're all ready to rupture...

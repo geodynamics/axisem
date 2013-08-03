@@ -3308,11 +3308,6 @@ subroutine def_solid_fluid_boundary_terms
      stop
   endif
   
-  ! output boundary precomputable matrix with radius [k]m and colatitude [deg]
-  open(unit=500+mynum,file=infopath(1:lfinfo)//'/boundary_term_sol'&
-                           //appmynum//'.dat')
-  open(unit=400+mynum,file=infopath(1:lfinfo)//'/boundary_term_flu'&
-                           //appmynum//'.dat')
   if (verbose > 1) then
      write(69,*)
      write(69,*)'saving boundary matrix with solid radius/colatitude into ',&
@@ -3321,23 +3316,31 @@ subroutine def_solid_fluid_boundary_terms
                  'boundary_term_flu_'//appmynum//'.dat'
      write(69,*)
   endif
+  
+  if (diagfiles) then
+      ! output boundary precomputable matrix with radius [k]m and colatitude [deg]
+      open(unit=500+mynum,file=infopath(1:lfinfo)//'/boundary_term_sol'&
+                               //appmynum//'.dat')
+      open(unit=400+mynum,file=infopath(1:lfinfo)//'/boundary_term_flu'&
+                               //appmynum//'.dat')
 
-  do iel=1,nel_bdry  
-     ielglob=ielsolid(bdry_solid_el(iel))
-     do ipol=0,npol
-        write(500+mynum,15)rcoord(ipol,bdry_jpol_solid(iel),ielglob)/1.d3, &
-                           thetacoord(ipol,bdry_jpol_solid(iel),ielglob)/pi*180.,&
-                           bdry_matr(ipol,iel,1),bdry_matr(ipol,iel,2)
+      do iel=1,nel_bdry  
+         ielglob=ielsolid(bdry_solid_el(iel))
+         do ipol=0,npol
+            write(500+mynum,15)rcoord(ipol,bdry_jpol_solid(iel),ielglob)/1.d3, &
+                               thetacoord(ipol,bdry_jpol_solid(iel),ielglob)/pi*180.,&
+                               bdry_matr(ipol,iel,1),bdry_matr(ipol,iel,2)
 
-        write(400+mynum,15)rcoord(ipol,bdry_jpol_fluid(iel),&
-                                   ielfluid(bdry_fluid_el(iel)))/1.d3, &
-                            thetacoord(ipol,bdry_jpol_fluid(iel),&
-                                       ielfluid(bdry_fluid_el(iel)))/pi*180.,&
-                            bdry_matr(ipol,iel,1),bdry_matr(ipol,iel,2)
-     enddo
-  enddo
-  close(500+mynum)
-  close(400+mynum)
+            write(400+mynum,15)rcoord(ipol,bdry_jpol_fluid(iel),&
+                                       ielfluid(bdry_fluid_el(iel)))/1.d3, &
+                                thetacoord(ipol,bdry_jpol_fluid(iel),&
+                                           ielfluid(bdry_fluid_el(iel)))/pi*180.,&
+                                bdry_matr(ipol,iel,1),bdry_matr(ipol,iel,2)
+         enddo
+      enddo
+      close(500+mynum)
+      close(400+mynum)
+  end if
 
 15 format(4(1pe12.4))
 

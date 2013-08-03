@@ -125,7 +125,7 @@ seismograms.o: commun.o data_io.o data_mesh.o data_mesh_preloop.o \
 	utlity.o mesh_params.h Makefile ../make_axisem.macros 
 source.o: apply_masks.o commun.o data_io.o data_mesh.o data_mesh_preloop.o \
 	data_proc.o data_source.o data_spec.o data_time.o global_parameters.o \
-	pointwise_derivatives.o utlity.o Makefile ../make_axisem.macros 
+	nc_routines.o pointwise_derivatives.o utlity.o Makefile ../make_axisem.macros 
 splib.o: global_parameters.o Makefile ../make_axisem.macros 
 stiffness.o: attenuation.o data_matr.o data_mesh.o data_source.o data_spec.o \
 	global_parameters.o unrolled_loops.o mesh_params.h Makefile ../make_axisem.macros 

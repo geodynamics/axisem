@@ -302,13 +302,15 @@ subroutine read_model(rho, lambda, mu, Q_mu, Q_kappa)
   ! TNM Oct 29: addition of heterogeneities in separate routine
   if (add_hetero) call compute_heterogeneities(rho,lambda,mu)
 
-  !plot final velocity model in vtk
-  if (lpr .and. verbose > 1) write(6,*) '   plotting vtks for the model properties....'
-  if (anel_true) then
-      call plot_model_vtk(rho, lambda, mu, Q_mu=Q_mu, Q_kappa=Q_kappa) 
-  else
-      call plot_model_vtk(rho, lambda, mu)
-  endif
+  if (diagfiles) then
+      !plot final velocity model in vtk
+      if (lpr .and. verbose > 1) write(6,*) '   plotting vtks for the model properties....'
+      if (anel_true) then
+          call plot_model_vtk(rho, lambda, mu, Q_mu=Q_mu, Q_kappa=Q_kappa) 
+      else
+          call plot_model_vtk(rho, lambda, mu)
+      endif
+  end if
 
   ! Some tests....
   if (do_mesh_tests) then
@@ -544,16 +546,18 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   if (add_hetero) call compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, &
                                                  eta_ani, fa_ani_theta, fa_ani_phi, ieldom)
 
-  ! plot final velocity model in vtk
-  if (lpr .and. verbose > 1) write(6,*) 'plotting vtks for the model properties....'
+  if (diagfiles) then
+      ! plot final velocity model in vtk
+      if (lpr .and. verbose > 1) write(6,*) 'plotting vtks for the model properties....'
 
-  if (anel_true) then
-     call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                         fa_ani_phi, Q_mu, Q_kappa)
-  else
-     call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                         fa_ani_phi)
-  endif
+      if (anel_true) then
+         call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+                             fa_ani_phi, Q_mu, Q_kappa)
+      else
+         call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+                             fa_ani_phi)
+      endif
+  end if
 
   ! Some tests....
   if (do_mesh_tests) then

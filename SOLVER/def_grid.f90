@@ -120,8 +120,11 @@ subroutine init_grid
      
      icount=0; iicount=0
      
-     open(unit=8978,file=infopath(1:lfinfo)//'/mpi_gll_send.dat'//appmynum)
-     open(unit=8979,file=infopath(1:lfinfo)//'/mpi_gll_recv.dat'//appmynum)
+     if (diagfiles) then
+         open(unit=8978,file=infopath(1:lfinfo)//'/mpi_gll_send.dat'//appmynum)
+         open(unit=8979,file=infopath(1:lfinfo)//'/mpi_gll_recv.dat'//appmynum)
+     end if
+
      do iel=1,nel_solid
         do jpol=0,npol
            do ipol=0,npol
@@ -135,7 +138,7 @@ subroutine init_grid
                        glob2el_send(icount,1)=ipol
                        glob2el_send(icount,2)=jpol
                        glob2el_send(icount,3)=iel
-                       write(8978,*)icount,iel,ipol,jpol
+                       if (diagfiles) write(8978,*)icount,iel,ipol,jpol
                     endif
                  enddo
               endif
@@ -147,15 +150,17 @@ subroutine init_grid
                        glob2el_recv(iicount,1)=ipol
                        glob2el_recv(iicount,2)=jpol
                        glob2el_recv(iicount,3)=iel
-                       write(8979,*)iicount,iel,ipol,jpol
+                       if (diagfiles) write(8979,*)iicount,iel,ipol,jpol
                     endif
                  enddo
               endif
            end do
         end do
      end do
-     close(8978)
-     close(8979)
+     if (diagfiles) then
+         close(8978)
+         close(8979)
+     end if
      
      num_send_gll = icount
      num_recv_gll = iicount

@@ -25,7 +25,7 @@ module nc_routines
 #ifdef unc
     use netcdf
 #endif
-    use data_io,    only : verbose, deflate_level
+    use data_io,    only : verbose, deflate_level, nseismo
     use data_proc,  only : mynum, nproc, lpr
     use global_parameters
     use commun,     only : barrier
@@ -79,7 +79,9 @@ module nc_routines
     ! Stuff moved from data_io
     integer             :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout, ncid_meshout
     integer             :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
-    integer             :: nc_times_dimid, nc_comp_dimid, nc_disp_varid
+    integer             :: nc_times_dimid, nc_comp_dimid, nc_disp_varid, nc_stf_seis_varid
+    integer             :: nc_time_varid, nc_iter_dimid, nc_stf_iter_varid
+
     integer             :: nc_strcomp_dimid
     integer             :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
     integer             :: nc_surfelem_strain_varid, nc_surfelem_disp_src_varid
@@ -99,6 +101,10 @@ module nc_routines
     integer             :: ndim_disp !< 2 for monopole, 3 for rest
 
 
+    !! Buffer variables for the STF.
+    real(kind=sp), allocatable :: stf_seis_dumpvar(:)
+    real(kind=sp), allocatable :: stf_dumpvar(:)
+
     !! @todo These parameters should move to a input file soon
     !> How many snaps should be buffered in RAM?
     integer             :: dumpbuffersize = 256
@@ -106,11 +112,11 @@ module nc_routines
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
     public              :: nc_write_att_char, nc_write_att_real, nc_write_att_int
-    public              :: nc_define_outputfile, nc_open_parallel, nc_end_output
+    public              :: nc_define_outputfile, nc_finish_prepare, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
     public              :: nc_write_el_domains
     public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
-    public              :: nc_make_snapfile
+    public              :: nc_make_snapfile, nc_dump_stf
 contains
 
 
@@ -375,6 +381,30 @@ end subroutine nc_dump_strain_to_disk
 !-----------------------------------------------------------------------------------------
 
 
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_stf(stf)
+#ifdef unc
+    use data_io,  only                       : nseismo
+    use data_time, only                      : seis_it, niter
+    real(kind=sp), intent(in), dimension(:) :: stf   
+    integer                                 :: it, i
+
+    allocate(stf_dumpvar(niter))
+    allocate(stf_seis_dumpvar(nseismo))
+    stf_seis_dumpvar = 0.0
+    it = 1
+    do i = 1, niter
+        if ( mod(i,seis_it) == 0) stf_seis_dumpvar(it) = stf(i) 
+        it = it + 1
+    end do
+    stf_dumpvar = stf
+
+
+#endif
+end subroutine nc_dump_stf
+!----------------------------------------------------------------------------------------
+
 !-----------------------------------------------------------------------------------------
 !> Dump receiver specific stuff, especially displacement and velocity
 !! N.B.: Works with global indices.
@@ -383,8 +413,9 @@ subroutine nc_dump_rec(recfield)
     use data_io,   ONLY: iseismo
     real(sp), intent(in), dimension(3,num_rec) :: recfield
 #ifdef unc
-    
-    recdumpvar(iseismo,:,:) = recfield(:,:)
+   
+    recdumpvar(iseismo,:,:) = 0.0
+    where(abs(recfield)>epsi) recdumpvar(iseismo,:,:) = recfield(:,:)
 
 #endif
 end subroutine
@@ -536,9 +567,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     use data_io,     ONLY: nseismo, nstrain, nseismo, ibeg, iend, dump_wavefields
     use data_io,     ONLY: datapath, lfdata, strain_samp
-    use data_time,   ONLY: strain_it
     use data_mesh,   ONLY: maxind, num_rec, discont
     use data_source, ONLY: src_type, t_0
+    use data_time,   ONLY: deltat, niter
 
     include 'mesh_params.h'
 
@@ -549,7 +580,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     real(dp), dimension(nrec),intent(in) :: rec_ph            !< Receiver phi
     integer, dimension(nrec),intent(in)  :: rec_proc          !< Receiver processor
 #ifdef unc
-    real(dp), dimension(nstrain)         :: time
+    real(dp), dimension(nstrain)         :: time_strain
+    real(dp), dimension(nseismo)         :: time_seis
     character(len=16), allocatable       :: varname(:)
     integer                              :: ivar, i
     integer                              :: irec, iproc, nmode
@@ -660,8 +692,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         if (verbose > 1) write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
 110     format(' Dimension ', A20, ' with length ', I8, ' and ID', I6) 
-        call check( nf90_def_dim(ncid_out, "timesteps", nseismo, nc_times_dimid) )
-        if (verbose > 1) write(6,110) "timesteps", nseismo, nc_times_dimid 
+        call check( nf90_def_dim(ncid_out, "seis_timesteps", nseismo, nc_times_dimid) )
+        if (verbose > 1) write(6,110) "seis_timesteps", nseismo, nc_times_dimid 
+
+        call check( nf90_def_dim(ncid_out, "sim_timesteps", niter, nc_iter_dimid) )
+        if (verbose > 1) write(6,110) "sim_timesteps", niter, nc_iter_dimid 
 
         call check( nf90_def_dim(ncid_recout, "receivers", nrec, nc_rec_dimid) )
         if (verbose > 1) write(6,110) "receivers", nrec, nc_rec_dimid
@@ -681,10 +716,26 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                  dimids=(/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), &
                                  !storage = NF90_CHUNKED, chunksizes=(/nseismo,3,1/), &
                                  !contiguous = .false., chunksizes=(/nseismo,3,1/), &
+                                 deflate_level = deflate_level, &
                                  varid=nc_disp_varid) )
 
         call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )
         call check( nf90_put_att(ncid_recout, nc_disp_varid, '_FillValue', 0.0) )
+
+        call check( nf90_def_var(ncid=ncid_recout, name="stf_seis", xtype=NF90_FLOAT,&
+                                 dimids=(/nc_times_dimid/), &
+                                 deflate_level = deflate_level, &
+                                 varid=nc_stf_seis_varid) )
+        
+        call check( nf90_def_var(ncid=ncid_recout, name="stf_iter", xtype=NF90_FLOAT,&
+                                 dimids=(/nc_iter_dimid/), &
+                                 deflate_level = deflate_level, &
+                                 varid=nc_stf_iter_varid) )
+        
+        call check( nf90_def_var(ncid=ncid_recout, name="time", xtype=NF90_DOUBLE,&
+                                 dimids=(/nc_times_dimid/), &
+                                 deflate_level = deflate_level, &
+                                 varid=nc_time_varid) )
 
         !call check( nf90_def_var(ncid_recout, "Lat_req", NF90_FLOAT, (/nc_rec_dimid/), &
         !                         nc_latr_varid) )
@@ -841,15 +892,26 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = (/irec, 1/), &
                                       count = (/1, 40/), values = (rec_names(irec))) )
         end do
+
+        ! Write out seismogram dump times
+        time_seis = dble((/ (i, i = 1, nseismo) /)) * deltat
+        call check( nf90_put_var( ncid_recout, nc_time_varid, values = time_seis ) ) 
         if (verbose > 1) write(6,*) '...done'
-   
+
+        ! Write out STFs
+        call check( nf90_put_var(ncid = ncid_recout, varid = nc_stf_iter_varid, &
+                                 values = stf_dumpvar) )
+        call check( nf90_put_var(ncid = ncid_recout, varid = nc_stf_seis_varid, &
+                                 values = stf_seis_dumpvar) )
+
         ! Write out strain dump times
         if (dump_wavefields) then
-            time = dble((/ (i, i = 1, nstrain) /))
-            time = time * t_0 / strain_samp
+            time_strain = dble((/ (i, i = 1, nstrain) /))
+            time_strain = time_strain * t_0 / strain_samp
             call check( nf90_put_var(ncid   = ncid_out, &
                                      varid  = nc_snaptime_varid, &
-                                     values = time ) ) 
+                                     values = time_strain ) ) 
+            ! Write out discontinuity depths
             call check( nf90_put_var(ncid   = ncid_snapout, &
                                      varid  = nc_disc_varid, &
                                      values = discont) )
@@ -951,8 +1013,8 @@ end subroutine nc_write_att_int
 ! MvD: we are not really opening in parrallel any more, are we? Then this is a
 !      missleading name + comment
 
-!> Open the NetCDF output file in parallel and check for variable IDs.
-subroutine nc_open_parallel
+!> Open the NetCDF output file, check for variable IDs and dump meshes.
+subroutine nc_finish_prepare
 #ifdef unc
     use data_io,   ONLY  : datapath, lfdata, dump_wavefields
     use data_mesh, ONLY  : maxind, surfcoord
@@ -1026,7 +1088,7 @@ subroutine nc_open_parallel
         end if !mynum.eq.iproc
     end do
 #endif
-end subroutine nc_open_parallel
+end subroutine nc_finish_prepare
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
