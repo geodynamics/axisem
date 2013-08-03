@@ -708,6 +708,9 @@ def PyAxi(**kwargs):
                 sys.stdout.write('Copy the input...')
                 sys.stdout.flush()
 
+            while not os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])):
+                print 'Waiting for %s to be created' \
+                        %(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
             subprocess.check_call(['cp', input['inpython_address'],
                         os.path.join(input['axi_address'], 'SOLVER', input['solver_name'], "inpython.cfg")])
             print 'DONE'
