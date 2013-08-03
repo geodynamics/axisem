@@ -33,10 +33,10 @@ public
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
-  real(kind=dp)    , dimension(0:npol) :: xi_k, eta
-  real(kind=dp)    , dimension(0:npol) :: dxi
-  real(kind=dp)    , dimension(0:npol) :: wt          !Quadrature weights
-  real(kind=dp)    , dimension(0:npol) :: wt_axial_k  !Quad. wgts for the   
+  real(kind=dp)   , dimension(0:npol) :: xi_k, eta
+  real(kind=dp)   , dimension(0:npol) :: dxi
+  real(kind=dp)   , dimension(0:npol) :: wt          !Quadrature weights
+  real(kind=dp)   , dimension(0:npol) :: wt_axial_k  !Quad. wgts for the   
                                                      !gaus jacobi(0,1) integration
 
 ! Lagrange interpolant derivatives

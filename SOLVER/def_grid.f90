@@ -248,8 +248,8 @@ subroutine massmatrix(masstmp,nel,domain)
   character(len=5), intent(in)     :: domain
   real(kind=realkind), intent(out) :: masstmp(0:npol,0:npol,nel)
   
-  real(kind=dp)                     :: mass2
-  real(kind=dp)                     :: local_crd_nodes(8,2)
+  real(kind=dp)                    :: mass2
+  real(kind=dp)                    :: local_crd_nodes(8,2)
   integer                          :: iel,ielem, inode,ipol,jpol
 
   masstmp(:,:,:) = zero
@@ -293,7 +293,7 @@ end subroutine massmatrix
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!! Same as routine massmatrix above but in real(kind=dp)    .
+!! Same as routine massmatrix above but in real(kind=dp)   .
 subroutine massmatrix_dble(masstmp,nel,domain)
 
   use geom_transf
@@ -303,9 +303,9 @@ subroutine massmatrix_dble(masstmp,nel,domain)
   
   integer,intent(in)               :: nel
   character(len=5), intent(in)     :: domain
-  real(kind=dp)    , intent(out)    :: masstmp(0:npol,0:npol,nel)
+  real(kind=dp)   , intent(out)    :: masstmp(0:npol,0:npol,nel)
   
-  real(kind=dp)                     :: local_crd_nodes(8,2)
+  real(kind=dp)                    :: local_crd_nodes(8,2)
   integer                          :: iel,ielem, inode,ipol,jpol
 
   masstmp(:,:,:) = zero
@@ -410,7 +410,7 @@ subroutine dump_coarsing_element_info
   include 'mesh_params.h'
   
   integer          :: iel
-  real(kind=dp)     :: s,z,r,theta
+  real(kind=dp)    :: s,z,r,theta
   character(len=4) :: axischar
   character(len=1) :: northchar
   integer          :: ncoars,naxis,naxis_solid,naxis_fluid,ncurve
@@ -496,7 +496,7 @@ subroutine check_physical_coordinates
   include 'mesh_params.h'
   
   integer :: iel,ipol,jpol
-  real(kind=dp)     :: s,z,r,theta
+  real(kind=dp)    :: s,z,r,theta
 
   do iel = 1,nelem
      do ipol=0,npol
@@ -988,9 +988,9 @@ subroutine compute_spherical_surfaces
   include 'mesh_params.h'
   
   integer                      :: irad,ipol,iel,ielabove,ielbelow
-  real(kind=dp)    ,allocatable :: tmpradii(:,:),radsurf(:,:),radii2(:,:)
-  real(kind=dp)                 :: s,z,r1,r2,theta1,theta2,delta_th
-  real(kind=dp)                 :: tmpdble1,tmpdble2,deltacosth
+  real(kind=dp)   ,allocatable :: tmpradii(:,:),radsurf(:,:),radii2(:,:)
+  real(kind=dp)                :: s,z,r1,r2,theta1,theta2,delta_th
+  real(kind=dp)                :: tmpdble1,tmpdble2,deltacosth
 
   allocate(tmpradii(1:naxel,1:2))
   tmpradii(:,:) = zero
@@ -1185,10 +1185,10 @@ subroutine compute_volume
   include 'mesh_params.h'
   
   integer             :: iel,ipol,jpol
-  real(kind=dp)        :: vol_glob,vol_solid,vol_fluid
-  real(kind=dp)        :: vol_glob_num,vol_solid_num,vol_fluid_num
-  real(kind=dp)        :: vol_solid_numass,vol_fluid_numass
-  real(kind=dp)        :: router_fluid, rinner_fluid
+  real(kind=dp)       :: vol_glob,vol_solid,vol_fluid
+  real(kind=dp)       :: vol_glob_num,vol_solid_num,vol_fluid_num
+  real(kind=dp)       :: vol_solid_numass,vol_fluid_numass
+  real(kind=dp)       :: router_fluid, rinner_fluid
   
   real(kind=realkind), dimension(:,:,:), allocatable :: mass
   real(kind=realkind), dimension(:,:,:), allocatable :: mass_solid,mass_fluid
@@ -1342,7 +1342,7 @@ subroutine check_solid_fluid_boundaries
   
   real(kind=realkind), allocatable :: tmpsolfield(:,:,:), tmpflufield(:,:,:)
   integer                          :: bdrycount, ipol, jpol, iel
-  real(kind=dp)                     :: s, z, r, theta
+  real(kind=dp)                    :: s, z, r, theta
 
   allocate(tmpsolfield(0:npol,0:npol,1:nel_solid))
   allocate(tmpflufield(0:npol,0:npol,1:nel_fluid))
@@ -1424,7 +1424,7 @@ subroutine compute_hmin_meri(hmin)
 
   include 'mesh_params.h'
   
-  real(kind=dp)     :: hmin
+  real(kind=dp)    :: hmin
   real(kind=realkind),dimension(:,:,:),allocatable :: dis1,dis2
   integer :: ielem,ipol,jpol
 
@@ -1462,7 +1462,7 @@ subroutine bsort2(list,n)
 
   implicit none
   integer :: k,i,last,temp1
-  real(kind=dp)    , intent(in out) :: list(:)
+  real(kind=dp)   , intent(in out) :: list(:)
   integer, intent(in) :: n
   integer:: nswap
   integer:: ncomp

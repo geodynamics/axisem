@@ -38,8 +38,8 @@ module splib
 pure subroutine order(vin,vout,n)
 
   integer, intent(in)            :: n
-  real(kind=dp)    , intent(in)   :: vin(n)
-  real(kind=dp)    , intent(out)  :: vout(n)
+  real(kind=dp)   , intent(in)   :: vin(n)
+  real(kind=dp)   , intent(out)  :: vout(n)
   integer                        :: rankmax
   integer , dimension (n)        :: rank
   integer                        :: i, j
@@ -72,11 +72,11 @@ subroutine lag_interp_deriv_wgl(dl,xi,i,N)
   integer, intent(in)           :: N, i
   real(dp), intent(in)  :: xi(0:N)
   real(dp), intent(out) :: dl(0:N)
-  real(kind=dp)           :: mn_xi_i, mnprime_xi_i
-  real(kind=dp)           :: mnprimeprime_xi_i
-  real(kind=dp)           :: mn_xi_j, mnprime_xi_j 
-  real(kind=dp)           :: mnprimeprime_xi_j
-  real(kind=dp)           :: DN
+  real(kind=dp)          :: mn_xi_i, mnprime_xi_i
+  real(kind=dp)          :: mnprimeprime_xi_i
+  real(kind=dp)          :: mn_xi_j, mnprime_xi_j 
+  real(kind=dp)          :: mnprimeprime_xi_j
+  real(kind=dp)          :: DN
   integer                       :: j
 
   if ( i > N ) stop
@@ -138,8 +138,8 @@ pure subroutine hn_jprime(xi,j,N,dhj)
   integer,intent(in)    :: j
   integer               :: i
   real(dp), intent(out) :: dhj(0:N)
-  real(kind=dp)           :: DX,D2X
-  real(kind=dp)           :: VN (0:N), QN(0:N)
+  real(kind=dp)          :: DX,D2X
+  real(kind=dp)          :: VN (0:N), QN(0:N)
   real(dp), intent(in)  :: xi(0:N)
  
   dhj(:) = 0d0
@@ -164,7 +164,7 @@ pure subroutine zelegl(n,et,vn)
   integer, intent(in)    :: n !< Order of the formula
   real(dp), intent(out)  :: ET(0:n) ! Vector of the nodes
   real(dp), intent(out)  :: VN(0:n) ! Values of the Legendre polynomial at the nodes
-  real(kind=dp)            :: sn, x, c, etx, dy, d2y, y
+  real(kind=dp)           :: sn, x, c, etx, dy, d2y, y
   integer                :: i, n2, it
   
   if (n  ==  0) return
@@ -207,10 +207,10 @@ end subroutine zelegl
 !> computes the nodes relative to the legendre gauss-lobatto formula
 pure subroutine zelegl2(n,et)
 
-  implicit real(kind=dp)     (a-h,o-z)
+  implicit real(kind=dp)    (a-h,o-z)
   integer, intent(in)    :: n !< Order of the formula
   real(dp), intent(out)  :: ET(0:n) ! Vector of the nodes
-  real(kind=dp)            :: sn, x, c, etx, dy, d2y, y
+  real(kind=dp)           :: sn, x, c, etx, dy, d2y, y
   integer                :: i, n2, it
 
   if (n  ==  0) return
@@ -257,7 +257,7 @@ pure subroutine zemngl2(n,et)
   real(dp), intent(out)    :: et(0:n) !< vector of the nodes, et(i), i=0,n.
   real(dp), dimension(n-1) :: d, e
   integer                  :: i, n2
-  real(kind=dp)              :: x
+  real(kind=dp)             :: x
 
   if (n  ==  0) return
 
@@ -300,10 +300,10 @@ end subroutine zemngl2
 pure subroutine tqli(d,e,n)
 
   integer, intent(in)             :: n
-  real(kind=dp)    , intent(inout) :: d(n)
-  real(kind=dp)    , intent(inout) :: e(n)
+  real(kind=dp)   , intent(inout) :: d(n)
+  real(kind=dp)   , intent(inout) :: e(n)
   integer                         :: i,iter,l,m
-  real(kind=dp)                    :: b, c, dd, f, g, p, r, s
+  real(kind=dp)                   :: b, c, dd, f, g, p, r, s
 
   do i = 2, n
     e(i-1) = e(i)
@@ -355,10 +355,10 @@ end subroutine tqli
 
 !-----------------------------------------------------------------------------
 !> L2 norm of a and b  
-pure real(kind=dp)     function pythag(a,b)
+pure real(kind=dp)    function pythag(a,b)
 
-  real(kind=dp)    , intent(in) :: a, b
-  real(kind=dp)                 :: absa,absb
+  real(kind=dp)   , intent(in) :: a, b
+  real(kind=dp)                :: absa,absb
 
   absa=dabs(a)
   absb=dabs(b)
@@ -389,7 +389,7 @@ pure subroutine delegl(n,et,vn,qn,dqn)
    real(dp), intent(in)  ::  vn(0:n)  !< values of the legendre polynomial at the nodes, vn(i), i=0,n
    real(dp), intent(in)  ::  qn(0:n)  !< values of the polynomial at the nodes, qn(i), i=0,n
    real(dp), intent(out) ::  dqn(0:n) !< derivatives of the polynomial at the nodes, dqz(i), i=0,n
-   real(kind=dp)           ::  su, vi, ei, vj, ej, dn, c
+   real(kind=dp)          ::  su, vi, ei, vj, ej, dn, c
    integer               ::  i, j
        
    dqn(0) = 0.d0
@@ -426,7 +426,7 @@ pure subroutine valepo(n,x,y,dy,d2y)
   real(dp), intent(out) ::  y   !< value of the polynomial in x
   real(dp), intent(out) ::  dy  !< value of the first derivative in x
   real(dp), intent(out) ::  d2y !< value of the second derivative in x
-  real(kind=dp)           ::  c1, c2, c4, ym, yp, dym, dyp, d2ym, d2yp
+  real(kind=dp)          ::  c1, c2, c4, ym, yp, dym, dyp, d2ym, d2yp
   integer               ::  i
 
   y   = 1.d0
@@ -469,7 +469,7 @@ pure subroutine get_welegl(N,xi,wt)
   real(dp), intent(in)  :: xi(0:N)
   real(dp), intent(out) :: wt(0:N)
   integer               :: j
-  real(kind=dp)           :: y,dy,d2y,fact 
+  real(kind=dp)          :: y,dy,d2y,fact 
 
   fact = 2.0d0/(dble(N*(N+1)))
 
@@ -497,10 +497,10 @@ pure subroutine get_welegl_axial(N,xi,wt,iflag)
                                            !!             Formula : (VI.1.12), page 104             
                                            !! iflag = 3 : Third formula
                                            !!             Formula : (VI.1.20), page 107            
-  real(kind=dp)    , intent(in)  :: xi(0:N) !< Support points
-  real(kind=dp)    , intent(out) :: wt(0:N) !< Weighting factor at support points
+  real(kind=dp)   , intent(in)  :: xi(0:N) !< Support points
+  real(kind=dp)   , intent(out) :: wt(0:N) !< Weighting factor at support points
   integer                       :: j
-  real(kind=dp)                  :: y, dy, d2y, fact
+  real(kind=dp)                 :: y, dy, d2y, fact
 
   wt(:) = 0.0 
 
@@ -534,14 +534,14 @@ end subroutine get_welegl_axial
 !!   implemented after bernardi et al., page 57, eq. (iii.1.10)
 pure subroutine vamnpo(n,x,y,dy,d2y)
   
-  implicit real(kind=dp)     (a-h,o-z)
+  implicit real(kind=dp)    (a-h,o-z)
   integer, intent(in)   :: n   !< degree of the polynomial 
   real(dp), intent(in)  :: x   !< point in which the computation is performed
   real(dp), intent(out) :: y   !< value of the polynomial in x
   real(dp), intent(out) :: dy  !< value of the first derivative in x
   real(dp), intent(out) :: d2y !< value of the second derivative in x
-  real(kind=dp)           :: yp, dyp, d2yp, c1
-  real(kind=dp)           :: ym, dym, d2ym
+  real(kind=dp)          :: yp, dyp, d2yp, c1
+  real(kind=dp)          :: ym, dym, d2ym
   integer               :: i
   
   
@@ -590,7 +590,7 @@ pure subroutine polint(xa,ya,n,x,y,dy)
   real(dp), intent(in)  :: x, xa(n), ya(n)
   real(dp), intent(out) :: dy, y
   integer               :: i, m, ns
-  real(kind=dp)           :: den, dif, dift, ho, hp, w, c(n), d(n)
+  real(kind=dp)          :: den, dif, dift, ho, hp, w, c(n), d(n)
 
 
   ns=1

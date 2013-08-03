@@ -306,12 +306,12 @@ end subroutine def_rot_matrix
 subroutine rotate_receivers_recfile(num_rec_glob, rcvcolat, rcvlon1, receiver_name)
 
   integer, intent(in)             :: num_rec_glob
-  real(kind=dp)    , intent(inout) :: rcvcolat(1:num_rec_glob)
-  real(kind=dp)    , intent(inout) :: rcvlon1(1:num_rec_glob)
+  real(kind=dp)   , intent(inout) :: rcvcolat(1:num_rec_glob)
+  real(kind=dp)   , intent(inout) :: rcvlon1(1:num_rec_glob)
   character(len=40), intent(in)   :: receiver_name(num_rec_glob)
   integer                         :: ircv
-  real(kind=dp)                    :: x_vec(3), x_vec_rot(3), r_r
-  real(kind=dp)                    :: rcvlon(1:num_rec_glob)
+  real(kind=dp)                   :: x_vec(3), x_vec_rot(3), r_r
+  real(kind=dp)                   :: rcvlon(1:num_rec_glob)
 
   if (lpr) write(6,*)'  Rotating receivers and source to pole-centered system...'
   if (lpr) &

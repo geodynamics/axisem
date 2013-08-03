@@ -39,7 +39,7 @@ contains
 !-----------------------------------------------------------------------------
 logical function dblreldiff_small(x1,x2)
 
-  real(kind=dp)    , intent(in) :: x1,x2
+  real(kind=dp)   , intent(in) :: x1,x2
 
   dblreldiff_small = .false.
 
@@ -93,9 +93,9 @@ end function reldiff
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function dblereldiff(x1,x2)
+real(kind=dp)    function dblereldiff(x1,x2)
 
-  real(kind=dp)    , intent(in) :: x1,x2
+  real(kind=dp)   , intent(in) :: x1,x2
 
   if (x1/=zero) then
      dblereldiff=(x1-x2)/x1
@@ -125,9 +125,9 @@ end function absreldiff
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function dbleabsreldiff(x1,x2)
+real(kind=dp)    function dbleabsreldiff(x1,x2)
 
-  real(kind=dp)    , intent(in) :: x1,x2
+  real(kind=dp)   , intent(in) :: x1,x2
 
   if (x1/=zero) then
      dbleabsreldiff=abs((x1-x2)/x1)
@@ -153,9 +153,9 @@ subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
-  real(kind=dp)     :: s,z,r,theta
+  real(kind=dp)    :: s,z,r,theta
   integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)     :: nodes_crd(8,2)
+  real(kind=dp)    :: nodes_crd(8,2)
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -187,7 +187,7 @@ end subroutine compute_coordinates
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function scoord(ipol,jpol,ielem)
+real(kind=dp)    function scoord(ipol,jpol,ielem)
   !
   ! Given the elemental grid point index, outputs the s coordinate [m].
   ! These coordinates are by default ALWAYS global (no solid or fluid domains).
@@ -200,7 +200,7 @@ real(kind=dp)     function scoord(ipol,jpol,ielem)
   use geom_transf,          ONLY: mapping
   
   integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)     :: nodes_crd(8,2)
+  real(kind=dp)    :: nodes_crd(8,2)
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -222,7 +222,7 @@ end function scoord
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function zcoord(ipol,jpol,ielem)
+real(kind=dp)    function zcoord(ipol,jpol,ielem)
   !
   ! Given the elemental grid point index, outputs the z coordinate [m].
   ! These coordinates are by default ALWAYS global (no solid or fluid domains).
@@ -235,7 +235,7 @@ real(kind=dp)     function zcoord(ipol,jpol,ielem)
   use geom_transf,          ONLY: mapping
   
   integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)     :: nodes_crd(8,2)
+  real(kind=dp)    :: nodes_crd(8,2)
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -257,7 +257,7 @@ end function zcoord
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function rcoord(ipol,jpol,ielem)
+real(kind=dp)    function rcoord(ipol,jpol,ielem)
   !
   ! Given the elemental grid point index, outputs the radius coordinate [m].
   ! These coordinates are by default ALWAYS global (no solid or fluid domains).
@@ -270,7 +270,7 @@ real(kind=dp)     function rcoord(ipol,jpol,ielem)
   use geom_transf,          ONLY: mapping
   
   integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)     :: nodes_crd(8,2),s,z
+  real(kind=dp)    :: nodes_crd(8,2),s,z
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -295,7 +295,7 @@ end function rcoord
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function thetacoord(ipol,jpol,ielem)
+real(kind=dp)    function thetacoord(ipol,jpol,ielem)
   !
   ! Given the elemental grid point index, outputs the theta coordinate [rad].
   ! These coordinates are by default ALWAYS global (no solid or fluid domains).
@@ -308,7 +308,7 @@ real(kind=dp)     function thetacoord(ipol,jpol,ielem)
   use geom_transf,          ONLY: mapping
   
   integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)     :: nodes_crd(8,2),s,z
+  real(kind=dp)    :: nodes_crd(8,2),s,z
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -344,9 +344,9 @@ end function eps2zero
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function dbleps2zero(val)
+real(kind=dp)    function dbleps2zero(val)
 
-  real(kind=dp)     :: val
+  real(kind=dp)    :: val
 
   dbleps2zero=val
   if (abs(val) < epsi) dbleps2zero = zero

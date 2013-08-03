@@ -91,7 +91,7 @@ module data_matr
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr_fluid
   real(kind=realkind), dimension(0:npol,nel_bdry,2)    :: bdry_matr_solid
-  real(kind=dp)    , dimension(nel_bdry)                :: solflubdry_radius
+  real(kind=dp)   , dimension(nel_bdry)                :: solflubdry_radius
   
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   !	Attenuation

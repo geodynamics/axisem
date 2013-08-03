@@ -39,10 +39,10 @@ public
   integer, dimension(:,:), allocatable          :: lnods ! (nelem,1:8)
   character(len=6), dimension(:), allocatable   :: eltype ! (nelem)
   integer                                       :: npoin
-  real(kind=dp)    , dimension(:,:), allocatable :: crd_nodes ! (npoin,2)
+  real(kind=dp)   , dimension(:,:), allocatable :: crd_nodes ! (npoin,2)
   logical, dimension(:), allocatable            :: coarsing,north ! (nelem)
   integer                                       :: num_spher_radii
-  real(kind=dp)    , dimension(:), allocatable   :: spher_radii
+  real(kind=dp)   , dimension(:), allocatable   :: spher_radii
 ! Axial elements
   logical, dimension(:), allocatable            :: axis ! (nelem)
 

@@ -681,9 +681,9 @@ subroutine compute_numerical_parameters
   use attenuation, only: dump_memory_vars
   include "mesh_params.h"
 
-  real(kind=dp)     :: s,z,r,theta,s_max,dshift
-  real(kind=dp)     :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
-  real(kind=dp)     :: minds(nelem),maxds(nelem),mindz(nelem),maxdz(nelem)
+  real(kind=dp)    :: s,z,r,theta,s_max,dshift
+  real(kind=dp)    :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
+  real(kind=dp)    :: minds(nelem),maxds(nelem),mindz(nelem),maxdz(nelem)
   integer          :: ielem,ipol,jpol,i
   logical          :: found_shift
 
@@ -1050,11 +1050,11 @@ subroutine write_parameters
     integer          :: ipol,jpol,hmaxloc1(3),hminloc1(3)
     integer          :: maxprocssend_solid,maxprocsrecv_solid 
     integer          :: maxprocssend_fluid,maxprocsrecv_fluid
-    real(kind=dp)     :: dis1(0:npol-1,0:npol-1,nelem),dis2(0:npol-1,0:npol-1,nelem)
-    real(kind=dp)     :: s,z,r,theta,rminglob,thetaminglob,rmaxglob,thetamaxglob
-    real(kind=dp)     :: mysmin,myzmin,mysmax,myzmax
-    real(kind=dp)     :: myrmin,mythetamin,myrmax,mythetamax
-    real(kind=dp)     :: hmax,hmaxglob,hmin,hminglob
+    real(kind=dp)    :: dis1(0:npol-1,0:npol-1,nelem),dis2(0:npol-1,0:npol-1,nelem)
+    real(kind=dp)    :: s,z,r,theta,rminglob,thetaminglob,rmaxglob,thetamaxglob
+    real(kind=dp)    :: mysmin,myzmin,mysmax,myzmax
+    real(kind=dp)    :: myrmin,mythetamin,myrmax,mythetamax
+    real(kind=dp)    :: hmax,hmaxglob,hmin,hminglob
     character(len=7) :: clogic
 
     if (verbose > 1) then
@@ -1622,7 +1622,7 @@ subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
     
     include 'mesh_params.h'
     
-    real(kind=dp)    , intent(in) :: hmaxglob,hminglob
+    real(kind=dp)   , intent(in) :: hmaxglob,hminglob
     integer, intent(in) :: curvel,linel,seminoel,semisoel
     integer, intent(in) :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
     integer, intent(in) :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid

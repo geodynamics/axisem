@@ -46,10 +46,10 @@
 !//////////////////////////////////////////////////////////
 !
 !dk mapping----------------------------------------------------------
-  real(kind=dp)     function mapping(xil,etal,nodes_crd,iaxis,ielem0)
+  real(kind=dp)    function mapping(xil,etal,nodes_crd,iaxis,ielem0)
 !
   integer          :: iaxis,ielem0
-  real(kind=dp)     :: xil,etal,nodes_crd(8,2)!,dumbdummy
+  real(kind=dp)    :: xil,etal,nodes_crd(8,2)!,dumbdummy
 
   if (     ana_map) mapping = mapping_anal(xil,etal,nodes_crd,iaxis,ielem0)
   if (.not.ana_map) mapping = mapping_subpar(xil,etal,nodes_crd,iaxis) 
@@ -66,13 +66,13 @@
 !--------------------------------------------------------------------
 !
 !dk quadfunc_map--------------------------------------------
-  real(kind=dp)     function quadfunc_map(p,s,z,nodes_crd,ielem0)
+  real(kind=dp)    function quadfunc_map(p,s,z,nodes_crd,ielem0)
 !
 !        This routines computes the 
 !quadratic functional (s-s(xi,eta))**2 + (z-z(xi,eta))**2
 !
   integer :: ielem0
-  real(kind=dp)     :: p(2), s,z, nodes_crd(8,2)
+  real(kind=dp)    :: p(2), s,z, nodes_crd(8,2)
 !
   if (     ana_map) quadfunc_map = quadfunc_map_anal(p,s,z,nodes_crd,ielem0)
   if (.not.ana_map) quadfunc_map = quadfunc_map_subpar(p,s,z,nodes_crd) 
@@ -88,7 +88,7 @@
 !functional associated with the mapping.
 !
   integer :: ielem0
-  real(kind=dp)     :: grd(2),p(2), s,z, nodes_crd(8,2)
+  real(kind=dp)    :: grd(2),p(2), s,z, nodes_crd(8,2)
 
   if (     ana_map) call grad_quadfunc_map_anal(grd,p,s,z,nodes_crd,ielem0)
   if (.not.ana_map) call grad_quadfunc_map_subpar(grd,p,s,z,nodes_crd)
@@ -98,7 +98,7 @@
 !--------------------------------------------------------------
 !
 !dk s_over_oneplusxi_axis--------------------------------------------
-  real(kind=dp)     function s_over_oneplusxi_axis(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function s_over_oneplusxi_axis(xil,etal,nodes_crd,ielem0)
 ! 
 ! This routine returns the value of the quantity
 !  
@@ -108,7 +108,7 @@
 ! symmetry, in the case of an analytical transformation. 
   
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map)s_over_oneplusxi_axis=s_over_oneplusxi_axis_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map)s_over_oneplusxi_axis=s_over_oneplusxi_axis_subpar(xil,etal,nodes_crd) 
@@ -122,7 +122,7 @@
 ! -----TARJE-----------
 !=========================================================================
 !!$!dk one_over_oneplusxi_axis--------------------------------------------
-!!$  real(kind=dp)     function one_over_oneplusxi_axis(xi,eta,nodes_crd,ielem0)
+!!$  real(kind=dp)    function one_over_oneplusxi_axis(xi,eta,nodes_crd,ielem0)
 !!$! 
 !!$! This routine returns the value of the quantity
 !!$!  
@@ -132,7 +132,7 @@
 !!$! symmetry, in the case of an analytical transformation. 
 !!$  
 !!$  integer :: ielem0
-!!$  real(kind=dp)     :: xi, eta, nodes_crd(8,2)
+!!$  real(kind=dp)    :: xi, eta, nodes_crd(8,2)
 !!$! WRONG WRONG WRONG: STILL HAVE TO DEFINE SUBPARAM FOR ONE_OVER_....!!!!!!!!!!!!!!!!!!!!!
 !!$  if (.not.ana_map)one_over_oneplusxi_axis=one_over_oneplusxi_axis_subpar(xi,eta,nodes_crd) 
 !!$  if (     ana_map)one_over_oneplusxi_axis=one_over_oneplusxi_axis_anal(xi,eta,nodes_crd,ielem0)
@@ -146,10 +146,10 @@
 
 !
 !dk jacobian----------------------------------------------------
-  real(kind=dp)     function jacobian(xil, etal, nodes_crd, ielem0)
+  real(kind=dp)    function jacobian(xil, etal, nodes_crd, ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) jacobian = jacobian_anal(xil,etal,nodes_crd,ielem0)   
   if (.not.ana_map) jacobian = jacobian_subpar(xil,etal,nodes_crd)
@@ -158,13 +158,13 @@
 !----------------------------------------------------------------
 !
 !dk jacobian_srf------------------------------------------------------------
-  real(kind=dp)     function jacobian_srf(xil,crdedge,ielem0)
+  real(kind=dp)    function jacobian_srf(xil,crdedge,ielem0)
 !
 !       This routine computes the Jacobian of the transformation
 !that maps [-1,+1] into a portion of the boundary of domain.  
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, crdedge(3,2)
+  real(kind=dp)    :: xil, crdedge(3,2)
 
   if (     ana_map) then
      if (eltype(ielem0) /= 'linear') &
@@ -179,10 +179,10 @@
 !---------------------------------------------------------------------------
 !
 !dk alphak------------------------------------------------------
-  real(kind=dp)     function alphak(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function alphak(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) alphak = alphak_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) alphak = alphak_subpar(xil,etal,nodes_crd)
@@ -191,10 +191,10 @@
 !---------------------------------------------------------------
 !
 !dk betak------------------------------------------------------
-  real(kind=dp)     function betak(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function betak(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) betak = betak_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) betak = betak_subpar(xil,etal,nodes_crd)
@@ -203,10 +203,10 @@
 !---------------------------------------------------------------
 !
 !dk gammak------------------------------------------------------
-  real(kind=dp)     function gammak(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function gammak(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) gammak = gammak_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) gammak = gammak_subpar(xil,etal,nodes_crd)
@@ -215,10 +215,10 @@
 !---------------------------------------------------------------
 !
 !dk deltak------------------------------------------------------
-  real(kind=dp)     function deltak(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function deltak(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) deltak = deltak_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) deltak = deltak_subpar(xil,etal,nodes_crd)
@@ -227,10 +227,10 @@
 !---------------------------------------------------------------
 !
 !dk epsilonk----------------------------------------------------
-  real(kind=dp)     function epsilonk(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function epsilonk(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) epsilonk = epsilonk_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) epsilonk = epsilonk_subpar(xil,etal,nodes_crd)
@@ -239,10 +239,10 @@
 !---------------------------------------------------------------
 !
 !dk zetak------------------------------------------------------
-  real(kind=dp)     function zetak(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function zetak(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) zetak = zetak_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) zetak = zetak_subpar(xil,etal,nodes_crd)
@@ -251,10 +251,10 @@
 !---------------------------------------------------------------
 !
 !dk alpha------------------------------------------------------
-  real(kind=dp)     function alpha(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function alpha(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) alpha = alpha_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) alpha = alpha_subpar(xil,etal,nodes_crd)
@@ -263,10 +263,10 @@
 !---------------------------------------------------------------
 !
 !dk beta------------------------------------------------------
-  real(kind=dp)     function beta(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function beta(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) beta = beta_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) beta = beta_subpar(xil,etal,nodes_crd)
@@ -275,10 +275,10 @@
 !---------------------------------------------------------------
 !
 !dk gamma1------------------------------------------------------
-  real(kind=dp)     function gamma1(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function gamma1(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) gamma1 = gamma_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) gamma1 = gamma_subpar(xil,etal,nodes_crd)
@@ -287,10 +287,10 @@
 !---------------------------------------------------------------
 !
 !dk delta------------------------------------------------------
-  real(kind=dp)     function delta(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function delta(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) delta = delta_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) delta = delta_subpar(xil,etal,nodes_crd)
@@ -299,10 +299,10 @@
 !---------------------------------------------------------------
 !
 !dk epsilon1----------------------------------------------------
-  real(kind=dp)     function epsilon1(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function epsilon1(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if (     ana_map) epsilon1 = epsilon_anal(xil,etal,nodes_crd,ielem0)
   if (.not.ana_map) epsilon1 = epsilon_subpar(xil,etal,nodes_crd)
@@ -311,10 +311,10 @@
 !---------------------------------------------------------------
 !
 !dk zeta------------------------------------------------------
-  real(kind=dp)     function zeta(xil,etal,nodes_crd,ielem0)
+  real(kind=dp)    function zeta(xil,etal,nodes_crd,ielem0)
 !
   integer :: ielem0
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
  if (     ana_map) zeta = zeta_anal(xil,etal,nodes_crd,ielem0)
  if (.not.ana_map) zeta = zeta_subpar(xil,etal,nodes_crd)
@@ -337,8 +337,8 @@
   implicit none
 
   integer :: ielem0
-  real(kind=dp)     :: mg(2,2)
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: mg(2,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if(     ana_map) call mgrad_pointwise_anal(mg,xil,etal,nodes_crd,ielem0)
   if(.not.ana_map) call mgrad_pointwise_subpar(mg,xil,etal,nodes_crd)
@@ -361,8 +361,8 @@
   implicit none
 
   integer :: ielem0
-  real(kind=dp)     :: mg(2,2)
-  real(kind=dp)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)    :: mg(2,2)
+  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
 
   if(     ana_map) call mgrad_pointwisek_anal(mg,xil,etal,nodes_crd,ielem0)
   if(.not.ana_map) call mgrad_pointwisek_subpar(mg,xil,etal,nodes_crd)

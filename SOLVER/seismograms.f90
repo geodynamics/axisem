@@ -45,7 +45,7 @@ subroutine prepare_seismograms
   use commun, only : psum_int,barrier
   character(len=4)             :: appielem
   integer          :: j,iel,ielem,ind,epicount,equcount,anticount,iproc,maxind_glob
-  real(kind=dp)     :: s,z,r,theta
+  real(kind=dp)    :: s,z,r,theta
 
   if (lpr) &
   write(6,*)'  locating surface elements and generic receivers...'
@@ -303,21 +303,21 @@ subroutine prepare_from_recfile_seis
   
   integer                      :: i,iel,ipol,irec,num_rec_glob
   integer                      :: count_diff_loc,count_procs
-  real(kind=dp)                 :: s,z,r,theta,recdist,myrecdist
-  real(kind=dp)                 :: tmprecfile_th,tmprecfile_el(3)
-  real(kind=dp)    ,allocatable :: recfile_readth(:),recfile_readph(:)
-  real(kind=dp)    ,allocatable :: recfile_th_glob(:)
-  real(kind=dp)    ,allocatable :: recfile_th_loc(:),recfile_el_loc(:,:)
-  real(kind=dp)    ,allocatable :: recfile_th(:),recfile_ph_loc(:),recfile_ph_loc2(:)
+  real(kind=dp)                :: s,z,r,theta,recdist,myrecdist
+  real(kind=dp)                :: tmprecfile_th,tmprecfile_el(3)
+  real(kind=dp)   ,allocatable :: recfile_readth(:),recfile_readph(:)
+  real(kind=dp)   ,allocatable :: recfile_th_glob(:)
+  real(kind=dp)   ,allocatable :: recfile_th_loc(:),recfile_el_loc(:,:)
+  real(kind=dp)   ,allocatable :: recfile_th(:),recfile_ph_loc(:),recfile_ph_loc2(:)
   integer,allocatable          :: rec2proc(:),loc2globrec_loc(:)!, loc2globrec(:)
   character(len=4)             :: appielem
   character(len=100)           :: junk
   character(len=40), allocatable :: receiver_name(:)
-  real(kind=dp)                 :: maxreclocerr
+  real(kind=dp)                :: maxreclocerr
   
   ! Additional arrays within the STATIONS file
   character(len=20), allocatable, dimension(:) :: rec_name,rec_network
-  real(kind=dp)    , allocatable, dimension(:) :: reclat,reclon,recelevation,recbury
+  real(kind=dp)   , allocatable, dimension(:) :: reclat,reclon,recelevation,recbury
   integer ierror
 
   irec=0
@@ -697,15 +697,15 @@ subroutine prepare_from_recfile_cmb
   
   integer                      :: i,iel,ipol,icmb,num_cmb_glob
   integer                      :: count_diff_loc,count_procs,ielglob
-  real(kind=dp)                 :: s,z,r,theta,cmbdist,mycmbdist
-  real(kind=dp)                 :: tmpcmbfile_th,tmpcmbfile_r,tmpcmbfile_el(3)
-  real(kind=dp)    ,allocatable :: cmbfile_readth(:),cmbfile_th_glob(:)
-  real(kind=dp)    ,allocatable :: cmbfile_r_glob(:),cmbfile_r_loc(:)
-  real(kind=dp)    ,allocatable :: cmbfile_th_loc(:),cmbfile_el_loc(:,:)
-  real(kind=dp)    ,allocatable :: cmbfile_th(:),cmbfile_r(:)
+  real(kind=dp)                :: s,z,r,theta,cmbdist,mycmbdist
+  real(kind=dp)                :: tmpcmbfile_th,tmpcmbfile_r,tmpcmbfile_el(3)
+  real(kind=dp)   ,allocatable :: cmbfile_readth(:),cmbfile_th_glob(:)
+  real(kind=dp)   ,allocatable :: cmbfile_r_glob(:),cmbfile_r_loc(:)
+  real(kind=dp)   ,allocatable :: cmbfile_th_loc(:),cmbfile_el_loc(:,:)
+  real(kind=dp)   ,allocatable :: cmbfile_th(:),cmbfile_r(:)
   integer,allocatable          :: cmb2proc(:),loc2globcmb_loc(:),loc2globcmb(:)
   character(len=4)             :: appielem
-  real(kind=dp)                 :: maxcmblocerr
+  real(kind=dp)                :: maxcmblocerr
 
   icmb=0
   count_diff_loc=0
@@ -956,7 +956,7 @@ end subroutine open_hyp_epi_equ_anti
 subroutine compute_hyp_epi_equ_anti(t,disp)
 
   use data_source, only: iel_src,ipol_src,jpol_src,have_src,src_type
-  real(kind=dp)     :: t
+  real(kind=dp)    :: t
   real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
 
   if (maxind>0) then

@@ -460,7 +460,7 @@ subroutine compute_coordinates_mesh(s,z,ielem,inode)
   ! for (global) element ielem
  
   integer, intent(in)           :: ielem, inode
-  real(kind=dp)    , intent(out) :: s,z
+  real(kind=dp)   , intent(out) :: s,z
 
   s = crd_nodes(lnods(ielem,inode),1)
   z = crd_nodes(lnods(ielem,inode),2)

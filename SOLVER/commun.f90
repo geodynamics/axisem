@@ -331,7 +331,7 @@ subroutine assembmass_sum_solid(f1,res)
   include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid)
-  real(kind=dp)    , intent(out)     :: res
+  real(kind=dp)   , intent(out)     :: res
   integer                           :: ipt, idest, iel, ipol, jpol
 
   res = 0.d0 
@@ -341,7 +341,7 @@ subroutine assembmass_sum_solid(f1,res)
         do jpol = 0, npol
            ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
            idest = igloc_solid(ipt)
-           gvec_solid(idest) = gvec_solid(idest) + dble(f1(ipol,jpol,iel))
+           gvec_solid(idest) = gvec_solid(idest) + f1(ipol,jpol,iel)
         end do
      end do
   end do
@@ -617,7 +617,7 @@ subroutine assembmass_sum_fluid(f1,res)
   include 'mesh_params.h' 
   
   real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_fluid)
-  real(kind=dp)    , intent(out)     :: res
+  real(kind=dp)   , intent(out)     :: res
   integer ipt, idest
   integer iel, ipol, jpol
 
@@ -629,7 +629,7 @@ subroutine assembmass_sum_fluid(f1,res)
         do jpol = 0, npol
            ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
            idest = igloc_fluid(ipt)
-           gvec_fluid(idest) = gvec_fluid(idest) + dble(f1(ipol,jpol,iel))
+           gvec_fluid(idest) = gvec_fluid(idest) + f1(ipol,jpol,iel)
         end do
      end do
   end do
@@ -860,7 +860,7 @@ end subroutine broadcast_int
 subroutine broadcast_dble(input_dble,input_proc)
 
   integer, intent(in)             :: input_proc
-  real(kind=dp)    , intent(inout) :: input_dble
+  real(kind=dp)   , intent(inout) :: input_dble
 
   if (nproc>1) call pbroadcast_dble(input_dble,input_proc) ! comment for serial
 
@@ -868,9 +868,9 @@ end subroutine broadcast_dble
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function pmin(scal)
+real(kind=dp)    function pmin(scal)
 
-  real(kind=dp)     :: scal
+  real(kind=dp)    :: scal
   
   pmin = scal
   if (nproc>1) pmin = ppmin(scal) ! comment for serial
@@ -879,9 +879,9 @@ end function pmin
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function pmax(scal)
+real(kind=dp)    function pmax(scal)
 
-  real(kind=dp)     :: scal
+  real(kind=dp)    :: scal
 
   pmax = scal
   if (nproc>1) pmax = ppmax(scal)  ! comment for serial
@@ -923,9 +923,9 @@ end function psum_int
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function psum_dble(scal)
+real(kind=dp)    function psum_dble(scal)
 
-  real(kind=dp)     :: scal
+  real(kind=dp)    :: scal
 
   psum_dble = scal
   if (nproc>1) psum_dble = ppsum_dble(scal) ! comment for serial

@@ -35,12 +35,12 @@ module attenuation
   public :: time_step_memvars_cg4
   public :: att_coarse_grained
 
-  real(kind=dp)    , allocatable   :: y_j_attenuation(:)
-  real(kind=dp)    , allocatable   :: w_j_attenuation(:), exp_w_j_deltat(:)
-  real(kind=dp)    , allocatable   :: ts_fac_t(:), ts_fac_tm1(:)
-  integer                         :: n_sls_attenuation
-  logical                         :: do_corr_lowq, dump_memory_vars = .false.
-  logical                         :: att_coarse_grained = .true.
+  real(kind=dp), allocatable       :: y_j_attenuation(:)
+  real(kind=dp), allocatable       :: w_j_attenuation(:), exp_w_j_deltat(:)
+  real(kind=dp), allocatable       :: ts_fac_t(:), ts_fac_tm1(:)
+  integer                          :: n_sls_attenuation
+  logical                          :: do_corr_lowq, dump_memory_vars = .false.
+  logical                          :: att_coarse_grained = .true.
 
   real(kind=realkind), allocatable :: src_dev_tm1_glob(:,:,:,:)
   real(kind=realkind), allocatable :: src_tr_tm1_glob(:,:,:)
@@ -67,10 +67,10 @@ subroutine time_step_memvars_cg4(memvar, disp)
   real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j
-  real(kind=dp)          :: yp_j_mu(n_sls_attenuation)
-  real(kind=dp)          :: yp_j_kappa(n_sls_attenuation)
-  real(kind=dp)          :: a_j_mu(n_sls_attenuation)
-  real(kind=dp)          :: a_j_kappa(n_sls_attenuation)
+  real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
+  real(kind=dp)         :: yp_j_kappa(n_sls_attenuation)
+  real(kind=dp)         :: a_j_mu(n_sls_attenuation)
+  real(kind=dp)         :: a_j_kappa(n_sls_attenuation)
 
   real(kind=realkind)   :: grad_t_cg4(1:4,6)
 
@@ -199,10 +199,10 @@ subroutine time_step_memvars(memvar, disp)
   real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j, ipol, jpol
-  real(kind=dp)          :: yp_j_mu(n_sls_attenuation)
-  real(kind=dp)          :: yp_j_kappa(n_sls_attenuation)
-  real(kind=dp)          :: a_j_mu(n_sls_attenuation)
-  real(kind=dp)          :: a_j_kappa(n_sls_attenuation)
+  real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
+  real(kind=dp)         :: yp_j_kappa(n_sls_attenuation)
+  real(kind=dp)         :: a_j_mu(n_sls_attenuation)
+  real(kind=dp)         :: a_j_kappa(n_sls_attenuation)
 
   real(kind=realkind)   :: grad_t(0:npol,0:npol,6)
 
@@ -480,40 +480,40 @@ subroutine prepare_attenuation(lambda, mu)
   use analytic_mapping,     only: compute_partial_derivatives
   use data_source,          only: nelsrc, ielsrc
   use data_pointwise!,       only: DsDeta_over_J_sol_cg4, DzDeta_over_J_sol_cg4, DsDxi_over_J_sol_cg4, DzDxi_over_J_sol_cg4
-    use commun,             only: broadcast_int, broadcast_log, &
+  use commun,               only: broadcast_int, broadcast_log, &
                                   broadcast_char, broadcast_dble, barrier
 
 
   include 'mesh_params.h'
 
-  real(kind=dp)    , intent(inout)   :: lambda(0:npol,0:npol,1:nelem)
-  real(kind=dp)    , intent(inout)   :: mu(0:npol,0:npol,1:nelem)
+  real(kind=dp), intent(inout)   :: lambda(0:npol,0:npol,1:nelem)
+  real(kind=dp), intent(inout)   :: mu(0:npol,0:npol,1:nelem)
 
-  real(kind=dp)                      :: mu_w1(0:npol,0:npol)
+  real(kind=dp)                  :: mu_w1(0:npol,0:npol)
 
-  real(kind=dp)                      :: delta_mu_0(0:npol,0:npol)
-  real(kind=dp)                      :: kappa_w1(0:npol,0:npol)
-  real(kind=dp)                      :: delta_kappa_0(0:npol,0:npol)
+  real(kind=dp)                  :: delta_mu_0(0:npol,0:npol)
+  real(kind=dp)                  :: kappa_w1(0:npol,0:npol)
+  real(kind=dp)                  :: delta_kappa_0(0:npol,0:npol)
   
-  real(kind=dp)                      :: kappa_fac, mu_fac
+  real(kind=dp)                  :: kappa_fac, mu_fac
 
-  real(kind=dp)                      :: f_min, f_max, w_1, w_0
-  integer                           :: nfsamp, max_it, i, iel, j
-  real(kind=dp)                      :: Tw, Ty, d
-  logical                           :: fixfreq
-  real(kind=dp)    , allocatable     :: w_samp(:), q_fit(:), chil(:)
-  real(kind=dp)    , allocatable     :: yp_j_mu(:)
-  real(kind=dp)    , allocatable     :: yp_j_kappa(:)
+  real(kind=dp)                  :: f_min, f_max, w_1, w_0
+  integer                        :: nfsamp, max_it, i, iel, j
+  real(kind=dp)                  :: Tw, Ty, d
+  logical                        :: fixfreq
+  real(kind=dp), allocatable     :: w_samp(:), q_fit(:), chil(:)
+  real(kind=dp), allocatable     :: yp_j_mu(:)
+  real(kind=dp), allocatable     :: yp_j_kappa(:)
   
-  real(kind=dp)                      :: local_crd_nodes(8,2)
-  real(kind=dp)                      :: gamma_w_l(0:npol,0:npol)
-  integer                           :: inode, ipol, jpol
-  real(kind=dp)                      :: dsdxi, dzdxi, dsdeta, dzdeta
-  real(kind=dp)                      :: weights_cg(0:npol,0:npol)
+  real(kind=dp)                  :: local_crd_nodes(8,2)
+  real(kind=dp)                  :: gamma_w_l(0:npol,0:npol)
+  integer                        :: inode, ipol, jpol
+  real(kind=dp)                  :: dsdxi, dzdxi, dsdeta, dzdeta
+  real(kind=dp)                  :: weights_cg(0:npol,0:npol)
     
-  integer                           :: iinparam_advanced=500, ioerr
-  character(len=256)                :: line
-  character(len=256)                :: keyword, keyvalue
+  integer                        :: iinparam_advanced=500, ioerr
+  character(len=256)             :: line
+  character(len=256)             :: keyword, keyvalue
 
   ! Default values
   n_sls_attenuation = 5
@@ -941,19 +941,23 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 !> compute Q after (Emmerich & Korn, inverse of eq 21)
 !! linearized version (exact = false) is eq 22 in E&K
-subroutine q_linear_solid(y_j, w_j, w, exact, Qls)
+pure subroutine q_linear_solid(y_j, w_j, w, exact, Qls)
   
-  real(kind=dp)    , intent(in)    :: y_j(:), w_j(:), w(:)
-  real(kind=dp)    , intent(out)   :: Qls(size(w))
+  real(kind=dp)   , intent(in)    :: y_j(:), w_j(:), w(:)
+  real(kind=dp)   , intent(out)   :: Qls(size(w))
   integer                         :: j
   
   logical, optional, intent(in)           :: exact
   !f2py logical, optional, intent(in)     :: exact = 0 
-  logical                                 :: exact_loc = .false.
+  logical                                 :: exact_loc
   
-  real(kind=dp)                    :: Qls_denom(size(w))
+  real(kind=dp)                   :: Qls_denom(size(w))
   
-  if (present(exact)) exact_loc = exact
+  if (present(exact)) then
+      exact_loc = exact
+  else
+      exact_loc = .false.
+  end if
   
   Qls = 1
   if (exact_loc) then
@@ -975,13 +979,13 @@ end subroutine
 !> computes a first order correction to the linearized coefficients:
 !! yp_j_corrected = y_j * delta_j 
 !! MvD Attenuation Notes, p. 17.3 bottom
-subroutine fast_correct(y_j, yp_j)
+pure subroutine fast_correct(y_j, yp_j)
 
-  real(kind=dp)    , intent(in)    :: y_j(:)
-  real(kind=dp)    , intent(out)   :: yp_j(size(y_j))
+  real(kind=dp), intent(in)    :: y_j(:)
+  real(kind=dp), intent(out)   :: yp_j(size(y_j))
   
-  real(kind=dp)                    :: dy_j(size(y_j))
-  integer                         :: k
+  real(kind=dp)                :: dy_j(size(y_j))
+  integer                      :: k
 
   dy_j(1) = 1 + .5 * y_j(1)
 
@@ -996,19 +1000,23 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 !> returns l2 misfit between constant Q and fitted Q using standard linear solids
-subroutine l2_error(Q, Qls, lognorm, lse)
+pure subroutine l2_error(Q, Qls, lognorm, lse)
  
-  real(kind=dp)    , intent(in)    :: Q, Qls(:)
+  real(kind=dp)   , intent(in)    :: Q, Qls(:)
   
   logical, optional, intent(in)   :: lognorm
   ! optional argument with default value (a bit nasty in f2py)
   !f2py logical, optional, intent(in) :: lognorm = 1
-  logical :: lognorm_loc = .true.
+  logical                         :: lognorm_loc
   
-  real(kind=dp)    , intent(out)   :: lse
+  real(kind=dp)   , intent(out)   :: lse
   integer                         :: nfsamp, i
   
-  if (present(lognorm)) lognorm_loc = lognorm
+  if (present(lognorm)) then
+      lognorm_loc = lognorm
+  else
+      lognorm_loc = .false.
+  end if
 
   lse = 0
   nfsamp = size(Qls)
@@ -1068,13 +1076,13 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   use data_proc,            only: lpr, mynum
   ! use ifport
 
-  real(kind=dp)    , intent(in)            :: Q, f_min, f_max
+  real(kind=dp)   , intent(in)            :: Q, f_min, f_max
   integer, intent(in)                     :: N, nfsamp, max_it
 
-  real(kind=dp)    , optional, intent(in)          :: Tw, Ty, d
-  !f2py real(kind=dp)    , optional, intent(in)    :: Tw=.1, Ty=.1, d=.99995
-  real(kind=dp)                                    :: Tw_loc = .1, Ty_loc = .1
-  real(kind=dp)                                    :: d_loc = .99995
+  real(kind=dp)   , optional, intent(in)          :: Tw, Ty, d
+  !f2py real(kind=dp)   , optional, intent(in)    :: Tw=.1, Ty=.1, d=.99995
+  real(kind=dp)                                   :: Tw_loc = .1, Ty_loc = .1
+  real(kind=dp)                                   :: d_loc = .99995
 
   logical, optional, intent(in)           :: fixfreq, verbose, exact
   !f2py logical, optional, intent(in)     :: fixfreq = 0, verbose = 0
@@ -1086,17 +1094,17 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   !f2py character(len=7), optional, intent(in) :: mode = 'maxwell'
   character(len=7)                        :: mode_loc = 'maxwell'
 
-  real(kind=dp)    , intent(out)   :: w_j(N)
-  real(kind=dp)    , intent(out)   :: y_j(N)
-  real(kind=dp)    , intent(out)   :: w(nfsamp) 
-  real(kind=dp)    , intent(out)   :: q_fit(nfsamp) 
-  real(kind=dp)    , intent(out)   :: chil(max_it) 
+  real(kind=dp), intent(out)      :: w_j(N)
+  real(kind=dp), intent(out)      :: y_j(N)
+  real(kind=dp), intent(out)      :: w(nfsamp) 
+  real(kind=dp), intent(out)      :: q_fit(nfsamp) 
+  real(kind=dp), intent(out)      :: chil(max_it) 
 
-  real(kind=dp)                    :: w_j_test(N)
-  real(kind=dp)                    :: y_j_test(N)
-  real(kind=dp)                    :: expo
-  real(kind=dp)                    :: chi, chi_test
-  real(kind=dp)                    :: randnr
+  real(kind=dp)                   :: w_j_test(N)
+  real(kind=dp)                   :: y_j_test(N)
+  real(kind=dp)                   :: expo
+  real(kind=dp)                   :: chi, chi_test
+  real(kind=dp)                   :: randnr
 
   integer             :: j, it, last_it_print
 

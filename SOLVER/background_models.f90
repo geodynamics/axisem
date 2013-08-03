@@ -31,7 +31,7 @@
 !! discontinuities and their above/below elastic values for the mesher only 
 !! (see module model_discontinuities).
 module background_models
-
+  use global_parameters, only: dp, sp
   implicit none
   
   public :: velocity, model_is_ani, model_is_anelastic
@@ -41,9 +41,9 @@ contains
 !-----------------------------------------------------------------------------
 !> Wrapper function to call velocities upon different background models 
 !! for a given radius r0 [m], parameter type param (rho,vs,vp) and idom
-double precision function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
+real(kind=dp)  function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
 
-  double precision, intent(in)   :: r0
+  real(kind=dp)   , intent(in)   :: r0
   integer, intent(in)            :: idom
   character(len=100), intent(in) :: bkgrdmodel2
   integer, intent(in)            :: lfbkgrdmodel2
@@ -138,13 +138,13 @@ end function model_is_anelastic
 !> from Montagner and Kennett (1995)
 !! interpolated between discontinuities using matlab's polyfit, use radii!!!
 !! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
-double precision function ak135f(r0, param, idom)
+real(kind=dp) function ak135f(r0, param, idom)
 
-    double precision, intent(in) :: r0
+    real(kind=dp)   , intent(in) :: r0
     integer, intent(in)          :: idom
-    double precision             :: r,x_ak
-    double precision             :: ro_ak, vp_ak, vs_ak
-    double precision             :: Qmu_ak, Qka_ak
+    real(kind=dp)                :: r,x_ak
+    real(kind=dp)                :: ro_ak, vp_ak, vs_ak
+    real(kind=dp)                :: Qmu_ak, Qka_ak
     character(len=3), intent(in) :: param !rho, vs,vp
   
     r =r0 / 1000.
@@ -258,13 +258,13 @@ end function ak135f
 !> from Kennett, Engdahl and Buland, 1995
 !! interpolated between discontinuities using matlab's polyfit, use radii!!!
 !! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
-double precision function ak135(r0, param, idom)
+real(kind=dp) function ak135(r0, param, idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r,x_ak
-  double precision             :: ro_ak, vp_ak, vs_ak
-  double precision             :: Qmu, Qkappa
+  real(kind=dp)                :: r,x_ak
+  real(kind=dp)                :: ro_ak, vp_ak, vs_ak
+  real(kind=dp)                :: Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -364,13 +364,13 @@ end function ak135
 
 !-----------------------------------------------------------------------------
 !> isotropic prem model in terms of domains separated by discontinuities
-double precision function prem_sub(r0, param, idom)
+real(kind=dp) function prem_sub(r0, param, idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r,x_prem
-  double precision             :: ro_prem,vp_prem,vs_prem
-  double precision             :: Qmu, Qkappa
+  real(kind=dp)                :: r,x_prem
+  real(kind=dp)                :: ro_prem,vp_prem,vs_prem
+  real(kind=dp)                :: Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -475,13 +475,13 @@ end function prem_sub
 
 !-----------------------------------------------------------------------------
 !> prem model in terms of domains separated by discontinuities
-double precision function prem_ani_sub(r0, param, idom)
+real(kind=dp) function prem_ani_sub(r0, param, idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r,x_prem
-  double precision             :: ro_prem, vpv_prem, vsv_prem, vph_prem 
-  double precision             :: vsh_prem, eta_aniso, Qmu, Qkappa
+  real(kind=dp)                :: r,x_prem
+  real(kind=dp)                :: ro_prem, vpv_prem, vsv_prem, vph_prem 
+  real(kind=dp)                :: vsh_prem, eta_aniso, Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -612,12 +612,12 @@ end function prem_ani_sub
 !-----------------------------------------------------------------------------
 !> isotropic prem model in terms of domains separated by discontinuities
 !! No fluid outer core, but instead vs=vp/sqrt(3)
-double precision function prem_solid_sub(r0,param,idom)
+real(kind=dp) function prem_solid_sub(r0,param,idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r, x_prem
-  double precision             :: ro_prem, vp_prem, vs_prem
+  real(kind=dp)                :: r, x_prem
+  real(kind=dp)                :: ro_prem, vp_prem, vs_prem
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -697,12 +697,12 @@ end function prem_solid_sub
 !-----------------------------------------------------------------------------
 !> isotropic prem model in terms of domains separated by discontinuities
 !! but with lower crust extended to the surface
-double precision function prem_onecrust_sub(r0, param, idom)
+real(kind=dp) function prem_onecrust_sub(r0, param, idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r, x_prem
-  double precision             :: ro_prem, vp_prem, vs_prem
+  real(kind=dp)                :: r, x_prem
+  real(kind=dp)                :: ro_prem, vp_prem, vs_prem
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -777,13 +777,13 @@ end function prem_onecrust_sub
 
 !-----------------------------------------------------------------------------
 ! prem model in terms of domains separated by discontinuities
-double precision function prem_onecrust_ani_sub(r0, param, idom)
+real(kind=dp) function prem_onecrust_ani_sub(r0, param, idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r, x_prem
-  double precision             :: ro_prem, vpv_prem, vsv_prem, vph_prem 
-  double precision             :: vsh_prem, eta_aniso, Qmu, Qkappa
+  real(kind=dp)                :: r, x_prem
+  real(kind=dp)                :: ro_prem, vpv_prem, vsv_prem, vph_prem 
+  real(kind=dp)                :: vsh_prem, eta_aniso, Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -905,13 +905,13 @@ end function prem_onecrust_ani_sub
 
 !-----------------------------------------------------------------------------
 ! isotropic prem_light model (crust removed) in terms of domains separated by disconts.
-double precision function prem_light_sub(r0, param, idom)
+real(kind=dp) function prem_light_sub(r0, param, idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r, x_prem
-  double precision             :: ro_prem, vp_prem, vs_prem
-  double precision             :: Qmu, Qkappa
+  real(kind=dp)                :: r, x_prem
+  real(kind=dp)                :: ro_prem, vp_prem, vs_prem
+  real(kind=dp)                :: Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -1004,13 +1004,13 @@ end function prem_light_sub
 
 !-----------------------------------------------------------------------------
 ! anisotropic prem_light model (crust removed) in terms of domains separated by disconts.
-double precision function prem_light_ani_sub(r0, param, idom)
+real(kind=dp) function prem_light_ani_sub(r0, param, idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r,x_prem
-  double precision             :: ro_prem, vpv_prem, vsv_prem, vph_prem 
-  double precision             :: vsh_prem, eta_aniso, Qmu, Qkappa
+  real(kind=dp)                :: r,x_prem
+  real(kind=dp)                :: ro_prem, vpv_prem, vsv_prem, vph_prem 
+  real(kind=dp)                :: vsh_prem, eta_aniso, Qmu, Qkappa
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -1125,12 +1125,12 @@ end function prem_light_ani_sub
 !-----------------------------------------------------------------------------
 !> isotropic prem_light model (crust removed) in terms of domains separated by disconts.
 !! No fluid outer core, but instead vs=vp/sqrt(3)
-double precision function prem_solid_light_sub(r0, param, idom)
+real(kind=dp) function prem_solid_light_sub(r0, param, idom)
 
-  double precision, intent(in) :: r0
+  real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
-  double precision             :: r, x_prem
-  double precision             :: ro_prem, vp_prem, vs_prem
+  real(kind=dp)                :: r, x_prem
+  real(kind=dp)                :: ro_prem, vp_prem, vs_prem
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -1202,17 +1202,17 @@ end function prem_solid_light_sub
 !-----------------------------------------------------------------------------
 !> iasp91 model in terms of domains separated by discontinuities
 !! with PREM density and attenuation
-double precision function iasp91_sub(r0, param, idom)
+real(kind=dp) function iasp91_sub(r0, param, idom)
 
-  double precision, intent(in)    :: r0
+  real(kind=dp)   , intent(in)    :: r0
   integer, intent(in)             :: idom
   character(len=3), intent(in)    :: param !rho, vs,vp
-  double precision                :: r, x
-  double precision                :: rho, vp, vs, Qmu, Qkappa
+  real(kind=dp)                   :: r, x
+  real(kind=dp)                   :: rho, vp, vs, Qmu, Qkappa
   
-  double precision                :: REARTH
-  double precision                :: R120, RMOHO
-  double precision                :: x1, x2
+  real(kind=dp)                   :: REARTH
+  real(kind=dp)                   :: R120, RMOHO
+  real(kind=dp)                   :: x1, x2
 
   REARTH           = 6371000.
   ! compute real physical radius in meters
@@ -1348,13 +1348,13 @@ end function iasp91_sub
 !! ndisc
 !! r vp vs rho qkappa qmu
 !! ...
-double precision function arbitr_sub(param, idom)
+real(kind=dp) function arbitr_sub(param, idom)
 
   integer, intent(in)             :: idom
   integer                         :: idom2
   character(len=3), intent(in)    :: param !rho, vs,vp
-  double precision, allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
-  double precision, allocatable, dimension(:) :: qmutmp, qkappatmp
+  real(kind=dp)   , allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
+  real(kind=dp)   , allocatable, dimension(:) :: qmutmp, qkappatmp
   integer                         :: ndisctmp, i
   logical                         :: bkgrdmodelfile_exists
 
@@ -1421,17 +1421,17 @@ end function arbitr_sub
 !! ndisc
 !! r vp vs rho
 !! ...
-double precision function arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
+real(kind=dp) function arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
 
-  double precision, intent(in)      :: r0
+  real(kind=dp)   , intent(in)      :: r0
   integer, intent(in)               :: idom
   character(len=100), intent(in)    :: bkgrdmodel2 
   character(len=3), intent(in)      :: param !rho, vs,vp
 
-  double precision, allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
+  real(kind=dp)   , allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
   integer           :: ndisctmp, i, ndisctmp2, ind(2)
   logical           :: bkgrdmodelfile_exists
-  double precision  :: w(2), wsum
+  real(kind=dp)     :: w(2), wsum
 
   ! Does the file bkgrdmodel".bm" exist?
   inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
@@ -1473,11 +1473,11 @@ end function arbitr_sub_solar
 subroutine interp_vel(r0, r, n, ind, w, wsum)
 
   integer, intent(in)           :: n
-  double precision, intent(in)  :: r0, r(1:n)
+  real(kind=dp)   , intent(in)  :: r0, r(1:n)
   integer, intent(out)          :: ind(2)
-  double precision, intent(out) :: w(2), wsum
+  real(kind=dp)   , intent(out) :: w(2), wsum
   integer                       :: i, p
-  double precision              :: dr1, dr2
+  real(kind=dp)                 :: dr1, dr2
 
   p = 1
 

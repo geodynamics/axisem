@@ -180,7 +180,7 @@ end subroutine prepare_waves
 !  
 !  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3), intent(inout) :: disp, velo
 !  integer           :: iel, ipol, jpol
-!  real(kind=dp)      :: a, c, vp, vs, period
+!  real(kind=dp)     :: a, c, vp, vs, period
 !
 !  a = 1e-6
 !  vp = 10e3
@@ -218,7 +218,7 @@ end subroutine prepare_waves
 !  
 !  integer, intent(out)  :: dumppoint_ids(3,2)
 !  integer               :: iel, ipol, jpol
-!  real(kind=dp)          :: mindist1, mindist2, s1, s2, z1, z2
+!  real(kind=dp)         :: mindist1, mindist2, s1, s2, z1, z2
 !
 !  s1 = 1e5
 !  s2 = 1e5
@@ -594,8 +594,8 @@ subroutine symplectic_time_loop
   integer          :: iter, i
   
   ! symplectic stuff
-  real(kind=dp)    , allocatable, dimension(:) :: coefd, coeff, coefv, subdt
-  real(kind=dp)    , allocatable, dimension(:) :: stf_symp
+  real(kind=dp)   , allocatable, dimension(:) :: coefd, coeff, coefv, subdt
+  real(kind=dp)   , allocatable, dimension(:) :: stf_symp
   
   ! choose symplectic scheme (4,6,8,10th order) and compute coefficients
   call symplectic_coefficients(coefd,coeff,coefv)
@@ -736,10 +736,10 @@ subroutine symplectic_coefficients(coefd,coeff,coefv)
 
   use commun,         only : barrier,pend
   
-  real(kind=dp)    , allocatable, dimension(:), intent(out) :: coefd,coeff,coefv
-  real(kind=dp)    , allocatable, dimension(:) :: g
-  real(kind=dp)     :: zeta_symp,iota_symp,kappa_symp
-  real(kind=dp)     :: rho,theta,nu,lambda
+  real(kind=dp)   , allocatable, dimension(:), intent(out) :: coefd,coeff,coefv
+  real(kind=dp)   , allocatable, dimension(:) :: g
+  real(kind=dp)    :: zeta_symp,iota_symp,kappa_symp
+  real(kind=dp)    :: rho,theta,nu,lambda
   integer :: Q,n,i
   real :: B,C
 
@@ -947,8 +947,8 @@ end subroutine symplectic_coefficients
 subroutine SS_scheme(n,a,b,g)
   
   integer, intent(in) :: n
-  real(kind=dp)    , intent(in)  :: g(n)
-  real(kind=dp)    , intent(out) :: a(nstages+1), b(nstages)
+  real(kind=dp)   , intent(in)  :: g(n)
+  real(kind=dp)   , intent(out) :: a(nstages+1), b(nstages)
   integer :: i
 
   a(1) = g(1) / 2.d0

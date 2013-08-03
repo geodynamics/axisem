@@ -487,8 +487,8 @@ end subroutine compute_stf
 subroutine compute_stf_t(nstf_t,t,stf_t)
   
   integer, intent(in)           :: nstf_t
-  real(kind=dp)    , intent(in)  :: t(1:nstf_t)
-  real(kind=dp)    , intent(out) :: stf_t(1:nstf_t)
+  real(kind=dp)   , intent(in)  :: t(1:nstf_t)
+  real(kind=dp)   , intent(out) :: stf_t(1:nstf_t)
 
 
   select case(stf_type)
@@ -521,7 +521,7 @@ subroutine compute_src
   real(kind=realkind), allocatable :: source_term(:,:,:,:)
   real(kind=realkind), allocatable :: point_source(:,:,:)
   integer                          :: ipol,jpol,ielem,k
-  real(kind=dp)                     :: s,z,r,theta
+  real(kind=dp)                    :: s,z,r,theta
 
   allocate(source_term(0:npol,0:npol,1:nel_solid,1:3))
   source_term = 0. 
@@ -697,7 +697,7 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   use commun, only: pmin, psum_int
   
   integer, intent(out) :: iel_src2, ipol_src2, jpol_src2
-  real(kind=dp)         :: s, z, r, theta, mydzsrc, zsrcout, dzsrc
+  real(kind=dp)        :: s, z, r, theta, mydzsrc, zsrcout, dzsrc
   integer              :: ielem, ipol, jpol, count_src_procs
   
   ! find depth that is closest to desired value zsrc
@@ -875,9 +875,9 @@ end subroutine gauss_dd
 !! approximate discrete dirac
 subroutine delta_src
   integer :: i,j
-  real(kind=dp)     :: a,integral
+  real(kind=dp)    :: a,integral
   character(len=6) :: dirac_approx(6)
-  real(kind=dp)    ,allocatable :: signal(:),timetmp(:),int_stf(:)
+  real(kind=dp)   ,allocatable :: signal(:),timetmp(:),int_stf(:)
 
   if (lpr) write(6,*)'Discrete Dirac choice: ',discrete_choice
   allocate(signal(1:niter),timetmp(1:niter),int_stf(1:niter))
@@ -978,8 +978,8 @@ end subroutine delta_src
 subroutine gauss_t(nstf_t,t,stf_t)
 
   integer, intent(in)           :: nstf_t
-  real(kind=dp)    , intent(in)  :: t(nstf_t)
-  real(kind=dp)    , intent(out) :: stf_t(nstf_t)
+  real(kind=dp)   , intent(in)  :: t(nstf_t)
+  real(kind=dp)   , intent(out) :: stf_t(nstf_t)
   integer                       :: i
 
   do i=1,nstf_t
@@ -995,8 +995,8 @@ end subroutine gauss_t
 subroutine gauss_d_t(nstf_t,t,stf_t)
 
   integer, intent(in)              :: nstf_t
-  real(kind=dp)    , intent(in)     :: t(nstf_t)
-  real(kind=dp)    , intent(out)    :: stf_t(nstf_t)
+  real(kind=dp)   , intent(in)     :: t(nstf_t)
+  real(kind=dp)   , intent(out)    :: stf_t(nstf_t)
   integer                          :: i
 
   do i=1,nstf_t
@@ -1013,8 +1013,8 @@ end subroutine gauss_d_t
 subroutine gauss_dd_t(nstf_t,t,stf_t)
 
   integer, intent(in)              :: nstf_t
-  real(kind=dp)    , intent(in)  :: t(nstf_t)
-  real(kind=dp)    , intent(out) :: stf_t(nstf_t)
+  real(kind=dp)   , intent(in)  :: t(nstf_t)
+  real(kind=dp)   , intent(out) :: stf_t(nstf_t)
   integer                          :: i
 
   do i=1,nstf_t
@@ -1032,8 +1032,8 @@ end subroutine gauss_dd_t
 subroutine wtcoef(f, f1, f2, f3, f4, wt)
   implicit none
 
-  real(kind=dp)    , intent(in) ::  f,f1,f2,f3,f4
-  real(kind=dp)    , intent(out)::  wt
+  real(kind=dp)   , intent(in) ::  f,f1,f2,f3,f4
+  real(kind=dp)   , intent(out)::  wt
 
   if (f3.gt.f4) stop 'wtcoef: f3>f4 '
   if (f1.gt.f2) stop 'wtcoef: f1>f2 '
@@ -1053,8 +1053,8 @@ end subroutine wtcoef
 subroutine delta_src_t(nstf_t, t,stf_t)
 
   integer, intent(in)             :: nstf_t
-  real(kind=dp)    , intent(in)    :: t(nstf_t)
-  real(kind=dp)    , intent(out)   :: stf_t(nstf_t)
+  real(kind=dp)   , intent(in)    :: t(nstf_t)
+  real(kind=dp)   , intent(out)   :: stf_t(nstf_t)
 
   stf_t(1:nstf_t) = zero
 
@@ -1068,7 +1068,7 @@ end subroutine delta_src_t
 subroutine quasiheavi_t(nstf_t,stf_t)
 
   integer, intent(in)           :: nstf_t
-  real(kind=dp)    , intent(out) :: stf_t(nstf_t)
+  real(kind=dp)   , intent(out) :: stf_t(nstf_t)
  
   stf_t = 0.
   stf_t(seis_it:nstf_t) = magnitude
@@ -1087,7 +1087,7 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
   real(kind=realkind), intent(out) :: f(0:npol,0:npol,nel_solid)
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
   integer                          :: liel_src, lipol_src, ljpol_src, ipol, jpol, i
-  real(kind=dp)                     :: s, z, r, theta
+  real(kind=dp)                    :: s, z, r, theta
   character(len=16)                :: fmt1
   integer                          :: nsrcelem
 
@@ -1164,7 +1164,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   real(kind=realkind), allocatable :: ds(:), dz(:)
   
   integer                          :: ielem, ipol, jpol, i, nsrcelem
-  real(kind=dp)                     :: s, z, r, theta, r1, r2
+  real(kind=dp)                    :: s, z, r, theta, r1, r2
   logical                          :: oldway
   character(len=16)                :: fmt1
 

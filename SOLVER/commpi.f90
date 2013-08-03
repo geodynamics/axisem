@@ -187,7 +187,7 @@ end subroutine pbroadcast_int
 subroutine pbroadcast_dble(input_dble,input_proc)
 
   integer, intent(in)             :: input_proc
-  real(kind=dp)    , intent(inout) :: input_dble
+  real(kind=dp)   , intent(inout) :: input_dble
   integer                         :: ierror
 
   call mpi_bcast(input_dble, 1, MPI_DOUBLE_PRECISION, input_proc, &
@@ -198,10 +198,10 @@ end subroutine pbroadcast_dble
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function ppmin(scal)
+real(kind=dp)    function ppmin(scal)
 
-  real(kind=dp)     :: scal
-  real(kind=dp)     :: buff, buff2
+  real(kind=dp)    :: scal
+  real(kind=dp)    :: buff, buff2
   integer          :: ierror
 
   buff = scal
@@ -215,10 +215,10 @@ end function ppmin
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function ppmax(scal)
+real(kind=dp)    function ppmax(scal)
 
-  real(kind=dp)     :: scal
-  real(kind=dp)     :: buff, buff2
+  real(kind=dp)    :: scal
+  real(kind=dp)    :: buff, buff2
   integer          :: ierror
 
   buff = scal
@@ -265,10 +265,10 @@ end function ppsum
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)     function ppsum_dble(scal)
+real(kind=dp)    function ppsum_dble(scal)
 
-  real(kind=dp)     :: scal
-  real(kind=dp)     :: buff, buff2
+  real(kind=dp)    :: scal
+  real(kind=dp)    :: buff, buff2
   integer          :: ierror
   
   buff = scal

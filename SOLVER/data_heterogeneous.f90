@@ -34,15 +34,15 @@ public
    character(len=200), allocatable :: het_file_discr(:), het_ani_discr(:), het_rel_discr(:)
    logical, allocatable :: rdep(:),grad(:)
    logical :: add_up, ani_hetero
-   real(kind=dp)    , allocatable :: gradrdep1(:),gradrdep2(:)
-   real(kind=dp)    , allocatable :: p_inv_dist(:), R_inv_dist(:)
-   real(kind=dp)    , allocatable :: r_het1(:),r_het2(:),th_het1(:),th_het2(:)
-   real(kind=dp)    , allocatable :: delta_rho(:), delta_vp(:), delta_vs(:)
-   real(kind=dp)    , allocatable :: a_ica(:), b_ica(:), c_ica(:), fa_theta_ica(:), &
+   real(kind=dp)   , allocatable :: gradrdep1(:),gradrdep2(:)
+   real(kind=dp)   , allocatable :: p_inv_dist(:), R_inv_dist(:)
+   real(kind=dp)   , allocatable :: r_het1(:),r_het2(:),th_het1(:),th_het2(:)
+   real(kind=dp)   , allocatable :: delta_rho(:), delta_vp(:), delta_vs(:)
+   real(kind=dp)   , allocatable :: a_ica(:), b_ica(:), c_ica(:), fa_theta_ica(:), &
                                     fa_phi_ica(:), theta_slices(:)
    integer, allocatable :: inverseshape(:)
    integer :: num_slices
-   real(kind=dp)     :: rhetmin, rhetmax, thhetmin, thhetmax
+   real(kind=dp)    :: rhetmin, rhetmax, thhetmin, thhetmax
 
 
 
