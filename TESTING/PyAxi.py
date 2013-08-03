@@ -430,17 +430,33 @@ def PyAxi(**kwargs):
 #               else:
 #                   print 'DONE'
 #           
-#           if input['netCDF'] != 'N':
-#               if input['verbose'] != 'N':
-#                   print "\n==================="
-#                   print "Change netCDF flags"
-#                   print "==================="
-#               else:
-#                   sys.stdout.write('Change netCDF flags...')
-#                   sys.stdout.flush()
-#               
-#               makefile_open = open('./Makefile', 'r')
-#               makefile_read = makefile_open.readlines()
+            if input['netCDF'] != 'N':
+                if input['verbose'] != 'N':
+                    print "\n==================="
+                    print "Change netCDF flags"
+                    print "==================="
+                else:
+                    sys.stdout.write('Change netCDF flags...')
+                    sys.stdout.flush()
+                
+                makefile_open = open('../make_axisem.macros', 'r')
+                makefile_read = makefile_open.readlines()
+                search = 'USE_NETCDF = '
+                for i in range(0, len(makefile_read)):
+                    if makefile_read[i].find(search) != -1:
+                        makefile_read[i] = 'USE_NETCDF = true' + '\n'
+                        num = i
+                makefile_open.close()
+                
+                makefile_open = open('../make_axisem.macros', 'w')
+                for i in range(0, len(makefile_read)):
+                    makefile_open.write(makefile_read[i])
+                makefile_open.close()
+                if input['verbose'] != 'N':
+                    print makefile_read[num]
+                else:
+                    print 'DONE'
+
 #               search = '#F90FLAGS = -Dunc'
 #               for i in range(0, len(makefile_read)):
 #                   if makefile_read[i].find(search) != -1:

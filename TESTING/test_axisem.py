@@ -29,10 +29,11 @@ if not args.a:
             '3. test03: quadpole (mxy)\n' + \
             '4. test04: CMT (location: north pole)\n' + \
             '5. test05: CMT (location: 70N 50E)\n' + \
+            '6. test06: like test05, but with NetCDF\n' + \
             '\n(format = 01,02 OR 1,2,3)' + \
             '\n')
 else:
-    test_no = '1,2,3,4,5'
+    test_no = '1,2,3,4,5,6'
 
 print '=========================================='
 print 'Requested Test numbers:'
