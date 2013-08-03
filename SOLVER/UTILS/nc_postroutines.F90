@@ -23,10 +23,13 @@ module nc_routines
 #ifdef unc
   use netcdf
 #endif
+  implicit none
+  integer, parameter         :: sp = selected_real_kind(6, 37)
   type ncparamtype
-      integer, dimension(4)             :: id
-      integer, dimension(4)             :: seis_grpid
-      integer, dimension(4)             :: disp_varid, recnam_varid, phi_varid, theta_varid
+      integer, dimension(4)  :: id
+      integer, dimension(4)  :: seis_grpid
+      integer, dimension(4)  :: disp_varid, recnam_varid
+      integer, dimension(4)  :: phi_varid, theta_varid, thetar_varid
   end type
 contains
   subroutine nc_open(ncid, nsim, simdir)
@@ -47,6 +50,7 @@ contains
         call check( nf90_inq_varid(ncid%seis_grpid(isim), 'receiver_name', ncid%recnam_varid(isim)))
         call check( nf90_inq_varid(ncid%seis_grpid(isim), 'azimuths', ncid%phi_varid(isim)))
         call check( nf90_inq_varid(ncid%seis_grpid(isim), 'distances', ncid%theta_varid(isim)))
+        call check( nf90_inq_varid(ncid%seis_grpid(isim), 'distances_requested', ncid%thetar_varid(isim)))
     end do
 #endif
 
@@ -67,11 +71,12 @@ contains
 
 !--------------------------------------------------------------------
 
-  subroutine nc_read_recnames(ncid, nrec, recname, theta, phi)
-    type(ncparamtype), intent(in)      :: ncid
-    integer, intent(in)                :: nrec
-    character(len=40), intent(out)     :: recname(nrec)
-    real, dimension(nrec), intent(out) :: theta, phi
+  subroutine nc_read_recnames(ncid, nrec, recname, theta, thetar, phi)
+    type(ncparamtype), intent(in)               :: ncid
+    integer, intent(in)                         :: nrec
+    character(len=40), intent(out)              :: recname(nrec)
+    real(kind=sp), dimension(nrec), intent(out) :: theta, phi, thetar
+    integer                                     :: irec
 #ifdef unc
     do irec = 1, nrec
         call check( nf90_get_var(ncid%seis_grpid(1), ncid%recnam_varid(1), &
@@ -83,6 +88,9 @@ contains
                              values = phi) )
     call check( nf90_get_var(ncid%seis_grpid(1), ncid%theta_varid(1), &
                              values  = theta) )
+    call check( nf90_get_var(ncid%seis_grpid(1), ncid%thetar_varid(1), &
+                             values  = thetar) )
+    thetar = 90. - thetar
     theta = 90. - theta
   
 #endif

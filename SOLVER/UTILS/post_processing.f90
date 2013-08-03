@@ -45,7 +45,7 @@ module data_all
   real, dimension(:,:,:), allocatable :: mij_phi
   real, allocatable, dimension(:)     :: magnitude
   real                                :: dt, period, dt_seis
-  real, allocatable, dimension(:)     :: thr_orig, phr_orig
+  real, allocatable, dimension(:)     :: thr_orig, phr_orig, th_orig
   real, dimension(3,3)                :: rot_mat
   character(len=3)                    :: rec_comp_sys
   logical                             :: load_snaps
@@ -129,6 +129,7 @@ program post_processing_seis
   ! input seismogram names
   allocate(recname(nrec))
   allocate(thr_orig(nrec))
+  allocate(th_orig(nrec))
   allocate(phr_orig(nrec))
   
   ! these are the rotated receiver coordinates, having the source at the north pole
@@ -138,7 +139,11 @@ program post_processing_seis
   
   ! these are the original receiver coordinates, having the source at the actual location
   if (use_netcdf) then
-      call nc_read_recnames(ncparams, nrec, recname, thr_orig, phr_orig)
+      call nc_read_recnames(ncparams, nrec, recname, th_orig, thr_orig, phr_orig)
+      do isim = 1, nsim
+          colat(:,isim) = th_orig(:)
+          lon(:, isim)  = phr_orig(:)
+      end do
       ! @TODO
   else
       open(unit=61, file=trim(simdir(1))//'/Data/receiver_names.dat')
@@ -155,11 +160,16 @@ program post_processing_seis
   ! compute exact receiver locations (GLL points they are mapped to) and write
   ! to file, should be the same for all subfolders
   do isim=1, nsim
-     open(unit=20, file=trim(simdir(isim))//'/Data/receiver_pts.dat')
+     if (.not.use_netcdf) then
+         open(unit=20, file=trim(simdir(isim))//'/Data/receiver_pts.dat')
+     end if
+
      open(unit=21, file=trim(outdir)//'/receiver_gll_locs_'//trim(src_type(isim,2))//'.dat')
      write(21,'(4a15)') ' ', 'colat', 'lat', 'lon'
      do i=1,nrec
-        read(20,*) colat(i,isim), lon(i,isim), junk
+        if (.not.use_netcdf) then
+            read(20,*) colat(i,isim), lon(i,isim), junk
+        end if
         if (abs(lon(i,isim)-360.) < 0.01) lon(i,isim) = 0.
        
         ! transform to xyz
@@ -210,7 +220,7 @@ program post_processing_seis
                                  rloc_rtp(2) / pi * 180. - 90., &
                                  rloc_rtp(3) / pi * 180.
      enddo
-     close(20)
+     if (.not.use_netcdf) close(20)
      close(21)
   enddo
 
