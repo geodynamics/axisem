@@ -77,7 +77,7 @@ commun.o: clocks.o commpi.o data_matr.o data_mesh.o data_numbering.o \
 	data_proc.o data_time.o global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
 data_comm.o: global_parameters.o Makefile ../make_axisem.macros 
 data_heterogeneous.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
-data_io.o:  Makefile ../make_axisem.macros 
+data_io.o: global_parameters.o Makefile ../make_axisem.macros 
 data_matr.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
 data_mesh.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
 data_mesh_preloop.o: global_parameters.o mesh_params.h Makefile ../make_axisem.macros 
@@ -149,3 +149,4 @@ parameters.o: attenuation.o commun.o data_comm.o data_io.o data_mesh.o \
 	data_time.o global_parameters.o nc_routines.o utlity.o mesh_params.h Makefile ../make_axisem.macros 
 ftz.o:  Makefile ../make_axisem.macros 
 pthread.o:  Makefile ../make_axisem.macros 
+kdtree2.o:  Makefile ../make_axisem.macros

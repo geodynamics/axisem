@@ -258,6 +258,7 @@ sub MakeDependsf90 {
          }
       }
    
+print MAKEFILE "kdtree2.o:  Makefile ../make_axisem.macros\n";
+system("perl -ni -e 'print unless /^kdtree2.o: kdtree2.o/' Makefile ");
 
 print "\nCheck Makefile to make sure you're happy with it.\n\n";
-system("perl -ni -e 'print unless /^kdtree2.o/' Makefile ");
