@@ -38,7 +38,6 @@ module data_grid
   
   real(kind=dp)      :: router,lsq_fac
   integer            :: ngllcube
-  integer, parameter :: ndim = 2
   
   real(kind=dp), dimension(:), allocatable :: rmax_el, rmin_el
   logical :: southern

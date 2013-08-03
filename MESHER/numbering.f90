@@ -46,7 +46,6 @@ subroutine define_global_global_numbering
   real(kind=dp)   , dimension(:), allocatable   :: sgtmp, zgtmp
   logical, dimension(:), allocatable            :: ifseg
   integer, dimension(:), allocatable            :: loc
-  integer   :: iel, jpol,ipol, ipt
   integer   :: npointot
 
   ngllcube = (npol + 1)**2 
@@ -71,7 +70,7 @@ subroutine define_global_global_numbering
 
   iclock07 = tick()
   call get_global(neltot, sgtmp, zgtmp, iglob, loc, ifseg, nglobglob, npointot, &
-                  ngllcube, NDIM)
+                  ngllcube)
   iclock07 = tick(id=idold07, since=iclock07)
 
   deallocate(ifseg)
@@ -93,7 +92,6 @@ subroutine define_global_flobal_numbering
   real(kind=dp)   , dimension(:), allocatable :: sgtmp,zgtmp
   integer, dimension(:), allocatable :: loc_fluid
   logical, dimension(:), allocatable ::   ifseg
-  integer :: iel, jpol,ipol, ipt
   integer :: npointot
 
   npointot = neltot_fluid * (npol+1)**2
@@ -119,7 +117,7 @@ subroutine define_global_flobal_numbering
 
   iclock07 = tick()
   call get_global(neltot_fluid, sgtmp, zgtmp, iglob_fluid, loc_fluid, ifseg, &
-                  nglobflob, npointot, NGLLcube, NDIM)
+                  nglobflob, npointot, NGLLcube)
   iclock07 = tick(id=idold07, since=iclock07)
 
   deallocate(ifseg)
@@ -143,7 +141,6 @@ subroutine define_global_slobal_numbering
   logical, dimension(:), allocatable            :: ifseg
 
   integer :: npointot
-  integer :: iel, jpol,ipol, ipt
 
   npointot = neltot_solid * (npol+1)**2
 
@@ -168,7 +165,7 @@ subroutine define_global_slobal_numbering
 
   iclock07 = tick()
   call get_global(neltot_solid, sgtmp, zgtmp, iglob_solid, loc_solid, ifseg, nglobslob, &
-                  npointot, NGLLcube, NDIM)
+                  npointot, NGLLcube)
   iclock07 = tick(id=idold07, since=iclock07)
 
   deallocate(ifseg)
@@ -200,7 +197,7 @@ end subroutine define_global_slobal_numbering
 !=====================================================================
 
 subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
-                      NGLLCUBE2, NDIM2, nmax_threads_in)
+                      NGLLCUBE2, nmax_threads_in)
 
   ! this routine MUST be in real(kind=dp)    to avoid sensitivity
   ! to roundoff errors in the coordinates of the points
@@ -212,23 +209,22 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   use sorting,      only: mergesort_3
   !$ use omp_lib     
 
-  integer, intent(in)               :: nspec2, npointot2, NGLLCUBE2, NDIM2
-  real(kind=dp)   , intent(inout)   :: xp(npointot2), yp(npointot2)
-  integer, intent(out)              :: iglob2(npointot2), loc2(npointot2), nglob2
-  logical, intent(out)              :: ifseg2(npointot2)
-  integer, intent(in), optional     :: nmax_threads_in
+  integer, intent(in)                :: nspec2, npointot2, NGLLCUBE2
+  real(kind=dp)   , intent(inout)    :: xp(npointot2), yp(npointot2)
+  integer, intent(out)               :: iglob2(npointot2), loc2(npointot2), nglob2
+  logical, intent(out)               :: ifseg2(npointot2)
+  integer, intent(in), optional      :: nmax_threads_in
 
-  integer :: nmax_threads
+  integer                            :: nmax_threads
 
-  integer :: ioffs(npointot2)
+  integer                            :: ioffs(npointot2)
 
-  integer :: ispec, i, nthreads, inttemp
-  integer :: ieoff, ilocnum, nseg, ioff, iseg, ig
-  real(kind=dp)    :: realtemp
+  integer                            :: ispec, i, nthreads
+  integer                            :: ieoff, ilocnum, nseg, ioff, iseg, ig
 
   integer, dimension(:), allocatable :: ind, ninseg
 
-  real(kind=dp)   , parameter :: SMALLVALTOL = 1.d-08
+  real(kind=dp), parameter           :: SMALLVALTOL = 1.d-08
 
   if (present(nmax_threads_in)) then
      nmax_threads = nmax_threads_in

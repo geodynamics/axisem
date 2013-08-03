@@ -175,7 +175,7 @@ subroutine generate_serendipity(npoin, nel, sg, zg)
   if (dump_mesh_info_screen) write(6,*) 'CALLING GLOBAL NUMBERING' 
   
   call get_global(nel, sg2, zg2, iglob_serend, loc_serend, ifseg_serend, &
-                  nglob_serend, npoin2, 8, NDIM)
+                  nglob_serend, npoin2, 8)
   if (dump_mesh_info_screen) write(6,*) 'NGLOB SERENDIPITY IS ' , nglob_serend
 
 

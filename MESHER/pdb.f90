@@ -336,7 +336,7 @@ subroutine define_glocal_numbering
      allocate(wloc(npointotp))
      
      call get_global(nelp, wsgll, wzgll, wigloc, wloc, wifseg, wnglob, &
-                     npointotp, NGLLCUBE, ndim, nthreads)
+                     npointotp, NGLLCUBE, nthreads)
      
      deallocate(wzgll,wsgll)
      deallocate(wifseg)
@@ -542,7 +542,7 @@ subroutine define_sflocal_numbering
         iclock09 = tick()
         call get_global(nelp_solid, wsgll_solid, wzgll_solid, wigloc_solid,  &
                         wloc_solid, wifseg_solid, wnglob_solid, npointotp_solid, &
-                        NGLLCUBE, NDIM, nthreads)
+                        NGLLCUBE, nthreads)
         iclock09 = tick(id=idold09, since=iclock09)
         
         deallocate(wzgll_solid, wsgll_solid)
@@ -632,7 +632,7 @@ subroutine define_sflocal_numbering
         
         iclock09 = tick()
         call get_global(nelp_fluid, wsgll_fluid, wzgll_fluid, wigloc_fluid,  &
-             wloc_fluid, wifseg_fluid, wnglob_fluid, npointotp_fluid, NGLLCUBE, NDIM)
+             wloc_fluid, wifseg_fluid, wnglob_fluid, npointotp_fluid, NGLLCUBE)
         iclock09 = tick(id=idold09, since=iclock09)
         
         deallocate(wzgll_fluid, wsgll_fluid)
@@ -2243,7 +2243,7 @@ subroutine generate_serendipity_per_proc(sg, zg)
      wloc(1:npointotp) = 0
 
      iclock09 = tick()
-     call get_global(nelp,sgpw,zgpw,wiglob,wloc,wifseg,wnglob,npointotp,ncp,ndim)
+     call get_global(nelp,sgpw,zgpw,wiglob,wloc,wifseg,wnglob,npointotp,ncp)
      iclock09 = tick(id=idold09, since=iclock09)
 
      nglobmeshp(iproc) = wnglob
