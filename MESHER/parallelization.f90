@@ -1315,7 +1315,7 @@ end function rightof
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine nelem_under(ndivs, x0, x1, x2, x3, z0, z1, z2, z3, proc_max, &
+subroutine nelem_under(ndivs, x0, x1, x2, x3, z0, z1, z2, z3, proc_max, &
                             proc_min, nelem, proc)
   implicit none
   real(kind=sp), intent(in) :: x0, x1, x2, x3, z0, z1, z2, z3
