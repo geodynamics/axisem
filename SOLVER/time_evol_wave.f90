@@ -633,17 +633,17 @@ subroutine sf_time_loop_newmark_omp
         '************ S T A R T I N G   T I M E   L O O P *************'
 
   !!$omp parallel shared(acc1, disp) private(ielem)
-  !$omp parallel default(shared) private(ielem)
+  !$omp parallel default(shared) private(ielem, iter)
   !$omp single
   !$ print *, 'number of threads: ', omp_get_num_threads()
   !$omp end single
   do iter = 1, niter
-     !$omp single
-    
+     !$omp master
      t = t + deltat
-     call runtime_info(iter,disp,chi)
-
-     !$omp end single
+     call runtime_info(iter, disp, chi)
+     !$omp end master
+     !$omp barrier
+     
      !$omp workshare
      chi = chi +  deltat * dchi + half_dt_sq * ddchi0
      disp = disp + deltat * velo + half_dt_sq * acc0
@@ -687,6 +687,7 @@ subroutine sf_time_loop_newmark_omp
 
      call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
      iclockstiff = tick()
+
      !$omp end single
      !$omp do
      do ielem = 1, nel_solid
@@ -1155,7 +1156,7 @@ end subroutine SS_scheme
 !-----------------------------------------------------------------------------
 !> Print time step, time, min/max displacement and potential values
 !! and stop the simulation if displacements blow up beyond acceptable...
-subroutine runtime_info(iter,disp,chi)
+subroutine runtime_info(iter, disp, chi)
   
   use commun, only : pend
   
