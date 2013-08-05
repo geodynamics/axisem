@@ -514,7 +514,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                <DataItem Dimensions="3 3" Format="XML">',/&
     '                      ', i10,'         0          1',/&
     '                               1         1          1',/&
-    '                               1'    i10,'          1',/&
+    '                               1',   i10,'          1',/&
     '                </DataItem>',/&
     '                <DataItem Dimensions="', i10, i10, ' 2" NumberType="Float" Format="hdf">',/&
     '                   ', A, ':/displacement',/&
@@ -571,7 +571,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                <DataItem Dimensions="3 3" Format="XML">',/&
     '                      ', i10,'         0          2',/&
     '                               1         1          1',/&
-    '                               1'    i10,'          1',/&
+    '                               1',   i10,'          1',/&
     '                </DataItem>',/&
     '                <DataItem Dimensions="', i10, i10, ' 3" NumberType="Float" Format="hdf">',/&
     '                   ', A, ':/displacement',/&
@@ -617,11 +617,11 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
   character(len=200)                :: filename, varname
   integer                           :: l, n
   
-  write(appisnap, "(I0.8)"), iter
+  write(appisnap, "(I0.8)") iter
   do l=1, 6
-     write(lchar, "(I0.2)"), l
+     write(lchar, "(I0.2)") l
      do n=1, n_sls_attenuation
-        write(nchar, "(I0.2)"), n
+        write(nchar, "(I0.2)") n
         filename = trim(infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appmynum &
                         //'_'//appisnap)
         varname = 'memvar_'//lchar//'_'//nchar
