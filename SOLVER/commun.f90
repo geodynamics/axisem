@@ -47,6 +47,7 @@ module commun
   
   implicit none
   public :: comm2d ! the general assembly & communication routine
+  public :: pdistsum_solid, pdistsum_fluid
   public :: assemb_sum_solid, assemb_3sum_solid ! energy in solid
   public :: assemb_sum_fluid, assemb_2sum_fluid ! energy in fluid
   
@@ -70,7 +71,7 @@ contains
 !! The global assembly is discarded as it is not necessary during the time loop
 !! and therefore chose not to store any global numbering arrays.
 !! If nproc>1, then internode message passing is applied where necessary.
-subroutine comm2d(f,nel,nc,domainin)
+subroutine comm2d(f, nel, nc, domainin)
   
   include 'mesh_params.h' 
   
@@ -103,11 +104,11 @@ end subroutine comm2d
 !! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
 !! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
 !! sum & exchange values on processor boundary points.
-subroutine pdistsum_solid(vec,nc)
+subroutine pdistsum_solid(vec, nc)
   
   use data_numbering,   only: igloc_solid
   use data_mesh,        only: gvec_solid
-  use data_time,        only: idmpi,iclockmpi
+  use data_time,        only: idmpi, iclockmpi
   use clocks_mod
   
   include 'mesh_params.h' 
@@ -117,31 +118,71 @@ subroutine pdistsum_solid(vec,nc)
   integer                            :: ic, iel, jpol, ipol, idest, ipt
   
   do ic = 1, nc
-     ! Gather
+     ! Gather element boundaries
      gvec_solid(:) = 0.d0
+     ipt = 1
      do iel = 1, nel_solid
-        do jpol = 0, npol
-           do ipol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-              idest = igloc_solid(ipt)
-              gvec_solid(idest) = gvec_solid(idest)+vec(ipol,jpol,iel,ic)
-           end do
+         
+        jpol = 0
+        do ipol = 0, npol
+           idest = igloc_solid(ipt)
+           gvec_solid(idest) = gvec_solid(idest) + vec(ipol,jpol,iel,ic)
+           ipt = ipt + 1
+        end do
+
+        do jpol = 1, npol-1
+           ipol = 0
+           idest = igloc_solid(ipt)
+           gvec_solid(idest) = gvec_solid(idest) + vec(ipol,jpol,iel,ic)
+           ipt = ipt + npol
+
+           ipol = npol
+           idest = igloc_solid(ipt)
+           gvec_solid(idest) = gvec_solid(idest) + vec(ipol,jpol,iel,ic)
+           ipt = ipt + 1
+        end do
+
+        jpol = npol
+        do ipol = 0, npol
+           idest = igloc_solid(ipt)
+           gvec_solid(idest) = gvec_solid(idest) + vec(ipol,jpol,iel,ic)
+           ipt = ipt + 1
         end do
      end do
-  
+
      ! Collect processor boundaries into buffer for each component
      iclockmpi = tick()
      if (nproc>1) call feed_buffer(ic) ! comment for serial
      iclockmpi = tick(id=idmpi,since=iclockmpi)
   
      ! Scatter
+     ipt = 1
      do iel = 1, nel_solid
-        do jpol = 0, npol
-           do ipol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-              idest = igloc_solid(ipt)
-              vec(ipol,jpol,iel,ic) = gvec_solid(idest)
-           end do
+        
+        jpol = 0
+        do ipol = 0, npol
+           idest = igloc_solid(ipt)
+           vec(ipol,jpol,iel,ic) = gvec_solid(idest)
+           ipt = ipt + 1
+        end do
+
+        do jpol = 1, npol-1
+           ipol = 0
+           idest = igloc_solid(ipt)
+           vec(ipol,jpol,iel,ic) = gvec_solid(idest)
+           ipt = ipt + npol
+
+           ipol = npol
+           idest = igloc_solid(ipt)
+           vec(ipol,jpol,iel,ic) = gvec_solid(idest)
+           ipt = ipt + 1
+        end do
+
+        jpol = npol
+        do ipol = 0, npol
+           idest = igloc_solid(ipt)
+           vec(ipol,jpol,iel,ic) = gvec_solid(idest)
+           ipt = ipt + 1
         end do
      end do
   end do
@@ -190,7 +231,7 @@ subroutine pdistsum_fluid(vec)
 
   iclockmpi = tick()
   if (nproc>1) call asynch_messaging_fluid ! comment for serial
-  iclockmpi = tick(id=idmpi,since=iclockmpi)
+  iclockmpi = tick(id=idmpi, since=iclockmpi)
 
   ! Scatter
   do iel = 1, nel_fluid
