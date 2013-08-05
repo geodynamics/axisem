@@ -35,7 +35,7 @@ if not args.a:
             '\n(format = 01,02 OR 1,2,3)' + \
             '\n')
 else:
-    test_no = '1,2,3,4,5'
+    test_no = '1,2,3,4,5,6,7'
 
 print '=========================================='
 print 'Requested Test numbers:'
