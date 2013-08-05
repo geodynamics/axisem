@@ -1,8 +1,8 @@
 include ../../make_axisem.macros
 ifeq ($(strip $(USE_NETCDF)),true)
    FFLAGS += -Dunc
-   LIBS = -L $(NETCDF_PATH)/lib -lnetcdff -Wl,-rpath,$(NETCDF_PATH)/lib
-   INCLUDE = -I $(NETCDF_PATH)/include
+   LIBS = -L $(strip $(NETCDF_PATH))/lib -lnetcdff -Wl,-rpath,$(strip $(NETCDF_PATH))/lib
+   INCLUDE = -I $(strip $(NETCDF_PATH))/include
 else
    LIBS = 
    INCLUDE =
