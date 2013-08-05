@@ -31,7 +31,6 @@ if not args.a:
             '5. test05: CMT (location: 70N 50E)\n' + \
             '6. test06: like test05, but with NetCDF\n' + \
             '7. test07: like test05, but with 1 CPU\n' + \
-            '8. test08: like test05, but with NetCDF\n' + \
             '\n(format = 01,02 OR 1,2,3)' + \
             '\n')
 else:
