@@ -276,7 +276,9 @@ subroutine time_loop
   iclockold = tick()
 
   if (time_scheme=='newmark2') then
+     !$ if (.false.) &
      call sf_time_loop_newmark
+     !$ call sf_time_loop_newmark_omp
   else
      call symplectic_time_loop
   endif
@@ -331,7 +333,7 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
   
-  integer :: iter
+  integer :: iter, ielem
 
   if (lpr) then
      write(6,*)
@@ -368,7 +370,7 @@ subroutine sf_time_loop_newmark
   !velo = 1.d-30
   !acc0 = 1.d-30
   !acc1 = 1.d-30
-  !
+
   !chi = 1.d-30
   !dchi = 1.d-30
   !ddchi0 = 1.d-30
@@ -399,7 +401,6 @@ subroutine sf_time_loop_newmark
         '************ S T A R T I N G   T I M E   L O O P *************'
 
   do iter = 1, niter
-    
      ! TESTING plane wave: dump fields at the two points found by
      ! find_dump_points
      !write(myunit,*) t, disp(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1), 3), &
@@ -436,7 +437,7 @@ subroutine sf_time_loop_newmark
 
      ! FLUID: stiffness term assembly
      iclockcomm = tick()
-     call comm2d(ddchi1, nel_fluid, 1, 'fluid')
+     call pdistsum_fluid(ddchi1)
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ! FLUID: update 2nd derivative of potential
@@ -500,7 +501,7 @@ subroutine sf_time_loop_newmark
 
      ! SOLID: 3-component stiffness term assembly ==> w^T K_s u
      iclockcomm = tick()
-     call comm2d(acc1, nel_solid, 3, 'solid') 
+     call pdistsum_solid(acc1, 3) 
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ! SOLID: add source, only in source elements and for stf/=0
@@ -554,12 +555,196 @@ subroutine sf_time_loop_newmark
         call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
      endif
      iclockdump = tick(id=iddump, since=iclockdump)
-
   end do ! time loop
   
   !close(myunit)
 
 end subroutine sf_time_loop_newmark
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine sf_time_loop_newmark_omp
+  
+  use commun
+  use global_parameters
+  use apply_masks
+  use stiffness
+  use clocks_mod
+  use data_matr,            only: inv_mass_rho, inv_mass_fluid
+  use attenuation,          only: time_step_memvars
+  use attenuation,          only: time_step_memvars_cg4
+  use attenuation,          only: n_sls_attenuation
+  use attenuation,          only: att_coarse_grained
+  use data_mesh,            only: gvec_solid
+  !$ use omp_lib
+  
+  include 'mesh_params.h'
+  
+  ! Solid fields
+  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
+  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: acc0, acc1
+  
+  ! solid memory variables + gradient
+  real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
+  real(kind=realkind), allocatable :: memory_var_cg4(:,:,:,:)
+
+  ! Fluid fields
+  real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
+  real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
+
+  integer   :: dumppoint_ids(3,2)
+  integer   :: myunit
+  
+  integer :: iter, ielem, ic
+
+  if (lpr) then
+     write(6,*)
+     write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+     write(6,*)'TTTT  2nd-order, acceleration-driven Newmark time scheme TTTTT'
+     write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+     write(6,*)
+  endif
+
+
+  disp = zero
+  velo = zero 
+  acc0 = zero
+  acc1 = zero
+  
+  chi = zero
+  dchi = zero
+  ddchi0 = zero
+  ddchi1 = zero
+  
+  t = zero
+     
+  ! omp timeloop for a start only for monopoles
+  if (src_type(1) /= 'monopole') stop
+
+  ! omp timeloop for no mpi parallelization 
+  if (nproc > 1) stop
+  
+  ! omp timeloop without attenuation 
+  if (anel_true) stop
+
+
+  if (lpr) write(6,*) '************ S T A R T I N G   T I M E   L O O P *************'
+  if (verbose > 1) write(69,*) &
+        '************ S T A R T I N G   T I M E   L O O P *************'
+
+  !!$omp parallel shared(acc1, disp) private(ielem)
+  !$omp parallel default(shared) private(ielem)
+  !$omp single
+  !$ print *, 'number of threads: ', omp_get_num_threads()
+  !$omp end single
+  do iter = 1, niter
+     !$omp single
+    
+     t = t + deltat
+     call runtime_info(iter,disp,chi)
+
+     !$omp end single
+     !$omp workshare
+     chi = chi +  deltat * dchi + half_dt_sq * ddchi0
+     disp = disp + deltat * velo + half_dt_sq * acc0
+     !$omp end workshare
+     !$omp single
+
+     iclockstiff = tick()
+     !$omp end single
+     !$omp do
+     do ielem = 1, nel_fluid
+        call elemental_fluid_stiffness(ddchi1, chi, ielem)
+     enddo
+     !$omp end do
+     !$omp single
+     iclockstiff = tick(id=idstiff, since=iclockstiff)
+
+     call bdry_copy2fluid(ddchi1, disp)
+
+     iclockcomm = tick()
+     !call pdistsum_fluid(ddchi1)
+     gvec_fluid(:) = 0.d0
+     !$omp end single
+     !$omp do
+     do ielem = 1, nel_fluid
+        call gather_elem_fluid(ddchi1, ielem)
+     enddo
+     !$omp end do
+     !$omp do
+     do ielem = 1, nel_fluid
+        call scatter_elem_fluid(ddchi1, ielem)
+     enddo
+     !$omp end do
+     !$omp single
+     iclockcomm = tick(id=idcomm, since=iclockcomm)
+
+     !$omp end single
+     !$omp workshare
+     ddchi1 = - inv_mass_fluid * ddchi1
+     !$omp end workshare
+     !$omp single
+
+     call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
+     iclockstiff = tick()
+     !$omp end single
+     !$omp do
+     do ielem = 1, nel_solid
+        call elemental_stiffness_mono(acc1, disp, ielem)
+     enddo 
+     !$omp end do
+     !$omp single
+     iclockstiff = tick(id=idstiff, since=iclockstiff)
+     
+     call bdry_copy2solid(acc1, ddchi1)
+     call apply_axis_mask_onecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
+
+     iclockcomm = tick()
+     !$omp end single
+     !call pdistsum_solid(acc1, 3) 
+     do ic = 1, 3
+        !$omp single
+        gvec_solid(:) = 0.d0
+        !$omp end single
+        !$omp do
+        do ielem = 1, nel_solid
+           call gather_elem_solid(acc1, ic, ielem)
+        enddo
+        !$omp end do
+        !$omp do
+        do ielem = 1, nel_solid
+           call scatter_elem_solid(acc1, ic, ielem)
+        enddo
+        !$omp end do
+     enddo
+     !$omp single
+     iclockcomm = tick(id=idcomm, since=iclockcomm)
+
+     if (have_src) call add_source(acc1, stf(iter))
+
+     !$omp end single
+     !$omp workshare
+     acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
+
+     acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
+
+     dchi = dchi + half_dt * (ddchi0 + ddchi1)
+     velo = velo + half_dt * (acc0 + acc1)
+
+     ddchi0 = ddchi1
+     acc0 = acc1
+     !$omp end workshare
+     !$omp single
+
+     iclockdump = tick()
+     call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
+     iclockdump = tick(id=iddump, since=iclockdump)
+     !$omp end single
+
+  end do ! time loop
+  !$omp end parallel
+  
+end subroutine sf_time_loop_newmark_omp
 !=============================================================================
 
 !-----------------------------------------------------------------------------
