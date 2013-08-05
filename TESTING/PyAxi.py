@@ -449,36 +449,14 @@ def PyAxi(**kwargs):
 #               else:
 #                   print 'DONE'
 #           
-            if input['verbose'] != 'N':
-                print "\n==================="
-                print "Change netCDF flags"
-                print "==================="
-            else:
-                sys.stdout.write('Change netCDF flags...')
-                sys.stdout.flush()
-            
-            makefile_open = open('../make_axisem.macros', 'r')
-            makefile_read = makefile_open.readlines()
-            search = 'USE_NETCDF'
-            num = 0
-            for i in range(0, len(makefile_read)):
-                if makefile_read[i].startswith(search):
-                    if input['netCDF'] == 'Y':
-                        makefile_read[i] = 'USE_NETCDF = true' + '\n'
-                    else:
-                        makefile_read[i] = 'USE_NETCDF = false' + '\n'
-                    num = i
-            makefile_open.close()
-            
-            makefile_open = open('../make_axisem.macros', 'w')
-            for i in range(0, len(makefile_read)):
-                makefile_open.write(makefile_read[i])
-            makefile_open.close()
-            if input['verbose'] != 'N':
-                print makefile_read[num]
-            else:
-                print 'DONE'
-
+#            if input['verbose'] != 'N':
+#                print "\n==================="
+#                print "Change netCDF flags"
+#                print "==================="
+#            else:
+#                sys.stdout.write('Change netCDF flags...')
+#                sys.stdout.flush()
+#            
 #               search = '#F90FLAGS = -Dunc'
 #               for i in range(0, len(makefile_read)):
 #                   if makefile_read[i].find(search) != -1:
@@ -559,7 +537,7 @@ def PyAxi(**kwargs):
             inparam_advanced_input.append('DEFLATE_LEVEL     %s\n' %(input['solver_deflate_level']))
             inparam_advanced_input.append('SNAPSHOT_DT     %s\n' %(input['solver_snapshot_dt']))
             inparam_advanced_input.append('SNAPSHOTS_FORMAT     %s\n' %(input['solver_snapshots_format']))
-            inparam_advanced_input.append('USE_NETCDF     %s\n' %(input['solver_netCDF']))
+            inparam_advanced_input.append('USE_NETCDF     %s\n' %(input['make_axisem_use_netcdf']))
             inparam_advanced_input.append('KERNEL_WAVEFIELDS     %s\n' %(input['solver_kernel_wavefields']))
             inparam_advanced_input.append('KERNEL_SPP     %s\n' %(input['solver_kernel_spp']))
             inparam_advanced_input.append('KERNEL_SOURCE     %s\n' %(input['solver_kernel_source']))
@@ -1222,11 +1200,11 @@ def read_input_file():
     input['solver_save_snapshots'] = config.get('SOLVER_BASIC', 'SAVE_SNAPSHOTS')
     input['solver_verbosity'] = config.get('SOLVER_BASIC', 'VERBOSITY')
    
-    input['solver_netCDF'] = config.get('SOLVER_ADVANCED', 'USE_NETCDF')
-    if input['solver_netCDF'] != 'false': input['netCDF'] = 'Y'
-    else: input['netCDF'] = 'N'
-    input['netCDF_LIBS'] = config.get('SOLVER_ADVANCED', 'NETCDF_LIBS')
-    input['netCDF_INCLUDE'] = config.get('SOLVER_ADVANCED', 'NETCDF_INCLUDE')
+    #input['solver_netCDF'] = config.get('SOLVER_ADVANCED', 'USE_NETCDF')
+    #if input['solver_netCDF'] != 'false': input['netCDF'] = 'Y'
+    #else: input['netCDF'] = 'N'
+    #input['netCDF_LIBS'] = config.get('SOLVER_ADVANCED', 'NETCDF_LIBS')
+    #input['netCDF_INCLUDE'] = config.get('SOLVER_ADVANCED', 'NETCDF_INCLUDE')
    
     input['solver_sampling_rate'] = config.get('SOLVER_ADVANCED', 'SAMPLING_RATE')
     input['solver_time_step'] = config.get('SOLVER_ADVANCED', 'TIME_STEP')
@@ -1373,7 +1351,7 @@ def read_input_file():
         print '##################################'
     
     if input['receiver_type'] == 'database':
-        input['netCDF'] = 'Y'
+        #input['netCDF'] = 'Y'
         input['post_processing'] = 'N'
     
     if obspy_error != 'N':
