@@ -223,56 +223,8 @@ def PyAxi(**kwargs):
         #if output != 0: print output_print
         print 'DONE'
 
-#       # Create Mesher Makefile (required just once!)
-#       if input['mesher_makefile'] != 'N':
-#           if input['verbose'] != 'N':
-#               print "========================="
-#               print "Create Mesher Makefile"
-#               print "=========================\n"
-#               stdout_param = None
-#           else:
-#               sys.stdout.write('Create Mesher Makefile...')
-#               sys.stdout.flush()
-#               stdout_param = subprocess.PIPE
-#
-#           if input['make_flag_mesher'] != 'N':
-#               output = subprocess.check_call(['./makemake.pl', input['make_flag_mesher']], stdout = stdout_param)
-#               if output != 0: print output_print
-#           else:
-#               output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
-#               if output != 0: print output_print
-#           print 'DONE'
-#           
         # Change the input files + make clean; make
         if input['mesher_make'] != 'N':
-#           # Change the mpi_compiler based on the local machine
-#           if input['mpi_compiler'] != 'N':
-#               if input['verbose'] != 'N':
-#                   print "==============="
-#                   print "Change F90 flag"
-#                   print "==============="
-#               else:
-#                   sys.stdout.write('Change F90 flag...')
-#                   sys.stdout.flush()
-#               makefile_open = open('./Makefile', 'r')
-#               makefile_read = makefile_open.readlines()
-#               search = 'F90 = '
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'F90 = ' + input['mpi_compiler'] + '\n'
-#                       num = i
-#               makefile_open.close()
-#               makefile_open = open('./Makefile', 'w')
-#
-#               for i in range(0, len(makefile_read)):
-#                   makefile_open.write(makefile_read[i])
-#
-#               makefile_open.close()
-#               if input['verbose'] != 'N':
-#                  print makefile_read[num]
-#               else:
-#                   print 'DONE'
-            
             if input['verbose'] != 'N':
                 print "==================="
                 print "Change inparam_mesh"
@@ -386,115 +338,8 @@ def PyAxi(**kwargs):
         print "======"
         os.chdir(os.path.join(input['axi_address'], 'SOLVER'))
                 
-#       # Create SOLVER Makefile
-#       if input['solver_makefile'] != 'N':
-#           if input['verbose'] != 'N':
-#               print "======================"
-#               print "Create Solver Makefile"
-#               print "======================\n"
-#               stdout_param = None
-#           else:
-#               stdout_param = subprocess.PIPE
-#
-#           if input['netCDF'] == 'N' and input['make_flag_solver'] == 'N':
-#               print '--------------------------------'
-#               print 'No specific flag fot makemake.pl'
-#               print 'No netCDF option'
-#               print '--------------------------------\n'
-#               output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
-#               if output != 0: print output_print
-#           elif input['netCDF'] == 'N' and input['make_flag_solver'] != 'N':
-#               print '--------------------------------'
-#               print 'Specific flag(s) fot makemake.pl: ' + input['make_flag_solver']
-#               print 'No netCDF option'
-#               print '--------------------------------\n'
-#               output = subprocess.check_call(['./makemake.pl', input['make_flag_solver']], stdout = stdout_param)
-#               if output != 0: print output_print
-#           elif input['netCDF'] != 'N' and input['make_flag_solver'] == 'N':
-#               print '--------------------------------'
-#               print 'No specific flag fot makemake.pl'
-#               print 'With netCDF option'
-#               print '--------------------------------\n'
-#               output = subprocess.check_call(['./makemake.pl', '-netcdf'], stdout = stdout_param)
-#               if output != 0: print output_print
-#           elif input['netCDF'] != 'N' and input['make_flag_solver'] != 'N':
-#               print '--------------------------------'
-#               print 'Specific flag(s) fot makemake.pl: ' + input['make_flag_solver']
-#               print 'With netCDF option'
-#               print '--------------------------------\n'
-#               output = subprocess.check_call(['./makemake.pl', input['make_flag_solver'], '-netcdf'], stdout = stdout_param)
-#               if output != 0: print output_print
-#           print '\n-----------------------------'
-#           print 'Create Solver Makefile...DONE'
-#           print '-----------------------------'
-#      
-       # Change the input files + make clean; make
+        # Change the input files + make clean; make
         if input['solver_make'] != 'N':
-#           
-#           if input['mpi_compiler'] != 'N':
-#               if input['verbose'] != 'N':
-#                   print "\n==============="
-#                   print "Change F90 flag"
-#                   print "==============="
-#               else:
-#                   sys.stdout.write('Change F90 flag...')
-#                   sys.stdout.flush()
-#
-#               makefile_open = open('./Makefile', 'r')
-#               makefile_read = makefile_open.readlines()
-#               search = 'F90 = '
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'F90 = ' + input['mpi_compiler'] + '\n'
-#                       num = i
-#               makefile_open.close()
-#               
-#               makefile_open = open('./Makefile', 'w')
-#               for i in range(0, len(makefile_read)):
-#                   makefile_open.write(makefile_read[i])
-#               makefile_open.close()
-#               if input['verbose'] != 'N':
-#                   print makefile_read[num]
-#               else:
-#                   print 'DONE'
-#           
-#            if input['verbose'] != 'N':
-#                print "\n==================="
-#                print "Change netCDF flags"
-#                print "==================="
-#            else:
-#                sys.stdout.write('Change netCDF flags...')
-#                sys.stdout.flush()
-#            
-#               search = '#F90FLAGS = -Dunc'
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'F90FLAGS = -Dunc' + '\n'
-#                       num_0 = i
-#               search = 'LIBS = '
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'LIBS = ' + input['netCDF_LIBS'] + '\n'
-#                       num_1 = i
-#               search = 'INCLUDE ='
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'INCLUDE = ' + input['netCDF_INCLUDE'] + '\n'
-#                       num_2 = i
-#               makefile_open.close()
-#               makefile_open = open('./Makefile', 'w')
-#
-#               for i in range(0, len(makefile_read)):
-#                   makefile_open.write(makefile_read[i])
-#
-#               makefile_open.close()
-#               if input['verbose'] != 'N':
-#                   print makefile_read[num_0]
-#                   print makefile_read[num_1]
-#                   print makefile_read[num_2]
-#               else:
-#                   print 'DONE'
-
             if input['verbose'] != 'N':
                 print "\n===================="
                 print "Change inparam_basic"
@@ -1210,11 +1055,6 @@ def read_input_file():
     input['solver_save_snapshots'] = config.get('SOLVER_BASIC', 'SAVE_SNAPSHOTS')
     input['solver_verbosity'] = config.get('SOLVER_BASIC', 'VERBOSITY')
    
-    #input['solver_netCDF'] = config.get('SOLVER_ADVANCED', 'USE_NETCDF')
-    #if input['solver_netCDF'] != 'false': input['netCDF'] = 'Y'
-    #else: input['netCDF'] = 'N'
-    #input['netCDF_LIBS'] = config.get('SOLVER_ADVANCED', 'NETCDF_LIBS')
-    #input['netCDF_INCLUDE'] = config.get('SOLVER_ADVANCED', 'NETCDF_INCLUDE')
    
     input['solver_sampling_rate'] = config.get('SOLVER_ADVANCED', 'SAMPLING_RATE')
     input['solver_time_step'] = config.get('SOLVER_ADVANCED', 'TIME_STEP')
@@ -1362,7 +1202,6 @@ def read_input_file():
         print '##################################'
     
     if input['receiver_type'] == 'database':
-        #input['netCDF'] = 'Y'
         input['post_processing'] = 'N'
     
     if obspy_error != 'N':
@@ -1565,3 +1404,176 @@ if __name__ == "__main__":
     print "total time: " + str(t_pro)
     print "===========================\n"
     #sys.exit(status)
+
+
+###############################################################
+######################### TRASH ###############################
+###############################################################
+
+
+#       # Create Mesher Makefile (required just once!)
+#       if input['mesher_makefile'] != 'N':
+#           if input['verbose'] != 'N':
+#               print "========================="
+#               print "Create Mesher Makefile"
+#               print "=========================\n"
+#               stdout_param = None
+#           else:
+#               sys.stdout.write('Create Mesher Makefile...')
+#               sys.stdout.flush()
+#               stdout_param = subprocess.PIPE
+#
+#           if input['make_flag_mesher'] != 'N':
+#               output = subprocess.check_call(['./makemake.pl', input['make_flag_mesher']], stdout = stdout_param)
+#               if output != 0: print output_print
+#           else:
+#               output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
+#               if output != 0: print output_print
+#           print 'DONE'
+#           
+#           # Change the mpi_compiler based on the local machine
+#           if input['mpi_compiler'] != 'N':
+#               if input['verbose'] != 'N':
+#                   print "==============="
+#                   print "Change F90 flag"
+#                   print "==============="
+#               else:
+#                   sys.stdout.write('Change F90 flag...')
+#                   sys.stdout.flush()
+#               makefile_open = open('./Makefile', 'r')
+#               makefile_read = makefile_open.readlines()
+#               search = 'F90 = '
+#               for i in range(0, len(makefile_read)):
+#                   if makefile_read[i].find(search) != -1:
+#                       makefile_read[i] = 'F90 = ' + input['mpi_compiler'] + '\n'
+#                       num = i
+#               makefile_open.close()
+#               makefile_open = open('./Makefile', 'w')
+#
+#               for i in range(0, len(makefile_read)):
+#                   makefile_open.write(makefile_read[i])
+#
+#               makefile_open.close()
+#               if input['verbose'] != 'N':
+#                  print makefile_read[num]
+#               else:
+#                   print 'DONE'
+
+
+
+#       # Create SOLVER Makefile
+#       if input['solver_makefile'] != 'N':
+#           if input['verbose'] != 'N':
+#               print "======================"
+#               print "Create Solver Makefile"
+#               print "======================\n"
+#               stdout_param = None
+#           else:
+#               stdout_param = subprocess.PIPE
+#
+#           if input['netCDF'] == 'N' and input['make_flag_solver'] == 'N':
+#               print '--------------------------------'
+#               print 'No specific flag fot makemake.pl'
+#               print 'No netCDF option'
+#               print '--------------------------------\n'
+#               output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
+#               if output != 0: print output_print
+#           elif input['netCDF'] == 'N' and input['make_flag_solver'] != 'N':
+#               print '--------------------------------'
+#               print 'Specific flag(s) fot makemake.pl: ' + input['make_flag_solver']
+#               print 'No netCDF option'
+#               print '--------------------------------\n'
+#               output = subprocess.check_call(['./makemake.pl', input['make_flag_solver']], stdout = stdout_param)
+#               if output != 0: print output_print
+#           elif input['netCDF'] != 'N' and input['make_flag_solver'] == 'N':
+#               print '--------------------------------'
+#               print 'No specific flag fot makemake.pl'
+#               print 'With netCDF option'
+#               print '--------------------------------\n'
+#               output = subprocess.check_call(['./makemake.pl', '-netcdf'], stdout = stdout_param)
+#               if output != 0: print output_print
+#           elif input['netCDF'] != 'N' and input['make_flag_solver'] != 'N':
+#               print '--------------------------------'
+#               print 'Specific flag(s) fot makemake.pl: ' + input['make_flag_solver']
+#               print 'With netCDF option'
+#               print '--------------------------------\n'
+#               output = subprocess.check_call(['./makemake.pl', input['make_flag_solver'], '-netcdf'], stdout = stdout_param)
+#               if output != 0: print output_print
+#           print '\n-----------------------------'
+#           print 'Create Solver Makefile...DONE'
+#           print '-----------------------------'
+#      
+
+
+#           
+#           if input['mpi_compiler'] != 'N':
+#               if input['verbose'] != 'N':
+#                   print "\n==============="
+#                   print "Change F90 flag"
+#                   print "==============="
+#               else:
+#                   sys.stdout.write('Change F90 flag...')
+#                   sys.stdout.flush()
+#
+#               makefile_open = open('./Makefile', 'r')
+#               makefile_read = makefile_open.readlines()
+#               search = 'F90 = '
+#               for i in range(0, len(makefile_read)):
+#                   if makefile_read[i].find(search) != -1:
+#                       makefile_read[i] = 'F90 = ' + input['mpi_compiler'] + '\n'
+#                       num = i
+#               makefile_open.close()
+#               
+#               makefile_open = open('./Makefile', 'w')
+#               for i in range(0, len(makefile_read)):
+#                   makefile_open.write(makefile_read[i])
+#               makefile_open.close()
+#               if input['verbose'] != 'N':
+#                   print makefile_read[num]
+#               else:
+#                   print 'DONE'
+#           
+#            if input['verbose'] != 'N':
+#                print "\n==================="
+#                print "Change netCDF flags"
+#                print "==================="
+#            else:
+#                sys.stdout.write('Change netCDF flags...')
+#                sys.stdout.flush()
+#            
+#               search = '#F90FLAGS = -Dunc'
+#               for i in range(0, len(makefile_read)):
+#                   if makefile_read[i].find(search) != -1:
+#                       makefile_read[i] = 'F90FLAGS = -Dunc' + '\n'
+#                       num_0 = i
+#               search = 'LIBS = '
+#               for i in range(0, len(makefile_read)):
+#                   if makefile_read[i].find(search) != -1:
+#                       makefile_read[i] = 'LIBS = ' + input['netCDF_LIBS'] + '\n'
+#                       num_1 = i
+#               search = 'INCLUDE ='
+#               for i in range(0, len(makefile_read)):
+#                   if makefile_read[i].find(search) != -1:
+#                       makefile_read[i] = 'INCLUDE = ' + input['netCDF_INCLUDE'] + '\n'
+#                       num_2 = i
+#               makefile_open.close()
+#               makefile_open = open('./Makefile', 'w')
+#
+#               for i in range(0, len(makefile_read)):
+#                   makefile_open.write(makefile_read[i])
+#
+#               makefile_open.close()
+#               if input['verbose'] != 'N':
+#                   print makefile_read[num_0]
+#                   print makefile_read[num_1]
+#                   print makefile_read[num_2]
+#               else:
+#                   print 'DONE'
+
+
+    #input['solver_netCDF'] = config.get('SOLVER_ADVANCED', 'USE_NETCDF')
+    #if input['solver_netCDF'] != 'false': input['netCDF'] = 'Y'
+    #else: input['netCDF'] = 'N'
+    #input['netCDF_LIBS'] = config.get('SOLVER_ADVANCED', 'NETCDF_LIBS')
+    #input['netCDF_INCLUDE'] = config.get('SOLVER_ADVANCED', 'NETCDF_INCLUDE')
+
