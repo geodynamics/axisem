@@ -148,7 +148,7 @@ subroutine start_clock
   idold    = clock_id('Time loop routine')
   idcomm   = clock_id('Assembly/MPI routines')
   idmpi    = clock_id(' > Only MPI routine')
-  idstiff  = clock_id('Solid stiffness routine')
+  idstiff  = clock_id('Stiffness routine')
   idanelst = clock_id(' > Anelastic stiffness routine')
   idanelts = clock_id('Anelastic time step routine')
   iddump   = clock_id('Dump routine')
