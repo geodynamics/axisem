@@ -55,7 +55,6 @@ subroutine bkgrdmodel_testing
   real(kind=sp), allocatable                        :: x(:), y(:), z(:)
   character(len=200)                                :: fname
   integer                                           :: npts_vtk, ct
-  integer                                           :: tock, tick
 
   allocate(crit(0:npol,0:npol))
   crit(:,:) = 0.d0 
@@ -109,9 +108,11 @@ subroutine bkgrdmodel_testing
   endif
   
   ! find smallest/largest grid spacing
-  !tick = time()
-  !!$omp parallel shared(hmax, hmin, x, y, z, vp1, vs1, rho1, Qmu, Qka, mesh2) & 
-  !!$omp          private(s1, z1, r, h1, s2, z2, h2, iel, jpol, ipol, velo, crit, crit_max, theta, ct) 
+  !$omp parallel shared(hmin2, h, npol, router, hmax, hmin, x, y, z, vp1, vs1, rho1, &
+  !$omp                 Qmu, Qka, mesh2, bkgrdmodel, v_p, v_s, rho, period) & 
+  !$omp          private(s1, z1, r, h1, s2, z2, h2, iel, jpol, ipol, velo, velo_max,  &
+  !$omp                  crit, crit_max, theta, ct) 
+  !$omp do 
   do iel = 1, neltot
   
      do jpol = 0, npol-1
@@ -135,18 +136,16 @@ subroutine bkgrdmodel_testing
      end do
   
      ! check on element edges
-     do ipol = npol, npol
-        do jpol = 0, npol -1 
-           h(ipol,jpol,iel) = h(ipol-1,jpol,iel)
-           hmin2(ipol,jpol,iel) = hmin2(ipol-1,jpol,iel)
-        end do
+     ipol = npol
+     do jpol = 0, npol -1 
+        h(ipol,jpol,iel) = h(ipol-1,jpol,iel)
+        hmin2(ipol,jpol,iel) = hmin2(ipol-1,jpol,iel)
      end do
   
-     do jpol = npol, npol 
-        do ipol = 0, npol-1
-           h(ipol,jpol,iel) = h(ipol,jpol-1,iel)
-           hmin2(ipol,jpol,iel) = hmin2(ipol,jpol-1,iel)
-        end do
+     jpol = npol
+     do ipol = 0, npol-1
+        h(ipol,jpol,iel) = h(ipol,jpol-1,iel)
+        hmin2(ipol,jpol,iel) = hmin2(ipol,jpol-1,iel)
      end do
 
      h(npol,npol,iel) = h(npol-1,npol,iel)
@@ -155,10 +154,8 @@ subroutine bkgrdmodel_testing
      hmax(iel) = maxval(h(:,:,iel))
   
   end do ! elements
+  !$omp single
 
-  !!$omp single
-  !tock = time()
-  write(6,*)'    Runtime: ', tock-tick, ' s'
   write(6,*)'calculate GLL spacing...'
   
   ! global min/max spacing
@@ -185,9 +182,8 @@ subroutine bkgrdmodel_testing
   open(unit=62, file=diagpath(1:lfdiag)//'/radial_velocity.dat')  
   
   write(6,*) 'starting big loop....'
-  !tick = time()
-  !!$omp end single 
-  !!$omp do 
+  !$omp end single 
+  !$omp do 
   do iel = 1, neltot
      do jpol = 0, npol
         do ipol = 0,npol
@@ -219,10 +215,12 @@ subroutine bkgrdmodel_testing
            
               if ( solid_domain(region(iel))) then 
                  velo = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
+                 velo_max = velocity(r*router,'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
               else
                  velo = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
+                 ! to avoid calling velocity twice in fluid domain:
+                 velo_max = velo
               endif
-              velo_max = velocity(r*router,'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
            endif
   
            crit(ipol,jpol) = h(ipol,jpol,iel) / (velo * period) * dble(npol)
@@ -347,10 +345,8 @@ subroutine bkgrdmodel_testing
 
   
   end do ! iel
-  !!$omp end do 
-  !!$omp end parallel
-  !tock = time()
-  !write(6,*)'    Runtime after ''big loop'': ', tock-tick, ' s'
+  !$omp end do 
+  !$omp end parallel
   if (bkgrdmodel=='solar') deallocate(v_p, v_s, rho)
  
 
@@ -409,8 +405,6 @@ subroutine bkgrdmodel_testing
     endif
   endif
   
-  !tock = time()
-  !write(6,*)'    Runtime after VTK dump: ', tock-tick, ' s'
 
   if (dump_mesh_vtk) then
       deallocate(x, y, z)
