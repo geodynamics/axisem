@@ -148,6 +148,7 @@ subroutine pdistsum_solid(vec, nc)
            gvec_solid(idest) = gvec_solid(idest) + vec(ipol,jpol,iel,ic)
            ipt = ipt + 1
         end do
+
      end do
 
      ! Collect processor boundaries into buffer for each component
@@ -184,6 +185,7 @@ subroutine pdistsum_solid(vec, nc)
            vec(ipol,jpol,iel,ic) = gvec_solid(idest)
            ipt = ipt + 1
         end do
+
      end do
   end do
   
@@ -214,19 +216,40 @@ subroutine pdistsum_fluid(vec)
   include 'mesh_params.h' 
   
   real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_fluid)
-  integer                            :: iel,jpol,ipol,idest,ipt
+  integer                            :: iel, jpol, ipol, idest, ipt
 
   gvec_fluid(:) = 0.d0
 
   ! Gather
+  ipt = 1
   do iel = 1, nel_fluid
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-           idest = igloc_fluid(ipt)
-           gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel) 
-        end do
+
+     jpol = 0
+     do ipol = 0, npol
+        idest = igloc_fluid(ipt)
+        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
+        ipt = ipt + 1
      end do
+
+     do jpol = 1, npol-1
+        ipol = 0
+        idest = igloc_fluid(ipt)
+        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
+        ipt = ipt + npol
+
+        ipol = npol
+        idest = igloc_fluid(ipt)
+        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
+        ipt = ipt + 1
+     end do
+
+     jpol = npol
+     do ipol = 0, npol
+        idest = igloc_fluid(ipt)
+        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
+        ipt = ipt + 1
+     end do
+
   end do
 
   iclockmpi = tick()
@@ -234,14 +257,35 @@ subroutine pdistsum_fluid(vec)
   iclockmpi = tick(id=idmpi, since=iclockmpi)
 
   ! Scatter
+  ipt = 1
   do iel = 1, nel_fluid
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-           idest = igloc_fluid(ipt)
-           vec(ipol,jpol,iel) = gvec_fluid(idest)
-        end do
+
+     jpol = 0
+     do ipol = 0, npol
+        idest = igloc_fluid(ipt)
+        vec(ipol,jpol,iel) = gvec_fluid(idest)
+        ipt = ipt + 1
      end do
+
+     do jpol = 1, npol-1
+        ipol = 0
+        idest = igloc_fluid(ipt)
+        vec(ipol,jpol,iel) = gvec_fluid(idest)
+        ipt = ipt + npol
+
+        ipol = npol
+        idest = igloc_fluid(ipt)
+        vec(ipol,jpol,iel) = gvec_fluid(idest)
+        ipt = ipt + 1
+     end do
+
+     jpol = npol
+     do ipol = 0, npol
+        idest = igloc_fluid(ipt)
+        vec(ipol,jpol,iel) = gvec_fluid(idest)
+        ipt = ipt + 1
+     end do
+
   end do
 
 end subroutine pdistsum_fluid
