@@ -278,7 +278,7 @@ subroutine define_glocal_numbering
 ! The glocal numbering for each processor's entire domain.
 ! The glocal number bookkeeping is not passed to the database, 
 ! as we only need solid and fluid global numbers.
-!
+
   use numbering 
   use data_gllmesh, only : sgll, zgll
   use data_time
@@ -299,13 +299,12 @@ subroutine define_glocal_numbering
   integer :: idest,i
   integer :: valnum_cent(6),totvalnum_cent
   integer :: valnum_semi(6),totvalnum_semi
-  integer             :: nthreads = 1
+  integer :: nthreads = 1
 
   nelmax = maxval(nel)
   allocate(igloc(nelmax*(npol+1)**2,0:nproc-1))
   allocate(nglobp(0:nproc-1))
   
-
   !$ nthreads = max(OMP_get_max_threads() / nproc, 1)
   !$omp parallel do private(iproc, nelp, npointotp, wsgll, wzgll, iel, ielg, ipol, jpol, ipt, &
   !$omp                     wigloc, wifseg, wloc, wnglob, uglob2, val, valnum_cent, valnum_semi, &
@@ -341,12 +340,6 @@ subroutine define_glocal_numbering
      deallocate(wifseg)
      deallocate(wloc)
 
-     !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/wigloc.dat', iproc
-     !open(unit=1100+iproc, file=trim(filename))
-     !write(1100+iproc,*) wnglob
-     !write(1100+iproc,*) wigloc
-     !close(1100+iproc)
-     
      do ipt = 1, npointotp
         igloc(ipt,iproc) = wigloc(ipt)
      end do
@@ -375,11 +368,6 @@ subroutine define_glocal_numbering
        end do
      end do
      
-     !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/uglob2.dat', iproc
-     !open(unit=1100+iproc, file=trim(filename))
-     !write(1100+iproc,*) uglob2
-     !close(1100+iproc)
-  
      do iel = 1, nel(iproc)
        do ipol = 0, npol
          do jpol = 0, npol
@@ -405,12 +393,6 @@ subroutine define_glocal_numbering
        end do
      end do
      deallocate(uglob2, val)
-     
-     !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/val.dat', iproc
-     !open(unit=1100+iproc, file=trim(filename))
-     !write(1100+iproc,*) val
-     !close(1100+iproc)
-
      deallocate(wigloc)
 
      totvalnum_cent = 0
@@ -419,12 +401,6 @@ subroutine define_glocal_numbering
         totvalnum_cent = totvalnum_cent + valnum_cent(i)/i
         totvalnum_semi = totvalnum_semi + valnum_semi(i)/i
      enddo
-     
-     !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/totval.dat', iproc
-     !open(unit=1100+iproc, file=trim(filename))
-     !write(1100+iproc,*) totvalnum_semi
-     !write(1100+iproc,*) totvalnum_cent
-     !close(1100+iproc)
   
      if (dump_mesh_info_screen) then 
         write(6,*)
@@ -439,11 +415,6 @@ subroutine define_glocal_numbering
   end do
   !$omp end parallel do 
      
-  !write(filename, "(a,a,i3.3)") diagpath(1:lfdiag), '/igloc.dat'
-  !open(unit=1100, file=trim(filename))
-  !write(1100,*) igloc
-  !close(1100)
-
   if (dump_mesh_info_screen) then
     do iproc = 0, nproc-1
        write(6,*) 'proc.,nglob:', iproc, nglobp(iproc)
@@ -461,7 +432,7 @@ subroutine define_sflocal_numbering
 ! This will be passed to the solver as the defining bookkeeping arrays 
 ! for the assembly procedure.
 ! DATABASE: igloc_solid,igloc_solid
-!
+
   use numbering 
   use data_gllmesh, only : sgll, zgll
   use data_time
@@ -502,17 +473,17 @@ subroutine define_sflocal_numbering
   nglobp_solid(:) = 0
   nglobp_fluid(:) = 0
 
-  !!$ nthreads = max(OMP_get_max_threads() / nproc, 1)
-  !!$omp parallel do private(iproc, nelp_solid, nelp_fluid, npointotp_solid, npointotp_fluid, &
-  !!$omp                     wsgll_solid, wsgll_fluid, wzgll_solid, wzgll_fluid, &
-  !!$omp                     iel, ielg, ipol, jpol, ipt, &
-  !!$omp                     wigloc_solid, wigloc_fluid, wifseg_solid, wifseg_fluid, &
-  !!$omp                     wloc_solid, wloc_fluid, wnglob_solid, wnglob_fluid, &
-  !!$omp                     uglob2_solid, val_solid, valnum_cent_solid, valnum_semi_solid, &
-  !!$omp                     uglob2_fluid, val_fluid, valnum_fluid, &
-  !!$omp                     idest, i, totvalnum_semi_solid, totvalnum_cent_solid, &
-  !!$omp                     totvalnum_fluid) &
-  !!$omp             shared(nglobp_solid, nglobp_fluid, igloc_solid, igloc_fluid)
+  !$ nthreads = max(OMP_get_max_threads() / nproc, 1)
+  !$omp parallel do private(iproc, nelp_solid, nelp_fluid, npointotp_solid, npointotp_fluid, &
+  !$omp                     wsgll_solid, wsgll_fluid, wzgll_solid, wzgll_fluid, &
+  !$omp                     iel, ielg, ipol, jpol, ipt, &
+  !$omp                     wigloc_solid, wigloc_fluid, wifseg_solid, wifseg_fluid, &
+  !$omp                     wloc_solid, wloc_fluid, wnglob_solid, wnglob_fluid, &
+  !$omp                     uglob2_solid, val_solid, valnum_cent_solid, valnum_semi_solid, &
+  !$omp                     uglob2_fluid, val_fluid, valnum_fluid, &
+  !$omp                     idest, i, totvalnum_semi_solid, totvalnum_cent_solid, &
+  !$omp                     totvalnum_fluid) &
+  !$omp             shared(nglobp_solid, nglobp_fluid, igloc_solid, igloc_fluid)
   do iproc = 0, nproc-1
 
      ! Solid
@@ -720,6 +691,7 @@ subroutine define_sflocal_numbering
         end if
      endif ! have_fluid
   end do ! iproc
+  !$omp end parallel do 
 
   if (dump_mesh_info_screen) then 
      ! here are used some arrays such as nglobp that are not needed
@@ -743,7 +715,6 @@ subroutine define_sflocal_numbering
                                  2*(npol+1)+(sum(nbelem)/2-nbcnd)*(npol)
 
   end if
-  !!$omp end parallel do 
 
   ! This test is not valid for nproc>1 since the proc boundaries are singular 
   ! global points for each proc and hence one would need to subtract the 
