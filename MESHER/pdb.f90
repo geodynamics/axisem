@@ -306,10 +306,11 @@ subroutine define_glocal_numbering
   allocate(nglobp(0:nproc-1))
   
   !$ nthreads = max(OMP_get_max_threads() / nproc, 1)
-  !$omp parallel do private(iproc, nelp, npointotp, wsgll, wzgll, iel, ielg, ipol, jpol, ipt, &
-  !$omp                     wigloc, wifseg, wloc, wnglob, uglob2, val, valnum_cent, valnum_semi, &
-  !$omp                     idest, i, totvalnum_semi, totvalnum_cent, filename) &
-  !$omp             shared(nglobp, igloc)
+  !$omp parallel do private(iproc, nelp, npointotp, wsgll, wzgll, iel, ielg, ipol, &
+  !$omp                     jpol, ipt, wigloc, wifseg, wloc, wnglob, uglob2, val, &
+  !$omp                     valnum_cent, valnum_semi, idest, i, totvalnum_semi, &
+  !$omp                     totvalnum_cent) &
+  !$omp              shared(nglobp, igloc)
   do iproc = 0, nproc-1
 
      nelp = nel(iproc)  
