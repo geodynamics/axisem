@@ -47,6 +47,8 @@ module commun
   
   implicit none
   public :: comm2d ! the general assembly & communication routine
+  public :: gather_elem_solid, scatter_elem_solid
+  public :: gather_elem_fluid, scatter_elem_fluid
   public :: pdistsum_solid, pdistsum_fluid
   public :: assemb_sum_solid, assemb_3sum_solid ! energy in solid
   public :: assemb_sum_fluid, assemb_2sum_fluid ! energy in fluid
@@ -202,6 +204,56 @@ end subroutine pdistsum_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+subroutine gather_elem_solid(vec, ic, iel)
+  
+  use data_numbering,   only: igloc_solid
+  use data_mesh,        only: gvec_solid
+  use data_time,        only: idmpi, iclockmpi
+  use clocks_mod
+  
+  include 'mesh_params.h' 
+  
+  integer, intent(in)                :: ic, iel
+  real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_solid,3)
+  integer                            :: jpol, ipol, idest, ipt
+  
+  do jpol = 0, npol
+     do ipol = 0, npol
+        ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+        idest = igloc_solid(ipt)
+        gvec_solid(idest) = gvec_solid(idest)+vec(ipol,jpol,iel,ic)
+     end do
+  end do
+  
+end subroutine gather_elem_solid
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine scatter_elem_solid(vec, ic, iel)
+  
+  use data_numbering,   only: igloc_solid
+  use data_mesh,        only: gvec_solid
+  use data_time,        only: idmpi, iclockmpi
+  use clocks_mod
+  
+  include 'mesh_params.h' 
+  
+  integer, intent(in)                :: ic, iel
+  real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_solid,3)
+  integer                            :: jpol, ipol, idest, ipt
+  
+  do jpol = 0, npol
+     do ipol = 0, npol
+        ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+        idest = igloc_solid(ipt)
+        vec(ipol,jpol,iel,ic) = gvec_solid(idest)
+     end do
+  end do
+  
+end subroutine scatter_elem_solid
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 !> This is a driver routine to perform the assembly of field f of dimension nc
 !! defined in the fluid. The assembly/direct stiffness summation is composed of
 !! the "gather" and "scatter" operations, i.e. to add up all element-edge 
@@ -289,6 +341,48 @@ subroutine pdistsum_fluid(vec)
   end do
 
 end subroutine pdistsum_fluid
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine gather_elem_fluid(vec, iel)
+
+  use data_numbering,   only: igloc_fluid
+  include 'mesh_params.h' 
+  
+  real(kind=realkind), intent(in)    :: vec(0:npol,0:npol,nel_fluid)
+  integer, intent(in)                :: iel
+  integer                            :: jpol, ipol, idest, ipt
+
+  do jpol = 0, npol
+     do ipol = 0, npol
+        ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+        idest = igloc_fluid(ipt)
+        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel) 
+     end do
+  end do
+  
+end subroutine gather_elem_fluid
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine scatter_elem_fluid(vec, iel)
+     
+  use data_numbering,   only: igloc_fluid
+  include 'mesh_params.h' 
+  
+  real(kind=realkind), intent(out)   :: vec(0:npol,0:npol,nel_fluid)
+  integer, intent(in)                :: iel
+  integer                            :: jpol, ipol, idest, ipt
+
+  do jpol = 0, npol
+     do ipol = 0, npol
+        ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+        idest = igloc_fluid(ipt)
+        vec(ipol,jpol,iel) = gvec_fluid(idest)
+     end do
+  end do
+  
+end subroutine scatter_elem_fluid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
