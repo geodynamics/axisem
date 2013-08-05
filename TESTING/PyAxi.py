@@ -160,9 +160,18 @@ def PyAxi(**kwargs):
     ##############################################################
     stdout_param = None
     os.chdir(input['axi_address'])
-    output = subprocess.check_call(['./copytemplates.sh'], stdout = stdout_param)
+    #output = subprocess.check_call(['./copytemplates.sh'], stdout = stdout_param)
+    output = subprocess.check_call(['cp', os.path.join('.', 'MESHER', 'Makefile.TEMPLATE'), \
+                                        os.path.join('.', 'MESHER', 'Makefile')], stdout = stdout_param)
     if output != 0: print output_print
-
+    output = subprocess.check_call(['cp', os.path.join('.', 'SOLVER', 'Makefile.TEMPLATE'), \
+                                        os.path.join('.', 'SOLVER', 'Makefile')], stdout = stdout_param)
+    if output != 0: print output_print
+    if not os.path.exist(os.path.join('.', 'SOLVER', 'inparam_xdmf')):
+        output = subprocess.check_call(['cp', os.path.join('.', 'SOLVER', 'inparam_xdmf.TEMPLATE'), \
+                                        os.path.join('.', 'SOLVER', 'inparam_xdmf')], stdout = stdout_param)
+    if output != 0: print output_print
+    
     ##############################################################
     ################CREATE make_axisem.macros ####################
     ##############################################################
@@ -533,6 +542,7 @@ def PyAxi(**kwargs):
             inparam_advanced_input.append('TIME_SCHEME     %s\n' %(input['solver_time_scheme']))
             inparam_advanced_input.append('DATA_DIR     "%s"\n' %(input['solver_data_dir']))
             inparam_advanced_input.append('INFO_DIR     "%s"\n' %(input['solver_info_dir']))
+            inparam_advanced_input.append('DIAGNOSTIC_FILE_OUTPUT     "%s"\n' %(input['solver_diag_file_output']))
             inparam_advanced_input.append('MESH_TEST     %s\n' %(input['solver_mesh_test']))
             inparam_advanced_input.append('DEFLATE_LEVEL     %s\n' %(input['solver_deflate_level']))
             inparam_advanced_input.append('SNAPSHOT_DT     %s\n' %(input['solver_snapshot_dt']))
@@ -1212,6 +1222,7 @@ def read_input_file():
     input['solver_time_scheme'] = config.get('SOLVER_ADVANCED', 'TIME_SCHEME')
     input['solver_data_dir'] = config.get('SOLVER_ADVANCED', 'DATA_DIR')
     input['solver_info_dir'] = config.get('SOLVER_ADVANCED', 'INFO_DIR')
+    input['solver_diag_file_output'] = config.get('SOLVER_ADVANCED', 'DIAGNOSTIC_FILE_OUTPUT')
     input['solver_mesh_test'] = config.get('SOLVER_ADVANCED', 'MESH_TEST')
     input['solver_deflate_level'] = config.get('SOLVER_ADVANCED', 'DEFLATE_LEVEL')
     input['solver_snapshot_dt'] = config.get('SOLVER_ADVANCED', 'SNAPSHOT_DT')
