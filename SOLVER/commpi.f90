@@ -320,7 +320,6 @@ subroutine feed_buffer(ic)
   
   ! Fill send buffer
   if (sizesend_solid > 0) then
-     buffs_all(:,ic,:) = 0.d0
      do imsg = 1, sizesend_solid
         sizemsg_solid = sizemsgsend_solid(imsg)
         do ip = 1, sizemsg_solid
@@ -332,7 +331,6 @@ subroutine feed_buffer(ic)
   
   ! Fill receive buffer
   if (sizerecv_solid > 0) then 
-     buffr_all(:,ic,:) = 0.d0
      do imsg = 1, sizerecv_solid
         sizemsg_solid = sizemsgrecv_solid(imsg)
         do ip = 1, sizemsg_solid
