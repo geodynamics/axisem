@@ -443,7 +443,7 @@ def PyAxi(**kwargs):
             search = 'USE_NETCDF'
             num = 0
             for i in range(0, len(makefile_read)):
-                if makefile_read[i].find(search) != -1:
+                if makefile_read[i].startswith(search):
                     if input['netCDF'] == 'Y':
                         makefile_read[i] = 'USE_NETCDF = true' + '\n'
                     else:
@@ -727,10 +727,13 @@ def PyAxi(**kwargs):
                 sys.stdout.write('Copy the input...')
                 sys.stdout.flush()
 
-            while not os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])):
-                time.sleep(2)
-                print 'Waiting for %s to be created' \
-                        %(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
+            if not os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])):
+                print 'WARNING: $s is not created! Wait for 10 sec and re-check.' \
+                            %(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
+                time.sleep(10)
+                if not os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])):
+                    sys.exit('...ERROR...%s is not created.' 
+                            %(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])))
             subprocess.check_call(['cp', input['inpython_address'],
                         os.path.join(input['axi_address'], 'SOLVER', input['solver_name'], "inpython.cfg")])
             print 'DONE'
@@ -748,6 +751,12 @@ def PyAxi(**kwargs):
             print_output = "Just after 2 seconds!"
             
             if input['source_type'] == 'sourceparams':
+                if not os.path.exists('OUTPUT_' + input['solver_name']):
+                    print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
+                                %('OUTPUT_' + input['solver_name'])
+                    time.sleep(10)
+                    if not os.path.exists('OUTPUT_' + input['solver_name']):
+                        sys.exit('...ERROR...%s is not created.' %('OUTPUT_' + input['solver_name']))
                 while (test == -1):
                     output_file_open =  open('OUTPUT_' + input['solver_name'], 'r')
                     output_file_read = output_file_open.readlines()
@@ -760,6 +769,39 @@ def PyAxi(**kwargs):
                     time.sleep(2)
                     
             elif input['source_type'] == 'cmtsolut':
+                
+                if not os.path.exists(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY')):
+                    print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
+                                %(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'))
+                    time.sleep(10)
+                    if not os.path.exists(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY')):
+                        sys.exit('...ERROR...%s is not created.' 
+                                    %(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY')))
+                
+                if not os.path.exists(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY')):
+                    print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
+                                %(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'))
+                    time.sleep(10)
+                    if not os.path.exists(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY')):
+                        sys.exit('...ERROR...%s is not created.' 
+                                    %(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY')))
+  
+                if not os.path.exists(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ')):
+                    print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
+                                %(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'))
+                    time.sleep(10)
+                    if not os.path.exists(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ')):
+                        sys.exit('...ERROR...%s is not created.' 
+                                    %(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ')))
+ 
+                if not os.path.exists(os.path.join('MZZ', 'OUTPUT_MZZ')):
+                    print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
+                                %(os.path.join('MZZ', 'OUTPUT_MZZ'))
+                    time.sleep(10)
+                    if not os.path.exists(os.path.join('MZZ', 'OUTPUT_MZZ')):
+                        sys.exit('...ERROR...%s is not created.' 
+                                    %(os.path.join('MZZ', 'OUTPUT_MZZ')))
+
                 while (test_1 == -1 or test_2 == -1 or test_3 == -1 or test_4 == -1):
                         output_file_open =  open(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'), 'r')
                         output_file_read = output_file_open.readlines()
