@@ -158,17 +158,36 @@ def PyAxi(**kwargs):
     ##############################################################
     ######################COPY TEMPLATES #########################
     ##############################################################
-        
     stdout_param = None
     os.chdir(input['axi_address'])
     output = subprocess.check_call(['./copytemplates.sh'], stdout = stdout_param)
     if output != 0: print output_print
+
+    ##############################################################
+    ################CREATE make_axisem.macros ####################
+    ##############################################################
+    print '\nCreating the make_axisem.macros...',
+    os.chdir(input['axi_address'])
+    make_axisem_fio = open(os.path.join('./make_axisem.macros'), 'w')
+    make_axisem_ls = []
+    make_axisem_ls.append('MPIRUN = %s \n' %(input['make_axisem_mpirun']))
+    make_axisem_ls.append('USE_NETCDF = %s \n' %(input['make_axisem_use_netcdf']))
+    make_axisem_ls.append('NETCDF_PATH = %s \n' %(input['make_axisem_netcdf_path']))
+    make_axisem_ls.append('CC = %s \n' %(input['make_axisem_CC']))
+    make_axisem_ls.append('FC = %s \n' %(input['make_axisem_FC']))
+    make_axisem_ls.append('FFLAGS = %s \n' %(input['make_axisem_FFLAGS']))
+    make_axisem_ls.append('CFLAGS = %s \n' %(input['make_axisem_CFLAGS']))
+    make_axisem_ls.append('LDFLAGS = %s \n' %(input['make_axisem_LDFLAGS']))
+    for make_axi_item in make_axisem_ls:
+        make_axisem_fio.writelines(make_axi_item)
+    make_axisem_fio.close()
+    print 'DONE'
         
     ##############################################################
     ############################# MESHER #########################
     ##############################################################
     t1_mesher = time.time()
-    
+
     if input['mesher'] != 'N':
         print "\n======"
         print "MESHER"
@@ -1296,9 +1315,14 @@ def read_input_file():
     input['fmin'] = eval(config.get('MISC', 'FMIN'))
     input['fmax'] = eval(config.get('MISC', 'FMAX'))
    
-    input['make_flag_mesher'] = config.get('MPI', 'MAKE_FLAG_MESHER')
-    input['make_flag_solver'] = config.get('MPI', 'MAKE_FLAG_SOLVER')
-    input['mpi_compiler'] = config.get('MPI', 'MPI_COMPILER')
+    input['make_axisem_mpirun'] = config.get('MAKE_AXISEM', 'MPIRUN')
+    input['make_axisem_use_netcdf'] = config.get('MAKE_AXISEM', 'USE_NETCDF')
+    input['make_axisem_netcdf_path'] = config.get('MAKE_AXISEM', 'NETCDF_PATH')
+    input['make_axisem_CC'] = config.get('MAKE_AXISEM', 'CC')
+    input['make_axisem_FC'] = config.get('MAKE_AXISEM', 'FC')
+    input['make_axisem_FFLAGS'] = config.get('MAKE_AXISEM', 'FFLAGS')
+    input['make_axisem_CFLAGS'] = config.get('MAKE_AXISEM', 'CFLAGS')
+    input['make_axisem_LDFLAGS'] = config.get('MAKE_AXISEM', 'LDFLAGS')
     
     input['test'] = config.get('TEST', 'TEST')
     input['test_folder'] = config.get('TEST', 'TEST_FOLDER')
