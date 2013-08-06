@@ -732,7 +732,10 @@ subroutine pcheck(test, errmsg)
   if (nproc > 1) then
      call ppcheck(test, errmsg)
   else
-     print '(a)', trim(parse_nl(errmsg))
+     if (test) then
+        print '(a)', trim(parse_nl(errmsg))
+        stop
+     endif
   endif
 
 end subroutine pcheck
