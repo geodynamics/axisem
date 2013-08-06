@@ -41,7 +41,7 @@
 module commun
   
   use global_parameters
-  use data_mesh, ONLY : gvec_solid,gvec_fluid
+  !use data_mesh, ONLY : gvec_solid, gvec_fluid
   use commpi ! comment out for serial
   use data_proc
   
@@ -50,12 +50,6 @@ module commun
   public :: gather_elem_solid, scatter_elem_solid
   public :: gather_elem_fluid, scatter_elem_fluid
   public :: pdistsum_solid, pdistsum_fluid
-  public :: assemb_sum_solid, assemb_3sum_solid ! energy in solid
-  public :: assemb_sum_fluid, assemb_2sum_fluid ! energy in fluid
-  
-  public :: assemb_sum_solid2, assemb_3sum_solid2 ! energy in solid
-  public :: assemb_sum_fluid2, assemb_2sum_fluid2 ! energy in fluid
-  public :: glob_sum_solid, glob_sum3_solid, glob_sum_fluid
   
   public :: assembmass_sum_solid, assembmass_sum_fluid ! assemble and sum massmat
   public :: broadcast_int, broadcast_dble, broadcast_char, broadcast_log
@@ -123,6 +117,7 @@ subroutine pdistsum_solid(vec, nc)
      ! Gather element boundaries
      gvec_solid(:) = 0.d0
      ipt = 1
+
      do iel = 1, nel_solid
          
         jpol = 0
@@ -263,6 +258,7 @@ subroutine pdistsum_fluid(vec)
   
   use data_numbering,   only: igloc_fluid
   use data_time,        only: idmpi, iclockmpi
+  use data_mesh,        only: gvec_fluid
   use clocks_mod
   
   include 'mesh_params.h' 
@@ -347,6 +343,7 @@ end subroutine pdistsum_fluid
 subroutine gather_elem_fluid(vec, iel)
 
   use data_numbering,   only: igloc_fluid
+  use data_mesh,        only: gvec_fluid
   include 'mesh_params.h' 
   
   real(kind=realkind), intent(in)    :: vec(0:npol,0:npol,nel_fluid)
@@ -369,6 +366,7 @@ end subroutine gather_elem_fluid
 subroutine scatter_elem_fluid(vec, iel)
      
   use data_numbering,   only: igloc_fluid
+  use data_mesh,        only: gvec_fluid
   include 'mesh_params.h' 
   
   real(kind=realkind), intent(out)   :: vec(0:npol,0:npol,nel_fluid)
@@ -463,7 +461,8 @@ end subroutine mpi_asynch_messaging_test_solid
 !! the time loop.
 subroutine mpi_asynch_messaging_test_fluid
   
-  use data_numbering, only: igloc_fluid
+  use data_numbering,   only: igloc_fluid
+  use data_mesh,        only: gvec_fluid
   
   include 'mesh_params.h' 
   
@@ -507,7 +506,8 @@ end subroutine mpi_asynch_messaging_test_fluid
 !-----------------------------------------------------------------------------
 subroutine assembmass_sum_solid(f1,res)
 
-  use data_numbering, only: igloc_solid
+  use data_numbering,   only: igloc_solid
+  use data_mesh,        only: gvec_solid
   include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid)
@@ -532,268 +532,10 @@ end subroutine assembmass_sum_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine assemb_sum_solid(f1,f2,res,nc)
-
-  use data_numbering, only: igloc_solid
-  include 'mesh_params.h'
-  
-  integer, intent(in)   :: nc
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid,nc), &
-                                       f2(0:npol,0:npol,nel_solid,nc)
-  real(kind=realkind), intent(out)  :: res
-  integer               :: ic , ipt, idest
-  integer               :: iel, ipol, jpol
-
-  res = 0.d0 
-  
-  do ic = 1, nc
-     gvec_solid(:) = 0.d0
-     do iel = 1, nel_solid
-        do ipol = 0, npol
-           do jpol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              idest = igloc_solid(ipt)
-              gvec_solid(idest) = gvec_solid(idest) + &
-                                    f1(ipol,jpol,iel,ic) * f2(ipol,jpol,iel,ic)
-           end do
-        end do
-     end do
-     res = res + sum(gvec_solid)
-  enddo
-
-  if (nproc>1) res=ppsum(res) ! comment for serial
-
-end subroutine assemb_sum_solid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine glob_sum_solid(f1,res,nc)
-
-  use data_numbering, ONLY: igloc_solid
-  include 'mesh_params.h'
-  
-  integer, intent(in)   :: nc
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid,nc)
-  real(kind=realkind), intent(out)  :: res
-  integer               :: ic , ipt, idest
-  integer               :: iel, ipol, jpol
-
-  res = 0.d0
-
-  do ic = 1, nc
-     gvec_solid(:) = 0.d0
-     do iel = 1, nel_solid
-        do ipol = 0, npol
-           do jpol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              idest = igloc_solid(ipt)
-              gvec_solid(idest) = f1(ipol,jpol,iel,ic)
-           end do
-        end do
-     end do
-     res = res + sum(gvec_solid)
-  enddo
-
-  if (nproc>1) res = ppsum(res) ! comment for serial
-
-end subroutine glob_sum_solid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine glob_sum_fluid(f1,res,nc)
-
-  use data_numbering, only: igloc_fluid
-  include 'mesh_params.h'
-  
-  integer, intent(in)   :: nc 
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_fluid,nc)
-  real(kind=realkind), intent(out)  :: res
-  integer               :: ic , ipt, idest
-  integer               :: iel, ipol, jpol
-
-  res = 0.d0
-
-  do ic = 1, nc 
-     gvec_fluid(:) = 0.d0
-     do iel = 1, nel_fluid
-        do ipol = 0, npol
-           do jpol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              idest = igloc_fluid(ipt)
-              gvec_fluid(idest) = f1(ipol,jpol,iel,ic)
-           end do 
-        end do
-     end do
-     res = res + sum(gvec_fluid)
-  enddo
-
-  if (nproc>1) res=ppsum(res) ! comment for serial
-
-end subroutine glob_sum_fluid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine glob_sum3_solid(f1,f2,res,nc)
-
-  use data_numbering, only: igloc_solid,nglob_solid
-  include 'mesh_params.h' 
-  
-  integer, intent(in)   :: nc
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid,nc)
-  real(kind=realkind), intent(in)   :: f2(0:npol,0:npol,nel_solid)
-  real(kind=realkind), intent(out)  :: res
-  real(kind=realkind)   :: gvec_solid2(nglob_solid)
-  integer               :: ic , ipt, idest
-  integer               :: iel, ipol, jpol
-
-  res = 0.d0
-
-  do ic = 1, nc
-     gvec_solid(:) = 0.d0
-     gvec_solid2(:) = 0.d0
-     do iel = 1, nel_solid
-        do ipol = 0, npol
-           do jpol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              idest = igloc_solid(ipt)
-              gvec_solid(idest) = f1(ipol,jpol,iel,ic)
-              gvec_solid2(idest) = f2(ipol,jpol,iel)
-           end do
-        end do
-     end do
-     res = res + sum(gvec_solid*gvec_solid*gvec_solid2)
-  enddo       
-              
-  if (nproc>1) res=ppsum(res) ! comment for serial
-           
-end subroutine glob_sum3_solid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine assemb_sum_solid2(f1,f2,res,nc)
-
-  use data_numbering, ONLY: igloc_solid,nglob_solid
-  include 'mesh_params.h'
-  
-  integer, intent(in)   :: nc
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid,nc), &
-                                       f2(0:npol,0:npol,nel_solid,nc)
-  real(kind=realkind), intent(out)  :: res
-  real(kind=realkind)   :: gvec_solid2(nglob_solid)
-  integer               :: ic , ipt, idest
-  integer               :: iel, ipol, jpol
-
-  res = 0.d0 
-  
-  do ic = 1, nc
-     gvec_solid(:) = 0.d0
-     gvec_solid2(:) = 0.d0
-     do iel = 1, nel_solid
-        do ipol = 0, npol
-           do jpol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              idest = igloc_solid(ipt)
-              gvec_solid(idest) = gvec_solid(idest) + f1(ipol,jpol,iel,ic)
-              gvec_solid2(idest) = gvec_solid2(idest) + f2(ipol,jpol,iel,ic)
-           end do
-        end do
-     end do
-     
-     do ipt=1,nglob_solid
-        res = res + gvec_solid(ipt)*gvec_solid2(ipt)
-     enddo
-
-  enddo
-
-  if (nproc>1) res = ppsum(res) ! comment for serial
-
-end subroutine assemb_sum_solid2
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine assemb_3sum_solid(f1,res,nc)
-
-  use data_matr,        only : inv_mass_rho 
-  use data_numbering,   only: igloc_solid
-  include 'mesh_params.h' 
-  
-  integer, intent(in)   :: nc
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid,nc)
-  real(kind=realkind), intent(out)  :: res
-  integer               :: ic , ipt, idest
-  integer               :: ielem, ipol, jpol
-
-  res = 0.d0
-  
-  do ic = 1, nc
-
-     gvec_solid(:) = 0.d0
-     do ielem = 1, nel_solid
-        do ipol = 0, npol
-           do jpol = 0, npol
-              ipt = (ielem-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              idest = igloc_solid(ipt)
-              gvec_solid(idest) = gvec_solid(idest) + &
-                                f1(ipol,jpol,ielem,ic)*f1(ipol,jpol,ielem,ic)/&
-                                inv_mass_rho(ipol,jpol,ielem)
-           end do
-        end do
-     end do
-
-     res = res + sum(gvec_solid)
-
-  enddo
-
-  if (nproc>1) res = ppsum(res) ! comment for serial
-
-end subroutine assemb_3sum_solid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine assemb_3sum_solid2(f1,res,nc)
-
-  use data_numbering, ONLY: igloc_solid,nglob_solid
-  use data_matr, ONLY : inv_mass_rho
-  include 'mesh_params.h'
-  
-  integer, intent(in)   :: nc
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid,nc)
-  real(kind=realkind), intent(out)  :: res
-  real(kind=realkind)   :: gvec_solid3(nglob_solid)
-  integer               :: ic , ipt, idest
-  integer               :: iel, ipol, jpol
-
-  res = 0.d0 
-  
-  do ic = 1, nc
-     gvec_solid(:) = 0.d0
-     gvec_solid3(:) = 0.d0
-     do iel = 1, nel_solid
-        do ipol = 0, npol
-           do jpol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-              idest = igloc_solid(ipt)
-              gvec_solid(idest) = gvec_solid(idest) + f1(ipol,jpol,iel,ic)
-              gvec_solid3(idest)=1.d0/inv_mass_rho(ipol,jpol,iel) ! is already assembled
-           end do
-        end do
-     end do
-     
-     do ipt=1,nglob_solid
-        res = res + gvec_solid(ipt)*gvec_solid(ipt)*gvec_solid3(ipt)
-     enddo
-
-  enddo
-
-  if (nproc>1) res = ppsum(res) ! comment for serial
-
-end subroutine assemb_3sum_solid2
-!=============================================================================
-
-!-----------------------------------------------------------------------------
 subroutine assembmass_sum_fluid(f1,res)
 
-  use data_numbering, only: igloc_fluid
+  use data_numbering,   only: igloc_fluid
+  use data_mesh,        only: gvec_fluid
   include 'mesh_params.h' 
   
   real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_fluid)
@@ -818,145 +560,6 @@ subroutine assembmass_sum_fluid(f1,res)
   if (nproc>1) res = ppsum_dble(res) ! comment for serial
 
 end subroutine assembmass_sum_fluid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine assemb_sum_fluid(f1,res)
-
-  use data_matr,        only: inv_mass_fluid
-  use data_numbering,   only: igloc_fluid
-  include 'mesh_params.h' 
-  
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_fluid)
-  real(kind=realkind), intent(out)  :: res
-  integer :: ipt, idest
-  integer :: iel, ipol, jpol
-
-  res = 0.d0
-  
-  gvec_fluid(:) = 0.d0
-  do iel = 1, nel_fluid
-     do ipol = 0, npol
-        do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           idest = igloc_fluid(ipt)
-           gvec_fluid(idest) = gvec_fluid(idest) + f1(ipol,jpol,iel) * &
-                            f1(ipol,jpol,iel)/inv_mass_fluid(ipol,jpol,iel)
-        end do
-     end do
-  end do
-
-  res = res + sum(gvec_fluid)
-  if (nproc>1) res = ppsum(res) ! comment for serial
-
-end subroutine assemb_sum_fluid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine assemb_sum_fluid2(f1,res)
-
-  use data_matr,        only: inv_mass_fluid
-  use data_numbering,   only: igloc_fluid
-  include 'mesh_params.h' 
-  
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_fluid)
-  real(kind=realkind), intent(out)  :: res
-  real(kind=realkind)   :: gvec_fluid3(nglob_fluid)
-  integer               :: ipt, idest
-  integer               :: iel, ipol, jpol
-
-  res = 0.d0
-  gvec_fluid(:) = 0.d0
-  gvec_fluid3(:) = 0.d0
-
-  do iel = 1, nel_fluid
-     do ipol = 0, npol
-        do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           idest = igloc_fluid(ipt)
-           gvec_fluid(idest) = gvec_fluid(idest) + f1(ipol,jpol,iel) 
-           gvec_fluid3(idest)= 1.d0/inv_mass_fluid(ipol,jpol,iel)
-        end do
-     end do
-  end do
-
-  do ipt=1,nglob_fluid
-     res = res + gvec_fluid(ipt)*gvec_fluid(ipt)*gvec_fluid3(ipt)
-  enddo
-
-  if (nproc>1) res = ppsum(res) ! comment for serial
-
-end subroutine assemb_sum_fluid2
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine assemb_2sum_fluid(f1,f2,res)
-
-use data_numbering, ONLY: igloc_fluid
-include 'mesh_params.h'
-
-real(kind=realkind), intent(in)     :: f1(0:npol,0:npol,nel_fluid), &
-                                       f2(0:npol,0:npol,nel_fluid)
-real(kind=realkind), intent(out)    :: res
-integer     :: ipt, idest
-integer     :: iel, ipol, jpol
-
-  res = 0.d0 
-  gvec_fluid(:) = 0.d0
-
-  do iel = 1, nel_fluid
-     do ipol = 0, npol
-        do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           idest = igloc_fluid(ipt)
-           gvec_fluid(idest) = gvec_fluid(idest) + &
-                               f1(ipol,jpol,iel)*f2(ipol,jpol,iel)
-        end do
-     end do
-  end do
-
-  res = res + sum(gvec_fluid)
-  if (nproc>1) res = ppsum(res) ! comment for serial
-
-end subroutine assemb_2sum_fluid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine assemb_2sum_fluid2(f1,f2,res)
-
-  use data_matr,        only: inv_mass_fluid
-  use data_numbering,   only: igloc_fluid
-  include 'mesh_params.h' 
-  
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_fluid), &
-                                       f2(0:npol,0:npol,nel_fluid)
-  real(kind=realkind), intent(out)  :: res
-  real(kind=realkind)   :: gvec_fluid2(nglob_fluid)
-  integer               :: ipt, idest
-  integer               :: iel, ipol, jpol
-
-  res = 0.d0
-  gvec_fluid(:) = 0.d0
-  gvec_fluid2(:) = 0.d0
-
-  do iel = 1, nel_fluid
-     do ipol = 0, npol
-        do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-           idest = igloc_fluid(ipt)
-           gvec_fluid(idest) = gvec_fluid(idest) + f1(ipol,jpol,iel) 
-           gvec_fluid2(idest)=gvec_fluid2(idest) + f2(ipol,jpol,iel) 
-        end do
-     end do
-  end do
-
-  do ipt=1, nglob_fluid
-     res = res + gvec_fluid(ipt) * gvec_fluid2(ipt)
-  enddo
-
-  if (nproc>1) res = ppsum(res) ! comment for serial
-
-end subroutine assemb_2sum_fluid2
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -1048,7 +651,7 @@ end subroutine broadcast_dble
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function pmin(scal)
+real(kind=dp) function pmin(scal)
 
   real(kind=dp)    :: scal
   
@@ -1059,7 +662,7 @@ end function pmin
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function pmax(scal)
+real(kind=dp) function pmax(scal)
 
   real(kind=dp)    :: scal
 
@@ -1103,7 +706,7 @@ end function psum_int
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function psum_dble(scal)
+real(kind=dp) function psum_dble(scal)
 
   real(kind=dp)    :: scal
 
