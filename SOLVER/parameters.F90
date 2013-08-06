@@ -262,15 +262,11 @@ subroutine read_inparam_basic
          case('single')
             src_file_type = 'sourceparams'
          case('force')
-            print *, 'FIXME: Forces needs to be checked!'
-            stop 2
+            stop 'FIXME: Forces need to be implemented!'
          case('moment')
             src_file_type = 'cmtsolut'
          case default
-            if(lpr) then
-               print *, 'SIMULATION_TYPE in inparam_basic has invalid value ', simtype
-            end if
-            stop 2
+            stop 'SIMULATION_TYPE in inparam_basic has invalid value'
          end select
 
        case('RECFILE_TYPE')
@@ -296,7 +292,7 @@ subroutine read_inparam_basic
      end do
      
      close(iinparam_basic)
-     if (lpr .and. verbose > 1) print *, 'done'
+     if (verbose > 1) print *, 'done'
   endif
   
   ! broadcast values to other processors
@@ -316,7 +312,6 @@ end subroutine
 !> get verbosity in the very beginning
 subroutine read_inparam_basic_verbosity
 
-  use data_mesh,   only: meshname
   use commun,      only: broadcast_int
   integer             :: iinparam_basic=500, ioerr
   character(len=256)  :: line
@@ -488,7 +483,7 @@ subroutine read_inparam_advanced
                      dump_xdmf = .true.
                      dump_vtk = .true.
                  case default 
-                     write(6,*)'invalid value for snapshots format!'; stop
+                     stop 'invalid value for snapshots format!'
                  end select
              endif
 
@@ -592,53 +587,33 @@ end subroutine
 !> Checking the consistency of some of the input parameters
 subroutine check_basic_parameters
 
-  if (trim(src_file_type) == 'undefined') then
-      if (lpr) write(6,200) 'SIMULATION_TYPE', 'inparam_basic'
-      stop
-  end if
-  !if (trim(rec_file_type).eq.'undefined') then
-  !    if (lpr) write(6,200) 'RECFILE_TYPE', 'inparam_basic'
-  !    stop
-  !end if
-  if (trim(meshname) == 'undefined') then
-      if (lpr) write(6,200) 'MESHNAME', 'inparam_basic'
-      stop
-  end if
+  character(len=1024) :: errmsg
 
-200 format(A,' is not defined in input file ',A, ', but has to')
+  errmsg = 'SIMULATION_TYPE is not defined in input file inparam_basic'
+  call pcheck(trim(src_file_type) == 'undefined', errmsg)
 
+  errmsg = 'MESHNAME is not defined in input file inparam_basic'
+  call pcheck(trim(meshname) == 'undefined', errmsg)
 
 #ifndef unc
-  if (use_netcdf) then
-     write(6,*) 'ERROR: trying to use netcdf IO but axisem was compiled without netcdf'
-     stop 2
-  endif
+  errmsg = 'trying to use netcdf IO but axisem was compiled without netcdf'
+  call pcheck(use_netcdf, errmsg)
 #endif
 
-  if (src_dump_type == 'anal') then
-     write(6,*) 'ERROR: Analytical source wavefield dump not implemented YET!'
-     stop 2
-  endif
+  errmsg = 'Analytical source wavefield dump not implemented YET!'
+  call pcheck(src_dump_type == 'anal', errmsg)
 
-  if (realkind /= sp .and. realkind /= dp) then
-     if (lpr) then
-        write(6,'(a/a,i4,i4/a,i4/a)') 'PROBLEM with REAL data kind!', &
-                               '... can only handle real kinds', sp, ' or ',dp,'.', &
-                               'real kind here:', realkind, &
-                               'change parameter realkind in global_parameters.f90'
-     endif
-     stop
-  endif
+  write(errmsg ,'(a,a,i4,a,i4,a,a,i4,a)') &
+        'PROBLEM with REAL data kind!\n', &
+        '... can only handle real kinds', sp, ' or ', dp, '.\n', &
+        'real kind here:', realkind, &
+        '\nchange parameter realkind in global_parameters.f90'
+  call pcheck((realkind /= sp .and. realkind /= dp), errmsg)
 
-  if (strain_samp > 15) then
-     if (lpr) then     
-        write(6,*)
-        write(6,*) "!!!!!! NOT GOING ANY FURTHER !!!!!!"
-        write(6,*) "  It's just too much to save 10 frames of strain & velocity"
-        write(6,*) "  per source period! Choose something reasonable."
-     endif
-     stop
-  endif
+  errmsg = "!!!!!! NOT GOING ANY FURTHER !!!!!!\n" &
+        // "  It's just too much to save 10 frames of strain & velocity\n" &
+        // "  per source period! Choose something reasonable."
+  call pcheck(strain_samp > 15, errmsg)
 
   if (enforced_dt > zero) then
      if (lpr) then     
@@ -656,6 +631,8 @@ subroutine check_basic_parameters
 
 14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
 
+  !@ TODO: should this be an ERROR? Do we need dump_snaps_solflu at all given
+  !        the newer options?
   if (dump_vtk .and. dump_snaps_solflu) then 
       if (lpr) then
          write(6,*)''
@@ -686,7 +663,6 @@ subroutine check_basic_parameters
   endif
   write(6,*)
 
-
 end subroutine check_basic_parameters
 !=============================================================================
 
@@ -696,45 +672,39 @@ subroutine compute_numerical_parameters
   use attenuation, only: dump_memory_vars
   include "mesh_params.h"
 
-  real(kind=dp)    :: s,z,r,theta,s_max,dshift
-  real(kind=dp)    :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
-  real(kind=dp)    :: minds(nelem),maxds(nelem),mindz(nelem),maxdz(nelem)
-  integer          :: ielem,ipol,jpol,i
-  logical          :: found_shift
+  real(kind=dp)         :: s,z,r,theta,s_max,dshift
+  real(kind=dp)         :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
+  real(kind=dp)         :: minds(nelem),maxds(nelem),mindz(nelem),maxdz(nelem)
+  integer               :: ielem,ipol,jpol,i
+  logical               :: found_shift
+  character(len=1024)   :: errmsg
 
-  if (lpr) then
-     write(6,*)
-     write(6,*)'  Computing numerical parameters...'
-  endif
-
+  if (lpr .and. verbose > 1) write(6,'(/,a)') '  Computing numerical parameters...'
 
   ! Overwrite time step or source period if demanded by input
-  if (enforced_dt>zero) then
+  if (enforced_dt > zero) then
      if (time_scheme=='newmark2' .and. enforced_dt>deltat .or. & 
           time_scheme=='symplec4' .and. enforced_dt>1.5*deltat .or. &
           time_scheme=='SS_35o10' .and. enforced_dt>3.0*deltat  ) then 
-        if (lpr) then 
-           write(6,*)
-           write(6,*)'PROBLEM: Time step larger than allowed by mesh!'
-           write(6,*)'Chosen value (in inparam file) [s] :',enforced_dt
-           write(6,*)'Maximal time step for this mesh [s]:',deltat
-           write(6,*)'Change time step in input file to lower than this max.'
-           write(6,*)'or to zero to use precalculated (recommended)'
-        endif
-        stop
+        write(errmsg,*) &
+              'PROBLEM: Time step larger than allowed by mesh!\n', &
+              'Chosen value (in inparam file) [s] :', enforced_dt, '\n', &
+              'Maximal time step for this mesh [s]:', deltat, '\n', &
+              'Change time step in input file to lower than this max\n', &
+              'or to zero to use precalculated (recommended)'
+        print *, 'bla'
+        call pcheck(.true., errmsg)
      else
-        if (lpr) then 
-           write(6,*)
-           write(6,*)'    WARNING: Time step smaller than necessary by mesh!'
-           write(6,20)enforced_dt,deltat
-           write(6,19)100.-enforced_dt/deltat*100.
+        if (lpr .and. verbose > 1) then 
+           write(6,'(/,a)')'    WARNING: Time step smaller than necessary by mesh!'
+           write(6,20) enforced_dt, deltat
+           write(6,19) 100. - enforced_dt / deltat * 100.
         endif
-        deltat=enforced_dt
+        deltat = enforced_dt
      endif
   else
-     if (lpr) then 
-        write(6,*)
-        write(6,*)'    Using time step precalculated by the mesher:',deltat
+     if (lpr .and. verbose > 1) then 
+        write(6,'(/,a)')'    Using time step precalculated by the mesher:',deltat
      endif
   endif
 20 format('     Chosen/maximal time step [s]:',2(f7.3))
@@ -1640,9 +1610,9 @@ end subroutine create_kernel_header
 
 !-----------------------------------------------------------------------------
 !< Checking some mesh parameters and message parsing
-subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
-                       curvel_solid,linel_solid,seminoel_solid,semisoel_solid,&
-                       curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid)
+subroutine check_parameters(hmaxglob, hminglob, curvel, linel, seminoel, semisoel,  &
+                       curvel_solid, linel_solid, seminoel_solid, semisoel_solid, &
+                       curvel_fluid, linel_fluid, seminoel_fluid, semisoel_fluid)
 
     use data_comm
     
@@ -1653,7 +1623,7 @@ subroutine check_parameters(hmaxglob,hminglob,curvel,linel,seminoel,semisoel, &
     integer, intent(in) :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
     integer, intent(in) :: curvel_fluid,linel_fluid,seminoel_fluid,semisoel_fluid
     
-    if (verbose > 1) write(6,*)procstrg,'Checking solid message-passing...'
+    if (verbose > 1) write(6,*) procstrg, 'Checking solid message-passing...'
     if (nproc==1 .and. psum_int(sizesend_solid)>0 ) then 
        write(6,*)'Problem: Have only one proc but want to send messages..'
        stop
