@@ -1429,7 +1429,7 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
   character(len=3), intent(in)      :: param !rho, vs,vp
 
   real(kind=dp)   , allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
-  integer           :: ndisctmp, i, ndisctmp2, ind(2)
+  integer           :: ndisctmp, i, ind(2)
   logical           :: bkgrdmodelfile_exists
   real(kind=dp)     :: w(2), wsum
 
