@@ -1107,8 +1107,6 @@ subroutine arbitr_discont
 
   integer :: idom, junk
   logical :: bkgrdmodelfile_exists
-  real(kind=dp)    :: disc1, disc2, rho2, vp2, vs2
-  
   
   ! Does the file bkgrdmodel".bm" exist?
   inquire(file='external_model.bm', exist=bkgrdmodelfile_exists)
@@ -1181,7 +1179,7 @@ subroutine solar_discont
   use data_grid, only: ri
   ! discontinuities (read in from a file) to be honored by the mesh
   
-  integer :: idom,ndisctmp,ii,ind
+  integer :: idom,ndisctmp,ind
   logical :: bkgrdmodelfile_exists
   real(kind=dp)    :: disc1,disc2,rho2,vp2,vs2
   real(kind=dp)   , allocatable :: vptmp(:,:),vstmp(:,:),rhotmp(:,:),disconttmp(:)
