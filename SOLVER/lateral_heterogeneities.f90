@@ -339,7 +339,7 @@ end subroutine read_param_hetero
 subroutine rotate_hetero(r,th)
 
     real(kind=dp)   ,intent(inout) :: r,th
-    real(kind=dp)    :: x_vec(3), x_vec_rot(3), r_r, arg1
+    real(kind=dp)    :: x_vec(3), x_vec_rot(3), r_r
 
     x_vec(1) = r * dsin(th)
     x_vec(2) = 0.d0
@@ -478,7 +478,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
 
     integer                         :: hetind
     real(kind=dp)   , allocatable   :: w(:)
-    integer                         :: iel, ipol, jpol, i, j
+    integer                         :: iel, ipol, jpol, j
     integer                         :: num_het_pts
     real(kind=dp)                   :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
     real(kind=dp)                   :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
@@ -1119,8 +1119,7 @@ subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
     real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(out)   :: rhopost, &
                                                                        lambdapost, mupost
     integer         :: hetind
-    real(kind=8)    :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
-    real(kind=8)    :: vptmp, vstmp, rhotmp, th, r
+    real(kind=8)    :: vptmp, vstmp, th, r
     integer         :: iel, ipol, jpol, icount, i
     real(kind=8)    :: rand
     real(kind=8), allocatable :: r_rad(:), rand_rad(:), r_radtmp(:), rand_radtmp(:)
@@ -1329,11 +1328,11 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
                                                                        lambdapost, mupost
     integer, intent(in)                                             :: hetind
 
-    real(kind=dp)    :: t, decay, shift_fact, max_delta_vp, max_delta_vs, max_delta_rho
-    real(kind=dp)    :: vptmp, vstmp, rhotmp, s, z, r, th, gauss_val
+    real(kind=dp)    :: decay
+    real(kind=dp)    :: vptmp, vstmp, s, z, r, th, gauss_val
     real(kind=dp)    :: r_center_gauss, th_center_gauss
-    real(kind=dp)    :: s_center_gauss, z_center_gauss, halfwidth_r, halfwidth_th
-    real(kind=dp)   , allocatable :: rhet(:), thhet(:), phhet(:) 
+    real(kind=dp)    :: halfwidth_r, halfwidth_th
+    real(kind=dp)   , allocatable :: rhet(:), thhet(:)
 
     ! start elastic property values
     real(kind=dp)    :: vpst, vsst, rhost
@@ -1346,7 +1345,7 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
     real(kind=dp)    :: grad_halfwidth_r, grad_halfwidth_th
     real(kind=dp)    :: grad_r_het, grad_th_het2, grad_th_het1
     real(kind=dp)    :: dr_outer, dr_inner, dth_outer, dth_inner
-    real(kind=dp)    :: val, dro, dru, grad_th_val, gradwidth, grad_val
+    real(kind=dp)    :: val, gradwidth
 
     if (het_funct_type(hetind) == 'gauss') then 
        decay = 3.5d0
