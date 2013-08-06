@@ -411,10 +411,18 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
   current = .false.
   
   ! 10 : outer core (Michel P.)
+  !@TODO why ndisc-1? what about models where the fluid is not the second last
+  !      domain???
   if (idom /= ndisc-1  .and. solid_domain(idom)) then 
      velo = velocity(current_radius,'v_s',idom,bkgrdmodel,lfbkgrdmodel)
   else
-     velo = velocity(current_radius,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
+     !@TODO: add a prefactor here to make smaller elements in outer core and
+     !       reduce dispersion error in outer core!
+     !       Outer Core P-Waves see a lot more dispersion error than in the
+     !       mantle, due to beeing on the resolution edge. But as the fluid is
+     !       really cheap, we could just make the elements smaller...
+     !velo = .9 * velocity(current_radius,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
+     velo = 1. * velocity(current_radius,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
   end if
   ns_trial = estimate_ns(pts_wavelngth,current_radius,velo,period)
   icount_glob = icount_glob+1
