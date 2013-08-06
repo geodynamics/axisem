@@ -81,15 +81,16 @@ subroutine ppcheck(test, errmsg)
 
   if (errsum == nproc) then
      if (mynum == 0) &
-        print '(a,/,a)', 'ERROR on all ranks, error message:', trim(parse_nl(errmsg))
+        print '(/,a,/,/,a,/)', 'ERROR on all ranks, error message:', &
+                                trim(parse_nl(errmsg))
   elseif (errsum > 0 .and. err > 0) then
-     print '(a,i4,a,/,a)', 'local ERROR on rank ', mynum, ', error message:', &
+     print '(/,a,i4,a,/,/,a,/)', 'local ERROR on rank ', mynum, ', error message:', &
            trim(parse_nl(errmsg))
   endif
 
   call mpi_barrier(MPI_COMM_WORLD, ierror)
 
-  stop
+  if (errsum > 0) stop
 
 end subroutine
 !=============================================================================
