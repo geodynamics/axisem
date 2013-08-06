@@ -54,7 +54,7 @@ module commun
   public :: broadcast_int, broadcast_dble, broadcast_char, broadcast_log
   public :: pinit, pend
   public :: pmin, pmax, pmax_int, psum, psum_int, psum_dble
-  public :: barrier
+  public :: barrier, pcheck
   public :: mpi_asynch_messaging_test_solid, mpi_asynch_messaging_test_fluid
   private
 
@@ -731,11 +731,9 @@ subroutine pcheck(test, errmsg)
   
   if (nproc > 1) then
      call ppcheck(test, errmsg)
-  else
-     if (test) then
-        print '(a)', trim(parse_nl(errmsg))
-        stop
-     endif
+  elseif (test) then
+     print '(/,a,/,/,a,/)', 'ERROR:', trim(parse_nl(errmsg))
+     stop
   endif
 
 end subroutine pcheck
