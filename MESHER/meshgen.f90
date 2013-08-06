@@ -360,37 +360,43 @@ subroutine def_reference_spherical_grid_discont
 
   ! FIRST DEFINE PARAMETERS FOR ASSOCIATED CYLINDRICAL/CARTESIAN GRID
 
-  ns=ns_glob ! inherited from discont_meshing routine
-  nz=nz_glob ! inherited from discont_meshing routine 
-  ri=rmin/router
-  ro=1.
+  ns = ns_glob ! inherited from discont_meshing routine
+  nz = nz_glob ! inherited from discont_meshing routine 
+  ri = rmin/router
+  ro = 1.
   allocate(dz(1:nz))
   do iz = 1, nz
-    dz(iz)=2.d0*dz_glob(nz-iz+1)/(router-rmin)
+    dz(iz) = 2.d0 * dz_glob(nz-iz+1) / (router-rmin)
   end do
 
   if (dump_mesh_info_screen) then
-   write(6,*)'ns,nz,ri,ro:', ns,nz,ri,ro
-   write(6,*)'dz', dz(:)
-   write(6,*)'SUM(dz):', SUM(dz)
+     write(6,*)  'ns,nz,ri,ro:', ns,nz,ri,ro
+     write(6,*)  'dz', dz(:)
+     write(6,*)  'SUM(dz):', SUM(dz)
   end if
 
   ! Total number of points (soon to be corners)  in the non-coarsened shell
-  npts=(ns+1)*(nz+1)
+  npts = (ns + 1) * (nz + 1)
 
   if (dump_mesh_info_screen) then
-   write(6,*)'CHECK PARAMS 4 ri,ro,router,nz,ns:',ri,ro,router,nz,ns;call flush(6)
+     write(6,*)'CHECK PARAMS 4 ri,ro,router,nz,ns:',ri,ro,router,nz,ns
+     call flush(6)
   end if
-  allocate(s_unif(npts),z_unif(npts)) ; s_unif(:) = 0.d0 ; z_unif(:) = 0.d0
+
+  allocate(s_unif(npts),z_unif(npts))
+  s_unif(:) = 0.d0
+  z_unif(:) = 0.d0
+  
   allocate(crd_grdc(1:ns+1,1:nz+1,2),crd_grds(1:ns+1,1:nz+1,2))
-  crd_grdc(:,:,:) = 0.d0 ;  crd_grds(:,:,:) = 0.d0
+  crd_grdc(:,:,:) = 0.d0
+  crd_grds(:,:,:) = 0.d0
 
   ! Define coordinates in the parent square
-  call def_ref_cart_coordinates_discont(ns,nz,crd_grdc,dz)
+  call def_ref_cart_coordinates_discont(ns, nz, crd_grdc, dz)
   
   ! In order to use analytic mapping to get coordinates 
   ! 1) Define control nodes to define shell geometry (Northern H)
-  call def_control_nodes(crd_control_nodes,ri,ro)
+  call def_control_nodes(crd_control_nodes, ri, ro)
   
   ! 2) Use the map_spheroid function
   call def_mapped_coordinates(ns,nz,crd_grds,crd_grdc,crd_control_nodes)
@@ -439,7 +445,8 @@ subroutine def_mapped_coordinates(ns1, nz1, crds, crdc, crd_cont)
 
   do iz = 1,nz1+1
      do is = 1,ns1+1
-        xi = crdc(is,iz,1) ; eta = crdc(is,iz,2)
+        xi = crdc(is,iz,1)
+        eta = crdc(is,iz,2)
         crds(is,iz,1) = map_spheroid(xi,eta,crd_cont,1)
         crds(is,iz,2) = map_spheroid(xi,eta,crd_cont,2)
      end do
@@ -1017,37 +1024,33 @@ subroutine define_central_region
      open(unit=47,file=diagpath(1:lfdiag)//'/fort.47')
      open(unit=48,file=diagpath(1:lfdiag)//'/fort.48')
   end if
-  do ix=1,2*ndivs+1
+
+  do ix=1, 2*ndivs+1
      maxy=int(min(ix,ceiling(dble(ix)/2.)+1))
      if (dump_mesh_info_screen) write(6,*)'CENTR: ix,maxy',ix,maxy
-     do iy=1,maxy
-        rad=dble(ix)/dble(2*ndivs+1)*(ri-maxh_icb/router)
+     do iy=1, maxy
+        rad = dble(ix) / dble(2*ndivs+1) * (ri-maxh_icb/router)
         ! linear
-        p=dble(ix)/dble(2*ndivs)+1.
-        ! quadratic
-        !p=(dble(ix)/dble(2*ndivs))**2+1.
-        ! cubic
-        !p=(dble(ix)/dble(2*ndivs))**3+1.
+        p = dble(ix) / dble(2*ndivs)+1.
 
-        if (iy>1) then
-          angle=tan( pi/2.d0 * ( 1 - dble(iy-1)/dble(ix) ) )
-          y=rad/(angle**p+1.d0)**(1.d0/p)
+        if (iy > 1) then
+          angle = tan( pi/2.d0 * ( 1 - dble(iy-1)/dble(ix) ) )
+          y = rad / (angle**p + 1.d0)**(1.d0/p)
         else 
-          angle=0.d0
-          y=0.d0;
+          angle = 0.d0
+          y = 0.d0;
         endif
-        x=dble(( rad**p-abs(y)**p )**(1.d0/p))
-
+        x = dble(( rad**p-abs(y)**p )**(1.d0/p))
 
         ! compute s,z coordinates in rotated frame and indices
         if (mod(ix,2)==0) then
 
            !   below diagonal, s>=z
-           s_arr(int(ix/2)+1,maxy-iy+1)=x+y 
-           z_arr(int(ix/2)+1,maxy-iy+1)=x-y
+           s_arr(int(ix/2)+1,maxy-iy+1) = x + y 
+           z_arr(int(ix/2)+1,maxy-iy+1) = x - y
            !   above diagonal, s<z (switched indices, negative y)
-           s_arr(maxy-iy+1,int(ix/2)+1)=x-y
-           z_arr(maxy-iy+1,int(ix/2)+1)=x+y
+           s_arr(maxy-iy+1,int(ix/2)+1) = x - y
+           z_arr(maxy-iy+1,int(ix/2)+1) = x + y
 
            if (dump_mesh_info_files) then  
               write(46,*)y,x
@@ -1065,8 +1068,8 @@ subroutine define_central_region
   end if
 
   ! earth center
-  s_arr(1,1)=zero
-  z_arr(1,1)=zero
+  s_arr(1,1) = zero
+  z_arr(1,1) = zero
 
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! TNM MAY 2007: Apply stretching for 45-deg pathological elements
@@ -1083,13 +1086,15 @@ subroutine define_central_region
   if (dump_mesh_info_files) then 
      open(unit=5559,file=diagpath(1:lfdiag)//'/fort.5559') 
   end if
-  do is=2,ndivs+1
-     do iz=2,ndivs+1
-        if ( is==iz )  then
-           p=0.5d0*(s_arr(is,iz)-s_arr(is-1,iz-1))*dble(is)/dble(ndivs)
+  
+  do is=2, ndivs+1
+     do iz=2, ndivs+1
+        !@ TODO this is a stupid loop
+        if (is == iz)  then
+           p = 0.5d0 * (s_arr(is,iz) - s_arr(is-1,iz-1)) * dble(is) / dble(ndivs)
            if (dump_mesh_info_files) write(5559,*)is,iz,p,s_arr(is,iz)
-           s_arr(is,iz) = s_arr(is,iz)+p
-           z_arr(is,iz) = z_arr(is,iz)+p
+           s_arr(is,iz) = s_arr(is,iz) + p
+           z_arr(is,iz) = z_arr(is,iz) + p
            if (dump_mesh_info_files) write(5559,*)is,iz,p,s_arr(is,iz)
         endif
      enddo
@@ -1097,16 +1102,19 @@ subroutine define_central_region
   if (dump_mesh_info_files) then 
      close(5559)
   end if
+  
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  !@TODO add here shrinking of axial elements as in the sperical shell
 
   ! make sure max val is ri
-  s_arr=s_arr/maxval(abs(s_arr))*(ri-maxh_icb/router)
-  z_arr=z_arr/maxval(abs(z_arr))*(ri-maxh_icb/router)
+  s_arr = s_arr / maxval(abs(s_arr)) * (ri - maxh_icb/router)
+  z_arr = z_arr / maxval(abs(z_arr)) * (ri - maxh_icb/router)
 
   if (dump_mesh_info_files) then  
      open(unit=44,file=diagpath(1:lfdiag)//'/fort.44')
      open(unit=45,file=diagpath(1:lfdiag)//'/fort.45')
   end if
+
   do is=1,ndivs+1
      do iz=1,ndivs+1
         ipt = uniform_nodenumber(is,iz,ndivs,npts)
@@ -1116,6 +1124,7 @@ subroutine define_central_region
         if (dump_mesh_info_files) write(45,*) is,iz,s_arr(is,iz),z_arr(is,iz)
      enddo
   enddo
+  
   if (dump_mesh_info_files) then  
      close(44)
      close(45)
@@ -1313,27 +1322,41 @@ subroutine def_ref_cart_coordinates(nst, nzt, crd, inner_shell)
 end subroutine def_ref_cart_coordinates
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
+
   use data_grid
+  use data_bkgrdmodel, only: nc_init
   integer, intent(in) :: nst, nzt
-  real(kind=dp)   , dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
-  real(kind=dp)   , dimension(1:nzt) :: dz
+  real(kind=dp), dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
+  real(kind=dp), dimension(1:nzt) :: dz
 
   integer           :: is, iz 
-  real(kind=dp)     :: ds
-  
-  ds = 2./dble(nst)
+  real(kind=dp)     :: ds1, ds2, sizefac
+ 
+  !sizefac = .75
+  sizefac = 1.
+  !@ TODO this value needs to be tested!
+
+  !Make axial elements a bit smaller, to avoid artifacts from axial integration
+  !scheme
+  ds1 = 2.d0 / dble(nst) * sizefac
+  ds2 = (2.d0 - 2**nc_init * ds1) / dble(nst - 2**nc_init)
+
   do is = 1, nst+1
      do iz = 1, nzt+1
-        crd(is,iz,1) = -1.d0+ dble(is-1) * ds
+        if (is <= 2**nc_init) then
+           crd(is,iz,1) = -1.d0 + dble(is-1) * ds1
+        else
+           crd(is,iz,1) = -1.d0 + 2**nc_init * ds1 + dble(is-1 - 2**nc_init) * ds2
+        endif
      end do
      crd(is,1,2) = -1.d0 
      do iz = 2, nzt+1
         crd(is,iz,2) = crd(is,iz-1,2) +  dz(iz-1)
      end do
   end do
+
 end subroutine def_ref_cart_coordinates_discont
 !-----------------------------------------------------------------------------------------
 
