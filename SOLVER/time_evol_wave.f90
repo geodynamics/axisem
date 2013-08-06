@@ -332,8 +332,7 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
-  
-  integer :: iter, ielem
+  integer :: iter
 
   if (lpr) then
      write(6,*)
@@ -584,27 +583,11 @@ subroutine sf_time_loop_newmark_omp
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: acc0, acc1
   
-  ! solid memory variables + gradient
-  real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
-  real(kind=realkind), allocatable :: memory_var_cg4(:,:,:,:)
-
   ! Fluid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
-  integer   :: dumppoint_ids(3,2)
-  integer   :: myunit
-  
-  integer :: iter, ielem, ic
-
-  if (lpr) then
-     write(6,*)
-     write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
-     write(6,*)'TTTT  2nd-order, acceleration-driven Newmark time scheme TTTTT'
-     write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
-     write(6,*)
-  endif
-
+  integer   :: iter, ielem, ic
 
   disp = zero
   velo = zero 
@@ -619,20 +602,16 @@ subroutine sf_time_loop_newmark_omp
   t = zero
      
   ! omp timeloop for a start only for monopoles
-  if (src_type(1) /= 'monopole') stop
+  if (src_type(1) /= 'monopole') stop 'no monopol'
 
   ! omp timeloop for no mpi parallelization 
-  if (nproc > 1) stop
+  if (nproc > 1) stop 'no mpi'
   
   ! omp timeloop without attenuation 
-  if (anel_true) stop
-
+  if (anel_true) stop 'no anel'
 
   if (lpr) write(6,*) '************ S T A R T I N G   T I M E   L O O P *************'
-  if (verbose > 1) write(69,*) &
-        '************ S T A R T I N G   T I M E   L O O P *************'
 
-  !!$omp parallel shared(acc1, disp) private(ielem)
   !$omp parallel default(shared) private(ielem, iter)
   !$omp single
   !$ print *, 'number of threads: ', omp_get_num_threads()
@@ -648,60 +627,63 @@ subroutine sf_time_loop_newmark_omp
      chi = chi +  deltat * dchi + half_dt_sq * ddchi0
      disp = disp + deltat * velo + half_dt_sq * acc0
      !$omp end workshare
+     
      !$omp single
-
      iclockstiff = tick()
      !$omp end single
+     
      !$omp do
      do ielem = 1, nel_fluid
         call elemental_fluid_stiffness(ddchi1, chi, ielem)
      enddo
      !$omp end do
+    
      !$omp single
      iclockstiff = tick(id=idstiff, since=iclockstiff)
-
      call bdry_copy2fluid(ddchi1, disp)
-
      iclockcomm = tick()
      !call pdistsum_fluid(ddchi1)
      gvec_fluid(:) = 0.d0
      !$omp end single
+     
      !$omp do
      do ielem = 1, nel_fluid
         call gather_elem_fluid(ddchi1, ielem)
      enddo
      !$omp end do
+     
      !$omp do
      do ielem = 1, nel_fluid
         call scatter_elem_fluid(ddchi1, ielem)
      enddo
      !$omp end do
+     
      !$omp single
      iclockcomm = tick(id=idcomm, since=iclockcomm)
-
      !$omp end single
+     
      !$omp workshare
      ddchi1 = - inv_mass_fluid * ddchi1
      !$omp end workshare
-     !$omp single
 
+     !$omp single
      call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
      iclockstiff = tick()
-
      !$omp end single
+     
      !$omp do
      do ielem = 1, nel_solid
         call elemental_stiffness_mono(acc1, disp, ielem)
      enddo 
      !$omp end do
+     
      !$omp single
      iclockstiff = tick(id=idstiff, since=iclockstiff)
-     
      call bdry_copy2solid(acc1, ddchi1)
      call apply_axis_mask_onecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
-
      iclockcomm = tick()
      !$omp end single
+    
      !call pdistsum_solid(acc1, 3) 
      do ic = 1, 3
         !$omp single
@@ -718,25 +700,22 @@ subroutine sf_time_loop_newmark_omp
         enddo
         !$omp end do
      enddo
+     
      !$omp single
      iclockcomm = tick(id=idcomm, since=iclockcomm)
-
      if (have_src) call add_source(acc1, stf(iter))
-
      !$omp end single
+     
      !$omp workshare
      acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
-
      acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
-
      dchi = dchi + half_dt * (ddchi0 + ddchi1)
      velo = velo + half_dt * (acc0 + acc1)
-
      ddchi0 = ddchi1
      acc0 = acc1
      !$omp end workshare
+     
      !$omp single
-
      iclockdump = tick()
      call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
      iclockdump = tick(id=iddump, since=iclockdump)
