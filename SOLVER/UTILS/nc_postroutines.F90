@@ -20,9 +20,11 @@
 !
 
 module nc_routines
+
 #ifdef unc
   use netcdf
 #endif
+
   implicit none
   integer, parameter         :: sp = selected_real_kind(6, 37)
   type ncparamtype
@@ -31,98 +33,118 @@ module nc_routines
       integer, dimension(4)  :: disp_varid, recnam_varid
       integer, dimension(4)  :: phi_varid, theta_varid, thetar_varid
   end type
+
 contains
-  subroutine nc_open(ncid, nsim, simdir)
-    implicit none
-    type(ncparamtype), intent(inout)            :: ncid
-    integer, intent(in)                         :: nsim
-    character(len=100), allocatable, intent(in) :: simdir(:)
-    character(len=256)                          :: fnam
-    integer                                     :: isim
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_open(ncid, nsim, simdir)
+  implicit none
+  type(ncparamtype), intent(inout)            :: ncid
+  integer, intent(in)                         :: nsim
+  character(len=100), allocatable, intent(in) :: simdir(:)
+  character(len=256)                          :: fnam
+  integer                                     :: isim
     
 #ifdef unc
-    do isim = 1, nsim
-        fnam = trim(simdir(isim))//'/Data/axisem_output.nc4'
-        write(6,*) 'Opening forward file ', trim(fnam)
-        call check( nf90_open ( path=trim(fnam), mode=NF90_NOWRITE, ncid=ncid%id(isim)))
-        call check( nf90_inq_grp_ncid(ncid%id(isim), "Seismograms", ncid%seis_grpid(isim)) )
-        call check( nf90_inq_varid(ncid%seis_grpid(isim), 'displacement', ncid%disp_varid(isim)) )
-        call check( nf90_inq_varid(ncid%seis_grpid(isim), 'receiver_name', ncid%recnam_varid(isim)))
-        call check( nf90_inq_varid(ncid%seis_grpid(isim), 'azimuths', ncid%phi_varid(isim)))
-        call check( nf90_inq_varid(ncid%seis_grpid(isim), 'distances', ncid%theta_varid(isim)))
-        call check( nf90_inq_varid(ncid%seis_grpid(isim), 'distances_requested', ncid%thetar_varid(isim)))
-    end do
+  do isim = 1, nsim
+      fnam = trim(simdir(isim))//'/Data/axisem_output.nc4'
+      write(6,*) 'Opening forward file ', trim(fnam)
+      call check( nf90_open ( path=trim(fnam), mode=NF90_NOWRITE, ncid=ncid%id(isim)))
+      call check( nf90_inq_grp_ncid(ncid%id(isim), "Seismograms", ncid%seis_grpid(isim)) )
+      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'displacement', &
+                                 ncid%disp_varid(isim)) )
+      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'receiver_name', &
+                                 ncid%recnam_varid(isim)))
+      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'azimuths', ncid%phi_varid(isim)))
+      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'distances', &
+                                 ncid%theta_varid(isim)))
+      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'distances_requested', &
+                                 ncid%thetar_varid(isim)))
+  end do
 #endif
 
 
-  end subroutine nc_open
-!--------------------------------------------------------------------
+end subroutine nc_open
+!-----------------------------------------------------------------------------------------
 
-  subroutine nc_close(ncid)
-    implicit none
-    type(ncparamtype), intent(inout)            :: ncid
+!-----------------------------------------------------------------------------------------
+subroutine nc_close(ncid)
+  implicit none
+  type(ncparamtype), intent(inout)            :: ncid
+
 #ifdef unc
-    integer                                     :: state, isim
-    do isim = 1,4
-        state = nf90_close(ncid%id(isim))
-    end do
+  integer                                     :: state, isim
+  
+  do isim = 1,4
+      state = nf90_close(ncid%id(isim))
+  end do
 #endif
-  end subroutine
 
-!--------------------------------------------------------------------
+end subroutine
+!-----------------------------------------------------------------------------------------
 
-  subroutine nc_read_recnames(ncid, nrec, recname, theta, thetar, phi)
-    type(ncparamtype), intent(in)               :: ncid
-    integer, intent(in)                         :: nrec
-    character(len=40), intent(out)              :: recname(nrec)
-    real(kind=sp), dimension(nrec), intent(out) :: theta, phi, thetar
-    integer                                     :: irec
+!-----------------------------------------------------------------------------------------
+subroutine nc_read_recnames(ncid, nrec, recname, theta, thetar, phi)
+  type(ncparamtype), intent(in)               :: ncid
+  integer, intent(in)                         :: nrec
+  character(len=40), intent(out)              :: recname(nrec)
+  real(kind=sp), dimension(nrec), intent(out) :: theta, phi, thetar
+  integer                                     :: irec
+
 #ifdef unc
-    do irec = 1, nrec
-        call check( nf90_get_var(ncid%seis_grpid(1), ncid%recnam_varid(1), &
-                                 start = (/irec, 1/), &
-                                 count = (/1, 40/), & 
-                                 values = recname(irec)) )
-    end do
-    call check( nf90_get_var(ncid%seis_grpid(1), ncid%phi_varid(1), &
-                             values = phi) )
-    call check( nf90_get_var(ncid%seis_grpid(1), ncid%theta_varid(1), &
-                             values  = theta) )
-    call check( nf90_get_var(ncid%seis_grpid(1), ncid%thetar_varid(1), &
-                             values  = thetar) )
-    thetar = 90. - thetar
-    theta = 90. - theta
+  do irec = 1, nrec
+      call check( nf90_get_var(ncid%seis_grpid(1), ncid%recnam_varid(1), &
+                               start = (/irec, 1/), &
+                               count = (/1, 40/), & 
+                               values = recname(irec)) )
+  end do
+  call check( nf90_get_var(ncid%seis_grpid(1), ncid%phi_varid(1), &
+                           values = phi) )
+  call check( nf90_get_var(ncid%seis_grpid(1), ncid%theta_varid(1), &
+                           values  = theta) )
+  call check( nf90_get_var(ncid%seis_grpid(1), ncid%thetar_varid(1), &
+                           values  = thetar) )
+  thetar = 90. - thetar
+  theta = 90. - theta
   
 #endif
-  end subroutine nc_read_recnames
+end subroutine nc_read_recnames
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------
-  subroutine nc_read_seismograms(ncid, nt, nrec, nsim, seis_snglcomp)
-    implicit none
-    type(ncparamtype), intent(in)  :: ncid
-    integer, intent(in)            :: nt, nrec, nsim
-    real, intent(out)              :: seis_snglcomp(nt,3,nrec,nsim)
-    integer                        :: isim
+!-----------------------------------------------------------------------------------------
+subroutine nc_read_seismograms(ncid, nt, nrec, nsim, seis_snglcomp)
+  implicit none
+  type(ncparamtype), intent(in)  :: ncid
+  integer, intent(in)            :: nt, nrec, nsim
+  real, intent(out)              :: seis_snglcomp(nt,3,nrec,nsim)
+  integer                        :: isim
+
 #ifdef unc
 
-    do isim = 1, nsim
-        call check( nf90_get_var( ncid%seis_grpid(isim), ncid%disp_varid(isim), &
-                                  start=(/1, 1, 1/), &
-                                  count = (/nt, 3, nrec/), &
-                                  values = seis_snglcomp(:,:,:,isim)) )
-    end do
+  do isim = 1, nsim
+      call check( nf90_get_var( ncid%seis_grpid(isim), ncid%disp_varid(isim), &
+                                start=(/1, 1, 1/), &
+                                count = (/nt, 3, nrec/), &
+                                values = seis_snglcomp(:,:,:,isim)) )
+  end do
 #endif
-  end subroutine nc_read_seismograms
-!--------------------------------------------------------------------
-  subroutine check(status)
-  ! Translates netcdf error codes into error messages
-    implicit none
-    integer, intent ( in) :: status
+end subroutine nc_read_seismograms
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine check(status)
+! Translates netcdf error codes into error messages
+  implicit none
+  integer, intent ( in) :: status
+
 #ifdef unc
-    if(status /= nf90_noerr) then 
-      print *, trim(nf90_strerror(status))
-      stop 1
-    end if
+  if(status /= nf90_noerr) then 
+    print *, trim(nf90_strerror(status))
+    stop 1
+  end if
 #endif
-  end subroutine check  
+
+end subroutine check  
+!-----------------------------------------------------------------------------------------
+
 end module nc_routines
