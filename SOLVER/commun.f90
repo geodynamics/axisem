@@ -41,7 +41,6 @@
 module commun
   
   use global_parameters
-  !use data_mesh, ONLY : gvec_solid, gvec_fluid
   use commpi ! comment out for serial
   use data_proc
   
