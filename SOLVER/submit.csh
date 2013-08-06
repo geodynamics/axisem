@@ -23,6 +23,7 @@ else if ( -d $1) then
     exit
 endif
 
+#@TODO What happens if not defined? Checkint these in parameters.F90 is quite late then...
 set datapath = `grep "DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"//g'`
 set infopath = `grep "INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
 set meshdir = "MESHES/"`grep "^MESHNAME" inparam_basic | awk '{print $2}'`
@@ -81,6 +82,9 @@ if ( "$2" == '-q') then
 endif
 
 set multisrc = 'false'
+
+# @TODO grep is not stable if SIMULATION_TYPE is there twice, e.g. in a comment line!!
+
 set srctype = `grep "SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
 if ( $srctype == 'single') then
     set multisrc = 'false'
