@@ -741,26 +741,27 @@ subroutine compute_numerical_parameters
 19 format('     ...lengthens this simulation by',f6.2,' percent!')
 
   ! source period
-  if (enforced_period>zero .and. (trim(stf_type)/='dirac_0' .or. trim(stf_type)/='quheavi') ) then 
-     if (enforced_period<period) then 
+  if (enforced_period > zero &
+       .and. (trim(stf_type)/='dirac_0' .or. trim(stf_type)/='quheavi') ) then 
+     if (enforced_period < period) then 
         if (lpr) then 
            write(6,*)
-           write(6,*)'    WARNING: Period smaller than necessary by mesh!'
+           write(6,*)'    ERROR: Period smaller than necessary by mesh!'
            write(6,*)'    A pulse of this (short) chosen half width will produce numerical '
            write(6,*)'    noise on this (coarse) mesh'
            write(6,21)'   Chosen value (in inparam file):',enforced_period
            write(6,21)'   Minimal period for this mesh  :',period
            write(6,*)'    Change period in input file to larger than this min.'
            write(6,*)'    or to zero to use precalculated (recommended)'
+           stop
         endif
-        t_0=enforced_period
      else
         if (lpr) then 
            write(6,*)
            write(6,*)'    WARNING: Using larger period than necessary by mesh!'
            write(6,23)enforced_period,period
         endif
-        t_0=enforced_period
+        t_0 = enforced_period
      endif
   else 
      if (trim(stf_type)/='dirac_0' .or. trim(stf_type)/='quheavi') then
