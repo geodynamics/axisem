@@ -596,7 +596,7 @@ subroutine dump_wavefields_mesh_1d
   real(kind=dp)   , dimension(:,:,:), allocatable :: ssol, zsol
   real(kind=dp)   , dimension(:,:,:), allocatable :: sflu, zflu
   
-  integer :: iel, ipol,jpol,i
+  integer :: iel, ipol, jpol
   
   ! Dump entire (including duplicate) GLL point grid for displ_only
   if (dump_type=='displ_only') then

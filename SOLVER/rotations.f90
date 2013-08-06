@@ -489,7 +489,6 @@ subroutine save_google_earth_kml(srccolat1, srclon1, rcvcolat, rcvlon, &
 15 format(a46)
 16 format(a11)
 17 format(a7,a9,a10,i4,a7)
-18 format(a36,a4,a14)
 19 format(a24,a15)
 20 format(A18,f8.2,f8.2)
 

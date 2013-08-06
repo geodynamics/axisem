@@ -559,7 +559,7 @@ subroutine glob_stiffness_di(glob_stiffness,u)
   real(kind=realkind), dimension(0:npol,0:npol) :: m11zl, m21zl, m41zl
   
   ! local variables for axial elements
-  real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l, m0_w4l, m0_w5l
+  real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l, m0_w4l
   real(kind=realkind), dimension(0:npol) :: m0_w6l, m0_w7l, m0_w8l, m0_w9l, m0_w10l
   
   ! work arrays

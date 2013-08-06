@@ -65,7 +65,7 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
   character(len=4)                :: appisnap
-  integer                         :: iel, ipol, jpol, iidim
+  integer                         :: iel, iidim
   real(kind=realkind)             :: dsdchi, prefac
   
   ! When reading the fluid wavefield, one needs to multiply all components 
@@ -212,8 +212,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
     real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
     character(len=4)                :: appisnap
-    integer                         :: iel, iidim, ct, ipol, jpol, ipol1, jpol1, i, j
-    real(kind=realkind)             :: dsdchi, prefac
+    integer                         :: iel, ct, ipol, jpol, ipol1, jpol1, i, j
     real(sp), allocatable           :: u(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
     real(kind=realkind)             :: f_sol_spz(0:npol,0:npol,1:nel_solid,3)
     character(len=120)              :: fname
@@ -869,9 +868,8 @@ subroutine dump_velo_global(v,dchi)
   real(kind=realkind),intent(in) :: dchi(:,:,:)
   
   real(kind=realkind)            :: phicomp(0:npol,0:npol,nel_fluid)
-  integer                        :: i, iel
+  integer                        :: i
   character(len=4)               :: appisnap
-  real(kind=realkind)            :: dsdchi(0:npol,naxel_fluid)
   real(kind=realkind)            :: f(0:npol,0:npol,1:nel_solid,3)
   real(kind=realkind)            :: fflu(0:npol,0:npol,1:nel_fluid,3)
   real(kind=realkind)            :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
