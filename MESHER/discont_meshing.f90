@@ -397,23 +397,20 @@ end subroutine create_subregions
 subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz,  &
                          icount_glob, ic, ns_ref)
 
-  integer, intent(in)    :: idom
-  real(kind=dp)   , intent(in)      :: rdisc_bot(ndisc)
-  real(kind=dp)   , intent(inout)   :: current_radius, dz, ds
-  logical, intent(inout) :: current, memorydz
-  integer, intent(inout) :: icount_glob, ic
-  integer, intent(inout) :: ns_ref
+  integer, intent(in)           :: idom
+  real(kind=dp), intent(in)     :: rdisc_bot(ndisc)
+  real(kind=dp), intent(inout)  :: current_radius, dz, ds
+  logical, intent(inout)        :: current, memorydz
+  integer, intent(inout)        :: icount_glob, ic
+  integer, intent(inout)        :: ns_ref
   
-  real(kind=dp)    :: dz_trial
-  real(kind=dp)    :: velo
-  integer:: nz_trial,ns_trial
+  real(kind=dp)                 :: dz_trial
+  real(kind=dp)                 :: velo
+  integer                       :: nz_trial,ns_trial
   
   current = .false.
   
-  ! 10 : outer core (Michel P.)
-  !@TODO why ndisc-1? what about models where the fluid is not the second last
-  !      domain???
-  if (idom /= ndisc-1  .and. solid_domain(idom)) then 
+  if (solid_domain(idom)) then 
      velo = velocity(current_radius,'v_s',idom,bkgrdmodel,lfbkgrdmodel)
   else
      !@TODO: add a prefactor here to make smaller elements in outer core and
