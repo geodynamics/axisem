@@ -1,4 +1,4 @@
-######## INPUT FILE FOR AXISEM (SOLVER): GLOBAL WAVE PROPAGATION IN
+################# INPUT FILE FOR AXISEM (SOLVER) ###############################
 
 # Choose simulation type, allowed options:
 # single: Simulation of one elemental source. Set sourceparams.dat for the
@@ -8,7 +8,7 @@
 
 SIMULATION_TYPE   single
 
-#### SIMULATION PARAMETERS ####
+######################## SIMULATION PARAMETERS ################################
 # Choose desired seismogram length 
 
 SEISMOGRAM_LENGTH  1800.
@@ -19,10 +19,11 @@ SEISMOGRAM_LENGTH  1800.
 #           and station name (default)
 # database: One station at each GLL point, arbitrary station locations 
 #           can be reconstructed from this.
+
 RECFILE_TYPE      stations 
 
 
-#### MODEL / MESH ####
+############################# MODEL / MESH ####################################
 # Choose Mesh (local subdirname in SOLVER/MESHES directory)
 # N.B. The mesh controls the velocity model and the number of CPUs
 
@@ -31,20 +32,15 @@ MESHNAME            PREMlight_2CPUs
 # Use lateral heterogeneities (aka 2.5D model).
 # The model has to be described in inparam_hetero (default: false)
 
-# LAT_HETEROGENEITY  .false. 
+LAT_HETEROGENEITY  .false. 
 
 
 # Include viscoelastic attenuation (details in inparam_advanced)
 ATTENUATION         true 
 
-#### WAVEFIELD SNAPSHOTS #####################################
+######################## WAVEFIELD SNAPSHOTS ##################################
 # Save wavefield snapshots for visualization (default: false)
 # more details in inparam_advanced
 
-#SAVE_SNAPSHOTS         true  
+SAVE_SNAPSHOTS         false  
 
-# Set verbosity of the code, allowed values:
-# 0: only errors
-# 1: errors plus some information (default)
-# 2: extra stories for spare time
-VERBOSITY               1

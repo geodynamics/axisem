@@ -313,7 +313,7 @@ end subroutine
 subroutine read_inparam_basic_verbosity
 
   use commun,      only: broadcast_int
-  integer             :: iinparam_basic=500, ioerr
+  integer             :: iinparam_advanced=500, ioerr
   character(len=256)  :: line
   character(len=256)  :: keyword, keyvalue
 
@@ -326,10 +326,10 @@ subroutine read_inparam_basic_verbosity
      keyword = ' '
      keyvalue = ' '
      
-     open(unit=iinparam_basic, file='inparam_basic', status='old', action='read',  iostat=ioerr)
-     if (ioerr /= 0) stop 'Check input file ''inparam_basic''! Is it still there?' 
+     open(unit=iinparam_advanced, file='inparam_advanced', status='old', action='read',  iostat=ioerr)
+     if (ioerr /= 0) stop 'Check input file ''inparam_advanced''! Is it still there?' 
      do
-         read(iinparam_basic, fmt='(a256)', iostat=ioerr) line
+         read(iinparam_advanced, fmt='(a256)', iostat=ioerr) line
          if (ioerr < 0) exit
          if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
 
@@ -337,7 +337,7 @@ subroutine read_inparam_basic_verbosity
      
          if (trim(keyword) == 'VERBOSITY') read(keyvalue, *) verbose
      end do
-     close(iinparam_basic)
+     close(iinparam_advanced)
   endif
   
   ! broadcast verbosity to other processors
