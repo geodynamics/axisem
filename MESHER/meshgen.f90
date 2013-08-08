@@ -1088,16 +1088,11 @@ subroutine define_central_region
   end if
   
   do is=2, ndivs+1
-     do iz=2, ndivs+1
-        !@ TODO this is a stupid loop
-        if (is == iz)  then
-           p = 0.5d0 * (s_arr(is,iz) - s_arr(is-1,iz-1)) * dble(is) / dble(ndivs)
-           if (dump_mesh_info_files) write(5559,*)is,iz,p,s_arr(is,iz)
-           s_arr(is,iz) = s_arr(is,iz) + p
-           z_arr(is,iz) = z_arr(is,iz) + p
-           if (dump_mesh_info_files) write(5559,*)is,iz,p,s_arr(is,iz)
-        endif
-     enddo
+     p = 0.5d0 * (s_arr(is,is) - s_arr(is-1,is-1)) * dble(is) / dble(ndivs)
+     if (dump_mesh_info_files) write(5559,*)is,is,p,s_arr(is,is)
+     s_arr(is,is) = s_arr(is,is) + p
+     z_arr(is,is) = z_arr(is,is) + p
+     if (dump_mesh_info_files) write(5559,*)is,is,p,s_arr(is,is)
   enddo
   if (dump_mesh_info_files) then 
      close(5559)
