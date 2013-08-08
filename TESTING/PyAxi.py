@@ -613,10 +613,10 @@ def PyAxi(**kwargs):
                     output_file_open =  open('OUTPUT_' + input['solver_name'], 'r')
                     output_file_read = output_file_open.readlines()
                     test = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                    for k in range(0, int(input['mesher_ncpu'])):
-                        if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
-                            test = -1
-                            print_output = output_file_read[-1-k].split('\n')[0]
+                    # for k in range(0, int(input['mesher_ncpu'])):
+                    if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                        test = -1
+                        print_output = output_file_read[-1].split('\n')[0]
                     print print_output
                     time.sleep(2)
                     
@@ -658,37 +658,37 @@ def PyAxi(**kwargs):
                         output_file_open =  open(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'), 'r')
                         output_file_read = output_file_open.readlines()
                         test_1 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        for k in range(0, int(input['mesher_ncpu'])):
-                            if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
-                                test_1 = -1
-                                print_output = output_file_read[-1-k].split('\n')[0]
+                        # for k in range(0, int(input['mesher_ncpu'])):
+                        if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                            test_1 = -1
+                            print_output = output_file_read[-1].split('\n')[0]
                         print 'MXX_P_MYY:     ' + print_output
                         
                         output_file_open =  open(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'), 'r')
                         output_file_read = output_file_open.readlines()
                         test_2 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        for k in range(0, int(input['mesher_ncpu'])):
-                            if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
-                                test_2 = -1
-                                print_output = output_file_read[-1-k].split('\n')[0]
+                        # for k in range(0, int(input['mesher_ncpu'])):
+                        if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                            test_2 = -1
+                            print_output = output_file_read[-1].split('\n')[0]
                         print 'MXY_MXX_M_MYY: ' + print_output
                         
                         output_file_open =  open(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'), 'r')
                         output_file_read = output_file_open.readlines()
                         test_3 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        for k in range(0, int(input['mesher_ncpu'])):
-                            if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
-                                test_3 = -1
-                                print_output = output_file_read[-1-k].split('\n')[0]
+                        # for k in range(0, int(input['mesher_ncpu'])):
+                        if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                            test_3 = -1
+                            print_output = output_file_read[-1].split('\n')[0]
                         print 'MXZ_MYZ:       ' + print_output
                         
                         output_file_open =  open(os.path.join('MZZ', 'OUTPUT_MZZ'), 'r')
                         output_file_read = output_file_open.readlines()
                         test_4 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        for k in range(0, int(input['mesher_ncpu'])):
-                            if output_file_read[-1-k].find('PROGRAM axisem FINISHED') == -1:
-                                test_4 = -1
-                                print_output = output_file_read[-1-k].split('\n')[0]
+                        # for k in range(0, int(input['mesher_ncpu'])):
+                        if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                            test_4 = -1
+                            print_output = output_file_read[-1].split('\n')[0]
                         print 'MZZ:           ' + print_output
                         
                         time.sleep(2)
