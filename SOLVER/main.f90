@@ -106,8 +106,7 @@ program axisem
 
   call pend ! commun
 
-  if(lpr) write(6,*) procstrg, '=========PROGRAM axisem FINISHED============='
-
+  if(lpr) write(6,*) '=========PROGRAM axisem FINISHED============='
   if (verbose > 1) write(69,*) '=========PROGRAM axisem FINISHED============='
 
 !=======================
