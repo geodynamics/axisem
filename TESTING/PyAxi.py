@@ -381,7 +381,7 @@ def PyAxi(**kwargs):
             if os.path.isfile('inparam_advanced'):
                 subprocess.check_call(['rm', 'inparam_advanced'])
             inparam_advanced_input = []
-            inparam_advanced_input.append('SAMPLING_RATE     %s\n' %(input['solver_sampling_rate']))
+            inparam_advanced_input.append('SAMPLING_PERIOD     %s\n' %(input['solver_sampling_rate']))
             inparam_advanced_input.append('TIME_STEP     %s\n' %(input['solver_time_step']))
             inparam_advanced_input.append('SOURCE_PERIOD     %s\n' %(input['solver_source_period']))
             inparam_advanced_input.append('TIME_SCHEME     %s\n' %(input['solver_time_scheme']))
@@ -1056,7 +1056,7 @@ def read_input_file():
     input['solver_verbosity'] = config.get('SOLVER_BASIC', 'VERBOSITY')
    
    
-    input['solver_sampling_rate'] = config.get('SOLVER_ADVANCED', 'SAMPLING_RATE')
+    input['solver_sampling_rate'] = config.get('SOLVER_ADVANCED', 'SAMPLING_PERIOD')
     input['solver_time_step'] = config.get('SOLVER_ADVANCED', 'TIME_STEP')
     input['solver_source_period'] = config.get('SOLVER_ADVANCED', 'SOURCE_PERIOD')
     input['solver_time_scheme'] = config.get('SOLVER_ADVANCED', 'TIME_SCHEME')
