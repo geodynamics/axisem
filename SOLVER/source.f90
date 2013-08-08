@@ -191,7 +191,7 @@ subroutine read_sourceparams
      read(20000,*) stf_type, src_header(1:12)
      read(20000,*) junk, junk, eventname
      read(20000,*) junk, junk, time_shift 
-     read(20000,*) junk, junk, enforced_period
+     read(20000,*) junk, junk !, enforced_period
      read(20000,*) junk, srclat
      read(20000,*) junk, srclon  
      read(20000,*) junk, src_depth
