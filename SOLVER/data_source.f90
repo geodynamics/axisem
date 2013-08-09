@@ -42,7 +42,7 @@ include "mesh_params.h"
  logical             :: have_src
  real(kind=realkind), allocatable :: stf(:)
  logical             :: rot_src
- real(kind=realkind) :: Mij(6),rot_mom_tensor(3,3)
+ real(kind=realkind) :: Mij(6)
 
 ! discrete diracs
  real(kind=realkind) :: sampling_per_a,discrete_dirac_halfwidth

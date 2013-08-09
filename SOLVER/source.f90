@@ -35,355 +35,55 @@ module source
 contains
 
 !-----------------------------------------------------------------------------
-!> sourceparams.dat :
-!!
-!!1.E20               magnitude (Nm)
-!!'dipole'            excitation type: 'monopole', 'dipole', 'quadpole'
-!!'mxz'               'explosion','mxx_p_myy','mzz','vertforce' (MONOPOLE)
-!!                    'mxz', 'myz', 'xforce', 'yforce'          (DIPOLE)
-!!                    'mxy', 'mxx_m_myy'                        (QUADRUPOLE)
-!!344.034             source depth [km]
-!!'gauss_1'           source time function: 'dirac_0', 'gauss_0', 'gauss_1' 
-!!                    (1st deriv), 'gauss_2' (2nd)
-!!100.0               dominant source period [s]; put 0 if to be 
-!!                    calculated automatically from mesh/model
 subroutine read_sourceparams
   
   real(kind=realkind)   :: srclat
-  character(len=30)     :: junk, eventname
-  character(len=30)     :: src_header(12)
-  real(kind=realkind)   :: time_shift
-  integer               :: i, j
-
-  rot_src = .false.
-
-  !=========================
-  if (src_file_type=='sourceparams') then 
-  !=========================
-
-     open(unit=20000, file='sourceparams.dat', POSITION='REWIND', status='old')
-     read(20000,*) (Mij(i),i=1,6)
-     read(20000,*) src_type(1)
-     read(20000,*) src_type(2)
-     read(20000,*)
-     read(20000,*)
-     read(20000,*) src_depth
-
-     src_depth = src_depth * 1000. ! in meters
-
-     read(20000,*) srccolat
-     read(20000,*) srclon
-
-     srccolat = srccolat * pi / 180.d0
-     srclon = srclon * pi / 180.d0
-
-     read(20000,*) stf_type
-     close(20000)
-
-     ! NB: num_simul hardcoded to 1 at the moment!
-     !-----------------------------------------------------------------
-     if (num_simul == 4) then ! moment tensor elements
-     !-----------------------------------------------------------------
-        if (isim == 1) then 
-           src_type(1) = 'monopole'
-           src_type(2) = 'mzz'
-           magnitude = Mij(1)
-        elseif (isim == 2) then
-           src_type(1) = 'monopole'
-           src_type(2) = 'mxx_p_myy'
-           magnitude = Mij(2) + Mij(3)
-        elseif (isim == 3) then
-           src_type(1) = 'dipole'
-           src_type(2) = 'mxz'
-           magnitude=Mij(4)
-        elseif (isim == 4) then
-           src_type(1) = 'quadpole'
-           src_type(2) = 'mxy'
-           magnitude = Mij(6)
-        else    
-           write(6,*) 'ERROR: simulation number not recognized:', isim, num_simul
-           stop
-        endif
-
-     !-----------------------------------------------------------------
-     elseif (num_simul == 2) then ! single forces
-     !-----------------------------------------------------------------
-        if  (isim == 1) then 
-           src_type(1) = 'monopole'
-           src_type(2) = 'vertforce'
-        elseif (isim == 2) then
-           src_type(1) = 'dipole'
-           src_type(2) = 'xforce'
-        else
-           write(6,*) 'ERROR: simulation number not recognized:', isim, num_simul
-           stop
-        endif
-
-     !-----------------------------------------------------------------
-     elseif (num_simul == 1 ) then ! moment tensor /single force component
-     !-----------------------------------------------------------------
-        if (lpr .and. verbose > 1) then 
-           write(6,'(/a)') '  One simulation for one source!'
-        endif
-
-        if (src_type(2) == 'mzz') then           
-            magnitude = Mij(1)
-            Mij = 0.
-            Mij(1) = magnitude  
-        elseif (src_type(2) == 'mxx_p_myy') then
-            magnitude = (Mij(2) + Mij(3)) / 2.
-            Mij = 0.
-            Mij(2:3) = magnitude/2.
-        elseif (src_type(2) == 'mxz') then
-            magnitude = Mij(4)
-            Mij = 0.
-           Mij(4) = magnitude
-        elseif (src_type(2) == 'myz') then
-           magnitude = Mij(5)
-           Mij = 0.
-           Mij(5) = magnitude
-        elseif (src_type(2) == 'mxy') then
-           magnitude = Mij(6)
-           Mij = 0.
-           Mij(6) = magnitude
-        elseif (src_type(2) == 'mxx_m_myy') then
-           magnitude = (Mij(2) - Mij(3)) / 2.
-           Mij = 0.
-           Mij(2) = magnitude / 2.
-           Mij(3) = -magnitude / 2. 
-        elseif (src_type(2) == 'explosion') then 
-           magnitude = (Mij(1) + Mij(2) + Mij(3)) / 3.
-           Mij = 0.
-           Mij(1:3) = magnitude
-        elseif (src_type(2) == 'vertforce' .or. src_type(2) == 'xforce' &
-                .or. src_type(2) == 'yforce') then
-           magnitude = Mij(1) 
-        endif
-
-     !-----------------------------------------------------------------
-     else ! num_simul
-     !-----------------------------------------------------------------
-        write(6,'(a,a,i2,/,a,a,/,a,a,/,a,a)') &
-                   procstrg, 'ERROR: Unrecognized number of simulations:', num_simul, &
-                   procstrg, '       Choose 1: moment tensor element or force', &
-                   procstrg, '       Choose 2: all single forces', &
-                   procstrg, '       Choose 4: full moment tensor'
-        stop
-     !-----------------------------------------------------------------
-     endif ! num_simul
-     !-----------------------------------------------------------------
-
-     if (magnitude < smallval) then 
-        write(6,'(a,/,a,/,a,a,f10.2,/,a,6f10.2)') &
-            ' .... ERROR: Inconsistency between magnitude given by moment tensor and source type!', &
-            ' .... check sourceparams.dat and make sure that the source type has a non-zero moment tensor entry.', &
-            ' .... source type & magnitude:', src_type(2), magnitude, &
-            ' .... moment tensor:', (Mij(i),i=1,6)
-        stop
-     endif
-
-  !=========================
-  elseif (src_file_type == 'cmtsolut') then
-  !=========================
-     
-     if(lpr) write(6,*)'  reading CMTSOLUTION file....'
-     open(unit=20000, file='CMTSOLUTION', POSITION='REWIND', status='old')
-     read(20000,*) stf_type, src_header(1:12)
-     read(20000,*) junk, junk, eventname
-     read(20000,*) junk, junk, time_shift 
-     read(20000,*) junk, junk !, enforced_period
-     read(20000,*) junk, srclat
-     read(20000,*) junk, srclon  
-     read(20000,*) junk, src_depth
-     read(20000,*) junk, Mij(1) !Mrr
-     read(20000,*) junk, Mij(2) !Mtt
-     read(20000,*) junk, Mij(3) !Mpp
-     read(20000,*) junk, Mij(4) !Mrt
-     read(20000,*) junk, Mij(5) !Mrp
-     read(20000,*) junk, Mij(6) !Mtp
-     close(20000)
-
-     if (lpr) then 
-        write(6,*)'  CMT header: ',(trim(src_header(i)//' '), i=1,12)
-        write(6,*)'  event name: ',trim(eventname)
-     endif
-
-     if (srclon <= zero) srclon = srclon + 360.d0 
-     srccolat = 90.d0 - srclat
-     srclon = srclon * pi / 180.0
-     srccolat = srccolat * pi / 180.0
-     src_depth = src_depth * 1000.
-
-     if (trim(stf_type) /= 'gauss_0' .and. trim(stf_type) /= 'gauss_1' &
-            .and. trim(stf_type) /= 'gauss_2' .and. &
-            trim(stf_type) /= 'quheavi' ) then
-        if (lpr) then 
-           write(6,'(a,/,a,/,a,a,/,a,/)') &
-              '  ...setting source time function to dirac by default!', &
-              '     if you wish to choose another stf, ', &
-              '     prepend the first line with the stf name, i.e before: ', &
-              trim(stf_type), &
-              '     add gauss_0, gauss_1, gauss_2, or quheavi.'
-        endif
-        stf_type = 'dirac_0'
-
-     else 
-        if (lpr) write(6,*)'  source time function:', trim(stf_type)
-     endif
-
-     if ( Mij(1) /= zero .and. sum(abs(Mij(2:6))) < smallval * abs(Mij(1)) ) then 
-        src_type(1) = 'monopole'
-        src_type(2) = 'mzz'
-        magnitude = Mij(1)
-        if (lpr) write(6,*) '    simulating a '//src_type(2)
-
-     elseif ( abs(Mij(2) - Mij(3)) < smallval * abs(Mij(2)) &
-                .and. abs(Mij(1)) < smallval * abs(Mij(2)) &
-                .and. sum(abs(Mij(4:6))) < smallval * abs(Mij(2)) ) then 
-        src_type(1) = 'monopole'
-        src_type(2) = 'mxx_p_myy'
-        magnitude = (Mij(2) + Mij(3)) / 2.
-        if (lpr) write(6,*) '    simulating a '//src_type(2)
-
-     elseif ( abs(Mij(2) - Mij(3)) < smallval * abs(Mij(2)) &
-                .and. abs(Mij(2) - Mij(1)) < smallval * abs(Mij(2)) &
-                .and. sum(abs(Mij(4:6))) < smallval * abs(Mij(2)) ) then 
-        src_type(1) = 'monopole'
-        src_type(2) = 'explosion'
-        magnitude = sum(Mij(1:3)) / 3.
-        if (lpr) write(6,*) '    simulating a '//src_type(2)
-
-     elseif ( Mij(4) /= zero &
-                .and. sum(abs(Mij(1:3))) + sum(abs(Mij(5:6))) < smallval * abs(Mij(4)) ) then 
-        src_type(1) = 'dipole'
-        src_type(2) = 'mxz'
-        magnitude = Mij(4)
-        if (lpr) write(6,*) '    simulating a '//src_type(2)
-
-     elseif ( Mij(5) /= zero &
-                .and. (sum(abs(Mij(1:4))) + abs(Mij(6))) < smallval * abs(Mij(5)) ) then 
-        src_type(1) = 'dipole'
-        src_type(2) = 'myz'
-        magnitude = Mij(5)
-        if (lpr) write(6,*) '    simulating a '//src_type(2)
-
-     elseif ( Mij(6) /= zero .and. sum(abs(Mij(1:5))) < smallval * abs(Mij(6)) ) then 
-        src_type(1) = 'quadpole'
-        src_type(2) = 'mxy'
-        magnitude = Mij(6)
-        if (lpr) write(6,*) '    simulating a '//src_type(2)
-
-     elseif ( abs(Mij(2) + Mij(3)) < smallval * abs(Mij(2)) &
-                .and. abs(Mij(1)) < smallval * abs(Mij(2)) &
-                .and. sum(abs(Mij(4:6))) < smallval * abs(Mij(2)) ) then 
-        src_type(1) = 'quadpole'
-        src_type(2) = 'mxx_m_myy'
-        magnitude = (Mij(2) - Mij(3)) / 2.
-        if (lpr) write(6,*) '    simulating a '//src_type(2)
-
-     else
-        if (lpr) write(6,'(a,a)') &
-            '  Moment tensor has multiple non-zero entries... therefore doing separate simulations.. ', &
-            '  Me thinks we should never arrive here, because CMT should be handled by submit script'
-        stop
-     endif
-
-     ! Magnitude in CMTSOLUTION is given in dyn*cm... rescaling:
-     magnitude = magnitude / 1.E7
-     Mij = Mij / 1.E7
-
-     open(unit=899, file='Data/moment_tensor.dat')
-     write(899,*) (Mij(i), i=1,3)
-     write(899,*) (Mij(i), i=4,6)
-     close(899)
-
-  !=========================
-  elseif (src_file_type=='finfault') then
-  !=========================
-
-     write(6,*) "finite fault option not finished yet. go to source.f90 and do it yourself ;)"
-     stop
-     
-     if (lpr) write(6,*) ' Simulating a finite fault'
-     open(unit=20000,file='finite_fault.dat',POSITION='REWIND',status='old')
-     read(20000,*)junk
-     read(20000,*)fflt_num
-     read(20000,*)fflt_stf_name
-     read(20000,*)fflt_nt,fflt_dt
-     read(20000,*)fflt_scalarmoment
-     read(20000,*)junk
-     read(20000,*)junk
-     read(20000,*)junk
-     allocate(fflt_lat(fflt_num),fflt_lon(fflt_num),fflt_depth(fflt_num))
-     allocate(fflt_strike(fflt_num),fflt_dip(fflt_num),fflt_rake(fflt_num))
-     do i=1,fflt_num
-        read(20000,*)fflt_lat(i),fflt_lon(i),fflt_depth(i),fflt_strike(i),fflt_dip(i),fflt_rake(i)
-     enddo
-     if (fflt_num==1) then 
-        read(20000,*)src_type(1)
-        read(20000,*)src_type(2)
-     endif
-     close(20000)
-     num_simul = fflt_num
-
-     ! conversions
-     allocate(fflt_theta(fflt_num),fflt_phi(fflt_num),fflt_r(fflt_num),fflt_Mij(6,fflt_num))
-     fflt_theta = (90.-fflt_lat)*pi/180.
-     do i=1,fflt_num
-        if (fflt_lon(i)<=zero) fflt_lon(i)=fflt_lon(i) + 360.d0 
-     enddo
-     fflt_phi = fflt_lon*pi/180.
-     fflt_r = router-fflt_depth*1.d3
-     fflt_strike = fflt_strike*pi/180.
-     fflt_dip = fflt_dip*pi/180.
-     fflt_rake = fflt_rake*pi/180.
-     fflt_Mij(1,:) = sin(2.d0*fflt_dip)*sin(fflt_rake) !Mrr
-     fflt_Mij(2,:) = -sin(fflt_dip)*cos(fflt_rake)*sin(2.d0*fflt_strike) - & ! Mtt
-                      sin(2.d0*fflt_dip)*(sin(2.d0*fflt_strike))**2*sin(fflt_rake)
-     fflt_Mij(3,:) = sin(fflt_dip)*cos(fflt_rake)*sin(2.d0*fflt_strike) - & ! Mpp
-                     sin (2.d0*fflt_dip)*(cos(2.d0*fflt_strike))**2*sin(fflt_rake)   
-     fflt_Mij(4,:) = -sin(fflt_rake)*sin(fflt_strike)*cos(2.d0*fflt_dip) - & ! Mrt
-                      cos(fflt_dip)*cos(fflt_rake)*cos(fflt_strike)     
-     fflt_Mij(5,:) = cos(fflt_strike)*sin(fflt_rake)*cos(2.d0*fflt_dip) -  & ! Mrp
-                     cos(fflt_dip)*cos(fflt_rake)*sin(fflt_strike)       
-     fflt_Mij(6,:) = sin(fflt_dip)*cos(fflt_rake)*cos(2.d0*fflt_strike) +  &  !Mtp
-                     half*sin(2.d0*fflt_dip)*sin(2.d0*fflt_strike)*sin(fflt_rake)
-
-     fflt_Mij = fflt_Mij*fflt_scalarmoment
-
-     deallocate(fflt_lat,fflt_lon,fflt_depth,fflt_strike,fflt_dip,fflt_rake)
-     if (lpr) then
-        write(6,*)'  fflt: number of points in finite fault:',fflt_num
-        write(6,*)'  fflt: min/max radius [km]:',minval(fflt_r)/1000.,maxval(fflt_r)/1000.
-        write(6,*)'  fflt: min/max colatitude (deg):',minval(fflt_theta)*180./pi,maxval(fflt_theta)*180./pi
-        write(6,*)'  fflt: min/max longitude (deg):',minval(fflt_phi)*180./pi,maxval(fflt_phi)*180./pi       
-        write(6,*)'  fflt: moment tensors:'
-        do i=1,fflt_num
-           write(6,*)'  fflt:',(fflt_Mij(j,i),j=1,6)
-        enddo
-        if (fflt_num==1) write(6,*)'  fflt: src_type: ',trim(src_type(1)),trim(src_type(2))
-     endif
-
-     if (fflt_num>1) then 
-        ! MvD: this does not seem to be consistent with the most recent version
-        ! of submit.csh
-        write(6,*)"  Haven't implemented the finite fault option to run multiple simulations in serial or parallel."
-        write(6,*)"  Please resubmit by specifying 'finfault' as the second argument to the submit script."
-        stop
-     endif
-
-     ! prepare number of simulations, rotations, etc
+  character(len=256)    :: keyword, keyvalue, line
+  integer               :: iinparam_source=500, ioerr
+ 
   
-  !=========================
-  else 
-  !=========================
+  if (verbose > 1) write(6,'(A)', advance='no') '    Reading inparam_source...'
+  open(unit=iinparam_source, file='inparam_source', status='old', action='read',  iostat=ioerr)
+  if (ioerr /= 0) stop 'Check input file ''inparam_source''! Is it still there?' 
 
-     write(6,*) 'ERROR: source file type undefined:',src_file_type
-     stop
-  !=========================
-  endif
-  !=========================
+  do
+    read(iinparam_source, fmt='(a256)', iostat=ioerr) line
+    if (ioerr < 0) exit
+    if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+
+    read(line,*) keyword, keyvalue 
   
+    parameter_to_read : select case(trim(keyword))
+    
+    case('SOURCE_TYPE') 
+        read(keyvalue, *) src_type(2)
+        select case(src_type(2))
+        case('mrr', 'explosion', 'mtt_p_mpp', 'vertforce')
+            src_type(1) = 'monopole'
+        case('mtr', 'mpr', 'thetaforce', 'phiforce')
+            src_type(1) = 'dipole'
+        case('mtp', 'mtt_m_mpp')
+            src_type(1) = 'quadpole'
+        end select
+
+    case('SOURCE_DEPTH')
+        read(keyvalue,*) src_depth 
+
+    case('SOURCE_LAT')
+        read(keyvalue,*) srclat
+        srccolat = 90.0 - srclat
+
+    case('SOURCE_LON')
+        read(keyvalue,*) srclon
+
+    case('SOURCE_AMPLITUDE')
+        read(keyvalue,*) magnitude
+
+    end select parameter_to_read
+
+  enddo
+  close(iinparam_source)
+
   if (srccolat /= 0.d0 .or. srclon /= 0.d0 ) then
      write(6,'(/,a,a,/,a,a)')&
         procstrg, '  Source not along the axis!', &

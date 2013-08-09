@@ -86,15 +86,14 @@ set multisrc = 'false'
 # @TODO grep is not stable if SIMULATION_TYPE is there twice, e.g. in a comment line!!
 
 set srctype = `grep "SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
+set src_file_type = 'sourceparams'
+set srcfile = 'inparam_source'
 if ( $srctype == 'single') then
     set multisrc = 'false'
-    set src_file_type = 'sourceparams'
 else if ( $srctype == 'force') then
     set multisrc = 'true'
-    set src_file_type = 'sourceparams'
 else if ( $srctype == 'moment') then
     set multisrc = 'true'
-    set src_file_type = 'cmtsolut'
 endif
 
 if ( $newqueue == 'true' ) then 
@@ -111,13 +110,6 @@ if ( { make -j } == 0 ) then
   exit
 endif
 
-if ( $src_file_type == 'cmtsolut' ) then
-    set srcfile = 'CMTSOLUTION'
-else if ( $src_file_type == 'sourceparams' ) then
-    set srcfile = 'sourceparams.dat'
-else if ( $src_file_type == 'finfault' ) then
-    set srcfile = 'finite_fault.dat'
-endif 
 
 if ( ! -f $homedir/$srcfile ) then 
     echo "file $srcfile does not exist"
@@ -153,48 +145,31 @@ if ( $multisrc == 'true' ) then
         set map_mij = ( 1 2 4 6 )
         set numsim = 4
         set srcapp = ( MZZ MXX_P_MYY MXZ_MYZ MXY_MXX_M_MYY )
-        set srctype1 = ( "'monopole'" "'monopole'" "'dipole'" "'quadpole'")
-        set srctype2 = ( "'mzz'" "'mxx_p_myy'" "'mxz'" "'mxy'" )
+        set srctype  = ( "'mrr'" "'mtt_p_mpp'" "'mtr'" "'mtp'" )
+        set srcdepth = `grep "depth: " $homedir/CMTSOLUTION  |awk '{print $2}'`
+        set srclat   = `grep "latitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
+        set srclon   = `grep "longitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
 
     else if ( $srctype == 'force' ) then 
-        set numsim = 2
-        set srcapp = ( PZ PX )
-        set srctype1 = ( "'monopole'" "'dipole'" )
-        set srctype2 = ( "'vertforce'" "'xforce'" )
+        set numsim   = 2
+        set srcapp   = ( PZ PX )
+        set srctype  = ( "'vertforce'" "'xforce'" )
 
-    else if ( $srctype == 'finfault') then 
-        set num_src = `cat finite_fault.dat | grep fflt_num |awk '{print $1}'`
-        set numsim = 4
-        set num_src_arr = `tail -n $num_src finite_fault.dat | awk '{print $1}'`
-        set srcapp = ( MZZ MXX_P_MYY MXZ_MYZ MXY_MXX_M_MYY )      
-        set srctype1 = ( "'monopole'" "'monopole'" "'dipole'" "'quadpole'")
-        set srctype2 = ( "'mzz'" "'mxx_p_myy'" "'mxz'" "'mxy'" )
     else
         echo " Unrecognized source type" $srctype
-        echo " Choose either 'moment', 'force', 'finfault' or leave blank for one simulation as in sourceparams.dat"
+        echo " Choose either 'moment', 'force', or leave blank for one simulation as in inparam_source"
         exit
     endif
 
-   if ( $src_file_type == 'cmtsolut' ) then 
-       set mom_tens1 = ( "Mrr:" "Mtt:" "Mpp:" "Mrt:" "Mrp:" "Mtp:" ) 
-       set map_mij = ( 1 2 4 6 )
-       set map_mij_name = ( "Mrr:" "Mtt:" "Mrt:" "Mtp:" ) 
-       head -n 7 $homedir/CMTSOLUTION > 'CMTSOLUTION.MIJ' 
-       foreach el (${mom_tens1}) 
-           echo $el "     0.000e+27" >> 'CMTSOLUTION.MIJ'
-       end
-   endif
 else if ( $multisrc == 'false' ) then
     # one simulation
     set numsim = 1; 
-    set srctype1 = `grep "excitation type" sourceparams.dat |awk '{print $1}'`
-    set srctype2 = `head -n 3 sourceparams.dat  | tail -n 1 |awk '{print $1}'` 
+    set srctype = `grep "^SOURCE_TYPE" $srcfile  |awk '{print $2}'`
     set srcapp = ( "./"  )
 endif 
 
 echo 'source names:' $srcapp
-echo 'source radiation types:' $srctype1
-echo 'source components:' $srctype2
+echo 'source components:' $srctype
 
 mkdir $1
 cd $1
@@ -219,35 +194,15 @@ foreach isrc (${num_src_arr})
         if  ( $multisrc == 'true' ) then
             echo "constructing separate source files for" $isim 
 
-            if ( $src_file_type == 'sourceparams' ) then
+          #  if ( $src_file_type == 'sourceparams' ) then
                 set mijtmp = `echo $mij_sourceparams`
                 set mijtmp[$map_mij[$i]] = '1.E20'
-                echo $mijtmp > $srcfile.$isrc.$isim
-                echo $srctype1[$i] >> $srcfile.$isrc.$isim
-                echo $srctype2[$i] >> $srcfile.$isrc.$isim
-                tail -n 12 $homedir/$srcfile >> $srcfile.$isrc.$isim
+                echo 'SOURCE_TYPE'  $srctype[$i] > $srcfile.$isrc.$isim
+                echo 'SOURCE_DEPTH' $srcdepth     >> $srcfile.$isrc.$isim
+                echo 'SOURCE_LAT'   $srclat       >> $srcfile.$isrc.$isim
+                echo 'SOURCE_LON'   $srclon       >> $srcfile.$isrc.$isim
+                echo 'SOURCE_AMPLITUDE  1.E20'    >> $srcfile.$isrc.$isim
             
-            else if ( $src_file_type == 'cmtsolut' ) then
-                set num = `echo $num $map_mij[$i] |awk '{print $1+$2}'`
-                head -n $num $homedir/$srcfile.MIJ > $srcfile.$isrc.$isim
-                echo $map_mij_name[$i] "    1.0000e+27" >> $srcfile.$isrc.$isim
-                if ( $isim == 'MXX_P_MYY' ) then 
-                    echo "Mpp:     1.0000e+27" >> $srcfile.$isrc.$isim       
-                    @ num++
-                endif
-                set num = `echo 12 $num |awk '{print $1-$2}'`
-                tail -n $num $homedir/$srcfile.MIJ >> $srcfile.$isrc.$isim
-            endif 
-
-            else if ( $src_file_type == 'finfault' ) then	    
-                head -n 1 $homedir/$srcfile >! $srcfile.$isrc.$isim
-                echo "1              fflt_num : number of individual points below" >> $srcfile.$isrc.$isim
-                head -n 9 $homedir/$srcfile |tail -n 7 >> $srcfile.$isrc.$isim
-                tail -n $num_src $homedir/$srcfile |head -n $i |tail -n 1 >> $srcfile.$isrc.$isim
-                echo $srctype1[$i] >> $srcfile.$isrc.$isim
-                echo $srctype2[$i] >> $srcfile.$isrc.$isim
-            endif
-
         endif 
         
         if ( $multisrc == 'false' ) then
@@ -297,6 +252,7 @@ foreach isrc (${num_src_arr})
         cp $homedir/$recfile . 
         cp $homedir/inparam_basic .
         cp $homedir/inparam_advanced .
+        cp $homedir/inparam_source .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
 
@@ -314,6 +270,7 @@ foreach isrc (${num_src_arr})
         cp $homedir/mesh_params.h .
         cp $homedir/inparam_basic .
         cp $homedir/inparam_advanced .
+        cp $homedir/inparam_source .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
     end
@@ -348,17 +305,17 @@ foreach isrc (${num_src_arr})
             if ( $queue == 'lsf' ) then 
                 bsub -R "rusage[mem=2048]" -I -n $nodnum $mpiruncmd -n $nodnum ./axisem 2>&1 > $outputname &
 
-	    ######## slurm  #######
+            ######## slurm  #######
             else if ( $queue == 'slurmlocal' ) then 
             	aprun -n $nodnum ./axisem >& $outputname &
             
-	    else if ( $queue == 'slurm' ) then 
-		echo '#\!/bin/bash' > sbatch.sh
-		echo "#sbatch --ntasks=$nodnum" >> sbatch.sh
-		echo "#sbatch --time=00:59:00" >> sbatch.sh
-		echo "aprun -n $nodnum ./axisem >& $outputname" >> sbatch.sh
-           	
-		sbatch sbatch.sh 
+            else if ( $queue == 'slurm' ) then 
+                echo '#\!/bin/bash' > sbatch.sh
+                echo "#sbatch --ntasks=$nodnum" >> sbatch.sh
+                echo "#sbatch --time=00:59:00" >> sbatch.sh
+                echo "aprun -n $nodnum ./axisem >& $outputname" >> sbatch.sh
+                    
+                sbatch sbatch.sh 
 
 	    ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 

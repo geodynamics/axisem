@@ -361,6 +361,7 @@ subroutine read_inparam_advanced
   seis_dt = 0.0
   enforced_period = 0.0
   enforced_dt = 0.0
+  stf_type = 'gauss_0'
   time_scheme = 'newmark2'
   
   datapath = './Data'
@@ -408,6 +409,9 @@ subroutine read_inparam_advanced
              
          case('SOURCE_PERIOD')
              read(keyvalue, *) enforced_period
+
+         case('SOURCE_FUNCTION')
+             read(keyvalue, *) stf_type
 
          case('TIME_STEP')
              read(keyvalue, *) enforced_dt

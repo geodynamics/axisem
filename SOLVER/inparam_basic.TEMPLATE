@@ -41,6 +41,8 @@ ATTENUATION         true
 ######################## WAVEFIELD SNAPSHOTS ##################################
 # Save wavefield snapshots for visualization (default: false)
 # more details in inparam_advanced
+# Be sure to set the SOURCE_FUNCTION (inparam_advanced) to gauss_0 to avoid 
+# aliasing and HF artifacts.
 
 SAVE_SNAPSHOTS         false  
 
