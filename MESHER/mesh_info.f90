@@ -60,34 +60,37 @@ subroutine define_regions
   allocate(rmax_el(neltot))
   rmax_el(:) = 0.d0 
 
-  write(6,*) 'af neltot ', neltot
-
   do iel = 1, neltot
      count = 0
      ! find rmin_el and rmax_el
-     do jpol=0,npol,npol
-        do ipol=0,npol,npol
-           count=count+1
-           rtmp(count)=dsqrt(sgll(ipol,jpol,iel)**2 + zgll(ipol,jpol,iel)**2)
+     do jpol=0, npol, npol
+        do ipol=0, npol, npol
+           count = count + 1
+           rtmp(count) = dsqrt(sgll(ipol,jpol,iel)**2 + zgll(ipol,jpol,iel)**2)
         enddo
      enddo
-     rmin_el(iel)=minval(rtmp)
-     rmax_el(iel)=maxval(rtmp)
+     rmin_el(iel) = minval(rtmp)
+     rmax_el(iel) = maxval(rtmp)
 
      scom(iel) = sgll(npol/2,npol/2,iel)
      zcom(iel) = zgll(npol/2,npol/2,iel)
 
-     rcom(iel)=dsqrt(scom(iel)**2+zcom(iel)**2)
+     rcom(iel) = dsqrt(scom(iel)**2 + zcom(iel)**2)
 
      s1 = scom(iel)
      z1 = zcom(iel) 
-     theta = datan(s1/(z1+1.d-30))
-     if ( 0. > theta ) theta = pi + theta
-     if (theta == 0.d0 .and. z1 < 0.d0) theta = pi
+     theta = dacos(z1 / dsqrt(z1**2 + s1**2))
+     if (theta < 0) then
+        write(6,*) 'theta < 0', theta, s1, z1
+        stop
+     elseif (theta > pi) then
+        write(6,*) 'theta > pi', theta, s1, z1
+        stop
+     endif
      thetacom(iel) = theta
   end do
 
-  allocate(region(neltot),nel_region(neltot))
+  allocate(region(neltot), nel_region(neltot))
   region(:) = 0
   nel_region(:) = 0
   
