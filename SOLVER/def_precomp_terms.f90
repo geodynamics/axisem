@@ -69,13 +69,11 @@ subroutine read_model_compute_terms
 
   allocate(rho(0:npol,0:npol,1:nelem),massmat_kwts2(0:npol,0:npol,1:nelem))
   allocate(lambda(0:npol,0:npol,1:nelem),mu(0:npol,0:npol,1:nelem))
-  if (ani_true) then
-    allocate(xi_ani(0:npol,0:npol,1:nelem))
-    allocate(phi_ani(0:npol,0:npol,1:nelem))
-    allocate(eta_ani(0:npol,0:npol,1:nelem))
-    allocate(fa_ani_theta(0:npol,0:npol,1:nelem))
-    allocate(fa_ani_phi(0:npol,0:npol,1:nelem))
-  endif
+  allocate(xi_ani(0:npol,0:npol,1:nelem))
+  allocate(phi_ani(0:npol,0:npol,1:nelem))
+  allocate(eta_ani(0:npol,0:npol,1:nelem))
+  allocate(fa_ani_theta(0:npol,0:npol,1:nelem))
+  allocate(fa_ani_phi(0:npol,0:npol,1:nelem))
   
   if (anel_true) then
     allocate(Q_mu(1:nel_solid))
@@ -85,21 +83,13 @@ subroutine read_model_compute_terms
   ! load velocity/density model  (velocities in m/s, density in kg/m^3 )
   if (lpr .and. verbose > 1) write(6,*) '   define background model....'
 
-  if (ani_true) then
-     if (lpr .and. verbose > 1) write(6,*) '   model is anisotropic....'
-     if (anel_true) then
-       if(lpr .and. verbose > 1) write(6,*)'   ....and anelastic...'
-       call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                           fa_ani_phi, Q_mu, Q_kappa)
-     else
-       call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
-     endif
-  else 
-     if (anel_true) then
-       call read_model(rho, lambda, mu, Q_mu, Q_kappa)
-     else
-       call read_model(rho, lambda, mu)
-     endif
+  if (lpr .and. verbose > 1) write(6,*) '   model is anisotropic....'
+  if (anel_true) then
+    if(lpr .and. verbose > 1) write(6,*)'   ....and anelastic...'
+    call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+                        fa_ani_phi, Q_mu, Q_kappa)
+  else
+    call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
   endif
 
   if (lpr .and. verbose > 1) write(6,*) '   compute Lagrange interpolant derivatives...'
@@ -133,13 +123,9 @@ subroutine read_model_compute_terms
   endif
      
   if (lpr .and. verbose > 1) write(6,*) '   define solid stiffness terms....'
-  if (ani_true) then
-     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
-                                    eta_ani, fa_ani_theta, fa_ani_phi)
-     deallocate(xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
-  else
-     call def_solid_stiffness_terms(lambda, mu, massmat_kwts2)
-  endif
+  call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
+                                 eta_ani, fa_ani_theta, fa_ani_phi)
+  deallocate(xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
   
   deallocate(lambda,mu)
   
@@ -1604,74 +1590,40 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
      do jpol=0,npol
        select case (src_type(1))
        case ('monopole')
-         if (ani_true) then
-            call compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
-                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
-                                       fa_ani_theta, fa_ani_phi, &
-                                       massmat_kwts2, &
-                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                       M_z_eta_wt_k,M_s_eta_wt_k, &
-                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-         else
-            call compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
-                                       lambda,mu,massmat_kwts2, &
-                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                       M_z_eta_wt_k,M_s_eta_wt_k, &
-                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-         endif
+          call compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+                                     lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                     fa_ani_theta, fa_ani_phi, &
+                                     massmat_kwts2, &
+                                     non_diag_fact,alpha_wt_k,beta_wt_k,&
+                                     gamma_wt_k,delta_wt_k,epsil_wt_k,&
+                                     zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
+                                     M_z_eta_wt_k,M_s_eta_wt_k, &
+                                     Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
+                                     Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
        case('dipole')
-         if (ani_true) then
-            call compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
-                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
-                                       fa_ani_theta, fa_ani_phi, &
-                                       massmat_kwts2, &
-                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                       M_z_eta_wt_k,M_s_eta_wt_k, &
-                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-         else
-            call compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
-                                       lambda,mu,massmat_kwts2, &
-                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                       M_z_eta_wt_k,M_s_eta_wt_k, &
-                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-         endif
+          call compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+                                     lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                     fa_ani_theta, fa_ani_phi, &
+                                     massmat_kwts2, &
+                                     non_diag_fact,alpha_wt_k,beta_wt_k,&
+                                     gamma_wt_k,delta_wt_k,epsil_wt_k,&
+                                     zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
+                                     M_z_eta_wt_k,M_s_eta_wt_k, &
+                                     Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
+                                     Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
        case('quadpole') 
-         if (ani_true) then
-            call compute_quadrupole_stiff_terms_ani(ielem,jpol,&
-                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
-                                       fa_ani_theta, fa_ani_phi, &
-                                       massmat_kwts2,&
-                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                       M_z_eta_wt_k,M_s_eta_wt_k, &
-                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-         else
-            call compute_quadrupole_stiff_terms(ielem,jpol,local_crd_nodes,&
-                                       lambda,mu,massmat_kwts2,&
-                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                       M_z_eta_wt_k,M_s_eta_wt_k, &
-                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-         endif
-
+          call compute_quadrupole_stiff_terms_ani(ielem,jpol,&
+                                     lambda,mu,xi_ani,phi_ani,eta_ani, &
+                                     fa_ani_theta, fa_ani_phi, &
+                                     massmat_kwts2,&
+                                     non_diag_fact,alpha_wt_k,beta_wt_k,&
+                                     gamma_wt_k,delta_wt_k,epsil_wt_k,&
+                                     zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
+                                     M_z_eta_wt_k,M_s_eta_wt_k, &
+                                     Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
+                                     Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
       end select
 
      enddo  ! jpol
@@ -1732,115 +1684,6 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
   deallocate(non_diag_fact)
 
 end subroutine def_solid_stiffness_terms
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
-                                       lambda,mu,massmat_kwts2, &
-                                       non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                       gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                       zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                       M_z_eta_wt_k,M_s_eta_wt_k, &
-                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-
-  include "mesh_params.h"
-  
-  integer, intent(in) :: ielem,jpol
-  
-  real(kind=dp)   , intent(in) :: lambda(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: mu(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
-  
-  real(kind=dp)   , intent(in) :: non_diag_fact(0:npol,nel_solid)
-  real(kind=dp)   , intent(in) :: local_crd_nodes(8,2)
-  
-  real(kind=dp)   , intent(in) :: alpha_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: beta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: gamma_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: delta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: epsil_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: zeta_wt_k(0:npol,0:npol)
-  
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-  
-  real(kind=dp)   , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
-  
-  integer          :: ipol
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta
-  
-  ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
-  if ( ielem==1 .and. jpol==0 ) then
-     M0_w1(0:npol,1:nel_solid) = zero
-     M0_w2(0:npol,1:nel_solid) = zero
-     M0_w3(0:npol,1:nel_solid) = zero
-  endif
-  
-  do ipol=0,npol
-     M11s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
-          two*mu(ipol,jpol,ielsolid(ielem)))*delta_wt_k(ipol,jpol)+&
-          mu(ipol,jpol,ielsolid(ielem))*alpha_wt_k(ipol,jpol)
-     M21s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
-          two*mu(ipol,jpol,ielsolid(ielem)))*zeta_wt_k(ipol,jpol)+&
-          mu(ipol,jpol,ielsolid(ielem))*gamma_wt_k(ipol,jpol)
-     M41s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
-          two*mu(ipol,jpol,ielsolid(ielem)))*epsil_wt_k(ipol,jpol)+&
-          mu(ipol,jpol,ielsolid(ielem))*beta_wt_k(ipol,jpol)
-     M12s(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
-          Ms_z_eta_s_xi_wt_k(ipol,jpol)+&
-          mu(ipol,jpol,ielsolid(ielem))*Ms_z_xi_s_eta_wt_k(ipol,jpol)
-     M22s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
-          mu(ipol,jpol,ielsolid(ielem)))*Ms_z_eta_s_eta_wt_k(ipol,jpol)
-     M32s(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
-          Ms_z_xi_s_eta_wt_k(ipol,jpol)+&
-          mu(ipol,jpol,ielsolid(ielem))*Ms_z_eta_s_xi_wt_k(ipol,jpol)
-     M42s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-          mu(ipol,jpol,ielsolid(ielem)))*Ms_z_xi_s_xi_wt_k(ipol,jpol)
-     M11z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))*&
-          delta_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
-          two*mu(ipol,jpol,ielsolid(ielem)))*alpha_wt_k(ipol,jpol)
-     M21z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))*&
-          zeta_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+ &
-          two*mu(ipol,jpol,ielsolid(ielem)))*gamma_wt_k(ipol,jpol)
-     M41z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))* &
-          epsil_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
-          two*mu(ipol,jpol,ielsolid(ielem)))*beta_wt_k(ipol,jpol)
-
-     M_2(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
-          M_z_xi_wt_k(ipol,jpol)
-     M_1(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
-          M_z_eta_wt_k(ipol,jpol)
-     M_4(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
-          M_s_xi_wt_k(ipol,jpol)
-     M_3(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
-          M_s_eta_wt_k(ipol,jpol)
-
-     M_w1(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
-          two*mu(ipol,jpol,ielsolid(ielem)))* &
-          massmat_kwts2(ipol,jpol,ielsolid(ielem))
-     if (axis_solid(ielem)) M_w1(0,jpol,ielem)=zero
-  enddo
-  
-  ! AXIS
-  if ( axis_solid(ielem) ) then
-     call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta, &
-          xi_k(0),eta(jpol),local_crd_nodes,ielsolid(ielem))
-     ipol=0
-
-     M0_w3(jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))* &
-          dsdxi*wt_axial_k(0)*wt(jpol)
-     M0_w1(jpol,ielem)=(three*lambda(ipol,jpol,ielsolid(ielem))+ &
-          two*mu(ipol,jpol,ielsolid(ielem)))* &
-          non_diag_fact(jpol,ielem)
-  endif
-
-end subroutine compute_monopole_stiff_terms
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -2022,182 +1865,6 @@ subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
   enddo ! ipol
 
 end subroutine compute_monopole_stiff_terms_ani
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
-                                      lambda,mu,massmat_kwts2, &
-                                      non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                      gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                      zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                      M_z_eta_wt_k,M_s_eta_wt_k, &
-                                      Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                      Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-
-  include "mesh_params.h"
-  
-  integer, intent(in) :: ielem,jpol
-  
-  real(kind=dp)   , intent(in) :: lambda(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: mu(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
-  
-  real(kind=dp)   , intent(in) :: non_diag_fact(0:npol,nel_solid)
-  real(kind=dp)   , intent(in) :: local_crd_nodes(8,2)
-  
-  real(kind=dp)   , intent(in) :: alpha_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: beta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: gamma_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: delta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: epsil_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: zeta_wt_k(0:npol,0:npol)
-  
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-  
-  real(kind=dp)   , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
-  
-  integer          :: ipol
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta
-  
-  ! Clumsy to initialize inside a loop... but hey, the easiest way in this setup.
-  if ( ielem==1 .and. jpol==0 ) then
-     M0_w1(0:npol,1:nel_solid) = zero
-     M0_w2(0:npol,1:nel_solid) = zero
-     M0_w3(0:npol,1:nel_solid) = zero
-     M0_w4(0:npol,1:nel_solid) = zero
-     M0_w5(0:npol,1:nel_solid) = zero
-     M0_w6(0:npol,1:nel_solid) = zero
-     M0_w7(0:npol,1:nel_solid) = zero
-     M0_w8(0:npol,1:nel_solid) = zero
-     M0_w9(0:npol,1:nel_solid) = zero
-     M0_w10(0:npol,1:nel_solid) = zero
-  endif
-  
-  do ipol=0,npol
-     ! + and - components
-     M11s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
-          three*mu(ipol,jpol,ielsolid(ielem)))*delta_wt_k(ipol,jpol)+&
-          two*mu(ipol,jpol,ielsolid(ielem))*alpha_wt_k(ipol,jpol)
-     M21s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
-          three*mu(ipol,jpol,ielsolid(ielem)))*zeta_wt_k(ipol,jpol)+&
-          two*mu(ipol,jpol,ielsolid(ielem))*gamma_wt_k(ipol,jpol)
-     M41s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-          three*mu(ipol,jpol,ielsolid(ielem)))*epsil_wt_k(ipol,jpol)+&
-          two*mu(ipol,jpol,ielsolid(ielem))*beta_wt_k(ipol,jpol)
-
-     M12s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-          mu(ipol,jpol,ielsolid(ielem)))*delta_wt_k(ipol,jpol)
-     M22s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-          mu(ipol,jpol,ielsolid(ielem)))*zeta_wt_k(ipol,jpol)
-     M42s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-          mu(ipol,jpol,ielsolid(ielem)))*epsil_wt_k(ipol,jpol)
-
-     M13s(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))*&
-          Ms_z_eta_s_xi_wt_k(ipol,jpol)+mu(ipol,jpol,ielsolid(ielem))*&
-          Ms_z_xi_s_eta_wt_k(ipol,jpol)
-     M32s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-          mu(ipol,jpol,ielsolid(ielem)))*Ms_z_eta_s_eta_wt_k(ipol,jpol)
-     M33s(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))*&
-          Ms_z_xi_s_eta_wt_k(ipol,jpol)+mu(ipol,jpol,ielsolid(ielem))*&
-          Ms_z_eta_s_xi_wt_k(ipol,jpol)
-     M43s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-          mu(ipol,jpol,ielsolid(ielem)))*Ms_z_xi_s_xi_wt_k(ipol,jpol)
-
-     ! z component
-     M11z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))* &
-          delta_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
-          two*mu(ipol,jpol,ielsolid(ielem)))*alpha_wt_k(ipol,jpol)
-     M21z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))* &
-          zeta_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
-          two*mu(ipol,jpol,ielsolid(ielem)))*gamma_wt_k(ipol,jpol)
-     M41z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))* &
-          epsil_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
-          two*mu(ipol,jpol,ielsolid(ielem)))*beta_wt_k(ipol,jpol)
-
-     ! D^x_y terms
-     M_1(ipol,jpol,ielem) = two * &
-         (lambda(ipol,jpol,ielsolid(ielem)) + &
-         mu(ipol,jpol,ielsolid(ielem))) * M_z_eta_wt_k(ipol,jpol)
-     M_2(ipol,jpol,ielem) = two * (lambda(ipol,jpol,ielsolid(ielem)) + &
-         mu(ipol,jpol,ielsolid(ielem))) * M_z_xi_wt_k(ipol,jpol)
-     M_3(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem)) * &
-         M_s_eta_wt_k(ipol,jpol)
-     M_4(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem)) * &
-         M_s_xi_wt_k(ipol,jpol)
-     M_5(ipol,jpol,ielem) = two * &
-         (lambda(ipol,jpol,ielsolid(ielem)) - &
-         mu(ipol,jpol,ielsolid(ielem))) * M_z_eta_wt_k(ipol,jpol)
-     M_6(ipol,jpol,ielem) = two * (lambda(ipol,jpol,ielsolid(ielem)) - &
-         mu(ipol,jpol,ielsolid(ielem))) * M_z_xi_wt_k(ipol,jpol)  
-     M_7(ipol,jpol,ielem) = &
-          two * lambda(ipol,jpol,ielsolid(ielem)) * M_s_eta_wt_k(ipol,jpol)
-     M_8(ipol,jpol,ielem) = &
-         two * lambda(ipol,jpol,ielsolid(ielem)) * M_s_xi_wt_k(ipol,jpol)
-
-     ! AXIS-------------------
-     ! 2nd order terms
-     M_w1(ipol,jpol,ielem) = four * &
-          (lambda(ipol,jpol,ielsolid(ielem)) + &
-          three * mu(ipol,jpol,ielsolid(ielem))) * &
-          massmat_kwts2(ipol,jpol,ielsolid(ielem))
-     M_w2(ipol,jpol,ielem) = zero
-     M_w3(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem)) * &
-          massmat_kwts2(ipol,jpol,ielsolid(ielem))
-  enddo ! ipol
-
-  ! AXIS
-  if ( axis_solid(ielem) ) then
-
-     M11s(0,jpol,ielem) = zero
-     M12s(0,jpol,ielem) = zero
-     M42s(0,jpol,ielem) = zero
-     M32s(0,jpol,ielem) = zero
-     M43s(0,jpol,ielem) = zero
-     M11z(0,jpol,ielem) = zero
-
-     M_1(0,jpol,ielem) = zero
-     M_2(0,jpol,ielem) = zero
-     M_3(0,jpol,ielem) = zero
-     M_4(0,jpol,ielem) = zero
-     M_5(0,jpol,ielem) = zero
-     M_6(0,jpol,ielem) = zero
-     M_7(0,jpol,ielem) = zero
-     M_8(0,jpol,ielem) = zero
-
-     M_w1(0,jpol,ielem) = zero
-     M_w3(0,jpol,ielem) = zero
-
-     call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta, &
-          xi_k(0),eta(jpol),local_crd_nodes,ielsolid(ielem))
-
-     ipol = 0
-
-     M0_w1(jpol,ielem) = two * &
-          (lambda(ipol,jpol,ielsolid(ielem)) + &
-          mu(ipol,jpol,ielsolid(ielem))) * dzdeta * wt_axial_k(0) * wt(jpol)
-     M0_w2(jpol,ielem) = two * (lambda(ipol,jpol,ielsolid(ielem)) + &
-          mu(ipol,jpol,ielsolid(ielem))) * dzdxi * wt_axial_k(0) * wt(jpol)
-     M0_w7(jpol,ielem) = mu(ipol,jpol,ielsolid(ielem))* &
-          non_diag_fact(jpol,ielem)
-     M0_w8(jpol,ielem) = mu(ipol,jpol,ielsolid(ielem))* &
-          dsdxi * wt_axial_k(0) * wt(jpol)
-     M0_w9(jpol,ielem) =  &
-          (four * (lambda(ipol,jpol,ielsolid(ielem)) - &
-          mu(ipol,jpol,ielsolid(ielem))) * dzdeta*&
-          wt_axial_k(0) * wt(jpol)) + &
-          (four * (lambda(ipol,jpol,ielsolid(ielem)) + &
-          four * mu(ipol,jpol,ielsolid(ielem))) * &
-          non_diag_fact(jpol,ielem))
-     
-  endif
-
-end subroutine compute_dipole_stiff_terms
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -2456,193 +2123,6 @@ end subroutine compute_dipole_stiff_terms_ani
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine compute_quadrupole_stiff_terms(ielem,jpol,local_crd_nodes, &
-                                      lambda,mu,massmat_kwts2, &
-                                      non_diag_fact,alpha_wt_k,beta_wt_k,&
-                                      gamma_wt_k,delta_wt_k,epsil_wt_k,&
-                                      zeta_wt_k,M_s_xi_wt_k,M_z_xi_wt_k,&
-                                      M_z_eta_wt_k,M_s_eta_wt_k, &
-                                      Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
-                                      Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
-
-  include "mesh_params.h"
-
-  integer, intent(in) :: ielem,jpol
-
-  real(kind=dp)   , intent(in) :: lambda(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: mu(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
-
-  real(kind=dp)   , intent(in) :: non_diag_fact(0:npol,nel_solid)
-  real(kind=dp)   , intent(in) :: local_crd_nodes(8,2)
-
-  real(kind=dp)   , intent(in) :: alpha_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: beta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: gamma_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: delta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: epsil_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: zeta_wt_k(0:npol,0:npol)
-
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-
-  real(kind=dp)   , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
-
-  integer          :: ipol
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta
-  
-  if ( ielem==1 .and. jpol==0 ) then
-     M0_w1(0:npol,1:nel_solid) = zero
-     M0_w2(0:npol,1:nel_solid) = zero
-     M0_w3(0:npol,1:nel_solid) = zero
-     M0_w4(0:npol,1:nel_solid) = zero
-     M0_w5(0:npol,1:nel_solid) = zero
-     M0_w6(0:npol,1:nel_solid) = zero
-  endif
-
-  do ipol=0,npol
-     M11s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-         two*mu(ipol,jpol,ielsolid(ielem)))*delta_wt_k(ipol,jpol)+&
-         mu(ipol,jpol,ielsolid(ielem))*alpha_wt_k(ipol,jpol)
-     M21s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-         two*mu(ipol,jpol,ielsolid(ielem)))*zeta_wt_k(ipol,jpol)+&
-         mu(ipol,jpol,ielsolid(ielem))*gamma_wt_k(ipol,jpol)
-     M41s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-         two*mu(ipol,jpol,ielsolid(ielem)))*epsil_wt_k(ipol,jpol)+&
-         mu(ipol,jpol,ielsolid(ielem))*beta_wt_k(ipol,jpol)
-     M12s(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))*&
-         Ms_z_eta_s_xi_wt_k(ipol,jpol)+mu(ipol,jpol,ielsolid(ielem))*&
-         Ms_z_xi_s_eta_wt_k(ipol,jpol)
-     M22s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+&
-         mu(ipol,jpol,ielsolid(ielem)))*Ms_z_eta_s_eta_wt_k(ipol,jpol)
-     M32s(ipol,jpol,ielem)=lambda(ipol,jpol,ielsolid(ielem))*&
-         Ms_z_xi_s_eta_wt_k(ipol,jpol)+mu(ipol,jpol,ielsolid(ielem))*&
-         Ms_z_eta_s_xi_wt_k(ipol,jpol)
-     M42s(ipol,jpol,ielem)=(lambda(ipol,jpol,ielsolid(ielem))+ &
-         mu(ipol,jpol,ielsolid(ielem)))*Ms_z_xi_s_xi_wt_k(ipol,jpol)
-     M11z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))* &
-         delta_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
-         two*mu(ipol,jpol,ielsolid(ielem)))*alpha_wt_k(ipol,jpol)
-     M21z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))* &
-         zeta_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))+&
-         two*mu(ipol,jpol,ielsolid(ielem)))*gamma_wt_k(ipol,jpol)
-     M41z(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))* &
-         epsil_wt_k(ipol,jpol)+(lambda(ipol,jpol,ielsolid(ielem))&
-         +two*mu(ipol,jpol,ielsolid(ielem)))*beta_wt_k(ipol,jpol)
-
-     M1phi(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))*&
-         (delta_wt_k(ipol,jpol)+alpha_wt_k(ipol,jpol))
-     M2phi(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))*&
-          (zeta_wt_k(ipol,jpol)+ gamma_wt_k(ipol,jpol))
-     M4phi(ipol,jpol,ielem)=mu(ipol,jpol,ielsolid(ielem))*&
-          (epsil_wt_k(ipol,jpol)+beta_wt_k(ipol,jpol))
-
-     M_1(ipol,jpol,ielem) = lambda(ipol,jpol,ielsolid(ielem))*&
-          M_z_eta_wt_k(ipol,jpol)
-     M_2(ipol,jpol,ielem) = lambda(ipol,jpol,ielsolid(ielem))*&
-          M_z_xi_wt_k(ipol,jpol)
-     M_3(ipol,jpol,ielem) = lambda(ipol,jpol,ielsolid(ielem))*&
-          M_s_eta_wt_k(ipol,jpol)
-     M_4(ipol,jpol,ielem) = lambda(ipol,jpol,ielsolid(ielem))*&
-          M_s_xi_wt_k(ipol,jpol)
-
-     M_5(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem))*&
-            M_z_eta_wt_k(ipol,jpol)
-     M_6(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem))*&
-            M_z_xi_wt_k(ipol,jpol)
-     M_7(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem))*&
-            M_s_eta_wt_k(ipol,jpol)
-     M_8(ipol,jpol,ielem) = mu(ipol,jpol,ielsolid(ielem))*&
-            M_s_xi_wt_k(ipol,jpol)
-
-     M_w1(ipol,jpol,ielem) = (lambda(ipol,jpol,ielsolid(ielem)) + &
-          6.d0*mu(ipol,jpol,ielsolid(ielem))) * &
-          massmat_kwts2(ipol,jpol,ielsolid(ielem))
-     M_w2(ipol,jpol,ielem) = &
-          -(two * lambda(ipol,jpol,ielsolid(ielem)) + &
-          6.d0*mu(ipol,jpol,ielsolid(ielem))) * &
-          massmat_kwts2(ipol,jpol,ielsolid(ielem))
-     M_w3(ipol,jpol,ielem) = zero
-     M_w4(ipol,jpol,ielem) = &
-          (four*lambda(ipol,jpol,ielsolid(ielem)) + &
-          9.d0*mu(ipol,jpol,ielsolid(ielem))) * &
-          massmat_kwts2(ipol,jpol,ielsolid(ielem))
-     M_w5(ipol,jpol,ielem) = four * mu(ipol,jpol,ielsolid(ielem)) * &
-          massmat_kwts2(ipol,jpol,ielsolid(ielem))
-  enddo ! ipol
-
-  ! AXIS
-  if ( axis_solid(ielem) ) then
-     ipol=0
-     
-     M11s(0,jpol,ielem) = zero
-     M22s(0,jpol,ielem) = zero
-     M42s(0,jpol,ielem) = zero
-     M11z(0,jpol,ielem) = zero
-     M1phi(0,jpol,ielem) = zero
-     
-     M_1(0,jpol,ielem) = zero 
-     M_2(0,jpol,ielem) = zero
-     M_3(0,jpol,ielem) = zero 
-     M_4(0,jpol,ielem) = zero
-     M_5(0,jpol,ielem) = zero 
-     M_6(0,jpol,ielem) = zero
-     M_7(0,jpol,ielem) = zero 
-     M_8(0,jpol,ielem) = zero
-
-     M_w1(0,jpol,ielem)=zero
-     M_w2(0,jpol,ielem)=zero
-     M_w3(0,jpol,ielem)=zero
-     M_w4(0,jpol,ielem)=zero
-     M_w5(0,jpol,ielem)=zero
-
-     ! the next definitions could be simplified using the fact that
-     ! z_eta(0,j) = J(0,j) (s_xi(0,j))^(-1), hence
-     ! dzdeta * wt_axial_k(0) * wt(jpol)) = non_diag_fact(jpol,ielem)
-     ! - MvD
-
-     call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,&
-          xi_k(0),eta(jpol),local_crd_nodes,ielsolid(ielem))
-     
-     M0_w6(jpol,ielem)=four*mu(ipol,jpol,ielsolid(ielem))*&
-           non_diag_fact(jpol,ielem)
-
-     M0_w4(jpol,ielem)=&
-          (-two*mu(ipol,jpol,ielsolid(ielem))*dzdeta* &
-          wt_axial_k(0)*wt(jpol))+ &
-          ((four*lambda(ipol,jpol,ielsolid(ielem))+&
-          9.d0*mu(ipol,jpol,ielsolid(ielem)))*&
-          non_diag_fact(jpol,ielem))
-
-     M0_w1(jpol,ielem)=&
-          (two*lambda(ipol,jpol,ielsolid(ielem))*dzdeta* &
-          wt_axial_k(0)*wt(jpol))+ &
-          ((lambda(ipol,jpol,ielsolid(ielem))+&
-          6.d0*mu(ipol,jpol,ielsolid(ielem)))*&
-          non_diag_fact(jpol,ielem))
-
-     M0_w2(jpol,ielem)=&
-          (two*(mu(ipol,jpol,ielsolid(ielem))-&
-          lambda(ipol,jpol,ielsolid(ielem)))*dzdeta* &
-          wt_axial_k(0)*wt(jpol)) - &
-          ((two*lambda(ipol,jpol,ielsolid(ielem))+&
-          6.d0*mu(ipol,jpol,ielsolid(ielem)))*&
-          non_diag_fact(jpol,ielem))
-     
-     M0_w3(jpol,ielem) = zero
-     M0_w5(jpol,ielem) = zero
-
-  endif
-
-end subroutine compute_quadrupole_stiff_terms
-!=============================================================================
-
-!-----------------------------------------------------------------------------
 subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol, &
                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
                                       fa_ani_theta, fa_ani_phi, &
@@ -2863,7 +2343,7 @@ end subroutine compute_quadrupole_stiff_terms_ani
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
+real(kind=dp) function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
                                      theta_fa, phi_fa, i, j, k, l)
 !< returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
 !! i, j, k and l should be in [1,3]
@@ -2871,11 +2351,11 @@ real(kind=dp)    function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
 ! MvD [Anisotropy Notes, p. 13.4]
   
   
-  real(kind=dp)   , intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
-  real(kind=dp)   , intent(in) :: theta_fa, phi_fa
-  integer, intent(in) :: i, j, k, l
-  real(kind=dp)   , dimension(1:3, 1:3) :: deltaf
-  real(kind=dp)   , dimension(1:3) :: s
+  real(kind=dp), intent(in) :: lambda, mu, xi_ani, phi_ani, eta_ani
+  real(kind=dp), intent(in) :: theta_fa, phi_fa
+  integer, intent(in)       :: i, j, k, l
+  real(kind=dp), dimension(1:3, 1:3) :: deltaf
+  real(kind=dp), dimension(1:3) :: s
   
   deltaf = zero
   deltaf(1,1) = one

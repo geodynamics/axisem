@@ -382,7 +382,6 @@ subroutine read_inparam_advanced
   rhohomo = 10.
   
   deflate_level = 5
-  force_ani = .true.
   snap_dt = 20.
   dump_vtk = .false.
   dump_xdmf = dump_snaps_glob
@@ -468,9 +467,6 @@ subroutine read_inparam_advanced
          case('DEFLATE_LEVEL')
              read(keyvalue,*) deflate_level
 
-         case('FORCE_ANISO')
-             read(keyvalue,*) force_ani
-
          case('SNAPSHOT_DT')
              read(keyvalue, *) snap_dt
 
@@ -525,7 +521,6 @@ subroutine read_inparam_advanced
   call broadcast_dble(snap_dt, 0) 
   
   call broadcast_log(dump_energy, 0) 
-  call broadcast_log(force_ani, 0) 
   call broadcast_log(dump_snaps_glob, 0) 
   call broadcast_log(dump_xdmf, 0) 
   call broadcast_log(dump_vtk, 0) 

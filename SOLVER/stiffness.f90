@@ -25,7 +25,7 @@ module stiffness
 
   use global_parameters, only: realkind
   use data_matr
-  use data_mesh,         only: axis_solid, axis_fluid, nsize, ani_true
+  use data_mesh,         only: axis_solid, axis_fluid, nsize
   use data_spec
   use data_source
   
@@ -203,13 +203,12 @@ subroutine glob_stiffness_mono(glob_stiffness,u)
 
         V4 = m0_w1l * V1 + m0_w3l * V2
 
-        if (ani_true) then
-           ! additional anisotropic terms
-           call vxm(G0, uz, V3)
+        ! additional anisotropic terms
+        call vxm(G0, uz, V3)
 
-           V4 = V4 + m0_w2l * V3
-           X2 = outerprod(G0, m0_w2l * V1)
-        endif
+        V4 = V4 + m0_w2l * V3
+        X2 = outerprod(G0, m0_w2l * V1)
+        ! end additional anisotropic terms
            
         V2 = m0_w3l * V1
         call vxm(V2, G2T, V1)
@@ -325,13 +324,12 @@ subroutine elemental_stiffness_mono(glob_stiffness,u, ielem)
 
      V4 = m0_w1l * V1 + m0_w3l * V2
 
-     if (ani_true) then
-        ! additional anisotropic terms
-        call vxm(G0, uz, V3)
+     ! additional anisotropic terms
+     call vxm(G0, uz, V3)
 
-        V4 = V4 + m0_w2l * V3
-        X2 = outerprod(G0, m0_w2l * V1)
-     endif
+     V4 = V4 + m0_w2l * V3
+     X2 = outerprod(G0, m0_w2l * V1)
+     ! end additional anisotropic terms
         
      V2 = m0_w3l * V1
      call vxm(V2, G2T, V1)
@@ -696,31 +694,22 @@ subroutine glob_stiffness_di(glob_stiffness,u)
         call vxm(u10, G2, V4)
         call vxm(u20, G2, V5)
 
-        if (ani_true) then
-           ! zero in isotropic case
-           m0_w3l(0:npol)  = M0_w3(0:npol,ielem)
-           m0_w4l(0:npol)  = M0_w4(0:npol,ielem)
-           m0_w6l(0:npol)  = M0_w6(0:npol,ielem)
-           m0_w10l(0:npol) = M0_w10(0:npol,ielem)
+        ! zero in isotropic case
+        m0_w3l(0:npol)  = M0_w3(0:npol,ielem)
+        m0_w4l(0:npol)  = M0_w4(0:npol,ielem)
+        m0_w6l(0:npol)  = M0_w6(0:npol,ielem)
+        m0_w10l(0:npol) = M0_w10(0:npol,ielem)
 
-           S1p = outerprod(G0, m0_w1l * V2 + m0_w3l * V3)
-           
-           S1m = outerprod(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w6l  * V4 &
-                                           + m0_w9l * V2 + m0_w10l * V3)
-           
-           S1z = outerprod(G0, m0_w3l * V1 + (m0_w4l + m0_w8l) * V4 + m0_w7l * V3 &
-                                           + m0_w10l * V2)
+        S1p = outerprod(G0, m0_w1l * V2 + m0_w3l * V3)
+        
+        S1m = outerprod(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w6l  * V4 &
+                                        + m0_w9l * V2 + m0_w10l * V3)
+        
+        S1z = outerprod(G0, m0_w3l * V1 + (m0_w4l + m0_w8l) * V4 + m0_w7l * V3 &
+                                        + m0_w10l * V2)
 
-           V4 = (m0_w2l + m0_w6l) * V2 + (m0_w4l + m0_w8l) * V3
-        else
-           S1p = outerprod(G0, m0_w1l * V2)
-           
-           S1m = outerprod(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w9l * V2)
-           
-           S1z = outerprod(G0, m0_w7l * V3 + m0_w8l * V4)
-
-           V4 = m0_w2l * V2 + m0_w8l * V3
-        endif
+        V4 = (m0_w2l + m0_w6l) * V2 + (m0_w4l + m0_w8l) * V3
+        ! end additional anisotropic terms
 
         ! Final VxM in + component
         call vxm(V4, G2T, V1)
@@ -1110,39 +1099,27 @@ subroutine glob_stiffness_quad(glob_stiffness,u)
         m0_w4l(0:npol) = M0_w4(0:npol,ielem)
         m0_w6l(0:npol) = M0_w6(0:npol,ielem)
 
-        if (ani_true) then
-           m0_w3l(0:npol) = M0_w3(0:npol,ielem)
-           m0_w5l(0:npol) = M0_w5(0:npol,ielem)
+        ! additional anisotropic terms
+        m0_w3l(0:npol) = M0_w3(0:npol,ielem)
+        m0_w5l(0:npol) = M0_w5(0:npol,ielem)
 
-           ! VxM
-           call vxm(G0, us, V1)
-           call vxm(G0, uphi, V2)
-           call vxm(G0, uz, V3)
+        ! VxM
+        call vxm(G0, us, V1)
+        call vxm(G0, uphi, V2)
+        call vxm(G0, uz, V3)
 
-           ! Collocations, Sums, Tensorization
-           S1s = outerprod(G0, m0_w1l * V1 + m0_w2l * V2 + m0_w3l * V3)
+        ! Collocations, Sums, Tensorization
+        S1s = outerprod(G0, m0_w1l * V1 + m0_w2l * V2 + m0_w3l * V3)
 
-           S1phi = outerprod(G0, m0_w2l * V1 + m0_w4l * V2 + m0_w5l * V3)
-           
-           S1z = outerprod(G0, m0_w3l * V1 + m0_w5l * V2 + m0_w6l * V3)
-        else
-           ! VxM
-           call vxm(G0, us, V1)
-           call vxm(G0, uphi, V2)
-           call vxm(G0, uz, V3)
+        S1phi = outerprod(G0, m0_w2l * V1 + m0_w4l * V2 + m0_w5l * V3)
+        
+        S1z = outerprod(G0, m0_w3l * V1 + m0_w5l * V2 + m0_w6l * V3)
+        ! end additional anisotropic terms
 
-           ! Collocations, Sums, Tensorization
-           S1s = outerprod(G0, m0_w1l * V1 + m0_w2l * V2)
-           
-           S1phi = outerprod(G0, m0_w2l * V1 + m0_w4l * V2)
-           
-           S1z = outerprod(G0, m0_w6l * V3)
-       endif
-
-       ! Final Sum
-       loc_stiffness_s   = loc_stiffness_s   + S1s
-       loc_stiffness_phi = loc_stiffness_phi + S1phi 
-       loc_stiffness_z   = loc_stiffness_z   + S1z 
+        ! Final Sum
+        loc_stiffness_s   = loc_stiffness_s   + S1s
+        loc_stiffness_phi = loc_stiffness_phi + S1phi 
+        loc_stiffness_z   = loc_stiffness_z   + S1z 
 
      endif
 

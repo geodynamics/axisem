@@ -55,7 +55,7 @@ subroutine read_db
   use data_comm
   use data_proc
   use data_time
-  use data_io,            only : force_ani, do_anel
+  use data_io,            only : do_anel
   use data_numbering,     only : nglob, nglob_solid, igloc_solid, igloc_fluid
   use commun,             only : barrier, psum, pmax, pmin
   use background_models,  only : model_is_ani, model_is_anelastic
@@ -173,12 +173,6 @@ subroutine read_db
      read(1000+mynum) discont(idom), solid_domain(idom), idom_fluid(idom) 
   enddo
  
-  if (force_ani) then
-     ani_true = .true.
-  else
-     ani_true = model_is_ani(bkgrdmodel)
-  endif
-
   if (do_anel) then
      if (model_is_anelastic(bkgrdmodel)) then
         anel_true = .true.
@@ -199,7 +193,6 @@ subroutine read_db
      write(69,*) '  router [m]          = ', router
      write(69,*) '  resolve_inner_shear = ', resolve_inner_shear
      write(69,*) '  have_fluid          = ', have_fluid
-     write(69,*) '  ani_true            = ', ani_true
      write(69,*) '  anel_true           = ', anel_true
   endif
 

@@ -108,7 +108,6 @@ module data_mesh
   real(kind=dp)               :: rmin, minh_ic, maxh_ic, maxh_icb
   logical                     :: make_homo
   real(kind=dp)               :: vphomo, vshomo, rhohomo
-  logical                     :: ani_true  ! anisotropic model?
   logical                     :: anel_true ! anelastic model?
   !--------------------------------------------------------------------------
 
