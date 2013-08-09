@@ -111,7 +111,9 @@ subroutine create_domain_decomposition
 
   allocate(procel(nelmax,0:nproc-1))
   allocate(procel_fluid(nelmax_fluid,0:nproc-1))
+  procel_fluid = -1
   allocate(procel_solid(nelmax_solid,0:nproc-1))
+  procel_solid = -1
   allocate(el2proc(neltot))
   el2proc(:)=-1
 
@@ -126,24 +128,35 @@ subroutine create_domain_decomposition
   ! write out procel arrays
   if (dump_mesh_info_files) then
      open(unit=666,file=diagpath(1:lfdiag)//'/inv_procel.dat')
-     do iproc=0,nproc-1
-       do iel=1,neltot
-          if (el2proc(iel)==iproc) then 
-             write(666,*)iproc,iel,inv_procel(iel,iproc),&
-                         procel(inv_procel(iel,iproc),iproc)
+     do iproc=0, nproc-1
+       do iel=1, neltot
+          if (el2proc(iel) == iproc) then 
+             write(666,*) iproc, iel, inv_procel(iel,iproc), &
+                          procel(inv_procel(iel,iproc),iproc)
           endif
        enddo
      enddo
      close(666)
      
      open(unit=666,file=diagpath(1:lfdiag)//'/procel.dat')
-     do iproc=0,nproc-1
-       do iel=1,nel(iproc)
-          write(666,*)iproc,iel,procel(iel,iproc),inv_procel(procel(iel,iproc),iproc)
+     do iproc=0, nproc-1
+       do iel=1, nel(iproc)
+          write(666,*) iproc, iel, procel(iel,iproc), inv_procel(procel(iel,iproc),iproc)
        enddo
      enddo
      close(666)
   end if
+  
+  do iel = 1, neltot
+      if (.not. attributed(iel) ) then 
+         write(6,*) ' NOT ATTRIBUTED '
+         write(6,*) iel, thetacom(iel), solid(iel), fluid(iel)
+      endif
+  end do
+
+  do iel = 1, neltot
+     if (.not.attributed(iel) ) stop
+  end do
   
   ! check that every element has been assigned
   if (minval(el2proc)==-1) then
@@ -151,17 +164,6 @@ subroutine create_domain_decomposition
      write(6,*) 'Element(s) not assigned to any processor:', minloc(el2proc)
      stop
   endif
-
-  do iel = 1, neltot
-   if (.not. attributed(iel) ) then 
-      write(6,*) ' NOT ATTRIBUTED '
-      write(6,*) iel, thetacom(iel),solid(iel),fluid(iel)
-   endif
-  end do
-
-  do iel = 1, neltot
-     if (.not.attributed(iel) ) stop
-  end do
 
   if (dump_mesh_info_screen) then
   write(6,*)
@@ -252,7 +254,7 @@ subroutine domain_decomposition_theta
 ! procel: 
 
   integer               :: iproc, iiproc, iel
-  integer               :: iel0_solid, iel0_fluid, mycount
+  integer               :: mycount
   real(kind=dp)         :: deltatheta
   integer, allocatable  :: central_count(:)
   real(kind=dp)         :: pi2
@@ -262,25 +264,17 @@ subroutine domain_decomposition_theta
 
   allocate(central_count(0:nproc-1))
 
-  ! Create colatitude bounds array for outer shell
-  allocate(theta_min_proc(0:nproc-1),theta_max_proc(0:nproc-1))
-  theta_min_proc(:) = 0.d0 ; theta_max_proc(:) = 0.d0
-  deltatheta = pi2/dble(nproc)
-  do iproc = 0, nproc-1
-     theta_min_proc(iproc) = dble(iproc  )*deltatheta
-     theta_max_proc(iproc) = dble(iproc+1)*deltatheta
-  end do
+  !! Create colatitude bounds array for outer shell
+  ! theta_min_proc and theta_max_proc are now filled up in
+  ! meshgen.f90:def_ref_cart_coordinates_discont
 
   ! **************** INNER CUBE **********************
-  !   call decompose_inner_cube(iproc,theta_min,theta_max)
-
   if (nproc == 1 .or. nproc == 2 .or. nproc == 4) then
       ! define quadratic functions to delineate processor boundaries. 
-      ! Works for nproc=1,2,4 at this point
+      ! Works for nproc = 1, 2, 4 
       call decompose_inner_cube_quadratic_fcts(central_count)
   elseif (nproc >= 8 .and. (nproc / 4) * 4 == nproc) then
-      ! newest version of inner core decomposition (nproc needs to be multiple
-      ! of 4)
+      ! newest version of inner core decomposition (nproc needs to be multiple of 4)
       call decompose_inner_cube_opt(central_count)
   else
       write(6,*)
@@ -292,64 +286,55 @@ subroutine domain_decomposition_theta
 
   ! **************** END OF INNER CUBE****************
 
-  iel0_solid = 1
-  iel0_fluid = 1
-
   do iproc = 0, nproc -1
 
      mycount = 0
   
-     do iel = 1,neltot
+     do iel = 1, neltot
   
-        ! I add the extra requirement that element iel to be in appropriate 
-        ! theta slice
-  
-        if (fluid(iel) .and. (thetacom(iel) > theta_min_proc(iproc)) .and.  &
-            (thetacom(iel) < theta_max_proc(iproc)) ) then
-         mycount = mycount+1
-         procel_fluid(mycount,iproc) = iel
-         attributed(iel) = .true.
+        ! add the extra requirement that element iel to be in appropriate theta slice
+        if (fluid(iel) .and. &
+            (thetacom(iel) >= theta_min_proc(iproc)) .and.  &
+            (thetacom(iel) <= theta_max_proc(iproc)) ) then
+            mycount = mycount + 1
+            procel_fluid(mycount,iproc) = iel
+            attributed(iel) = .true.
         end if
-        if ( mycount == nel_fluid(iproc) ) then
-         iel0_fluid = 1
-         exit
-        end if
+
+        if ( mycount == nel_fluid(iproc) ) exit
      end do ! iel
   
      mycount = central_count(iproc)
   
      !  At this stage we have assigned nel_fluid fluid elements
      !  to each processor, stored in a procel_fluid(1:nel_fluid,iproc)
-     !  do iel = iel0_solid,neltot
      !  Here we start the loop over solid elements and try to assign them to iproc
      
-     do iel = 1,neltot
-        if (.not.fluid(iel) .and. .not.(attributed(iel)) .and. &
-             (thetacom(iel) >= theta_min_proc(iproc))     .and. &
-             (thetacom(iel) <= theta_max_proc(iproc))     ) then
-           mycount = mycount+1
+     do iel = 1, neltot
+        if ( .not. fluid(iel) .and. .not.(attributed(iel)) .and. &
+             (thetacom(iel) >= theta_min_proc(iproc)) .and. &
+             (thetacom(iel) <= theta_max_proc(iproc)) ) then
+           mycount = mycount + 1
            procel_solid(mycount,iproc) = iel
            attributed(iel) = .true.
         end if
+
         if ( mycount == nel_solid(iproc) ) then
-           iel0_solid = 1
            if (dump_mesh_info_screen) then
-              write(6,*) ' PROC ', iproc ,' has everybody it needs ' 
+              write(6,*) ' PROC ', iproc ,' has everybody it needs ', mycount, nel_solid(iproc)
               call flush(6)
            endif
            exit
         end if
-        if ( mycount == nel_solid(iproc) ) exit
-  
      end do
   
-     if (mycount< nel_solid(iproc)) then 
+     if (mycount < nel_solid(iproc)) then 
         write(6,*)
-        write(6,*)'Problem: not all solid elements attributed for proc',iproc,&
-                   mycount
-        do iiproc=0,nproc-1
-           write(6,*)'nel_solid(iproc),centralcount:',&
-                     iiproc,nel_solid(iiproc),central_count(iiproc)
+        write(6,*) 'Problem: not all solid elements attributed for proc', iproc, &
+                    mycount, nel_solid(iproc)
+        do iiproc=0, nproc-1
+           write(6,*) 'nel_solid(iproc), centralcount:',&
+                     iiproc, nel_solid(iiproc), central_count(iiproc)
         enddo
         stop
      endif
@@ -365,12 +350,14 @@ subroutine domain_decomposition_theta
         else
            procel(iel,iproc) = procel_solid(iel-nel_fluid(iproc),iproc)
            if (procel(iel,iproc)<=0) then
-              write(6,*)'PROCEL ZERO!',iproc,eltypeg(iel),iel,nel_fluid(iproc)
+              write(6,*) 'PROCEL ZERO!', iproc, eltypeg(iel), iel, nel_fluid(iproc)
+              write(6,*) '            ', thetacom(iel), pi/nproc * iproc, &
+                         pi/nproc * (iproc + 1)
               stop
            endif
         end if
-        el2proc(procel(iel,iproc))=iproc
-        inv_procel(procel(iel,iproc),iproc)=iel
+        el2proc(procel(iel,iproc)) = iproc
+        inv_procel(procel(iel,iproc),iproc) = iel
      end do
 
   end do !nproc-1

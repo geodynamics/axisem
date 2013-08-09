@@ -1087,6 +1087,7 @@ subroutine define_central_region
      open(unit=5559,file=diagpath(1:lfdiag)//'/fort.5559') 
   end if
   
+  ! loop along diagonal: is==iz
   do is=2, ndivs+1
      p = 0.5d0 * (s_arr(is,is) - s_arr(is-1,is-1)) * dble(is) / dble(ndivs)
      if (dump_mesh_info_files) write(5559,*)is,is,p,s_arr(is,is)
@@ -1094,12 +1095,22 @@ subroutine define_central_region
      z_arr(is,is) = z_arr(is,is) + p
      if (dump_mesh_info_files) write(5559,*)is,is,p,s_arr(is,is)
   enddo
+
   if (dump_mesh_info_files) then 
      close(5559)
   end if
   
   !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+  !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   !@TODO add here shrinking of axial elements as in the sperical shell
+  !      might not be necessary, but keeping this in a comment for now
+  !do is=ndivs+1, 2, -1
+  !   do iz=1, ndivs+1
+  !      s_arr(is,iz) = s_arr(is,iz) - s_arr(2,iz) * 0.25 * (ndivs + 2 - is) / ndivs
+  !   enddo
+  !enddo
+  !+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   ! make sure max val is ri
   s_arr = s_arr / maxval(abs(s_arr)) * (ri - maxh_icb/router)
@@ -1321,20 +1332,26 @@ end subroutine def_ref_cart_coordinates
 subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
 
   use data_grid
-  use data_bkgrdmodel, only: nc_init
+  use data_bkgrdmodel, only: nc_init, nproc_target
+  use data_pdb,        only: theta_max_proc, theta_min_proc, nproc
+
   integer, intent(in) :: nst, nzt
   real(kind=dp), dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
   real(kind=dp), dimension(1:nzt) :: dz
 
-  integer           :: is, iz 
+  integer           :: is, iz
   real(kind=dp)     :: ds1, ds2, sizefac
+
+  real(kind=dp)     :: deltatheta
+  real(kind=dp)     :: pi2
+  integer           :: iproc
+
  
-  !sizefac = .75
+  !sizefac = .7
   sizefac = 1.
   !@ TODO this value needs to be tested!
 
-  !Make axial elements a bit smaller, to avoid artifacts from axial integration
-  !scheme
+  !Make axial elements a bit smaller, to avoid artifacts from axial integration scheme
   ds1 = 2.d0 / dble(nst) * sizefac
   ds2 = (2.d0 - 2**nc_init * ds1) / dble(nst - 2**nc_init)
 
@@ -1351,6 +1368,32 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
         crd(is,iz,2) = crd(is,iz-1,2) +  dz(iz-1)
      end do
   end do
+  
+  ! Create colatitude bounds array for outer shell
+  ds1 = 1.d0 / dble(nst) * sizefac
+  ds2 = (1.d0 - 2**nc_init * ds1) / dble(nst - 2**nc_init)
+
+  write(6,*) ds1, ds2, nst
+  
+  pi2 = 2.d0 * dasin(1.d0)
+  allocate(theta_min_proc(0:nproc_target-1), theta_max_proc(0:nproc_target-1))
+  theta_min_proc(:) = 0.d0
+  theta_max_proc(:) = 0.d0
+  theta_max_proc(nproc_target-1) = pi2
+
+  do iproc = 0, nproc_target-2
+     theta_min_proc(iproc+1) = 0.5d0 * pi2 * (ds1 * 2**nc_init &
+                       + ds2 * (nst * 2 / nproc_target * (iproc + 1) - 2**nc_init))
+     theta_max_proc(iproc)   = 0.5d0 * pi2 * (ds1 * 2**nc_init &
+                       + ds2 * (nst * 2 / nproc_target * (iproc + 1) - 2**nc_init))
+  end do
+
+  write(6,*) 'theta slices:'
+  do iproc = 0, nproc_target-1
+     write(6,*) theta_min_proc(iproc)
+     write(6,*) theta_max_proc(iproc)
+  enddo
+  !stop
 
 end subroutine def_ref_cart_coordinates_discont
 !-----------------------------------------------------------------------------------------
