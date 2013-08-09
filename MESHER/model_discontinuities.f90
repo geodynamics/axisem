@@ -55,18 +55,18 @@ subroutine define_discont
      case('prem_iso_solid')
         write(6,*)'Reading PREM_SOLID discontinuities...'
         call prem_solid_discont
-     case('prem_iso_onecrust')
-        write(6,*)'Reading PREM_ONECRUST discontinuities...'
-        call prem_onecrust_discont
-     case('prem_ani_onecrust')
-        write(6,*)'Reading PREM_ONECRUST_ANI discontinuities...'
-        call prem_onecrust_ani_discont
      case('prem_iso_light')
         write(6,*)'Reading PREM_LIGHT discontinuities...'
         call prem_light_discont   
      case('prem_ani_light')
         write(6,*)'Reading PREM_LIGHT_ANI discontinuities...'
         call prem_light_ani_discont   
+     case('prem_iso_onecrust')
+        write(6,*)'Reading PREM_ONECRUST discontinuities...'
+        call prem_onecrust_discont
+     case('prem_ani_onecrust')
+        write(6,*)'Reading PREM_ONECRUST_ANI discontinuities...'
+        call prem_onecrust_ani_discont
      case('prem_iso_solid_light')
         write(6,*)'Reading PREM_SOLID_LIGHT discontinuities...'
         call prem_solid_light_discont
