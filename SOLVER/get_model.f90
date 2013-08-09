@@ -371,7 +371,6 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   use commun, ONLY : barrier
   use lateral_heterogeneities
   use data_mesh_preloop, ONLY : ielsolid
-  use data_io, ONLY : rot_mat
   use data_source, ONLY : rot_src
 
   include 'mesh_params.h'
