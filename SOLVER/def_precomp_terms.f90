@@ -86,10 +86,10 @@ subroutine read_model_compute_terms
   if (lpr .and. verbose > 1) write(6,*) '   model is anisotropic....'
   if (anel_true) then
     if(lpr .and. verbose > 1) write(6,*)'   ....and anelastic...'
-    call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
+    call read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
                         fa_ani_phi, Q_mu, Q_kappa)
   else
-    call read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+    call read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
   endif
 
   if (lpr .and. verbose > 1) write(6,*) '   compute Lagrange interpolant derivatives...'
@@ -1590,7 +1590,7 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
      do jpol=0,npol
        select case (src_type(1))
        case ('monopole')
-          call compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+          call compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                      lambda,mu,xi_ani,phi_ani,eta_ani, &
                                      fa_ani_theta, fa_ani_phi, &
                                      massmat_kwts2, &
@@ -1602,7 +1602,7 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
                                      Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
        case('dipole')
-          call compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+          call compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                      lambda,mu,xi_ani,phi_ani,eta_ani, &
                                      fa_ani_theta, fa_ani_phi, &
                                      massmat_kwts2, &
@@ -1614,7 +1614,7 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
                                      Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
        case('quadpole') 
-          call compute_quadrupole_stiff_terms_ani(ielem,jpol,&
+          call compute_quadrupole_stiff_terms(ielem,jpol,&
                                      lambda,mu,xi_ani,phi_ani,eta_ani, &
                                      fa_ani_theta, fa_ani_phi, &
                                      massmat_kwts2,&
@@ -1687,7 +1687,7 @@ end subroutine def_solid_stiffness_terms
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                        lambda,mu,xi_ani,phi_ani,eta_ani, &
                                        fa_ani_theta, fa_ani_phi, &
                                        massmat_kwts2, &
@@ -1794,7 +1794,7 @@ subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
         
         if (Ctmp > smallval_sngl) then
            write(6,*) procstrg, ' ERROR: some stiffness term that should be zero '
-           write(6,*) procstrg, '        is not: in compute_monopole_stiff_terms_ani()'
+           write(6,*) procstrg, '        is not: in compute_monopole_stiff_terms()'
            stop
         endif
      endif
@@ -1864,11 +1864,11 @@ subroutine compute_monopole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
      endif
   enddo ! ipol
 
-end subroutine compute_monopole_stiff_terms_ani
+end subroutine compute_monopole_stiff_terms
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
+subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
                                       fa_ani_theta, fa_ani_phi, &
                                       massmat_kwts2, &
@@ -1980,7 +1980,7 @@ subroutine compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
         
         if (Ctmp > smallval_sngl) then
            write(6,*) procstrg, ' ERROR: some stiffness term that should be zero '
-           write(6,*) procstrg, '        is not: in compute_monopole_stiff_terms_ani()'
+           write(6,*) procstrg, '        is not: in compute_dipole_stiff_terms()'
            stop
         endif
      endif
@@ -2119,11 +2119,11 @@ subroutine compute_dipole_stiff_terms_ani(ielem,jpol,local_crd_nodes, &
 
   endif
 
-end subroutine compute_dipole_stiff_terms_ani
+end subroutine compute_dipole_stiff_terms
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol, &
+subroutine compute_quadrupole_stiff_terms(ielem,jpol, &
                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
                                       fa_ani_theta, fa_ani_phi, &
                                       massmat_kwts2, &
@@ -2230,7 +2230,7 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol, &
         
         if (Ctmp > smallval_sngl) then
            write(6,*)procstrg,' ERROR: some stiffness term that should be zero '
-           write(6,*)procstrg,'        is not: in compute_monopole_stiff_terms_ani()'
+           write(6,*)procstrg,'        is not: in compute_quadrupole_stiff_terms()'
            stop
         endif
      endif
@@ -2339,7 +2339,7 @@ subroutine compute_quadrupole_stiff_terms_ani(ielem,jpol, &
       M_w5(0,jpol,ielem) = zero
    endif
 
-end subroutine compute_quadrupole_stiff_terms_ani
+end subroutine compute_quadrupole_stiff_terms
 !=============================================================================
 
 !-----------------------------------------------------------------------------

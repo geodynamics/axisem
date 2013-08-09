@@ -33,7 +33,7 @@ module get_model
 
   implicit none
 
-  public :: read_model_ani
+  public :: read_model
   private
   contains
 
@@ -78,7 +78,7 @@ module get_model
 !!    On-the-fly verification of respective radial averages:
 !!       xmgrace timestep_rad.dat or xmgrace period_rad.dat
 !-----------------------------------------------------------------------------
-subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                           fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
 
   use commun, ONLY : barrier
@@ -319,7 +319,7 @@ subroutine read_model_ani(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                            vpmaxloc(1), vpmaxloc(2))
   call compute_coordinates(s, z, vsmaxr, theta, vsmaxloc(3),&
                            vsmaxloc(1), vsmaxloc(2))
-end subroutine read_model_ani
+end subroutine read_model
 !=============================================================================
 
 !-----------------------------------------------------------------------------
