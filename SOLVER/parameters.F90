@@ -716,13 +716,13 @@ subroutine compute_numerical_parameters
      if (enforced_period < period) then 
         if (lpr) then 
            write(6,*)
-           write(6,*)'    ERROR: Period smaller than necessary by mesh!'
-           write(6,*)'    A pulse of this (short) chosen half width will produce numerical '
-           write(6,*)'    noise on this (coarse) mesh'
+           write(6,*) '    ERROR: Period smaller than necessary by mesh!'
+           write(6,*) '    A pulse of this (short) chosen half width will produce numerical '
+           write(6,*) '    noise on this (coarse) mesh'
            write(6,21)'   Chosen value (in inparam file):',enforced_period
            write(6,21)'   Minimal period for this mesh  :',period
-           write(6,*)'    Change period in input file to larger than this min.'
-           write(6,*)'    or to zero to use precalculated (recommended)'
+           write(6,*) '    Change period in input file to larger than this min.'
+           write(6,*) '    or to zero to use precalculated (recommended)'
            stop
         endif
      else
@@ -750,7 +750,7 @@ subroutine compute_numerical_parameters
 
 
   ! Compute number of iterations in time loop
-  niter=floor((seislength_t+smallval_dble)/deltat)
+  niter=ceiling((seislength_t+smallval_dble)/deltat)
   if (lpr) then 
      write(6,*)
      write(6,22)'    desired simulation length  :',seislength_t,' seconds'
@@ -763,20 +763,14 @@ subroutine compute_numerical_parameters
      write(6,*)
      write(6,22)'    desired seismogram sampling:',seis_dt,' seconds'
   endif
-  if (seis_dt > zero  .and. seis_dt >= deltat ) then
-     if (period/seis_dt<10.) then
-        if (lpr) write(6,*) ' ! ! !   W A R N I N G   ! ! !'
-        if (lpr) write(6,*) 'seismogram sampling too coarse w.r.t. mesh resolution:',period,seis_dt
-        if (lpr) write(6,*) '... changing seismogram sampling rate to ',period/10.
-        seis_dt=period/10.
-     endif
+  if (seis_dt > 0.0  .and. seis_dt >= deltat ) then
      seis_it=floor((seis_dt+smallval_dble)/deltat)
      seis_dt=deltat*seis_it
-  elseif (seis_dt < deltat) then
-     if (lpr) write(6,*) 'seismogram sampling cannot be smaller than time step...'
-     if (lpr) write(6,*) '...changing it to the time step'
-     seis_dt = deltat
-     seis_it = 1
+  elseif (seis_dt > 0.0 .and. seis_dt < deltat) then
+     write(errmsg,*) 'seismogram sampling cannot be smaller than time step... \n', &
+                     ' seismogram sampling:  ', seis_dt, &
+                     '\ nsimulation time step: ', deltat
+     call pcheck(.true.,errmsg)
   else
      seis_it = 1
      seis_dt = deltat
@@ -851,7 +845,7 @@ subroutine compute_numerical_parameters
      if (20.*seis_dt > period ) then 
         if (lpr) then 
            write(6,*)'   +++++++++++++++++++ W A R N I N G +++++++++++++++++++++ '
-           write(6,*)'   The sampling rate of seismograms is quite coarse given the'
+           write(6,*)'   The sampling period of seismograms is quite coarse given the'
            write(6,*)'   Dirac delta source time function. We suggest to use at least'
            write(6,*)'   20 points per period to ensure accurate results, i.e. seis_dt<=',period/20.
            write(6,*)'   +++++++++++++++ E N D  o f  W A R N I N G +++++++++++++ '
