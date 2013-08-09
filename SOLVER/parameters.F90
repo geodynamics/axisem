@@ -403,7 +403,7 @@ subroutine read_inparam_advanced
      
          parameter_to_read : select case(trim(keyword))
 
-         case('SAMPLING_RATE')
+         case('SAMPLING_PERIOD')
              read(keyvalue, *) seis_dt 
              
          case('SOURCE_PERIOD')
