@@ -495,12 +495,14 @@ subroutine read_inparam_advanced
   
   call broadcast_dble(seis_dt, 0) 
   call broadcast_dble(enforced_period, 0) 
+  call broadcast_char(stf_type, 0) 
   call broadcast_dble(enforced_dt, 0) 
   
   call broadcast_char(time_scheme, 0) 
   call broadcast_char(datapath, 0) 
   call broadcast_char(infopath, 0) 
   
+  call broadcast_log(diagfiles, 0) 
   call broadcast_log(do_mesh_tests, 0) 
   call broadcast_log(dump_wavefields, 0) 
   
