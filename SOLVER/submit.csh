@@ -1,9 +1,11 @@
 #!/bin/csh -f
 
-set pwd_noblank = `echo $PWD | sed 's/ //g'`
-test "$pwd_noblank" != "$PWD" && echo "ERROR: your path contains a blank, please rename" && exit
+#set pwd_noblank = `echo $PWD | sed 's/ //g'`
+#test "$pwd_noblank" != "$PWD" && echo "ERROR: your path contains a blank, please rename" && exit
 
-set homedir = $PWD
+#set homedir = $PWD
+set homedir = `echo $PWD | sed 's/ /%20/g'`
+echo $homedir
 
 if ( ${#argv} < 1 || "$1" == "-h" ) then
     echo ""
@@ -322,13 +324,15 @@ foreach isrc (${num_src_arr})
                 echo "# Sample PBS for parallel jobs" > run_solver.pbs
                 echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
                 echo "ulimit -s unlimited " >> run_solver.pbs
-                echo "cd $PWD " >> run_mesh.pbs
+                echo "cd $PWD " >> run_solver.pbs
                 echo "$mpiruncnd -n $nodnum ./axisem  > OUTPUT " >> run_solver.pbs
                 qsub run_solver.pbs
             endif
 
         ######## SUBMIT LOCALLY #######
         else 
+            ulimit -s unlimited
+            setenv OMP_NUM_THREADS 4
             $mpiruncmd -n $nodnum ./axisem >& $outputname &
         endif
 
