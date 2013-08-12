@@ -44,7 +44,7 @@ INFO_DIR        "./Info"
 # Enabling this option will put all seismograms and wavefields into one file
 # axisem_output.nc4 in the $DATA directory. Postprocessing will automatically
 # read and process this file.
-USE_NETCDF          true
+USE_NETCDF          false
 
 # Level of compression of wavefield data (0: off, 9:highest, default: 5)
 DEFLATE_LEVEL       5
@@ -145,6 +145,3 @@ HOMO_MODEL          .false.
 HOMO_VP             10.
 HOMO_VS             5.77
 HOMO_RHO            3.
-
-# Force anisotropic model handling of isotropic models
-FORCE_ANISO         .true.
