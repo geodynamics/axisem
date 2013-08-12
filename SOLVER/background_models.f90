@@ -58,7 +58,7 @@ real(kind=dp)  function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
         velocity = prem_sub(r0, param, idom)
      case('prem_ani')
         velocity = prem_ani_sub(r0, param, idom)
-     case('prem_solid')
+     case('prem_iso_solid')
         velocity = prem_solid_sub(r0, param, idom)
      case('prem_iso_light')
         velocity = prem_light_sub(r0, param, idom)
@@ -149,7 +149,6 @@ real(kind=dp) function ak135f(r0, param, idom)
   
     r =r0 / 1000.
     x_ak = r / 6371. ! normalized
-
 
     select case(idom) 
     case(12) ! depth: 6371.000000
