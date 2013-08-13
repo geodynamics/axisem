@@ -712,9 +712,10 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
   real, dimension(1:npts), intent(in)               :: longit
   integer, intent(in)   :: npts, nsim
   real, dimension(6)    :: Mij_scale
-  character(len=100)    :: junk
-  integer               :: isim, i, j
-  real                  :: transrottmp(1:3,1:3), Mij_matr(3,3)
+  character(len=100)    :: junk, fmtstring
+  character(len=256)    :: keyword, keyvalue, line
+  integer               :: isim, i, j, iinparam_source, ioerr
+  real                  :: transrottmp(1:3,1:3), Mij_matr(3,3), amplitude
   
   ! This is the rotation matrix of Nissen-Meyer, Dahlen, Fournier, GJI 2007
   ! to rotate xyz coordinates 
@@ -759,16 +760,32 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
 
-  elseif (src_file_type=='sourceparams') then 
-     open(unit=20000,file='sourceparams.dat',POSITION='REWIND',status='old')
-     read(20000,*) (Mij(i),i=1,6)
-     close(20000)        
+  else if (src_file_type=='sourceparams') then
+     open(unit=iinparam_source, file='inparam_source', status='old', action='read',  iostat=ioerr)
+     if (ioerr /= 0) stop 'Check input file ''inparam_source''! Is it still there?' 
+ 
+     do
+        read(iinparam_source, fmt='(a256)', iostat=ioerr) line
+        if (ioerr < 0) exit
+        if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+
+        read(line,*) keyword, keyvalue 
+      
+        if (trim(keyword) == 'SOURCE_AMPLITUDE') then
+            read(keyvalue,*) amplitude
+        end if
+     end do
+     Mij = amplitude ! The whole tensor is set to amplitude. That's okay, since later only the terms
+                     ! are used, which are nonzero for this simulation.
+
   else
      write(6,*)'unknown source file type!',src_file_type
+     stop
   endif
 
+  fmtstring = '(6(E12.5))'
   write(6,*) 'Original moment tensor: (Mrr, Mtt, Mpp, Mrt, Mrp, Mtp)'
-  write(6,*) (Mij(i),i=1,6)
+  write(6,fmtstring) (Mij(i),i=1,6)
   write(6,*) 'magnitudes of each run:'
   write(6,*) (magnitude(isim),isim=1,nsim)
 
@@ -776,67 +793,43 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      Mij_scale = Mij / magnitude(isim)
 
-     write(6,*)'Mij scaled:',Mij_scale
+     write(6,*)'Mij scaled:'
+     write(6,fmtstring) Mij_scale
 
-     if ( (src_file_type=='sourceparams')) then 
-        write(6,*)isim, 'rotating moment tensor from sourceparams..'
-        transrottmp(1:3,1:3) = trans_rot_mat(:,:,isim)
-        Mij_matr(1,1) = Mij_scale(1)
-        Mij_matr(2,2) = Mij_scale(2)
-        Mij_matr(3,3) = Mij_scale(3)
-        Mij_matr(1,2) = Mij_scale(4)
-        Mij_matr(1,3) = Mij_scale(5)
-        Mij_matr(2,3) = Mij_scale(6)
-        Mij_matr(2,1) = Mij_matr(1,2)
-        Mij_matr(3,1) = Mij_matr(1,3)
-        Mij_matr(3,2) = Mij_matr(2,3) 
-
-        ! rotate Mij to source at NP system
-        Mij_matr = matmul(transrottmp,Mij_matr)
-        Mij_matr = matmul(Mij_matr,transpose(transrottmp))
-
-        Mij_scale(1) = Mij_matr(1,1)
-        Mij_scale(2) = Mij_matr(2,2)
-        Mij_scale(3) = Mij_matr(3,3) 
-        Mij_scale(4) = Mij_matr(1,2) 
-        Mij_scale(5) = Mij_matr(1,3)
-        Mij_scale(6) = Mij_matr(2,3)
-         
-     endif
 
      do i=1,npts
 
-        if (src_type(isim,2) == 'mzz') then
+        if (src_type(isim,2) == 'mrr') then
            mij_prefact(i,isim,:) = Mij_scale(1)
            mij_prefact(i,isim,2) = 0.
-           if (i==1) write(6,*) isim, 'Simulation is mzz, prefact:', &
+           if (i==1) write(6,*) isim, 'Simulation is mrr, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
 
-        elseif (src_type(isim,2) == 'mxx_p_myy') then
+        elseif (src_type(isim,2) == 'mtt_p_mpp') then
            mij_prefact(i,isim,:) = Mij_scale(2) + Mij_scale(3)
            mij_prefact(i,isim,2) = 0.
            if (i==1) write(6,*) isim, 'Simulation is mxx, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
 
-        elseif (src_type(isim,2) == 'mxz' .or. src_type(isim,2)=='myz') then
+        elseif (src_type(isim,2) == 'mtr' .or. src_type(isim,2)=='mpr') then
            mij_prefact(i,isim,:) = Mij_scale(4) * cos(longit(i)) &
                                 + Mij_scale(5) * sin(longit(i))
            mij_prefact(i,isim,2) = - Mij_scale(4) * sin(longit(i)) &
                                 + Mij_scale(5) * cos(longit(i))
 
-           if (i==1) write(6,*) isim, 'Simulation is mxz, prefact:', &
+           if (i==1) write(6,*) isim, 'Simulation is mtr, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
 
-        elseif (src_type(isim,2) == 'mxy' .or. src_type(isim,2)=='mxx_m_myy') then
+        elseif (src_type(isim,2) == 'mtp' .or. src_type(isim,2)=='mtt_m_mpp') then
            mij_prefact(i,isim,:) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit(i))  &
                                      + 2. * Mij_scale(6) * sin(2. * longit(i)) 
            mij_prefact(i,isim,2) = (Mij_scale(3) - Mij_scale(2)) * sin(2. * longit(i)) &
                                      + 2. * Mij_scale(6)*cos(2. * longit(i))
 
-           if (i==1) write(6,*) isim, 'Simulation is mxy, prefact:', &
+           if (i==1) write(6,*) isim, 'Simulation is mtp, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
 
@@ -845,8 +838,10 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
            if (i==1) write(6,*) isim, 'Simulation is explosion, prefact:', &
                                 mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
                                 mij_prefact(i,isim,3)
+        else
+            write(6,*) 'unknown source type ', src_type(isim,2)
+            stop
         endif
-        
      enddo
 
      write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
@@ -860,9 +855,9 @@ subroutine sum_individual_wavefields(field_sum, field_in, n, mij_prefact)
 
   implicit none
   
-  integer, intent(in) :: n
-  real, dimension(n,3), intent(in) :: field_in
-  real, dimension(3), intent(in) :: mij_prefact
+  integer, intent(in)                 :: n
+  real, dimension(n,3), intent(in)    :: field_in
+  real, dimension(3),   intent(in)    :: mij_prefact
   real, dimension(n,3), intent(inout) :: field_sum
 
   field_sum(:,1) = field_sum(:,1) + mij_prefact(1) * field_in(:,1)
