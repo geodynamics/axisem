@@ -41,6 +41,7 @@ contains
 !----------------------------------------------------------------------------------------
 subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                    fa_ani_theta, fa_ani_phi, ieldom)
+    use commun, only: barrier
     include 'mesh_params.h'
 
     integer :: ij
@@ -170,6 +171,8 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                delta_vs, inverseshape, p_inv_dist, R_inv_dist, het_ani_discr, &
                het_rel_discr) 
 
+
+    call barrier ! for nicer output 
 
     if (lpr) then
        write(6,*)
