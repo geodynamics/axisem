@@ -318,7 +318,7 @@ foreach isrc (${num_src_arr})
 
 	    ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 
-                #set nodes = `echo (($nodnum/16 + 15/16))`
+                #set nodes = `echo ${nodnum} | awk 'BEGIN {printf "%.0f\n", $1/16+0.49}'`
 
                 echo "# Sample PBS for parallel jobs" > run_solver.pbs
                 echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
