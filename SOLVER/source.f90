@@ -934,14 +934,14 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                        source_term(ipol,jpol,liel_src,3) = &
                             dzwz(lipol_src,ljpol_src,liel_src)
                     
-                    case ('mxx_p_myy' ) 
+                    case ('mtt_p_mpp' ) 
                        if (ipol==0 .and. jpol==0 .and. lpr)  &
                             write(6,*)'  ',procstrg, &
                             'computing source s-component for Mxx+Myy'
                        source_term(ipol,jpol,liel_src,1) = &
                              dsws(lipol_src,ljpol_src,liel_src)
 
-                    case ('mzz')
+                    case ('mrr')
                        if (ipol==0 .and. jpol==0 .and. lpr)  &
                             write(6,*)'  ',procstrg, &
                             'computing source field z-component for Mzz'
@@ -959,7 +959,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                  case ('dipole') poletype
                     select case(src_type(2))
 
-                    case ('mxz','myz')
+                    case ('mtr','mpr')
                        if (ipol==0 .and. jpol==0 .and. lpr)  &
                             write(6,*) '  computing source + and z-components for Mxz'
                        source_term(ipol, jpol, liel_src, 1) =  &
@@ -978,7 +978,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                  case ('quadpole') poletype
                     select case (src_type(2))
 
-                    case ('mxy','mxx_m_myy') 
+                    case ('mtp','mtt_m_mpp') 
                        if (ipol==0 .and. jpol==0 .and. lpr)  &
                             write(6,*) '  computing source s- and phi-components for Mxy'
                        source_term(ipol,jpol,liel_src,1) = &
@@ -1031,29 +1031,29 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
            do ipol=0,npol
               select case (src_type(2))
 
-              case('mxx_p_myy')
+              case('mtt_p_mpp')
                  source_term(ipol,ljpol_src,liel_src,1) = two * ds(ipol)
 
-              case('mzz')
+              case('mrr')
                  source_term(0,ipol,liel_src,3) = dz(ipol)
 
               case('explosion')
                  source_term(ipol,ljpol_src,liel_src,1) = two * ds(ipol)
                  source_term(0,ipol,liel_src,3) = dz(ipol)
 
-              case('mxz')
+              case('mtr')
                  source_term(0,ipol,liel_src,1) = dz(ipol)
                  source_term(ipol,ljpol_src,liel_src,3) = ds(ipol)
 
-              case('myz')
+              case('mpr')
                  source_term(0,ipol,liel_src,1) = dz(ipol ) 
                  source_term(ipol,ljpol_src,liel_src,3) = ds(ipol)
 
-              case('mxx_m_myy')
+              case('mtt_m_mpp')
                  source_term(ipol,ljpol_src,liel_src,1) = ds(ipol)
                  source_term(ipol,ljpol_src,liel_src,2) = ds(ipol)
 
-              case('mxy')
+              case('mtp')
                  source_term(ipol,ljpol_src,liel_src,1) = ds(ipol)
                  source_term(ipol,ljpol_src,liel_src,2) = ds(ipol)
 
