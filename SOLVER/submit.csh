@@ -318,13 +318,16 @@ foreach isrc (${num_src_arr})
 
 	    ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 
+                #set nodes = `echo (($nodnum/16 + 15/16))`
+
                 echo "# Sample PBS for parallel jobs" > run_solver.pbs
                 echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
-                #echo "#PBS -l nodes=${nodnum}:ppn=16" >> run_solver.pbs
+                #echo "#PBS -l nodes=${nodes}:ppn=16" >> run_solver.pbs
                 echo "ulimit -s unlimited " >> run_solver.pbs
                 echo "cd $PWD " >> run_solver.pbs
                 echo "$mpiruncmd -n ${nodnum} $PWD/axisem  > $outputname " >> run_solver.pbs
                 qsub run_solver.pbs
+
             endif
 
         ######## SUBMIT LOCALLY #######
