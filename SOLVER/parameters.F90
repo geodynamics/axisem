@@ -1436,13 +1436,13 @@ subroutine write_parameters
     
     if (lpr) then
 
-        if (src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') then
+        if (src_file_type == 'cmtsolut' .and. src_type(2) == 'mrr') then
            open(unit=9, file="../param_post_processing")
         elseif (src_file_type == 'sourceparams') then
            open(unit=9, file="param_post_processing")
         endif
 
-        if ((src_file_type == 'cmtsolut' .and. src_type(2) == 'mzz') &
+        if ((src_file_type == 'cmtsolut' .and. src_type(2) == 'mrr') &
               .or. src_file_type == 'sourceparams') then
            write(6,*)'  Writing post processing input file: param_post_processing'
            write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
