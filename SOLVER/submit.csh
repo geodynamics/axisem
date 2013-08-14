@@ -309,16 +309,33 @@ foreach isrc (${num_src_arr})
             	aprun -n $nodnum ./axisem >& $outputname &
             
             else if ( $queue == 'slurm' ) then 
-                echo '#\!/bin/bash' > sbatch.sh
-                echo "#sbatch --ntasks=$nodnum" >> sbatch.sh
-                echo "#sbatch --time=00:59:00" >> sbatch.sh
-                echo "aprun -n $nodnum ./axisem >& $outputname" >> sbatch.sh
-                    
+
+		        # this is a crazy line, but with pure integer division its hard to handle.
+                set nodes = `echo ${nodnum} | awk '{printf "%.0f\n", $1/32+0.49}'`
+                echo "nodes = $nodes"
+                @ ntaskspernode = ($nodnum / $nodes)
+                echo "ntaskspernode = $ntaskspernode"
+                
+                echo '#\!/bin/bash -l'                          >  sbatch.sh
+                echo "#SBATCH --nodes=$nodes"                   >> sbatch.sh
+                echo "#SBATCH --ntasks=$nodnum"                 >> sbatch.sh
+                echo "#SBATCH --ntasks-per-node=$ntaskspernode" >> sbatch.sh
+                echo "#SBATCH --time=00:59:00"                  >> sbatch.sh
+                                
+                echo "module load slurm"                        >> sbatch.sh
+                
+                echo 'echo "The current job ID is $SLURM_JOB_ID"'           >> sbatch.sh
+                echo 'echo "Running on $SLURM_JOB_NUM_NODES nodes"'         >> sbatch.sh
+                echo 'echo "Using $SLURM_NTASKS_PER_NODE tasks per node"'   >> sbatch.sh
+                echo 'echo "A total of $SLURM_NTASKS tasks is used"'        >> sbatch.sh
+                
+                echo "aprun -B ./axisem >& $outputname"         >> sbatch.sh
+                                    
                 sbatch sbatch.sh 
 
 	    ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 
-                #set nodes = `echo ${nodnum} | awk 'BEGIN {printf "%.0f\n", $1/16+0.49}'`
+		        #set nodes = `echo ${nodnum} | awk '{printf "%.0f\n", $1/16+0.49}'`
 
                 echo "# Sample PBS for parallel jobs" > run_solver.pbs
                 echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
