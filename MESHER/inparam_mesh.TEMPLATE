@@ -24,8 +24,13 @@ BACKGROUND_MODEL    'prem_iso'
 # Dominant period [s]
 DOMINANT_PERIOD     20.0
 
-# Number of processors to be used
+# Number of processors to be used 
+# (will be overwritten with 4 if ONLY_SUGGEST_NPROC is set true)
 NCPU                2
+
+# will not generate a mesh, but only suggested numbers for nproc for optimal mesh
+# decomposition
+ONLY_SUGGEST_NPROC  false
 
 # write vtk output
 WRITE_VTK           true

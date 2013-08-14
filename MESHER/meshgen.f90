@@ -882,6 +882,8 @@ subroutine define_central_region
 
   integer           :: ix, iy, maxy
   real(kind=dp)     :: rad, angle, p, x, y
+  
+  integer :: nproc_opt, nproc_opt_buff, nn
 
   ! number of latitude slices at shell - central region boundary (termed ib)
   ns_ib = ns / 2**nc  
@@ -892,6 +894,28 @@ subroutine define_central_region
 
   ! define number of divisions in one direction for central square
   ndivs = ns_ib/2
+  
+  if (only_suggest_nproc) then 
+     write(6,*)
+     write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+     write(6,*) 'ndivs = ', ndivs
+     write(6,*) '   suggested number of processors for optimal mesh decomposition:'
+     do nn=1, 10
+         nproc_opt = ndivs / (2 * nn)
+         if (mod(nproc_opt, 4) > 0) nproc_opt = nproc_opt + 4 - mod(nproc_opt, 4)
+         if (nproc_opt > 4) then
+            if (nproc_opt .ne. nproc_opt_buff) write(6,*) nproc_opt
+         else
+            exit
+         end if
+         nproc_opt_buff = nproc_opt
+     enddo
+     write(6,*) '   1, 2 and 4 are always decomposed optimally'
+     write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+     write(6,*)
+     write(6,*) 'ONLY_SUGGEST_NPROC was set, hence stopping now. Set to false to actually generate a mesh!'
+     stop
+  end if
 
   ! compute number of necessary extra coarsenings nex
   nex = ns_ib/(2*ndivs)-1

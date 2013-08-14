@@ -60,6 +60,7 @@ subroutine read_params
   router = 6.371e6
   dump_mesh_info_files = .false.
   dump_mesh_info_screen = .false.
+  only_suggest_nproc = .false.
   diagpath = 'Diags'
   lfdiag = index(diagpath,' ') - 1 
 
@@ -89,6 +90,9 @@ subroutine read_params
       case('NCPU')
           read(keyvalue, *) nproc_target
 
+      case('ONLY_SUGGEST_NPROC')
+          read(keyvalue, *) only_suggest_nproc
+      
       case('WRITE_VTK')
           read(keyvalue, *) dump_mesh_vtk
 
@@ -123,10 +127,14 @@ subroutine read_params
       write(6,20) 'BACKGROUND_MODEL' 
       stop
   end if
+
   if (nproc_target==-1) then
       write(6,20) 'NCPU'
       stop
   end if
+
+  if (only_suggest_nproc) nproc_target = 4
+
   if (period==-1) then
       write(6,20) 'DOMINANT_PERIOD'
       stop
