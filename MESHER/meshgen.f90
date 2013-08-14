@@ -914,7 +914,7 @@ subroutine define_central_region
      write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
      write(6,*)
      write(6,*) 'ONLY_SUGGEST_NPROC was set, hence stopping now. Set to false to actually generate a mesh!'
-     stop
+     call exit()
   end if
 
   ! compute number of necessary extra coarsenings nex
