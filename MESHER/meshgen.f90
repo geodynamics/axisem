@@ -898,7 +898,6 @@ subroutine define_central_region
   if (only_suggest_nproc) then 
      write(6,*)
      write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
-     write(6,*) 'ndivs = ', ndivs
      write(6,*) '   suggested number of processors for optimal mesh decomposition:'
      do nn=1, 10
          nproc_opt = ndivs / (2 * nn)
@@ -1411,13 +1410,6 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
      theta_max_proc(iproc)   = 0.5d0 * pi2 * (ds1 * 2**nc_init &
                        + ds2 * (nst * 2 / nproc_target * (iproc + 1) - 2**nc_init))
   end do
-
-  write(6,*) 'theta slices:'
-  do iproc = 0, nproc_target-1
-     write(6,*) theta_min_proc(iproc)
-     write(6,*) theta_max_proc(iproc)
-  enddo
-  !stop
 
 end subroutine def_ref_cart_coordinates_discont
 !-----------------------------------------------------------------------------------------
