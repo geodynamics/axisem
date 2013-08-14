@@ -48,6 +48,16 @@ else if ( $1 == 'torque' ) then
     echo "./xmesh > OUTPUT " >> run_mesh.pbs
     qsub run_mesh.pbs
 
+else if ( $1 == 'slurm' ) then 
+    echo '#\!/bin/bash -l' > sbatch.sh
+    echo "#sbatch --ntasks=1" >> sbatch.sh
+    echo "#sbatch --nodes=1" >> sbatch.sh
+    echo "#sbatch --time=00:59:00" >> sbatch.sh
+    echo "export OMP_NUM_THREADS=4" >> sbatch.sh
+    echo "aprun -n 1 -d 4 ./xmesh > OUTPUT" >> sbatch.sh
+
+    sbatch sbatch.sh 
+
 else if ( $1 == 'slurmlocal' ) then 
     ######## slurm #######
     aprun -n 1 ./xmesh > OUTPUT &
