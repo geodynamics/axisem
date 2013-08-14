@@ -25,7 +25,7 @@ ntheta = 721
 dtheta = 180. / (ntheta - 1)
 
 nlayers = len(layers) - 1
-# number of radial point per layer. with nearest neighbour interpolatopn 2 is fine
+# number of radial point per layer. with nearest neighbour interpolation 2 is fine
 nlpl = 2
 # distance of points from layer boundaries (e.g. to avoid perturbations on both sides of a
 # discontinuity)
@@ -50,6 +50,7 @@ for l in np.arange(nlayers):
             elif theta > angles[l][1]:
                 vp = vp_in[l,1]
             else:
+                # linear interpolation in the central region
                 vp = vp_in[l,0] \
                    + (vp_in[l,1] - vp_in[l,0]) / (angles[l][1] - angles[l][0]) \
                         * (theta - angles[l][0])
