@@ -51,7 +51,8 @@ module commun
   public :: pdistsum_solid, pdistsum_fluid
   
   public :: assembmass_sum_solid, assembmass_sum_fluid ! assemble and sum massmat
-  public :: broadcast_int, broadcast_dble, broadcast_char, broadcast_log
+  public :: broadcast_int, broadcast_int_arr
+  public :: broadcast_dble, broadcast_char, broadcast_log
   public :: pinit, pend
   public :: pmin, pmax, pmax_int, psum, psum_int, psum_dble
   public :: barrier, pcheck
@@ -633,9 +634,20 @@ subroutine broadcast_int(input_int,input_proc)
   integer, intent(in)    :: input_proc
   integer, intent(inout) :: input_int
 
-  if (nproc>1) call pbroadcast_int(input_int,input_proc) ! comment for serial
+  if (nproc>1) call pbroadcast_int(input_int, input_proc) ! comment for serial
    
 end subroutine broadcast_int
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine broadcast_int_arr(input_int,input_proc)
+
+  integer, intent(in)    :: input_proc
+  integer, intent(inout) :: input_int(:)
+
+  if (nproc>1) call pbroadcast_int_arr(input_int, input_proc) ! comment for serial
+
+end subroutine broadcast_int_arr
 !=============================================================================
 
 !-----------------------------------------------------------------------------

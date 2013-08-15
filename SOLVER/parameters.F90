@@ -386,6 +386,18 @@ subroutine read_inparam_advanced
   dump_vtk = .false.
   dump_xdmf = dump_snaps_glob
   use_netcdf = .false.
+
+  ! xdmf stuff
+  i_n_xdmf = -1
+  j_n_xdmf = -1
+  allocate(i_arr_xdmf(1:npol+1))
+  allocate(j_arr_xdmf(1:npol+1))
+  i_arr_xdmf = -1
+  j_arr_xdmf = -1
+  xdmf_rmin = 0
+  xdmf_rmax = 7000
+  xdmf_thetamin = 0
+  xdmf_thetamax = 180
   
   keyword = ' '
   keyvalue = ' '
@@ -463,6 +475,9 @@ subroutine read_inparam_advanced
          case('HOMO_RHO')
              read(keyvalue,*) rhohomo 
              rhohomo = rhohomo * 1.e3
+         
+         case('USE_NETCDF')
+             read(keyvalue, *) use_netcdf
 
          case('DEFLATE_LEVEL')
              read(keyvalue,*) deflate_level
@@ -486,13 +501,36 @@ subroutine read_inparam_advanced
                      stop 'invalid value for snapshots format!'
                  end select
              endif
+         
+         case('XDMF_RMIN')
+             read(keyvalue, *) xdmf_rmin
+             xdmf_rmin = xdmf_rmin * 1000
+         
+         case('XDMF_RMAX')
+             read(keyvalue, *) xdmf_rmax
+             xdmf_rmax = xdmf_rmax * 1000
+         
+         case('XDMF_COLAT_MIN')
+             read(keyvalue, *) xdmf_thetamin
+             xdmf_thetamin = xdmf_thetamin * pi / 180.
+         
+         case('XDMF_COLAT_MAX')
+             read(keyvalue, *) xdmf_thetamax
+             xdmf_thetamax = xdmf_thetamax * pi / 180.
+         
+         case('XDMF_GLL_I')
+             read(keyvalue, *) i_n_xdmf
+             read(keyvalue, *) i_n_xdmf, i_arr_xdmf(1:i_n_xdmf)
 
-         case('USE_NETCDF')
-             read(keyvalue, *) use_netcdf
+         case('XDMF_GLL_J')
+             read(keyvalue, *) j_n_xdmf
+             read(keyvalue, *) j_n_xdmf, j_arr_xdmf(1:j_n_xdmf)
+
          end select parameter_to_read
      end do
   endif
   
+
   call broadcast_dble(seis_dt, 0) 
   call broadcast_dble(enforced_period, 0) 
   call broadcast_char(stf_type, 0) 
@@ -528,7 +566,17 @@ subroutine read_inparam_advanced
   call broadcast_log(dump_vtk, 0) 
   call broadcast_log(use_netcdf, 0) 
   
+  call broadcast_dble(xdmf_rmin, 0) 
+  call broadcast_dble(xdmf_rmax, 0) 
+  call broadcast_dble(xdmf_thetamin, 0) 
+  call broadcast_dble(xdmf_thetamax, 0) 
   
+  call broadcast_int(i_n_xdmf, 0) 
+  call broadcast_int(j_n_xdmf, 0) 
+  
+  call broadcast_int_arr(i_arr_xdmf, 0) 
+  call broadcast_int_arr(j_arr_xdmf, 0) 
+
   lfdata = index(datapath,' ') - 1
   lfinfo = index(infopath,' ') - 1
   if (lpr .and. verbose > 1) print *, 'done'
@@ -615,6 +663,9 @@ subroutine check_basic_parameters
         // "  It's just too much to save 10 frames of strain & velocity\n" &
         // "  per source period! Choose something reasonable."
   call pcheck(strain_samp > 15, errmsg)
+
+  errmsg = "Need indices for GLL points to dump xdmf. Set XDMF_GLL_* in inparam_advanced"
+  call pcheck(dump_xdmf .and. (i_n_xdmf == -1 .or. j_n_xdmf == -1 ), errmsg)
 
   if (enforced_dt > zero) then
      if (lpr) then     

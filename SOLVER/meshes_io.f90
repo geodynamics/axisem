@@ -116,38 +116,7 @@ subroutine dump_xdmf_grid()
   integer, allocatable  :: grid(:,:), mapping(:)
   logical, allocatable  :: check(:), mask_tp_elem(:)
   character(len=120)    :: fname
-  real(kind=dp)          :: rmin, rmax, thetamin, thetamax
   
-  inquire(file="inparam_xdmf", EXIST=file_exists)
-
-  if (.not. file_exists) then 
-     write(6,*) ''
-     write(6,*) 'ERROR: xdmf output set in inparam, but'
-     write(6,*) '       inparam_xdmf does not exist!'
-     stop
-  endif
-
-  open(unit=91, file='inparam_xdmf')
-
-  read(91,*) rmin, rmax
-  read(91,*) thetamin, thetamax
-
-  rmin = rmin * 1000
-  rmax = rmax * 1000
-  
-  thetamin = thetamin * pi / 180.
-  thetamax = thetamax * pi / 180.
-  
-  read(91,*) i_n_xdmf
-  allocate(i_arr_xdmf(1:i_n_xdmf))
-  read(91,*) i_arr_xdmf
-  
-  read(91,*) j_n_xdmf
-  allocate(j_arr_xdmf(1:j_n_xdmf))
-  read(91,*) j_arr_xdmf
-
-  close(91)
-
   allocate(mask_tp_elem(nelem))
   mask_tp_elem = .false.
 
@@ -155,16 +124,16 @@ subroutine dump_xdmf_grid()
 
   do iel=1, nel_fluid
       if (min(min(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
-              min(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) < rmax &
+              min(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) < xdmf_rmax &
           .and. &
           max(max(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
-              max(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) > rmin &
+              max(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) > xdmf_rmin &
           .and. &
           min(min(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
-              min(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) < thetamax &
+              min(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) < xdmf_thetamax &
           .and. &
           max(max(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
-              max(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) > thetamin) &
+              max(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) > xdmf_thetamin) &
           then        
           ct = ct + 1
           mask_tp_elem(iel) = .true.
@@ -173,16 +142,16 @@ subroutine dump_xdmf_grid()
   
   do iel=1, nel_solid
       if (min(min(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
-              min(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) < rmax &
+              min(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) < xdmf_rmax &
           .and. &
           max(max(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
-              max(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) > rmin &
+              max(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) > xdmf_rmin &
           .and. &
           min(min(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
-              min(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) < thetamax &
+              min(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) < xdmf_thetamax &
           .and. &
           max(max(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
-              max(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) > thetamin) &
+              max(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) > xdmf_thetamin) &
           then        
           ct = ct + 1
           mask_tp_elem(iel + nel_fluid) = .true.

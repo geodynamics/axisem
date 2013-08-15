@@ -51,7 +51,8 @@ module commpi
   public :: testing_asynch_messaging_fluid, asynch_messaging_fluid
   public :: testing_asynch_messaging_solid
   public :: feed_buffer, send_recv_buffers_solid, extract_from_buffer
-  public :: pbroadcast_dble, pbroadcast_int, pbroadcast_char, pbroadcast_log
+  public :: pbroadcast_dble, pbroadcast_char, pbroadcast_log
+  public :: pbroadcast_int_arr, pbroadcast_int
   public :: ppcheck, parse_nl
   private
 
@@ -185,6 +186,19 @@ end subroutine pbroadcast_int
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+subroutine pbroadcast_int_arr(input_int, input_proc)
+
+  integer, intent(in)    :: input_proc
+  integer, intent(inout) :: input_int(:)
+  integer                :: ierror
+
+  call mpi_bcast(input_int, size(input_int), MPI_INTEGER, input_proc, MPI_COMM_WORLD, ierror)
+  call mpi_barrier(MPI_COMM_WORLD, ierror)
+
+end subroutine pbroadcast_int_arr
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 subroutine pbroadcast_dble(input_dble,input_proc)
 
   integer, intent(in)             :: input_proc
@@ -199,7 +213,7 @@ end subroutine pbroadcast_dble
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function ppmin(scal)
+real(kind=dp) function ppmin(scal)
 
   real(kind=dp)    :: scal
   real(kind=dp)    :: buff, buff2
@@ -216,7 +230,7 @@ end function ppmin
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function ppmax(scal)
+real(kind=dp) function ppmax(scal)
 
   real(kind=dp)    :: scal
   real(kind=dp)    :: buff, buff2
@@ -266,7 +280,7 @@ end function ppsum
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function ppsum_dble(scal)
+real(kind=dp) function ppsum_dble(scal)
 
   real(kind=dp)    :: scal
   real(kind=dp)    :: buff, buff2

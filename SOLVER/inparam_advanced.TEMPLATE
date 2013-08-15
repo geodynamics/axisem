@@ -58,6 +58,21 @@ SNAPSHOT_DT          20.
 # options for values: xdmf, vtk, both
 SNAPSHOTS_FORMAT     xdmf  
 
+# limit the region to plot in the xdmf files
+# radius in km
+XDMF_RMIN        0.
+XDMF_RMAX        7000.
+
+# minimal and maximal colatitude to be plotted
+XDMF_COLAT_MIN   0.
+XDMF_COLAT_MAX   180.
+
+# GLL Points to be plotted in each element in the region
+# number (first digit) and indices of gll points in i direction in [0, npol]
+XDMF_GLL_I       '3 0 2 4'
+# number and indices of gll points in j direction in [0, npol]
+XDMF_GLL_J       '3 0 2 4'
+
 
 ######################## DEBUGGING ############################################
 # Set verbosity of the code, allowed values:

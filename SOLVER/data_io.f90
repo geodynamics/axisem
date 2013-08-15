@@ -68,8 +68,9 @@ module data_io
   integer           :: ndumppts_el
 
   ! for xdmf dumps
-  integer           :: i_n_xdmf, j_n_xdmf
-  integer, allocatable :: i_arr_xdmf(:), j_arr_xdmf(:)
+  integer               :: i_n_xdmf, j_n_xdmf
+  integer, allocatable  :: i_arr_xdmf(:), j_arr_xdmf(:)
+  real(kind=dp)         :: xdmf_rmin, xdmf_rmax, xdmf_thetamin, xdmf_thetamax
 
   ! rotations
   real(kind=dp)    :: rot_mat(3,3),trans_rot_mat(3,3)
