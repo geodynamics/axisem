@@ -56,11 +56,6 @@ if ( ! -f inparam_hetero) then
   cp inparam_hetero.TEMPLATE inparam_hetero
 endif
 
-if ( ! -f inparam_xdmf) then 
-  cp inparam_xdmf.TEMPLATE inparam_xdmf
-endif
-
-
 # if the mesh has different mesh_params.h, copy here
 if ( ! -f mesh_params.h || `diff mesh_params.h $meshdir/mesh_params.h | wc -l` != "0" ) then
   echo 'copying mesh_params.h from ' $meshdir
@@ -87,6 +82,7 @@ set multisrc = 'false'
 set srctype = `grep "SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
 set src_file_type = 'sourceparams'
 set srcfile = 'inparam_source'
+
 if ( $srctype == 'single') then
     set multisrc = 'false'
 else if ( $srctype == 'force') then
@@ -144,7 +140,7 @@ if ( $multisrc == 'true' ) then
         set map_mij = ( 1 2 4 6 )
         set numsim = 4
         set srcapp = ( MZZ MXX_P_MYY MXZ_MYZ MXY_MXX_M_MYY )
-        set srctype  = ( "'mrr'" "'mtt_p_mpp'" "'mtr'" "'mtp'" )
+        set srctype  = ( "mrr" "mtt_p_mpp" "mtr" "mtp" )
         set srcdepth = `grep "depth: " $homedir/CMTSOLUTION  |awk '{print $2}'`
         set srclat   = `grep "latitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
         set srclon   = `grep "longitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
@@ -152,7 +148,7 @@ if ( $multisrc == 'true' ) then
     else if ( $srctype == 'force' ) then 
         set numsim   = 2
         set srcapp   = ( PZ PX )
-        set srctype  = ( "'vertforce'" "'xforce'" )
+        set srctype  = ( "vertforce" "xforce" )
 
     else
         echo " Unrecognized source type" $srctype
@@ -193,15 +189,11 @@ foreach isrc (${num_src_arr})
         if  ( $multisrc == 'true' ) then
             echo "constructing separate source files for" $isim 
 
-          #  if ( $src_file_type == 'sourceparams' ) then
-                set mijtmp = `echo $mij_sourceparams`
-                set mijtmp[$map_mij[$i]] = '1.E20'
-                echo 'SOURCE_TYPE'  $srctype[$i] > $srcfile.$isrc.$isim
-                echo 'SOURCE_DEPTH' $srcdepth     >> $srcfile.$isrc.$isim
-                echo 'SOURCE_LAT'   $srclat       >> $srcfile.$isrc.$isim
-                echo 'SOURCE_LON'   $srclon       >> $srcfile.$isrc.$isim
-                echo 'SOURCE_AMPLITUDE  1.E20'    >> $srcfile.$isrc.$isim
-            
+            echo 'SOURCE_TYPE'  $srctype[$i]  >  $srcfile.$isrc.$isim
+            echo 'SOURCE_DEPTH' $srcdepth     >> $srcfile.$isrc.$isim
+            echo 'SOURCE_LAT'   $srclat       >> $srcfile.$isrc.$isim
+            echo 'SOURCE_LON'   $srclon       >> $srcfile.$isrc.$isim
+            echo 'SOURCE_AMPLITUDE  1.E20'    >> $srcfile.$isrc.$isim
         endif 
         
         if ( $multisrc == 'false' ) then
@@ -251,7 +243,6 @@ foreach isrc (${num_src_arr})
         cp $homedir/$recfile . 
         cp $homedir/inparam_basic .
         cp $homedir/inparam_advanced .
-        cp $homedir/inparam_source .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
 
@@ -269,9 +260,12 @@ foreach isrc (${num_src_arr})
         cp $homedir/mesh_params.h .
         cp $homedir/inparam_basic .
         cp $homedir/inparam_advanced .
-        cp $homedir/inparam_source .
         cp $homedir/inparam_hetero .
         cp $homedir/inparam_xdmf .
+
+        if ( $multisrc == 'true' ) then
+            cp $homedir/CMTSOLUTION .
+        endif
     end
 end
 
