@@ -269,11 +269,11 @@ subroutine domain_decomposition_theta
   ! meshgen.f90:def_ref_cart_coordinates_discont
 
   ! **************** INNER CUBE **********************
-  if (nproc == 1 .or. nproc == 2 .or. nproc == 4) then
+  if (nproc == 1 .or. nproc == 2) then
       ! define quadratic functions to delineate processor boundaries. 
-      ! Works for nproc = 1, 2, 4 
+      ! Works for nproc = 1, 2
       call decompose_inner_cube_quadratic_fcts(central_count)
-  elseif (nproc >= 8 .and. (nproc / 4) * 4 == nproc) then
+  elseif (nproc >= 4 .and. (nproc / 4) * 4 == nproc) then
       ! newest version of inner core decomposition (nproc needs to be multiple of 4)
       call decompose_inner_cube_opt(central_count)
   else
@@ -431,204 +431,6 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count)
     ! The distinctive southern processor will be taken care of later on...
      proc_central(1:ndivs,1:ndivs)=0
      num_el(0)=ndivs**2
-  
-  else ! domain decomposition needed
-  
-     arclngth=int(4*ndivs/nproc)
-     area=2*ndivs**2/nproc ! per proc, e.g. north
-  
-     if (mod(2*ndivs**2,nproc)/=0) then 
-        write(6,*)'Central cube area not divisible into equal areas!'
-        stop
-     endif
-  
-     ! arclngth = processor's section along the boundary of the central region
-     if (mod(4*ndivs,nproc)/=0) then 
-        write(6,*)'PROBLEM with number of central-region elements and nproc:'
-        write(6,*)'ndivs,nproc:',ndivs,nproc
-        write(6,*)'ndivs (number of northern elements in one direction)'
-        write(6,*)'needs to be multiple of nproc/4...'
-        stop
-     endif
-  
-     ! area well defined?
-     if (mod(2*ndivs**2,nproc)/=0) then 
-        write(6,*)'PROBLEM with number of central-region elements and nproc:'
-        write(6,*)'els,nproc:',ndivs**2,nproc
-        write(6,*)'number of elements needs to be multiple of nproc/2...'
-        stop
-     endif
-  
-     ! equator mynum = nproc/2-1 
-  
-     ! define quadratic function with area = ndivs**2/nproc
-     ! starting at arclength = 4 ndivs/nproc for s=ndivs
-     ! 
-     a = (3.d0/2.d0)*(dble(arclngth)-dble(area)/dble(ndivs))/dble(ndivs)**2
-     b = ((3.d0/2.d0)*dble(area)/dble(ndivs)-dble(arclngth)/2.d0) 
-     icount=0;
-  
-     if (nproc>4) then
-         ! make sure the column at ndivs equals arclength
-        proc_central(ndivs,arclngth)=nproc2
-        icount=icount+1
-     endif
-  
-     do is=ndivs,1,-1
-        do iz=1,ndivs
-           if (iz < a*is**2 + b) then
-              proc_central(is,iz)=nproc2
-              icount=icount+1
-           endif
-  
-           ! keep the first two elements off the spherical/linear boundary
-           ! belonging to the same proc
-           if (is==ndivs-1 .and. proc_central(ndivs,iz)==nproc2 .and. &
-                proc_central(is,iz)/=nproc2 ) then 
-              proc_central(ndivs-1,iz)=nproc2
-              icount=icount+1
-           endif
-        enddo
-     enddo
-  
-     missing=area-icount
-  
-     if (missing<0) then
-        write(6,*)'Problem: included more elements than needed in equat. element!'
-        write(6,*)'included/needed:',icount,area
-        stop
-  
-     elseif (missing>0) then
-        ! fill the missing elements
-        if (dump_mesh_info_screen)& 
-        write(6,*)'Equatorial processor nproc/2-1: Filling missing els:',missing
-        icount=0
-           do while (icount<missing)
-           is=ndivs
-           do while (is>2)
-              is=is-1
-              do iz=1,ndivs
-              if (proc_central(is,iz)==nproc2) then
-                 if (proc_central(is-1,iz)/=nproc2) then
-                    proc_central(is-1,iz)=nproc2
-                    icount=icount+1
-                    is=is-1
-                    if (icount==missing .or. is<2) exit
-                 endif
-                 if (icount==missing .or. is<2) exit
-              endif
-              if (icount==missing .or. is<2) exit
-           enddo
-           if (icount==missing ) exit
-        enddo
-        if (icount==missing ) exit
-        enddo
-     endif ! if missing
-  
-     ! duplicate this distribution to next processors as # columns per is
-     num_columns(1:ndivs)=0
-     do is=1,ndivs
-        do iz=1,ndivs-1
-           if (proc_central(is,iz)==nproc2) then
-              num_columns(is)=num_columns(is)+1
-              if (proc_central(is,iz+1)/=nproc2) upper_boundary_el(is)=iz
-           endif
-        enddo
-     enddo
-  
-     ! Check if proc has right amount of elements
-     call check_my_els(nproc2,proc_central)
-  
-     if (nproc==4) then 
-        do is=1,ndivs
-           do iz=1,ndivs
-              if (proc_central(is,iz)==-1) then
-                 proc_central(is,iz)=0
-              end if
-           end do
-        end do
-  
-        ! Check if proc has right amount of elements
-        call check_my_els(0,proc_central)
-     ! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-     else ! nproc>4
-     ! >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-  
-         ! processors along the s=ndivs vertical edge of the central cube
-         ! nproc/2-1 down to corner/45-deg proc nproc/4
-  
-         proccount=0
-         num_columns_hi(1:ndivs)=num_columns(1:ndivs)
-  
-         do iproc=nproc/2-2,nproc/4,-1
-  
-            proccount=proccount+1
-  
-            num_columns_lo = num_columns_hi+1
-            num_columns_hi =  num_columns_hi  + num_columns
-  
-            ! try to avoid jumps growing with each new processor
-            do is  = 2,ndivs-1
-               if (num_columns_hi(is-1) < num_columns_hi(is)-1) then
-  
-                  num_columns_hi(is-1) = num_columns_hi(is-1) + 1
-                  num_columns_hi(is) = num_columns_hi(is) - 1
-  
-                  ! avoid diagonally touching processor boundaries, i.e. elements known 
-                  ! to three processors 
-                  if (num_columns_hi(is)<=num_columns_lo(is+1)+1) then 
-                     num_columns_hi(is)=num_columns_hi(is)+1
-                     num_columns_hi(is+1)=num_columns_hi(is+1)-1
-                  endif
-  
-               endif
-                  
-               ! try to avoid jumps over two
-               if (num_columns_hi(is-1) == num_columns_hi(is) .and. &
-                   num_columns_hi(is+1) >= num_columns_hi(is)+2 ) then
-  
-                  num_columns_hi(is) = num_columns_hi(is) + 1
-                  num_columns_hi(is+1) = num_columns_hi(is+1) - 1
-  
-               endif
-  
-               ! try to avoid drops in the positive is direction
-               if (num_columns_hi(is+1) < num_columns_hi(is)) then
-  
-                  num_columns_hi(is) = num_columns_hi(is) - 1
-                  num_columns_hi(is+1) = num_columns_hi(is+1) + 1
-  
-               endif
-  
-               ! try to avoid jumps over two (again...)
-               if (num_columns_hi(is-1) == num_columns_hi(is) .and. &
-                   num_columns_hi(is+1) >= num_columns_hi(is)+2 ) then
-  
-                  num_columns_hi(is) = num_columns_hi(is) + 1
-                  num_columns_hi(is+1) = num_columns_hi(is+1) - 1
-  
-               endif
-  
-            enddo
-  
-            ! fill with belongings...
-            do is=1,ndivs
-               proc_central(is,num_columns_lo(is):num_columns_hi(is))=iproc
-            enddo
-  
-            ! Check if proc has right amount of elements
-            call check_my_els(iproc,proc_central)
-  
-         enddo ! iproc
-  
-         ! mynum 0 (northernmost)
-         proc_central(1:arclngth,ndivs/2+1:ndivs)=0
-  
-         ! Check if proc has right amount of elements
-         call check_my_els(0,proc_central)
-  
-     endif ! if nproc>4
-  
   endif
 
   allocate(count_assi(0:nproc2))
@@ -873,6 +675,11 @@ subroutine decompose_inner_cube_opt(central_count)
 
   ndivsppx0 = ndivs / 2 / nproc2
   if (ndivsppx0 < 2) then 
+      ndivsppx0 = 2
+  endif
+
+  ! treat 4 procs as special case
+  if (nproc2 == 2) then
       ndivsppx0 = 2
   endif
   
