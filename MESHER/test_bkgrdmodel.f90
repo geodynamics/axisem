@@ -250,6 +250,7 @@ subroutine bkgrdmodel_testing
         endif
         ntoobig = ntoobig + 1
         ! should add a stop here after complete debugging....    
+        ! @TODO
         ! MvD: this test fails for many elements at the moment (11/2012)
      endif
   
@@ -264,7 +265,9 @@ subroutine bkgrdmodel_testing
         endif
         ntoosmall = ntoosmall + 1
         ! should add a stop here after complete debugging....    
+        ! @TODO
         ! MvD: this test fails for many elements at the moment (11/2012)
+        !      - might be connected to #59
      endif
   
      ! save into vtk====================================
@@ -362,38 +365,53 @@ subroutine bkgrdmodel_testing
     fname = trim(diagpath)//'/mesh_rho'
     call write_VTK_bin_scal(x, y, z, rho1, npts_vtk/4, fname)
     deallocate(rho1)
+  endif
            
     
-    h_real = real(hmax/(period/(pts_wavelngth*real(npol))))
-    write(6,*) 'minmax hmax:', minval(h_real), maxval(h_real)
+  h_real = real(hmax / (period / (pts_wavelngth * real(npol))))
+  write(6,*) 'minmax hmax:', minval(h_real), maxval(h_real)
+  
+  if (dump_mesh_vtk) then
     fname = trim(diagpath)//'/mesh_hmax'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
+  endif
   
-    h_real = real(hmin/(dt/courant))
-    write(6,*) 'minmax hmin:', minval(h_real), maxval(h_real)
+  h_real = real(hmin / (dt / courant))
+  write(6,*) 'minmax hmin:', minval(h_real), maxval(h_real)
+  if (dump_mesh_vtk) then
     fname = trim(diagpath)//'/mesh_hmin'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
+  endif
   
-    h_real = real(period/hmax)
-    write(6,*) 'minmax pts wavelngth:', minval(h_real), maxval(h_real)
+  h_real = real(period / hmax)
+  write(6,*) 'minmax pts wavelngth:', minval(h_real), maxval(h_real)
+  if (dump_mesh_vtk) then
     fname = trim(diagpath)//'/mesh_pts_wavelength'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
+  endif
   
-    h_real = real(dt/hmin)
-    write(6,*) 'minmax courant:',minval(h_real),maxval(h_real)
+  h_real = real(dt / hmin)
+  write(6,*) 'minmax courant:',minval(h_real),maxval(h_real)
+  if (dump_mesh_vtk) then
     fname=trim(diagpath)//'/mesh_courant'
     call write_VTK_bin_scal_old(h_real,mesh2,neltot,fname)
+  endif
   
-    h_real = real(courant*hmin)
-    write(6,*) 'minmax dt:', minval(h_real), maxval(h_real)
+  h_real = real(courant * hmin)
+  write(6,*) 'minmax dt:', minval(h_real), maxval(h_real)
+  if (dump_mesh_vtk) then
     fname = trim(diagpath)//'/mesh_dt'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
+  endif
   
-    h_real = real(pts_wavelngth*real(npol)*hmax)
-    write(6,*)'minmax period:', minval(h_real), maxval(h_real)
+  h_real = real(pts_wavelngth * real(npol) * hmax)
+  write(6,*)'minmax period:', minval(h_real), maxval(h_real)
+  if (dump_mesh_vtk) then
     fname = trim(diagpath)//'/mesh_period'
     call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
+  endif
     
+  if (dump_mesh_vtk) then
     if (model_is_anelastic(bkgrdmodel)) then
        fname = trim(diagpath)//'/mesh_Qmu'
        call write_VTK_bin_scal(x, y, z, Qmu, npts_vtk/4, fname)
@@ -403,15 +421,12 @@ subroutine bkgrdmodel_testing
        fname = trim(diagpath)//'/mesh_Qka'
        call write_VTK_bin_scal(x, y, z, Qka, npts_vtk/4, fname)
     endif
-  endif
   
+    deallocate(x, y, z)
+    deallocate(mesh2, h_real)
 
-  if (dump_mesh_vtk) then
-      deallocate(x, y, z)
-      deallocate(mesh2, h_real)
-
-      if (allocated(Qka)) deallocate(Qka)
-      if (allocated(Qmu)) deallocate(Qmu)
+    if (allocated(Qka)) deallocate(Qka)
+    if (allocated(Qmu)) deallocate(Qmu)
   end if
 
   char_time_max = maxval(hmax)
