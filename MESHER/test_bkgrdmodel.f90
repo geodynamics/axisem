@@ -192,20 +192,6 @@ subroutine bkgrdmodel_testing
   
            r = dsqrt(s1**2 + z1**2)
 
-           if (s1<1.d-5 .and. z1>=0.d0) then 
-              if (bkgrdmodel=='solar') then 
-                    velo = v_p(ipol,jpol,iel)
-  
-              else 
-                 if ( solid_domain(region(iel)) ) then 
-                    velo = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
-                 else
-                    velo = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
-                 endif
-                 write(62,*) r*router, velo; call flush(62)
-              endif
-           endif
-  
            if (bkgrdmodel=='solar') then 
               velo = v_p(ipol,jpol,iel)
               velo_max = v_p(ipol,jpol,iel)
@@ -220,6 +206,12 @@ subroutine bkgrdmodel_testing
                  velo = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
                  ! to avoid calling velocity twice in fluid domain:
                  velo_max = velo
+              endif
+           endif
+           
+           if (s1<1.d-5 .and. z1>=0.d0) then 
+              if (bkgrdmodel /= 'solar') then 
+                 write(62,*) r*router, velo
               endif
            endif
   
@@ -239,7 +231,7 @@ subroutine bkgrdmodel_testing
      z1 = zgll(npol/2,npol/2,iel)
   
      ! check if grid spacing is within (numerically) allowable limits
-     if (hmax(iel) > period/(pts_wavelngth*dble(npol))) then
+     if (hmax(iel) > period / (pts_wavelngth * dble(npol))) then
         if (dump_mesh_info_files) then 
            write(61,*) 'WARNING +: grid spacing TOO LARGE in element', iel
            write(61,*) 'WARNING +: r,theta [km,deg]:', dsqrt(s1**2+z1**2)*router*1e-3, &
