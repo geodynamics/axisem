@@ -180,6 +180,9 @@ subroutine bkgrdmodel_testing
   end if
   
   open(unit=62, file=diagpath(1:lfdiag)//'/radial_velocity.dat')  
+
+  ! initialize dt with crazy value and search for minimum in this loop
+  dt = 1e10
   
   write(6,*) 'starting big loop....'
   !$omp end single 
@@ -246,7 +249,12 @@ subroutine bkgrdmodel_testing
         ! MvD: this test fails for many elements at the moment (11/2012)
      endif
   
-     if (hmin(iel) < dt / courant) then
+     ! avoid concurrent write access to dt in case of omp
+     !$omp atomic
+     dt = min(dt, real(courant * hmin(iel)))
+
+     ! multiplication by .9999 to avoid floting point precision issues
+     if (hmin(iel) < (dt / courant) * .9999) then
         if (dump_mesh_info_files) then 
            write(61,*) 'WARNING -: grid spacing TOO SMALL in element', iel
            write(61,*) 'WARNING -: r,theta [km,deg]:', dsqrt(s1**2+z1**2)*router*1e-3, &
