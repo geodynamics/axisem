@@ -57,8 +57,8 @@ COARSENING_LAYERS   3
 # Surface radius (default: 6.371e+6
 # RADIUS             6.371e+6   
 
-# Save mesh files (WARNING: large) (default: false)
-# SAVE_MESH          false
+# Save mesh debug files (WARNING: large) (default: false)
+# SAVE_DEBUG_FILES     false
 
 # Write excessive info output (WARNING: for the inclined)
 # VERBOSE              false

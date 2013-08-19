@@ -114,7 +114,7 @@ subroutine read_params
       case('RADIUS') 
           read(keyvalue, *) router
 
-      case('SAVE_MESH')
+      case('SAVE_DEBUG_FILES')
           read(keyvalue, *) dump_mesh_info_files
 
       case('VERBOSE')
