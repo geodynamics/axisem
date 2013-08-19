@@ -9,8 +9,11 @@
 MPIRUN  = mpirun
 
 # Enable NetCDF
-USE_NETCDF =false
+USE_NETCDF = false
 NETCDF_PATH = $(HOME)/local
+
+# compile without MPI
+SERIAL = false
 
 # GFORTRAN (fast)
 CC      = gcc                                # C compiler

@@ -150,7 +150,9 @@ subroutine pdistsum_solid(vec, nc)
 
      ! Collect processor boundaries into buffer for each component
      iclockmpi = tick()
+#ifndef serial
      if (nproc>1) call feed_buffer(ic) ! comment for serial
+#endif
      iclockmpi = tick(id=idmpi,since=iclockmpi)
   
      ! Scatter
@@ -186,6 +188,7 @@ subroutine pdistsum_solid(vec, nc)
      end do
   end do
   
+#ifndef serial
   iclockmpi = tick()
   if (nproc>1) then
      ! Do message-passing for all components at once
@@ -194,6 +197,7 @@ subroutine pdistsum_solid(vec, nc)
      call extract_from_buffer(vec,nc) ! comment for serial
   endif ! nproc>1
   iclockmpi = tick(id=idmpi,since=iclockmpi)
+#endif
   
 end subroutine pdistsum_solid
 !=============================================================================
@@ -300,9 +304,11 @@ subroutine pdistsum_fluid(vec)
 
   end do
 
+#ifndef serial
   iclockmpi = tick()
   if (nproc>1) call asynch_messaging_fluid ! comment for serial
   iclockmpi = tick(id=idmpi, since=iclockmpi)
+#endif
 
   ! Scatter
   ipt = 1
@@ -426,8 +432,10 @@ subroutine mpi_asynch_messaging_test_solid
      end do
   end do
 
+#ifndef serial
   if (nproc > 1) &
         call testing_asynch_messaging_solid(gvec_solid2,3) !comment for serial
+#endif
 
   do ic = 1, 3
      ! Scatter
@@ -485,7 +493,9 @@ subroutine mpi_asynch_messaging_test_fluid
      end do
   end do
 
+#ifndef serial
   if (nproc>1) call testing_asynch_messaging_fluid !comment for serial
+#endif
 
   ! Scatter
   do iel = 1, nel_fluid
@@ -526,7 +536,9 @@ subroutine assembmass_sum_solid(f1,res)
      end do
   end do
   res = res + sum(gvec_solid(:))
+#ifndef serial
   if (nproc>1) res=ppsum_dble(res) ! comment for serial
+#endif
 
 end subroutine assembmass_sum_solid
 !=============================================================================
@@ -557,7 +569,9 @@ subroutine assembmass_sum_fluid(f1,res)
   end do
   res = res + sum(gvec_fluid)
 
+#ifndef serial
   if (nproc>1) res = ppsum_dble(res) ! comment for serial
+#endif
 
 end subroutine assembmass_sum_fluid
 !=============================================================================
@@ -567,6 +581,7 @@ subroutine pinit
 
   include 'mesh_params.h'
   
+#ifndef serial
   ! Start message passing interface if parallel simulation
   if (nproc_mesh > 1) then 
      call ppinit ! comment for serial
@@ -580,6 +595,13 @@ subroutine pinit
      nproc = nproc_mesh
      mynum = 0
   endif
+#endif
+
+#ifdef serial
+  if (nproc_mesh > 1) &
+        write(6,*) 'ERROR: Solver compiled with SERIAL flag, but mesh has nproc > 1: ', &
+                    nproc_mesh
+#endif
 
   lpr = .false.
   if (nproc>1) then
@@ -601,7 +623,9 @@ end subroutine pinit
 !! End message passing interface if parallel
 subroutine pend
 
+#ifndef serial
   if (nproc>1) call ppend ! comment for serial
+#endif
 
 end subroutine pend
 !=============================================================================
@@ -612,7 +636,9 @@ subroutine broadcast_char(input_char,input_proc)
   character(*), intent(inout)   :: input_char
   integer, intent(in)           :: input_proc
 
+#ifndef serial
   if (nproc>1) call pbroadcast_char(input_char,input_proc) ! comment for serial
+#endif
    
 end subroutine broadcast_char
 !=============================================================================
@@ -623,7 +649,9 @@ subroutine broadcast_log(input_log,input_proc)
   integer, intent(in)    :: input_proc
   logical, intent(inout) :: input_log
 
+#ifndef serial
   if (nproc>1) call pbroadcast_log(input_log,input_proc) ! comment for serial
+#endif
    
 end subroutine broadcast_log
 !=============================================================================
@@ -634,7 +662,9 @@ subroutine broadcast_int(input_int,input_proc)
   integer, intent(in)    :: input_proc
   integer, intent(inout) :: input_int
 
+#ifndef serial
   if (nproc>1) call pbroadcast_int(input_int, input_proc) ! comment for serial
+#endif
    
 end subroutine broadcast_int
 !=============================================================================
@@ -645,7 +675,9 @@ subroutine broadcast_int_arr(input_int,input_proc)
   integer, intent(in)    :: input_proc
   integer, intent(inout) :: input_int(:)
 
+#ifndef serial
   if (nproc>1) call pbroadcast_int_arr(input_int, input_proc) ! comment for serial
+#endif
 
 end subroutine broadcast_int_arr
 !=============================================================================
@@ -656,7 +688,9 @@ subroutine broadcast_dble(input_dble,input_proc)
   integer, intent(in)             :: input_proc
   real(kind=dp)   , intent(inout) :: input_dble
 
+#ifndef serial
   if (nproc>1) call pbroadcast_dble(input_dble,input_proc) ! comment for serial
+#endif
 
 end subroutine broadcast_dble
 !=============================================================================
@@ -667,7 +701,9 @@ real(kind=dp) function pmin(scal)
   real(kind=dp)    :: scal
   
   pmin = scal
+#ifndef serial
   if (nproc>1) pmin = ppmin(scal) ! comment for serial
+#endif
 
 end function pmin
 !=============================================================================
@@ -678,7 +714,9 @@ real(kind=dp) function pmax(scal)
   real(kind=dp)    :: scal
 
   pmax = scal
+#ifndef serial
   if (nproc>1) pmax = ppmax(scal)  ! comment for serial
+#endif
 
 end function pmax
 !=============================================================================
@@ -689,7 +727,9 @@ integer function pmax_int(scal)
   integer :: scal
 
   pmax_int=scal
+#ifndef serial
   if (nproc>1) pmax_int = ppmax_int(scal)  ! comment for serial
+#endif
 
 end function pmax_int
 !=============================================================================
@@ -700,7 +740,9 @@ real(kind=realkind) function psum(scal)
   real(kind=realkind) :: scal
 
   psum = scal
+#ifndef serial
   if (nproc>1) psum = ppsum(scal) ! comment for serial
+#endif
 
 end function psum
 !=============================================================================
@@ -711,7 +753,9 @@ integer function psum_int(scal)
   integer :: scal
 
   psum_int = scal
+#ifndef serial
   if (nproc>1) psum_int = ppsum_int(scal) ! comment for serial
+#endif
 
 end function psum_int
 !=============================================================================
@@ -722,7 +766,9 @@ real(kind=dp) function psum_dble(scal)
   real(kind=dp)    :: scal
 
   psum_dble = scal
+#ifndef serial
   if (nproc>1) psum_dble = ppsum_dble(scal) ! comment for serial
+#endif
 
 end function psum_dble
 !=============================================================================
@@ -730,7 +776,9 @@ end function psum_dble
 !-----------------------------------------------------------------------------
 subroutine barrier
  
+#ifndef serial
   if (nproc>1) call pbarrier ! comment for serial
+#endif
 
 end subroutine barrier
 !=============================================================================
@@ -741,9 +789,10 @@ subroutine pcheck(test, errmsg)
   logical, intent(in)            :: test
   character(len=*), intent(in)   :: errmsg
   
-  if (nproc > 1) then
-     call ppcheck(test, errmsg)
-  elseif (test) then
+#ifndef serial
+  if (nproc > 1) call ppcheck(test, errmsg)
+#endif
+  if (nproc == 1 .and. test) then
      print '(/,a,/,/,a,/)', 'ERROR:', trim(parse_nl(errmsg))
      stop
   endif

@@ -5,7 +5,7 @@ include ../make_axisem.macros
 SRCS =	nc_routines.F90 parameters.F90 analytic_mapping.f90 \
 	analytic_semi_mapping.f90 analytic_spheroid_mapping.f90 \
 	apply_masks.f90 attenuation.f90 background_models.f90 clocks.f90 \
-	commpi.f90 commun.f90 data_comm.f90 data_heterogeneous.f90 \
+	commpi.F90 commun.F90 data_comm.f90 data_heterogeneous.f90 \
 	data_io.f90 data_matr.f90 data_mesh.f90 data_mesh_preloop.f90 \
 	data_numbering.f90 data_pointwise.f90 data_proc.f90 data_source.f90 \
 	data_spec.f90 data_time.f90 def_grid.f90 def_precomp_terms.f90 \
@@ -34,6 +34,11 @@ ifeq ($(strip $(USE_NETCDF)),true)
 else
    LIBS = 
    INCLUDE =
+endif
+
+ifeq ($(strip $(SERIAL)),true)
+   FFLAGS += -Dserial
+   LDLAGS += -pthread
 endif
 
 

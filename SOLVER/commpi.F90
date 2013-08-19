@@ -41,7 +41,9 @@ module commpi
   ! in case you have problems with the mpi module, you might try to use the
   ! include below, in which case you will have to specify the location in the 
   ! Makefile or copy to the build directory!
+#ifndef serial
   use mpi
+#endif
   implicit none
   !include 'mpif.h'
   
@@ -72,6 +74,7 @@ subroutine ppcheck(test, errmsg)
 
   integer :: err, errsum, ierror
   
+#ifndef serial
   if (test) then 
      err = 1
   else
@@ -92,6 +95,7 @@ subroutine ppcheck(test, errmsg)
   call mpi_barrier(MPI_COMM_WORLD, ierror)
 
   if (errsum > 0) stop
+#endif
 
 end subroutine
 !=============================================================================
@@ -122,6 +126,7 @@ subroutine ppinit
 
   use data_comm, only: mpi_realkind
   integer :: ierror
+#ifndef serial
   
   call MPI_INIT( ierror)
   call MPI_COMM_RANK( MPI_COMM_WORLD, mynum, ierror )
@@ -131,6 +136,7 @@ subroutine ppinit
      if (realkind==4) mpi_realkind = MPI_REAL
      if (realkind==8) mpi_realkind = MPI_DOUBLE_PRECISION
   endif
+#endif
 
 end subroutine ppinit
 !=============================================================================
@@ -139,7 +145,9 @@ end subroutine ppinit
 subroutine ppend
   integer :: ierror
 
+#ifndef serial
   call MPI_FINALIZE(ierror)
+#endif
 
 end subroutine ppend
 !=============================================================================
@@ -152,9 +160,11 @@ subroutine pbroadcast_char(input_char,input_proc)
   integer                       :: ierror
 
 
+#ifndef serial
   call mpi_bcast(input_char, len(input_char), MPI_CHARACTER, input_proc, &
                  MPI_COMM_WORLD, ierror)
   call mpi_barrier(MPI_COMM_WORLD, ierror)
+#endif
 
 end subroutine pbroadcast_char
 !=============================================================================
@@ -166,8 +176,10 @@ subroutine pbroadcast_log(input_log,input_proc)
   logical, intent(inout) :: input_log
   integer                :: ierror
 
+#ifndef serial
   call mpi_bcast(input_log, 1, MPI_LOGICAL, input_proc, MPI_COMM_WORLD, ierror)
   call mpi_barrier(MPI_COMM_WORLD, ierror)
+#endif
 
 end subroutine pbroadcast_log
 !=============================================================================
@@ -179,8 +191,10 @@ subroutine pbroadcast_int(input_int,input_proc)
   integer, intent(inout) :: input_int
   integer                :: ierror
 
+#ifndef serial
   call mpi_bcast(input_int, 1, MPI_INTEGER, input_proc, MPI_COMM_WORLD, ierror)
   call mpi_barrier(MPI_COMM_WORLD, ierror)
+#endif
 
 end subroutine pbroadcast_int
 !=============================================================================
@@ -192,8 +206,10 @@ subroutine pbroadcast_int_arr(input_int, input_proc)
   integer, intent(inout) :: input_int(:)
   integer                :: ierror
 
+#ifndef serial
   call mpi_bcast(input_int, size(input_int), MPI_INTEGER, input_proc, MPI_COMM_WORLD, ierror)
   call mpi_barrier(MPI_COMM_WORLD, ierror)
+#endif
 
 end subroutine pbroadcast_int_arr
 !=============================================================================
@@ -205,9 +221,11 @@ subroutine pbroadcast_dble(input_dble,input_proc)
   real(kind=dp)   , intent(inout) :: input_dble
   integer                         :: ierror
 
+#ifndef serial
   call mpi_bcast(input_dble, 1, MPI_DOUBLE_PRECISION, input_proc, &
                  MPI_COMM_WORLD, ierror)
   call mpi_barrier(MPI_COMM_WORLD, ierror)
+#endif
 
 end subroutine pbroadcast_dble
 !=============================================================================
@@ -221,8 +239,10 @@ real(kind=dp) function ppmin(scal)
 
   buff = scal
   buff2 = scal
+#ifndef serial
   call MPI_ALLREDUCE(buff, buff2, 1, MPI_DOUBLE_PRECISION, MPI_MIN,  &
                      MPI_COMM_WORLD, ierror)
+#endif
 
   ppmin = buff2
 
@@ -238,8 +258,10 @@ real(kind=dp) function ppmax(scal)
 
   buff = scal
   buff2 = scal
+#ifndef serial
   call MPI_ALLREDUCE(buff, buff2, 1, MPI_DOUBLE_PRECISION, MPI_MAX,  &
                      MPI_COMM_WORLD, ierror)
+#endif
   ppmax = buff2
 
 end function ppmax
@@ -254,8 +276,10 @@ integer function ppmax_int(scal)
 
   buff = scal
   buff2 = scal
+#ifndef serial
   call MPI_ALLREDUCE(buff, buff2, 1, MPI_INTEGER, MPI_MAX,  &
                      MPI_COMM_WORLD, ierror)
+#endif
   ppmax_int = buff2
   
 end function ppmax_int
@@ -271,8 +295,10 @@ real(kind=realkind) function ppsum(scal)
 
   buff = scal
   buff2 = scal
+#ifndef serial
   call MPI_ALLREDUCE(buff, buff2, 1, mpi_realkind, MPI_SUM,  &
                      MPI_COMM_WORLD, ierror)
+#endif
 
   ppsum = buff2
 
@@ -288,8 +314,10 @@ real(kind=dp) function ppsum_dble(scal)
   
   buff = scal
   buff2 = scal
+#ifndef serial
   call MPI_ALLREDUCE(buff, buff2, 1, MPI_DOUBLE_PRECISION, MPI_SUM,  &
                      MPI_COMM_WORLD, ierror)
+#endif
 
   ppsum_dble = buff2
 
@@ -305,8 +333,10 @@ integer function ppsum_int(scal)
   
   buff = scal
   buff2 = scal
+#ifndef serial
   call MPI_ALLREDUCE(buff, buff2, 1, MPI_INTEGER, MPI_SUM,  &
                      MPI_COMM_WORLD, ierror)
+#endif
   
   ppsum_int = buff2
 
@@ -317,7 +347,9 @@ end function ppsum_int
 subroutine pbarrier
   integer :: ierror
  
+#ifndef serial
   CALL MPI_BARRIER(MPI_COMM_WORLD, ierror)
+#endif
 
 end subroutine pbarrier
 !=============================================================================
@@ -333,6 +365,7 @@ subroutine feed_buffer(ic)
   integer                        :: imsg,ipg,ip
   integer                        :: sizemsg_solid
   
+#ifndef serial
   ! Fill send buffer
   if (sizesend_solid > 0) then
      do imsg = 1, sizesend_solid
@@ -354,6 +387,7 @@ subroutine feed_buffer(ic)
         end do
      end do
   endif
+#endif
 
 end subroutine feed_buffer
 !=============================================================================
@@ -370,6 +404,8 @@ subroutine send_recv_buffers_solid(nc)
   include 'mesh_params.h'
   
   integer, intent(in) :: nc
+
+#ifndef serial
   integer             :: imsg, sizeb, ipdes, ipsrc
   integer             :: msgnum, msgnum1, msgnum2
   integer             :: status(MPI_STATUS_SIZE), sizemsg_solid
@@ -425,6 +461,7 @@ subroutine send_recv_buffers_solid(nc)
         buffs_all(1:sizemsg_solid,1:nc,imsg) = buffs_solid(1:sizemsg_solid,1:nc)
      enddo
   endif
+#endif
 
 end subroutine send_recv_buffers_solid
 !=============================================================================
@@ -443,6 +480,7 @@ subroutine extract_from_buffer(vec,nc)
   integer             :: imsg, ipg, ip, ipol, jpol, iel, ipt, ic
   integer             :: sizemsg_solid
   
+#ifndef serial
   do ic = 1, nc
 
      ! Extract back-received from buffer (phase 3)
@@ -484,6 +522,7 @@ subroutine extract_from_buffer(vec,nc)
      endif
 
   end do
+#endif
 
 end subroutine extract_from_buffer
 !=============================================================================
@@ -502,11 +541,12 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
   real(kind=realkind),intent(inout)  :: gvec_solid2(:,:)
   integer, intent(in)                :: nc
 
+#ifndef serial
   integer :: imsg, ipg, ip, sizeb, ipdes, ipsrc
   integer :: msgnum, msgnum1, msgnum2
   integer :: status(MPI_STATUS_SIZE), sizemsg_solid
   integer :: ierror
-  
+
   ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
   if (verbose > 1) write(69,*)' Asynchrounous solid communication test:'
 
@@ -590,6 +630,7 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
 
 12 format('   MPI: ',a8,a15,i3,', size=',i8,a6,i3)
 13 format('   MPI: ',a8,' DONE.')
+#endif
 
 end subroutine testing_asynch_messaging_solid
 !=============================================================================
@@ -605,6 +646,7 @@ subroutine asynch_messaging_fluid
   
   include 'mesh_params.h'
   
+#ifndef serial
   integer :: imsg, ipg, ip, sizeb, ipdes, ipsrc
   integer :: msgnum, msgnum1, msgnum2
   integer :: status(MPI_STATUS_SIZE), sizemsg_fluid
@@ -669,6 +711,7 @@ subroutine asynch_messaging_fluid
         enddo
      enddo
   endif
+#endif
 
 end subroutine asynch_messaging_fluid
 !=============================================================================
@@ -686,6 +729,7 @@ subroutine testing_asynch_messaging_fluid
   
   include 'mesh_params.h'
   
+#ifndef serial
   integer :: imsg, ipg, ip, sizeb, ipdes, ipsrc
   integer :: msgnum, msgnum1, msgnum2
   integer :: status(MPI_STATUS_SIZE), sizemsg_fluid
@@ -763,6 +807,7 @@ subroutine testing_asynch_messaging_fluid
 
 12 format('   MPI: ',a8,a15,i3,', size=',i8,a6,i3)
 13 format('   MPI: ',a8,' DONE.')
+#endif
 
 end subroutine testing_asynch_messaging_fluid
 !=============================================================================
