@@ -304,14 +304,10 @@ foreach isrc (${num_src_arr})
             
             else if ( $queue == 'slurm' ) then 
 
-		        # this is a crazy line, but with pure integer division its hard to handle.
-                set nodes = `echo ${nodnum} | awk '{printf "%.0f\n", $1/32+0.49}'`
-                echo "nodes = $nodes"
-                @ ntaskspernode = ($nodnum / $nodes)
+                set ntaskspernode = 32
                 echo "ntaskspernode = $ntaskspernode"
                 
                 echo '#\!/bin/bash -l'                          >  sbatch.sh
-                echo "#SBATCH --nodes=$nodes"                   >> sbatch.sh
                 echo "#SBATCH --ntasks=$nodnum"                 >> sbatch.sh
                 echo "#SBATCH --ntasks-per-node=$ntaskspernode" >> sbatch.sh
                 echo "#SBATCH --time=00:59:00"                  >> sbatch.sh
@@ -323,12 +319,13 @@ foreach isrc (${num_src_arr})
                 echo 'echo "Using $SLURM_NTASKS_PER_NODE tasks per node"'   >> sbatch.sh
                 echo 'echo "A total of $SLURM_NTASKS tasks is used"'        >> sbatch.sh
                 
-                echo "aprun -B ./axisem >& $outputname"         >> sbatch.sh
+                echo  'aprun -n $SLURM_NTASKS ./axisem >& '$outputname      >> sbatch.sh
                                     
                 sbatch sbatch.sh 
 
 	    ######## TORQUE/MAUI SCHEDULER #######
             else if ( $queue == 'torque' ) then 
+		# this is a crazy line, but with pure integer division its hard to handle.
                 #set nodes = `echo ${nodnum} | awk '{printf "%.0f\n", $1/16+0.49}'`
 
                 echo "# Sample PBS for parallel jobs" > run_solver.pbs
