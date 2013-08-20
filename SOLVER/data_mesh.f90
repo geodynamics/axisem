@@ -35,8 +35,29 @@ module data_mesh
   
   use global_parameters
   implicit none
-  include "mesh_params.h"
+  !include "mesh_params.h"
   public 
+
+  ! Very basic mesh parameters, have been in mesh_params.h before
+  integer ::         npol !<            polynomial order
+  integer ::        nelem !<                   proc. els
+  integer ::       npoint !<               proc. all pts
+  integer ::    nel_solid !<             proc. solid els
+  integer ::    nel_fluid !<             proc. fluid els
+  integer :: npoint_solid !<             proc. solid pts
+  integer :: npoint_fluid !<             proc. fluid pts
+  integer ::  nglob_solid !<            proc. slocal pts
+  integer ::  nglob_fluid !<            proc. flocal pts
+  integer ::     nel_bdry !< proc. solid-fluid bndry els
+  integer ::        ndisc !<   # disconts in bkgrd model
+  integer ::   nproc_mesh !<        number of processors
+  integer :: lfbkgrdmodel !<   length of bkgrdmodel name
+
+  ! global number in solid varies across procs due to central cube domain decomposition
+  integer                            :: nglob
+  integer, allocatable, dimension(:) :: igloc_solid ! (npoint_solid)
+  integer, allocatable, dimension(:) :: igloc_fluid ! (npoint_fluid)
+
 
   ! Misc definitions
   integer                          :: nsize, npoint_solid3
@@ -44,15 +65,13 @@ module data_mesh
 
   ! global numbering array for the solid and fluid assembly
   real(kind=realkind), allocatable :: gvec_solid(:) 
-  real(kind=realkind)              :: gvec_fluid(nglob_fluid)
-
-  real(kind=realkind)              :: smallval
+  real(kind=realkind), allocatable :: gvec_fluid(:)
 
   ! Deprecated elemental mesh (radius & colatitude of elemental midpoint)
   ! This is used for blow up localization. Might want to remove this when 
   ! everything is running smoothly in all eternities...
-  real(kind=realkind)   :: mean_rad_colat_solid(nel_solid,2)
-  real(kind=realkind)   :: mean_rad_colat_fluid(nel_fluid,2)
+  real(kind=realkind), allocatable  :: mean_rad_colat_solid(:,:)
+  real(kind=realkind), allocatable  :: mean_rad_colat_fluid(:,:)
   
   ! Global mesh informations
   real(kind=dp)         :: router ! Outer radius (surface)
@@ -75,8 +94,8 @@ module data_mesh
   ! Axial elements
   integer               :: naxel, naxel_solid, naxel_fluid
   integer,allocatable   :: ax_el(:), ax_el_solid(:), ax_el_fluid(:)
-  logical               :: axis_solid(nel_solid)
-  logical               :: axis_fluid(nel_fluid)
+  logical,allocatable   :: axis_solid(:)
+  logical,allocatable   :: axis_fluid(:)
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Background Model related
@@ -85,26 +104,28 @@ module data_mesh
   ! Solid-Fluid boundary----------------------------------------------------
 
   ! mapping nel_bdry elements into the solid/fluid element numbers
-  integer, dimension(nel_bdry) :: bdry_solid_el, bdry_fluid_el
+  integer, allocatable, dimension(:) :: bdry_solid_el, bdry_fluid_el
 
   ! mapping the z coordinate of the boundary for each element 
   ! (depending on north/south, above/below)
-  integer, dimension(nel_bdry) :: bdry_jpol_solid, bdry_jpol_fluid
+  integer, allocatable, dimension(:) :: bdry_jpol_solid, bdry_jpol_fluid
 
   ! Boolean to determine whether proc has solid-fluid boundary elements
   logical :: have_bdry_elem 
 
-  ! integer array of size nel_bdry containing the "global" element number 
-  ! for 1:nel_bdry 
-  integer, dimension(nel_bdry) :: ibdryel
+  !Not used anywhere
+  !! integer array of size nel_bdry containing the "global" element number 
+  !! for 1:nel_bdry 
+  !integer, dimension(nel_bdry) :: ibdryel
+  
 
   ! Background model--------------------------------------------------------
   character(len=100)          :: bkgrdmodel
   character(len=100)          :: meshname
   logical                     :: resolve_inner_shear, have_fluid
-  real(kind=dp)               :: discont(ndisc)
-  logical                     :: solid_domain(ndisc)
-  integer                     :: idom_fluid(ndisc)
+  real(kind=dp), allocatable  :: discont(:)
+  logical, allocatable        :: solid_domain(:)
+  integer, allocatable        :: idom_fluid(:)
   real(kind=dp)               :: rmin, minh_ic, maxh_ic, maxh_icb
   logical                     :: make_homo
   real(kind=dp)               :: vphomo, vshomo, rhohomo
@@ -127,6 +148,33 @@ module data_mesh
   integer                      :: nelem_plot, npoint_plot
   logical, allocatable         :: plotting_mask(:,:,:)
   integer, allocatable         :: mapping_ijel_iplot(:,:,:)
+
+
+  contains
+
+  !> Read parameters formerly in mesh_params.h 
+  !! It is slightly dirty to have this routine in a data module
+  !! but it allows to define the variables as 'protected', i.e.
+  !! fixed outside of this module.
+  subroutine read_mesh_basics(iounit)
+     integer, intent(in)   :: iounit
+
+     print *, iounit
+     read(iounit) npol
+     read(iounit) nelem
+     read(iounit) npoint
+     read(iounit) nel_solid
+     read(iounit) nel_fluid
+     read(iounit) npoint_solid
+     read(iounit) npoint_fluid
+     read(iounit) nglob_solid
+     read(iounit) nglob_fluid
+     read(iounit) nel_bdry
+     read(iounit) ndisc
+     read(iounit) nproc_mesh
+     read(iounit) lfbkgrdmodel
+
+  end subroutine
 
 !=======================
 end module data_mesh

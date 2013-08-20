@@ -150,12 +150,11 @@ end subroutine
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
 subroutine nc_dump_field_solid(f, varname)
 
-    include 'mesh_params.h'
-    real(kind=realkind), intent(in)   :: f(npts_sol)  !< Data to dump
+    real(kind=realkind), intent(in)   :: f(:)     !< Data to dump, size should be npts_sol
     character(len=*), intent(in)      :: varname  !< Internal name of data to dump. 
     !! Is used to identify the NetCDF Variable in question
 #ifdef unc
-    integer                           :: ivar, iproc, flen
+    integer                           :: ivar
 
     do ivar=1, nvar
         !< Check whether this Variable actually exists in file ncid_out
@@ -179,8 +178,7 @@ end subroutine nc_dump_field_solid
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
 subroutine nc_dump_field_fluid(f, varname)
 
-    include 'mesh_params.h'
-    real(kind=realkind), intent(in)   :: f(npts_flu)  !< Data to dump
+    real(kind=realkind), intent(in)   :: f(:)  !< Data to dump, size should be npts_flu
     character(len=*), intent(in)      :: varname  !< Internal name of data to dump. 
     !! Is used to identify the NetCDF Variable in question
 #ifdef unc
@@ -308,7 +306,6 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     use global_parameters, ONLY: realkind
     use data_mesh,         ONLY: loc2globrec, maxind
 
-    include 'mesh_params.h'
     integer                           :: ivar, flen, isnap_loc
     real                              :: tick, tack
     integer                           :: dumpsize
@@ -489,7 +486,6 @@ end subroutine
 subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
     use data_io, ONLY : ndumppts_el
-    include    'mesh_params.h'
     real(sp), intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
 #ifdef unc
 
@@ -571,7 +567,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     use data_source, ONLY: src_type, t_0
     use data_time,   ONLY: deltat, niter
 
-    include 'mesh_params.h'
 
     integer, intent(in)                  :: nrec              !< Number of receivers
     character(len=40),intent(in)         :: rec_names(nrec)   !< Receiver names

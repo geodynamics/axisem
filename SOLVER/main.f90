@@ -46,6 +46,8 @@ program axisem
 
   call define_io_appendix(appmynum,mynum)
   call define_io_appendix(appnproc,nproc)
+  
+  !call get_mesh_params !Get very basic mesh params, including pol. order, needed later
   call open_local_output_file ! parameters, open file for processor-specific screen output 
   call start_clock !clocks
 

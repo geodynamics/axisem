@@ -317,12 +317,14 @@ subroutine sf_time_loop_newmark
   use attenuation,          only: time_step_memvars_cg4
   use attenuation,          only: n_sls_attenuation
   use attenuation,          only: att_coarse_grained
-  
-  include 'mesh_params.h'
+  use data_mesh
+  !include 'mesh_params.h'
   
   ! Solid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: acc0, acc1
+  !real(kind=realkind), allocatable, dimension(:,:,:,:) :: disp, velo
+  !real(kind=realkind), allocatable, dimension(:,:,:,:) :: acc0, acc1
   
   ! solid memory variables + gradient
   real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
@@ -331,6 +333,8 @@ subroutine sf_time_loop_newmark
   ! Fluid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
+  !real(kind=realkind), allocatable, dimension(:,:,:)   :: chi, dchi
+  !real(kind=realkind), allocatable, dimension(:,:,:)   :: ddchi0, ddchi1
 
   integer :: iter
 
@@ -375,11 +379,21 @@ subroutine sf_time_loop_newmark
   !ddchi0 = 1.d-30
   !ddchi1 = 1.d-30
 
+  !allocate(disp(0:npol,0:npol,nel_solid,3))
+  !allocate(velo(0:npol,0:npol,nel_solid,3))
+  !allocate(acc0(0:npol,0:npol,nel_solid,3))
+  !allocate(acc1(0:npol,0:npol,nel_solid,3))
+
   disp = zero
   velo = zero 
   acc0 = zero
   acc1 = zero
   
+  !allocate(chi(0:npol,0:npol,nel_fluid))
+  !allocate(dchi(0:npol,0:npol,nel_fluid))
+  !allocate(ddchi0(0:npol,0:npol,nel_fluid))
+  !allocate(ddchi1(0:npol,0:npol,nel_fluid))
+
   chi = zero
   dchi = zero
   ddchi0 = zero
@@ -453,7 +467,11 @@ subroutine sf_time_loop_newmark
      select case (src_type(1))
         case ('monopole')
            call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
-           call glob_stiffness_mono(acc1, disp)
+           if (npol==4) then
+              call glob_stiffness_mono_4(acc1, disp)
+           else
+              call glob_stiffness_mono(acc1, disp)
+           end if
            if (anel_true) then
               iclockanelst = tick()
               if (att_coarse_grained) then
@@ -577,7 +595,8 @@ subroutine sf_time_loop_newmark_omp
   use data_mesh,            only: gvec_solid
   !$ use omp_lib
   
-  include 'mesh_params.h'
+  use data_mesh
+  !include 'mesh_params.h'
   
   ! Solid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
@@ -748,7 +767,9 @@ subroutine symplectic_time_loop
   use source,       only: compute_stf_t
   use data_matr,    only: inv_mass_rho,inv_mass_fluid
   
-  include 'mesh_params.h'
+  
+  use data_mesh
+  !include 'mesh_params.h'
   
   ! solid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo, acc
@@ -1138,12 +1159,12 @@ end subroutine SS_scheme
 subroutine runtime_info(iter, disp, chi)
   
   use commun, only : pend
-  
-  include 'mesh_params.h'
+  !use data_mesh
+  !include 'mesh_params.h'
   
   integer, intent(in)             :: iter
-  real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,nel_fluid)
+  real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
+  real(kind=realkind), intent(in) :: chi(0:,0:,:)
   integer                         :: iblow(4), check_disp, check_iter, time_stamp
   character(len=4)                :: appistamp
 
@@ -1180,7 +1201,7 @@ subroutine runtime_info(iter, disp, chi)
 15 format(f7.1,4(1pe12.3))
 
   ! Stop simulation if displacement exceeds source magnitude
-  if ( maxval(abs(disp(1,1,:,:))) > abs(magnitude) ) then
+  if ( maxval(abs(disp(1,1,:,:))) > 10*abs(magnitude) ) then
      write(6,*) procstrg,'!!!!!!!!!!!!!!! DISPLACEMENTS BLEW UP !!!!!!!!!!!!!!!'
      write(6,*) procstrg,'  Time step & time:', iter, t 
      write(6,*) procstrg,'  Proc. num, displ value',mynum,maxval(abs(disp))
@@ -1191,7 +1212,7 @@ subroutine runtime_info(iter, disp, chi)
      write(6,*) procstrg,'ipol,jpol  :',iblow(1)-1,iblow(2)-1
      write(6,*) procstrg,'axis       :',axis_solid(iblow(3))
      write(6,*) procstrg,''
-     call pend
+     !call pend
      stop
   endif
 
@@ -1203,10 +1224,10 @@ end subroutine runtime_info
 !! and I have the source.
 subroutine add_source(acc1, stf1)
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)    :: stf1
-  real(kind=realkind), intent(inout) :: acc1(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(inout) :: acc1(0:,0:,:,:)
   integer             :: iel,i
 
   i=0
@@ -1233,11 +1254,11 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   use attenuation,          only: n_sls_attenuation, dump_memory_vars
   
   integer, intent(in)            :: iter
-  real(kind=realkind),intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind),intent(in) :: velo(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind),intent(in) :: chi(0:npol,0:npol,nel_fluid)
-  real(kind=realkind),intent(in) :: dchi(0:npol,0:npol,nel_fluid)
-  real(kind=realkind),intent(in) :: ddchi(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in) :: disp(0:, 0:, :, :)
+  real(kind=realkind),intent(in) :: velo(0:, 0:, :, :)
+  real(kind=realkind),intent(in) :: chi(0:,  0:, :)
+  real(kind=realkind),intent(in) :: dchi(0:, 0:, :)
+  real(kind=realkind),intent(in) :: ddchi(0:,0:, :)
   real(kind=realkind),intent(in), optional :: &
         memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
   real(kind=realkind) :: time
@@ -1388,48 +1409,48 @@ endif   ! dump_wavefields?
 end subroutine dump_stuff
 !=============================================================================
 
-!-----------------------------------------------------------------------------
-!> This is for quick checks and singular computations of the bulk moduli kernels
-!! hence only the trace of the strain tensor is needed and computed. 
-subroutine dump_velo_straintrace_cmb(u,velo)
-
-  use data_source,              only: src_type
-  use pointwise_derivatives,    only: axisym_gradient_solid
-  use pointwise_derivatives,    only: f_over_s_solid
-  
-  include 'mesh_params.h'
-  
-  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind), intent(in)   :: velo(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind)               :: grad_sol(0:npol,0:npol,nel_solid,3)
-
-  if (src_type(1)=='dipole') then
-     call axisym_gradient_solid(u(:,:,:,1)+u(:,:,:,2),grad_sol(:,:,:,1:2))
-  else
-     call axisym_gradient_solid(u(:,:,:,1),grad_sol(:,:,:,1:2)) ! dsus, dzus
-  endif
-  call axisym_gradient_solid(u(:,:,:,3),grad_sol(:,:,:,2:3)) ! dsuz, dzuz
-
-  if (src_type(1)=='monopole') then
-     grad_sol(:,:,:,2)=u(:,:,:,1)
-
-  elseif (src_type(1)=='dipole') then 
-     grad_sol(:,:,:,2)=real(2.,kind=realkind)*u(:,:,:,2)
-
-  elseif (src_type(1)=='quadpole') then
-     grad_sol(:,:,:,2)=u(:,:,:,1)-real(2.,kind=realkind)*u(:,:,:,2)
-
-  endif
-
-  grad_sol(:,:,:,2) = f_over_s_solid(grad_sol(:,:,:,2))
-
-  ! Slightly dirty, but memory-cheaper: sum of 3 diag strain elements
-  grad_sol(:,:,:,1) = grad_sol(:,:,:,1) + grad_sol(:,:,:,2) + grad_sol(:,:,:,3)
-
-  call compute_recfile_cmb(velo,grad_sol(:,:,:,1))
-
-end subroutine dump_velo_straintrace_cmb
-!=============================================================================
+!!-----------------------------------------------------------------------------
+!!> This is for quick checks and singular computations of the bulk moduli kernels
+!!! hence only the trace of the strain tensor is needed and computed. 
+!subroutine dump_velo_straintrace_cmb(u,velo)
+!
+!  use data_source,              only: src_type
+!  use pointwise_derivatives,    only: axisym_gradient_solid
+!  use pointwise_derivatives,    only: f_over_s_solid
+!  
+!  include 'mesh_params.h'
+!  
+!  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,nel_solid,3)
+!  real(kind=realkind), intent(in)   :: velo(0:npol,0:npol,nel_solid,3)
+!  real(kind=realkind)               :: grad_sol(0:npol,0:npol,nel_solid,3)
+!
+!  if (src_type(1)=='dipole') then
+!     call axisym_gradient_solid(u(:,:,:,1)+u(:,:,:,2),grad_sol(:,:,:,1:2))
+!  else
+!     call axisym_gradient_solid(u(:,:,:,1),grad_sol(:,:,:,1:2)) ! dsus, dzus
+!  endif
+!  call axisym_gradient_solid(u(:,:,:,3),grad_sol(:,:,:,2:3)) ! dsuz, dzuz
+!
+!  if (src_type(1)=='monopole') then
+!     grad_sol(:,:,:,2)=u(:,:,:,1)
+!
+!  elseif (src_type(1)=='dipole') then 
+!     grad_sol(:,:,:,2)=real(2.,kind=realkind)*u(:,:,:,2)
+!
+!  elseif (src_type(1)=='quadpole') then
+!     grad_sol(:,:,:,2)=u(:,:,:,1)-real(2.,kind=realkind)*u(:,:,:,2)
+!
+!  endif
+!
+!  grad_sol(:,:,:,2) = f_over_s_solid(grad_sol(:,:,:,2))
+!
+!  ! Slightly dirty, but memory-cheaper: sum of 3 diag strain elements
+!  grad_sol(:,:,:,1) = grad_sol(:,:,:,1) + grad_sol(:,:,:,2) + grad_sol(:,:,:,3)
+!
+!  call compute_recfile_cmb(velo,grad_sol(:,:,:,1))
+!
+!end subroutine dump_velo_straintrace_cmb
+!!=============================================================================
 
 !-----------------------------------------------------------------------------
 !> Compute the full, global strain tensor on-the-fly. Each of 6 (monopole: 4)
@@ -1453,10 +1474,11 @@ subroutine compute_strain(u, chi)
   use pointwise_derivatives,    only: f_over_s_fluid
   use wavefields_io,            only: dump_field_1d
   
-  include 'mesh_params.h'
+  use data_mesh
+  !include 'mesh_params.h'
   
-  real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,nel_fluid)
+  real(kind=realkind), intent(in) :: u(0:,0:,:,:)
+  real(kind=realkind), intent(in) :: chi(0:,0:,:)
   
   real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
   real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
@@ -1622,13 +1644,13 @@ subroutine energy(disp1,vel,dchi1,ddchi)
   use stiffness
   use apply_masks
   use commun
+  use data_mesh
+  !include 'mesh_params.h'
   
-  include 'mesh_params.h'
-  
-  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3),intent(in) :: disp1
-  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3),intent(in) :: vel
-  real(kind=realkind), dimension(0:npol,0:npol,nel_fluid),intent(in)   :: dchi1
-  real(kind=realkind), dimension(0:npol,0:npol,nel_fluid),intent(in)   :: ddchi
+  real(kind=realkind), dimension(0:,0:,:,:),intent(in) :: disp1
+  real(kind=realkind), dimension(0:,0:,:,:),intent(in) :: vel
+  real(kind=realkind), dimension(0:,0:,:),intent(in)   :: dchi1
+  real(kind=realkind), dimension(0:,0:,:),intent(in)   :: ddchi
   
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: dchi
@@ -1726,10 +1748,10 @@ subroutine bdry_copy2fluid(uflu,usol)
   use data_matr, only : bdry_matr,solflubdry_radius
   use data_source, only : src_type
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
-  real(kind=realkind), intent(inout) :: uflu(0:npol,0:npol,1:nel_fluid)
-  real(kind=realkind), intent(in)    :: usol(0:npol,0:npol,1:nel_solid,3)
+  real(kind=realkind), intent(inout) :: uflu(0:,0:,:)
+  real(kind=realkind), intent(in)    :: usol(0:,0:,:,:)
   integer                            :: iel,jpols,jpolf,iels,ielf
 
   if (src_type(1) == 'dipole') then 
@@ -1740,10 +1762,10 @@ subroutine bdry_copy2fluid(uflu,usol)
         iels = bdry_solid_el(iel)
         ielf = bdry_fluid_el(iel)
 
-        uflu(0:npol,jpolf,ielf) = uflu(0:npol,jpolf,ielf) - &
-             bdry_matr(0:npol,iel,1) * &
-             (usol(0:npol,jpols,iels,1) + usol(0:npol,jpols,iels,2) ) - &
-             bdry_matr(0:npol,iel,2) * usol(0:npol,jpols,iels,3)
+        uflu(:,jpolf,ielf) = uflu(:,jpolf,ielf) - &
+                             bdry_matr(:,iel,1) * &
+                             (usol(:,jpols,iels,1) + usol(:,jpols,iels,2) ) - &
+                             bdry_matr(:,iel,2) * usol(:,jpols,iels,3)
      enddo
 
   else
@@ -1754,9 +1776,9 @@ subroutine bdry_copy2fluid(uflu,usol)
         iels = bdry_solid_el(iel)
         ielf = bdry_fluid_el(iel)
 
-        uflu(0:npol,jpolf,ielf) = uflu(0:npol,jpolf,ielf) - &
-             bdry_matr(0:npol,iel,1) * usol(0:npol,jpols,iels,1) - &
-             bdry_matr(0:npol,iel,2) * usol(0:npol,jpols,iels,3)
+        uflu(:,jpolf,ielf) = uflu(:,jpolf,ielf) - &
+                             bdry_matr(:,iel,1) * usol(:,jpols,iels,1) - &
+                             bdry_matr(:,iel,2) * usol(:,jpols,iels,3)
      enddo
 
   endif
@@ -1772,10 +1794,10 @@ subroutine bdry_copy2solid(usol,uflu)
   use data_matr,   only : bdry_matr, solflubdry_radius
   use data_source, only : src_type
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
-  real(kind=realkind), intent(inout) :: usol(0:npol,0:npol,1:nel_solid,3)
-  real(kind=realkind), intent(in)    :: uflu(0:npol,0:npol,1:nel_fluid)
+  real(kind=realkind), intent(inout) :: usol(0:,0:,:,:)
+  real(kind=realkind), intent(in)    :: uflu(0:,0:,:)
   integer                            :: iel,jpols,jpolf,iels,ielf
 
   do iel = 1,nel_bdry
@@ -1786,19 +1808,19 @@ subroutine bdry_copy2solid(usol,uflu)
 
      if (src_type(1) == 'dipole') then 
 
-     usol(0:npol,jpols,iels,1) = usol(0:npol,jpols,iels,1) + &
-          bdry_matr(0:npol,iel,1) * uflu(0:npol,jpolf,ielf)
+     usol(:,jpols,iels,1) = usol(:,jpols,iels,1) + &
+          bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)
 
-     usol(0:npol,jpols,iels,2) = usol(0:npol,jpols,iels,2) + &
-          bdry_matr(0:npol,iel,1) * uflu(0:npol,jpolf,ielf)
+     usol(:,jpols,iels,2) = usol(:,jpols,iels,2) + &
+          bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)
 
      else
-     usol(0:npol,jpols,iels,1) = usol(0:npol,jpols,iels,1) + &
-          bdry_matr(0:npol,iel,1) * uflu(0:npol,jpolf,ielf)        
+     usol(:,jpols,iels,1) = usol(:,jpols,iels,1) + &
+          bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)        
      endif
 
-     usol(0:npol,jpols,iels,3) = usol(0:npol,jpols,iels,3) + &
-          bdry_matr(0:npol,iel,2) * uflu(0:npol,jpolf,ielf)
+     usol(:,jpols,iels,3) = usol(:,jpols,iels,3) + &
+          bdry_matr(:,iel,2) * uflu(:,jpolf,ielf)
 
   enddo
 

@@ -85,13 +85,13 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   use lateral_heterogeneities
   use data_mesh_preloop, ONLY : ielsolid
   use data_source, ONLY : rot_src
+  use data_mesh, only: npol, nelem, nel_solid
+  !include 'mesh_params.h'
 
-  include 'mesh_params.h'
-
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(out) :: rho
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(out) :: fa_ani_theta, fa_ani_phi
+  real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: rho
+  real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
+  real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
+  real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: fa_ani_theta, fa_ani_phi
 
   real(kind=realkind), dimension(nel_solid), intent(out), optional :: Q_mu, Q_kappa
 
@@ -329,6 +329,7 @@ end subroutine read_model
 !! r vp vs rho
 subroutine arbitr_sub_solar_arr(s,z,v_p,v_s,rho,bkgrdmodel2)
 
+  use data_mesh
   real(kind=dp)   , intent(in) :: s(0:npol,0:npol,1:nelem),z(0:npol,0:npol,1:nelem)
   character(len=100), intent(in) :: bkgrdmodel2
   real(kind=dp)   , dimension(:,:,:), intent(out) :: rho(0:npol,0:npol,1:nelem)
@@ -444,7 +445,8 @@ end subroutine interp_vel
 !-----------------------------------------------------------------------------
 subroutine check_mesh_discontinuities(ieldom,domcount)
 
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh, only: ndisc, npol, nelem
 
   integer, intent(in)  :: ieldom(:)
   integer, intent(out) :: domcount(ndisc)
@@ -523,7 +525,8 @@ end subroutine check_mesh_discontinuities
 !-----------------------------------------------------------------------------
 subroutine check_elastic_discontinuities(ieldom,domcount,lambda,mu,rho)
 
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh, only : ndisc, nelem
 
   integer, intent(in)          :: ieldom(nelem),domcount(ndisc)
   real(kind=dp)   , intent(in) :: rho(0:npol,0:npol,nelem)
@@ -761,8 +764,8 @@ end subroutine check_elastic_discontinuities
 subroutine check_background_model(lambda,mu,rho)
 
   use data_mesh_preloop, ONLY : eltype, coarsing
-
-  include 'mesh_params.h'
+  use data_mesh, only : npol, nelem
+  !include 'mesh_params.h'
 
   real(kind=dp)   , intent(in)  :: rho(0:npol,0:npol,nelem) 
   real(kind=dp)   , intent(in)  :: lambda(0:npol,0:npol,nelem)
@@ -962,7 +965,8 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
   use data_mesh_preloop, ONLY : eltype, coarsing, north, axis
   use commun, ONLY : psum_dble,broadcast_int,broadcast_dble
 
-  include 'mesh_params.h'
+  use data_mesh
+  !include 'mesh_params.h'
 
   real(kind=dp)   , intent(in)  :: rho(0:npol,0:npol,nelem)
   real(kind=dp)   , intent(in)  :: lambda(0:npol,0:npol,nelem)
@@ -1294,13 +1298,14 @@ end subroutine write_VTK_bin_scal
 subroutine plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                           fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
 
+  use data_mesh
   use data_mesh_preloop,  ONLY : ielsolid
 
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in) :: rho 
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in) :: lambda, mu
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in), optional :: &
-                                          xi_ani, phi_ani, eta_ani
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+  real(kind=dp), dimension(0:,0:,:), intent(in) :: rho 
+  real(kind=dp), dimension(0:,0:,:), intent(in) :: lambda, mu
+  real(kind=dp), dimension(0:,0:,:), intent(in), optional :: &
+                                xi_ani, phi_ani, eta_ani
+  real(kind=dp), dimension(0:,0:,:), intent(in), optional :: &
                                           fa_ani_theta, fa_ani_phi
 
   real(kind=realkind), dimension(nel_solid), intent(in), optional :: Q_mu, Q_kappa

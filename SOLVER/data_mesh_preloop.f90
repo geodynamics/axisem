@@ -30,7 +30,7 @@ module data_mesh_preloop
 
 use global_parameters
 implicit none
-include "mesh_params.h"
+!include "mesh_params.h"
 public 
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

@@ -46,12 +46,13 @@ contains
 !! and some short-hand parameters for the time loop.
 subroutine init_grid
 
-  use data_numbering, only : igloc_solid, nglob_solid
+  use data_mesh, only : igloc_solid, nglob_solid, nglob_fluid, npol, nel_solid
+  use data_mesh, only : nelem, nel_fluid, npoint_solid
   use data_comm
   use commun
   use splib, only: zemngl2, get_welegl_axial, zelegl, get_welegl
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   integer :: iel, ipol, jpol, idest, ipt, icount, iicount, ipg, ip
   
@@ -104,6 +105,10 @@ subroutine init_grid
 
   ! Initialize the solid global number array needed for the assembly
   allocate(gvec_solid(nglob_solid))
+
+  ! Initialize the fluid global number array needed for the assembly
+  allocate(gvec_fluid(nglob_fluid))
+  
 
   ! Initialize solid array that maps global numbers into elemental numbers for 
   ! processor boundaries

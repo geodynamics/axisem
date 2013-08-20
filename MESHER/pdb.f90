@@ -2313,9 +2313,25 @@ subroutine write_db
      if (dump_mesh_info_screen) write(6,*) 'WRITING OUT DATABASE TO ',dbname(1:lfdbname)
      open(10,file=dbname(1:lfdbname), FORM="UNFORMATTED", STATUS="REPLACE")
   
-      npointotp = nel(iproc)*(npol+1)**2 
+     npointotp = nel(iproc)*(npol+1)**2 
   
      !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+     ! Write basic mesh parameters. What was once in mesh_params.h
+     write(10) npol ! npol in SOLVER
+     write(10) nel(iproc) ! nelem in SOLVER
+     write(10) nel(iproc)*(npol+1)**2 ! npoint in SOLVER
+     write(10) nel_solid(iproc)       ! nel_solid
+     write(10) nel_fluid(iproc)       ! nel_fluid
+     write(10) nel_solid(iproc)*(npol+1)**2 ! npoint_solid
+     write(10) nel_fluid(iproc)*(npol+1)**2 ! npoint_fluid
+     write(10) nglobp_solid(iproc)           ! nglob_solid
+     write(10) nglobp_fluid(iproc)           ! nglob_fluid
+     write(10) nbdry_el(iproc)              ! nel_bdry
+     write(10) ndisc                        ! ndisc
+     write(10) nproc                        ! nproc_mesh
+     write(10) lfbkgrdmodel                 ! lfbkgrdmodel
+     
+     
      ! Coordinates of control points
      if (dump_mesh_info_screen) &
         write(6,*)'PARALLEL DATABASE: writing coordinates/control points...',iproc
@@ -2336,7 +2352,7 @@ subroutine write_db
         endif
      end do
   
-     ! Number of global distinct points (slightly differs for each processor!)
+     !! Number of global distinct points (slightly differs for each processor!)
      write(10) nglobp(iproc)
   
      ! Element types
@@ -2352,8 +2368,8 @@ subroutine write_db
      write(10) procel_solidp(:,iproc)
      write(10) procel_fluidp(:,iproc)
   
-     ! Number of distinct points in solid (slightly differs for each processor!)
-     write(10) nglobp_solid(iproc)
+     !! Number of distinct points in solid (slightly differs for each processor!)
+     !write(10) nglobp_solid(iproc)
   
      ! slocal numbering 
      npointotp = nel_solid(iproc)*(npol+1)**2 

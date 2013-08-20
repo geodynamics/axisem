@@ -28,32 +28,32 @@ use global_parameters
 
 implicit none
 public
-include "mesh_params.h"
+!include "mesh_params.h"
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
- character(len=10)   :: src_type(2)
- real(kind=dp)       :: t_0,magnitude
- character(len=12)   :: src_file_type
- character(len=7)    :: stf_type
- real(kind=dp)       :: src_depth,zsrc,srccolat,srclon
- integer             :: iel_src,ipol_src,jpol_src
- integer             :: isim,num_simul
- logical             :: have_src
+ character(len=10)                :: src_type(2)
+ real(kind=dp)                    :: t_0,magnitude
+ character(len=12)                :: src_file_type
+ character(len=7)                 :: stf_type
+ real(kind=dp)                    :: src_depth,zsrc,srccolat,srclon
+ integer                          :: iel_src,ipol_src,jpol_src
+ integer                          :: isim,num_simul
+ logical                          :: have_src
  real(kind=realkind), allocatable :: stf(:)
- logical             :: rot_src
- real(kind=realkind) :: Mij(6)
+ logical                          :: rot_src
+ real(kind=realkind)              :: Mij(6)
 
 ! discrete diracs
- real(kind=realkind) :: sampling_per_a,discrete_dirac_halfwidth
- integer             :: period_vs_discrete_halfwidth,it_src_shift 
- real(kind=realkind) :: dt_src_shift,shift_fact_discrete_dirac
- character(len=6)    :: discrete_choice
- logical             :: discrete_dirac
+ real(kind=realkind)              :: sampling_per_a,discrete_dirac_halfwidth
+ integer                          :: period_vs_discrete_halfwidth,it_src_shift 
+ real(kind=realkind)              :: dt_src_shift,shift_fact_discrete_dirac
+ character(len=6)                 :: discrete_choice
+ logical                          :: discrete_dirac
 
 ! elemental source term, maximally across 8 elements and 3 components
- real(kind=realkind) :: source_term_el(0:npol,0:npol,8,3)
- integer             :: nelsrc, ielsrc(8)
+ real(kind=realkind), allocatable :: source_term_el(:,:,:,:) !(0:npol,0:npol,8,3)
+ integer                          :: nelsrc, ielsrc(8)
 
 ! How to deal with the source for kernel wavefield dumps
  character(len=4)    :: src_dump_type

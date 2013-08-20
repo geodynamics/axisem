@@ -25,7 +25,7 @@
 module parameters
 
     use global_parameters
-    use data_mesh 
+    !use data_mesh 
     use data_mesh_preloop 
     use data_proc
     use data_time 
@@ -76,7 +76,8 @@ end subroutine
 !! data paths, specification of wavefield dumping etc.
 subroutine readin_parameters
 
-  include 'mesh_params.h'
+  use data_mesh, only: make_homo, do_mesh_tests
+  !include 'mesh_params.h'
 
   call read_inparam_basic
   
@@ -202,13 +203,6 @@ subroutine readin_parameters
      need_fluid_displ = .true.
   endif
 
-  ! define general small value
-
-  if (realkind==4) then
-      smallval = smallval_sngl
-  elseif (realkind==8) then
-      smallval = smallval_dble
-  endif
 
   if (lpr .and. verbose > 1) write(6,*)'     small value is:',smallval
 
@@ -349,11 +343,13 @@ end subroutine
 !-----------------------------------------------------------------------------
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
-    
+  
+  use data_mesh,  only: naxel, meshname, vphomo, vshomo, rhohomo, make_homo, do_mesh_tests
   use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
 
   integer               :: iinparam_advanced=500, ioerr
+  integer               :: npol_max = 12
   character(len=256)    :: line
   character(len=256)    :: keyword, keyvalue
 
@@ -390,8 +386,8 @@ subroutine read_inparam_advanced
   ! xdmf stuff
   i_n_xdmf = -1
   j_n_xdmf = -1
-  allocate(i_arr_xdmf(1:npol+1))
-  allocate(j_arr_xdmf(1:npol+1))
+  allocate(i_arr_xdmf(1:npol_max+1))
+  allocate(j_arr_xdmf(1:npol_max+1))
   i_arr_xdmf = -1
   j_arr_xdmf = -1
   xdmf_rmin = 0
@@ -456,7 +452,7 @@ subroutine read_inparam_advanced
 
          case('KERNEL_IEND')
              read(keyvalue,*) iend
-             iend = npol - iend
+             !iend = npol - iend
 
          case('SAVE_ENERGY')
              read(keyvalue,*) dump_energy
@@ -635,7 +631,7 @@ end subroutine
 !-----------------------------------------------------------------------------
 !> Checking the consistency of some of the input parameters
 subroutine check_basic_parameters
-
+  use data_mesh
   character(len=1024) :: errmsg
 
   errmsg = 'SIMULATION_TYPE is not defined in input file inparam_basic'
@@ -722,7 +718,9 @@ end subroutine check_basic_parameters
 !> Compute numerical parameters, like time step, snapshot frequency
 subroutine compute_numerical_parameters
   use attenuation, only: dump_memory_vars
-  include "mesh_params.h"
+  use data_mesh
+
+  !include "mesh_params.h"
 
   real(kind=dp)         :: s,z,r,theta,s_max,dshift
   real(kind=dp)         :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
@@ -1074,9 +1072,9 @@ subroutine write_parameters
 
     use data_comm
     use nc_routines
-    use data_numbering, ONLY : nglob,nglob_solid
-    
-    include 'mesh_params.h'
+    !use data_mesh, ONLY : nglob,nglob_solid
+    use data_mesh
+    !include 'mesh_params.h'
 
     integer          :: iel,curvel,linel,seminoel,semisoel
     integer          :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
@@ -1286,7 +1284,8 @@ subroutine write_parameters
         call flush(6)
 
         ! additionally write a header for the kernel software
-        if (dump_wavefields) call create_kernel_header
+        ! not used anymore
+        !if (dump_wavefields) call create_kernel_header
 
 
         ! write generic simulation info file
@@ -1582,77 +1581,77 @@ end subroutine write_parameters
 !----------------------------------------------------------------------------- 
 !> Static header with some info for subsequent kernel computations.
 !! Produces file mesh_params_kernel.h
-subroutine create_kernel_header
-
-    use data_mesh, ONLY: hmax_glob
-    use data_io, ONLY: nstrain
-    character(len=8)  :: mydate
-    character(len=10) :: mytime
-    character(len=80) :: dbname2
-    integer           :: lfdbname
-
-    call date_and_time(mydate,mytime)
-    dbname2='mesh_params_kernel.h'
-    lfdbname=index(dbname2,' ')-1
-    
-    open(97,file=dbname2(1:lfdbname))
-    write(97,10) nproc
-    write(97,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
-    write(97,*)''
-    write(97,29)
-    write(97,12)'Background model     :',bkgrdmodel
-    write(97,13)'Inner-core shear wave:',resolve_inner_shear
-    write(97,14)'Dominant period [s]  :',period
-    write(97,14)'Elements/wavelength  :',pts_wavelngth
-    write(97,14)'Courant number       :',courant
-    write(97,30)
-    write(97,*)''
-    write(97,9)'nt',niter,'number of time steps'
-    write(97,19)'deltat',deltat,'time step'
-    write(97,17)'hmax', hmax_glob,'maximum element size'
-    write(97,17)'vpmax', vpmax,'maximum p-velocity'
-    write(97,17)'rmax', router, 'maximum radius'
-    write(97,9)'ndumps',nstrain, 'total wavefield dumps'
-    write(97,9)'strain_samp',int(strain_samp),'dumps per period'
-    write(97,18)"src_type",src_type(1),'source type'
-    write(97,18)"src_type2",src_type(2),'source type'
-    write(97,28)"bkgrdmodel",bkgrdmodel,&
-                                                      'background model'
-    write(97,9)'ibeg',ibeg,'dumped starting GLL within element'
-    write(97,9)'iend',iend,'dumped ending GLL within element'
-    
-    if (have_fluid) then 
-        write(97,31)
-    else
-        write(97,32)
-    end if
-    write(97,*)''
-    write(97,30)
-    write(97,*)''
-    close(97)
-
-    write(6,*)
-    write(6,*)'wrote parameters for kerner into ',dbname2(1:lfdbname)
-    write(6,*)
-
-9   format(' integer, parameter :: ',A12,' =',i11,'  ! ',A27)
-17  format(' real, parameter    :: ',A12,' =',f11.2,'  ! ',A27)
-19  format(' real, parameter    :: ',A12,' =',f11.5,'  ! ',A27)
-18  format(' character(len=10), parameter    :: ',A12," ='",A10,"'  ! ",A27)
-28  format(' character(len=100), parameter    :: ',A12," ='",A10,"'  ! ",A27)
-31  format(' logical, parameter    :: have_fluid=.true.')
-32  format(' logical, parameter    :: have_fluid=.false.')
-10  format('! Proc ',i3,': Header for kernel information to run static kerner')
-11  format('! created by the solver on ', &
-             A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
-29  format('!:::::::::::::::::::: Input parameters :::::::::::::::::::::::::::')
-12  format('!  ',A23,A20)
-13  format('!  ',A23,L10)
-14  format('!  ',A23,1f10.4)
-30  format('!:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
-
-end subroutine create_kernel_header
-!-----------------------------------------------------------------------------
+!subroutine create_kernel_header
+!
+!    use data_mesh !, ONLY: hmax_glob
+!    use data_io, ONLY: nstrain
+!    character(len=8)  :: mydate
+!    character(len=10) :: mytime
+!    character(len=80) :: dbname2
+!    integer           :: lfdbname
+!
+!    call date_and_time(mydate,mytime)
+!    dbname2='mesh_params_kernel.h'
+!    lfdbname=index(dbname2,' ')-1
+!    
+!    open(97,file=dbname2(1:lfdbname))
+!    write(97,10) nproc
+!    write(97,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
+!    write(97,*)''
+!    write(97,29)
+!    write(97,12)'Background model     :',bkgrdmodel
+!    write(97,13)'Inner-core shear wave:',resolve_inner_shear
+!    write(97,14)'Dominant period [s]  :',period
+!    write(97,14)'Elements/wavelength  :',pts_wavelngth
+!    write(97,14)'Courant number       :',courant
+!    write(97,30)
+!    write(97,*)''
+!    write(97,9)'nt',niter,'number of time steps'
+!    write(97,19)'deltat',deltat,'time step'
+!    write(97,17)'hmax', hmax_glob,'maximum element size'
+!    write(97,17)'vpmax', vpmax,'maximum p-velocity'
+!    write(97,17)'rmax', router, 'maximum radius'
+!    write(97,9)'ndumps',nstrain, 'total wavefield dumps'
+!    write(97,9)'strain_samp',int(strain_samp),'dumps per period'
+!    write(97,18)"src_type",src_type(1),'source type'
+!    write(97,18)"src_type2",src_type(2),'source type'
+!    write(97,28)"bkgrdmodel",bkgrdmodel,&
+!                                                      'background model'
+!    write(97,9)'ibeg',ibeg,'dumped starting GLL within element'
+!    write(97,9)'iend',iend,'dumped ending GLL within element'
+!    
+!    if (have_fluid) then 
+!        write(97,31)
+!    else
+!        write(97,32)
+!    end if
+!    write(97,*)''
+!    write(97,30)
+!    write(97,*)''
+!    close(97)
+!
+!    write(6,*)
+!    write(6,*)'wrote parameters for kerner into ',dbname2(1:lfdbname)
+!    write(6,*)
+!
+!9   format(' integer, parameter :: ',A12,' =',i11,'  ! ',A27)
+!17  format(' real, parameter    :: ',A12,' =',f11.2,'  ! ',A27)
+!19  format(' real, parameter    :: ',A12,' =',f11.5,'  ! ',A27)
+!18  format(' character(len=10), parameter    :: ',A12," ='",A10,"'  ! ",A27)
+!28  format(' character(len=100), parameter    :: ',A12," ='",A10,"'  ! ",A27)
+!31  format(' logical, parameter    :: have_fluid=.true.')
+!32  format(' logical, parameter    :: have_fluid=.false.')
+!10  format('! Proc ',i3,': Header for kernel information to run static kerner')
+!11  format('! created by the solver on ', &
+!             A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
+!29  format('!:::::::::::::::::::: Input parameters :::::::::::::::::::::::::::')
+!12  format('!  ',A23,A20)
+!13  format('!  ',A23,L10)
+!14  format('!  ',A23,1f10.4)
+!30  format('!:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
+!
+!end subroutine create_kernel_header
+!!-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
 !< Checking some mesh parameters and message parsing
@@ -1661,8 +1660,9 @@ subroutine check_parameters(hmaxglob, hminglob, curvel, linel, seminoel, semisoe
                        curvel_fluid, linel_fluid, seminoel_fluid, semisoel_fluid)
 
     use data_comm
+    use data_mesh
     
-    include 'mesh_params.h'
+    !include 'mesh_params.h'
     
     real(kind=dp)   , intent(in) :: hmaxglob,hminglob
     integer, intent(in) :: curvel,linel,seminoel,semisoel

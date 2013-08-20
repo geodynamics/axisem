@@ -969,9 +969,10 @@ end subroutine open_hyp_epi_equ_anti
 !! See open_hyp_epi_equ_anti for component explanation.
 subroutine compute_hyp_epi_equ_anti(t,disp)
 
+  use data_mesh, only: npol
   use data_source, only: iel_src,ipol_src,jpol_src,have_src,src_type
   real(kind=dp)    :: t
-  real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
 
   if (maxind>0) then
      if (mynum==0) then
@@ -1046,9 +1047,9 @@ subroutine compute_recfile_seis_bare(disp)
 
   use data_source, only : src_type
   
-  include "mesh_params.h"
-  
-  real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
+  !include "mesh_params.h"
+
+  real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
   
   integer :: i
 
@@ -1088,9 +1089,10 @@ subroutine nc_compute_recfile_seis_bare(disp)
 
   use data_source, only : src_type
   use nc_routines, only : nc_dump_rec
+  !use data_mesh
   implicit none
-  include "mesh_params.h"
-  real(kind=realkind), intent(in)  :: disp(0:npol,0:npol,nel_solid,3)
+  !include "mesh_params.h"
+  real(kind=realkind), intent(in)  :: disp(0:,0:,:,:)
   real(kind=realkind)              :: disp_rec(3,num_rec)
   integer                          :: i
 
@@ -1128,11 +1130,11 @@ end subroutine nc_compute_recfile_seis_bare
 subroutine compute_recfile_cmb(velo,grad_sol)
 
   use data_source, only : src_type
+  use data_mesh
+  !include "mesh_params.h"
   
-  include "mesh_params.h"
-  
-  real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,1)
+  real(kind=realkind), intent(in) :: velo(0:,0:,:,:)
+  real(kind=realkind)             :: grad_sol(0:,0:,:,:)
   integer :: i
 
   if (src_type(1)=='monopole') then
@@ -1165,10 +1167,11 @@ subroutine compute_surfelem(disp,velo)
   use data_io,     only : istrain
   use data_source, only : src_type
   use nc_routines, only : nc_dump_surface
-  include "mesh_params.h"
+  use data_mesh, only : npol
+  !include "mesh_params.h"
   
-  real(kind=realkind), intent(in) :: disp(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind), intent(in) :: velo(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
+  real(kind=realkind), intent(in) :: velo(0:,0:,:,:)
   real                            :: dumpvar(maxind,3)
   integer                         :: i
 
@@ -1240,9 +1243,9 @@ subroutine compute_surfelem_strain(u)
   use data_source,            only: src_type
   use pointwise_derivatives,  only: axisym_gradient_solid, axisym_gradient_solid_add
   use nc_routines,            only: nc_dump_surface
-  
-  include "mesh_params.h"
-  real(kind=realkind), intent(in) :: u(0:npol,0:npol,nel_solid,3)
+  use data_mesh,            only: npol, nel_solid
+  !include "mesh_params.h"
+  real(kind=realkind), intent(in) :: u(0:,0:,:,:)
   
   real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
   real(kind=realkind)             :: dumpvar(maxind, 6)

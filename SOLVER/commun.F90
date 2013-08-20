@@ -54,12 +54,10 @@ contains
 !! and therefore chose not to store any global numbering arrays.
 !! If nproc>1, then internode message passing is applied where necessary.
 subroutine comm2d(f, nel, nc, domainin)
-  
-  include 'mesh_params.h' 
-  
+  use data_mesh, only: npol 
   character(len=5), intent(in)       :: domainin
   integer, intent(in)                :: nc,nel
-  real(kind=realkind), intent(inout) :: f(0:npol,0:npol,nel,nc)
+  real(kind=realkind), intent(inout) :: f(0:npol,0:npol,1:nel,1:nc)
   
     if (domainin=='total') then
        if (lpr) &
@@ -88,15 +86,15 @@ end subroutine comm2d
 !! sum & exchange values on processor boundary points.
 subroutine pdistsum_solid(vec, nc)
   
-  use data_numbering,   only: igloc_solid
-  use data_mesh,        only: gvec_solid
+  use data_mesh,   only: igloc_solid
+  use data_mesh,        only: gvec_solid, npol, nel_solid
   use data_time,        only: idmpi, iclockmpi
   use clocks_mod
   
-  include 'mesh_params.h' 
+  !include 'mesh_params.h' 
   
   integer, intent(in)                :: nc
-  real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_solid,nc)
+  real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
   integer                            :: ic, iel, jpol, ipol, idest, ipt
   
   do ic = 1, nc
@@ -191,15 +189,15 @@ end subroutine pdistsum_solid
 !-----------------------------------------------------------------------------
 subroutine gather_elem_solid(vec, ic, iel)
   
-  use data_numbering,   only: igloc_solid
-  use data_mesh,        only: gvec_solid
+  use data_mesh,   only: igloc_solid
+  use data_mesh,        only: gvec_solid, npol
   use data_time,        only: idmpi, iclockmpi
   use clocks_mod
   
-  include 'mesh_params.h' 
+  !include 'mesh_params.h' 
   
   integer, intent(in)                :: ic, iel
-  real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
   integer                            :: jpol, ipol, idest, ipt
   
   do jpol = 0, npol
@@ -216,15 +214,15 @@ end subroutine gather_elem_solid
 !-----------------------------------------------------------------------------
 subroutine scatter_elem_solid(vec, ic, iel)
   
-  use data_numbering,   only: igloc_solid
-  use data_mesh,        only: gvec_solid
+  use data_mesh,   only: igloc_solid
+  use data_mesh,        only: gvec_solid, npol
   use data_time,        only: idmpi, iclockmpi
   use clocks_mod
   
-  include 'mesh_params.h' 
+  !include 'mesh_params.h' 
   
   integer, intent(in)                :: ic, iel
-  real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
   integer                            :: jpol, ipol, idest, ipt
   
   do jpol = 0, npol
@@ -246,12 +244,12 @@ end subroutine scatter_elem_solid
 !! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
 subroutine pdistsum_fluid(vec)
   
-  use data_numbering,   only: igloc_fluid
+  use data_mesh,   only: igloc_fluid
   use data_time,        only: idmpi, iclockmpi
-  use data_mesh,        only: gvec_fluid
+  use data_mesh,        only: gvec_fluid, npol, nel_fluid
   use clocks_mod
   
-  include 'mesh_params.h' 
+  !include 'mesh_params.h' 
   
   real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_fluid)
   integer                            :: iel, jpol, ipol, idest, ipt
@@ -334,11 +332,11 @@ end subroutine pdistsum_fluid
 !-----------------------------------------------------------------------------
 subroutine gather_elem_fluid(vec, iel)
 
-  use data_numbering,   only: igloc_fluid
-  use data_mesh,        only: gvec_fluid
-  include 'mesh_params.h' 
+  use data_mesh,   only: igloc_fluid
+  use data_mesh,        only: gvec_fluid, npol
+  !include 'mesh_params.h' 
   
-  real(kind=realkind), intent(in)    :: vec(0:npol,0:npol,nel_fluid)
+  real(kind=realkind), intent(in)    :: vec(0:,0:,:)
   integer, intent(in)                :: iel
   integer                            :: jpol, ipol, idest, ipt
 
@@ -357,9 +355,9 @@ end subroutine gather_elem_fluid
 !-----------------------------------------------------------------------------
 subroutine scatter_elem_fluid(vec, iel)
      
-  use data_numbering,   only: igloc_fluid
-  use data_mesh,        only: gvec_fluid
-  include 'mesh_params.h' 
+  use data_mesh,   only: igloc_fluid
+  use data_mesh,        only: gvec_fluid, npol, nel_fluid
+  !include 'mesh_params.h' 
   
   real(kind=realkind), intent(out)   :: vec(0:npol,0:npol,nel_fluid)
   integer, intent(in)                :: iel
@@ -389,9 +387,9 @@ end subroutine scatter_elem_fluid
 !! the time loop.
 subroutine mpi_asynch_messaging_test_solid
   
-  use data_numbering, only: igloc_solid, nglob_solid
-  
-  include 'mesh_params.h' 
+  use data_mesh, only: igloc_solid, nglob_solid
+  use data_mesh,      only: npol, nel_solid, nel_fluid
+  !include 'mesh_params.h' 
   
   real(kind=realkind),allocatable   :: vec(:,:,:,:)
   real(kind=realkind),allocatable   :: gvec_solid2(:,:)
@@ -455,10 +453,10 @@ end subroutine mpi_asynch_messaging_test_solid
 !! the time loop.
 subroutine mpi_asynch_messaging_test_fluid
   
-  use data_numbering,   only: igloc_fluid
-  use data_mesh,        only: gvec_fluid
+  use data_mesh,   only: igloc_fluid
+  use data_mesh,        only: gvec_fluid, npol, nel_fluid
   
-  include 'mesh_params.h' 
+  !include 'mesh_params.h' 
   
   real(kind=realkind),allocatable :: vec(:,:,:)
   integer                         :: iel,jpol,ipol,idest,ipt
@@ -502,14 +500,15 @@ end subroutine mpi_asynch_messaging_test_fluid
 !-----------------------------------------------------------------------------
 subroutine assembmass_sum_solid(f1,res)
 
-  use data_numbering,   only: igloc_solid
-  use data_mesh,        only: gvec_solid
-  include 'mesh_params.h'
+  use data_mesh,   only: igloc_solid
+  use data_mesh,        only: gvec_solid, npol, nel_solid
+  !include 'mesh_params.h'
   
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_solid)
+  real(kind=realkind), intent(in)   :: f1(0:,0:,:)
   real(kind=dp)   , intent(out)     :: res
   integer                           :: ipt, idest, iel, ipol, jpol
 
+  !!@TODO Optimise for npol = 4
   res = 0.d0 
   gvec_solid(:) = 0.d0
   do iel = 1, nel_solid
@@ -532,11 +531,12 @@ end subroutine assembmass_sum_solid
 !-----------------------------------------------------------------------------
 subroutine assembmass_sum_fluid(f1,res)
 
-  use data_numbering,   only: igloc_fluid
+  use data_mesh,   only: igloc_fluid
   use data_mesh,        only: gvec_fluid
-  include 'mesh_params.h' 
+  use data_mesh,        only: gvec_solid, npol, nel_fluid
+  !include 'mesh_params.h' 
   
-  real(kind=realkind), intent(in)   :: f1(0:npol,0:npol,nel_fluid)
+  real(kind=realkind), intent(in)   :: f1(0:,0:,:)
   real(kind=dp)   , intent(out)     :: res
   integer ipt, idest
   integer iel, ipol, jpol
@@ -565,7 +565,8 @@ end subroutine assembmass_sum_fluid
 !-----------------------------------------------------------------------------
 subroutine pinit
 
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh, only: nproc_mesh
   
 #ifndef serial
   ! Start message passing interface if parallel simulation

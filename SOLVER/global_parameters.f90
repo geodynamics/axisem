@@ -45,8 +45,9 @@ public
 ! Do not change these unless problems with any of the accuracy tests arise.
 ! As floating point rounding is system-dependent, there might be different 
 ! numbers for different systems, but the below values seem generally reasonable. 
-  real(kind=sp), parameter    :: smallval_sngl = 1e-6
-  real(kind=dp), parameter    :: smallval_dble = 1e-11
+  real(kind=sp), parameter       :: smallval_sngl = 1e-6
+  real(kind=dp), parameter       :: smallval_dble = 1e-11
+  real(kind=realkind), parameter :: smallval = smallval_sngl !< Change for dp
 
 ! Do not change these.
   double precision, parameter :: zero = 0d0, half = 5d-1, third = 1d0 / 3d0

@@ -353,7 +353,6 @@ subroutine feed_buffer(ic)
   use data_comm
   use data_mesh, only: gvec_solid
   
-  include 'mesh_params.h'
   integer, intent(in)            :: ic
   integer                        :: imsg,ipg,ip
   integer                        :: sizemsg_solid
@@ -393,8 +392,6 @@ subroutine send_recv_buffers_solid(nc)
   ! (consulation thereof to be avoided if at all possible...)
   
   use data_comm
-  
-  include 'mesh_params.h'
   
   integer, intent(in) :: nc
 
@@ -462,14 +459,15 @@ end subroutine send_recv_buffers_solid
 !-----------------------------------------------------------------------------
 subroutine extract_from_buffer(vec,nc)
 
+  use data_mesh,    only: npol
   use data_comm
   use data_mesh,      only: gvec_solid
-  use data_numbering, only: igloc_solid
+  use data_mesh, only: igloc_solid
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   integer, intent(in) :: nc
-  real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_solid,nc)
+  real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
   integer             :: imsg, ipg, ip, ipol, jpol, iel, ipt, ic
   integer             :: sizemsg_solid
   
@@ -530,7 +528,6 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
 
   use data_comm
   
-  include 'mesh_params.h'
   real(kind=realkind),intent(inout)  :: gvec_solid2(:,:)
   integer, intent(in)                :: nc
 
@@ -637,7 +634,6 @@ subroutine asynch_messaging_fluid
 
   use data_comm
   
-  include 'mesh_params.h'
   
 #ifndef serial
   integer :: imsg, ipg, ip, sizeb, ipdes, ipsrc
@@ -720,7 +716,6 @@ subroutine testing_asynch_messaging_fluid
 
   use data_comm
   
-  include 'mesh_params.h'
   
 #ifndef serial
   integer :: imsg, ipg, ip, sizeb, ipdes, ipsrc

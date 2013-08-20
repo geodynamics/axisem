@@ -56,37 +56,66 @@ subroutine read_db
   use data_proc
   use data_time
   use data_io,            only : do_anel
-  use data_numbering,     only : nglob, nglob_solid, igloc_solid, igloc_fluid
+  !use data_mesh,     only : nglob, nglob_solid, igloc_solid, igloc_fluid
   use commun,             only : barrier, psum, pmax, pmin
   use background_models,  only : model_is_ani, model_is_anelastic
   
-  integer             :: iptp, ipsrc, ipdes, imsg, inode, iptcp, iel, idom, i
+  integer             :: iptp, ipsrc, ipdes, imsg, inode, iptcp, iel, idom, i, ioerr
   character(len=120)  :: dbname
   integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
+
+
+
+
+  dbname = 'Mesh/meshdb.dat'//appmynum
+
+  call barrier
+!  do i=0, nproc-1
+     !if (mynum==i) then
+        if (verbose > 1) write(6,*)'  ', procstrg, 'opening database ', trim(dbname)
+        open(1000+mynum, file=trim(dbname), FORM="UNFORMATTED", &
+                             STATUS="OLD", POSITION="REWIND", IOSTAT=ioerr)
+        if (ioerr.ne.0) then
+           write(6,*) 'Could not open mesh file ', trim(dbname)
+           stop
+        end if
+     !endif
+     !call flush(6)
+     !call barrier
+  !enddo
   
+  if (lpr .and. verbose > 1) write(6,*) &
+        '  Reading databases: see processor output for details.'
+
+  ! Read all the parameters formerly in mesh_params.h   
+  !call read_mesh_basics(1000+mynum)
+
+     read(1000+mynum) npol
+     read(1000+mynum) nelem
+     read(1000+mynum) npoint
+     read(1000+mynum) nel_solid
+     read(1000+mynum) nel_fluid
+     read(1000+mynum) npoint_solid
+     read(1000+mynum) npoint_fluid
+     read(1000+mynum) nglob_solid
+     read(1000+mynum) nglob_fluid
+     read(1000+mynum) nel_bdry
+     read(1000+mynum) ndisc
+     read(1000+mynum) nproc_mesh
+     read(1000+mynum) lfbkgrdmodel
+
   ! Allocate arrays from data_mesh_preloop (only needed before the time loop),
   ! i.e. to be deallocated before the loop
   allocate(lnods(1:nelem,1:8))
   allocate(eltype(1:nelem), coarsing(1:nelem), north(1:nelem), axis(1:nelem))
+
+  ! Allocate mesh arrays
   allocate(ielsolid(1:nel_solid))
   allocate(ielfluid(1:nel_fluid))
+  allocate(mean_rad_colat_solid(nel_solid,2))
+  allocate(mean_rad_colat_fluid(nel_fluid,2))
 
-  dbname = 'Mesh/meshdb.dat'//appmynum
 
-  do i=0, nproc-1
-     call barrier
-     if (mynum==i) then
-        if (verbose > 1) write(6,*)'  ', procstrg, 'opening database ', trim(dbname)
-        open(1000+mynum, file=trim(dbname), FORM="UNFORMATTED", &
-                             STATUS="OLD", POSITION="REWIND")
-     endif
-     call flush(6)
-     call barrier
-  enddo
-  
-  if (lpr .and. verbose > 1) write(6,*) &
-        '  Reading databases: see processor output for details.'
-  
   read(1000+mynum) npoin
 
   if (verbose > 1) then
@@ -122,19 +151,22 @@ subroutine read_db
   read(1000+mynum) ielsolid
   read(1000+mynum) ielfluid
 
-  ! Number of distinct points in solid (slightly differs for each processor!)
-  read(1000+mynum) nglob_solid
-
   ! slocal numbering 
+  allocate(igloc_solid(npoint_solid))
   read(1000+mynum) igloc_solid(1:npoint_solid)
 
   ! flocal numbering 
+  allocate(igloc_fluid(npoint_fluid))
   read(1000+mynum) igloc_fluid(1:npoint_fluid)
 
   ! Solid-Fluid boundary
   if (verbose > 1) write(69,*) 'reading solid/fluid boundary info...'
   read(1000+mynum) have_bdry_elem
 
+  allocate(bdry_solid_el(1:nel_bdry))
+  allocate(bdry_fluid_el(1:nel_bdry))
+  allocate(bdry_jpol_solid(1:nel_bdry))
+  allocate(bdry_jpol_fluid(1:nel_bdry))
   read(1000+mynum) bdry_solid_el(1:nel_bdry)
   read(1000+mynum) bdry_fluid_el(1:nel_bdry)
   read(1000+mynum) bdry_jpol_solid(1:nel_bdry)
@@ -169,6 +201,7 @@ subroutine read_db
   bkgrdmodel=bkgrdmodel(1:lfbkgrdmodel)
 
   read(1000+mynum) router, resolve_inner_shear, have_fluid
+  allocate(discont(ndisc), solid_domain(ndisc), idom_fluid(ndisc))
   do idom=1, ndisc
      read(1000+mynum) discont(idom), solid_domain(idom), idom_fluid(idom) 
   enddo
@@ -292,6 +325,8 @@ subroutine read_db
   endif
 
   allocate(ax_el(naxel),ax_el_solid(1:naxel_solid),ax_el_fluid(1:naxel_fluid))
+  allocate(axis_solid(nel_solid))
+  allocate(axis_fluid(nel_fluid))
 
   read(1000+mynum) ax_el(1:naxel)
   read(1000+mynum) ax_el_solid(1:naxel_solid)
@@ -447,7 +482,7 @@ end subroutine read_db
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine compute_coordinates_mesh(s,z,ielem,inode)
+elemental subroutine compute_coordinates_mesh(s,z,ielem,inode)
   ! Output s,z are the physical coordinates defined at
   ! serendipity nodes inode (between 1 and 8 usually) 
   ! for (global) element ielem

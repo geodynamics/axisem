@@ -329,7 +329,7 @@ subroutine compute_strain_att_el_cg4(u, grad_u, iel)
   
   include 'mesh_params.h'
   
-  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,3)
+  real(kind=realkind), intent(in)   :: u(0:,0:,:)
   real(kind=realkind), intent(out)  :: grad_u(1:4,6)
   integer, intent(in)               :: iel
   

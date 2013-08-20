@@ -58,11 +58,12 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   use data_source, only : src_type
   use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
-  include 'mesh_params.h'
+  use data_mesh, only: npol, nel_solid, nel_fluid
+  !include 'mesh_params.h'
   
   integer, intent(in)             :: ibeg, iend, jbeg, jend
-  real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
-  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
+  real(kind=realkind), intent(in) :: chi(0:,0:,:)
   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
   character(len=4)                :: appisnap
   integer                         :: iel, iidim
@@ -141,11 +142,12 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
   use data_source, only : src_type
   use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
-  include 'mesh_params.h'
+  use data_mesh, only: npol, nel_solid, nel_fluid
+  !include 'mesh_params.h'
   
   integer, intent(in)             :: ibeg, iend, jbeg, jend
-  real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
-  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
+  real(kind=realkind), intent(in) :: chi(0:,0:,:)
   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
   character(len=4)                :: appisnap
   integer                         :: iel, ipol, jpol, iidim
@@ -206,11 +208,11 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
     use data_time, only : t
     use nc_routines, only: nc_dump_snapshot
+    use data_mesh, only: npol, nel_solid, nel_fluid
+    !include 'mesh_params.h'
     
-    include 'mesh_params.h'
-    
-    real(kind=realkind), intent(in) :: f_sol(0:npol,0:npol,1:nel_solid,3)
-    real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+    real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
+    real(kind=realkind), intent(in) :: chi(0:,0:,:)
     character(len=4)                :: appisnap
     integer                         :: iel, ct, ipol, jpol, ipol1, jpol1, i, j
     real(sp), allocatable           :: u(:,:), usz_fl(:,:,:,:), up_fl(:,:,:)
@@ -605,10 +607,10 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
   use attenuation,    only: n_sls_attenuation
   use data_matr,      only: points_solid
   use lateral_heterogeneities, only: write_VTK_bin_scal_pts
+  use data_mesh,             only: npol, nel_solid, nel_fluid 
+  !include 'mesh_params.h'
   
-  include 'mesh_params.h'
-  
-  real(kind=realkind), intent(in)   :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(in)   :: memvar(0:,0:,:,:,:)
   integer, intent(in)               :: iter
   
   character(len=8)                  :: appisnap
@@ -644,10 +646,11 @@ end subroutine snapshot_memoryvar_vtk
 !! Convention for order in the file: First the fluid, then the solid domain.
 subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
 
-  include 'mesh_params.h'
-  
+  !include 'mesh_params.h'
+  use data_mesh, only: nel_solid
+
   integer, intent(in)             :: ibeg, iend, jbeg, jend
-  real(kind=realkind), intent(in) :: f(0:npol,0:npol,1:nel_solid,3)
+  real(kind=realkind), intent(in) :: f(0:,0:,:,:)
   character(len=4)                :: appisnap
   integer                         :: iel, ipol, jpol, idim
 
@@ -674,10 +677,11 @@ subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
   use data_source, only : src_type
   use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh, only: npol, nel_fluid
   
   integer, intent(in)             :: ibeg, iend, jbeg, jend
-  real(kind=realkind), intent(in) :: chi(0:npol,0:npol,1:nel_fluid)
+  real(kind=realkind), intent(in) :: chi(0:,0:,:)
   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
   character(len=4)                :: appisnap
   integer                         :: iel, ipol, jpol
@@ -725,14 +729,15 @@ end subroutine fluid_snapshot
 !-----------------------------------------------------------------------------------------
 subroutine dump_field_1d(f, filename, appisnap, n)
 
-  use data_proc,    only : appmynum
+  !use data_proc,    only : appmynum
   use data_source,  only : have_src, src_dump_type
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh, only : nel_solid, nel_fluid
   
   integer, intent(in)                 :: n
-  real(kind=realkind),intent(in)      :: f(0:npol,0:npol,1:n)
-  real(kind=realkind)                 :: floc(0:npol,0:npol,1:n)
+  real(kind=realkind),intent(in)      :: f(0:,0:,:)
+  real(kind=realkind)                 :: floc(0:size(f,1)-1, 0:size(f,2)-1, 1:size(f,3))
   character(len=16), intent(in)       :: filename
   character(len=4), intent(in)        :: appisnap
 
@@ -743,10 +748,10 @@ subroutine dump_field_1d(f, filename, appisnap, n)
 
   if (use_netcdf) then
       if (n==nel_solid) then
-          call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,1:n), .true.), &
+          call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
                                    filename(2:))
       elseif (n==nel_fluid) then
-          call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,1:n), .true.), &
+          call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
                                    filename(2:))
       else
           write(6,*) 'Neither solid nor fluid. What''s wrong here?'
@@ -756,7 +761,7 @@ subroutine dump_field_1d(f, filename, appisnap, n)
      open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_' &
                                  //appmynum//'_'//appisnap//'.bindat', &
           FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
-     write(25000+mynum) pack(floc(ibeg:iend,ibeg:iend,1:n), .true.)
+     write(25000+mynum) pack(floc(ibeg:iend,ibeg:iend,:), .true.)
      close(25000+mynum)
   end if
 
@@ -768,13 +773,13 @@ subroutine dump_disp(u, chi)
 
   use data_source, only : src_type,src_dump_type
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in) :: u(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind),intent(in) :: chi(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in) :: u(0:,0:,:,:)
+  real(kind=realkind),intent(in) :: chi(0:,0:,:)
   integer                        :: i
   character(len=4)               :: appisnap
-  real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind)            :: f(0:size(u,1)-1, 0:size(u,1)-1,size(u,3),3)
 
   call define_io_appendix(appisnap,istrain)
 
@@ -814,13 +819,14 @@ subroutine dump_velo_dchi(v, dchi)
 
   use data_source, only : src_type, src_dump_type
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in) :: v(0:npol,0:npol,nel_solid,3)
-  real(kind=realkind),intent(in) :: dchi(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in) :: v(0:,0:,:,:)
+  real(kind=realkind),intent(in) :: dchi(0:,0:,:)
   integer                        :: i
   character(len=4)               :: appisnap
-  real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind)            :: f(0:size(v,1)-1, 0:size(v,1)-1,size(v,3),3)
+  !real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
 
   call define_io_appendix(appisnap,istrain)
 
@@ -862,7 +868,8 @@ subroutine dump_velo_global(v,dchi)
   use data_source,              only: src_type, src_dump_type
   use pointwise_derivatives,    only: axisym_gradient_fluid, dsdf_fluid_allaxis
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh
   
   real(kind=realkind),intent(in) :: v(:,:,:,:)
   real(kind=realkind),intent(in) :: dchi(:,:,:)
@@ -885,10 +892,10 @@ subroutine dump_velo_global(v,dchi)
 
   if (use_netcdf) then
      if (src_type(1)/='monopole') then
-        call nc_dump_field_solid((f(ibeg:iend,ibeg:iend,:,2)), 'velo_sol_p')
+        call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,2),.true.), 'velo_sol_p')
      end if
-     call nc_dump_field_solid((f(ibeg:iend,ibeg:iend,:,1)), 'velo_sol_s')
-     call nc_dump_field_solid((f(ibeg:iend,ibeg:iend,:,3)), 'velo_sol_z')
+     call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,1),.true.), 'velo_sol_s')
+     call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,3),.true.), 'velo_sol_z')
   else
      open(unit=95000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
                                 //appmynum//'_'//appisnap//'.bindat',&
@@ -943,18 +950,18 @@ end subroutine dump_velo_global
 !! elements that have a non-zero source term (i.e. including all 
 !! assembled neighboring elements)
 !! This is a preliminary test for the wavefield dumps.
-subroutine eradicate_src_elem_vec_values(u)
+pure subroutine eradicate_src_elem_vec_values(u)
 
   use data_source, only : nelsrc,ielsrc,have_src
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind),intent(inout) :: u(0:,0:,:,:)
   integer :: iel
   
   if (have_src) then
      do iel=1,nelsrc
-        u(0:npol,0:npol,ielsrc(iel),1:3) = real(0.,kind=realkind)
+        u(:,:,ielsrc(iel),:) = 0.0
      enddo
   endif
 
@@ -966,18 +973,18 @@ end subroutine eradicate_src_elem_vec_values
 !! elements that have a non-zero source term (i.e. including all 
 !! assembled neighboring elements)
 !! This is a preliminary test for the wavefield dumps.
-subroutine eradicate_src_elem_values(u)
+pure subroutine eradicate_src_elem_values(u)
 
   use data_source, only : nelsrc,ielsrc,have_src
  
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
 
-  real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(inout) :: u(0:,0:,:)
   integer :: iel
   
   if (have_src) then
      do iel=1,nelsrc
-        u(0:npol,0:npol,ielsrc(iel)) = real(0.,kind=realkind)
+        u(:,:,ielsrc(iel)) = 0.0
      enddo
   endif
 

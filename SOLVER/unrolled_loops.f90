@@ -37,11 +37,12 @@ module unrolled_loops
 !! Size is fixed to npol x npol
 pure subroutine mxm(a,b,c)
 
+  use data_mesh, only: npol
   use global_parameters, only: realkind
-  include "mesh_params.h" 
+  !include "mesh_params.h" 
   
-  real(kind=realkind), intent(in)  :: a(0: npol,0: npol),b(0: npol,0: npol) !< Input matrices
-  real(kind=realkind), intent(out) :: c(0: npol,0: npol)                    !< Result
+  real(kind=realkind), intent(in)  :: a(0: ,0: ),b(0: ,0: ) !< Input matrices
+  real(kind=realkind), intent(out) :: c(0: ,0: )                    !< Result
   integer                          :: i, j
 
   do j = 0, npol
@@ -57,13 +58,14 @@ end subroutine mxm
 !> Multiplies vector a leftwise to matrix b to have vector c.
 !! Size is fixed to npol x npol
 pure subroutine vxm(a,b,c)
-  
+ 
+  use data_mesh, only: npol
   use global_parameters, only: realkind
-  include "mesh_params.h" 
+  !include "mesh_params.h" 
 
-  real(kind=realkind), intent(in)  :: a(0: npol)         !< Vector a
-  real(kind=realkind), intent(in)  :: b(0: npol,0: npol) !< Matrix b
-  real(kind=realkind), intent(out) :: c(0: npol)         !< Resulting vector c
+  real(kind=realkind), intent(in)  :: a(0: )         !< Vector a
+  real(kind=realkind), intent(in)  :: b(0: ,0: ) !< Matrix b
+  real(kind=realkind), intent(out) :: c(0: )         !< Resulting vector c
   integer                          :: j
 
   do j = 0, npol

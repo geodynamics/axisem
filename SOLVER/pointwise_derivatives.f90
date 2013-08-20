@@ -59,9 +59,7 @@ pure function f_over_s_solid_el_cg4(f, iel)
   use data_pointwise,           ONLY: inv_s_solid
   use data_mesh,                ONLY: naxel_solid, ax_el_solid
 
-  include 'mesh_params.h'
-  
-  real(kind=realkind),intent(in) :: f(0:4,0:4)
+  real(kind=realkind),intent(in) :: f(0:,0:)
   integer,intent(in)             :: iel
   real(kind=realkind)            :: f_over_s_solid_el_cg4(1:4)
   
@@ -84,9 +82,10 @@ pure function f_over_s_solid_el(f, iel)
   use data_pointwise,           ONLY: inv_s_solid
   use data_mesh,                ONLY: naxel_solid, ax_el_solid
 
-  include 'mesh_params.h'
+  use data_mesh, only: npol
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in) :: f(0:npol,0:npol)
+  real(kind=realkind),intent(in) :: f(0:,0:)
   integer,intent(in)             :: iel
   real(kind=realkind)            :: f_over_s_solid_el(0:npol,0:npol)
   real(kind=realkind)            :: dsdf(0:npol,0:npol)
@@ -112,9 +111,10 @@ pure function f_over_s_solid(f)
   use data_pointwise,           ONLY: inv_s_solid
   use data_mesh,                ONLY: naxel_solid, ax_el_solid
 
-  include 'mesh_params.h'
+  use data_mesh,              only: npol, nel_solid
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in) :: f(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(in) :: f(0:,0:,:)
   real(kind=realkind)            :: f_over_s_solid(0:npol,0:npol,nel_solid)
   real(kind=realkind)            :: dsdf(0:npol,naxel_solid)
   integer                        :: iel
@@ -139,9 +139,10 @@ pure function f_over_s_fluid(f)
   use data_pointwise,           ONLY: inv_s_fluid
   use data_mesh,                ONLY: naxel_fluid, ax_el_fluid
 
-  include 'mesh_params.h'
+  use data_mesh,              only: npol, nel_fluid
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in) :: f(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in) :: f(0:,0:,:)
   real(kind=realkind)            :: f_over_s_fluid(0:npol,0:npol,nel_fluid)
   real(kind=realkind)            :: dsdf(0:npol,naxel_fluid)
   integer                        :: iel
@@ -169,9 +170,10 @@ pure subroutine axisym_dsdf_solid(f, dsdf)
   use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
   use unrolled_loops
   
-  include 'mesh_params.h'
+  use data_mesh,              only: npol, nel_solid
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in)               :: f(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(in)               :: f(0:,0:,:)
   real(kind=realkind),intent(out)              :: dsdf(0:npol,0:npol,nel_solid)
   integer                                      :: iel
   real(kind=realkind),dimension(0:npol,0:npol) :: mxm1, mxm2
@@ -209,9 +211,9 @@ pure subroutine axisym_gradient_solid_el_cg4(f,grad,iel)
   use data_pointwise, ONLY: DsDeta_over_J_sol_cg4, DsDxi_over_J_sol_cg4
   use unrolled_loops
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in)        :: f(0:npol,0:npol)
+  real(kind=realkind),intent(in)        :: f(0:,0:)
   real(kind=realkind),intent(out)       :: grad(1:4,2)
   integer,intent(in)                    :: iel
   real(kind=realkind),dimension(1:4)    :: mxm1, mxm2
@@ -261,9 +263,9 @@ end subroutine axisym_gradient_solid_el_cg4
 !-------------------------------------------------------------
 pure subroutine mxm_cg4_sparse_c(a,b,c)
 
-  include "mesh_params.h" 
+  !include "mesh_params.h" 
 
-  real(kind=realkind), intent(in)  :: a(0:4,0:4), b(0:4,0:4)
+  real(kind=realkind), intent(in)  :: a(0:,0:), b(0:,0:)
   real(kind=realkind), intent(out) :: c(1:4)
 
   c(1) = & 
@@ -309,9 +311,10 @@ pure subroutine axisym_gradient_solid_el(f,grad,iel)
   use data_pointwise, ONLY: DsDeta_over_J_sol, DsDxi_over_J_sol
   use unrolled_loops
   
-  include 'mesh_params.h'
+  use data_mesh,              only: npol, nel_solid
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in)               :: f(0:npol,0:npol)
+  real(kind=realkind),intent(in)               :: f(0:,0:)
   real(kind=realkind),intent(out)              :: grad(0:npol,0:npol,2)
   integer,intent(in)                           :: iel
   real(kind=realkind),dimension(0:npol,0:npol) :: mxm1, mxm2, dsdf, dzdf
@@ -351,9 +354,10 @@ pure subroutine axisym_gradient_solid(f,grad)
   use data_pointwise, ONLY: DsDeta_over_J_sol, DsDxi_over_J_sol
   use unrolled_loops
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh, only   : npol, nel_solid
   
-  real(kind=realkind),intent(in)               :: f(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(in)               :: f(0:,0:,:)
   real(kind=realkind),intent(out)              :: grad(0:npol,0:npol,nel_solid,2)
   integer                                      :: iel
   real(kind=realkind),dimension(0:npol,0:npol) :: mxm1,mxm2,dsdf,dzdf
@@ -399,9 +403,10 @@ pure subroutine axisym_gradient_solid_add(f,grad)
   use data_pointwise, ONLY: DsDeta_over_J_sol,DsDxi_over_J_sol
   use unrolled_loops
   
-  include 'mesh_params.h'
+  use data_mesh, only   : npol, nel_solid
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in)                    :: f(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(in)                    :: f(0:,0:,:)
   real(kind=realkind),intent(inout)                 :: grad(0:npol,0:npol,nel_solid,2)
   integer                                           :: iel
   real(kind=realkind),dimension(0:npol,0:npol)      :: mxm1, mxm2, dsdf, dzdf
@@ -445,10 +450,11 @@ pure subroutine dsdf_elem_solid(dsdf,f,iel)
   
   use data_pointwise, ONLY: DzDeta_over_J_sol,DzDxi_over_J_sol
   use unrolled_loops
+ 
+  use data_mesh, only: npol
+  !include 'mesh_params.h'
   
-  include 'mesh_params.h'
-  
-  real(kind=realkind), intent(in)               :: f(0:npol,0:npol)
+  real(kind=realkind), intent(in)               :: f(0:,0:)
   real(kind=realkind), intent(out)              :: dsdf(0:npol,0:npol)
   integer,intent(in)                            :: iel
   real(kind=realkind), dimension(0:npol,0:npol) :: mxm1, mxm2
@@ -480,9 +486,10 @@ pure subroutine dzdf_elem_solid(dzdf,f,iel)
   use data_pointwise, ONLY: DsDeta_over_J_sol,DsDxi_over_J_sol
   use unrolled_loops
   
-  include 'mesh_params.h'
+  use data_mesh, only: npol
+  !include 'mesh_params.h'
   
-  real(kind=realkind), intent(in)               :: f(0:npol,0:npol)
+  real(kind=realkind), intent(in)               :: f(0:,0:)
   real(kind=realkind), intent(out)              :: dzdf(0:npol,0:npol)
   integer,intent(in)                            :: iel
   real(kind=realkind), dimension(0:npol,0:npol) :: mxm1, mxm2
@@ -512,10 +519,11 @@ pure subroutine dsdf_solid_allaxis(f,dsdf)
   
   use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
   use unrolled_loops
+
+  use data_mesh, only: npol, nel_solid
+  !include 'mesh_params.h'
   
-  include 'mesh_params.h'
-  
-  real(kind=realkind),intent(in)               :: f(0:npol,0:npol,nel_solid)
+  real(kind=realkind),intent(in)               :: f(0:,0:,:)
   real(kind=realkind),intent(out)              :: dsdf(0:npol,naxel_solid)
   real(kind=realkind),dimension(0:npol,0:npol) :: mxm1,mxm2
   real(kind=realkind),dimension(0:npol,0:npol) :: dzdxi,dzdeta,dsdf_el
@@ -546,9 +554,10 @@ pure subroutine axisym_gradient_fluid(f,grad)
   use data_pointwise, ONLY: DsDeta_over_J_flu,DsDxi_over_J_flu
   use unrolled_loops
   
-  include 'mesh_params.h'
+  use data_mesh, only: npol, nel_fluid
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in)               :: f(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in)               :: f(0:,0:,:)
   real(kind=realkind),intent(out)              :: grad(0:npol,0:npol,nel_fluid,2)
   integer                                      :: iel
   real(kind=realkind),dimension(0:npol,0:npol) :: mxm1,mxm2,dsdf,dzdf
@@ -593,9 +602,10 @@ pure subroutine axisym_gradient_fluid_add(f,grad)
   use data_pointwise, ONLY: DsDeta_over_J_flu,DsDxi_over_J_flu
   use unrolled_loops
   
-  include 'mesh_params.h'
+  use data_mesh, only: npol, nel_fluid
+  !include 'mesh_params.h'
   
-  real(kind=realkind), intent(in)                 :: f(0:npol,0:npol,nel_fluid)
+  real(kind=realkind), intent(in)                 :: f(0:,0:,:)
   real(kind=realkind), intent(inout)              :: grad(0:npol,0:npol,nel_fluid,2)
   integer                                         :: iel
   real(kind=realkind), dimension(0:npol,0:npol)   :: mxm1, mxm2, dsdf, dzdf
@@ -640,11 +650,11 @@ pure subroutine dsdf_fluid_axis(f, iel, jpol, dsdf)
   
   use data_pointwise, ONLY: DzDeta_over_J_flu, DzDxi_over_J_flu
   use unrolled_loops
-  
-  include 'mesh_params.h'
+  use data_mesh, only: npol
+  !include 'mesh_params.h'
   
   integer,intent(in)                           :: iel, jpol
-  real(kind=realkind),intent(in)               :: f(0:npol,0:npol)
+  real(kind=realkind),intent(in)               :: f(0:,0:)
   real(kind=realkind),intent(out)              :: dsdf
   real(kind=realkind),dimension(0:npol,0:npol) :: mxm1, mxm2
   real(kind=realkind),dimension(0:npol,0:npol) :: dzdxi, dzdeta, dsdf_el
@@ -671,9 +681,10 @@ pure subroutine dsdf_fluid_allaxis(f,dsdf)
   use data_pointwise, ONLY: DzDeta_over_J_flu, DzDxi_over_J_flu
   use unrolled_loops
   
-  include 'mesh_params.h'
+  use data_mesh, only: npol, nel_fluid
+  !include 'mesh_params.h'
   
-  real(kind=realkind),intent(in)               :: f(0:npol,0:npol,nel_fluid)
+  real(kind=realkind),intent(in)               :: f(0:,0:,:)
   real(kind=realkind),intent(out)              :: dsdf(0:npol,naxel_fluid)
   real(kind=realkind),dimension(0:npol,0:npol) :: mxm1, mxm2
   real(kind=realkind),dimension(0:npol,0:npol) :: dzdxi, dzdeta, dsdf_el

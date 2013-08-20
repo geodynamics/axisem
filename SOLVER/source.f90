@@ -355,6 +355,7 @@ subroutine compute_src
   endif !have_src
 
   ! construct source term array that only lives on nonzero elements (max. 8)
+  allocate(source_term_el(0:npol,0:npol,8,3))
   source_term_el = zero
   k = 0 
   if (have_src) then
