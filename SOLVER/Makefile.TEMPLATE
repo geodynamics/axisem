@@ -38,7 +38,7 @@ endif
 
 ifeq ($(strip $(SERIAL)),true)
    FFLAGS += -Dserial
-   LDLAGS += -pthread
+   LDFLAGS += -pthread
 endif
 
 
