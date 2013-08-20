@@ -244,7 +244,6 @@ foreach isrc (${num_src_arr})
         cp $homedir/inparam_basic .
         cp $homedir/inparam_advanced .
         cp $homedir/inparam_hetero .
-        cp $homedir/inparam_xdmf .
 
         if ( $multisrc == 'false' ) then
             ln -s ../$meshdir/ Mesh
@@ -261,7 +260,6 @@ foreach isrc (${num_src_arr})
         cp $homedir/inparam_basic .
         cp $homedir/inparam_advanced .
         cp $homedir/inparam_hetero .
-        cp $homedir/inparam_xdmf .
 
         if ( $multisrc == 'true' ) then
             cp $homedir/CMTSOLUTION .
