@@ -598,9 +598,11 @@ subroutine pinit
 #endif
 
 #ifdef serial
-  if (nproc_mesh > 1) &
+  if (nproc_mesh /= 1) &
         write(6,*) 'ERROR: Solver compiled with SERIAL flag, but mesh has nproc > 1: ', &
                     nproc_mesh
+  nproc = 1
+  mynum = 0
 #endif
 
   lpr = .false.
