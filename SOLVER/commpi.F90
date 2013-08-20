@@ -25,13 +25,6 @@ module commpi
   
   ! Wrapper routines to invoke the MPI library. 
   ! This routine is the sole place for parallel interactions. 
-  ! In other words, the routines are called by wrappers that contain an 
-  ! if (nproc>1) statement such that a serial version 
-  ! (i.e. without MPI libraries) of this code *shall* run after merely taking 
-  ! out this module commpi. 
-  !
-  ! WARNING: Need to make sure this is consistent for other issues like 
-  ! source and receiver locations in global/local reference.
 
   use global_parameters
   use data_proc

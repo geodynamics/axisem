@@ -24,24 +24,10 @@
 !!
 !! APRIL 2007:
 !! At this level, we only call parallel routines, but do not invoke MPI here. 
-!! This simplifies the construction of a completely serial code in that we 
-!! only need to decide here whether to call a parallel routine or not.
-!! It also means that a simulation on one processor, but using the full 
-!! parallel code in fact never utilizes the parallel routines. 
-!!
-!! To make this code purely serial: ---------------------------------------
-!! 1) remove module commpi.f90
-!! 2) comment out "use commpi"
-!! 3) comment out any lines containing "if (nproc>1)"
-!!    (marked "comment out for serial" below)
-!! 4) change the Makefile to compile with regular Fortran compiler, not mpif90
-!!         and delete any entries for commpi
-!!    alternatively: use the perl script makemake.pl after changing its entry 
-!!                   to the fortran compiler instead of mpif90 
 module commun
   
   use global_parameters
-  use commpi ! comment out for serial
+  use commpi
   use data_proc
   
   implicit none
@@ -151,7 +137,7 @@ subroutine pdistsum_solid(vec, nc)
      ! Collect processor boundaries into buffer for each component
      iclockmpi = tick()
 #ifndef serial
-     if (nproc>1) call feed_buffer(ic) ! comment for serial
+     if (nproc>1) call feed_buffer(ic)
 #endif
      iclockmpi = tick(id=idmpi,since=iclockmpi)
   
@@ -192,9 +178,9 @@ subroutine pdistsum_solid(vec, nc)
   iclockmpi = tick()
   if (nproc>1) then
      ! Do message-passing for all components at once
-     call send_recv_buffers_solid(nc) ! comment for serial
+     call send_recv_buffers_solid(nc)
      ! Extract back into each component sequentially
-     call extract_from_buffer(vec,nc) ! comment for serial
+     call extract_from_buffer(vec,nc)
   endif ! nproc>1
   iclockmpi = tick(id=idmpi,since=iclockmpi)
 #endif
@@ -306,7 +292,7 @@ subroutine pdistsum_fluid(vec)
 
 #ifndef serial
   iclockmpi = tick()
-  if (nproc>1) call asynch_messaging_fluid ! comment for serial
+  if (nproc>1) call asynch_messaging_fluid
   iclockmpi = tick(id=idmpi, since=iclockmpi)
 #endif
 
@@ -434,7 +420,7 @@ subroutine mpi_asynch_messaging_test_solid
 
 #ifndef serial
   if (nproc > 1) &
-        call testing_asynch_messaging_solid(gvec_solid2,3) !comment for serial
+        call testing_asynch_messaging_solid(gvec_solid2,3)
 #endif
 
   do ic = 1, 3
@@ -494,7 +480,7 @@ subroutine mpi_asynch_messaging_test_fluid
   end do
 
 #ifndef serial
-  if (nproc>1) call testing_asynch_messaging_fluid !comment for serial
+  if (nproc>1) call testing_asynch_messaging_fluid
 #endif
 
   ! Scatter
@@ -537,7 +523,7 @@ subroutine assembmass_sum_solid(f1,res)
   end do
   res = res + sum(gvec_solid(:))
 #ifndef serial
-  if (nproc>1) res=ppsum_dble(res) ! comment for serial
+  if (nproc>1) res=ppsum_dble(res)
 #endif
 
 end subroutine assembmass_sum_solid
@@ -570,7 +556,7 @@ subroutine assembmass_sum_fluid(f1,res)
   res = res + sum(gvec_fluid)
 
 #ifndef serial
-  if (nproc>1) res = ppsum_dble(res) ! comment for serial
+  if (nproc>1) res = ppsum_dble(res)
 #endif
 
 end subroutine assembmass_sum_fluid
@@ -584,7 +570,7 @@ subroutine pinit
 #ifndef serial
   ! Start message passing interface if parallel simulation
   if (nproc_mesh > 1) then 
-     call ppinit ! comment for serial
+     call ppinit
      if (nproc_mesh /= nproc) then        
         write(6,*) mynum, 'Problem with number of processors!'
         write(6,*) mynum, 'Mesh constructed for:', nproc_mesh
@@ -626,7 +612,7 @@ end subroutine pinit
 subroutine pend
 
 #ifndef serial
-  if (nproc>1) call ppend ! comment for serial
+  if (nproc>1) call ppend
 #endif
 
 end subroutine pend
@@ -639,7 +625,7 @@ subroutine broadcast_char(input_char,input_proc)
   integer, intent(in)           :: input_proc
 
 #ifndef serial
-  if (nproc>1) call pbroadcast_char(input_char,input_proc) ! comment for serial
+  if (nproc>1) call pbroadcast_char(input_char,input_proc)
 #endif
    
 end subroutine broadcast_char
@@ -652,7 +638,7 @@ subroutine broadcast_log(input_log,input_proc)
   logical, intent(inout) :: input_log
 
 #ifndef serial
-  if (nproc>1) call pbroadcast_log(input_log,input_proc) ! comment for serial
+  if (nproc>1) call pbroadcast_log(input_log,input_proc)
 #endif
    
 end subroutine broadcast_log
@@ -665,7 +651,7 @@ subroutine broadcast_int(input_int,input_proc)
   integer, intent(inout) :: input_int
 
 #ifndef serial
-  if (nproc>1) call pbroadcast_int(input_int, input_proc) ! comment for serial
+  if (nproc>1) call pbroadcast_int(input_int, input_proc)
 #endif
    
 end subroutine broadcast_int
@@ -678,7 +664,7 @@ subroutine broadcast_int_arr(input_int,input_proc)
   integer, intent(inout) :: input_int(:)
 
 #ifndef serial
-  if (nproc>1) call pbroadcast_int_arr(input_int, input_proc) ! comment for serial
+  if (nproc>1) call pbroadcast_int_arr(input_int, input_proc)
 #endif
 
 end subroutine broadcast_int_arr
@@ -691,7 +677,7 @@ subroutine broadcast_dble(input_dble,input_proc)
   real(kind=dp)   , intent(inout) :: input_dble
 
 #ifndef serial
-  if (nproc>1) call pbroadcast_dble(input_dble,input_proc) ! comment for serial
+  if (nproc>1) call pbroadcast_dble(input_dble,input_proc)
 #endif
 
 end subroutine broadcast_dble
@@ -704,7 +690,7 @@ real(kind=dp) function pmin(scal)
   
   pmin = scal
 #ifndef serial
-  if (nproc>1) pmin = ppmin(scal) ! comment for serial
+  if (nproc>1) pmin = ppmin(scal)
 #endif
 
 end function pmin
@@ -717,7 +703,7 @@ real(kind=dp) function pmax(scal)
 
   pmax = scal
 #ifndef serial
-  if (nproc>1) pmax = ppmax(scal)  ! comment for serial
+  if (nproc>1) pmax = ppmax(scal)
 #endif
 
 end function pmax
@@ -730,7 +716,7 @@ integer function pmax_int(scal)
 
   pmax_int=scal
 #ifndef serial
-  if (nproc>1) pmax_int = ppmax_int(scal)  ! comment for serial
+  if (nproc>1) pmax_int = ppmax_int(scal)
 #endif
 
 end function pmax_int
@@ -743,7 +729,7 @@ real(kind=realkind) function psum(scal)
 
   psum = scal
 #ifndef serial
-  if (nproc>1) psum = ppsum(scal) ! comment for serial
+  if (nproc>1) psum = ppsum(scal)
 #endif
 
 end function psum
@@ -756,7 +742,7 @@ integer function psum_int(scal)
 
   psum_int = scal
 #ifndef serial
-  if (nproc>1) psum_int = ppsum_int(scal) ! comment for serial
+  if (nproc>1) psum_int = ppsum_int(scal)
 #endif
 
 end function psum_int
@@ -769,7 +755,7 @@ real(kind=dp) function psum_dble(scal)
 
   psum_dble = scal
 #ifndef serial
-  if (nproc>1) psum_dble = ppsum_dble(scal) ! comment for serial
+  if (nproc>1) psum_dble = ppsum_dble(scal)
 #endif
 
 end function psum_dble
@@ -779,7 +765,7 @@ end function psum_dble
 subroutine barrier
  
 #ifndef serial
-  if (nproc>1) call pbarrier ! comment for serial
+  if (nproc>1) call pbarrier
 #endif
 
 end subroutine barrier

@@ -12,7 +12,7 @@ MPIRUN  = mpirun
 USE_NETCDF = false
 NETCDF_PATH = $(HOME)/local
 
-# compile without MPI
+# compile without MPI (if mpi is not installed, remove the $mpiruncmd from submit.csh)
 SERIAL = false
 
 # GFORTRAN (fast)
