@@ -63,9 +63,10 @@ subroutine read_model_compute_terms
   real(kind=dp)   , dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
   real(kind=dp)   , dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
 
-  if (lpr .and. verbose > 1) write(6,'(a,/,a)') &
-            '  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::', &
-            '    allocate elastic fields....'
+  if (lpr .and. verbose > 0) write(6,'(a)') &
+            '  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::'
+
+  if (lpr .and. verbose > 1) write(6,'(a)') '    allocate elastic fields....'
 
   allocate(rho(0:npol,0:npol,1:nelem),massmat_kwts2(0:npol,0:npol,1:nelem))
   allocate(lambda(0:npol,0:npol,1:nelem),mu(0:npol,0:npol,1:nelem))
@@ -149,7 +150,7 @@ subroutine read_model_compute_terms
 
   if (lpr .and. verbose > 1) write(6,*) '   ...deallocated unnecessary elastic arrays'
   
-  if (lpr .and. verbose > 1) write(6,*) ' :::::::DONE BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
+  if (lpr .and. verbose > 0) write(6,*) ' :::::::DONE BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
   call flush(6)
 
 end subroutine read_model_compute_terms
