@@ -91,7 +91,7 @@ program post_processing_seis
 
   use data_all
   use global_par
-  use nc_routines, only : ncparamtype, nc_open, nc_read_recnames, nc_read_seismograms
+  use nc_postroutines, only : ncparamtype, nc_open, nc_read_recnames, nc_read_seismograms
   implicit none 
   double precision     :: arg1
   type(ncparamtype)    :: ncparams

@@ -19,7 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-module nc_routines
+module nc_postroutines
 
 #ifdef unc
   use netcdf
@@ -147,4 +147,4 @@ subroutine check(status)
 end subroutine check  
 !-----------------------------------------------------------------------------------------
 
-end module nc_routines
+end module nc_postroutines
