@@ -42,14 +42,15 @@ contains
 subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                    fa_ani_theta, fa_ani_phi, ieldom)
     use commun, only: barrier
-    include 'mesh_params.h'
+    use data_mesh, only: npol, nelem
+    !include 'mesh_params.h'
 
     integer :: ij
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout) :: rho
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout) :: lambda,mu
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
+    real(kind=dp)   , dimension(0:,0:,:), intent(inout) :: rho
+    real(kind=dp)   , dimension(0:,0:,:), intent(inout) :: lambda,mu
+    real(kind=dp)   , dimension(0:,0:,:), intent(inout), optional :: &
            xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
-    integer, dimension(nelem), intent(in), optional :: ieldom
+    integer, dimension(:), intent(in), optional :: ieldom
 
     real(kind=dp)   , dimension(0:npol,0:npol,nelem) :: rhopost,lambdapost,mupost
     real(kind=dp)   , dimension(:,:,:), allocatable :: &
@@ -362,9 +363,9 @@ subroutine load_ica(rho, lambda, mu, lambdapost, xi_ani_post, phi_ani_post, &
                     eta_ani_post, fa_ani_theta_post, fa_ani_phi_post, hetind, ieldom)
 
     use utlity,     only: thetacoord, rcoord
-    use data_mesh,  only: discont
+    use data_mesh,  only: discont, npol, nelem, ndisc
 
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
+    real(kind=dp)   , dimension(0:,0:,:), intent(in) :: rho, lambda, mu
     real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(out) :: lambdapost, &
            xi_ani_post, phi_ani_post, eta_ani_post, fa_ani_theta_post, fa_ani_phi_post
     integer, dimension(nelem), intent(in) :: ieldom
@@ -462,35 +463,35 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                            xi_ani, phi_ani, eta_ani, xi_ani_post, phi_ani_post, &
                            eta_ani_post, fa_ani_theta_post, fa_ani_phi_post)
     use kdtree2_module
+    use data_mesh, only:                                nelem, npol
+    real(kind=dp), dimension(0:,0:,:), intent(in)    :: rho
+    real(kind=dp), dimension(0:,0:,:), intent(in)    :: lambda,mu
+    real(kind=dp), dimension(0:,0:,:), intent(inout) :: rhopost, &
+                                                        lambdapost, mupost
 
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in)    :: rho
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in)    :: lambda,mu
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
-                                                            lambdapost, mupost
+    real(kind=dp), dimension(0:,0:,:), intent(in), optional :: &
+                                                        xi_ani, phi_ani, eta_ani
+    real(kind=dp), dimension(0:,0:,:), intent(inout), optional :: &
+                                                        xi_ani_post, phi_ani_post, eta_ani_post
+    real(kind=dp), dimension(0:,0:,:), intent(inout), optional :: &
+                                                        fa_ani_theta_post, fa_ani_phi_post
 
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in), optional :: &
-                                                            xi_ani, phi_ani, eta_ani
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
-                                               xi_ani_post, phi_ani_post, eta_ani_post
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout), optional :: &
-                                               fa_ani_theta_post, fa_ani_phi_post
-
-    integer                         :: hetind
-    real(kind=dp)   , allocatable   :: w(:)
-    integer                         :: iel, ipol, jpol, j
-    integer                         :: num_het_pts
-    real(kind=dp)                   :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
-    real(kind=dp)                   :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
-    real(kind=dp)                   :: fa_theta_tmp, fa_phi_tmp
-    real(kind=dp)                   :: rmin, rmax, thetamin, thetamax
-    real(kind=dp)   , allocatable   :: szhet(:,:)
-    real(kind=dp)   , allocatable   :: rhet2(:), thhet2(:)
-    real(kind=dp)   , allocatable   :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
-    real(kind=dp)   , allocatable   :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
-                                       delta_vsv2(:), delta_eta2(:)
-    real(kind=dp)   , allocatable   :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
-    real(kind=dp)   , allocatable   :: fa_theta2(:), fa_phi2(:)
-    real(kind=dp)   , allocatable   :: rho2(:), vp2(:), vs2(:)
+    integer                      :: hetind
+    real(kind=dp), allocatable   :: w(:)
+    integer                      :: iel, ipol, jpol, j
+    integer                      :: num_het_pts
+    real(kind=dp)                :: s, z, r, th, r1, r2, r3, r4, th1, th2, th3, th4
+    real(kind=dp)                :: vptmp, vstmp, vpvtmp, vsvtmp,vphtmp, vshtmp, etatmp
+    real(kind=dp)                :: fa_theta_tmp, fa_phi_tmp
+    real(kind=dp)                :: rmin, rmax, thetamin, thetamax
+    real(kind=dp), allocatable   :: szhet(:,:)
+    real(kind=dp), allocatable   :: rhet2(:), thhet2(:)
+    real(kind=dp), allocatable   :: delta_rho2(:), delta_vp2(:), delta_vs2(:)
+    real(kind=dp), allocatable   :: delta_vph2(:), delta_vsh2(:), delta_vpv2(:), &
+                                    delta_vsv2(:), delta_eta2(:)
+    real(kind=dp), allocatable   :: vph2(:), vsh2(:), vpv2(:), vsv2(:), eta2(:)
+    real(kind=dp), allocatable   :: fa_theta2(:), fa_phi2(:)
+    real(kind=dp), allocatable   :: rho2(:), vp2(:), vs2(:)
 
     type(kdtree2), pointer          :: tree
     
@@ -938,7 +939,7 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
 
 
     use background_models,  only : velocity
-    use data_mesh,          only : discont, bkgrdmodel
+    use data_mesh,          only : discont, bkgrdmodel, lfbkgrdmodel
 
     integer, intent(in)                     :: hetind, num_het_pts
     real(kind=dp)   , intent(in)            :: rhet2(:), thhet2(:)
@@ -1114,18 +1115,18 @@ end subroutine plot_discrete_input
 subroutine load_random(rho,lambda,mu,rhopost,lambdapost,mupost,hetind)
 
     use commun
-    use data_mesh, only : naxel, ax_el
+    use data_mesh, only : naxel, ax_el, npol, nelem
     use utlity, only :  thetacoord, rcoord, zcoord
 
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout) :: rho
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(out)   :: rhopost, &
-                                                                       lambdapost, mupost
+    real(kind=dp), dimension(0:,0:,:), intent(inout)             :: rho
+    real(kind=dp), dimension(0:,0:,:), intent(inout)             :: lambda, mu
+    real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out)   :: rhopost, &
+                                                                    lambdapost, mupost
     integer         :: hetind
-    real(kind=8)    :: vptmp, vstmp, th, r
+    real(kind=dp)   :: vptmp, vstmp, th, r
     integer         :: iel, ipol, jpol, icount, i
-    real(kind=8)    :: rand
-    real(kind=8), allocatable :: r_rad(:), rand_rad(:), r_radtmp(:), rand_radtmp(:)
+    real(kind=dp)   :: rand
+    real(kind=dp), allocatable :: r_rad(:), rand_rad(:), r_radtmp(:), rand_radtmp(:)
 
     
     if (het_funct_type(hetind) == '2Dgll') then
@@ -1322,32 +1323,31 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
 
   ! added by fanie for sharp discontinuites
     use background_models, only : velocity
-    use data_mesh, only : discont, bkgrdmodel
+    use data_mesh, only : discont, bkgrdmodel, lfbkgrdmodel, nelem, npol
 
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout) :: rho
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout) :: lambda, mu
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(inout) :: rhopost, &
-                                                                       lambdapost, mupost
-    integer, intent(in)                                             :: hetind
+    real(kind=dp), dimension(0:,0:,:), intent(inout) :: rho
+    real(kind=dp), dimension(0:,0:,:), intent(inout) :: lambda, mu
+    real(kind=dp), dimension(0:,0:,:), intent(inout) :: rhopost, lambdapost, mupost
+    integer, intent(in)                              :: hetind
 
-    real(kind=dp)    :: decay
-    real(kind=dp)    :: vptmp, vstmp, s, z, r, th, gauss_val
-    real(kind=dp)    :: r_center_gauss, th_center_gauss
-    real(kind=dp)    :: halfwidth_r, halfwidth_th
-    real(kind=dp)   , allocatable :: rhet(:), thhet(:)
+    real(kind=dp) :: decay
+    real(kind=dp) :: vptmp, vstmp, s, z, r, th, gauss_val
+    real(kind=dp) :: r_center_gauss, th_center_gauss
+    real(kind=dp) :: halfwidth_r, halfwidth_th
+    real(kind=dp), allocatable :: rhet(:), thhet(:)
 
     ! start elastic property values
-    real(kind=dp)    :: vpst, vsst, rhost
+    real(kind=dp) :: vpst, vsst, rhost
     integer :: iel, ipol, jpol, icount, jj, ij, iel_count, idom
     logical :: foundit
-    real(kind=dp)    :: r1, r2, r3, r4, th1, th2, th3, th4
-    real(kind=dp)    :: rmin, rmax, thetamin, thetamax
+    real(kind=dp) :: r1, r2, r3, r4, th1, th2, th3, th4
+    real(kind=dp) :: rmin, rmax, thetamin, thetamax
 
     ! for gradient
-    real(kind=dp)    :: grad_halfwidth_r, grad_halfwidth_th
-    real(kind=dp)    :: grad_r_het, grad_th_het2, grad_th_het1
-    real(kind=dp)    :: dr_outer, dr_inner, dth_outer, dth_inner
-    real(kind=dp)    :: val, gradwidth
+    real(kind=dp) :: grad_halfwidth_r, grad_halfwidth_th
+    real(kind=dp) :: grad_r_het, grad_th_het2, grad_th_het1
+    real(kind=dp) :: dr_outer, dr_inner, dth_outer, dth_inner
+    real(kind=dp) :: val, gradwidth
 
     if (het_funct_type(hetind) == 'gauss') then 
        decay = 3.5d0
@@ -1848,9 +1848,10 @@ end subroutine load_het_funct
 !----------------------------------------------------------------------------------------
 subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                   fa_ani_theta, fa_ani_phi)
-    
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in) :: rho, lambda, mu
-    real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in), optional :: &
+   
+    use data_mesh, only: npol, nelem
+    real(kind=dp)   , dimension(0:,0:,:), intent(in) :: rho, lambda, mu
+    real(kind=dp)   , dimension(0:,0:,:), intent(in), optional :: &
                                     xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
 
     real, dimension(:), allocatable     :: vp_all, vs_all, rho_all
