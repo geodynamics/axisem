@@ -10,7 +10,7 @@ SRCS =	nc_routines.F90 parameters.F90 analytic_mapping.f90 \
 	data_pointwise.f90 data_proc.f90 data_source.f90 data_spec.f90 \
 	data_time.f90 def_grid.f90 def_precomp_terms.f90 geom_transf.f90 \
 	get_mesh.f90 get_model.f90 global_parameters.f90 kdtree2.f90 \
-	lateral_heterogeneities.f90 main.f90 mesh_params.f90 meshes_io.f90 \
+	lateral_heterogeneities.f90 main.f90 meshes_io.f90 \
 	pointwise_derivatives.f90 rotations.f90 seismograms.f90 source.f90 \
 	splib.f90 stiffness.f90 subpar_mapping.f90 time_evol_wave.f90 \
 	unrolled_loops.f90 utlity.f90 wavefields_io.f90 ftz.c pthread.c
@@ -22,7 +22,7 @@ OBJS =	nc_routines.o parameters.o analytic_mapping.o analytic_semi_mapping.o \
 	data_mesh_preloop.o data_pointwise.o data_proc.o data_source.o \
 	data_spec.o data_time.o def_grid.o def_precomp_terms.o geom_transf.o \
 	get_mesh.o get_model.o global_parameters.o kdtree2.o \
-	lateral_heterogeneities.o main.o mesh_params.o meshes_io.o \
+	lateral_heterogeneities.o main.o meshes_io.o \
 	pointwise_derivatives.o rotations.o seismograms.o source.o splib.o \
 	stiffness.o subpar_mapping.o time_evol_wave.o unrolled_loops.o \
 	utlity.o wavefields_io.o ftz.o pthread.o
