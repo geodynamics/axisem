@@ -720,8 +720,8 @@ subroutine compute_partial_derivatives(dsdxi, dzdxi, dsdeta, dzdeta, xil, etal, 
 ! of the analytic spheroidal mapping. 
 !
   integer,intent(in)            :: ielem0
-  real(kind=dp)   ,intent(in)   :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    ,intent(out) :: dsdxi,dzdxi,dsdeta,dzdeta
+  real(kind=dp), intent(in)     :: xil, etal, nodes_crd(8,2)
+  real(kind=dp), intent(out)    :: dsdxi, dzdxi, dsdeta, dzdeta
 
   if (eltype(ielem0) == 'curved') & 
   call compute_partial_d_spheroid(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal,nodes_crd)
