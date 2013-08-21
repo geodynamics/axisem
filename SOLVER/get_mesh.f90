@@ -34,7 +34,6 @@ module get_mesh
   ! and general background model information, time step & period, axial arrays.
 
   use global_parameters
-  use data_mesh_preloop
   use data_io,              only : verbose
    
   implicit none
@@ -56,7 +55,6 @@ subroutine read_db
   use data_proc
   use data_time
   use data_io,            only : do_anel
-  !use data_mesh,     only : nglob, nglob_solid, igloc_solid, igloc_fluid
   use commun,             only : barrier, psum, pmax, pmin
   use background_models,  only : model_is_ani, model_is_anelastic
   
@@ -89,90 +87,11 @@ subroutine read_db
         '  Reading databases: see processor output for details.'
 
   ! Read all the parameters formerly in mesh_params.h   
-  !call read_mesh_basics(1000+mynum)
+  call read_mesh_basics(1000+mynum)
+  
+  call read_mesh_advanced(1000+mynum)
 
-     read(1000+mynum) nproc_mesh
-     read(1000+mynum) npol
-     read(1000+mynum) nelem
-     read(1000+mynum) npoint
-     read(1000+mynum) nel_solid
-     read(1000+mynum) nel_fluid
-     read(1000+mynum) npoint_solid
-     read(1000+mynum) npoint_fluid
-     read(1000+mynum) nglob_solid
-     read(1000+mynum) nglob_fluid
-     read(1000+mynum) nel_bdry
-     read(1000+mynum) ndisc
-     read(1000+mynum) lfbkgrdmodel
-
-  ! Allocate arrays from data_mesh_preloop (only needed before the time loop),
-  ! i.e. to be deallocated before the loop
-  allocate(lnods(1:nelem,1:8))
-  allocate(eltype(1:nelem), coarsing(1:nelem), north(1:nelem), axis(1:nelem))
-
-  ! Allocate mesh arrays
-  allocate(ielsolid(1:nel_solid))
-  allocate(ielfluid(1:nel_fluid))
-  allocate(mean_rad_colat_solid(nel_solid,2))
-  allocate(mean_rad_colat_fluid(nel_fluid,2))
-
-
-  read(1000+mynum) npoin
-
-  if (verbose > 1) then
-     write(69,*) 'reading database from ', trim(dbname)
-     write(69,*) 'reading coordinates/control points...'
-     write(69,*) 'global number of control points:',npoin
-  endif
-
-  allocate(crd_nodes(1:npoin,1:2))
-
-  read(1000+mynum) crd_nodes(:,1)
-  read(1000+mynum) crd_nodes(:,2)
-  do iptcp = 1, npoin 
-     if(abs(crd_nodes(iptcp,2)) < 1.e-8) crd_nodes(iptcp,2) = zero
-  end do
-
-  do iel = 1, nelem
-     read(1000+mynum) (lnods(iel,inode), inode=1,8)
-  end do
-
-  ! Number of global distinct points (slightly differs for each processor!)
-  read(1000+mynum) nglob
-  if (verbose > 1) write(69,*) '  global number:', nglob
-
-  ! Element type
-  read(1000+mynum) eltype
-  read(1000+mynum) coarsing
-
-  !!!!!!!!!!! SOLID/FLUID !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-  ! mapping from sol/flu (1:nel_fluid) to global element numbers (1:neltot) 
-  if (verbose > 1) write(69,*) 'reading solid/fluid domain info...'
-  read(1000+mynum) ielsolid
-  read(1000+mynum) ielfluid
-
-  ! slocal numbering 
-  allocate(igloc_solid(npoint_solid))
-  read(1000+mynum) igloc_solid(1:npoint_solid)
-
-  ! flocal numbering 
-  allocate(igloc_fluid(npoint_fluid))
-  read(1000+mynum) igloc_fluid(1:npoint_fluid)
-
-  ! Solid-Fluid boundary
-  if (verbose > 1) write(69,*) 'reading solid/fluid boundary info...'
-  read(1000+mynum) have_bdry_elem
-
-  allocate(bdry_solid_el(1:nel_bdry))
-  allocate(bdry_fluid_el(1:nel_bdry))
-  allocate(bdry_jpol_solid(1:nel_bdry))
-  allocate(bdry_jpol_fluid(1:nel_bdry))
-  read(1000+mynum) bdry_solid_el(1:nel_bdry)
-  read(1000+mynum) bdry_fluid_el(1:nel_bdry)
-  read(1000+mynum) bdry_jpol_solid(1:nel_bdry)
-  read(1000+mynum) bdry_jpol_fluid(1:nel_bdry)
-
+  !!!!!!!!!!!! BACKGROUND MODEL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! General numerical input/output parameters
   if (verbose > 1) write(69,*)'reading numerical parameters...'
   read(1000+mynum) pts_wavelngth,period,courant,deltat
@@ -325,13 +244,7 @@ subroutine read_db
      write(6,*)
   endif
 
-  allocate(ax_el(naxel),ax_el_solid(1:naxel_solid),ax_el_fluid(1:naxel_fluid))
-  allocate(axis_solid(nel_solid))
-  allocate(axis_fluid(nel_fluid))
-
-  read(1000+mynum) ax_el(1:naxel)
-  read(1000+mynum) ax_el_solid(1:naxel_solid)
-  read(1000+mynum) ax_el_fluid(1:naxel_fluid)
+  call read_mesh_axel(1000+mynum)
 
   ! mask s-coordinate of axial elements identically to zero
   if (lpr .and. verbose > 1) write(6,*)'  setting s coordinate identical to zero along axis...'
@@ -466,6 +379,15 @@ subroutine read_db
 
   if (verbose > 1) write(69,*) 'Successfully read parallel database'
 
+  ! Allocate mesh arrays
+  allocate(mean_rad_colat_solid(nel_solid,2))
+  allocate(mean_rad_colat_fluid(nel_fluid,2))
+
+  ! Allocate arrays from data_mesh_preloop (only needed before the time loop),
+  ! i.e. to be deallocated before the loop
+  allocate(north(1:nelem), axis(1:nelem))
+
+
   do i=0, nproc-1
      call barrier
      if (mynum==i) then
@@ -488,6 +410,7 @@ elemental subroutine compute_coordinates_mesh(s,z,ielem,inode)
   ! serendipity nodes inode (between 1 and 8 usually) 
   ! for (global) element ielem
  
+  use data_mesh, only            : crd_nodes, lnods
   integer, intent(in)           :: ielem, inode
   real(kind=dp)   , intent(out) :: s,z
 

@@ -29,7 +29,6 @@ module def_precomp_terms
   
   use global_parameters
   use data_mesh
-  use data_mesh_preloop
   use data_spec
   use data_matr
   use data_source, only : src_type
@@ -1606,6 +1605,10 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
                  M_s_eta_wt_k(ipol,jpol) = zero
                  
                  if (anel_true) then
+                    dsdxi = 0 
+                    dsdeta = 0
+                    dzdeta = 0
+                    dzdxi = 0
                     Y(ipol,jpol,ielem) = 0
                     V_s_eta(ipol,jpol,ielem) = 0
                     V_s_xi(ipol,jpol,ielem) = 0

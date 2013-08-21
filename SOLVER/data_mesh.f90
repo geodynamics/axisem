@@ -39,33 +39,33 @@ module data_mesh
   public 
 
   ! Very basic mesh parameters, have been in mesh_params.h before
-  integer ::         npol !<            polynomial order
-  integer ::        nelem !<                   proc. els
-  integer ::       npoint !<               proc. all pts
-  integer ::    nel_solid !<             proc. solid els
-  integer ::    nel_fluid !<             proc. fluid els
-  integer :: npoint_solid !<             proc. solid pts
-  integer :: npoint_fluid !<             proc. fluid pts
-  integer ::  nglob_solid !<            proc. slocal pts
-  integer ::  nglob_fluid !<            proc. flocal pts
-  integer ::     nel_bdry !< proc. solid-fluid bndry els
-  integer ::        ndisc !<   # disconts in bkgrd model
-  integer ::   nproc_mesh !<        number of processors
-  integer :: lfbkgrdmodel !<   length of bkgrdmodel name
+  integer , protected ::         npol !<            polynomial order
+  integer , protected ::        nelem !<                   proc. els
+  integer , protected ::       npoint !<               proc. all pts
+  integer , protected ::    nel_solid !<             proc. solid els
+  integer , protected ::    nel_fluid !<             proc. fluid els
+  integer , protected :: npoint_solid !<             proc. solid pts
+  integer , protected :: npoint_fluid !<             proc. fluid pts
+  integer , protected ::  nglob_solid !<            proc. slocal pts
+  integer , protected ::  nglob_fluid !<            proc. flocal pts
+  integer , protected ::     nel_bdry !< proc. solid-fluid bndry els
+  integer , protected ::        ndisc !<   # disconts in bkgrd model
+  integer , protected ::   nproc_mesh !<        number of processors
+  integer , protected :: lfbkgrdmodel !<   length of bkgrdmodel name
 
   ! global number in solid varies across procs due to central cube domain decomposition
   integer                            :: nglob
-  integer, allocatable, dimension(:) :: igloc_solid ! (npoint_solid)
-  integer, allocatable, dimension(:) :: igloc_fluid ! (npoint_fluid)
+  integer, protected, allocatable, dimension(:) :: igloc_solid ! (npoint_solid)
+  integer, protected, allocatable, dimension(:) :: igloc_fluid ! (npoint_fluid)
 
 
   ! Misc definitions
-  integer                          :: nsize, npoint_solid3
-  logical                          :: do_mesh_tests
+  integer                           :: nsize, npoint_solid3
+  logical                           :: do_mesh_tests
 
   ! global numbering array for the solid and fluid assembly
-  real(kind=realkind), allocatable :: gvec_solid(:) 
-  real(kind=realkind), allocatable :: gvec_fluid(:)
+  real(kind=realkind), allocatable  :: gvec_solid(:) 
+  real(kind=realkind), allocatable  :: gvec_fluid(:)
 
   ! Deprecated elemental mesh (radius & colatitude of elemental midpoint)
   ! This is used for blow up localization. Might want to remove this when 
@@ -74,28 +74,28 @@ module data_mesh
   real(kind=realkind), allocatable  :: mean_rad_colat_fluid(:,:)
   
   ! Global mesh informations
-  real(kind=dp)         :: router ! Outer radius (surface)
+  real(kind=dp)                     :: router ! Outer radius (surface)
 
   ! critical mesh parameters (spacing/velocity, characteristic lead time etc)
-  real(kind=dp)         :: pts_wavelngth
-  real(kind=dp)         :: hmin_glob, hmax_glob
-  real(kind=dp)         :: min_distance_dim, min_distance_nondim
-  real(kind=dp)         :: char_time_max
-  integer               :: char_time_max_globel
-  real(kind=dp)         :: char_time_max_rad, char_time_max_theta
-  real(kind=dp)         :: char_time_min
-  integer               :: char_time_min_globel
-  real(kind=dp)         :: char_time_min_rad, char_time_min_theta
-  real(kind=dp)         :: vpmin, vsmin, vpmax, vsmax
-  real(kind=dp)         :: vpminr, vsminr, vpmaxr, vsmaxr
-  integer, dimension(3) :: vpminloc, vsminloc, vpmaxloc, vsmaxloc
+  real(kind=dp)                     :: pts_wavelngth
+  real(kind=dp)                     :: hmin_glob, hmax_glob
+  real(kind=dp)                     :: min_distance_dim, min_distance_nondim
+  real(kind=dp)                     :: char_time_max
+  integer                           :: char_time_max_globel
+  real(kind=dp)                     :: char_time_max_rad, char_time_max_theta
+  real(kind=dp)                     :: char_time_min
+  integer                           :: char_time_min_globel
+  real(kind=dp)                     :: char_time_min_rad, char_time_min_theta
+  real(kind=dp)                     :: vpmin, vsmin, vpmax, vsmax
+  real(kind=dp)                     :: vpminr, vsminr, vpmaxr, vsmaxr
+  integer, dimension(3)             :: vpminloc, vsminloc, vpmaxloc, vsmaxloc
 
   !----------------------------------------------------------------------
   ! Axial elements
-  integer               :: naxel, naxel_solid, naxel_fluid
-  integer,allocatable   :: ax_el(:), ax_el_solid(:), ax_el_fluid(:)
-  logical,allocatable   :: axis_solid(:)
-  logical,allocatable   :: axis_fluid(:)
+  integer                           :: naxel, naxel_solid, naxel_fluid
+  integer, protected, allocatable   :: ax_el(:), ax_el_solid(:), ax_el_fluid(:)
+  logical,            allocatable   :: axis_solid(:)
+  logical,            allocatable   :: axis_fluid(:)
 
   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   ! Background Model related
@@ -104,11 +104,11 @@ module data_mesh
   ! Solid-Fluid boundary----------------------------------------------------
 
   ! mapping nel_bdry elements into the solid/fluid element numbers
-  integer, allocatable, dimension(:) :: bdry_solid_el, bdry_fluid_el
+  integer, protected, allocatable :: bdry_solid_el(:), bdry_fluid_el(:)
 
   ! mapping the z coordinate of the boundary for each element 
   ! (depending on north/south, above/below)
-  integer, allocatable, dimension(:) :: bdry_jpol_solid, bdry_jpol_fluid
+  integer, protected, allocatable :: bdry_jpol_solid(:), bdry_jpol_fluid(:)
 
   ! Boolean to determine whether proc has solid-fluid boundary elements
   logical :: have_bdry_elem 
@@ -149,6 +149,23 @@ module data_mesh
   logical, allocatable         :: plotting_mask(:,:,:)
   integer, allocatable         :: mapping_ijel_iplot(:,:,:)
 
+  ! Only needed before the simulation and later deallocated
+  ! Global mesh informations
+  integer, dimension(:,:), allocatable          :: lnods ! (nelem,1:8)
+  character(len=6), dimension(:), allocatable   :: eltype ! (nelem)
+  integer                                       :: npoin
+  real(kind=dp), dimension(:,:), allocatable    :: crd_nodes ! (npoin,2)
+  logical, dimension(:), allocatable            :: coarsing,north ! (nelem)
+  integer                                       :: num_spher_radii
+  real(kind=dp)   , dimension(:), allocatable   :: spher_radii
+  ! Axial elements
+  logical, dimension(:), allocatable            :: axis ! (nelem)
+
+  ! Mapping between solid/fluid elements:
+  ! integer array of size nel_fluid containing the glocal (global per-proc)
+  ! element number for 1:nel_solid/fluid
+  integer, dimension(:), allocatable            :: ielsolid ! (nel_solid)
+  integer, dimension(:), allocatable            :: ielfluid ! (nel_fluid)
 
   contains
 
@@ -160,6 +177,7 @@ module data_mesh
      integer, intent(in)   :: iounit
 
      print *, iounit
+     read(iounit) nproc_mesh
      read(iounit) npol
      read(iounit) nelem
      read(iounit) npoint
@@ -171,10 +189,88 @@ module data_mesh
      read(iounit) nglob_fluid
      read(iounit) nel_bdry
      read(iounit) ndisc
-     read(iounit) nproc_mesh
      read(iounit) lfbkgrdmodel
 
-  end subroutine
+  
+end subroutine
+
+subroutine read_mesh_advanced(iounit)
+   use data_io, only     : verbose 
+   integer, intent(in)  :: iounit
+   integer              :: iptcp, iel, inode
+
+   read(iounit) npoin
+   
+     if (verbose > 1) then
+        write(69,*) 'reading coordinates/control points...'
+        write(69,*) 'global number of control points:',npoin
+     endif
+   allocate(crd_nodes(1:npoin,1:2))
+   
+   read(iounit) crd_nodes(:,1)
+   read(iounit) crd_nodes(:,2)
+   do iptcp = 1, npoin 
+      if(abs(crd_nodes(iptcp,2)) < 1.e-8) crd_nodes(iptcp,2) = zero
+   end do
+
+   allocate(lnods(1:nelem,1:8))
+   do iel = 1, nelem
+      read(iounit) (lnods(iel,inode), inode=1,8)
+   end do
+
+
+   ! Number of global distinct points (slightly differs for each processor!)
+   read(iounit) nglob
+   if (verbose > 1) write(69,*) '  global number:', nglob
+ 
+   ! Element type
+   allocate(eltype(1:nelem), coarsing(1:nelem))
+   read(iounit) eltype
+   read(iounit) coarsing
+ 
+   !!!!!!!!!!! SOLID/FLUID !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ 
+   ! mapping from sol/flu (1:nel_fluid) to global element numbers (1:neltot) 
+   if (verbose > 1) write(69,*) 'reading solid/fluid domain info...'
+   allocate(ielsolid(1:nel_solid))
+   allocate(ielfluid(1:nel_fluid))
+   read(iounit) ielsolid
+   read(iounit) ielfluid
+ 
+   ! slocal numbering 
+   allocate(igloc_solid(npoint_solid))
+   read(iounit) igloc_solid(1:npoint_solid)
+ 
+   ! flocal numbering 
+   allocate(igloc_fluid(npoint_fluid))
+   read(iounit) igloc_fluid(1:npoint_fluid)
+ 
+   ! Solid-Fluid boundary
+   if (verbose > 1) write(69,*) 'reading solid/fluid boundary info...'
+   read(iounit) have_bdry_elem
+ 
+   allocate(bdry_solid_el(1:nel_bdry))
+   allocate(bdry_fluid_el(1:nel_bdry))
+   allocate(bdry_jpol_solid(1:nel_bdry))
+   allocate(bdry_jpol_fluid(1:nel_bdry))
+   read(iounit) bdry_solid_el(1:nel_bdry)
+   read(iounit) bdry_fluid_el(1:nel_bdry)
+   read(iounit) bdry_jpol_solid(1:nel_bdry)
+   read(iounit) bdry_jpol_fluid(1:nel_bdry)
+end subroutine
+
+
+subroutine read_mesh_axel(iounit)
+   integer, intent(in) :: iounit
+
+   allocate(ax_el(naxel),ax_el_solid(1:naxel_solid),ax_el_fluid(1:naxel_fluid))
+   allocate(axis_solid(nel_solid))
+   allocate(axis_fluid(nel_fluid))
+
+   read(iounit) ax_el(1:naxel)
+   read(iounit) ax_el_solid(1:naxel_solid)
+   read(iounit) ax_el_fluid(1:naxel_fluid)
+end subroutine
 
 !=======================
 end module data_mesh

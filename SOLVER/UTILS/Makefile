@@ -4,7 +4,7 @@ ifeq ($(strip $(USE_NETCDF)),true)
    LIBS = -L $(strip $(NETCDF_PATH))/lib -lnetcdff -Wl,-rpath,$(strip $(NETCDF_PATH))/lib
    INCLUDE = -I $(strip $(NETCDF_PATH))/include
 else
-   LIBS = 
+   LIBS =
    INCLUDE =
 endif
 

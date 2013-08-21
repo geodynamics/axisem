@@ -218,7 +218,7 @@ end subroutine compute_stf_t
 !-----------------------------------------------------------------------------
 subroutine compute_src
 
-  use data_mesh_preloop
+  use data_mesh
   use utlity
   use commun, only: broadcast_int,broadcast_dble
   
@@ -398,7 +398,7 @@ end subroutine compute_src
 !-----------------------------------------------------------------------------
 subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
 
-  use data_mesh_preloop
+  use data_mesh
   use utlity
   use commun, only: pmin, psum_int
   
@@ -788,7 +788,7 @@ end subroutine quasiheavi_t
 !-----------------------------------------------------------------------------
 subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
 
-  use data_mesh_preloop
+  use data_mesh
   use utlity
   use commun
   
@@ -855,7 +855,7 @@ end subroutine define_bodyforce
 !! using pointwise derivatives of arbitrary scalar functions.
 subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   
-  use data_mesh_preloop
+  use data_mesh
   use data_spec, only : shp_deri_k
   
   use apply_masks

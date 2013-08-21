@@ -27,7 +27,6 @@ module meshes_io
 
   use global_parameters
   use data_mesh
-  use data_mesh_preloop, ONLY : ielsolid, ielfluid
   use data_proc
   use data_io
   

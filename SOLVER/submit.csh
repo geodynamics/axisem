@@ -363,7 +363,7 @@ cp -p $homedir/UTILS/plot_record_section.m .
 
 echo "To convolve and sum seismograms, run ./post_processing.csh after the simulations in:" 
 echo $mainrundir
-echo ".... the post-processing input files param_post_processing and param_snaps are generated in the solver"
+echo ".... the post-processing input file param_post_processing is generated in the solver"
 echo ".... based on guesses. Edit please."
 echo " ~ ~ ~ ~ ~ ~ ~ h a n g   o n   &   l o o s e ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~"
 

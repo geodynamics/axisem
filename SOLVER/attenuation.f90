@@ -472,9 +472,8 @@ subroutine prepare_attenuation(lambda, mu)
   use data_matr,            only: Q_mu, Q_kappa
   use data_matr,            only: delta_mu, delta_kappa
   use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
-  use data_mesh_preloop,    only: ielsolid
   use get_mesh,             only: compute_coordinates_mesh
-  use data_mesh,            only: axis_solid, npol, nelem, nel_solid
+  use data_mesh,            only: axis_solid, npol, nelem, ielsolid, nel_solid
   use data_spec,            only: eta, xi_k, wt, wt_axial_k
   use geom_transf,          only: jacobian
   use utlity,               only: scoord

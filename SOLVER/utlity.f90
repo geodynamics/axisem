@@ -149,7 +149,7 @@ subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_mesh,            ONLY: min_distance_dim
-  use data_mesh_preloop,    ONLY: lnods, crd_nodes, axis
+  use data_mesh,            ONLY: lnods, crd_nodes, axis
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
@@ -195,7 +195,7 @@ real(kind=dp)    function scoord(ipol,jpol,ielem)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_mesh,            ONLY: min_distance_dim
-  use data_mesh_preloop,    ONLY: lnods, crd_nodes, axis
+  use data_mesh,            ONLY: lnods, crd_nodes, axis
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
@@ -230,7 +230,7 @@ real(kind=dp)    function zcoord(ipol,jpol,ielem)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_mesh,            ONLY: min_distance_dim
-  use data_mesh_preloop,    ONLY: lnods, crd_nodes, axis
+  use data_mesh,            ONLY: lnods, crd_nodes, axis
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
@@ -265,7 +265,7 @@ real(kind=dp)    function rcoord(ipol,jpol,ielem)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_mesh,            ONLY: min_distance_dim
-  use data_mesh_preloop,    ONLY: lnods, crd_nodes, axis
+  use data_mesh,            ONLY: lnods, crd_nodes, axis
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
@@ -303,7 +303,7 @@ real(kind=dp)    function thetacoord(ipol,jpol,ielem)
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
   use data_mesh,            ONLY: min_distance_dim
-  use data_mesh_preloop,    ONLY: lnods, crd_nodes,axis
+  use data_mesh,            ONLY: lnods, crd_nodes,axis
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   

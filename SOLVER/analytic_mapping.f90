@@ -28,7 +28,6 @@ module analytic_mapping
   use analytic_semi_mapping
   use subpar_mapping
   use data_mesh
-  use data_mesh_preloop
 
   implicit none
 
