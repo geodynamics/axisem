@@ -34,7 +34,7 @@ module stiffness
   implicit none
   
   public :: glob_stiffness_mono, glob_stiffness_di, glob_stiffness_quad
-  public :: glob_stiffness_mono_4 !, glob_stiffness_di, glob_stiffness_quad
+  public :: glob_stiffness_mono_4, glob_stiffness_di_4, glob_stiffness_quad_4
   public :: elemental_stiffness_mono, elemental_fluid_stiffness
   public :: glob_anel_stiffness_mono, glob_anel_stiffness_di, glob_anel_stiffness_quad
   public :: glob_anel_stiffness_mono_cg4, glob_anel_stiffness_di_cg4, &

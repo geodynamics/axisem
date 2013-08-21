@@ -57,8 +57,8 @@ contains
 subroutine dump_glob_grid_midpoint(ibeg,iend,jbeg,jend)
   
   use data_pointwise, ONLY : inv_rho_fluid
-  
-  include 'mesh_params.h'
+  use data_mesh,      only : npol, nel_fluid, nel_solid
+  !include 'mesh_params.h'
   
   integer, intent(in) :: ibeg,iend,jbeg,jend 
   integer             :: iel,ipol,jpol
@@ -450,7 +450,7 @@ end subroutine finish_xdmf_xml
 subroutine prepare_mesh_memoryvar_vtk()
 
   use data_matr, only: points_solid
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
 
   integer :: iel, ipol,jpol
   
@@ -474,7 +474,7 @@ end subroutine prepare_mesh_memoryvar_vtk
 !! Convention for order in the file: First the fluid, then the solid domain.
 subroutine dump_solid_grid(ibeg,iend,jbeg,jend)
 
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   integer, intent(in) :: ibeg,iend,jbeg,jend 
   integer             :: iel, ipol,jpol
@@ -505,7 +505,7 @@ subroutine dump_fluid_grid(ibeg,iend,jbeg,jend)
 
   use data_pointwise, ONLY : inv_rho_fluid
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   integer, intent(in) :: ibeg,iend,jbeg,jend
   integer             :: iel, ipol,jpol
@@ -706,12 +706,12 @@ subroutine fldout_cyl2(fname,nel,f,ibeg,iend,jbeg,jend,flag_norm,domain)
 
   use utlity, ONLY : compute_coordinates
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   character(len=80), intent(in)   :: fname
   character(len=5), intent(in)    :: domain
   integer, intent(in)             :: flag_norm,ibeg,iend,jbeg,jend,nel
-  real(kind=realkind), intent(in) :: f(ibeg:iend,jbeg:jend,nel)
+  real(kind=realkind), intent(in) :: f(ibeg:,jbeg:,:)
   integer                         :: lf,ielem, ipol,jpol,iel
   real(kind=dp)                   :: r, theta, s, z
   real(kind=realkind)             :: fnr,afnr

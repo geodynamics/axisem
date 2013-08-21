@@ -162,11 +162,14 @@ end subroutine hn_jprime
 pure subroutine zelegl(n,et,vn)
 
   integer, intent(in)    :: n !< Order of the formula
-  real(dp), intent(out)  :: ET(0:n) ! Vector of the nodes
-  real(dp), intent(out)  :: VN(0:n) ! Values of the Legendre polynomial at the nodes
+  real(dp), intent(out), allocatable  :: ET(:) ! Vector of the nodes
+  real(dp), intent(out), allocatable  :: VN(:) ! Values of the Legendre polynomial at the nodes
   real(kind=dp)           :: sn, x, c, etx, dy, d2y, y
   integer                :: i, n2, it
-  
+ 
+  if(.not.allocated(et))  allocate(et(0:n))
+  if(.not.allocated(vn))  allocate(vn(0:n))
+
   if (n  ==  0) return
 
   n2 = (n-1)/2
@@ -253,11 +256,13 @@ end subroutine zelegl2
 !!   by Azaiez et al.  
 pure subroutine zemngl2(n,et)
   
-  integer, intent(in)      :: n       !< Order of the formula
-  real(dp), intent(out)    :: et(0:n) !< vector of the nodes, et(i), i=0,n.
-  real(dp), dimension(n-1) :: d, e
-  integer                  :: i, n2
-  real(kind=dp)             :: x
+  integer, intent(in)                :: n       !< Order of the formula
+  real(dp), allocatable, intent(out) :: et(:) !< vector of the nodes, et(i), i=0,n.
+  real(dp), dimension(n-1)           :: d, e
+  integer                            :: i, n2
+  real(kind=dp)                      :: x
+
+  if (.not.allocated(et)) allocate(et(0:n))
 
   if (n  ==  0) return
 
@@ -465,11 +470,13 @@ end subroutine valepo
 !! Gauss-Lobatto-Legendre quadrature formula of order N.
 pure subroutine get_welegl(N,xi,wt)
 
-  integer, intent(in)   :: N
-  real(dp), intent(in)  :: xi(0:N)
-  real(dp), intent(out) :: wt(0:N)
-  integer               :: j
-  real(kind=dp)          :: y,dy,d2y,fact 
+  integer, intent(in)                :: N
+  real(dp), intent(in)               :: xi(0:N)
+  real(dp), allocatable, intent(out) :: wt(:)
+  integer                            :: j
+  real(kind=dp)                      :: y,dy,d2y,fact 
+
+  if(.not.allocated(wt)) allocate(wt(0:n))
 
   fact = 2.0d0/(dble(N*(N+1)))
 
@@ -490,18 +497,19 @@ end subroutine get_welegl
 !! axis of symmetry of the Earth.
 pure subroutine get_welegl_axial(N,xi,wt,iflag)
 
-  integer, intent(in)           :: N       !< order of GLL quadrature formula
-  integer, intent(in)           :: iflag   !< Selector for quadrature formulae proposed 
-                                           !! by Bernardi et al.
-                                           !! iflag = 2 : Second formula 
-                                           !!             Formula : (VI.1.12), page 104             
-                                           !! iflag = 3 : Third formula
-                                           !!             Formula : (VI.1.20), page 107            
-  real(kind=dp)   , intent(in)  :: xi(0:N) !< Support points
-  real(kind=dp)   , intent(out) :: wt(0:N) !< Weighting factor at support points
-  integer                       :: j
-  real(kind=dp)                 :: y, dy, d2y, fact
+  integer, intent(in)                     :: N       !< order of GLL quadrature formula
+  integer, intent(in)                     :: iflag   !< Selector for quadrature formulae proposed 
+                                                     !! by Bernardi et al.
+                                                     !! iflag = 2 : Second formula 
+                                                     !!             Formula : (VI.1.12), page 104             
+                                                     !! iflag = 3 : Third formula
+                                                     !!             Formula : (VI.1.20), page 107            
+  real(kind=dp), intent(in)               :: xi(0:N) !< Support points
+  real(kind=dp), allocatable, intent(out) :: wt(:)   !< Weighting factor at support points
+  integer                                 :: j
+  real(kind=dp)                           :: y, dy, d2y, fact
 
+  if(.not.allocated(wt)) allocate(wt(0:n))
   wt(:) = 0.0 
 
   if (iflag == 2 ) then 

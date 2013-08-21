@@ -486,7 +486,11 @@ subroutine sf_time_loop_newmark
 
         case ('dipole') 
            call apply_axis_mask_twocomp(disp, nel_solid, ax_el_solid, naxel_solid)
-           call glob_stiffness_di(acc1, disp) 
+           if (npol==4) then
+              call glob_stiffness_di_4(acc1, disp)
+           else
+              call glob_stiffness_di(acc1, disp)
+           end if
            if (anel_true) then
               iclockanelst = tick()
               if (att_coarse_grained) then
@@ -501,7 +505,11 @@ subroutine sf_time_loop_newmark
 
         case ('quadpole') 
            call apply_axis_mask_threecomp(disp, nel_solid, ax_el_solid, naxel_solid)
-           call glob_stiffness_quad(acc1, disp) 
+           if (npol==4) then
+              call glob_stiffness_quad_4(acc1, disp)
+           else
+              call glob_stiffness_quad(acc1, disp) 
+           end if
            if (anel_true) then
               iclockanelst = tick()
               if (att_coarse_grained) then

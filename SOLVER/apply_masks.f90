@@ -41,14 +41,14 @@ contains
 subroutine apply_axis_mask_scal(u, nel, ax_array, nax_array)
   ! for a scalar array
 
-  include "mesh_params.h"
+  !include "mesh_params.h"
   integer, intent(in)               :: nel, nax_array
-  real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel)
+  real(kind=realkind),intent(inout) :: u(0:,0:,:)
   integer, intent(in)               :: ax_array(nax_array)
   integer                           :: ielem
 
   do ielem = 1, nax_array
-     u(0,0:npol,ax_array(ielem)) = zero
+     u(0,:,ax_array(ielem)) = zero
   end do
 
 end subroutine apply_axis_mask_scal
@@ -58,14 +58,13 @@ end subroutine apply_axis_mask_scal
 subroutine apply_axis_mask_onecomp(u, nel, ax_array, nax_array)
   ! for the first component of the array
 
-  include "mesh_params.h"
   integer, intent(in)               :: nel,nax_array
-  real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel,3)
+  real(kind=realkind),intent(inout) :: u(0:,0:,:,:)
   integer, intent(in)               :: ax_array(nax_array)
   integer                           :: ielem
 
   do ielem = 1, nax_array
-     u(0,0:npol,ax_array(ielem),1) = zero
+     u(0,:,ax_array(ielem),1) = zero
   end do
 
 end subroutine apply_axis_mask_onecomp
@@ -75,14 +74,13 @@ end subroutine apply_axis_mask_onecomp
 subroutine apply_axis_mask_twocomp(u, nel, ax_array, nax_array)
   ! for the 2nd and 3rd component of the array
   
-  include "mesh_params.h"
   integer, intent(in)               :: nel, nax_array
-  real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel,3)
+  real(kind=realkind),intent(inout) :: u(0:,0:,:,:)
   integer, intent(in)               :: ax_array(nax_array)
   integer                           :: ielem
 
   do ielem = 1, nax_array
-     u(0,0:npol,ax_array(ielem),2:3) = zero
+     u(0,:,ax_array(ielem),2:3) = zero
   end do
 
 end subroutine apply_axis_mask_twocomp
@@ -92,14 +90,13 @@ end subroutine apply_axis_mask_twocomp
 subroutine apply_axis_mask_threecomp(u, nel, ax_array, nax_array)
   ! for the all components of the array
 
-  include "mesh_params.h"
   integer, intent(in)               :: nel, nax_array
-  real(kind=realkind),intent(inout) :: u(0:npol,0:npol,nel,3)
+  real(kind=realkind),intent(inout) :: u(0:,0:,:,:)
   integer, intent(in)               :: ax_array(nax_array)
   integer                           :: ielem
 
   do ielem = 1, nax_array
-     u(0,0:npol,ax_array(ielem),1:3) = zero
+     u(0,:,ax_array(ielem),1:3) = zero
   end do
 
 end subroutine apply_axis_mask_threecomp

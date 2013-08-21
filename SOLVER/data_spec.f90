@@ -27,24 +27,24 @@
 
 use global_parameters
 implicit none
-include 'mesh_params.h'
+!include 'mesh_params.h'
 public 
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
-  real(kind=dp)   , dimension(0:npol) :: xi_k, eta
-  real(kind=dp)   , dimension(0:npol) :: dxi
-  real(kind=dp)   , dimension(0:npol) :: wt          !Quadrature weights
-  real(kind=dp)   , dimension(0:npol) :: wt_axial_k  !Quad. wgts for the   
+  real(kind=dp), allocatable, dimension(:) :: xi_k, eta   ! Allocated in splib
+  real(kind=dp), allocatable, dimension(:) :: dxi         ! " 
+  real(kind=dp), allocatable, dimension(:) :: wt          !Quadrature weights
+  real(kind=dp), allocatable, dimension(:) :: wt_axial_k  !Quad. wgts for the   
                                                      !gaus jacobi(0,1) integration
 
 ! Lagrange interpolant derivatives
 ! 3rd index: 1 - non-axial, 2 - axial
 ! 4th index: 1 - \partial_\xi, 2 - \partial_\eta
-  real(kind=realkind), dimension(0:npol,0:npol,2,2) :: shp_deri_k
-  real(kind=realkind), dimension(0:npol,0:npol)     :: G1, G1T, G2, G2T
-  real(kind=realkind), dimension(0:npol)            :: G0
+  real(kind=realkind), allocatable, dimension(:,:,:,:) :: shp_deri_k
+  real(kind=realkind), allocatable, dimension(:,:)     :: G1, G1T, G2, G2T
+  real(kind=realkind), allocatable, dimension(:)       :: G0
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

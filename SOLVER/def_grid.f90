@@ -252,7 +252,7 @@ subroutine massmatrix(masstmp,nel,domain)
   use geom_transf
   use get_mesh, only : compute_coordinates_mesh
   
-  include "mesh_params.h"
+  !include "mesh_params.h"
   
   integer,intent(in)               :: nel
   character(len=5), intent(in)     :: domain
@@ -309,7 +309,7 @@ subroutine massmatrix_dble(masstmp,nel,domain)
   use geom_transf
   use get_mesh, only : compute_coordinates_mesh
   
-  include "mesh_params.h"
+  !include "mesh_params.h"
   
   integer,intent(in)               :: nel
   character(len=5), intent(in)     :: domain
@@ -416,8 +416,9 @@ end subroutine mesh_tests
 subroutine dump_coarsing_element_info
 
   use commun, only: barrier
+  use data_mesh, only: nelem
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   integer          :: iel
   real(kind=dp)    :: s,z,r,theta
@@ -503,7 +504,8 @@ end subroutine dump_coarsing_element_info
 !! but lingering well since not exactly pricey...
 subroutine check_physical_coordinates
 
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh, only : nelem, npol
   
   integer :: iel,ipol,jpol
   real(kind=dp)    :: s,z,r,theta
@@ -577,8 +579,8 @@ end subroutine check_physical_coordinates
 subroutine check_axial_stuff
 
   use apply_masks
-  
-  include 'mesh_params.h'
+  use data_mesh, only: npol, nel_solid, nel_fluid, nel_bdry 
+  !include 'mesh_params.h'
   
   integer                          ::  iel,jpol
   integer                          :: count_ax,count2_ax,count3_ax,i
@@ -995,12 +997,12 @@ subroutine compute_spherical_surfaces
 
   use commun, only : broadcast_int, broadcast_dble, psum_dble
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
-  integer                      :: irad,ipol,iel,ielabove,ielbelow
-  real(kind=dp)   ,allocatable :: tmpradii(:,:),radsurf(:,:),radii2(:,:)
-  real(kind=dp)                :: s,z,r1,r2,theta1,theta2,delta_th
-  real(kind=dp)                :: tmpdble1,tmpdble2,deltacosth
+  integer                    :: irad,ipol,iel,ielabove,ielbelow
+  real(kind=dp), allocatable :: tmpradii(:,:),radsurf(:,:),radii2(:,:)
+  real(kind=dp)              :: s,z,r1,r2,theta1,theta2,delta_th
+  real(kind=dp)              :: tmpdble1,tmpdble2,deltacosth
 
   allocate(tmpradii(1:naxel,1:2))
   tmpradii(:,:) = zero
@@ -1191,8 +1193,9 @@ end subroutine compute_spherical_surfaces
 subroutine compute_volume
 
   use commun, only : psum,assembmass_sum_solid,assembmass_sum_fluid
+  use data_mesh, only: npol, nelem, nel_solid, nel_fluid
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   integer             :: iel,ipol,jpol
   real(kind=dp)       :: vol_glob,vol_solid,vol_fluid
@@ -1348,7 +1351,8 @@ end subroutine compute_volume
 !! contains more critical checks and actual terminating decisions....
 subroutine check_solid_fluid_boundaries
 
-  include 'mesh_params.h'
+  use data_mesh, only: npol, nel_solid, nel_fluid, nel_bdry 
+  !include 'mesh_params.h'
   
   real(kind=realkind), allocatable :: tmpsolfield(:,:,:), tmpflufield(:,:,:)
   integer                          :: bdrycount, ipol, jpol, iel
@@ -1432,7 +1436,8 @@ end subroutine check_solid_fluid_boundaries
 !! between two neighbouring points in the meridional plane.
 subroutine compute_hmin_meri(hmin)
 
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
+  use data_mesh, only: nelem, npol
   
   real(kind=dp)    :: hmin
   real(kind=realkind),dimension(:,:,:),allocatable :: dis1,dis2

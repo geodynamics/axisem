@@ -25,7 +25,7 @@ module attenuation
   use global_parameters,    only: realkind, third, sp, dp
   use data_io,              only: verbose
   implicit none
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
 
   private
   public :: prepare_attenuation
@@ -59,12 +59,12 @@ subroutine time_step_memvars_cg4(memvar, disp)
   use data_time,            only: deltat
   use data_matr,            only: Q_mu, Q_kappa
   use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
-  use data_mesh,            only: axis_solid
+  use data_mesh,            only: axis_solid, nel_solid
   use data_source,          only: src_type
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
 
-  real(kind=realkind), intent(inout)    :: memvar(1:4,6,n_sls_attenuation,nel_solid)
-  real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(inout)    :: memvar(:,:,:,:) !(1:4,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(in)       :: disp(:,:,:,:) !(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
@@ -191,12 +191,12 @@ subroutine time_step_memvars(memvar, disp)
   use data_time,            only: deltat
   use data_matr,            only: Q_mu, Q_kappa
   use data_matr,            only: delta_mu, delta_kappa
-  use data_mesh,            only: axis_solid
+  use data_mesh,            only: axis_solid, nel_solid, npol
   use data_source,          only: src_type
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
 
-  real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
-  real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(inout)    :: memvar(:,:,:,:,:) !(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(in)       :: disp(:,:,:,:) !(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j, ipol, jpol
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
@@ -327,7 +327,7 @@ subroutine compute_strain_att_el_cg4(u, grad_u, iel)
   use pointwise_derivatives,    only: axisym_gradient_solid_el_cg4
   use pointwise_derivatives,    only: f_over_s_solid_el_cg4
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: u(0:,0:,:)
   real(kind=realkind), intent(out)  :: grad_u(1:4,6)
@@ -397,10 +397,11 @@ subroutine compute_strain_att_el(u, grad_u, iel)
   use data_source,              only: src_type
   use pointwise_derivatives,    only: axisym_gradient_solid_el
   use pointwise_derivatives,    only: f_over_s_solid_el
+  use data_mesh,                only: npol
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
-  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,3)
+  real(kind=realkind), intent(in)   :: u(0:,0:,:)
   real(kind=realkind), intent(out)  :: grad_u(0:npol,0:npol,6)
   integer, intent(in)               :: iel
   
@@ -473,7 +474,7 @@ subroutine prepare_attenuation(lambda, mu)
   use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
   use data_mesh_preloop,    only: ielsolid
   use get_mesh,             only: compute_coordinates_mesh
-  use data_mesh,            only: axis_solid
+  use data_mesh,            only: axis_solid, npol, nelem, nel_solid
   use data_spec,            only: eta, xi_k, wt, wt_axial_k
   use geom_transf,          only: jacobian
   use utlity,               only: scoord
@@ -484,10 +485,10 @@ subroutine prepare_attenuation(lambda, mu)
                                   broadcast_char, broadcast_dble, barrier
 
 
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
 
-  real(kind=dp), intent(inout)   :: lambda(0:npol,0:npol,1:nelem)
-  real(kind=dp), intent(inout)   :: mu(0:npol,0:npol,1:nelem)
+  real(kind=dp), intent(inout)   :: lambda(0:,0:,1:)
+  real(kind=dp), intent(inout)   :: mu(0:,0:,1:)
 
   real(kind=dp)                  :: mu_w1(0:npol,0:npol)
 

@@ -57,7 +57,7 @@ subroutine read_model_compute_terms
   use attenuation,  only: prepare_attenuation
   use commun,       only: barrier
   
-  include 'mesh_params.h'
+ ! include 'mesh_params.h'
   
   real(kind=dp)   , dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
   real(kind=dp)   , dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
@@ -166,8 +166,8 @@ subroutine lagrange_derivs
 !! G2(i,j) = \partial_\eta ( l_i(\eta_j) )  i.e. all eta/non-ax xi directions 
 
   use splib, only : hn_jprime, lag_interp_deriv_wgl
-  
-  include 'mesh_params.h'
+  use data_mesh
+  !include 'mesh_params.h'
   
   real(kind=dp)     :: df(0:npol),dg(0:npol)
   integer           :: ishp,jpol
@@ -176,6 +176,13 @@ subroutine lagrange_derivs
   
   ! shp_deri_k only needed for the source and pointwise derivatives,
   ! otherwise (stiffness terms) we apply G0, G1, G2 and their transposes.
+  allocate(shp_deri_k(0:npol,0:npol,2,2))
+  allocate(G1(0:npol,0:npol))
+  allocate(G1T(0:npol,0:npol))
+  allocate(G2(0:npol,0:npol))
+  allocate(G2T(0:npol,0:npol))
+  allocate(G0(0:npol))
+
 
   shp_deri_k(:,:,:,:) = zero
 
@@ -253,7 +260,7 @@ subroutine compute_pointwisederiv_matrices
 !! mesh, i.e. only slightly more memory intensive).
 
   use data_pointwise
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
 
   integer          :: iel,inode,ipol,jpol
   real(kind=dp)    :: dsdxi,dzdxi,dsdeta,dzdeta
@@ -422,7 +429,7 @@ subroutine test_pntwsdrvtvs_solid
   use data_io
   use pointwise_derivatives
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   real(kind=realkind),allocatable :: tmpsolfield(:,:,:)
   real(kind=realkind),allocatable :: tmpsolfieldcomp(:,:,:,:)
@@ -567,7 +574,7 @@ subroutine test_pntwsdrvtvs_fluid
   use data_io
   use pointwise_derivatives
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   real(kind=realkind),allocatable :: tmpflufield(:,:,:)
   real(kind=realkind),allocatable :: tmpflufieldcomp(:,:,:,:)
@@ -720,15 +727,17 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   
   use data_io,          only : need_fluid_displ, dump_energy
   use commun,           only : comm2d
-  use data_pointwise,   only: inv_rho_fluid
+  use data_pointwise,   only : inv_rho_fluid
+  use data_matr,        only : inv_mass_rho, inv_mass_fluid
   
-  include "mesh_params.h"
+  !include "mesh_params.h"
+  use data_mesh,        only : npol, nelem, nel_solid, nel_fluid
   
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem),intent(in)  :: rho,lambda,mu
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem),intent(out) :: massmat_kwts2
+  real(kind=dp), dimension(0:,0:,:),intent(in)  :: rho, lambda, mu
+  real(kind=dp), dimension(0:npol,0:npol,nelem),intent(out) :: massmat_kwts2
   
-  real(kind=dp)   , allocatable    :: massmat_k(:,:,:)   !< Mass matrix
-  real(kind=dp)   , allocatable    :: jacob (:,:,:)      !< jacobian array
+  real(kind=dp), allocatable    :: massmat_k(:,:,:)   !< Mass matrix
+  real(kind=dp), allocatable    :: jacob (:,:,:)      !< jacobian array
   real(kind=realkind), allocatable :: drdxi(:,:,:,:)     !< min/max derivs
   
   real(kind=dp)     :: local_crd_nodes(8,2),s,z,r,theta
@@ -739,6 +748,9 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   allocate(massmat_k(0:npol,0:npol,1:nelem),jacob(0:npol,0:npol,1:nelem))
   allocate(drdxi(0:npol,0:npol,1:nelem,1:4))
   allocate(inv_rho_fluid(0:npol,0:npol,1:nel_fluid))
+
+  allocate(inv_mass_rho(0:npol,0:npol,1:nel_solid))
+  allocate(inv_mass_fluid(0:npol,0:npol,1:nel_fluid))
 
   massmat_k(:,:,:) = zero; massmat_kwts2(:,:,:) = zero
 
@@ -1110,7 +1122,7 @@ subroutine compute_mass_earth(rho)
   use commun,               only : psum
   use data_io,              only : infopath,lfinfo
   
-  include 'mesh_params.h'
+  !include 'mesh_params.h'
   
   real(kind=dp)   , intent(in)     :: rho(0:npol,0:npol,nelem)
   integer                          :: iel,ipol,jpol,idom,iidom,idisc
@@ -1274,36 +1286,61 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
 !! Adding optional arguments for anisotropy, MvD
 
   use attenuation, only: att_coarse_grained
-  include "mesh_params.h"
+  use data_mesh, only: npol, nel_solid, nelem
+  !include "mesh_params.h"
   
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in) :: lambda,mu
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in) :: massmat_kwts2
-  real(kind=dp)   , dimension(0:npol,0:npol,nelem), intent(in), optional :: xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
+  real(kind=dp), dimension(0:,0:,:), intent(in) :: lambda,mu
+  real(kind=dp), dimension(0:,0:,:), intent(in) :: massmat_kwts2
+  real(kind=dp), dimension(0:,0:,:), intent(in), optional :: xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
   
-  real(kind=dp)    :: local_crd_nodes(8,2)
-  integer          :: ielem,ipol,jpol,inode
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta
+  real(kind=dp) :: local_crd_nodes(8,2)
+  integer       :: ielem,ipol,jpol,inode
+  real(kind=dp) :: dsdxi,dzdeta,dzdxi,dsdeta
   
-  real(kind=dp)    :: alpha_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: beta_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: gamma_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: delta_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: epsil_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp) :: zeta_wt_k(0:npol,0:npol)
   
-  real(kind=dp)    :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: M_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: M_z_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: M_z_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)    :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp) :: M_s_eta_wt_k(0:npol,0:npol)
   
-  ! non-diagfact
-  real(kind=dp)   , allocatable :: non_diag_fact(:,:)
+  ! non-diagfac
+  real(kind=dp), allocatable :: non_diag_fact(:,:)
   
   ! Allocate Global Stiffness Arrays depending on source type:
+  allocate(M11s(0:npol, 0:npol, nel_solid)) 
+  allocate(M21s(0:npol, 0:npol, nel_solid))
+  allocate(M41s(0:npol, 0:npol, nel_solid)) 
+  allocate(M12s(0:npol, 0:npol, nel_solid))
+  allocate(M22s(0:npol, 0:npol, nel_solid)) 
+  allocate(M42s(0:npol, 0:npol, nel_solid))
+  allocate(M11z(0:npol, 0:npol, nel_solid)) 
+  allocate(M21z(0:npol, 0:npol, nel_solid)) 
+  allocate(M41z(0:npol, 0:npol, nel_solid))
+  allocate(M32s(0:npol, 0:npol, nel_solid))
+
+  allocate(M_1(0:npol,0:npol,nel_solid))
+  allocate(M_2(0:npol,0:npol,nel_solid))
+  allocate(M_3(0:npol,0:npol,nel_solid))
+  allocate(M_4(0:npol,0:npol,nel_solid))
+
+
+  allocate(M_w1(0:npol,0:npol,nel_solid))
+   
+  allocate(M0_w1(0:npol,nel_solid))
+  allocate(M0_w2(0:npol,nel_solid))
+  allocate(M0_w3(0:npol,nel_solid))
+
+
   select case (src_type(1))
   
   case ('dipole')
@@ -1699,38 +1736,39 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                        Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-  include "mesh_params.h"
+  use data_mesh, only: npol, nelem, nel_solid, nel_fluid
+  !include "mesh_params.h"
   
   integer, intent(in) :: ielem, jpol
   
-  real(kind=dp)   , intent(in) :: lambda(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: mu(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: xi_ani(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: phi_ani(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: eta_ani(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: xi_ani(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: phi_ani(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: eta_ani(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
   
-  real(kind=dp)   , intent(in) :: non_diag_fact(0:npol,nel_solid)
-  real(kind=dp)   , intent(in) :: local_crd_nodes(8,2)
+  real(kind=dp), intent(in) :: non_diag_fact(0:npol,nel_solid)
+  real(kind=dp), intent(in) :: local_crd_nodes(8,2)
   
-  real(kind=dp)   , intent(in) :: alpha_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: beta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: gamma_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: delta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: epsil_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: zeta_wt_k(0:npol,0:npol)
   
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
   
-  real(kind=dp)   , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
   
   integer          :: ipol
   real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta
@@ -1880,7 +1918,7 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-  include "mesh_params.h"
+  !include "mesh_params.h"
   
   integer, intent(in) :: ielem,jpol
   
@@ -2135,7 +2173,7 @@ subroutine compute_quadrupole_stiff_terms(ielem,jpol, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-  include "mesh_params.h"
+  !include "mesh_params.h"
   
   integer, intent(in)          :: ielem, jpol
   
@@ -2401,7 +2439,7 @@ subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
 !! Note that in this routine terms alpha etc. are scalars 
 !! (as opposed to the solid case of being elemental arrays).
     
-  include "mesh_params.h"
+  !include "mesh_params.h"
   real(kind=dp)   , intent(in)  :: rho(0:npol,0:npol,nelem)
   real(kind=dp)   , intent(in)  :: massmat_kwts2(0:npol,0:npol,nelem)
   
@@ -2410,6 +2448,12 @@ subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
   real(kind=dp)                 :: alpha_wt_k,beta_wt_k,gamma_wt_k
   real(kind=dp)                 :: delta_wt_k,epsil_wt_k,zeta_wt_k
   integer                       :: iel,ipol,jpol,inode
+
+  allocate(M1chi_fl(0:npol,0:npol,nel_fluid))
+  allocate(M2chi_fl(0:npol,0:npol,nel_fluid))
+  allocate(M4chi_fl(0:npol,0:npol,nel_fluid))
+  allocate(M_w_fl(0:npol,0:npol,nel_fluid))
+  allocate(M0_w_fl(0:npol,nel_fluid))
 
   allocate(non_diag_fact(0:npol,1:nel_fluid))
   
@@ -2536,14 +2580,19 @@ subroutine def_solid_fluid_boundary_terms
   
   use commun, only : psum
   use data_io
-  
-  include 'mesh_params.h'
+  use data_mesh, only: npol, nel_bdry
+  !include 'mesh_params.h'
   
   real(kind=dp)                :: local_crd_nodes(8,2)
   real(kind=dp)                :: s,z,r,theta,rf,thetaf
   real(kind=dp)                :: theta1,theta2,r1,r2,delta_th,bdry_sum
   integer                      :: iel,ielglob,ipol,inode,idom
   integer                      :: count_lower_disc,count_upper_disc
+
+  allocate(bdry_matr(0:npol,nel_bdry,2))   
+  allocate(bdry_matr_fluid(0:npol,nel_bdry,2))    
+  allocate(bdry_matr_solid(0:npol,nel_bdry,2))   
+  allocate(solflubdry_radius(nel_bdry))
 
   bdry_sum = zero
 
