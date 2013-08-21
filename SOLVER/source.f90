@@ -962,7 +962,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
                     case ('mtr','mpr')
                        if (ipol==0 .and. jpol==0 .and. lpr)  &
-                            write(6,*) '  computing source + and z-components for Mxz'
+                            write(6,*) '  computing source + and z-components for Mtr'
                        source_term(ipol, jpol, liel_src, 1) =  &
                             dzwz(lipol_src, ljpol_src, liel_src)
                        source_term(ipol, jpol, liel_src, 3) =  &
@@ -981,7 +981,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
                     case ('mtp','mtt_m_mpp') 
                        if (ipol==0 .and. jpol==0 .and. lpr)  &
-                            write(6,*) '  computing source s- and phi-components for Mxy'
+                            write(6,*) '  computing source s- and phi-components for Mtp'
                        source_term(ipol,jpol,liel_src,1) = &
                             dsws(lipol_src,ljpol_src,liel_src) 
                        source_term(ipol,jpol,liel_src,2) = &
