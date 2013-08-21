@@ -72,6 +72,8 @@ subroutine bkgrdmodel_testing
   hmin(:) = 0.d0
   hmax(:) = 0.d0
   
+  allocate(h_real(neltot))
+
   ntoobig = 0
   ntoosmall = 0
   j = 0
@@ -79,7 +81,7 @@ subroutine bkgrdmodel_testing
   ! vtk preparations
   if (dump_mesh_vtk) then
       npts_vtk = neltot * 4
-      allocate(mesh2(neltot,2), h_real(neltot))
+      allocate(mesh2(neltot,2))
       allocate(vp1(npts_vtk), vs1(npts_vtk), rho1(npts_vtk))
       allocate(x(npts_vtk), y(npts_vtk), z(npts_vtk))
       
