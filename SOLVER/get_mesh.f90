@@ -63,6 +63,7 @@ subroutine read_db
   integer             :: iptp, ipsrc, ipdes, imsg, inode, iptcp, iel, idom, i, ioerr
   character(len=120)  :: dbname
   integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
+  integer             :: ijunk
 
 
 
@@ -70,8 +71,8 @@ subroutine read_db
   dbname = 'Mesh/meshdb.dat'//appmynum
 
   call barrier
-!  do i=0, nproc-1
-     !if (mynum==i) then
+  do i=0, nproc-1
+     if (mynum==i) then
         if (verbose > 1) write(6,*)'  ', procstrg, 'opening database ', trim(dbname)
         open(1000+mynum, file=trim(dbname), FORM="UNFORMATTED", &
                              STATUS="OLD", POSITION="REWIND", IOSTAT=ioerr)
@@ -79,10 +80,10 @@ subroutine read_db
            write(6,*) 'Could not open mesh file ', trim(dbname)
            stop
         end if
-     !endif
-     !call flush(6)
-     !call barrier
-  !enddo
+     endif
+     call flush(6)
+     call barrier
+  enddo
   
   if (lpr .and. verbose > 1) write(6,*) &
         '  Reading databases: see processor output for details.'
@@ -90,6 +91,7 @@ subroutine read_db
   ! Read all the parameters formerly in mesh_params.h   
   !call read_mesh_basics(1000+mynum)
 
+     read(1000+mynum) nproc_mesh
      read(1000+mynum) npol
      read(1000+mynum) nelem
      read(1000+mynum) npoint
@@ -101,7 +103,6 @@ subroutine read_db
      read(1000+mynum) nglob_fluid
      read(1000+mynum) nel_bdry
      read(1000+mynum) ndisc
-     read(1000+mynum) nproc_mesh
      read(1000+mynum) lfbkgrdmodel
 
   ! Allocate arrays from data_mesh_preloop (only needed before the time loop),

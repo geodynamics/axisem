@@ -566,8 +566,22 @@ end subroutine assembmass_sum_fluid
 subroutine pinit
 
   !include 'mesh_params.h'
-  use data_mesh, only: nproc_mesh
-  
+  integer ioerr, nproc_mesh
+  character(len=20) dbname
+ 
+  ! Get mesh number of processors
+
+  dbname = 'Mesh/meshdb.dat0000'
+
+  open(1000, file=trim(dbname), FORM="UNFORMATTED", &
+             STATUS="OLD", POSITION="REWIND", IOSTAT=ioerr)
+  if (ioerr.ne.0) then
+     write(6,*) 'Could not open mesh file ', trim(dbname)
+     stop
+  end if
+  read(1000) nproc_mesh
+  close(1000)
+
 #ifndef serial
   ! Start message passing interface if parallel simulation
   if (nproc_mesh > 1) then 

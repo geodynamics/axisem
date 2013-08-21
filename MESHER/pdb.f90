@@ -2317,18 +2317,18 @@ subroutine write_db
   
      !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      ! Write basic mesh parameters. What was once in mesh_params.h
-     write(10) npol ! npol in SOLVER
-     write(10) nel(iproc) ! nelem in SOLVER
-     write(10) nel(iproc)*(npol+1)**2 ! npoint in SOLVER
-     write(10) nel_solid(iproc)       ! nel_solid
-     write(10) nel_fluid(iproc)       ! nel_fluid
+     write(10) nproc                        ! nproc_mesh
+     write(10) npol                         ! npol in SOLVER
+     write(10) nel(iproc)                   ! nelem in SOLVER
+     write(10) nel(iproc)*(npol+1)**2       ! npoint in SOLVER
+     write(10) nel_solid(iproc)             ! nel_solid
+     write(10) nel_fluid(iproc)             ! nel_fluid
      write(10) nel_solid(iproc)*(npol+1)**2 ! npoint_solid
      write(10) nel_fluid(iproc)*(npol+1)**2 ! npoint_fluid
-     write(10) nglobp_solid(iproc)           ! nglob_solid
-     write(10) nglobp_fluid(iproc)           ! nglob_fluid
+     write(10) nglobp_solid(iproc)          ! nglob_solid
+     write(10) nglobp_fluid(iproc)          ! nglob_fluid
      write(10) nbdry_el(iproc)              ! nel_bdry
      write(10) ndisc                        ! ndisc
-     write(10) nproc                        ! nproc_mesh
      write(10) lfbkgrdmodel                 ! lfbkgrdmodel
      
      
