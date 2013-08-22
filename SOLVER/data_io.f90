@@ -38,6 +38,7 @@ module data_io
   !> N.B. This is not wavefield snapshots, but kernel wavefields. Belongs to nstrain and
   !! istrain
   logical           :: dump_wavefields 
+  logical           :: checkpointing
   logical           :: diagfiles !< Write diagnostic files (seismograms at antipodes, 
                                  !! list of surface elements, blabla), default: false
 

@@ -116,7 +116,7 @@ module nc_routines
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
     public              :: nc_write_el_domains
     public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
-    public              :: nc_make_snapfile, nc_dump_stf
+    public              :: nc_make_snapfile, nc_dump_stf, nc_rec_checkpoint
 contains
 
 
@@ -456,6 +456,21 @@ end subroutine nc_dump_rec_to_disk
 !----------------------------------------------------------------------------------------
 
 
+!-----------------------------------------------------------------------------------------
+subroutine nc_rec_checkpoint
+#ifdef unc
+    integer         :: iproc
+    do iproc=0, nproc-1
+        call barrier
+        if (iproc == mynum) then
+            if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
+            call nc_dump_rec_to_disk()
+        end if
+        
+    end do
+#endif
+end subroutine
+
 !----------------------------------------------------------------------------------------
 !> Dump stuff along surface
 subroutine nc_dump_surface(surffield, disporvelo)!, nrec, dim2)
@@ -485,7 +500,8 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
-    use data_io, ONLY : ndumppts_el
+    use data_io,   ONLY : ndumppts_el
+    use data_mesh, ONLY : nelem 
     real(sp), intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
 #ifdef unc
 
@@ -563,7 +579,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     use data_io,     ONLY: nseismo, nstrain, nseismo, ibeg, iend, dump_wavefields
     use data_io,     ONLY: datapath, lfdata, strain_samp
-    use data_mesh,   ONLY: maxind, num_rec, discont
+    use data_mesh,   ONLY: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
+                           ndisc
     use data_source, ONLY: src_type, t_0
     use data_time,   ONLY: deltat, niter
 
@@ -710,8 +727,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_def_var(ncid=ncid_recout, name="displacement", xtype=NF90_FLOAT,&
                                  dimids=(/nc_times_dimid, nc_comp_dimid, nc_rec_dimid/), &
                                  !storage = NF90_CHUNKED, chunksizes=(/nseismo,3,1/), &
-                                 !contiguous = .false., chunksizes=(/nseismo,3,1/), &
-                                 deflate_level = deflate_level, &
+                                 contiguous = .false., chunksizes=(/nseismo,3,1/), &
+                                 !deflate_level = deflate_level, &
                                  varid=nc_disp_varid) )
 
         call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )

@@ -336,7 +336,7 @@ subroutine sf_time_loop_newmark
   !real(kind=realkind), allocatable, dimension(:,:,:)   :: chi, dchi
   !real(kind=realkind), allocatable, dimension(:,:,:)   :: ddchi0, ddchi1
 
-  integer :: iter
+  integer :: iter, ielem
 
   if (lpr) then
      write(6,*)
@@ -537,6 +537,7 @@ subroutine sf_time_loop_newmark
      ! TESTING plane wave
      if (have_src) call add_source(acc1, stf(iter))
 
+     !call update_solid_fields(velo, acc0, acc1, dchi, ddchi0, ddchi1, inv_mass_rho)
      ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
      acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
 
@@ -591,6 +592,36 @@ subroutine sf_time_loop_newmark
 end subroutine sf_time_loop_newmark
 !=============================================================================
 
+!subroutine update_solid_fields(velo, acc0, acc1, dchi, ddchi0, ddchi1, inv_mass_rho)
+!     real(kind=realkind), intent(inout), dimension(0:npol, 0:npol, nel_solid, 3) :: velo, acc0, acc1
+!     real(kind=realkind), intent(inout), dimension(0:npol, 0:npol, nel_fluid, 3) :: dchi, ddchi0
+!     real(kind=realkind), intent(in),    dimension(0:npol, 0:npol, nel_fluid, 3) :: ddchi1
+!     real(kind=realkind), intent(in),    dimension(0:npol, 0:npol, nel_solid)    :: inv_mass_rho 
+!    
+!     ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
+!     acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
+!
+!     if (src_type(1)/='monopole') &
+!          acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
+!
+!     if (src_type(1)=='dipole') then
+!        ! for the factor 2 compare eq 32 in TNM (2006)
+!        acc1(:,:,:,3) = - two * inv_mass_rho * acc1(:,:,:,3)
+!     else
+!        acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
+!     endif
+!
+!     ! FLUID: new 1st derivative of potential
+!     dchi = dchi + half_dt * (ddchi0 + ddchi1)
+!
+!     ! SOLID: new velocity
+!     velo = velo + half_dt * (acc0 + acc1)
+!
+!     ! update acceleration & 2nd deriv. of potential
+!     ddchi0 = ddchi1
+!     acc0 = acc1
+!
+! end subroutine
 !!-----------------------------------------------------------------------------
 !subroutine sf_time_loop_newmark_omp
 !  
@@ -1264,6 +1295,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   use data_mesh
   use wavefields_io
   use attenuation,          only: n_sls_attenuation, dump_memory_vars
+  use nc_routines,          only: nc_rec_checkpoint
   
   integer, intent(in)            :: iter
   real(kind=realkind),intent(in) :: disp(0:, 0:, :, :)
@@ -1290,9 +1322,6 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
      endif
   
      time = real(iter)*deltat
-     !call compute_recfile_seis_binary(time,disp,velo)
-     !!andrea
-     !if (dump_wavefields) call compute_surfelem_strain(disp)
      
      ! cmbrec locations read in from file (only velocity & tr(E))
      !    call dump_velo_straintrace_cmb(disp,velo)
@@ -1302,6 +1331,12 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
      if (diagfiles) call compute_hyp_epi_equ_anti(t,disp)
 
   endif
+
+  if (mod(iter, check_it)==0) then
+     if (checkpointing.and.use_netcdf) then
+        call nc_rec_checkpoint()
+     end if
+  end if
 
   ! Compute kinetic and potential energy globally
   if (dump_energy) call energy(disp, velo, dchi, ddchi)

@@ -46,6 +46,12 @@ INFO_DIR        "./Info"
 # read and process this file.
 USE_NETCDF          false
 
+# Do Checkpointing for the NetCDF seismogram output. Will save the seismograms 
+# every 5% of the total runtime to have at least something, should the solver
+# run crash. However, this affects performance slightly, so you might want to
+# turn it of for runs on safe systems.
+CHECKPOINTING       true
+
 # Level of compression of wavefield data (0: off, 9:highest, default: 5)
 DEFLATE_LEVEL       5
 

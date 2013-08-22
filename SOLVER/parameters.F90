@@ -475,6 +475,9 @@ subroutine read_inparam_advanced
          case('USE_NETCDF')
              read(keyvalue, *) use_netcdf
 
+         case('CHECKPOINTING')
+             read(keyvalue, *) checkpointing
+
          case('DEFLATE_LEVEL')
              read(keyvalue,*) deflate_level
 
@@ -828,6 +831,9 @@ subroutine compute_numerical_parameters
   deltat_coarse=seis_dt
 
   nseismo = floor(real(niter)/real(seis_it))
+
+  ! Frequency of checkpointing. Hardcoded to every 5% of runtime
+  check_it = niter/20
 
   if (lpr) then
      write(6,22)'    offered seismogram sampling:',deltat*seis_it,' seconds'
