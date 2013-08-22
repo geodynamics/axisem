@@ -220,13 +220,18 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
      call mxm_4(uz, G2, X4)
 
      ! lower order terms in s
-     loc_stiffness_s = m_4(0:npol,0:npol,ielem) * X4 + m_2(0:npol,0:npol,ielem) * X3 + m_1(0:npol,0:npol,ielem) * X1 + m_3(0:npol,0:npol,ielem) * X2 + us * m_w1(0:npol,0:npol,ielem)
+     loc_stiffness_s = m_4(0:npol,0:npol,ielem) * X4 + m_2(0:npol,0:npol,ielem) * X3 &
+                     + m_1(0:npol,0:npol,ielem) * X1 + m_3(0:npol,0:npol,ielem) * X2 + us * m_w1(0:npol,0:npol,ielem)
 
      ! higher order terms + lower order terms with D_xi mxm ()
-     S1s = m11s(0:npol,0:npol,ielem) * X3 + m21s(0:npol,0:npol,ielem) * X1 + m12s(0:npol,0:npol,ielem) * X4 + m22s(0:npol,0:npol,ielem) * X2 + m_1(0:npol,0:npol,ielem) * us
-     S2s = m11s(0:npol,0:npol,ielem) * X1 + m41s(0:npol,0:npol,ielem) * X3 + m32s(0:npol,0:npol,ielem) * X2 + m42s(0:npol,0:npol,ielem) * X4 + m_2(0:npol,0:npol,ielem) * us
-     S1z = m11z(0:npol,0:npol,ielem) * X4 + m21z(0:npol,0:npol,ielem) * X2 + m32s(0:npol,0:npol,ielem) * X3 + m22s(0:npol,0:npol,ielem) * X1 + m_3(0:npol,0:npol,ielem) * us
-     S2z = m11z(0:npol,0:npol,ielem) * X2 + m41z(0:npol,0:npol,ielem) * X4 + m12s(0:npol,0:npol,ielem) * X1 + m42s(0:npol,0:npol,ielem) * X3 + m_4(0:npol,0:npol,ielem) * us
+     S1s = m11s(0:npol,0:npol,ielem) * X3 + m21s(0:npol,0:npol,ielem) * X1 + m12s(0:npol,0:npol,ielem) * X4 &
+         + m22s(0:npol,0:npol,ielem) * X2 + m_1(0:npol,0:npol,ielem) * us
+     S2s = m11s(0:npol,0:npol,ielem) * X1 + m41s(0:npol,0:npol,ielem) * X3 + m32s(0:npol,0:npol,ielem) * X2 &
+         + m42s(0:npol,0:npol,ielem) * X4 + m_2(0:npol,0:npol,ielem) * us
+     S1z = m11z(0:npol,0:npol,ielem) * X4 + m21z(0:npol,0:npol,ielem) * X2 + m32s(0:npol,0:npol,ielem) * X3 &
+         + m22s(0:npol,0:npol,ielem) * X1 + m_3(0:npol,0:npol,ielem) * us
+     S2z = m11z(0:npol,0:npol,ielem) * X2 + m41z(0:npol,0:npol,ielem) * X4 + m12s(0:npol,0:npol,ielem) * X1 &
+         + m42s(0:npol,0:npol,ielem) * X3 + m_4(0:npol,0:npol,ielem) * us
      
      call mxm_4(S2s, G2T, X2)
      call mxm_4(S2z, G2T, X4)
