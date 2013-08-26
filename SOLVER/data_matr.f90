@@ -28,15 +28,15 @@ module data_matr
   ! temporal ODE. 
   
   use global_parameters
-  
+
   implicit none
   public 
 
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   !	Mass matrix arrays
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
-  real(kind=realkind), dimension(:,:,:), allocatable :: inv_mass_rho
-  real(kind=realkind), dimension(:,:,:), allocatable :: inv_mass_fluid
+  real(kind=realkind), protected, dimension(:,:,:), allocatable :: inv_mass_rho
+  real(kind=realkind), protected, dimension(:,:,:), allocatable :: inv_mass_fluid
   real(kind=realkind), dimension(:,:,:), allocatable :: unassem_mass_rho_solid
   real(kind=realkind), dimension(:,:,:), allocatable :: unassem_mass_lam_fluid 
 
@@ -114,6 +114,22 @@ module data_matr
 
   real(kind=realkind), allocatable :: V0_s_eta(:,:), V0_s_xi(:,:)
   real(kind=realkind), allocatable :: V0_z_eta(:,:), V0_z_xi(:,:)
+
+contains
+
+subroutine set_mass_matrices(npol, nel_solid, nel_fluid, inv_mass_rho_loc, inv_mass_fluid_loc)
+
+  integer, intent(in)        :: npol, nel_solid, nel_fluid
+  real(kind=realkind), intent(in)  :: inv_mass_rho_loc(:,:,:), inv_mass_fluid_loc(:,:,:)
+
+  allocate(inv_mass_rho(0:npol,0:npol,1:nel_solid))
+  allocate(inv_mass_fluid(0:npol,0:npol,1:nel_fluid))
+
+  inv_mass_rho   = inv_mass_rho_loc
+  inv_mass_fluid = inv_mass_fluid_loc
+  
+end subroutine set_mass_matrices
+
 
 !=====================
 end module data_matr
