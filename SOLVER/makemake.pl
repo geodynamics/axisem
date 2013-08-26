@@ -64,8 +64,13 @@ print MAKEFILE "   INCLUDE = -I \$(strip \$(NETCDF_PATH))/include\n";
 print MAKEFILE "else\n";
 print MAKEFILE "   LIBS = \n";
 print MAKEFILE "   INCLUDE =\n";
-print MAKEFILE "endif\n";
+print MAKEFILE "endif\n\n";
 
+
+print MAKEFILE "ifeq (\$(strip \$(SERIAL)),true)\n";
+print MAKEFILE "    FFLAGS += -Dserial\n";
+print MAKEFILE "    LDFLAGS += -pthread\n";
+print MAKEFILE "endif\n";
 
 print MAKEFILE "\n\n";
 print MAKEFILE "# cancel m2c implicit rule \n";
