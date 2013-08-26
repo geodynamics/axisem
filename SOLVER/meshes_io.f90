@@ -441,6 +441,8 @@ subroutine finish_xdmf_xml()
   close(13100)
   if (.not. src_type(1)=='monopole') close(13101)
   close(13102)
+  close(13103)
+  close(13104)
 
 end subroutine finish_xdmf_xml
 !=============================================================================

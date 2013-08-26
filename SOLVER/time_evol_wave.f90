@@ -123,6 +123,14 @@ subroutine prepare_waves
          fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'.dat'
          open(13102, file=trim(fname), access='stream', status='unknown', &
              form='unformatted', convert='little_endian', position='append')
+         
+         fname = datapath(1:lfdata)//'/xdmf_snap_trace_' //appmynum//'.dat'
+         open(13103, file=trim(fname), access='stream', status='unknown', &
+             form='unformatted', convert='little_endian', position='append')
+         
+         fname = datapath(1:lfdata)//'/xdmf_snap_curlip_' //appmynum//'.dat'
+         open(13104, file=trim(fname), access='stream', status='unknown', &
+             form='unformatted', convert='little_endian', position='append')
      end if
      call dump_xdmf_grid()
   endif

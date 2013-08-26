@@ -202,12 +202,12 @@ end subroutine glob_snapshot_midpoint
 !> Dumps the global displacement snapshots in binary plus XDMF descriptor
 subroutine glob_snapshot_xdmf(f_sol, chi)
 
-    use data_source, only : src_type
-    use data_pointwise, only : inv_rho_fluid, prefac_inv_s_rho_fluid
-    use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
-    use data_time, only : t
-    use nc_routines, only: nc_dump_snapshot
-    use data_mesh, only: npol, nel_solid, nel_fluid
+    use data_source,            only: src_type
+    use data_pointwise,         only: inv_rho_fluid, prefac_inv_s_rho_fluid
+    use pointwise_derivatives,  only: axisym_gradient_fluid, dsdf_fluid_axis
+    use data_time,              only: t
+    use nc_routines,            only: nc_dump_snapshot
+    use data_mesh,              only: npol, nel_solid, nel_fluid
     !include 'mesh_params.h'
     
     real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
@@ -324,6 +324,8 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
         write(13100) u(1,:)
         if (src_type(1) /= 'monopole') write(13101) u(2,:)
         write(13102) u(3,:)
+        write(13103) straintrace_mask
+        write(13104) curlinplane_mask
     end if
 
     deallocate(u)
@@ -377,7 +379,11 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
                         'xdmf_snap_s_'//appmynum//'.dat', &
                         npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
                         'xdmf_snap_z_'//appmynum//'.dat', &
-                        npoint_plot, appisnap, appisnap
+                        npoint_plot, appisnap, appisnap, &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_trace_'//appmynum//'.dat', &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_curlip_'//appmynum//'.dat'
         else
             write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
                         npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
@@ -386,7 +392,11 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
                         'xdmf_snap_p_'//appmynum//'.dat', &
                         npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
                         'xdmf_snap_z_'//appmynum//'.dat', &
-                        npoint_plot, appisnap, appisnap, appisnap
+                        npoint_plot, appisnap, appisnap, appisnap, &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_trace_'//appmynum//'.dat', &
+                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                        'xdmf_snap_curlip_'//appmynum//'.dat'
         endif !monopole
     end if !use_netcdf
 
@@ -430,6 +440,30 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                </DataItem>',/&
     '                <DataItem Reference="XML">',/&
     '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_z"]/DataItem[1]',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="straintrace" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="curlinplane" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
     '        </Attribute>',/&
@@ -490,6 +524,30 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                </DataItem>',/&
     '                <DataItem Reference="XML">',/&
     '                    /Xdmf/Domain/Grid[@Name="CellsTime"]/Grid[@Name="', A,'"]/Attribute[@Name="u_z"]/DataItem[1]',/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="straintrace" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
+    '                </DataItem>',/&
+    '            </DataItem>',/&
+    '        </Attribute>',/&
+    '        <Attribute Name="curlinplane" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
     '        </Attribute>',/&
