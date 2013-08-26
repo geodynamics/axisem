@@ -1295,7 +1295,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   use data_mesh
   use wavefields_io
   use attenuation,          only: n_sls_attenuation, dump_memory_vars
-  use nc_routines,          only: nc_rec_checkpoint
+  use nc_routines,          only: nc_rec_checkpoint, nc_dump_strain
   
   integer, intent(in)            :: iter
   real(kind=realkind),intent(in) :: disp(0:, 0:, :, :)
@@ -1374,18 +1374,18 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
     endif
   endif
 
-  if (dump_snaps_solflu) then
-    if (mod(iter,snap_it)==0) then
-        isnap=isnap+1
-        if (lpr) then
-           write(6,*)
-           write(6,*)'Writing solid/fluid snap to file:',isnap
-           write(6,*)
-        endif
-       if (have_fluid) call fluid_snapshot(chi, ibeg, iend, ibeg, iend)
-       call solid_snapshot(disp, ibeg, iend, ibeg, iend)
-     endif
-  endif
+  !if (dump_snaps_solflu) then
+  !  if (mod(iter,snap_it)==0) then
+  !      isnap=isnap+1
+  !      if (lpr) then
+  !         write(6,*)
+  !         write(6,*)'Writing solid/fluid snap to file:',isnap
+  !         write(6,*)
+  !      endif
+  !     if (have_fluid) call fluid_snapshot(chi, ibeg, iend, ibeg, iend)
+  !     call solid_snapshot(disp, ibeg, iend, ibeg, iend)
+  !   endif
+  !endif
 
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   ! Velocity field and strain tensor wavefields for 3-D kernels^-^-^-^-^
@@ -1546,13 +1546,13 @@ subroutine compute_strain(u, chi)
      call axisym_gradient_solid(u(:,:,:,1), grad_sol) ! 1: dsus, 2: dzus
   endif
  
-  call dump_field_1d(grad_sol(:,:,:,1), '/strain_dsus_sol', appisnap, nel_solid) 
+  call dump_field_1d(grad_sol(:,:,:,1), '/strain_dsus_sol', appisnap, nel_solid) !E33
  
   call axisym_gradient_solid_add(u(:,:,:,3), grad_sol) ! 1:dsuz+dzus,2:dzuz+dsus
  
   ! calculate entire E31 term: (dsuz+dzus)/2
   grad_sol(:,:,:,1) = grad_sol(:,:,:,1) / two_rk
-  call dump_field_1d(grad_sol(:,:,:,1), '/strain_dsuz_sol', appisnap, nel_solid)
+  call dump_field_1d(grad_sol(:,:,:,1), '/strain_dsuz_sol', appisnap, nel_solid) !E31
  
   ! Components involving phi....................................................
   if (src_type(1) == 'monopole') then

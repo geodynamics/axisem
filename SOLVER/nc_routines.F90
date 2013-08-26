@@ -97,6 +97,7 @@ module nc_routines
     !! Variables for dumping of wavefields for plotting purposes
     integer             :: nc_snap_disp_varid, nc_coord_dimid
     integer             :: nc_snap_point_varid, nc_snap_grid_varid
+    integer             :: nc_snap_pwave_varid, nc_snap_swave_varid
     integer             :: ncid_out_snap
     integer             :: ndim_disp !< 2 for monopole, 3 for rest
 
@@ -1172,6 +1173,22 @@ subroutine nc_make_snapfile
                             varid  = nc_snap_disp_varid) )
 
     call check(nf90_def_var(ncid   = ncid_out_snap, & 
+                            name   = 'straintrace',  &
+                            xtype  = NF90_FLOAT,     &
+                            dimids = [nc_snappoint_dimid, nc_snaptime_dimid], & 
+                            chunksizes = [npoint_plot, 1], &
+                            deflate_level = deflate_level, &
+                            varid  = nc_snap_pwave_varid) )
+
+    call check(nf90_def_var(ncid   = ncid_out_snap, & 
+                            name   = 'curlinplane',  &
+                            xtype  = NF90_FLOAT,     &
+                            dimids = [nc_snappoint_dimid, nc_snaptime_dimid], & 
+                            chunksizes = [npoint_plot, 1], &
+                            deflate_level = deflate_level, &
+                            varid  = nc_snap_swave_varid) )
+
+    call check(nf90_def_var(ncid   = ncid_out_snap, & 
                             name   = 'points',  &
                             xtype  = NF90_FLOAT,     &
                             dimids = [nc_coord_dimid, nc_snappoint_dimid], & 
@@ -1193,13 +1210,15 @@ end subroutine nc_make_snapfile
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine nc_dump_snapshot(u)
+subroutine nc_dump_snapshot(u, straintrace, curlinplane)
 
     use data_mesh,      only: npoint_plot
     use data_io,        only: isnap, nsnap
     use data_source,    only: src_type
 
-    real(kind=realkind), dimension(3,npoint_plot), intent(in)       :: u
+    real(kind=realkind), dimension(3,npoint_plot), intent(in)  :: u
+    real(kind=realkind), dimension(1,npoint_plot), intent(in)  :: straintrace
+    real(kind=realkind), dimension(1,npoint_plot), intent(in)  :: curlinplane
 
 #ifdef unc
     if (src_type(1) == 'monopole') then
@@ -1234,6 +1253,17 @@ subroutine nc_dump_snapshot(u)
                                values = u(3,:)) )
     end if
 
+    call check(nf90_put_var(ncid   = ncid_out_snap, &
+                            varid  = nc_snap_pwave_varid, &
+                            start  = [1, isnap], &
+                            count  = [npoint_plot, 1], &
+                            values = straintrace) )
+
+    call check(nf90_put_var(ncid   = ncid_out_snap, &
+                            varid  = nc_snap_swave_varid, &
+                            start  = [1, isnap], &
+                            count  = [npoint_plot, 1], &
+                            values = curlinplane) )
 #endif
 
 end subroutine nc_dump_snapshot
