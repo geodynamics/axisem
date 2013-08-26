@@ -30,7 +30,7 @@ module def_precomp_terms
   use global_parameters
   use data_mesh
   use data_spec
-  use data_matr
+  !use data_matr
   use data_source, only : src_type
   use data_io,     only : verbose
   use data_proc
@@ -55,6 +55,7 @@ subroutine read_model_compute_terms
   use get_model
   use attenuation,  only: prepare_attenuation
   use commun,       only: barrier
+  use data_matr,    only: Q_mu, Q_kappa, M_w_fl, M0_w_fl, M1chi_fl, M2chi_fl, M4chi_fl, bdry_matr
   
  ! include 'mesh_params.h'
   
@@ -727,16 +728,17 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   use data_io,          only : need_fluid_displ, dump_energy
   use commun,           only : comm2d
   use data_pointwise,   only : inv_rho_fluid
-  use data_matr,        only : inv_mass_rho, inv_mass_fluid
-  
+  use data_matr,        only : set_mass_matrices, unassem_mass_rho_solid, unassem_mass_lam_fluid
+
   !include "mesh_params.h"
   use data_mesh,        only : npol, nelem, nel_solid, nel_fluid
   
   real(kind=dp), dimension(0:,0:,:),intent(in)  :: rho, lambda, mu
   real(kind=dp), dimension(0:npol,0:npol,nelem),intent(out) :: massmat_kwts2
   
-  real(kind=dp), allocatable    :: massmat_k(:,:,:)   !< Mass matrix
-  real(kind=dp), allocatable    :: jacob (:,:,:)      !< jacobian array
+  real(kind=realkind), allocatable :: inv_mass_rho(:,:,:), inv_mass_fluid(:,:,:)
+  real(kind=dp), allocatable       :: massmat_k(:,:,:)   !< Mass matrix
+  real(kind=dp), allocatable       :: jacob (:,:,:)      !< jacobian array
   real(kind=realkind), allocatable :: drdxi(:,:,:,:)     !< min/max derivs
   
   real(kind=dp)     :: local_crd_nodes(8,2),s,z,r,theta
@@ -948,7 +950,9 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
      end do
   enddo
 
-
+  
+  ! Call routine in data_matr to actually set the values
+  call set_mass_matrices(npol, nel_solid, nel_fluid, inv_mass_rho, inv_mass_fluid)
 
   ! In the remainder: document min/max values and locations for velocities, 
   !    density, Jacobian, mass terms, GLL points. Lagrange derivatives etc.
@@ -1286,7 +1290,15 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
 
   use attenuation, only: att_coarse_grained
   use data_mesh, only: npol, nel_solid, nelem
-  !include "mesh_params.h"
+  use data_matr, only: M11s, M21s, M41s, M12s, M22s, M42s, M11z, M21z, M41z, M32s, &
+                       M13s, M33s, M43s, &
+                       M_1, M_2, M_3, M_4, M_5, M_6, M_7, M_8, &
+                       M_w1, M_w2, M_w3, M_w4, M_w5, &
+                       M0_w1, M0_w2, M0_w3, M0_w4, M0_w5, M0_w6, M0_w7, M0_w8, M0_w9, M0_w10, &
+                       M1phi, M2phi, M4phi, &
+                       Y_cg4,  V_s_eta_cg4, V_s_xi_cg4, V_z_eta_cg4, V_z_xi_cg4, &
+                       Y,  V_s_eta, V_s_xi, V_z_eta, V_z_xi, &
+                       Y0, V0_s_eta, V0_s_xi, V0_z_eta, V0_z_xi
   
   real(kind=dp), dimension(0:,0:,:), intent(in) :: lambda,mu
   real(kind=dp), dimension(0:,0:,:), intent(in) :: massmat_kwts2
@@ -1745,6 +1757,9 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                        Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
   use data_mesh, only: npol, nelem, nel_solid, nel_fluid
+  use data_matr, only: M0_w1, M0_w2, M0_w3, &
+                       M11s, M21s, M41s, M12s, M22s, M32s, M42s, M11z, M21z, M41z, &
+                       M_1, M_2, M_3, M_4, M_w1, M0_w1
   !include "mesh_params.h"
   
   integer, intent(in) :: ielem, jpol
@@ -1927,6 +1942,7 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
   !include "mesh_params.h"
+  use data_matr
   
   integer, intent(in) :: ielem,jpol
   
@@ -2182,6 +2198,7 @@ subroutine compute_quadrupole_stiff_terms(ielem,jpol, &
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
   !include "mesh_params.h"
+  use data_matr
   
   integer, intent(in)          :: ielem, jpol
   
@@ -2446,7 +2463,8 @@ subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
 !< Fluid precomputed matrices definitions for all sources.
 !! Note that in this routine terms alpha etc. are scalars 
 !! (as opposed to the solid case of being elemental arrays).
-    
+  
+  use data_matr
   !include "mesh_params.h"
   real(kind=dp)   , intent(in)  :: rho(0:npol,0:npol,nelem)
   real(kind=dp)   , intent(in)  :: massmat_kwts2(0:npol,0:npol,nelem)
@@ -2589,6 +2607,7 @@ subroutine def_solid_fluid_boundary_terms
   use commun, only : psum
   use data_io
   use data_mesh, only: npol, nel_bdry
+  use data_matr
   !include 'mesh_params.h'
   
   real(kind=dp)                :: local_crd_nodes(8,2)
