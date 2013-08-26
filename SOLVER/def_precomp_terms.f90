@@ -1638,7 +1638,6 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
                     V0_s_xi(jpol,ielem)  = wt_axial_k(ipol) * wt(jpol) * dsdxi * dsdxi
                     V0_z_eta(jpol,ielem) = wt_axial_k(ipol) * wt(jpol) * dsdxi * dzdeta
                     V0_z_xi(jpol,ielem)  = wt_axial_k(ipol) * wt(jpol) * dsdxi * (-dzdxi)
-                    write(123+mynum,*) dsdxi, dsdeta, dzdxi, dzdeta
                  endif
               endif
            enddo
