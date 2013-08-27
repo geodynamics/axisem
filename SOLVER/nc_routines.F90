@@ -459,16 +459,22 @@ end subroutine nc_dump_rec_to_disk
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_rec_checkpoint
+    use data_mesh, ONLY: loc2globrec, num_rec
 #ifdef unc
     integer         :: iproc
     do iproc=0, nproc-1
         call barrier
         if (iproc == mynum) then
-            if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
-            call nc_dump_rec_to_disk()
+            if (num_rec>0) then 
+                if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
+                call nc_dump_rec_to_disk()
+            else
+                if (verbose > 1) write(6,"('Proc ', I3, ' has no receivers and just waits for the others')") mynum
+            end if
         end if
         
     end do
+    call barrier
 #endif
 end subroutine
 
@@ -1109,14 +1115,19 @@ end subroutine nc_finish_prepare
 !! receiver seismograms.
 subroutine nc_end_output
 #ifdef unc
-    use data_io, only: dump_xdmf
-    integer         :: iproc
+    use data_mesh, only: num_rec
+    use data_io,   only: dump_xdmf
+    integer           :: iproc
 
     call barrier
     do iproc=0, nproc-1
         if (iproc == mynum) then
-            if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
-            call nc_dump_rec_to_disk()
+            if (num_rec>0) then 
+                if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
+                call nc_dump_rec_to_disk()
+            else
+                if (verbose > 1) write(6,"('Proc ', I3, ' has no receivers and just waits for the others')") mynum
+            end if
             if (dump_xdmf) then
                 call check(nf90_close(ncid_out_snap))
             end if

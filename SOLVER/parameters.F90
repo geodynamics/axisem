@@ -382,6 +382,7 @@ subroutine read_inparam_advanced
   dump_vtk = .false.
   dump_xdmf = dump_snaps_glob
   use_netcdf = .false.
+  checkpointing = .false.
 
   ! xdmf stuff
   i_n_xdmf = -1
@@ -564,6 +565,7 @@ subroutine read_inparam_advanced
   call broadcast_log(dump_xdmf, 0) 
   call broadcast_log(dump_vtk, 0) 
   call broadcast_log(use_netcdf, 0) 
+  call broadcast_log(checkpointing, 0) 
   
   call broadcast_dble(xdmf_rmin, 0) 
   call broadcast_dble(xdmf_rmax, 0) 
