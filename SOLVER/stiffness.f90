@@ -37,6 +37,7 @@ module stiffness
   public :: glob_stiffness_mono_4, glob_stiffness_di_4, glob_stiffness_quad_4
   public :: elemental_stiffness_mono, elemental_fluid_stiffness
   public :: glob_anel_stiffness_mono, glob_anel_stiffness_di, glob_anel_stiffness_quad
+  public :: glob_anel_stiffness_mono_4, glob_anel_stiffness_di_4, glob_anel_stiffness_quad_4
   public :: glob_anel_stiffness_mono_cg4, glob_anel_stiffness_di_cg4, &
             glob_anel_stiffness_quad_cg4
   public :: glob_fluid_stiffness
@@ -54,103 +55,6 @@ pure function outerprod(a,b)
   outerprod = spread(a, dim=2, ncopies=size(b)) * spread(b, dim=1, ncopies=size(a))
 end function outerprod
 !-----------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------
-pure subroutine mxm_cg4_sparse_a(a,b,c)
-   ! mxm for sparse a as found for coarse grained memory variables cg4
-
-   real(kind=realkind), intent(in)  :: a(1:4), b(0:4,0:4)
-   real(kind=realkind), intent(out) :: c(0:4,0:4)
-   integer                          :: j
-
-   ! c ist sparse, so initialization does matter
-   c = 0
-
-   do j = 0, 4
-     c(1,j) = & 
-        + a(1) * b(1,j) &
-        + a(2) * b(3,j) 
-
-     c(3,j) = & 
-        + a(3) * b(1,j) &
-        + a(4) * b(3,j) 
-   end do
-
-end subroutine mxm_cg4_sparse_a
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-pure subroutine mxm_cg4_sparse_b(a,b,c)
-   ! mxm for sparse b as found for coarse grained memory variables cg4
-
-   real(kind=realkind), intent(in)  :: a(0:4,0:4), b(1:4)
-   real(kind=realkind), intent(out) :: c(0:4,0:4)
-   integer i
-
-   ! c ist sparse, so initialization does matter
-   c = 0
-
-   do i = 0, 4
-     c(i,1) = & 
-        + a(i,1) * b(1) &
-        + a(i,3) * b(3) 
-
-     c(i,3) = & 
-        + a(i,1) * b(2) &
-        + a(i,3) * b(4) 
-   end do
-
-end subroutine mxm_cg4_sparse_b
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!> Multiplies matrizes a and b to have c.
-!! Size is fixed to 4x4
-pure subroutine mxm_4(a,b,c)
-
-  use global_parameters, only: realkind
- 
-  real(kind=realkind), intent(in)  :: a(0:4,0:4),b(0:4,0:4) !< Input matrices
-  real(kind=realkind), intent(out) :: c(0:4,0:4)                    !< Result
-  integer                          :: i, j
-
-  do i = 0, 4
-     c(i,0) = sum(a(i,:) * b(:,0))
-  end do
-  do i = 0, 4
-     c(i,1) = sum(a(i,:) * b(:,1))
-  end do
-  do i = 0, 4
-     c(i,2) = sum(a(i,:) * b(:,2))
-  end do
-  do i = 0, 4 
-     c(i,3) = sum(a(i,:) * b(:,3))
-  end do
-  do i = 0, 4
-     c(i,4) = sum(a(i,:) * b(:,4))
-  end do
-
-end subroutine mxm_4
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!> Multiplies vector a leftwise to matrix b to have vector c.
-!! Size is fixed to npol x npol
-pure subroutine vxm_4(a,b,c)
- 
-  use global_parameters, only: realkind
-
-  real(kind=realkind), intent(in)  :: a(0:4)         !< Vector a
-  real(kind=realkind), intent(in)  :: b(0:4,0:4)     !< Matrix b
-  real(kind=realkind), intent(out) :: c(0:4)         !< Resulting vector c
-  integer                          :: j
-
-  do j = 0, 4
-     c(j) = sum(a * b(:,j))
-  end do 
-
-end subroutine vxm_4
-!=============================================================================
 
 !-----------------------------------------------------------------------------
 pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
@@ -629,6 +533,110 @@ pure subroutine glob_anel_stiffness_mono(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_mono
+!=============================================================================
+
+
+!-----------------------------------------------------------------------------
+pure subroutine glob_anel_stiffness_mono_4(glob_stiffness, R)
+
+  use attenuation, ONLY: n_sls_attenuation
+  use data_mesh, only: nel_solid
+  !include "mesh_params.h"
+  
+  ! I/O global arrays
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
+  real(kind=realkind), intent(in)    :: R(0:,0:,:,:,:)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_z
+  
+  real(kind=realkind), dimension(0:4,0:4) :: r1, r2, r3, r5
+
+  real(kind=realkind), dimension(0:4,0:4) :: yl
+  real(kind=realkind), dimension(0:4,0:4) :: v_s_etal, v_s_xil
+  real(kind=realkind), dimension(0:4,0:4) :: v_z_etal, v_z_xil
+
+  real(kind=realkind), dimension(0:4,0:4) :: S1s, S2s
+  real(kind=realkind), dimension(0:4,0:4) :: S1z, S2z
+  real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4
+  
+  real(kind=realkind), dimension(0:4) :: y0l
+  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
+  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
+  real(kind=realkind), dimension(0:4) :: V1, V2, V3, V4
+  
+  integer :: ielem, j
+
+  do ielem = 1, nel_solid
+
+     yl(:,:) = Y(:,:,ielem)
+     v_s_etal(:,:) = V_s_eta(:,:,ielem)
+     v_s_xil(:,:)  = V_s_xi(:,:,ielem)
+     v_z_etal(:,:) = V_z_eta(:,:,ielem)
+     v_z_xil(:,:)  = V_z_xi(:,:,ielem)
+
+     r1(:,:) = 0
+     r2(:,:) = 0
+     r3(:,:) = 0
+     r5(:,:) = 0
+
+     ! sum memory variables first, then compute stiffness terms of the sum
+     do j=1, n_sls_attenuation
+        r1(:,:) = r1(:,:) + R(:,:,1,j,ielem)
+        r2(:,:) = r2(:,:) + R(:,:,2,j,ielem)
+        r3(:,:) = r3(:,:) + R(:,:,3,j,ielem)
+        r5(:,:) = r5(:,:) + R(:,:,5,j,ielem)
+     enddo
+
+     S1s = v_z_etal * r1 + v_s_etal * r5
+     S2s = v_z_xil  * r1 + v_s_xil  * r5
+     
+     S1z = v_z_etal * r5 + v_s_etal * r3
+     S2z = v_z_xil  * r5 + v_s_xil  * r3
+
+     if ( .not. axis_solid(ielem) ) then
+        call mxm_4(G2, S1s, X1)
+        call mxm_4(G2, S1z, X3)
+     else
+        call mxm_4(G1, S1s, X1)
+        call mxm_4(G1, S1z, X3)
+     endif
+
+     call mxm_4(S2s, G2T, X2)
+     call mxm_4(S2z, G2T, X4)
+
+     loc_stiffness_s = X1 + X2 + yl * r2
+     loc_stiffness_z = X3 + X4
+
+     if (axis_solid(ielem)) then
+        y0l(:) = Y0(:,ielem)
+        v0_s_etal(:) = V0_s_eta(:,ielem)
+        v0_s_xil(:)  = V0_s_xi(:,ielem)
+        v0_z_etal(:) = V0_z_eta(:,ielem)
+        v0_z_xil(:)  = V0_z_xi(:,ielem)
+
+        ! s - component
+        V1 = v0_z_etal * r1(0,:) + v0_s_etal * r5(0,:) + y0l * r2(0,:)
+        loc_stiffness_s = loc_stiffness_s + outerprod(G0, V1)
+
+        ! z - component
+        V2 = v0_z_etal * r5(0,:) + v0_s_etal * r3(0,:)
+        V3 = v0_z_xil  * r5(0,:) + v0_s_xil  * r3(0,:)
+        call vxm_4(V3, G2T, V4)
+
+        loc_stiffness_z = loc_stiffness_z + outerprod(G0, V2)
+        loc_stiffness_z(0,:) = loc_stiffness_z(0,:) + V4
+     endif
+
+     ! subtracting (!) from the global stiffness
+     glob_stiffness(0:4,0:4,ielem,1) = &
+            glob_stiffness(0:4,0:4,ielem,1) - loc_stiffness_s
+     glob_stiffness(0:4,0:4,ielem,3) = &
+            glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
+  enddo
+
+end subroutine glob_anel_stiffness_mono_4
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -1241,6 +1249,130 @@ end subroutine glob_anel_stiffness_di
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+pure subroutine glob_anel_stiffness_di_4(glob_stiffness, R)
+
+  use attenuation, ONLY: n_sls_attenuation
+  use data_mesh, only: nel_solid
+  !include "mesh_params.h"
+  
+  ! I/O global arrays
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
+  real(kind=realkind), intent(in)    :: R(0:,0:,:,:,:)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_p
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_m
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_z
+  
+  real(kind=realkind), dimension(0:4,0:4) :: r1, r2, r3, r4, r5, r6
+
+  real(kind=realkind), dimension(0:4,0:4) :: yl
+  real(kind=realkind), dimension(0:4,0:4) :: v_s_etal, v_s_xil
+  real(kind=realkind), dimension(0:4,0:4) :: v_z_etal, v_z_xil
+
+  real(kind=realkind), dimension(0:4,0:4) :: S1p, S2p
+  real(kind=realkind), dimension(0:4,0:4) :: S1m, S2m
+  real(kind=realkind), dimension(0:4,0:4) :: S1z, S2z
+  real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4, X5, X6
+  
+  real(kind=realkind), dimension(0:4) :: y0l
+  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
+  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
+  real(kind=realkind), dimension(0:4) :: V1, V2, V3
+  
+  integer :: ielem, j
+
+  do ielem = 1, nel_solid
+
+     yl(:,:) = Y(:,:,ielem)
+     v_s_etal(:,:) = V_s_eta(:,:,ielem)
+     v_s_xil(:,:)  = V_s_xi(:,:,ielem)
+     v_z_etal(:,:) = V_z_eta(:,:,ielem)
+     v_z_xil(:,:)  = V_z_xi(:,:,ielem)
+
+     r1(:,:) = 0
+     r2(:,:) = 0
+     r3(:,:) = 0
+     r4(:,:) = 0
+     r5(:,:) = 0
+     r6(:,:) = 0
+
+     ! sum memory variables first, then compute stiffness terms of the sum
+     do j=1, n_sls_attenuation
+        r1(:,:) = r1(:,:) + R(:,:,1,j,ielem)
+        r2(:,:) = r2(:,:) + R(:,:,2,j,ielem)
+        r3(:,:) = r3(:,:) + R(:,:,3,j,ielem)
+        r4(:,:) = r4(:,:) + R(:,:,4,j,ielem)
+        r5(:,:) = r5(:,:) + R(:,:,5,j,ielem)
+        r6(:,:) = r6(:,:) + R(:,:,6,j,ielem)
+     enddo
+
+     S1p = v_z_etal * (r1 - r6) + v_s_etal * (r5 - r4)
+     S2p = v_z_xil  * (r1 - r6) + v_s_xil  * (r5 - r4)
+     
+     S1m = v_z_etal * (r1 + r6) + v_s_etal * (r5 + r4)
+     S2m = v_z_xil  * (r1 + r6) + v_s_xil  * (r5 + r4)
+     
+     S1z = v_z_etal * r5 + v_s_etal * r3
+     S2z = v_z_xil  * r5 + v_s_xil  * r3
+
+     if ( .not. axis_solid(ielem) ) then
+        call mxm_4(G2, S1p, X1)
+        call mxm_4(G2, S1m, X3)
+        call mxm_4(G2, S1z, X5)
+     else
+        call mxm_4(G1, S1p, X1)
+        call mxm_4(G1, S1m, X3)
+        call mxm_4(G1, S1z, X5)
+     endif
+
+     call mxm_4(S2p, G2T, X2)
+     call mxm_4(S2m, G2T, X4)
+     call mxm_4(S2z, G2T, X6)
+
+     loc_stiffness_p = X1 + X2
+     loc_stiffness_m = X3 + X4 + 2 * yl * (r2 - r6)
+     loc_stiffness_z = X5 + X6 - yl * r4
+
+     if (axis_solid(ielem)) then
+        y0l(:) = Y0(:,ielem)
+        v0_s_etal(:) = V0_s_eta(:,ielem)
+        v0_s_xil(:)  = V0_s_xi(:,ielem)
+        v0_z_etal(:) = V0_z_eta(:,ielem)
+        v0_z_xil(:)  = V0_z_xi(:,ielem)
+
+        ! p - component
+        V1 = v0_z_etal * (r1(0,:) - r6(0,:)) + v0_s_etal * (r5(0,:) - r4(0,:))
+        
+        V2 = v0_z_xil  * (r1(0,:) - r6(0,:)) + v0_s_xil  *  (r5(0,:) - r4(0,:))
+        call vxm_4(V2, G2T, V3)
+        
+        loc_stiffness_p = loc_stiffness_p + outerprod(G0, V1)
+        loc_stiffness_p(0,:) = loc_stiffness_p(0,:) + V3
+        
+        ! m - component
+        V1 = v0_z_etal * (r1(0,:) + r6(0,:)) + v0_s_etal * (r5(0,:) + r4(0,:)) &
+                + y0l * 2 * (r2(0,:) - r6(0,:))
+        loc_stiffness_m = loc_stiffness_m + outerprod(G0, V1)
+
+        ! z - component
+        V1 = v0_z_etal * r5(0,:) + v0_s_etal * r3(0,:) - y0l * r4(0,:)
+        loc_stiffness_z = loc_stiffness_z + outerprod(G0, V2)
+     endif
+
+     ! subtracting (!) from the global stiffness
+     glob_stiffness(0:4,0:4,ielem,1) = &
+            glob_stiffness(0:4,0:4,ielem,1) - loc_stiffness_p
+     glob_stiffness(0:4,0:4,ielem,2) = &
+            glob_stiffness(0:4,0:4,ielem,2) - loc_stiffness_m
+     glob_stiffness(0:4,0:4,ielem,3) = &
+            glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
+  enddo
+
+end subroutine glob_anel_stiffness_di_4
+!=============================================================================
+
+!-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
@@ -1817,6 +1949,124 @@ pure subroutine glob_anel_stiffness_quad(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_quad
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
+
+  use attenuation, ONLY: n_sls_attenuation
+  use data_mesh,   only: nel_solid
+  !include "mesh_params.h"
+  
+  ! I/O global arrays
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:) !0:4,0:4,nel_solid,1:3)
+  real(kind=realkind), intent(in)    :: R(0:,0:,:,:,:) !(0:4,0:4,6,n_sls_attenuation,nel_solid)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_s
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_p
+  real(kind=realkind), dimension(0:4,0:4) :: loc_stiffness_z
+  
+  real(kind=realkind), dimension(0:4,0:4) :: r1, r2, r3, r4, r5, r6
+
+  real(kind=realkind), dimension(0:4,0:4) :: yl
+  real(kind=realkind), dimension(0:4,0:4) :: v_s_etal, v_s_xil
+  real(kind=realkind), dimension(0:4,0:4) :: v_z_etal, v_z_xil
+
+  real(kind=realkind), dimension(0:4,0:4) :: S1s, S2s
+  real(kind=realkind), dimension(0:4,0:4) :: S1p, S2p
+  real(kind=realkind), dimension(0:4,0:4) :: S1z, S2z
+  real(kind=realkind), dimension(0:4,0:4) :: X1, X2, X3, X4, X5, X6
+  
+  real(kind=realkind), dimension(0:4) :: y0l
+  real(kind=realkind), dimension(0:4) :: v0_s_etal, v0_s_xil
+  real(kind=realkind), dimension(0:4) :: v0_z_etal, v0_z_xil
+  real(kind=realkind), dimension(0:4) :: V1
+  
+  integer :: ielem, j
+
+  do ielem = 1, nel_solid
+
+     yl(:,:) = Y(:,:,ielem)
+     v_s_etal(:,:) = V_s_eta(:,:,ielem)
+     v_s_xil(:,:)  = V_s_xi(:,:,ielem)
+     v_z_etal(:,:) = V_z_eta(:,:,ielem)
+     v_z_xil(:,:)  = V_z_xi(:,:,ielem)
+
+     r1(:,:) = 0
+     r2(:,:) = 0
+     r3(:,:) = 0
+     r4(:,:) = 0
+     r5(:,:) = 0
+     r6(:,:) = 0
+
+     ! sum memory variables first, then compute stiffness terms of the sum
+     do j=1, n_sls_attenuation
+        r1(:,:) = r1(:,:) + R(:,:,1,j,ielem)
+        r2(:,:) = r2(:,:) + R(:,:,2,j,ielem)
+        r3(:,:) = r3(:,:) + R(:,:,3,j,ielem)
+        r4(:,:) = r4(:,:) + R(:,:,4,j,ielem)
+        r5(:,:) = r5(:,:) + R(:,:,5,j,ielem)
+        r6(:,:) = r6(:,:) + R(:,:,6,j,ielem)
+     enddo
+
+     S1s = v_z_etal * r1 + v_s_etal * r5
+     S2s = v_z_xil  * r1 + v_s_xil  * r5
+
+     S1p = v_z_etal * r6 + v_s_etal * r4
+     S2p = v_z_xil  * r6 + v_s_xil  * r4
+     
+     S1z = v_z_etal * r5 + v_s_etal * r3
+     S2z = v_z_xil  * r5 + v_s_xil  * r3
+
+     if ( .not. axis_solid(ielem) ) then
+        call mxm_4(G2, S1s, X1)
+        call mxm_4(G2, S1p, X3)
+        call mxm_4(G2, S1z, X5)
+     else
+        call mxm_4(G1, S1s, X1)
+        call mxm_4(G1, S1p, X3)
+        call mxm_4(G1, S1z, X5)
+     endif
+
+     call mxm_4(S2s, G2T, X2)
+     call mxm_4(S2p, G2T, X4)
+     call mxm_4(S2z, G2T, X6)
+
+     loc_stiffness_s = X1 + X2 + yl * (r2 - 2 * r6)
+     loc_stiffness_p = -X3 - X4 + yl * (r6 - 2 * r2)
+     loc_stiffness_z = X5 + X6 - yl * r4
+
+     if (axis_solid(ielem)) then
+        y0l(:) = Y0(:,ielem)
+        v0_s_etal(:) = V0_s_eta(:,ielem)
+        v0_s_xil(:)  = V0_s_xi(:,ielem)
+        v0_z_etal(:) = V0_z_eta(:,ielem)
+        v0_z_xil(:)  = V0_z_xi(:,ielem)
+
+        ! s - component
+        V1 = v0_z_etal * r1(0,:) + y0l * (r2(0,:) - 2 * r6(0,:))
+        loc_stiffness_s = loc_stiffness_s + outerprod(G0, V1)
+        
+        ! p - component
+        V1 = - v0_z_etal * r6(0,:) + y0l * (r6(0,:) - 2 * r2(0,:))
+        loc_stiffness_p = loc_stiffness_p + outerprod(G0, V1)
+
+        ! z - component
+        V1 = v0_s_etal * r3(0,:)
+        loc_stiffness_z = loc_stiffness_z + outerprod(G0, V1)
+     endif
+
+     ! subtracting (!) from the global stiffness
+     glob_stiffness(0:4,0:4,ielem,1) = &
+            glob_stiffness(0:4,0:4,ielem,1) - loc_stiffness_s
+     glob_stiffness(0:4,0:4,ielem,2) = &
+            glob_stiffness(0:4,0:4,ielem,2) - loc_stiffness_p
+     glob_stiffness(0:4,0:4,ielem,3) = &
+            glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
+  enddo
+
+end subroutine glob_anel_stiffness_quad_4
 !=============================================================================
 
 !-----------------------------------------------------------------------------

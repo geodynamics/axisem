@@ -25,14 +25,16 @@
 module unrolled_loops
 !========================
 
+  use global_parameters, only: realkind
+  
   implicit none
-  public :: mxm, vxm
+  public
 
   contains
 
-!============================================================
+!=============================================================================
 
-!-------------------------------------------------------------
+!-----------------------------------------------------------------------------
 !> Multiplies matrizes a and b to have c.
 !! Size is fixed to npol x npol
 pure subroutine mxm(a,b,c)
@@ -42,7 +44,7 @@ pure subroutine mxm(a,b,c)
   !include "mesh_params.h" 
   
   real(kind=realkind), intent(in)  :: a(0: ,0: ),b(0: ,0: ) !< Input matrices
-  real(kind=realkind), intent(out) :: c(0: ,0: )                    !< Result
+  real(kind=realkind), intent(out) :: c(0: ,0: )            !< Result
   integer                          :: i, j
 
   do j = 0, npol
@@ -52,9 +54,9 @@ pure subroutine mxm(a,b,c)
   end do 
 
 end subroutine mxm
-!-------------------------------------------------------------
+!=============================================================================
 
-!-------------------------------------------------------------
+!-----------------------------------------------------------------------------
 !> Multiplies vector a leftwise to matrix b to have vector c.
 !! Size is fixed to npol x npol
 pure subroutine vxm(a,b,c)
@@ -64,7 +66,7 @@ pure subroutine vxm(a,b,c)
   !include "mesh_params.h" 
 
   real(kind=realkind), intent(in)  :: a(0: )         !< Vector a
-  real(kind=realkind), intent(in)  :: b(0: ,0: ) !< Matrix b
+  real(kind=realkind), intent(in)  :: b(0: ,0: )     !< Matrix b
   real(kind=realkind), intent(out) :: c(0: )         !< Resulting vector c
   integer                          :: j
 
@@ -73,7 +75,105 @@ pure subroutine vxm(a,b,c)
   end do 
 
 end subroutine vxm
-!-------------------------------------------------------------
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+pure subroutine mxm_cg4_sparse_a(a,b,c)
+   ! mxm for sparse a as found for coarse grained memory variables cg4
+
+   real(kind=realkind), intent(in)  :: a(1:4), b(0:4,0:4)
+   real(kind=realkind), intent(out) :: c(0:4,0:4)
+   integer                          :: j
+
+   ! c ist sparse, so initialization does matter
+   c = 0
+
+   do j = 0, 4
+     c(1,j) = & 
+        + a(1) * b(1,j) &
+        + a(2) * b(3,j) 
+
+     c(3,j) = & 
+        + a(3) * b(1,j) &
+        + a(4) * b(3,j) 
+   end do
+
+end subroutine mxm_cg4_sparse_a
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+pure subroutine mxm_cg4_sparse_b(a,b,c)
+   ! mxm for sparse b as found for coarse grained memory variables cg4
+
+   real(kind=realkind), intent(in)  :: a(0:4,0:4), b(1:4)
+   real(kind=realkind), intent(out) :: c(0:4,0:4)
+   integer i
+
+   ! c ist sparse, so initialization does matter
+   c = 0
+
+   do i = 0, 4
+     c(i,1) = & 
+        + a(i,1) * b(1) &
+        + a(i,3) * b(3) 
+
+     c(i,3) = & 
+        + a(i,1) * b(2) &
+        + a(i,3) * b(4) 
+   end do
+
+end subroutine mxm_cg4_sparse_b
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> Multiplies matrizes a and b to have c.
+!! Size is fixed to 4x4
+pure subroutine mxm_4(a,b,c)
+
+  use global_parameters, only: realkind
+ 
+  real(kind=realkind), intent(in)  :: a(0:4,0:4),b(0:4,0:4) !< Input matrices
+  real(kind=realkind), intent(out) :: c(0:4,0:4)            !< Result
+  integer                          :: i, j
+
+  do i = 0, 4
+     c(i,0) = sum(a(i,:) * b(:,0))
+  end do
+  do i = 0, 4
+     c(i,1) = sum(a(i,:) * b(:,1))
+  end do
+  do i = 0, 4
+     c(i,2) = sum(a(i,:) * b(:,2))
+  end do
+  do i = 0, 4 
+     c(i,3) = sum(a(i,:) * b(:,3))
+  end do
+  do i = 0, 4
+     c(i,4) = sum(a(i,:) * b(:,4))
+  end do
+
+end subroutine mxm_4
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> Multiplies vector a leftwise to matrix b to have vector c.
+!! Size is fixed to npol x npol
+pure subroutine vxm_4(a,b,c)
+ 
+  use global_parameters, only: realkind
+
+  real(kind=realkind), intent(in)  :: a(0:4)         !< Vector a
+  real(kind=realkind), intent(in)  :: b(0:4,0:4)     !< Matrix b
+  real(kind=realkind), intent(out) :: c(0:4)         !< Resulting vector c
+  integer                          :: j
+
+  do j = 0, 4
+     c(j) = sum(a * b(:,j))
+  end do 
+
+end subroutine vxm_4
+!=============================================================================
+
 
 !========================
 end module unrolled_loops

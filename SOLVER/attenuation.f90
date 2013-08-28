@@ -32,6 +32,7 @@ module attenuation
   public :: n_sls_attenuation
   public :: dump_memory_vars
   public :: time_step_memvars
+  public :: time_step_memvars_4
   public :: time_step_memvars_cg4
   public :: att_coarse_grained
 
@@ -186,6 +187,142 @@ end subroutine
 !> analytical time integration of memory variables (linear interpolation for
 !! the strain)
 !! MvD, attenutation notes, p 13.2
+!! explicitly optimized for npol = 4
+subroutine time_step_memvars_4(memvar, disp)
+
+  use data_time,            only: deltat
+  use data_matr,            only: Q_mu, Q_kappa
+  use data_matr,            only: delta_mu, delta_kappa
+  use data_mesh,            only: axis_solid, nel_solid!, npol
+  use data_source,          only: src_type
+  !include 'mesh_params.h'
+
+  real(kind=realkind), intent(inout)    :: memvar(0:,0:,:,:,:) !(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(in)       :: disp(0:,0:,:,:) !(0:npol,0:npol,nel_solid,3)
+  
+  integer               :: iel, j, ipol, jpol
+  real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
+  real(kind=dp)         :: yp_j_kappa(n_sls_attenuation)
+  real(kind=dp)         :: a_j_mu(n_sls_attenuation)
+  real(kind=dp)         :: a_j_kappa(n_sls_attenuation)
+
+  real(kind=realkind)   :: grad_t(0:4,0:4,6)
+
+  real(kind=realkind)   :: trace_grad_t(0:4,0:4)
+  real(kind=realkind)   :: src_tr_t(0:4,0:4)
+  real(kind=realkind)   :: src_tr_tm1(0:4,0:4)
+  real(kind=realkind)   :: src_dev_t(0:4,0:4,6)
+  real(kind=realkind)   :: src_dev_tm1(0:4,0:4,6)
+  
+  real(kind=realkind)   :: src_tr_buf(0:4,0:4)
+  real(kind=realkind)   :: src_dev_buf(0:4,0:4,6)
+  
+  real(kind=realkind)   :: Q_mu_last, Q_kappa_last
+
+  Q_mu_last = -1
+  Q_kappa_last = -1
+
+  do iel=1, nel_solid
+     call compute_strain_att_el_4(disp(:,:,iel,:), grad_t, iel)
+
+     ! compute local coefficients y_j for kappa and mu (only if different from
+     ! previous element)
+     if (Q_mu(iel) /= Q_mu_last) then
+        Q_mu_last = Q_mu(iel)
+        if (do_corr_lowq) then
+           call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
+        else
+           yp_j_mu = y_j_attenuation / Q_mu(iel)
+        endif
+        a_j_mu = yp_j_mu / sum(yp_j_mu)
+     endif
+
+     if (Q_kappa(iel) /= Q_kappa_last) then
+        Q_kappa_last = Q_kappa(iel)
+        if (do_corr_lowq) then
+           call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
+        else
+           yp_j_kappa = y_j_attenuation / Q_kappa(iel)
+        endif
+        a_j_kappa = yp_j_kappa / sum(yp_j_kappa)
+     endif
+
+     trace_grad_t(:,:) = sum(grad_t(:,:,1:3), dim=3)
+
+     ! analytical time stepping, monopole/isotropic hardcoded
+
+     ! compute new source terms
+     src_tr_t(:,:) = delta_kappa(:,:,iel) * trace_grad_t(:,:)
+     src_dev_t(:,:,1) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,1) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,2) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,2) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,3) = delta_mu(:,:,iel) * 2 * (grad_t(:,:,3) - trace_grad_t(:,:) * third)
+     src_dev_t(:,:,5) = delta_mu(:,:,iel) * grad_t(:,:,5)
+  
+     if (src_type(1) .ne. 'monopole') then
+        src_dev_t(:,:,4) = delta_mu(:,:,iel) * grad_t(:,:,4)
+        src_dev_t(:,:,6) = delta_mu(:,:,iel) * grad_t(:,:,6)
+     endif
+
+     ! load old source terms
+     src_tr_tm1(:,:) = src_tr_tm1_glob(:,:,iel)
+     src_dev_tm1(:,:,:) = src_dev_tm1_glob(:,:,:,iel)
+     
+     do j=1, n_sls_attenuation
+        ! do the timestep
+        do jpol=0, 4
+           do ipol=0, 4
+              src_tr_buf(ipol,jpol) = ts_fac_t(j) * a_j_kappa(j) * src_tr_t(ipol,jpol) &
+                              + ts_fac_tm1(j) * a_j_kappa(j) * src_tr_tm1(ipol,jpol)
+
+              src_dev_buf(ipol,jpol,1:3) = &
+                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,1:3) &
+                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,1:3)
+              src_dev_buf(ipol,jpol,5) = &
+                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,5) &
+                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,5)
+              
+              memvar(ipol,jpol,1,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,1,j,iel) &
+                              + src_dev_buf(ipol,jpol,1) + src_tr_buf(ipol,jpol)
+              memvar(ipol,jpol,2,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,2,j,iel) &
+                              + src_dev_buf(ipol,jpol,2) + src_tr_buf(ipol,jpol)
+              memvar(ipol,jpol,3,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,3,j,iel) &
+                              + src_dev_buf(ipol,jpol,3) + src_tr_buf(ipol,jpol)
+              memvar(ipol,jpol,5,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,5,j,iel) &
+                              + src_dev_buf(ipol,jpol,5)
+
+              ! maybe a bit uggly with the if inside the loop, but keeping it
+              ! for now
+              if (src_type(1) .ne. 'monopole') then
+
+                 src_dev_buf(ipol,jpol,4) = &
+                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,4) &
+                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,4)
+                 src_dev_buf(ipol,jpol,6) = &
+                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,6) &
+                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,6)
+
+                 memvar(ipol,jpol,4,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,4,j,iel) &
+                              + src_dev_buf(ipol,jpol,4)
+                 memvar(ipol,jpol,6,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,6,j,iel) &
+                              + src_dev_buf(ipol,jpol,6)
+
+              endif
+           enddo
+        enddo
+     enddo
+
+     ! save srcs for next iteration
+     src_tr_tm1_glob(:,:,iel) = src_tr_t(:,:)
+     src_dev_tm1_glob(:,:,:,iel) = src_dev_t(:,:,:)
+  enddo
+  
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+!> analytical time integration of memory variables (linear interpolation for
+!! the strain)
+!! MvD, attenutation notes, p 13.2
 subroutine time_step_memvars(memvar, disp)
 
   use data_time,            only: deltat
@@ -195,8 +332,8 @@ subroutine time_step_memvars(memvar, disp)
   use data_source,          only: src_type
   !include 'mesh_params.h'
 
-  real(kind=realkind), intent(inout)    :: memvar(0:,0:,:,:,:) !(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
-  real(kind=realkind), intent(in)       :: disp(0:,0:,:,:) !(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid) !memvar(0:,0:,6,:,:)
+  real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3) !disp(0:,0:,:,3) 
   
   integer               :: iel, j, ipol, jpol
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
@@ -387,6 +524,78 @@ subroutine compute_strain_att_el_cg4(u, grad_u, iel)
   endif
 
 end subroutine compute_strain_att_el_cg4
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+!> compute strain in Voigt notation for a single element
+!! (i.e. E1 = E11, E2 = E22, E3 = E33, E4 = 2E23, E5 = 2E31, E6 = 2E12)
+!! explicitly for npol = 4
+subroutine compute_strain_att_el_4(u, grad_u, iel)
+
+  use data_source,              only: src_type
+  use pointwise_derivatives,    only: axisym_gradient_solid_el_4
+  use pointwise_derivatives,    only: f_over_s_solid_el
+  
+  !include 'mesh_params.h'
+  
+  real(kind=realkind), intent(in)   :: u(0:,0:,:)
+  real(kind=realkind), intent(out)  :: grad_u(0:4,0:4,6)
+  integer, intent(in)               :: iel
+  
+  real(kind=realkind)               :: grad_buff1(0:4,0:4,2)
+  real(kind=realkind)               :: grad_buff2(0:4,0:4,2)
+  
+  grad_u(:,:,:) = 0
+  
+  ! s,z components, identical for all source types..........................
+  if (src_type(1)=='dipole') then
+     call axisym_gradient_solid_el_4(u(:,:,1) + u(:,:,2), grad_buff1, iel)
+  else
+     ! 1: dsus, 2: dzus
+     call axisym_gradient_solid_el_4(u(:,:,1), grad_buff1, iel)
+  endif 
+
+  ! 1:dsuz, 2:dzuz
+  call axisym_gradient_solid_el_4(u(:,:,3), grad_buff2, iel) 
+  
+  grad_u(:,:,1) = grad_buff1(:,:,1)  ! dsus
+  grad_u(:,:,3) = grad_buff2(:,:,2)  ! dzuz
+
+  ! dsuz + dzus (factor of 2 from voigt notation)
+  grad_u(:,:,5) = grad_buff1(:,:,2) + grad_buff2(:,:,1) 
+ 
+  ! Components involving phi....................................................
+
+  if (src_type(1)=='monopole') then
+     ! us / s
+     grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1), iel) 
+
+  elseif (src_type(1)=='dipole') then
+     ! 2 u- / s
+     grad_u(:,:,2) = 2 * f_over_s_solid_el(u(:,:,2), iel) 
+     
+     ! 1:dsup, 2:dzup
+     call axisym_gradient_solid_el_4(u(:,:,1) - u(:,:,2), grad_buff1, iel) 
+     ! -uz/s - dzup
+     grad_u(:,:,4) = - f_over_s_solid_el(u(:,:,3), iel) - grad_buff1(:,:,2)
+     ! -2 u-/s - dsup
+     grad_u(:,:,6) = - grad_u(:,:,2) - grad_buff1(:,:,1)
+
+  elseif (src_type(1)=='quadpole') then
+     ! (us - 2 up) / s
+     grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1) - 2 * u(:,:,2), iel) 
+     
+     ! 1:dsup, 2:dzup
+     call axisym_gradient_solid_el_4(u(:,:,2), grad_buff1, iel) 
+
+     ! -2 uz/s - dzup
+     grad_u(:,:,4) = - 2 * f_over_s_solid_el(u(:,:,3), iel) - grad_buff1(:,:,2)  
+     ! (up - 2 us) /s - dsup
+     grad_u(:,:,6) = f_over_s_solid_el(u(:,:,2) - 2 * u(:,:,1), iel) - grad_buff1(:,:,1)
+
+  endif
+
+end subroutine compute_strain_att_el_4
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------

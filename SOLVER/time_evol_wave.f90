@@ -322,6 +322,7 @@ subroutine sf_time_loop_newmark
   use clocks_mod
   use data_matr,            only: inv_mass_rho, inv_mass_fluid
   use attenuation,          only: time_step_memvars
+  use attenuation,          only: time_step_memvars_4
   use attenuation,          only: time_step_memvars_cg4
   use attenuation,          only: n_sls_attenuation
   use attenuation,          only: att_coarse_grained
@@ -485,7 +486,11 @@ subroutine sf_time_loop_newmark
               if (att_coarse_grained) then
                  call glob_anel_stiffness_mono_cg4(acc1, memory_var_cg4)
               else
-                 call glob_anel_stiffness_mono(acc1, memory_var)
+                 if (npol==4) then
+                    call glob_anel_stiffness_mono_4(acc1, memory_var)
+                 else
+                    call glob_anel_stiffness_mono(acc1, memory_var)
+                 endif
               endif
               iclockanelst = tick(id=idanelst, since=iclockanelst)
            endif
@@ -504,7 +509,11 @@ subroutine sf_time_loop_newmark
               if (att_coarse_grained) then
                  call glob_anel_stiffness_di_cg4(acc1, memory_var_cg4)
               else
-                 call glob_anel_stiffness_di(acc1, memory_var)
+                 if (npol==4) then
+                    call glob_anel_stiffness_di_4(acc1, memory_var)
+                 else
+                    call glob_anel_stiffness_di(acc1, memory_var)
+                 endif
               endif
               iclockanelst = tick(id=idanelst, since=iclockanelst)
            endif
@@ -523,7 +532,11 @@ subroutine sf_time_loop_newmark
               if (att_coarse_grained) then
                  call glob_anel_stiffness_quad_cg4(acc1, memory_var_cg4)
               else
-                 call glob_anel_stiffness_quad(acc1, memory_var)
+                 if (npol==4) then
+                    call glob_anel_stiffness_quad_4(acc1, memory_var)
+                 else
+                    call glob_anel_stiffness_quad(acc1, memory_var)
+                 endif
               endif
               iclockanelst = tick(id=idanelst, since=iclockanelst)
            endif
@@ -577,7 +590,11 @@ subroutine sf_time_loop_newmark
         if (att_coarse_grained) then
            call time_step_memvars_cg4(memory_var_cg4, disp)
         else
-           call time_step_memvars(memory_var, disp)
+           if (npol==4) then
+              call time_step_memvars_4(memory_var, disp)
+           else
+              call time_step_memvars(memory_var, disp)
+           endif
         endif
         iclockanelts = tick(id=idanelts, since=iclockanelts)
      endif

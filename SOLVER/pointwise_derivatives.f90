@@ -37,6 +37,7 @@ MODULE pointwise_derivatives
   
   public :: axisym_gradient_solid, axisym_gradient_solid_add
   public :: axisym_gradient_solid_el
+  public :: axisym_gradient_solid_el_4
   public :: axisym_gradient_solid_el_cg4
   public :: axisym_gradient_fluid, axisym_gradient_fluid_add
   public :: dsdf_elem_solid, dzdf_elem_solid
@@ -300,6 +301,48 @@ end subroutine mxm_cg4_sparse_c
 !=============================================================================
 
 !----------------------------------------------------------------------------
+pure subroutine axisym_gradient_solid_el_4(f,grad,iel)
+  !
+  ! Computes the axisymmetric gradient of scalar field f in the solid region:
+  ! grad = \nabla {f} = \partial_s(f) \hat{s} + \partial_z(f) \hat{z}
+  !
+  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+  
+  use data_pointwise, only: DzDeta_over_J_sol, DzDxi_over_J_sol
+  use data_pointwise, only: DsDeta_over_J_sol, DsDxi_over_J_sol
+  use unrolled_loops
+  
+  !include 'mesh_params.h'
+  
+  real(kind=realkind),intent(in)               :: f(0:,0:)
+  real(kind=realkind),intent(out)              :: grad(0:4,0:4,2)
+  integer,intent(in)                           :: iel
+  real(kind=realkind),dimension(0:4,0:4)       :: mxm1, mxm2, dsdf, dzdf
+  real(kind=realkind),dimension(0:4,0:4)       :: dsdxi, dzdxi, dsdeta, dzdeta
+
+
+  dzdeta = DzDeta_over_J_sol(:,:,iel)
+  dzdxi  = DzDxi_over_J_sol(:,:,iel)
+  dsdeta = DsDeta_over_J_sol(:,:,iel)
+  dsdxi  = DsDxi_over_J_sol(:,:,iel)
+
+  if (axis_solid(iel)) then 
+     call mxm_4(G1T,f(:,:),mxm1) ! axial elements
+  else 
+     call mxm_4(G2T,f(:,:),mxm1) ! non-axial elements
+  endif 
+
+  call mxm_4(f(:,:),G2,mxm2)
+  dsdf = dzdeta * mxm1 + dzdxi * mxm2
+  dzdf = dsdeta * mxm1 + dsdxi * mxm2
+
+  grad(:,:,1) = dsdf
+  grad(:,:,2) = dzdf
+
+end subroutine axisym_gradient_solid_el_4
+!=============================================================================
+
+!----------------------------------------------------------------------------
 pure subroutine axisym_gradient_solid_el(f,grad,iel)
   !
   ! Computes the axisymmetric gradient of scalar field f in the solid region:
@@ -307,11 +350,11 @@ pure subroutine axisym_gradient_solid_el(f,grad,iel)
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
   
-  use data_pointwise, ONLY: DzDeta_over_J_sol, DzDxi_over_J_sol
-  use data_pointwise, ONLY: DsDeta_over_J_sol, DsDxi_over_J_sol
+  use data_pointwise, only: DzDeta_over_J_sol, DzDxi_over_J_sol
+  use data_pointwise, only: DsDeta_over_J_sol, DsDxi_over_J_sol
   use unrolled_loops
   
-  use data_mesh,              only: npol, nel_solid
+  use data_mesh,      only: npol
   !include 'mesh_params.h'
   
   real(kind=realkind),intent(in)               :: f(0:,0:)
