@@ -64,7 +64,7 @@ subroutine time_step_memvars_cg4(memvar, disp)
   !include 'mesh_params.h'
 
   real(kind=realkind), intent(inout)    :: memvar(:,:,:,:) !(1:4,6,n_sls_attenuation,nel_solid)
-  real(kind=realkind), intent(in)       :: disp(:,:,:,:) !(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(in)       :: disp(0:,0:,:,:) !(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
@@ -195,8 +195,8 @@ subroutine time_step_memvars(memvar, disp)
   use data_source,          only: src_type
   !include 'mesh_params.h'
 
-  real(kind=realkind), intent(inout)    :: memvar(:,:,:,:,:) !(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
-  real(kind=realkind), intent(in)       :: disp(:,:,:,:) !(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(inout)    :: memvar(0:,0:,:,:,:) !(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(in)       :: disp(0:,0:,:,:) !(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j, ipol, jpol
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
