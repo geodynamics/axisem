@@ -45,6 +45,7 @@ MODULE pointwise_derivatives
   public :: axisym_dsdf_solid
   public :: f_over_s_solid
   public :: f_over_s_solid_el
+  public :: f_over_s_solid_el_4
   public :: f_over_s_solid_el_cg4
   public :: f_over_s_fluid
   
@@ -99,6 +100,33 @@ pure function f_over_s_solid_el(f, iel)
      ! TODO: Optimize this computing the derivative only for i=0
      call dsdf_elem_solid(dsdf,f,iel)
      f_over_s_solid_el(0,:) = dsdf(0,:)
+  endif
+
+end function
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+pure function f_over_s_solid_el_4(f, iel)
+  !
+  ! computes f/s using L'Hospital's rule lim f/s = lim df/ds at the axis (s = 0)
+  !
+  use data_pointwise,           ONLY: inv_s_solid
+  use data_mesh,                ONLY: naxel_solid, ax_el_solid
+
+  integer, parameter             :: npol = 4 
+  real(kind=realkind),intent(in) :: f(0:,0:)
+  integer,intent(in)             :: iel
+  real(kind=realkind)            :: f_over_s_solid_el_4(0:npol,0:npol)
+  real(kind=realkind)            :: dsdf(0:npol,0:npol)
+  
+  ! in the bulk:
+  f_over_s_solid_el_4 = inv_s_solid(:,:,iel) * f
+
+  ! at the axis:
+  if (axis_solid(iel)) then
+     ! TODO: Optimize this computing the derivative only for i=0
+     call dsdf_elem_solid(dsdf,f,iel)
+     f_over_s_solid_el_4(0,:) = dsdf(0,:)
   endif
 
 end function
@@ -259,45 +287,6 @@ pure subroutine axisym_gradient_solid_el_cg4(f,grad,iel)
   grad(:,2) = dsdeta * mxm1 + dsdxi * mxm2 ! dzdf
 
 end subroutine axisym_gradient_solid_el_cg4
-!=============================================================================
- 
-!-------------------------------------------------------------
-pure subroutine mxm_cg4_sparse_c(a,b,c)
-
-  !include "mesh_params.h" 
-
-  real(kind=realkind), intent(in)  :: a(0:,0:), b(0:,0:)
-  real(kind=realkind), intent(out) :: c(1:4)
-
-  c(1) = & 
-     + a(1,0) * b(0,1) &
-     + a(1,1) * b(1,1) &
-     + a(1,2) * b(2,1) &
-     + a(1,3) * b(3,1) &
-     + a(1,4) * b(4,1)
-
-  c(2) = & 
-     + a(1,0) * b(0,3) &
-     + a(1,1) * b(1,3) &
-     + a(1,2) * b(2,3) &
-     + a(1,3) * b(3,3) &
-     + a(1,4) * b(4,3)
-
-  c(3) = & 
-     + a(3,0) * b(0,1) &
-     + a(3,1) * b(1,1) &
-     + a(3,2) * b(2,1) &
-     + a(3,3) * b(3,1) &
-     + a(3,4) * b(4,1)
-
-  c(4) = & 
-     + a(3,0) * b(0,3) &
-     + a(3,1) * b(1,3) &
-     + a(3,2) * b(2,3) &
-     + a(3,3) * b(3,3) &
-     + a(3,4) * b(4,3)
-
-end subroutine mxm_cg4_sparse_c
 !=============================================================================
 
 !----------------------------------------------------------------------------

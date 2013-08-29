@@ -24,6 +24,7 @@ module attenuation
 
   use global_parameters,    only: realkind, third, sp, dp
   use data_io,              only: verbose
+  use data_time
   implicit none
   !include 'mesh_params.h'
 
@@ -64,8 +65,10 @@ subroutine time_step_memvars_cg4(memvar, disp)
   use data_source,          only: src_type
   !include 'mesh_params.h'
 
-  real(kind=realkind), intent(inout)    :: memvar(:,:,:,:) !(1:4,6,n_sls_attenuation,nel_solid)
-  real(kind=realkind), intent(in)       :: disp(0:,0:,:,:) !(0:npol,0:npol,nel_solid,3)
+  real(kind=realkind), intent(inout)    :: memvar(1:4,6,n_sls_attenuation,nel_solid)
+  !real(kind=realkind), intent(inout)    :: memvar(:,:,:,:)
+  real(kind=realkind), intent(in)       :: disp(0:4,0:4,nel_solid,3)
+  !real(kind=realkind), intent(in)       :: disp(0:,0:,:,:)
   
   integer               :: iel, j
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
@@ -197,8 +200,10 @@ subroutine time_step_memvars_4(memvar, disp)
   use data_source,          only: src_type
   !include 'mesh_params.h'
 
-  real(kind=realkind), intent(inout)    :: memvar(0:,0:,:,:,:) !(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
-  real(kind=realkind), intent(in)       :: disp(0:,0:,:,:) !(0:npol,0:npol,nel_solid,3)
+  !real(kind=realkind), intent(inout)    :: memvar(0:,0:,:,:,:)
+  real(kind=realkind), intent(inout)    :: memvar(0:4,0:4,6,n_sls_attenuation,nel_solid)
+  !real(kind=realkind), intent(in)       :: disp(0:,0:,:,:)
+  real(kind=realkind), intent(in)       :: disp(0:4,0:4,nel_solid,3)
   
   integer               :: iel, j, ipol, jpol
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
@@ -267,48 +272,45 @@ subroutine time_step_memvars_4(memvar, disp)
      src_tr_tm1(:,:) = src_tr_tm1_glob(:,:,iel)
      src_dev_tm1(:,:,:) = src_dev_tm1_glob(:,:,:,iel)
      
+     
      do j=1, n_sls_attenuation
         ! do the timestep
-        do jpol=0, 4
-           do ipol=0, 4
-              src_tr_buf(ipol,jpol) = ts_fac_t(j) * a_j_kappa(j) * src_tr_t(ipol,jpol) &
-                              + ts_fac_tm1(j) * a_j_kappa(j) * src_tr_tm1(ipol,jpol)
+        src_tr_buf(:,:) = ts_fac_t(j) * a_j_kappa(j) * src_tr_t(:,:) &
+                        + ts_fac_tm1(j) * a_j_kappa(j) * src_tr_tm1(:,:)
 
-              src_dev_buf(ipol,jpol,1:3) = &
-                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,1:3) &
-                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,1:3)
-              src_dev_buf(ipol,jpol,5) = &
-                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,5) &
-                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,5)
-              
-              memvar(ipol,jpol,1,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,1,j,iel) &
-                              + src_dev_buf(ipol,jpol,1) + src_tr_buf(ipol,jpol)
-              memvar(ipol,jpol,2,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,2,j,iel) &
-                              + src_dev_buf(ipol,jpol,2) + src_tr_buf(ipol,jpol)
-              memvar(ipol,jpol,3,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,3,j,iel) &
-                              + src_dev_buf(ipol,jpol,3) + src_tr_buf(ipol,jpol)
-              memvar(ipol,jpol,5,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,5,j,iel) &
-                              + src_dev_buf(ipol,jpol,5)
+        src_dev_buf(:,:,1:3) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,:,1:3) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,:,1:3)
+        src_dev_buf(:,:,5) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,:,5) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,:,5)
+        
+        memvar(:,:,1,j,iel) = exp_w_j_deltat(j) * memvar(:,:,1,j,iel) &
+                        + src_dev_buf(:,:,1) + src_tr_buf(:,:)
+        memvar(:,:,2,j,iel) = exp_w_j_deltat(j) * memvar(:,:,2,j,iel) &
+                        + src_dev_buf(:,:,2) + src_tr_buf(:,:)
+        memvar(:,:,3,j,iel) = exp_w_j_deltat(j) * memvar(:,:,3,j,iel) &
+                        + src_dev_buf(:,:,3) + src_tr_buf(:,:)
+        memvar(:,:,5,j,iel) = exp_w_j_deltat(j) * memvar(:,:,5,j,iel) &
+                        + src_dev_buf(:,:,5)
 
-              ! maybe a bit uggly with the if inside the loop, but keeping it
-              ! for now
-              if (src_type(1) .ne. 'monopole') then
+        ! maybe a bit uggly with the if inside the loop, but keeping it
+        ! for now
+        if (src_type(1) .ne. 'monopole') then
 
-                 src_dev_buf(ipol,jpol,4) = &
-                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,4) &
-                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,4)
-                 src_dev_buf(ipol,jpol,6) = &
-                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,6) &
-                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,6)
+           src_dev_buf(:,:,4) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,:,4) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,:,4)
+           src_dev_buf(:,:,6) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,:,6) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,:,6)
 
-                 memvar(ipol,jpol,4,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,4,j,iel) &
-                              + src_dev_buf(ipol,jpol,4)
-                 memvar(ipol,jpol,6,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,6,j,iel) &
-                              + src_dev_buf(ipol,jpol,6)
+           memvar(:,:,4,j,iel) = exp_w_j_deltat(j) * memvar(:,:,4,j,iel) &
+                        + src_dev_buf(:,:,4)
+           memvar(:,:,6,j,iel) = exp_w_j_deltat(j) * memvar(:,:,6,j,iel) &
+                        + src_dev_buf(:,:,6)
 
-              endif
-           enddo
-        enddo
+        endif
      enddo
 
      ! save srcs for next iteration
@@ -404,46 +406,42 @@ subroutine time_step_memvars(memvar, disp)
      
      do j=1, n_sls_attenuation
         ! do the timestep
-        do jpol=0, npol
-           do ipol=0, npol
-              src_tr_buf(ipol,jpol) = ts_fac_t(j) * a_j_kappa(j) * src_tr_t(ipol,jpol) &
-                              + ts_fac_tm1(j) * a_j_kappa(j) * src_tr_tm1(ipol,jpol)
+        src_tr_buf(:,:) = ts_fac_t(j) * a_j_kappa(j) * src_tr_t(:,:) &
+                        + ts_fac_tm1(j) * a_j_kappa(j) * src_tr_tm1(:,:)
 
-              src_dev_buf(ipol,jpol,1:3) = &
-                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,1:3) &
-                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,1:3)
-              src_dev_buf(ipol,jpol,5) = &
-                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,5) &
-                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,5)
-              
-              memvar(ipol,jpol,1,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,1,j,iel) &
-                              + src_dev_buf(ipol,jpol,1) + src_tr_buf(ipol,jpol)
-              memvar(ipol,jpol,2,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,2,j,iel) &
-                              + src_dev_buf(ipol,jpol,2) + src_tr_buf(ipol,jpol)
-              memvar(ipol,jpol,3,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,3,j,iel) &
-                              + src_dev_buf(ipol,jpol,3) + src_tr_buf(ipol,jpol)
-              memvar(ipol,jpol,5,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,5,j,iel) &
-                              + src_dev_buf(ipol,jpol,5)
+        src_dev_buf(:,:,1:3) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,:,1:3) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,:,1:3)
+        src_dev_buf(:,:,5) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,:,5) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,:,5)
+        
+        memvar(:,:,1,j,iel) = exp_w_j_deltat(j) * memvar(:,:,1,j,iel) &
+                        + src_dev_buf(:,:,1) + src_tr_buf(:,:)
+        memvar(:,:,2,j,iel) = exp_w_j_deltat(j) * memvar(:,:,2,j,iel) &
+                        + src_dev_buf(:,:,2) + src_tr_buf(:,:)
+        memvar(:,:,3,j,iel) = exp_w_j_deltat(j) * memvar(:,:,3,j,iel) &
+                        + src_dev_buf(:,:,3) + src_tr_buf(:,:)
+        memvar(:,:,5,j,iel) = exp_w_j_deltat(j) * memvar(:,:,5,j,iel) &
+                        + src_dev_buf(:,:,5)
 
-              ! maybe a bit uggly with the if inside the loop, but keeping it
-              ! for now
-              if (src_type(1) .ne. 'monopole') then
+        ! maybe a bit uggly with the if inside the loop, but keeping it
+        ! for now
+        if (src_type(1) .ne. 'monopole') then
 
-                 src_dev_buf(ipol,jpol,4) = &
-                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,4) &
-                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,4)
-                 src_dev_buf(ipol,jpol,6) = &
-                          ts_fac_t(j) * a_j_mu(j) * src_dev_t(ipol,jpol,6) &
-                              + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(ipol,jpol,6)
+           src_dev_buf(:,:,4) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,:,4) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,:,4)
+           src_dev_buf(:,:,6) = &
+                    ts_fac_t(j) * a_j_mu(j) * src_dev_t(:,:,6) &
+                        + ts_fac_tm1(j) * a_j_mu(j) * src_dev_tm1(:,:,6)
 
-                 memvar(ipol,jpol,4,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,4,j,iel) &
-                              + src_dev_buf(ipol,jpol,4)
-                 memvar(ipol,jpol,6,j,iel) = exp_w_j_deltat(j) * memvar(ipol,jpol,6,j,iel) &
-                              + src_dev_buf(ipol,jpol,6)
+           memvar(:,:,4,j,iel) = exp_w_j_deltat(j) * memvar(:,:,4,j,iel) &
+                        + src_dev_buf(:,:,4)
+           memvar(:,:,6,j,iel) = exp_w_j_deltat(j) * memvar(:,:,6,j,iel) &
+                        + src_dev_buf(:,:,6)
 
-              endif
-           enddo
-        enddo
+        endif
      enddo
 
      ! save srcs for next iteration
@@ -534,11 +532,12 @@ subroutine compute_strain_att_el_4(u, grad_u, iel)
 
   use data_source,              only: src_type
   use pointwise_derivatives,    only: axisym_gradient_solid_el_4
-  use pointwise_derivatives,    only: f_over_s_solid_el
+  use pointwise_derivatives,    only: f_over_s_solid_el_4
   
   !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: u(0:,0:,:)
+  !real(kind=realkind), intent(in)   :: u(0:4,0:4,3)
   real(kind=realkind), intent(out)  :: grad_u(0:4,0:4,6)
   integer, intent(in)               :: iel
   
@@ -568,30 +567,30 @@ subroutine compute_strain_att_el_4(u, grad_u, iel)
 
   if (src_type(1)=='monopole') then
      ! us / s
-     grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1), iel) 
+     grad_u(:,:,2) = f_over_s_solid_el_4(u(:,:,1), iel) 
 
   elseif (src_type(1)=='dipole') then
      ! 2 u- / s
-     grad_u(:,:,2) = 2 * f_over_s_solid_el(u(:,:,2), iel) 
+     grad_u(:,:,2) = 2 * f_over_s_solid_el_4(u(:,:,2), iel) 
      
      ! 1:dsup, 2:dzup
      call axisym_gradient_solid_el_4(u(:,:,1) - u(:,:,2), grad_buff1, iel) 
      ! -uz/s - dzup
-     grad_u(:,:,4) = - f_over_s_solid_el(u(:,:,3), iel) - grad_buff1(:,:,2)
+     grad_u(:,:,4) = - f_over_s_solid_el_4(u(:,:,3), iel) - grad_buff1(:,:,2)
      ! -2 u-/s - dsup
      grad_u(:,:,6) = - grad_u(:,:,2) - grad_buff1(:,:,1)
 
   elseif (src_type(1)=='quadpole') then
      ! (us - 2 up) / s
-     grad_u(:,:,2) = f_over_s_solid_el(u(:,:,1) - 2 * u(:,:,2), iel) 
+     grad_u(:,:,2) = f_over_s_solid_el_4(u(:,:,1) - 2 * u(:,:,2), iel) 
      
      ! 1:dsup, 2:dzup
      call axisym_gradient_solid_el_4(u(:,:,2), grad_buff1, iel) 
 
      ! -2 uz/s - dzup
-     grad_u(:,:,4) = - 2 * f_over_s_solid_el(u(:,:,3), iel) - grad_buff1(:,:,2)  
+     grad_u(:,:,4) = - 2 * f_over_s_solid_el_4(u(:,:,3), iel) - grad_buff1(:,:,2)  
      ! (up - 2 us) /s - dsup
-     grad_u(:,:,6) = f_over_s_solid_el(u(:,:,2) - 2 * u(:,:,1), iel) - grad_buff1(:,:,1)
+     grad_u(:,:,6) = f_over_s_solid_el_4(u(:,:,2) - 2 * u(:,:,1), iel) - grad_buff1(:,:,1)
 
   endif
 
