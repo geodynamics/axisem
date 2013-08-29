@@ -295,7 +295,7 @@ foreach isrc (${num_src_arr})
 
             ########## LSF SCHEDULER ######################
             if ( $queue == 'lsf' ) then 
-                # for Brutus:
+                # for Brutus: http://brutuswiki.ethz.ch/brutus/OpenMPI#Issues_when_Using_Many_Cores
                 #unset OMPI_MCA_btl_openib_receive_queues
                 #bsub -R "rusage[mem=2048]" -n $nodnum -W 167:59 $mpiruncmd -n $nodnum ./axisem > $outputname &
                 bsub -R "rusage[mem=2048]" -I -n $nodnum $mpiruncmd -n $nodnum ./axisem 2>&1 > $outputname &
