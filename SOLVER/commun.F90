@@ -442,7 +442,6 @@ subroutine gather_elem_fluid(vec, iel)
      do ipol = 0, npol
         ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
         idest = igloc_fluid(ipt)
-        !$omp atomic
         gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel) 
      end do
   end do

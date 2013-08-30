@@ -33,14 +33,26 @@ module stiffness
   
   implicit none
   
-  public :: glob_stiffness_mono, glob_stiffness_di, glob_stiffness_quad
-  public :: glob_stiffness_mono_4, glob_stiffness_di_4, glob_stiffness_quad_4
-  public :: elemental_stiffness_mono, elemental_fluid_stiffness
-  public :: glob_anel_stiffness_mono, glob_anel_stiffness_di, glob_anel_stiffness_quad
-  public :: glob_anel_stiffness_mono_4, glob_anel_stiffness_di_4, glob_anel_stiffness_quad_4
-  public :: glob_anel_stiffness_mono_cg4, glob_anel_stiffness_di_cg4, &
-            glob_anel_stiffness_quad_cg4
-  public :: glob_fluid_stiffness_4, glob_fluid_stiffness
+  public :: glob_stiffness_mono
+  public :: glob_stiffness_mono_4
+  public :: glob_anel_stiffness_mono
+  public :: glob_anel_stiffness_mono_4
+  public :: glob_anel_stiffness_mono_cg4
+
+  public :: glob_stiffness_di
+  public :: glob_stiffness_di_4
+  public :: glob_anel_stiffness_di
+  public :: glob_anel_stiffness_di_4
+  public :: glob_anel_stiffness_di_cg4
+
+  public :: glob_stiffness_quad
+  public :: glob_stiffness_quad_4
+  public :: glob_anel_stiffness_quad
+  public :: glob_anel_stiffness_quad_4
+  public :: glob_anel_stiffness_quad_cg4
+
+  public :: glob_fluid_stiffness
+  
   private
 
 contains
@@ -82,13 +94,6 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
   real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
   real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
   real(kind=realkind), dimension(0:npol,0:npol) :: us, uz
-  !real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l
-  !real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_2l, m_3l, m_4l
-  !real(kind=realkind), dimension(0:npol,0:npol) :: m11sl, m21sl, m41sl, m12sl, m22sl
-  !real(kind=realkind), dimension(0:npol,0:npol) :: m32sl, m42sl, m11zl, m21zl, m41zl
-  
-  ! local variables for axial elements
-  !real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l
   
   ! work arrays
   real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4     ! MxM arrays
@@ -102,26 +107,8 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
   !dir$ loop count min(256)
   do ielem = 1, nel_solid
 
-     us(:,:) = u(0:npol,0:npol,ielem,1)
-     uz(:,:) = u(0:npol,0:npol,ielem,3)
-
-     !m_1l(:,:) = M_1(:,:,ielem)
-     !m_2l(:,:) = M_2(:,:,ielem)
-     !m_3l(:,:) = M_3(:,:,ielem)
-     !m_4l(:,:) = M_4(:,:,ielem)
-     !
-     !m_w1l(:,:) = M_w1(:,:,ielem)
-
-     !m11sl(:,:) = M11s(:,:,ielem)
-     !m21sl(:,:) = M21s(:,:,ielem)
-     !m41sl(:,:) = M41s(:,:,ielem)
-     !m12sl(:,:) = M12s(:,:,ielem)
-     !m22sl(:,:) = M22s(:,:,ielem)
-     !m32sl(:,:) = M32s(:,:,ielem)
-     !m42sl(:,:) = M42s(:,:,ielem)
-     !m11zl(:,:) = M11z(:,:,ielem)
-     !m21zl(:,:) = M21z(:,:,ielem)
-     !m41zl(:,:) = M41z(:,:,ielem)
+     us(:,:) = u(:,:,ielem,1)
+     uz(:,:) = u(:,:,ielem,3)
 
      if ( .not. axis_solid(ielem) ) then
         call mxm_4(G2T, us, X1)
@@ -135,18 +122,18 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
      call mxm_4(uz, G2, X4)
 
      ! lower order terms in s
-     loc_stiffness_s = m_4(0:npol,0:npol,ielem) * X4 + m_2(0:npol,0:npol,ielem) * X3 &
-                     + m_1(0:npol,0:npol,ielem) * X1 + m_3(0:npol,0:npol,ielem) * X2 + us * m_w1(0:npol,0:npol,ielem)
+     loc_stiffness_s = m_4(:,:,ielem) * X4 + m_2(:,:,ielem) * X3 &
+                     + m_1(:,:,ielem) * X1 + m_3(:,:,ielem) * X2 + us * m_w1(:,:,ielem)
 
      ! higher order terms + lower order terms with D_xi mxm ()
-     S1s = m11s(0:npol,0:npol,ielem) * X3 + m21s(0:npol,0:npol,ielem) * X1 + m12s(0:npol,0:npol,ielem) * X4 &
-         + m22s(0:npol,0:npol,ielem) * X2 + m_1(0:npol,0:npol,ielem) * us
-     S2s = m11s(0:npol,0:npol,ielem) * X1 + m41s(0:npol,0:npol,ielem) * X3 + m32s(0:npol,0:npol,ielem) * X2 &
-         + m42s(0:npol,0:npol,ielem) * X4 + m_2(0:npol,0:npol,ielem) * us
-     S1z = m11z(0:npol,0:npol,ielem) * X4 + m21z(0:npol,0:npol,ielem) * X2 + m32s(0:npol,0:npol,ielem) * X3 &
-         + m22s(0:npol,0:npol,ielem) * X1 + m_3(0:npol,0:npol,ielem) * us
-     S2z = m11z(0:npol,0:npol,ielem) * X2 + m41z(0:npol,0:npol,ielem) * X4 + m12s(0:npol,0:npol,ielem) * X1 &
-         + m42s(0:npol,0:npol,ielem) * X3 + m_4(0:npol,0:npol,ielem) * us
+     S1s = m11s(:,:,ielem) * X3 + m21s(:,:,ielem) * X1 + m12s(:,:,ielem) * X4 &
+         + m22s(:,:,ielem) * X2 + m_1(:,:,ielem) * us
+     S2s = m11s(:,:,ielem) * X1 + m41s(:,:,ielem) * X3 + m32s(:,:,ielem) * X2 &
+         + m42s(:,:,ielem) * X4 + m_2(:,:,ielem) * us
+     S1z = m11z(:,:,ielem) * X4 + m21z(:,:,ielem) * X2 + m32s(:,:,ielem) * X3 &
+         + m22s(:,:,ielem) * X1 + m_3(:,:,ielem) * us
+     S2z = m11z(:,:,ielem) * X2 + m41z(:,:,ielem) * X4 + m12s(:,:,ielem) * X1 &
+         + m42s(:,:,ielem) * X3 + m_4(:,:,ielem) * us
      
      call mxm_4(S2s, G2T, X2)
      call mxm_4(S2z, G2T, X4)
@@ -164,11 +151,7 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
 
      ! additional axis terms
      if (axis_solid(ielem) ) then
-        !m0_w1l(:) = M0_w1(:,ielem)
-        !m0_w2l(:) = M0_w2(:,ielem)
-        !m0_w3l(:) = M0_w3(:,ielem)
-        
-        uz0 = uz(0,0:npol)
+        uz0 = uz(0,:)
         X2 = 0
 
         call vxm_4(G0, us, V1)
@@ -185,14 +168,14 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
            
         V2 = m0_w3(:,ielem) * V1
         call vxm_4(V2, G2T, V1)
-        X2(0,0:npol) = X2(0,0:npol) + V1
+        X2(0,:) = X2(0,:) + V1
                                 
         loc_stiffness_s = loc_stiffness_s + outerprod_4(G0, V4)
         loc_stiffness_z = X2 + loc_stiffness_z
      endif
 
-     glob_stiffness(0:npol,0:npol,ielem,1) = loc_stiffness_s
-     glob_stiffness(0:npol,0:npol,ielem,3) = loc_stiffness_z
+     glob_stiffness(:,:,ielem,1) = loc_stiffness_s
+     glob_stiffness(:,:,ielem,3) = loc_stiffness_z
 
   end do
 
@@ -322,125 +305,6 @@ pure subroutine glob_stiffness_mono(glob_stiffness,u)
   enddo
 
 end subroutine glob_stiffness_mono
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-pure subroutine elemental_stiffness_mono(glob_stiffness,u, ielem)
-  use data_mesh, only: npol, nel_solid
-  !include "mesh_params.h"
-  
-  ! I/O global arrays
-  real(kind=realkind), intent(in)  :: u(0:,0:,:,:)
-  real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,1:3)
-  integer, intent(in)              :: ielem
-  
-  ! local variables for all elements
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_s
-  real(kind=realkind), dimension(0:npol,0:npol) :: loc_stiffness_z
-  real(kind=realkind), dimension(0:npol,0:npol) :: us, uz
-  real(kind=realkind), dimension(0:npol,0:npol) :: m_w1l
-  real(kind=realkind), dimension(0:npol,0:npol) :: m_1l, m_2l, m_3l, m_4l
-  real(kind=realkind), dimension(0:npol,0:npol) :: m11sl, m21sl, m41sl, m12sl, m22sl
-  real(kind=realkind), dimension(0:npol,0:npol) :: m32sl, m42sl, m11zl, m21zl, m41zl
-  
-  ! local variables for axial elements
-  real(kind=realkind), dimension(0:npol) :: m0_w1l, m0_w2l, m0_w3l
-  
-  ! work arrays
-  real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2, X3, X4     ! MxM arrays
-  real(kind=realkind), dimension(0:npol,0:npol) :: S1s, S2s, S1z, S2z ! Sum arrays
-  
-  real(kind=realkind), dimension(0:npol) :: V1, V2, V3, V4
-  real(kind=realkind), dimension(0:npol) :: uz0
-
-  us(:,:) = u(:,:,ielem,1)
-  uz(:,:) = u(:,:,ielem,3)
-
-  m_1l(:,:) = M_1(:,:,ielem)
-  m_2l(:,:) = M_2(:,:,ielem)
-  m_3l(:,:) = M_3(:,:,ielem)
-  m_4l(:,:) = M_4(:,:,ielem)
-  
-  m_w1l(:,:) = M_w1(:,:,ielem)
-
-  m11sl(:,:) = M11s(:,:,ielem)
-  m21sl(:,:) = M21s(:,:,ielem)
-  m41sl(:,:) = M41s(:,:,ielem)
-  m12sl(:,:) = M12s(:,:,ielem)
-  m22sl(:,:) = M22s(:,:,ielem)
-  m32sl(:,:) = M32s(:,:,ielem)
-  m42sl(:,:) = M42s(:,:,ielem)
-  m11zl(:,:) = M11z(:,:,ielem)
-  m21zl(:,:) = M21z(:,:,ielem)
-  m41zl(:,:) = M41z(:,:,ielem)
-
-  if ( .not. axis_solid(ielem) ) then
-     call mxm(G2T, us, X1)
-     call mxm(G2T, uz, X2)
-  else 
-     call mxm(G1T, us, X1)
-     call mxm(G1T, uz, X2)
-  endif
-
-  call mxm(us, G2, X3)
-  call mxm(uz, G2, X4)
-  
-  ! lower order terms in s
-  loc_stiffness_s = m_4l * X4 + m_2l * X3 + m_1l * X1 + m_3l * X2 + us * m_w1l
-
-  ! higher order terms + lower order terms with D_xi mxm ()
-  S1s = m11sl * X3 + m21sl * X1 + m12sl * X4 + m22sl * X2 + m_1l * us
-  S2s = m11sl * X1 + m41sl * X3 + m32sl * X2 + m42sl * X4 + m_2l * us
-  S1z = m11zl * X4 + m21zl * X2 + m32sl * X3 + m22sl * X1 + m_3l * us
-  S2z = m11zl * X2 + m41zl * X4 + m12sl * X1 + m42sl * X3 + m_4l * us
-  
-  call mxm(S2s, G2T, X2)
-  call mxm(S2z, G2T, X4)
-
-  if ( .not. axis_solid(ielem) ) then
-     call mxm(G2, S1s, X1)
-     call mxm(G2, S1z, X3)
-  else 
-     call mxm(G1, S1s, X1)
-     call mxm(G1, S1z, X3)
-  endif
-  
-  loc_stiffness_s = loc_stiffness_s + X1 + X2
-  loc_stiffness_z = X3 + X4 
-
-  ! additional axis terms
-  if (axis_solid(ielem) ) then
-     m0_w1l(:) = M0_w1(:,ielem)
-     m0_w2l(:) = M0_w2(:,ielem)
-     m0_w3l(:) = M0_w3(:,ielem)
-     
-     uz0 = uz(0,:)
-     X2 = 0
-
-     call vxm(G0, us, V1)
-     call vxm(uz0, G2, V2)
-
-     V4 = m0_w1l * V1 + m0_w3l * V2
-
-     ! additional anisotropic terms
-     call vxm(G0, uz, V3)
-
-     V4 = V4 + m0_w2l * V3
-     X2 = outerprod(G0, m0_w2l * V1)
-     ! end additional anisotropic terms
-        
-     V2 = m0_w3l * V1
-     call vxm(V2, G2T, V1)
-     X2(0,:) = X2(0,:) + V1
-                             
-     loc_stiffness_s = loc_stiffness_s + outerprod(G0, V4)
-     loc_stiffness_z = X2 + loc_stiffness_z
-  endif
-
-  glob_stiffness(0:npol,0:npol,ielem,1) = loc_stiffness_s
-  glob_stiffness(0:npol,0:npol,ielem,3) = loc_stiffness_z
-
-end subroutine elemental_stiffness_mono
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -2333,74 +2197,6 @@ pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
   enddo
 
 end subroutine glob_fluid_stiffness_4
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-pure subroutine elemental_fluid_stiffness(glob_stiffness_fl, chi, ielem)
-
-  use data_mesh, only: npol, nel_fluid
-  !include "mesh_params.h"
-  
-  ! I/O for global arrays
-  real(kind=realkind), intent(in)  :: chi(0:,0:,:)
-  real(kind=realkind), intent(out) :: glob_stiffness_fl(0:npol,0:npol,nel_fluid)
-  integer, intent(in)              :: ielem
-  
-  ! local variables for all elements
-  real(kind=realkind), dimension(0:npol,0:npol) :: chi_l, loc_stiffness
-  real(kind=realkind), dimension(0:npol,0:npol) :: m_w_fl_l
-  real(kind=realkind), dimension(0:npol,0:npol) :: m1chil, m2chil, m4chil
-  
-  ! local variables for axial elements
-  real(kind=realkind), dimension(0:npol) :: m0_w_fl_l
-  
-  ! work arrays
-  real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2  ! MxM arrays
-  real(kind=realkind), dimension(0:npol,0:npol) :: S1, S2  ! Sum
-  
-  real(kind=realkind), dimension(0:npol) :: V1
-  
-  chi_l(0:npol,0:npol) = chi(0:npol,0:npol,ielem)
-  m1chil(0:npol,0:npol) = M1chi_fl(:,:,ielem)
-  m2chil(0:npol,0:npol) = M2chi_fl(:,:,ielem)
-  m4chil(0:npol,0:npol) = M4chi_fl(:,:,ielem)
-
-  ! First MxM
-  call mxm(G2T, chi_l, X1)
-  call mxm(chi_l, G2, X2)
-
-  ! Collocations and sums of D terms
-  S1 = m1chil * X2 + m2chil * X1
-  S2 = m1chil * X1 + m4chil * X2
-
-  !Second MxM
-  call mxm(G2, S1, X1)
-  call mxm(S2, G2T, X2)
-  
-  ! Final Sum
-  loc_stiffness = X1 + X2
-
-  ! dipole and quadrupole cases: additional 2nd order term
-  if (src_type(1) .ne. 'monopole') then
-
-     m_w_fl_l(0:npol,0:npol) = M_w_fl(:,:,ielem)
-
-     loc_stiffness = loc_stiffness + m_w_fl_l * chi_l 
-
-     if ( axis_fluid(ielem) ) then
-        m0_w_fl_l(0:npol) = M0_w_fl(0:npol,ielem)
-        call vxm(G0,chi_l,V1)
-        
-        chi_l = outerprod(G0, m0_w_fl_l * V1) !chi_l as dummy 
-
-        loc_stiffness = loc_stiffness + chi_l
-     endif
-
-  endif
-
-  glob_stiffness_fl(0:npol,0:npol,ielem) = loc_stiffness
-
-end subroutine elemental_fluid_stiffness
 !=============================================================================
 
 !====================
