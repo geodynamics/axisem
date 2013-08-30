@@ -181,104 +181,8 @@ end subroutine prepare_waves
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!! TESTING routine to initialize a plane wave along the equator
-!subroutine plane_wave_initial_conditions(disp, velo)
-!
-!  use utlity,   only: zcoord, scoord
-!  use data_mesh_preloop,    only: ielsolid
-!  include 'mesh_params.h'
-!  
-!  real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3), intent(inout) :: disp, velo
-!  integer           :: iel, ipol, jpol
-!  real(kind=dp)     :: a, c, vp, vs, period
-!
-!  a = 1e-6
-!  vp = 10e3
-!  vs = 5.77e3
-!  period = 10.
-!  !c = vs * period /2.
-!  c = vp * period / 2.
-!
-!
-!  do iel=1, nel_solid
-!     do ipol=0, npol
-!        do jpol=0, npol
-!           ! P-wave
-!           disp(ipol,jpol,iel,3) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
-!           velo(ipol,jpol,iel,3) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
-!                        * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vp
-!           ! S-wave
-!           !disp(ipol,jpol,iel,1) = a * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2)
-!           !velo(ipol,jpol,iel,1) = 2 * a / c**2 * zcoord(ipol,jpol,ielsolid(iel)) &
-!           !             * exp(-zcoord(ipol,jpol,ielsolid(iel))**2 / c**2) * vs 
-!        enddo
-!     enddo
-!  enddo
-!
-!end subroutine plane_wave_initial_conditions
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!! TESTING routine finding two  points to dump the wavefield
-!subroutine find_dump_points(dumppoint_ids)
-!
-!  use utlity,   only: zcoord, scoord
-!  use data_mesh_preloop,    only: ielsolid
-!  include 'mesh_params.h'
-!  
-!  integer, intent(out)  :: dumppoint_ids(3,2)
-!  integer               :: iel, ipol, jpol
-!  real(kind=dp)         :: mindist1, mindist2, s1, s2, z1, z2
-!
-!  s1 = 1e5
-!  s2 = 1e5
-!
-!  z1 = 1.e6
-!  !z2 = z1 + 50e3 !phase
-!  z2 = 1.5e6 ! Q
-!
-!  mindist1 = 1e18
-!  mindist2 = 1e18
-!
-!
-!  do iel=1, nel_solid
-!     do ipol=0, npol
-!        do jpol=0, npol
-!           if ((zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
-!                 +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2 < mindist1) then
-!              dumppoint_ids(1,1) = ielsolid(iel)
-!              dumppoint_ids(2,1) = ipol
-!              dumppoint_ids(3,1) = jpol
-!              mindist1 = (zcoord(ipol,jpol,ielsolid(iel)) - z1)**2 & 
-!                            +  (scoord(ipol,jpol,ielsolid(iel)) - s1)**2
-!           endif
-!
-!           if ((zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
-!                 +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2 < mindist2) then
-!              dumppoint_ids(1,2) = ielsolid(iel)
-!              dumppoint_ids(2,2) = ipol
-!              dumppoint_ids(3,2) = jpol
-!              mindist2 = (zcoord(ipol,jpol,ielsolid(iel)) - z2)**2 & 
-!                            +  (scoord(ipol,jpol,ielsolid(iel)) - s2)**2
-!           endif
-!        enddo
-!     enddo
-!  enddo
-!
-!  print *, "TESTING PLANE WAVE"
-!  print *, "mindist1 = ", dsqrt(mindist1)
-!  print *, "mindist2 = ", dsqrt(mindist2)
-!  print *, "s1 = ", scoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
-!  print *, "z1 = ", zcoord(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1))
-!  print *, "s2 = ", scoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
-!  print *, "z2 = ", zcoord(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2))
-!  print *, dumppoint_ids
-!
-!end subroutine find_dump_points
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!> Entry point into the module time_evol_wave. Calls specific time loop functions, either for newmark or symplectic time scheme. 
+!> Entry point into the module time_evol_wave. Calls specific time loop
+! !functions, either for newmark or symplectic time scheme. 
 subroutine time_loop
 
   use clocks_mod, only: tick
@@ -412,25 +316,11 @@ subroutine sf_time_loop_newmark
   
   t = zero
 
-  ! FOR TESTING: PLANE WAVE INITIAL CONDITIONS
-  !call find_dump_points(dumppoint_ids)
-  !call plane_wave_initial_conditions(disp, velo)
-
-  !myunit = 72728
-  !open(unit=myunit, file='Info/dispersion.dat')
-
-
   if (lpr) write(6,*) '************ S T A R T I N G   T I M E   L O O P *************'
   if (verbose > 1) write(69,*) &
         '************ S T A R T I N G   T I M E   L O O P *************'
 
   do iter = 1, niter
-     ! TESTING plane wave: dump fields at the two points found by
-     ! find_dump_points
-     !write(myunit,*) t, disp(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1), 3), &
-     !                   disp(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2), 3), &
-     !                   velo(dumppoint_ids(2,1), dumppoint_ids(3,1), dumppoint_ids(1,1), 3), &
-     !                   velo(dumppoint_ids(2,2), dumppoint_ids(3,2), dumppoint_ids(1,2), 3)
 
      t = t + deltat
      call runtime_info(iter,disp,chi)
@@ -561,7 +451,6 @@ subroutine sf_time_loop_newmark
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ! SOLID: add source, only in source elements and for stf/=0
-     ! TESTING plane wave
      if (have_src) call add_source(acc1, stf(iter))
 
      !call update_solid_fields(velo, acc0, acc1, dchi, ddchi0, ddchi1, inv_mass_rho)
