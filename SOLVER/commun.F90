@@ -32,8 +32,6 @@ module commun
   
   implicit none
   public :: comm2d ! the general assembly & communication routine
-  public :: gather_elem_solid, scatter_elem_solid
-  public :: gather_elem_fluid, scatter_elem_fluid
   public :: pdistsum_solid, pdistsum_solid_4, pdistsum_fluid
   
   public :: assembmass_sum_solid, assembmass_sum_fluid ! assemble and sum massmat
@@ -182,7 +180,9 @@ subroutine pdistsum_solid(vec, nc)
 #endif
   
 end subroutine pdistsum_solid
+!=============================================================================
 
+!-----------------------------------------------------------------------------
 subroutine pdistsum_solid_4(vec)
   
   use data_mesh,        only: gvec_solid, nel_solid, igloc_solid
@@ -284,54 +284,6 @@ end subroutine pdistsum_solid_4
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine gather_elem_solid(vec, ic, iel)
-  
-  use data_mesh,   only: igloc_solid
-  use data_mesh,        only: gvec_solid, npol
-  use data_time,        only: idmpi, iclockmpi
-  use clocks_mod
-  
-  
-  integer, intent(in)                :: ic, iel
-  real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
-  integer                            :: jpol, ipol, idest, ipt
-  
-  do jpol = 0, npol
-     do ipol = 0, npol
-        ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-        idest = igloc_solid(ipt)
-        gvec_solid(idest) = gvec_solid(idest)+vec(ipol,jpol,iel,ic)
-     end do
-  end do
-  
-end subroutine gather_elem_solid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine scatter_elem_solid(vec, ic, iel)
-  
-  use data_mesh,   only: igloc_solid
-  use data_mesh,        only: gvec_solid, npol
-  use data_time,        only: idmpi, iclockmpi
-  use clocks_mod
-  
-  
-  integer, intent(in)                :: ic, iel
-  real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
-  integer                            :: jpol, ipol, idest, ipt
-  
-  do jpol = 0, npol
-     do ipol = 0, npol
-        ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-        idest = igloc_solid(ipt)
-        vec(ipol,jpol,iel,ic) = gvec_solid(idest)
-     end do
-  end do
-  
-end subroutine scatter_elem_solid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
 !> This is a driver routine to perform the assembly of field f of dimension nc
 !! defined in the fluid. The assembly/direct stiffness summation is composed of
 !! the "gather" and "scatter" operations, i.e. to add up all element-edge 
@@ -421,48 +373,6 @@ subroutine pdistsum_fluid(vec)
   end do
 
 end subroutine pdistsum_fluid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine gather_elem_fluid(vec, iel)
-
-  use data_mesh,   only: igloc_fluid
-  use data_mesh,        only: gvec_fluid, npol
-  
-  real(kind=realkind), intent(in)    :: vec(0:,0:,:)
-  integer, intent(in)                :: iel
-  integer                            :: jpol, ipol, idest, ipt
-
-  do jpol = 0, npol
-     do ipol = 0, npol
-        ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-        idest = igloc_fluid(ipt)
-        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel) 
-     end do
-  end do
-  
-end subroutine gather_elem_fluid
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-subroutine scatter_elem_fluid(vec, iel)
-     
-  use data_mesh,   only: igloc_fluid
-  use data_mesh,        only: gvec_fluid, npol, nel_fluid
-  
-  real(kind=realkind), intent(out)   :: vec(0:npol,0:npol,nel_fluid)
-  integer, intent(in)                :: iel
-  integer                            :: jpol, ipol, idest, ipt
-
-  do jpol = 0, npol
-     do ipol = 0, npol
-        ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-        idest = igloc_fluid(ipt)
-        vec(ipol,jpol,iel) = gvec_fluid(idest)
-     end do
-  end do
-  
-end subroutine scatter_elem_fluid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -597,6 +507,7 @@ subroutine assembmass_sum_solid(f1,res)
   integer                           :: ipt, idest, iel, ipol, jpol
 
   !!@TODO Optimise for npol = 4
+  !! MvD: I guess that is not necessary, because it is not called int the time loop
   res = 0.d0 
   gvec_solid(:) = 0.d0
   do iel = 1, nel_solid
