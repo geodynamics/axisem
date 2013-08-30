@@ -25,7 +25,7 @@ module data_mesh
 
   ! Arrays here pertain to some sort of mesh peculiarities and mainly serve 
   ! as information or parameters for many "if"-decisions such as
-  ! axis, north, element type,  solid-fluid boundary mapping, coarsening,
+  ! axis, north, element type, solid-fluid boundary mapping, coarsening,
   ! and specifically also related to the background model such as
   ! solid-fluid boundary mapping, discontinuities, and element arrays to 
   ! map solid/fluid to global element domains.
@@ -167,13 +167,14 @@ module data_mesh
   integer, dimension(:), allocatable            :: ielsolid ! (nel_solid)
   integer, dimension(:), allocatable            :: ielfluid ! (nel_fluid)
 
-  contains
+contains
 
-  !> Read parameters formerly in mesh_params.h 
-  !! It is slightly dirty to have this routine in a data module
-  !! but it allows to define the variables as 'protected', i.e.
-  !! fixed outside of this module.
-  subroutine read_mesh_basics(iounit)
+!-----------------------------------------------------------------------------------------
+!> Read parameters formerly in mesh_params.h 
+!! It is slightly dirty to have this routine in a data module
+!! but it allows to define the variables as 'protected', i.e.
+!! fixed outside of this module.
+subroutine read_mesh_basics(iounit)
      integer, intent(in)   :: iounit
 
      print *, iounit
@@ -191,9 +192,10 @@ module data_mesh
      read(iounit) ndisc
      read(iounit) lfbkgrdmodel
 
-  
 end subroutine
+!-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 subroutine read_mesh_advanced(iounit)
    use data_io, only     : verbose 
    integer, intent(in)  :: iounit
@@ -258,8 +260,9 @@ subroutine read_mesh_advanced(iounit)
    read(iounit) bdry_jpol_solid(1:nel_bdry)
    read(iounit) bdry_jpol_fluid(1:nel_bdry)
 end subroutine
+!-----------------------------------------------------------------------------------------
 
-
+!-----------------------------------------------------------------------------------------
 subroutine read_mesh_axel(iounit)
    integer, intent(in) :: iounit
 
@@ -271,6 +274,7 @@ subroutine read_mesh_axel(iounit)
    read(iounit) ax_el_solid(1:naxel_solid)
    read(iounit) ax_el_fluid(1:naxel_fluid)
 end subroutine
+!-----------------------------------------------------------------------------------------
 
 !=======================
 end module data_mesh
