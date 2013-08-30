@@ -92,8 +92,8 @@ print MAKEFILE "\trm -f \$(PROG) \$(OBJS) *.M *.mod *.d *.il core \n\n";
 #
 # make utils (postprocessing and alike)
 # 
-print MAKEFILE "utils :\n";
-print MAKEFILE "\tcd UTILS; make -f Makefile\n\n";
+print MAKEFILE "utils:\n";
+print MAKEFILE "\tcd UTILS; make\n\n";
 #
 # Make .f90 a valid suffix
 #

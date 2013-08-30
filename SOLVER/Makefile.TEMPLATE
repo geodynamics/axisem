@@ -53,8 +53,8 @@ $(PROG): $(OBJS)
 clean:
 	rm -f $(PROG) $(OBJS) *.M *.mod *.d *.il core 
 
-utils :
-	cd UTILS; make -f Makefile
+utils:
+	cd UTILS; make
 
 .SUFFIXES: $(SUFFIXES) .f90 .F90
 
