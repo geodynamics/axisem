@@ -58,7 +58,6 @@ subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
   use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
   use data_mesh, only: npol, nel_solid, nel_fluid
-  !include 'mesh_params.h'
   
   integer, intent(in)             :: ibeg, iend, jbeg, jend
   real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
@@ -142,7 +141,6 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
   use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
   use data_mesh, only: npol, nel_solid, nel_fluid
-  !include 'mesh_params.h'
   
   integer, intent(in)             :: ibeg, iend, jbeg, jend
   real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
@@ -208,7 +206,6 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     use data_time,              only: t
     use nc_routines,            only: nc_dump_snapshot
     use data_mesh,              only: npol, nel_solid, nel_fluid
-    !include 'mesh_params.h'
     
     real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
     real(kind=realkind), intent(in) :: chi(0:,0:,:)
@@ -900,7 +897,6 @@ subroutine snapshot_memoryvar_vtk(memvar, iter)
   use data_matr,      only: points_solid
   use lateral_heterogeneities, only: write_VTK_bin_scal_pts
   use data_mesh,             only: npol, nel_solid, nel_fluid 
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: memvar(0:,0:,:,:,:)
   integer, intent(in)               :: iter
@@ -938,7 +934,6 @@ end subroutine snapshot_memoryvar_vtk
 !! Convention for order in the file: First the fluid, then the solid domain.
 subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
 
-  !include 'mesh_params.h'
   use data_mesh, only: nel_solid
 
   integer, intent(in)             :: ibeg, iend, jbeg, jend
@@ -969,7 +964,6 @@ subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
   use data_source, only : src_type
   use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
   
-  !include 'mesh_params.h'
   use data_mesh, only: npol, nel_fluid
   
   integer, intent(in)             :: ibeg, iend, jbeg, jend
@@ -1024,7 +1018,6 @@ subroutine dump_field_1d(f, filename, appisnap, n)
   !use data_proc,    only : appmynum
   use data_source,  only : have_src, src_dump_type
   
-  !include 'mesh_params.h'
   use data_mesh, only : nel_solid, nel_fluid
   
   integer, intent(in)                 :: n
@@ -1065,7 +1058,6 @@ subroutine dump_disp(u, chi)
 
   use data_source, only : src_type,src_dump_type
   
-  !include 'mesh_params.h'
   
   real(kind=realkind),intent(in) :: u(0:,0:,:,:)
   real(kind=realkind),intent(in) :: chi(0:,0:,:)
@@ -1111,7 +1103,6 @@ subroutine dump_velo_dchi(v, dchi)
 
   use data_source, only : src_type, src_dump_type
   
-  !include 'mesh_params.h'
   
   real(kind=realkind),intent(in) :: v(0:,0:,:,:)
   real(kind=realkind),intent(in) :: dchi(0:,0:,:)
@@ -1160,7 +1151,6 @@ subroutine dump_velo_global(v,dchi)
   use data_source,              only: src_type, src_dump_type
   use pointwise_derivatives,    only: axisym_gradient_fluid, dsdf_fluid_allaxis
   
-  !include 'mesh_params.h'
   use data_mesh
   
   real(kind=realkind),intent(in) :: v(:,:,:,:)
@@ -1246,7 +1236,6 @@ pure subroutine eradicate_src_elem_vec_values(u)
 
   use data_source, only : nelsrc,ielsrc,have_src
   
-  !include 'mesh_params.h'
   
   real(kind=realkind),intent(inout) :: u(0:,0:,:,:)
   integer :: iel
@@ -1269,7 +1258,6 @@ pure subroutine eradicate_src_elem_values(u)
 
   use data_source, only : nelsrc,ielsrc,have_src
  
-  !include 'mesh_params.h'
 
   real(kind=realkind),intent(inout) :: u(0:,0:,:)
   integer :: iel

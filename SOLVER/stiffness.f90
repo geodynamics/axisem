@@ -52,6 +52,7 @@ module stiffness
   public :: glob_anel_stiffness_quad_cg4
 
   public :: glob_fluid_stiffness
+  public :: glob_fluid_stiffness_4
   
   private
 

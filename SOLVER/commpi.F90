@@ -464,7 +464,6 @@ subroutine extract_from_buffer(vec,nc)
   use data_mesh,      only: gvec_solid
   use data_mesh, only: igloc_solid
   
-  !include 'mesh_params.h'
   
   integer, intent(in) :: nc
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)

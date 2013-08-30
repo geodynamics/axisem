@@ -57,7 +57,6 @@ subroutine read_model_compute_terms
   use commun,       only: barrier
   use data_matr,    only: Q_mu, Q_kappa, M_w_fl, M0_w_fl, M1chi_fl, M2chi_fl, M4chi_fl, bdry_matr
   
- ! include 'mesh_params.h'
   
   real(kind=dp)   , dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
   real(kind=dp)   , dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
@@ -167,7 +166,6 @@ subroutine lagrange_derivs
 
   use splib, only : hn_jprime, lag_interp_deriv_wgl
   use data_mesh
-  !include 'mesh_params.h'
   
   real(kind=dp)     :: df(0:npol),dg(0:npol)
   integer           :: ishp,jpol
@@ -260,7 +258,6 @@ subroutine compute_pointwisederiv_matrices
 !! mesh, i.e. only slightly more memory intensive).
 
   use data_pointwise
-  !include 'mesh_params.h'
 
   integer          :: iel,inode,ipol,jpol
   real(kind=dp)    :: dsdxi,dzdxi,dsdeta,dzdeta
@@ -429,7 +426,6 @@ subroutine test_pntwsdrvtvs_solid
   use data_io
   use pointwise_derivatives
   
-  !include 'mesh_params.h'
   
   real(kind=realkind),allocatable :: tmpsolfield(:,:,:)
   real(kind=realkind),allocatable :: tmpsolfieldcomp(:,:,:,:)
@@ -574,7 +570,6 @@ subroutine test_pntwsdrvtvs_fluid
   use data_io
   use pointwise_derivatives
   
-  !include 'mesh_params.h'
   
   real(kind=realkind),allocatable :: tmpflufield(:,:,:)
   real(kind=realkind),allocatable :: tmpflufieldcomp(:,:,:,:)
@@ -1125,7 +1120,6 @@ subroutine compute_mass_earth(rho)
   use commun,               only : psum
   use data_io,              only : infopath,lfinfo
   
-  !include 'mesh_params.h'
   
   real(kind=dp)   , intent(in)     :: rho(0:npol,0:npol,nelem)
   integer                          :: iel,ipol,jpol,idom,iidom,idisc
@@ -2607,7 +2601,6 @@ subroutine def_solid_fluid_boundary_terms
   use data_io
   use data_mesh, only: npol, nel_bdry
   use data_matr
-  !include 'mesh_params.h'
   
   real(kind=dp)                :: local_crd_nodes(8,2)
   real(kind=dp)                :: s,z,r,theta,rf,thetaf

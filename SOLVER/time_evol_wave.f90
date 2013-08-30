@@ -231,7 +231,6 @@ subroutine sf_time_loop_newmark
   use attenuation,          only: n_sls_attenuation
   use attenuation,          only: att_coarse_grained
   use data_mesh
-  !include 'mesh_params.h'
   
   ! Solid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
@@ -518,7 +517,6 @@ subroutine symplectic_time_loop
   
   
   use data_mesh
-  !include 'mesh_params.h'
   
   ! solid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo, acc
@@ -909,7 +907,6 @@ subroutine runtime_info(iter, disp, chi)
   
   use commun, only : pend
   !use data_mesh
-  !include 'mesh_params.h'
   
   integer, intent(in)             :: iter
   real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
@@ -973,7 +970,6 @@ end subroutine runtime_info
 !! and I have the source.
 pure subroutine add_source(acc1, stf1)
   
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)    :: stf1
   real(kind=realkind), intent(inout) :: acc1(0:,0:,:,:)
@@ -1171,7 +1167,6 @@ end subroutine dump_stuff
 !  use pointwise_derivatives,    only: axisym_gradient_solid
 !  use pointwise_derivatives,    only: f_over_s_solid
 !  
-!  include 'mesh_params.h'
 !  
 !  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,nel_solid,3)
 !  real(kind=realkind), intent(in)   :: velo(0:npol,0:npol,nel_solid,3)
@@ -1228,7 +1223,6 @@ subroutine compute_strain(u, chi)
   use wavefields_io,            only: dump_field_1d
   
   use data_mesh
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in) :: u(0:,0:,:,:)
   real(kind=realkind), intent(in) :: chi(0:,0:,:)
@@ -1398,7 +1392,6 @@ subroutine energy(disp1,vel,dchi1,ddchi)
   use apply_masks
   use commun
   use data_mesh
-  !include 'mesh_params.h'
   
   real(kind=realkind), dimension(0:,0:,:,:),intent(in) :: disp1
   real(kind=realkind), dimension(0:,0:,:,:),intent(in) :: vel
@@ -1501,7 +1494,6 @@ pure subroutine bdry_copy2fluid(uflu,usol)
   use data_matr,   only : bdry_matr, solflubdry_radius
   use data_source, only : src_type
   
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(inout) :: uflu(0:,0:,:)
   real(kind=realkind), intent(in)    :: usol(0:,0:,:,:)
@@ -1547,7 +1539,6 @@ pure subroutine bdry_copy2solid(usol,uflu)
   use data_matr,   only : bdry_matr, solflubdry_radius
   use data_source, only : src_type
   
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(inout) :: usol(0:,0:,:,:)
   real(kind=realkind), intent(in)    :: uflu(0:,0:,:)

@@ -51,7 +51,6 @@ subroutine init_grid
   use commun
   use splib, only: zemngl2, get_welegl_axial, zelegl, get_welegl
   
-  !include 'mesh_params.h'
   
   integer :: iel, ipol, jpol, idest, ipt, icount, iicount, ipg, ip
   
@@ -417,7 +416,6 @@ subroutine dump_coarsing_element_info
   use commun, only: barrier
   use data_mesh, only: nelem
   
-  !include 'mesh_params.h'
   
   integer          :: iel
   real(kind=dp)    :: s,z,r,theta
@@ -503,7 +501,6 @@ end subroutine dump_coarsing_element_info
 !! but lingering well since not exactly pricey...
 subroutine check_physical_coordinates
 
-  !include 'mesh_params.h'
   use data_mesh, only : nelem, npol
   
   integer :: iel,ipol,jpol
@@ -579,7 +576,6 @@ subroutine check_axial_stuff
 
   use apply_masks
   use data_mesh, only: npol, nel_solid, nel_fluid, nel_bdry 
-  !include 'mesh_params.h'
   
   integer                          ::  iel,jpol
   integer                          :: count_ax,count2_ax,count3_ax,i
@@ -996,7 +992,6 @@ subroutine compute_spherical_surfaces
 
   use commun, only : broadcast_int, broadcast_dble, psum_dble
   
-  !include 'mesh_params.h'
   
   integer                    :: irad,ipol,iel,ielabove,ielbelow
   real(kind=dp), allocatable :: tmpradii(:,:),radsurf(:,:),radii2(:,:)
@@ -1194,7 +1189,6 @@ subroutine compute_volume
   use commun, only : psum,assembmass_sum_solid,assembmass_sum_fluid
   use data_mesh, only: npol, nelem, nel_solid, nel_fluid
   
-  !include 'mesh_params.h'
   
   integer             :: iel,ipol,jpol
   real(kind=dp)       :: vol_glob,vol_solid,vol_fluid
@@ -1351,7 +1345,6 @@ end subroutine compute_volume
 subroutine check_solid_fluid_boundaries
 
   use data_mesh, only: npol, nel_solid, nel_fluid, nel_bdry 
-  !include 'mesh_params.h'
   
   real(kind=realkind), allocatable :: tmpsolfield(:,:,:), tmpflufield(:,:,:)
   integer                          :: bdrycount, ipol, jpol, iel
@@ -1435,7 +1428,6 @@ end subroutine check_solid_fluid_boundaries
 !! between two neighbouring points in the meridional plane.
 subroutine compute_hmin_meri(hmin)
 
-  !include 'mesh_params.h'
   use data_mesh, only: nelem, npol
   
   real(kind=dp)    :: hmin

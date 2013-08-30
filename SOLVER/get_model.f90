@@ -85,7 +85,6 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   use lateral_heterogeneities
   use data_source, ONLY : rot_src
   use data_mesh, only: npol, nelem, nel_solid, ielsolid
-  !include 'mesh_params.h'
 
   real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: rho
   real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
@@ -444,7 +443,6 @@ end subroutine interp_vel
 !-----------------------------------------------------------------------------
 subroutine check_mesh_discontinuities(ieldom,domcount)
 
-  !include 'mesh_params.h'
   use data_mesh, only: ndisc, npol, nelem
 
   integer, intent(in)  :: ieldom(:)
@@ -524,7 +522,6 @@ end subroutine check_mesh_discontinuities
 !-----------------------------------------------------------------------------
 subroutine check_elastic_discontinuities(ieldom,domcount,lambda,mu,rho)
 
-  !include 'mesh_params.h'
   use data_mesh, only : ndisc, nelem
 
   integer, intent(in)          :: ieldom(nelem),domcount(ndisc)
@@ -764,7 +761,6 @@ subroutine check_background_model(lambda,mu,rho)
 
   use data_mesh, ONLY : eltype, coarsing
   use data_mesh, only : npol, nelem
-  !include 'mesh_params.h'
 
   real(kind=dp)   , intent(in)  :: rho(0:npol,0:npol,nelem) 
   real(kind=dp)   , intent(in)  :: lambda(0:npol,0:npol,nelem)
@@ -964,7 +960,6 @@ subroutine test_mesh_model_resolution(lambda,mu,rho)
   use data_mesh, ONLY : eltype, coarsing, north, axis
   use commun, ONLY : psum_dble,broadcast_int,broadcast_dble
 
-  !include 'mesh_params.h'
 
   real(kind=dp)   , intent(in)  :: rho(0:npol,0:npol,nelem)
   real(kind=dp)   , intent(in)  :: lambda(0:npol,0:npol,nelem)

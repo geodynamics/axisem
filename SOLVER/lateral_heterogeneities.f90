@@ -43,7 +43,6 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                    fa_ani_theta, fa_ani_phi, ieldom)
     use commun, only: barrier
     use data_mesh, only: npol, nelem
-    !include 'mesh_params.h'
 
     integer :: ij
     real(kind=dp)   , dimension(0:,0:,:), intent(inout) :: rho

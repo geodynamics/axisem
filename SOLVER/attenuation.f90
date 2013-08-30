@@ -26,7 +26,6 @@ module attenuation
   use data_io,              only: verbose
   use data_time
   implicit none
-  !include 'mesh_params.h'
 
   private
   public :: prepare_attenuation
@@ -63,7 +62,6 @@ subroutine time_step_memvars_cg4(memvar, disp)
   use data_matr,            only: delta_mu_cg4, delta_kappa_cg4
   use data_mesh,            only: axis_solid, nel_solid
   use data_source,          only: src_type
-  !include 'mesh_params.h'
 
   real(kind=realkind), intent(inout)    :: memvar(1:4,6,n_sls_attenuation,nel_solid)
   !real(kind=realkind), intent(inout)    :: memvar(:,:,:,:)
@@ -198,7 +196,6 @@ subroutine time_step_memvars_4(memvar, disp)
   use data_matr,            only: delta_mu, delta_kappa
   use data_mesh,            only: axis_solid, nel_solid!, npol
   use data_source,          only: src_type
-  !include 'mesh_params.h'
 
   !real(kind=realkind), intent(inout)    :: memvar(0:,0:,:,:,:)
   real(kind=realkind), intent(inout)    :: memvar(0:4,0:4,6,n_sls_attenuation,nel_solid)
@@ -332,7 +329,6 @@ subroutine time_step_memvars(memvar, disp)
   use data_matr,            only: delta_mu, delta_kappa
   use data_mesh,            only: axis_solid, nel_solid, npol
   use data_source,          only: src_type
-  !include 'mesh_params.h'
 
   real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid) !memvar(0:,0:,6,:,:)
   real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3) !disp(0:,0:,:,3) 
@@ -462,7 +458,6 @@ subroutine compute_strain_att_el_cg4(u, grad_u, iel)
   use pointwise_derivatives,    only: axisym_gradient_solid_el_cg4
   use pointwise_derivatives,    only: f_over_s_solid_el_cg4
   
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: u(0:,0:,:)
   real(kind=realkind), intent(out)  :: grad_u(1:4,6)
@@ -534,7 +529,6 @@ subroutine compute_strain_att_el_4(u, grad_u, iel)
   use pointwise_derivatives,    only: axisym_gradient_solid_el_4
   use pointwise_derivatives,    only: f_over_s_solid_el_4
   
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: u(0:,0:,:)
   !real(kind=realkind), intent(in)   :: u(0:4,0:4,3)
@@ -607,7 +601,6 @@ subroutine compute_strain_att_el(u, grad_u, iel)
   use pointwise_derivatives,    only: f_over_s_solid_el
   use data_mesh,                only: npol
   
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: u(0:,0:,:)
   real(kind=realkind), intent(out)  :: grad_u(0:npol,0:npol,6)
@@ -692,7 +685,6 @@ subroutine prepare_attenuation(lambda, mu)
                                   broadcast_char, broadcast_dble, barrier
 
 
-  !include 'mesh_params.h'
 
   real(kind=dp), intent(inout)   :: lambda(0:,0:,1:)
   real(kind=dp), intent(inout)   :: mu(0:,0:,1:)

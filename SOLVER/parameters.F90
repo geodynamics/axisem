@@ -77,7 +77,6 @@ end subroutine
 subroutine readin_parameters
 
   use data_mesh, only: make_homo, do_mesh_tests
-  !include 'mesh_params.h'
 
   call read_inparam_basic
   
@@ -346,7 +345,6 @@ subroutine read_inparam_advanced
   
   use data_mesh,  only: naxel, meshname, vphomo, vshomo, rhohomo, make_homo, do_mesh_tests
   use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
-  !include 'mesh_params.h'
 
   integer               :: iinparam_advanced=500, ioerr
   integer               :: npol_max = 12
@@ -1082,7 +1080,6 @@ subroutine write_parameters
     use nc_routines
     !use data_mesh, ONLY : nglob,nglob_solid
     use data_mesh
-    !include 'mesh_params.h'
 
     integer          :: iel,curvel,linel,seminoel,semisoel
     integer          :: curvel_solid,linel_solid,seminoel_solid,semisoel_solid
@@ -1670,7 +1667,6 @@ subroutine check_parameters(hmaxglob, hminglob, curvel, linel, seminoel, semisoe
     use data_comm
     use data_mesh
     
-    !include 'mesh_params.h'
     
     real(kind=dp)   , intent(in) :: hmaxglob,hminglob
     integer, intent(in) :: curvel,linel,seminoel,semisoel

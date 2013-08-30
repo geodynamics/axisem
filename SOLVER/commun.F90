@@ -90,7 +90,6 @@ subroutine pdistsum_solid(vec, nc)
   use data_time,        only: idmpi, iclockmpi
   use clocks_mod
   
-  !include 'mesh_params.h' 
   
   integer, intent(in)                :: nc
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
@@ -292,7 +291,6 @@ subroutine gather_elem_solid(vec, ic, iel)
   use data_time,        only: idmpi, iclockmpi
   use clocks_mod
   
-  !include 'mesh_params.h' 
   
   integer, intent(in)                :: ic, iel
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
@@ -317,7 +315,6 @@ subroutine scatter_elem_solid(vec, ic, iel)
   use data_time,        only: idmpi, iclockmpi
   use clocks_mod
   
-  !include 'mesh_params.h' 
   
   integer, intent(in)                :: ic, iel
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
@@ -347,7 +344,6 @@ subroutine pdistsum_fluid(vec)
   use data_mesh,        only: gvec_fluid, npol, nel_fluid
   use clocks_mod
   
-  !include 'mesh_params.h' 
   
   real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_fluid)
   integer                            :: iel, jpol, ipol, idest, ipt
@@ -432,7 +428,6 @@ subroutine gather_elem_fluid(vec, iel)
 
   use data_mesh,   only: igloc_fluid
   use data_mesh,        only: gvec_fluid, npol
-  !include 'mesh_params.h' 
   
   real(kind=realkind), intent(in)    :: vec(0:,0:,:)
   integer, intent(in)                :: iel
@@ -454,7 +449,6 @@ subroutine scatter_elem_fluid(vec, iel)
      
   use data_mesh,   only: igloc_fluid
   use data_mesh,        only: gvec_fluid, npol, nel_fluid
-  !include 'mesh_params.h' 
   
   real(kind=realkind), intent(out)   :: vec(0:npol,0:npol,nel_fluid)
   integer, intent(in)                :: iel
@@ -486,7 +480,6 @@ subroutine mpi_asynch_messaging_test_solid
   
   use data_mesh, only: igloc_solid, nglob_solid
   use data_mesh,      only: npol, nel_solid, nel_fluid
-  !include 'mesh_params.h' 
   
   real(kind=realkind),allocatable   :: vec(:,:,:,:)
   real(kind=realkind),allocatable   :: gvec_solid2(:,:)
@@ -553,7 +546,6 @@ subroutine mpi_asynch_messaging_test_fluid
   use data_mesh,   only: igloc_fluid
   use data_mesh,        only: gvec_fluid, npol, nel_fluid
   
-  !include 'mesh_params.h' 
   
   real(kind=realkind),allocatable :: vec(:,:,:)
   integer                         :: iel,jpol,ipol,idest,ipt
@@ -599,7 +591,6 @@ subroutine assembmass_sum_solid(f1,res)
 
   use data_mesh,   only: igloc_solid
   use data_mesh,        only: gvec_solid, npol, nel_solid
-  !include 'mesh_params.h'
   
   real(kind=realkind), intent(in)   :: f1(0:,0:,:)
   real(kind=dp)   , intent(out)     :: res
@@ -631,7 +622,6 @@ subroutine assembmass_sum_fluid(f1,res)
   use data_mesh,   only: igloc_fluid
   use data_mesh,        only: gvec_fluid
   use data_mesh,        only: gvec_solid, npol, nel_fluid
-  !include 'mesh_params.h' 
   
   real(kind=realkind), intent(in)   :: f1(0:,0:,:)
   real(kind=dp)   , intent(out)     :: res
@@ -662,7 +652,6 @@ end subroutine assembmass_sum_fluid
 !-----------------------------------------------------------------------------
 subroutine pinit
 
-  !include 'mesh_params.h'
   integer ioerr, nproc_mesh
   character(len=20) dbname
  
