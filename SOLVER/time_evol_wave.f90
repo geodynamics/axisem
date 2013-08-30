@@ -449,7 +449,11 @@ subroutine sf_time_loop_newmark
 
      ! FLUID: stiffness term K_f
      iclockstiff = tick()
-     call glob_fluid_stiffness(ddchi1, chi) 
+     if (npol==4) then
+        call glob_fluid_stiffness_4(ddchi1, chi) 
+     else
+        call glob_fluid_stiffness(ddchi1, chi) 
+     endif
      iclockstiff = tick(id=idstiff, since=iclockstiff)
 
      ! FLUID: solid-fluid boundary term (solid displ.) added to fluid stiffness
@@ -474,7 +478,7 @@ subroutine sf_time_loop_newmark
      !        4) masking of w
      ! MvD: masking of w?? you mean acc?
 
-     iclockstiff = tick()
+     !iclockstiff = tick()
      select case (src_type(1))
         case ('monopole')
            call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
@@ -545,7 +549,7 @@ subroutine sf_time_loop_newmark
            call bdry_copy2solid(acc1,ddchi1)
            call apply_axis_mask_threecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
      end select
-     iclockstiff = tick(id=idstiff, since=iclockstiff)
+     !iclockstiff = tick(id=idstiff, since=iclockstiff)
 
      ! SOLID: 3-component stiffness term assembly ==> w^T K_s u
      iclockcomm = tick()

@@ -40,7 +40,7 @@ module stiffness
   public :: glob_anel_stiffness_mono_4, glob_anel_stiffness_di_4, glob_anel_stiffness_quad_4
   public :: glob_anel_stiffness_mono_cg4, glob_anel_stiffness_di_cg4, &
             glob_anel_stiffness_quad_cg4
-  public :: glob_fluid_stiffness
+  public :: glob_fluid_stiffness_4, glob_fluid_stiffness
   private
 
 contains
@@ -54,6 +54,17 @@ pure function outerprod(a,b)
 
   outerprod = spread(a, dim=2, ncopies=size(b)) * spread(b, dim=1, ncopies=size(a))
 end function outerprod
+!-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+pure function outerprod_4(a,b) 
+  ! outer product (dyadic) from numerical recipes
+  
+  real(kind=realkind), dimension(0:4), intent(in)   :: a, b
+  real(kind=realkind), dimension(0:4,0:4)           :: outerprod_4
+
+  outerprod_4 = spread(a, dim=2, ncopies=5) * spread(b, dim=1, ncopies=5)
+end function outerprod_4
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
@@ -169,14 +180,14 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
         call vxm_4(G0, uz, V3)
 
         V4 = V4 + m0_w2(:,ielem) * V3
-        X2 = outerprod(G0, m0_w2(:,ielem) * V1)
+        X2 = outerprod_4(G0, m0_w2(:,ielem) * V1)
         ! end additional anisotropic terms
            
         V2 = m0_w3(:,ielem) * V1
         call vxm_4(V2, G2T, V1)
         X2(0,0:npol) = X2(0,0:npol) + V1
                                 
-        loc_stiffness_s = loc_stiffness_s + outerprod(G0, V4)
+        loc_stiffness_s = loc_stiffness_s + outerprod_4(G0, V4)
         loc_stiffness_z = X2 + loc_stiffness_z
      endif
 
@@ -618,14 +629,14 @@ pure subroutine glob_anel_stiffness_mono_4(glob_stiffness, R)
 
         ! s - component
         V1 = v0_z_etal * r1(0,:) + v0_s_etal * r5(0,:) + y0l * r2(0,:)
-        loc_stiffness_s = loc_stiffness_s + outerprod(G0, V1)
+        loc_stiffness_s = loc_stiffness_s + outerprod_4(G0, V1)
 
         ! z - component
         V2 = v0_z_etal * r5(0,:) + v0_s_etal * r3(0,:)
         V3 = v0_z_xil  * r5(0,:) + v0_s_xil  * r3(0,:)
         call vxm_4(V3, G2T, V4)
 
-        loc_stiffness_z = loc_stiffness_z + outerprod(G0, V2)
+        loc_stiffness_z = loc_stiffness_z + outerprod_4(G0, V2)
         loc_stiffness_z(0,:) = loc_stiffness_z(0,:) + V4
      endif
 
@@ -894,12 +905,12 @@ pure subroutine glob_stiffness_di_4(glob_stiffness,u)
         m0_w6l(:)  = M0_w6(:,ielem)
         m0_w10l(:) = M0_w10(:,ielem)
 
-        S1p = outerprod(G0, m0_w1l * V2 + m0_w3l * V3)
+        S1p = outerprod_4(G0, m0_w1l * V2 + m0_w3l * V3)
         
-        S1m = outerprod(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w6l  * V4 &
+        S1m = outerprod_4(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w6l  * V4 &
                                         + m0_w9l * V2 + m0_w10l * V3)
         
-        S1z = outerprod(G0, m0_w3l * V1 + (m0_w4l + m0_w8l) * V4 + m0_w7l * V3 &
+        S1z = outerprod_4(G0, m0_w3l * V1 + (m0_w4l + m0_w8l) * V4 + m0_w7l * V3 &
                                         + m0_w10l * V2)
 
         V4 = (m0_w2l + m0_w6l) * V2 + (m0_w4l + m0_w8l) * V3
@@ -1347,17 +1358,17 @@ pure subroutine glob_anel_stiffness_di_4(glob_stiffness, R)
         V2 = v0_z_xil  * (r1(0,:) - r6(0,:)) + v0_s_xil  *  (r5(0,:) - r4(0,:))
         call vxm_4(V2, G2T, V3)
         
-        loc_stiffness_p = loc_stiffness_p + outerprod(G0, V1)
+        loc_stiffness_p = loc_stiffness_p + outerprod_4(G0, V1)
         loc_stiffness_p(0,:) = loc_stiffness_p(0,:) + V3
         
         ! m - component
         V1 = v0_z_etal * (r1(0,:) + r6(0,:)) + v0_s_etal * (r5(0,:) + r4(0,:)) &
                 + y0l * 2 * (r2(0,:) - r6(0,:))
-        loc_stiffness_m = loc_stiffness_m + outerprod(G0, V1)
+        loc_stiffness_m = loc_stiffness_m + outerprod_4(G0, V1)
 
         ! z - component
         V1 = v0_z_etal * r5(0,:) + v0_s_etal * r3(0,:) - y0l * r4(0,:)
-        loc_stiffness_z = loc_stiffness_z + outerprod(G0, V2)
+        loc_stiffness_z = loc_stiffness_z + outerprod_4(G0, V2)
      endif
 
      ! subtracting (!) from the global stiffness
@@ -1810,11 +1821,11 @@ pure subroutine glob_stiffness_quad_4(glob_stiffness,u)
         call vxm_4(G0, uz, V3)
 
         ! Collocations, Sums, Tensorization
-        S1s = outerprod(G0, m0_w1l * V1 + m0_w2l * V2 + m0_w3l * V3)
+        S1s = outerprod_4(G0, m0_w1l * V1 + m0_w2l * V2 + m0_w3l * V3)
 
-        S1phi = outerprod(G0, m0_w2l * V1 + m0_w4l * V2 + m0_w5l * V3)
+        S1phi = outerprod_4(G0, m0_w2l * V1 + m0_w4l * V2 + m0_w5l * V3)
         
-        S1z = outerprod(G0, m0_w3l * V1 + m0_w5l * V2 + m0_w6l * V3)
+        S1z = outerprod_4(G0, m0_w3l * V1 + m0_w5l * V2 + m0_w6l * V3)
         ! end additional anisotropic terms
 
         ! Final Sum
@@ -2046,15 +2057,15 @@ pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
 
         ! s - component
         V1 = v0_z_etal * r1(0,:) + y0l * (r2(0,:) - 2 * r6(0,:))
-        loc_stiffness_s = loc_stiffness_s + outerprod(G0, V1)
+        loc_stiffness_s = loc_stiffness_s + outerprod_4(G0, V1)
         
         ! p - component
         V1 = - v0_z_etal * r6(0,:) + y0l * (r6(0,:) - 2 * r2(0,:))
-        loc_stiffness_p = loc_stiffness_p + outerprod(G0, V1)
+        loc_stiffness_p = loc_stiffness_p + outerprod_4(G0, V1)
 
         ! z - component
         V1 = v0_s_etal * r3(0,:)
-        loc_stiffness_z = loc_stiffness_z + outerprod(G0, V1)
+        loc_stiffness_z = loc_stiffness_z + outerprod_4(G0, V1)
      endif
 
      ! subtracting (!) from the global stiffness
@@ -2247,6 +2258,81 @@ pure subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
   enddo
 
 end subroutine glob_fluid_stiffness
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
+
+  use data_mesh, only: nel_fluid
+  !include "mesh_params.h"
+  
+  integer, parameter               :: npol = 4
+
+  ! I/O for global arrays
+  real(kind=realkind), intent(in)  :: chi(0:,0:,:)
+  real(kind=realkind), intent(out) :: glob_stiffness_fl(0:npol,0:npol,nel_fluid)
+  
+  ! local variables for all elements
+  real(kind=realkind), dimension(0:npol,0:npol) :: chi_l, loc_stiffness
+  real(kind=realkind), dimension(0:npol,0:npol) :: m_w_fl_l
+  real(kind=realkind), dimension(0:npol,0:npol) :: m1chil, m2chil, m4chil
+  
+  ! local variables for axial elements
+  real(kind=realkind), dimension(0:npol) :: m0_w_fl_l
+  
+  ! work arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: X1, X2  ! MxM arrays
+  real(kind=realkind), dimension(0:npol,0:npol) :: S1, S2  ! Sum
+  
+  real(kind=realkind), dimension(0:npol) :: V1
+  
+  integer :: ielem
+
+  do ielem = 1, nel_fluid
+
+     chi_l(0:npol,0:npol) = chi(0:npol,0:npol,ielem)
+     m1chil(0:npol,0:npol) = M1chi_fl(:,:,ielem)
+     m2chil(0:npol,0:npol) = M2chi_fl(:,:,ielem)
+     m4chil(0:npol,0:npol) = M4chi_fl(:,:,ielem)
+
+     ! First MxM
+     call mxm_4(G2T, chi_l, X1)
+     call mxm_4(chi_l, G2, X2)
+
+     ! Collocations and sums of D terms
+     S1 = m1chil * X2 + m2chil * X1
+     S2 = m1chil * X1 + m4chil * X2
+
+     !Second MxM
+     call mxm_4(G2, S1, X1)
+     call mxm_4(S2, G2T, X2)
+     
+     ! Final Sum
+     loc_stiffness = X1 + X2
+
+     ! dipole and quadrupole cases: additional 2nd order term
+     if (src_type(1) .ne. 'monopole') then
+
+        m_w_fl_l(0:npol,0:npol) = M_w_fl(:,:,ielem)
+
+        loc_stiffness = loc_stiffness + m_w_fl_l * chi_l 
+
+        if ( axis_fluid(ielem) ) then
+           m0_w_fl_l(0:npol) = M0_w_fl(0:npol,ielem)
+           call vxm_4(G0,chi_l,V1)
+           
+           chi_l = outerprod(G0, m0_w_fl_l * V1) !chi_l as dummy 
+
+           loc_stiffness = loc_stiffness + chi_l
+        endif
+
+     endif
+
+     glob_stiffness_fl(0:npol,0:npol,ielem) = loc_stiffness
+
+  enddo
+
+end subroutine glob_fluid_stiffness_4
 !=============================================================================
 
 !-----------------------------------------------------------------------------
