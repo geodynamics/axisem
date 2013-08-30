@@ -238,8 +238,6 @@ subroutine sf_time_loop_newmark
   ! Solid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: acc0, acc1
-  !real(kind=realkind), allocatable, dimension(:,:,:,:) :: disp, velo
-  !real(kind=realkind), allocatable, dimension(:,:,:,:) :: acc0, acc1
   
   ! solid memory variables + gradient
   real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
@@ -248,8 +246,6 @@ subroutine sf_time_loop_newmark
   ! Fluid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
-  !real(kind=realkind), allocatable, dimension(:,:,:)   :: chi, dchi
-  !real(kind=realkind), allocatable, dimension(:,:,:)   :: ddchi0, ddchi1
 
   integer :: iter, ielem
 
@@ -294,21 +290,11 @@ subroutine sf_time_loop_newmark
   !ddchi0 = 1.d-30
   !ddchi1 = 1.d-30
 
-  !allocate(disp(0:npol,0:npol,nel_solid,3))
-  !allocate(velo(0:npol,0:npol,nel_solid,3))
-  !allocate(acc0(0:npol,0:npol,nel_solid,3))
-  !allocate(acc1(0:npol,0:npol,nel_solid,3))
-
   disp = zero
   velo = zero 
   acc0 = zero
   acc1 = zero
   
-  !allocate(chi(0:npol,0:npol,nel_fluid))
-  !allocate(dchi(0:npol,0:npol,nel_fluid))
-  !allocate(ddchi0(0:npol,0:npol,nel_fluid))
-  !allocate(ddchi1(0:npol,0:npol,nel_fluid))
-
   chi = zero
   dchi = zero
   ddchi0 = zero
@@ -453,7 +439,6 @@ subroutine sf_time_loop_newmark
      ! SOLID: add source, only in source elements and for stf/=0
      if (have_src) call add_source(acc1, stf(iter))
 
-     !call update_solid_fields(velo, acc0, acc1, dchi, ddchi0, ddchi1, inv_mass_rho)
      ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
      acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
 
@@ -511,37 +496,6 @@ subroutine sf_time_loop_newmark
 
 end subroutine sf_time_loop_newmark
 !=============================================================================
-
-!subroutine update_solid_fields(velo, acc0, acc1, dchi, ddchi0, ddchi1, inv_mass_rho)
-!     real(kind=realkind), intent(inout), dimension(0:npol, 0:npol, nel_solid, 3) :: velo, acc0, acc1
-!     real(kind=realkind), intent(inout), dimension(0:npol, 0:npol, nel_fluid, 3) :: dchi, ddchi0
-!     real(kind=realkind), intent(in),    dimension(0:npol, 0:npol, nel_fluid, 3) :: ddchi1
-!     real(kind=realkind), intent(in),    dimension(0:npol, 0:npol, nel_solid)    :: inv_mass_rho 
-!    
-!     ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
-!     acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
-!
-!     if (src_type(1)/='monopole') &
-!          acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
-!
-!     if (src_type(1)=='dipole') then
-!        ! for the factor 2 compare eq 32 in TNM (2006)
-!        acc1(:,:,:,3) = - two * inv_mass_rho * acc1(:,:,:,3)
-!     else
-!        acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
-!     endif
-!
-!     ! FLUID: new 1st derivative of potential
-!     dchi = dchi + half_dt * (ddchi0 + ddchi1)
-!
-!     ! SOLID: new velocity
-!     velo = velo + half_dt * (acc0 + acc1)
-!
-!     ! update acceleration & 2nd deriv. of potential
-!     ddchi0 = ddchi1
-!     acc0 = acc1
-!
-! end subroutine
 
 !-----------------------------------------------------------------------------
 !> SOLVE coupled solid-fluid system of temporal ODEs:
