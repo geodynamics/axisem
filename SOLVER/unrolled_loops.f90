@@ -41,7 +41,6 @@ pure subroutine mxm(a,b,c)
 
   use data_mesh, only: npol
   use global_parameters, only: realkind
-  !include "mesh_params.h" 
   
   real(kind=realkind), intent(in)  :: a(0: ,0: ),b(0: ,0: ) !< Input matrices
   real(kind=realkind), intent(out) :: c(0: ,0: )            !< Result
@@ -63,7 +62,6 @@ pure subroutine vxm(a,b,c)
  
   use data_mesh, only: npol
   use global_parameters, only: realkind
-  !include "mesh_params.h" 
 
   real(kind=realkind), intent(in)  :: a(0: )         !< Vector a
   real(kind=realkind), intent(in)  :: b(0: ,0: )     !< Matrix b
@@ -128,7 +126,6 @@ end subroutine mxm_cg4_sparse_b
 !-------------------------------------------------------------
 pure subroutine mxm_cg4_sparse_c(a,b,c)
 
-  !include "mesh_params.h" 
 
   real(kind=realkind), intent(in)  :: a(0:,0:), b(0:,0:)
   real(kind=realkind), intent(out) :: c(1:4)

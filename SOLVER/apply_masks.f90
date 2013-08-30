@@ -41,7 +41,6 @@ contains
 subroutine apply_axis_mask_scal(u, nel, ax_array, nax_array)
   ! for a scalar array
 
-  !include "mesh_params.h"
   integer, intent(in)               :: nel, nax_array
   real(kind=realkind),intent(inout) :: u(0:,0:,:)
   integer, intent(in)               :: ax_array(nax_array)

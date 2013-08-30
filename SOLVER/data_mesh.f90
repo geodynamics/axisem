@@ -35,7 +35,7 @@ module data_mesh
   
   use global_parameters
   implicit none
-  !include "mesh_params.h"
+  
   public 
 
   ! Very basic mesh parameters, have been in mesh_params.h before
@@ -175,22 +175,23 @@ contains
 !! but it allows to define the variables as 'protected', i.e.
 !! fixed outside of this module.
 subroutine read_mesh_basics(iounit)
-     integer, intent(in)   :: iounit
 
-     print *, iounit
-     read(iounit) nproc_mesh
-     read(iounit) npol
-     read(iounit) nelem
-     read(iounit) npoint
-     read(iounit) nel_solid
-     read(iounit) nel_fluid
-     read(iounit) npoint_solid
-     read(iounit) npoint_fluid
-     read(iounit) nglob_solid
-     read(iounit) nglob_fluid
-     read(iounit) nel_bdry
-     read(iounit) ndisc
-     read(iounit) lfbkgrdmodel
+   integer, intent(in)   :: iounit
+
+   print *, iounit
+   read(iounit) nproc_mesh
+   read(iounit) npol
+   read(iounit) nelem
+   read(iounit) npoint
+   read(iounit) nel_solid
+   read(iounit) nel_fluid
+   read(iounit) npoint_solid
+   read(iounit) npoint_fluid
+   read(iounit) nglob_solid
+   read(iounit) nglob_fluid
+   read(iounit) nel_bdry
+   read(iounit) ndisc
+   read(iounit) lfbkgrdmodel
 
 end subroutine
 !-----------------------------------------------------------------------------------------
@@ -203,10 +204,10 @@ subroutine read_mesh_advanced(iounit)
 
    read(iounit) npoin
    
-     if (verbose > 1) then
-        write(69,*) 'reading coordinates/control points...'
-        write(69,*) 'global number of control points:',npoin
-     endif
+   if (verbose > 1) then
+      write(69,*) 'reading coordinates/control points...'
+      write(69,*) 'global number of control points:',npoin
+   endif
    allocate(crd_nodes(1:npoin,1:2))
    
    read(iounit) crd_nodes(:,1)
@@ -266,7 +267,9 @@ end subroutine
 subroutine read_mesh_axel(iounit)
    integer, intent(in) :: iounit
 
-   allocate(ax_el(naxel),ax_el_solid(1:naxel_solid),ax_el_fluid(1:naxel_fluid))
+   allocate(ax_el(naxel))
+   allocate(ax_el_solid(1:naxel_solid))
+   allocate(ax_el_fluid(1:naxel_fluid))
    allocate(axis_solid(nel_solid))
    allocate(axis_fluid(nel_fluid))
 

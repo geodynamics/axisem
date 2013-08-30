@@ -83,7 +83,6 @@ end function outerprod_4
 !-----------------------------------------------------------------------------
 pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
 
-  !include "mesh_params.h"
   use data_mesh, only: nel_solid
   
   integer, parameter               :: npol = 4
@@ -186,7 +185,6 @@ end subroutine glob_stiffness_mono_4
 !-----------------------------------------------------------------------------
 pure subroutine glob_stiffness_mono(glob_stiffness,u)
 
-  !include "mesh_params.h"
   use data_mesh, only: npol, nel_solid
   
   ! I/O global arrays
@@ -313,7 +311,6 @@ pure subroutine glob_anel_stiffness_mono(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh, only: npol, nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -417,7 +414,6 @@ pure subroutine glob_anel_stiffness_mono_4(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh, only: nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -520,7 +516,6 @@ pure subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh, only: nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -601,7 +596,6 @@ end subroutine glob_anel_stiffness_mono_cg4
 !-----------------------------------------------------------------------------
 pure subroutine glob_stiffness_di_4(glob_stiffness,u)
 
-  !include "mesh_params.h"
   use data_mesh, only: nel_solid
 
   integer, parameter              :: npol = 4
@@ -803,7 +797,6 @@ end subroutine glob_stiffness_di_4
 !-----------------------------------------------------------------------------
 pure subroutine glob_stiffness_di(glob_stiffness,u)
 
-  !include "mesh_params.h"
   use data_mesh, only: npol, nel_solid
 
   ! I/O for global arrays
@@ -1005,7 +998,6 @@ pure subroutine glob_anel_stiffness_di(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh, only: npol, nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -1129,7 +1121,6 @@ pure subroutine glob_anel_stiffness_di_4(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh, only: nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -1253,7 +1244,6 @@ pure subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh, only: npol, nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -1355,7 +1345,6 @@ end subroutine glob_anel_stiffness_di_cg4
 pure subroutine glob_stiffness_quad(glob_stiffness,u)
 
   use data_mesh, only: npol, nel_solid
-  !include "mesh_params.h"
   
   ! I/O for global arrays
   real(kind=realkind), intent(in)  :: u(0:,0:,:,:)
@@ -1714,7 +1703,6 @@ pure subroutine glob_anel_stiffness_quad(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh, only: npol, nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:) !0:npol,0:npol,nel_solid,1:3)
@@ -1832,7 +1820,6 @@ pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh,   only: nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:) !0:4,0:4,nel_solid,1:3)
@@ -1950,7 +1937,6 @@ pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
 
   use attenuation, ONLY: n_sls_attenuation
   use data_mesh, only: npol, nel_solid
-  !include "mesh_params.h"
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -2056,7 +2042,6 @@ end subroutine glob_anel_stiffness_quad_cg4
 pure subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
 
   use data_mesh, only: npol, nel_fluid
-  !include "mesh_params.h"
   
   ! I/O for global arrays
   real(kind=realkind), intent(in)  :: chi(0:,0:,:)
@@ -2129,7 +2114,6 @@ end subroutine glob_fluid_stiffness
 pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
 
   use data_mesh, only: nel_fluid
-  !include "mesh_params.h"
   
   integer, parameter               :: npol = 4
 

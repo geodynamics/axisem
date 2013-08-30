@@ -725,7 +725,6 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   use data_pointwise,   only : inv_rho_fluid
   use data_matr,        only : set_mass_matrices, unassem_mass_rho_solid, unassem_mass_lam_fluid
 
-  !include "mesh_params.h"
   use data_mesh,        only : npol, nelem, nel_solid, nel_fluid
   
   real(kind=dp), dimension(0:,0:,:),intent(in)  :: rho, lambda, mu
@@ -1753,7 +1752,6 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
   use data_matr, only: M0_w1, M0_w2, M0_w3, &
                        M11s, M21s, M41s, M12s, M22s, M32s, M42s, M11z, M21z, M41z, &
                        M_1, M_2, M_3, M_4, M_w1, M0_w1
-  !include "mesh_params.h"
   
   integer, intent(in) :: ielem, jpol
   
@@ -1934,7 +1932,6 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-  !include "mesh_params.h"
   use data_matr
   
   integer, intent(in) :: ielem,jpol
@@ -2190,7 +2187,6 @@ subroutine compute_quadrupole_stiff_terms(ielem,jpol, &
                                       Ms_z_eta_s_xi_wt_k,Ms_z_eta_s_eta_wt_k,&
                                       Ms_z_xi_s_eta_wt_k,Ms_z_xi_s_xi_wt_k)
 
-  !include "mesh_params.h"
   use data_matr
   
   integer, intent(in)          :: ielem, jpol
@@ -2458,7 +2454,6 @@ subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
 !! (as opposed to the solid case of being elemental arrays).
   
   use data_matr
-  !include "mesh_params.h"
   real(kind=dp)   , intent(in)  :: rho(0:npol,0:npol,nelem)
   real(kind=dp)   , intent(in)  :: massmat_kwts2(0:npol,0:npol,nelem)
   

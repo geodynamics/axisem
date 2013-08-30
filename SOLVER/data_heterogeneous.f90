@@ -25,7 +25,6 @@ module data_heterogeneous
 
 use global_parameters
 implicit none
-!include "mesh_params.h"
 public 
 
 ! Heterogeneous region

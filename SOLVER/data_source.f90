@@ -28,7 +28,6 @@ use global_parameters
 
 implicit none
 public
-!include "mesh_params.h"
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

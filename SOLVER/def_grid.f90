@@ -250,7 +250,6 @@ subroutine massmatrix(masstmp,nel,domain)
   use geom_transf
   use get_mesh, only : compute_coordinates_mesh
   
-  !include "mesh_params.h"
   
   integer,intent(in)               :: nel
   character(len=5), intent(in)     :: domain
@@ -307,7 +306,6 @@ subroutine massmatrix_dble(masstmp,nel,domain)
   use geom_transf
   use get_mesh, only : compute_coordinates_mesh
   
-  !include "mesh_params.h"
   
   integer,intent(in)               :: nel
   character(len=5), intent(in)     :: domain

@@ -1048,7 +1048,6 @@ subroutine compute_recfile_seis_bare(disp)
 
   use data_source, only : src_type
   use data_mesh, only   : recfile_el, num_rec
-  !include "mesh_params.h"
   
   real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
   
@@ -1093,7 +1092,6 @@ subroutine nc_compute_recfile_seis_bare(disp)
   use data_mesh,   only : recfile_el, num_rec, jsurfel
   !use data_mesh
   implicit none
-  !include "mesh_params.h"
   real(kind=realkind), intent(in)  :: disp(0:,0:,:,:)
   real(kind=realkind)              :: disp_rec(3,num_rec)
   integer                          :: i
@@ -1133,7 +1131,6 @@ subroutine compute_recfile_cmb(velo,grad_sol)
 
   use data_source, only : src_type
   use data_mesh
-  !include "mesh_params.h"
   
   real(kind=realkind), intent(in) :: velo(0:,0:,:,:)
   real(kind=realkind)             :: grad_sol(0:,0:,:,:)
@@ -1170,7 +1167,6 @@ subroutine compute_surfelem(disp,velo)
   use data_source, only : src_type
   use nc_routines, only : nc_dump_surface
   use data_mesh,   only : npol, jsurfel, surfelem, maxind
-  !include "mesh_params.h"
   
   real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
   real(kind=realkind), intent(in) :: velo(0:,0:,:,:)
@@ -1246,7 +1242,6 @@ subroutine compute_surfelem_strain(u)
   use pointwise_derivatives,  only: axisym_gradient_solid, axisym_gradient_solid_add
   use nc_routines,            only: nc_dump_surface
   use data_mesh,              only: npol, nel_solid, surfelem, maxind
-  !include "mesh_params.h"
   real(kind=realkind), intent(in) :: u(0:,0:,:,:)
   
   real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
