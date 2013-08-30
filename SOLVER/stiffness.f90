@@ -309,8 +309,8 @@ end subroutine glob_stiffness_mono
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh, only: npol, nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: npol, nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -412,8 +412,8 @@ end subroutine glob_anel_stiffness_mono
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono_4(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh, only: nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -514,8 +514,8 @@ end subroutine glob_anel_stiffness_mono_4
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh, only: nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -996,8 +996,8 @@ end subroutine glob_stiffness_di
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh, only: npol, nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: npol, nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -1119,8 +1119,8 @@ end subroutine glob_anel_stiffness_di
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di_4(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh, only: nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -1242,8 +1242,8 @@ end subroutine glob_anel_stiffness_di_4
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh, only: npol, nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: npol, nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -1701,8 +1701,8 @@ end subroutine glob_stiffness_quad_4
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_quad(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh, only: npol, nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: npol, nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:) !0:npol,0:npol,nel_solid,1:3)
@@ -1818,8 +1818,8 @@ end subroutine glob_anel_stiffness_quad
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh,   only: nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:) !0:4,0:4,nel_solid,1:3)
@@ -1935,8 +1935,8 @@ end subroutine glob_anel_stiffness_quad_4
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
 
-  use attenuation, ONLY: n_sls_attenuation
-  use data_mesh, only: npol, nel_solid
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: npol, nel_solid
   
   ! I/O global arrays
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
