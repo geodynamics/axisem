@@ -190,9 +190,7 @@ subroutine time_loop
   iclockold = tick()
 
   if (time_scheme=='newmark2') then
-     !!$ if (.false.) &
      call sf_time_loop_newmark
-     !!$ call sf_time_loop_newmark_omp
   else
      call symplectic_time_loop
   endif
