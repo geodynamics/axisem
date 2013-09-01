@@ -137,49 +137,49 @@ subroutine define_sflocal_coordinates
   nelmax_solid = maxval(nel_solid)
   nelmax_fluid = maxval(nel_fluid)
 
-  ! initialize to crazy values
-  rsol_max = -1e30
-  rflu_max = -1e30
-  rsol_min = 1e30
-  rflu_min = 1e30
-
-  ! Solid
-  do iproc = 0, nproc-1
-    do iel = 1, nel_solid(iproc)
-      ielg = procel_solid(iel,iproc)
-       do jpol = 0, npol
-         do ipol = 0, npol
-           rsol_max = max(rsol_max, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
-           rsol_min = min(rsol_min, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
-         end do
-       end do
-    end do
-  end do
-
-  write(6,*)'HAVE FLUID?',have_fluid
-
-  ! Fluid
-  if (have_fluid) then
-    do iproc = 0, nproc-1
-      do iel = 1, nel_fluid(iproc)
-        ielg = procel_fluid(iel,iproc)
-         do jpol = 0, npol
-           do ipol = 0, npol
-             rflu_max = max(rflu_max, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
-             rflu_min = min(rflu_min, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
-           end do
-         end do
-      end do
-    end do
-  endif ! have_fluid
-
-  rsol_max = sqrt(rsol_max)
-  rsol_min = sqrt(rsol_min)
-  rflu_max = sqrt(rflu_max)
-  rflu_min = sqrt(rflu_min)
-
   ! Min/max values
   if (dump_mesh_info_screen) then
+     ! initialize to crazy values
+     rsol_max = -1e30
+     rflu_max = -1e30
+     rsol_min = 1e30
+     rflu_min = 1e30
+
+     ! Solid
+     do iproc = 0, nproc-1
+       do iel = 1, nel_solid(iproc)
+         ielg = procel_solid(iel,iproc)
+          do jpol = 0, npol
+            do ipol = 0, npol
+              rsol_max = max(rsol_max, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
+              rsol_min = min(rsol_min, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
+            end do
+          end do
+       end do
+     end do
+
+     write(6,*)'HAVE FLUID?',have_fluid
+
+     ! Fluid
+     if (have_fluid) then
+       do iproc = 0, nproc-1
+         do iel = 1, nel_fluid(iproc)
+           ielg = procel_fluid(iel,iproc)
+            do jpol = 0, npol
+              do ipol = 0, npol
+                rflu_max = max(rflu_max, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
+                rflu_min = min(rflu_min, sgll(ipol,jpol,ielg)**2 + zgll(ipol,jpol,ielg)**2)
+              end do
+            end do
+         end do
+       end do
+     endif ! have_fluid
+
+     rsol_max = sqrt(rsol_max)
+     rsol_min = sqrt(rsol_min)
+     rflu_max = sqrt(rflu_max)
+     rflu_min = sqrt(rflu_min)
+
      write(6,*)'Solid-fluid coordinates:'
      if (have_solid) &
         write(6,*)'Min/max radius solid:', rsol_max, rsol_min
