@@ -54,13 +54,15 @@ subroutine create_pdb
   use clocks_mod
   
   integer   :: nelmax
+  
   if (dump_mesh_info_screen) then
     write(6,*)
     write(6,*)' ||||||||||||||| CREATING THE PARALLEL DATABASE ||||||||||||||||'
     write(6,*)
   end if
 
-  if (allocated(iglob)) deallocate(iglob)
+  !if (allocated(iglob)) deallocate(iglob)
+  deallocate(iglob)
 
   write(6,*) '  define glocal numbering....'; call flush(6)
   iclock12 = tick()

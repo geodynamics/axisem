@@ -33,8 +33,6 @@ module parallelization
   
   public :: create_domain_decomposition
 
-  logical, dimension(:), allocatable :: attributed
-
   private 
 
 contains
@@ -47,40 +45,44 @@ subroutine create_domain_decomposition
 ! procel: 
 
   integer :: iproc, iel, nelmax, nelmax_fluid, nelmax_solid
+  logical :: attributed(1:neltot)
 
   write(6,*)'     creating domain decomposition....'
 
   nproc = nproc_target
-  call check_nproc(nproc)
+  call check_nproc(nproc) ! checks if number of elements at ICB is multiple of nproc
 
-  allocate(attributed(1:neltot))
   attributed(:) = .false.
 
   allocate(nel(0:nproc-1))
   allocate(nel_fluid(0:nproc-1))
   allocate(nel_solid(0:nproc-1))
-  if (mod(neltot_fluid,nproc)/=0) then
-     write(6,*) ' neltot_fluid is not a multiple of nproc '
-     stop
-  end if
-  if (mod(neltot_solid,nproc)/=0) then
-     write(6,*)'NELTOT_SOLID=',neltot_solid,'NPROC=',nproc
-     write(6,*) ' neltot_solid is not a multiple of nproc '
-     stop
+
+  ! this should not be a problem anymore since these numbers are saved in each
+  ! mesh_db file individually:
+  !if (mod(neltot_fluid,nproc)/=0) then
+  !   write(6,*) ' neltot_fluid is not a multiple of nproc '
+  !   stop
+  !end if
+  !if (mod(neltot_solid,nproc)/=0) then
+  !   write(6,*)'NELTOT_SOLID=',neltot_solid,'NPROC=',nproc
+  !   write(6,*) ' neltot_solid is not a multiple of nproc '
+  !   stop
+  !end if
+
+  ! This must have been always the case as long as the two test statements
+  ! above where passed and neltot = neltot_solid + neltot_fluid
+  if ( mod(neltot,nproc) == 0) then
+     nel(:) = neltot / nproc
+     nel_fluid(:) = neltot_fluid / nproc
+     nel_solid(:) = neltot_solid / nproc
+  else
+     do iproc = 0, nproc - 2
+        nel(iproc) = neltot / (nproc-1)
+     end do
+     nel(nproc-1) = neltot - sum(nel(0:nproc-2))
   end if
 
-  if ( mod(neltot,nproc) == 0) then
-     do iproc = 0, nproc-1
-        nel(iproc) = neltot / nproc
-        nel_fluid(iproc) = neltot_fluid / nproc
-        nel_solid(iproc) = neltot_solid / nproc
-     end do
-  else
-     do iproc = 0, nproc -1
-        if (iproc < nproc -1 )  nel(iproc) = neltot / (nproc-1)
-        if (iproc == (nproc-1)) nel(iproc) = neltot - SUM (nel(0:nproc-2))
-     end do
-  end if
   nelmax = maxval(nel)
   nelmax_solid = maxval(nel_solid)
   nelmax_fluid = maxval(nel_fluid)
@@ -110,20 +112,21 @@ subroutine create_domain_decomposition
   end if
 
   allocate(procel(nelmax,0:nproc-1))
-  allocate(procel_fluid(nelmax_fluid,0:nproc-1))
-  procel_fluid = -1
-  allocate(procel_solid(nelmax_solid,0:nproc-1))
-  procel_solid = -1
-  allocate(el2proc(neltot))
-  el2proc(:)=-1
 
+  allocate(procel_fluid(nelmax_fluid,0:nproc-1))
+  allocate(procel_solid(nelmax_solid,0:nproc-1))
+  allocate(el2proc(neltot))
   allocate(inv_procel(neltot,0:nproc-1))
-  inv_procel(:,:)=-1
+
+  procel_fluid = -1
+  procel_solid = -1
+  el2proc      = -1
+  inv_procel   = -1
 
   ! Decompose such that each processor owns a cake piece in the theta direction,
   ! i.e. same amount of elements in solid and fluid respectively. 
   ! The inner cube is done such that each processor maximally has 2 neighbors.
-  call domain_decomposition_theta
+  call domain_decomposition_theta(attributed)
 
   ! write out procel arrays
   if (dump_mesh_info_files) then
@@ -146,19 +149,18 @@ subroutine create_domain_decomposition
      enddo
      close(666)
   end if
-  
-  do iel = 1, neltot
-      if (.not. attributed(iel) ) then 
-         write(6,*) ' NOT ATTRIBUTED '
-         write(6,*) iel, thetacom(iel), solid(iel), fluid(iel)
-      endif
-  end do
 
-  do iel = 1, neltot
-     if (.not.attributed(iel) ) stop
-  end do
-  
   ! check that every element has been assigned
+  if (any(.not. attributed)) then
+     do iel = 1, neltot
+         if (.not. attributed(iel) ) then 
+            write(6,*) ' NOT ATTRIBUTED '
+            write(6,*) iel, thetacom(iel), solid(iel), fluid(iel)
+         endif
+     end do
+     stop
+  endif
+  
   if (minval(el2proc)==-1) then
      write(6,*) ' ' 
      write(6,*) 'Element(s) not assigned to any processor:', minloc(el2proc)
@@ -166,18 +168,15 @@ subroutine create_domain_decomposition
   endif
 
   if (dump_mesh_info_screen) then
-  write(6,*)
-  write(6,*)'NUMBER OF ELEMENTS IN EACH SUBDOMAIN:'
-  do iproc=0,nproc-1
-     write(6,11)iproc, nel_solid(iproc),nel_fluid(iproc),nel(iproc) 
-  enddo
-  call flush(6)
-  write(6,*)
-11 format('Proc ',i3, ' has ',i8, ' solid,',i6,' fluid,',i9,' total elements')
+     write(6,*)
+     write(6,*)'NUMBER OF ELEMENTS IN EACH SUBDOMAIN:'
+     do iproc=0, nproc-1
+        write(6,'("Proc ",i3, " has ",i8, " solid,",i6," fluid,",i9," total elements")') &
+                iproc, nel_solid(iproc), nel_fluid(iproc), nel(iproc) 
+     enddo
+     call flush(6)
+     write(6,*)
   end if
-
-
-  deallocate(attributed)
 
   if (dump_mesh_vtk) call plot_dd_vtk
 
@@ -247,18 +246,21 @@ end subroutine plot_dd_vtk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine domain_decomposition_theta
+subroutine domain_decomposition_theta(attributed)
 ! nel : number of glocal elements, i.e. total number of a processor's elements
 ! nelmax: maximal number of glocal elements
 ! neltot: global total number of elements
 ! procel: 
 
-  integer               :: iproc, iiproc, iel
-  integer               :: mycount
-  real(kind=dp)         :: deltatheta
-  integer, allocatable  :: central_count(:)
-  real(kind=dp)         :: pi2
-  pi2 = two*dasin(one)
+  logical, intent(inout)    :: attributed(:)
+  
+  integer                   :: iproc, iiproc, iel
+  integer                   :: mycount
+  real(kind=dp)             :: deltatheta
+  integer, allocatable      :: central_count(:)
+  real(kind=dp)             :: pi2
+
+  pi2 = two * dasin(one)
 
   write(6,*)'     THETA-SLICING as domain decomposition....'
 
@@ -272,10 +274,10 @@ subroutine domain_decomposition_theta
   if (nproc == 1 .or. nproc == 2) then
       ! define quadratic functions to delineate processor boundaries. 
       ! Works for nproc = 1, 2
-      call decompose_inner_cube_quadratic_fcts(central_count)
+      call decompose_inner_cube_quadratic_fcts(central_count, attributed)
   elseif (nproc >= 4 .and. (nproc / 4) * 4 == nproc) then
       ! newest version of inner core decomposition (nproc needs to be multiple of 4)
-      call decompose_inner_cube_opt(central_count)
+      call decompose_inner_cube_opt(central_count, attributed)
   else
       write(6,*)
       write(6,*)'PROBLEM: central cube decomposition not implemented for &
@@ -390,9 +392,11 @@ end subroutine domain_decomposition_theta
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine decompose_inner_cube_quadratic_fcts(central_count)
+subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed)
 
-  integer, intent(out) :: central_count(0:nproc-1)
+  integer, intent(out)      :: central_count(0:nproc-1)
+  logical, intent(inout)    :: attributed(:)
+  
   integer :: iproc,is,iz,nproc2
   integer :: icount,i2count,iicount,missing
   integer :: arclngth,area,CapA,proccount,quadels
@@ -623,15 +627,17 @@ end subroutine check_nproc
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine decompose_inner_cube_opt(central_count)
-  implicit none
+subroutine decompose_inner_cube_opt(central_count, attributed)
+  
   integer, intent(out)       :: central_count(0:nproc-1)
+  logical, intent(inout)     :: attributed(:)
+
   integer                    :: nproc2, nlinsteps, ndivsppx0, ip, &
                                 ncorrections = 0, npart, is, iz, sign_buff, n, &
                                 ids, idz
   real(kind=sp)              :: r1, r2, stepsize, dphi
   real(kind=sp), allocatable :: x0(:), x1(:), x2(:), x3(:), z0(:), z1(:), z2(:), &
-                             z3(:), phi(:)
+                                z3(:), phi(:)
   integer, allocatable       :: proc(:,:), nelem(:)
   logical, allocatable       :: proc_iq_min(:,:), proc_iq_max(:,:), elems(:,:)
   logical                    :: exit_buff
@@ -983,7 +989,7 @@ end subroutine decompose_inner_cube_opt
 
 !-----------------------------------------------------------------------------------------
 logical function test_decomp(ndivs, proc, npart, nproc2)
-  implicit none
+
   integer, intent(in)     :: ndivs, proc(0:ndivs-1,0:ndivs-1), &
                              nproc2, npart
   integer                 :: is, iz, idx, idz, ip, nelem(0:nproc2), &
@@ -1048,7 +1054,7 @@ end function test_decomp
 
 !-----------------------------------------------------------------------------------------
 pure logical function below(x0, y0, x1, y1, xp, yp)
-  implicit none
+
   real(kind=sp), intent(in) :: x0, y0, x1, y1, xp, yp
   real(kind=sp)             :: m, b
   
@@ -1065,7 +1071,7 @@ end function below
 
 !-----------------------------------------------------------------------------------------
 pure logical function rightof(x0, y0, x1, y1, xp, yp)
-  implicit none
+
   real(kind=sp), intent(in) :: x0, y0, x1, y1, xp, yp
   real(kind=sp)             :: m, b
   
@@ -1083,7 +1089,7 @@ end function rightof
 !-----------------------------------------------------------------------------------------
 subroutine nelem_under(ndivs, x0, x1, x2, x3, z0, z1, z2, z3, proc_max, &
                             proc_min, nelem, proc)
-  implicit none
+
   real(kind=sp), intent(in) :: x0, x1, x2, x3, z0, z1, z2, z3
   logical, intent(in)       :: proc_max(0:ndivs-1,0:ndivs-1), &
                                proc_min(0:ndivs-1,0:ndivs-1)
