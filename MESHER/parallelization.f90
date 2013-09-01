@@ -87,19 +87,19 @@ subroutine create_domain_decomposition
 
      write(6,*)
      write(6,*)'************** VARIOUS NUMBERS OF ELEMENTS**********************'
-     do iproc=0,nproc-1
-        write(6,13)iproc,'has tot/sol/flu number       =',&
-                      nel(iproc),nel_solid(iproc),nel_fluid(iproc)
+     do iproc=0, nproc-1
+        write(6,13) iproc, 'has tot/sol/flu number       =', &
+                      nel(iproc), nel_solid(iproc), nel_fluid(iproc)
      enddo
-     write(6,12)'Maximal glocal total number nelmax       =',&
-                 nelmax,nelmax_solid,nelmax_fluid
+     write(6,12) 'Maximal glocal total number nelmax       =',&
+                  nelmax,nelmax_solid,nelmax_fluid
      write(6,*)
-     write(6,14)'Sum over total elements for all procs    =', sum(nel)
-     write(6,14)'Global, total number neltot              =', neltot
-     write(6,14)'Sum over solid elements for all procs    =', sum(nel_solid)
-     write(6,14)'Global, solid-domain number neltot_solid =', neltot_solid
-     write(6,14)'Sum over fluid elements for all procs    =', sum(nel_fluid)
-     write(6,14)'Global, fluid-domain number neltot_fluid =', neltot_fluid
+     write(6,14) 'Sum over total elements for all procs    =', sum(nel)
+     write(6,14) 'Global, total number neltot              =', neltot
+     write(6,14) 'Sum over solid elements for all procs    =', sum(nel_solid)
+     write(6,14) 'Global, solid-domain number neltot_solid =', neltot_solid
+     write(6,14) 'Sum over fluid elements for all procs    =', sum(nel_fluid)
+     write(6,14) 'Global, fluid-domain number neltot_fluid =', neltot_fluid
 
 13   format(i4,a37,3(i8))
 12   format(a41,3(i8))
@@ -159,7 +159,7 @@ subroutine create_domain_decomposition
      stop
   endif
   
-  if (minval(el2proc)==-1) then
+  if (minval(el2proc) == -1) then
      write(6,*) ' ' 
      write(6,*) 'Element(s) not assigned to any processor:', minloc(el2proc)
      stop
@@ -167,7 +167,7 @@ subroutine create_domain_decomposition
 
   if (dump_mesh_info_screen) then
      write(6,*)
-     write(6,*)'NUMBER OF ELEMENTS IN EACH SUBDOMAIN:'
+     write(6,*) 'NUMBER OF ELEMENTS IN EACH SUBDOMAIN:'
      do iproc=0, nproc-1
         write(6,'("Proc ",i3, " has ",i8, " solid,",i6," fluid,",i9," total elements")') &
                 iproc, nel_solid(iproc), nel_fluid(iproc), nel(iproc) 

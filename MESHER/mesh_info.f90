@@ -263,12 +263,12 @@ subroutine define_boundaries
   integer           :: j,ipol,ibelem
   real(kind=dp)     :: dmax, rbound
   integer           :: nbelemmax
-  real(kind=dp)   , allocatable :: bdry_radius(:)
+  real(kind=dp), allocatable :: bdry_radius(:)
 
   if (neltot_fluid>0 .and. neltot_solid>0 ) then 
      nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
-     write(6,*)'..... the number of fluid boundaries is not general enough....'
-     write(6,*)'.....should insert a test on whether the fluid is indeed completely embedded!'
+     write(6,*) '..... the number of fluid boundaries is not general enough....'
+     write(6,*) '.....should insert a test on whether the fluid is indeed completely embedded!'
   else if (neltot_solid==0) then
      nbcnd = 0
   else if (neltot_fluid == 0 ) then 
