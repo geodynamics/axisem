@@ -58,29 +58,25 @@ subroutine create_domain_decomposition
   allocate(nel_fluid(0:nproc-1))
   allocate(nel_solid(0:nproc-1))
 
-  ! this should not be a problem anymore since these numbers are saved in each
-  ! mesh_db file individually:
-  !if (mod(neltot_fluid,nproc)/=0) then
-  !   write(6,*) ' neltot_fluid is not a multiple of nproc '
-  !   stop
-  !end if
-  !if (mod(neltot_solid,nproc)/=0) then
-  !   write(6,*)'NELTOT_SOLID=',neltot_solid,'NPROC=',nproc
-  !   write(6,*) ' neltot_solid is not a multiple of nproc '
-  !   stop
-  !end if
-
   ! This must have been always the case as long as the two test statements
   ! above where passed and neltot = neltot_solid + neltot_fluid
-  if ( mod(neltot,nproc) == 0) then
+  if (mod(neltot,nproc) == 0 .and. mod(neltot_solid,nproc) == 0 &
+        .and. mod(neltot_fluid,nproc) == 0) then
      nel(:) = neltot / nproc
      nel_fluid(:) = neltot_fluid / nproc
      nel_solid(:) = neltot_solid / nproc
   else
+     ! exact load balancing not possible. This scheme attributes the same number
+     ! of elements to all but the last processors. The last has at maximum
+     ! nproc-1 elements less then the others (both in solid and fluid domain).
      do iproc = 0, nproc - 2
-        nel(iproc) = neltot / (nproc-1)
+        nel_fluid(iproc) = neltot_fluid / nproc + 1
+        nel_solid(iproc) = neltot_solid / nproc + 1
+        nel(iproc) = nel_solid(iproc) + nel_fluid(iproc)
      end do
-     nel(nproc-1) = neltot - sum(nel(0:nproc-2))
+     nel_fluid(nproc-1) = neltot_fluid - sum(nel_fluid(0:nproc-2))
+     nel_solid(nproc-1) = neltot_solid - sum(nel_solid(0:nproc-2))
+     nel(nproc-1) = nel_solid(nproc-1) + nel_fluid(nproc-1)
   end if
 
   nelmax = maxval(nel)
@@ -89,25 +85,27 @@ subroutine create_domain_decomposition
 
   if (dump_mesh_info_screen) then 
 
+     write(6,*)
      write(6,*)'************** VARIOUS NUMBERS OF ELEMENTS**********************'
      do iproc=0,nproc-1
-        write(6,13)iproc,'has tot/sol/flu number      =',&
+        write(6,13)iproc,'has tot/sol/flu number       =',&
                       nel(iproc),nel_solid(iproc),nel_fluid(iproc)
      enddo
-     write(6,12)'Maximal glocal total number nelmax      =',&
+     write(6,12)'Maximal glocal total number nelmax       =',&
                  nelmax,nelmax_solid,nelmax_fluid
      write(6,*)
-     write(6,14)'Sum over total elements for all procs   =',sum(nel)
-     write(6,14)'Global, total number neltot             =',neltot
-     write(6,14)'Sum over solid elements for all procs   =',sum(nel_solid)
-     write(6,14)'Global, solid-domain number neltot_solid=',neltot_solid
-     write(6,14)'Sum over fluid elements for all procs   =',sum(nel_fluid)
-     write(6,14)'Global, fluid-domain number neltot_fluid=',neltot_fluid
+     write(6,14)'Sum over total elements for all procs    =', sum(nel)
+     write(6,14)'Global, total number neltot              =', neltot
+     write(6,14)'Sum over solid elements for all procs    =', sum(nel_solid)
+     write(6,14)'Global, solid-domain number neltot_solid =', neltot_solid
+     write(6,14)'Sum over fluid elements for all procs    =', sum(nel_fluid)
+     write(6,14)'Global, fluid-domain number neltot_fluid =', neltot_fluid
 
 13   format(i4,a37,3(i8))
 12   format(a41,3(i8))
 14   format(a41,i8)
      write(6,*)'*****************************************************************'
+     write(6,*)
 
   end if
 
