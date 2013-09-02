@@ -167,10 +167,6 @@ def PyAxi(**kwargs):
     output = subprocess.check_call(['cp', os.path.join('.', 'SOLVER', 'Makefile.TEMPLATE'), \
                                         os.path.join('.', 'SOLVER', 'Makefile')], stdout = stdout_param)
     if output != 0: print output_print
-    if not os.path.exists(os.path.join('.', 'SOLVER', 'inparam_xdmf')):
-        output = subprocess.check_call(['cp', os.path.join('.', 'SOLVER', 'inparam_xdmf.TEMPLATE'), \
-                                        os.path.join('.', 'SOLVER', 'inparam_xdmf')], stdout = stdout_param)
-    if output != 0: print output_print
     
     ##############################################################
     ################CREATE make_axisem.macros ####################
