@@ -133,7 +133,7 @@ subroutine read_params
   end if
 
   if (nthetaslices==-1) then
-      write(6,20) 'NCPU'
+      write(6,20) 'NTHETA_SLICES'
       stop
   end if
 
