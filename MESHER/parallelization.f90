@@ -406,15 +406,21 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed)
   if (dump_mesh_info_screen) then 
      write(6,*)
      write(6,*)'<><><><><><><><><><><><><><><><><><><><><><><><><><>'
-     write(6,*)'CENTRAL LINEAR DOMAIN: quadratic function decomposition!'
+     write(6,*)'CENTRAL LINEAR DOMAIN: simple decomposition!'
      write(6,*)'ndivs,nproc:',ndivs,nproc
      write(6,*)'==> each processor should have el=',ndivs**2/nproc*2
      write(6,*)'<><><><><><><><><><><><><><><><><><><><><><><><><><>'
      write(6,*)
   end if
-  
+
+  if (nproc > 2) then
+     write(6,*) 'simple mesh decomposition cannot handle more than 2 processors'
+     write(6,*) 'use optimization scheme instead'
+     stop
+  endif
+
   nproc2 = nproc / 2 - 1
-  if (nproc==1) nproc2=0
+  if (nproc == 1) nproc2 = 0
   
   allocate(proc_central(1:ndivs,1:ndivs))
   proc_central(1:ndivs,1:ndivs)=-1
@@ -424,98 +430,90 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed)
   allocate(num_columns_hi(1:ndivs),num_columns_lo(1:ndivs))
   allocate(num_el(0:nproc2))
 
-  if (nproc==1) then 
-     proc_central(1:ndivs,1:ndivs)=0
-     num_el(0)=ndivs**2
-  
-  elseif (nproc==2) then 
-    ! This is the same as nproc=1 for the North.
-    ! The distinctive southern processor will be taken care of later on...
-     proc_central(1:ndivs,1:ndivs)=0
-     num_el(0)=ndivs**2
-  endif
+  proc_central(1:ndivs,1:ndivs) = 0
+  num_el(0) = ndivs**2
 
   allocate(count_assi(0:nproc2))
   count_assi = 0
   ! count respective processors elements 
   num_el(0:nproc2) = 0
 
-  do is=1,ndivs
-     do iz=1,ndivs
-        do iproc=0,nproc2
-           if (proc_central(is,iz)==iproc) then 
-              num_el(iproc)=num_el(iproc)+1
-              count_assi(iproc)=count_assi(iproc)+1
+  do is=1, ndivs
+     do iz=1, ndivs
+        do iproc=0, nproc2
+           if (proc_central(is,iz) == iproc) then 
+              num_el(iproc) = num_el(iproc) + 1
+              count_assi(iproc) = count_assi(iproc) + 1
            endif
         enddo
-        if (proc_central(is,iz)<0 .or. proc_central(is,iz)> nproc2) then
-           write(6,*)'Problem:',is,iz,'has no processor!'
+        if (proc_central(is,iz) < 0 .or. proc_central(is,iz) > nproc2) then
+           write(6,*) 'Problem:', is, iz, 'has no processor!'
            stop
         endif
      enddo
   enddo
   
-  do iproc=0,nproc2
-    if (count_assi(iproc)/= ndivs**2/(nproc2+1)) then 
-       write(6,*)'Problem: Not every element is assigned to processor',iproc
-       write(6,*)'Counted assigned els/total els:',count_assi(iproc), &
-                                                   ndivs**2/(nproc2+1)
-       if (iproc<nproc2) write(6,*)'els for other procs:',&
-                         count_assi(iproc+1:nproc2)
+  do iproc=0, nproc2
+    if (count_assi(iproc) /= ndivs**2/(nproc2+1)) then 
+       write(6,*) 'Problem: Not every element is assigned to processor', iproc
+       write(6,*) 'Counted assigned els/total els:', count_assi(iproc), ndivs**2/(nproc2+1)
+       if (iproc < nproc2) &
+            write(6,*) 'els for other procs:', count_assi(iproc+1:nproc2)
        stop
     endif
   enddo
   
   if(dump_mesh_info_screen) then 
      write(6,*)
-     do iproc=0,nproc2
-        write(6,12)iproc,num_el(iproc)
+     do iproc=0, nproc2
+        write(6,12) iproc,num_el(iproc)
      enddo
 12   format('Central cube: proc',i3' has',i6' elements')
   end if
   
   ! connect these processor dependencies to the global element numbering scheme
-  central_count(0:nproc-1)=0
+  central_count(0:nproc-1) = 0
   do iz = 1, ndivs
    do is = 1, ndivs
-      if (proc_central(is,iz)/=-1) then
-         central_count(proc_central(is,iz))=&
-                      central_count(proc_central(is,iz))+1
+      if (proc_central(is,iz) /= -1) then
+         central_count(proc_central(is,iz)) = central_count(proc_central(is,iz)) + 1
   
-         attributed(central_is_iz_to_globiel(is,iz))=.true.
-         attributed(central_is_iz_to_globiel(is,iz)+neltot/2)=.true.
+         attributed(central_is_iz_to_globiel(is,iz)) = .true.
+         attributed(central_is_iz_to_globiel(is,iz) + neltot / 2)=.true.
       else
-         write(6,*)'Unassigned element in the central cube!'
-         write(6,*)'is,iz:',is,iz
+         write(6,*) 'Unassigned element in the central cube!'
+         write(6,*) 'is,iz:',is,iz
          stop
       endif
-  
-     if (neltot_solid>0 ) then 
-     procel_solid(central_count(proc_central(is,iz)),proc_central(is,iz)) = &
+ 
+     ! MvD: what is this if statement for? Solid or Fluid inner core? Maybe not
+     !      robust then.
+     if (neltot_solid > 0) then 
+        procel_solid(central_count(proc_central(is,iz)),proc_central(is,iz)) = &
                                                 central_is_iz_to_globiel(is,iz)
      else
         procel_fluid(central_count(proc_central(is,iz)),proc_central(is,iz)) = &
-                                                      central_is_iz_to_globiel(is,iz)
+                                                central_is_iz_to_globiel(is,iz)
      endif
   
      ! South: inverted copy
-     if (nproc>1) then 
-        if (neltot_solid>0 ) then 
+     if (nproc > 1) then 
+        if (neltot_solid > 0) then 
            procel_solid(central_count(proc_central(is,iz)), &
                 nproc-1-proc_central(is,iz)) = &
-                central_is_iz_to_globiel(is,iz)+neltot/2
+                central_is_iz_to_globiel(is,iz) + neltot / 2
         else
            procel_fluid(central_count(proc_central(is,iz)), &
                 nproc-1-proc_central(is,iz)) = &
-                central_is_iz_to_globiel(is,iz)+neltot/2
+                central_is_iz_to_globiel(is,iz) + neltot / 2
         endif
      endif
     enddo
   enddo
   
   ! South: 
-  if (nproc>1) then
-     do iproc=0,nproc/2-1
+  if (nproc > 1) then
+     do iproc=0, nproc / 2 - 1
         central_count(nproc-iproc-1) = central_count(iproc)
      enddo
   endif
@@ -524,42 +522,41 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed)
   if (nproc==1) then 
     do iz = 1, ndivs
      do is = 1, ndivs
-          central_count(proc_central(is,iz))=&
-                        central_count(proc_central(is,iz))+1
+          central_count(proc_central(is,iz)) = central_count(proc_central(is,iz)) + 1
           if (neltot_solid>0 ) then         
              procel_solid(central_count(proc_central(is,iz)),0) = &
-                  central_is_iz_to_globiel(is,iz)+neltot/2
+                  central_is_iz_to_globiel(is,iz) + neltot / 2
           else
              procel_fluid(central_count(proc_central(is,iz)),0) = &
-                  central_is_iz_to_globiel(is,iz)+neltot/2
+                  central_is_iz_to_globiel(is,iz) + neltot / 2
           endif
       enddo
     enddo
   endif
   
   ! check if all central-cube elements are assigned
-  do is=1,neltot
+  ! MvD: this test assumes all linear elements are in the inner core!
+  do is=1, neltot
      if (eltypeg(is)=='linear' ) then 
         if (.not. attributed(is)) then 
            write(6,*)
-           write(6,*)'Problem: Central cube element not assigned!',is
+           write(6,*) 'Problem: Central cube element not assigned!', is
            stop
         endif
      endif
   enddo
   
   ! write out the central cube decomposition
-  
   if(dump_mesh_info_files) then 
      open(unit=10008,file=diagpath(1:lfdiag)//'/central_locind_locsz_iproc.dat')
      do iz = 1, ndivs
         do is = 1, ndivs
-           write(10008,13)is,iz,s_arr(is,iz),z_arr(is,iz),proc_central(is,iz)
+           write(10008,13) is, iz, s_arr(is,iz), z_arr(is,iz), proc_central(is,iz)
         enddo
      enddo
      do iz = 1, ndivs
         do is = 1, ndivs
-           write(10008,13)is,iz,s_arr(is,iz),-z_arr(is,iz),nproc-1-proc_central(is,iz)
+           write(10008,13)is, iz, s_arr(is,iz), -z_arr(is,iz), nproc-1-proc_central(is,iz)
         enddo
      enddo
      close(10008)

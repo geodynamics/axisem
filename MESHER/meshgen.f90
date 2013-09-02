@@ -1356,7 +1356,7 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
 
   use data_grid
   use data_bkgrdmodel, only: nc_init, nproc_target
-  use data_pdb,        only: theta_max_proc, theta_min_proc, nproc
+  use data_pdb,        only: theta_max_proc, theta_min_proc
 
   integer, intent(in) :: nst, nzt
   real(kind=dp), dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
