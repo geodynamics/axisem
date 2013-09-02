@@ -377,42 +377,43 @@ def PyAxi(**kwargs):
             if os.path.isfile('inparam_advanced'):
                 subprocess.check_call(['rm', 'inparam_advanced'])
             inparam_advanced_input = []
-            inparam_advanced_input.append('SAMPLING_PERIOD     %s\n' %(input['solver_sampling_rate']))
-            inparam_advanced_input.append('TIME_STEP     %s\n' %(input['solver_time_step']))
-            inparam_advanced_input.append('SOURCE_PERIOD     %s\n' %(input['solver_source_period']))
-            inparam_advanced_input.append('TIME_SCHEME     %s\n' %(input['solver_time_scheme']))
-            inparam_advanced_input.append('DATA_DIR     "%s"\n' %(input['solver_data_dir']))
-            inparam_advanced_input.append('INFO_DIR     "%s"\n' %(input['solver_info_dir']))
-            inparam_advanced_input.append('DIAGNOSTIC_FILE_OUTPUT     "%s"\n' %(input['solver_diag_file_output']))
-            inparam_advanced_input.append('MESH_TEST     %s\n' %(input['solver_mesh_test']))
-            inparam_advanced_input.append('DEFLATE_LEVEL     %s\n' %(input['solver_deflate_level']))
-            inparam_advanced_input.append('SNAPSHOT_DT     %s\n' %(input['solver_snapshot_dt']))
-            inparam_advanced_input.append('SNAPSHOTS_FORMAT     %s\n' %(input['solver_snapshots_format']))
-            inparam_advanced_input.append('USE_NETCDF     %s\n' %(input['make_axisem_use_netcdf']))
-            inparam_advanced_input.append('KERNEL_WAVEFIELDS     %s\n' %(input['solver_kernel_wavefields']))
-            inparam_advanced_input.append('KERNEL_SPP     %s\n' %(input['solver_kernel_spp']))
-            inparam_advanced_input.append('KERNEL_SOURCE     %s\n' %(input['solver_kernel_source']))
-            inparam_advanced_input.append('KERNEL_IBEG     %s\n' %(input['solver_kernel_ibeg']))
-            inparam_advanced_input.append('KERNEL_IEND     %s\n' %(input['solver_kernel_iend']))
-            inparam_advanced_input.append('NR_LIN_SOLIDS     %s\n' %(input['solver_nr_lin_solids']))
-            inparam_advanced_input.append('F_MIN     %s\n' %(input['solver_fmin']))
-            inparam_advanced_input.append('F_MAX     %s\n' %(input['solver_fmax']))
-            inparam_advanced_input.append('F_REFERENCE     %s\n' %(input['solver_fref']))
-            inparam_advanced_input.append('SMALL_Q_CORRECTION     %s\n' %(input['solver_small_q_correction']))
-            inparam_advanced_input.append('NR_F_SAMPLE     %s\n' %(input['solver_nr_f_sample']))
-            inparam_advanced_input.append('MAXINT_SA     %s\n' %(input['solver_maxint_sa']))
-            inparam_advanced_input.append('TSTART_SR     %s\n' %(input['solver_tstart_sr']))
-            inparam_advanced_input.append('TSTART_AMP     %s\n' %(input['solver_tstart_amp']))
-            inparam_advanced_input.append('T_DECAY     %s\n' %(input['solver_t_decay']))
-            inparam_advanced_input.append('FIX_FREQ     %s\n' %(input['solver_fix_freq']))
-            inparam_advanced_input.append('DUMP_VTK     %s\n' %(input['solver_dump_vtk']))
-            inparam_advanced_input.append('COARSE_GRAINED     %s\n' %(input['solver_coarse_grained']))
-            inparam_advanced_input.append('SAVE_ENERGY     %s\n' %(input['solver_save_energy']))
-            inparam_advanced_input.append('HOMO_MODEL     %s\n' %(input['solver_homo_model']))
-            inparam_advanced_input.append('HOMO_VP     %s\n' %(input['solver_homo_vp']))
-            inparam_advanced_input.append('HOMO_VS     %s\n' %(input['solver_homo_vs']))
-            inparam_advanced_input.append('HOMO_RHO     %s\n' %(input['solver_homo_rho']))
-            inparam_advanced_input.append('FORCE_ANISO     %s\n' %(input['solver_force_aniso']))
+            inparam_advanced_input.append('SAMPLING_PERIOD         %s\n' %(input['solver_sampling_rate']))
+            inparam_advanced_input.append('TIME_STEP               %s\n' %(input['solver_time_step']))
+            inparam_advanced_input.append('SOURCE_PERIOD           %s\n' %(input['solver_source_period']))
+            inparam_advanced_input.append('SOURCE_FUNCTION         %s\n' %(input['source_stf']))
+            inparam_advanced_input.append('TIME_SCHEME             %s\n' %(input['solver_time_scheme']))
+            inparam_advanced_input.append('DATA_DIR               "%s"\n' %(input['solver_data_dir']))
+            inparam_advanced_input.append('INFO_DIR               "%s"\n' %(input['solver_info_dir']))
+            inparam_advanced_input.append('DIAGNOSTIC_FILE_OUTPUT "%s"\n' %(input['solver_diag_file_output']))
+            inparam_advanced_input.append('MESH_TEST               %s\n' %(input['solver_mesh_test']))
+            inparam_advanced_input.append('DEFLATE_LEVEL           %s\n' %(input['solver_deflate_level']))
+            inparam_advanced_input.append('SNAPSHOT_DT             %s\n' %(input['solver_snapshot_dt']))
+            inparam_advanced_input.append('SNAPSHOTS_FORMAT        %s\n' %(input['solver_snapshots_format']))
+            inparam_advanced_input.append('USE_NETCDF              %s\n' %(input['make_axisem_use_netcdf']))
+            inparam_advanced_input.append('KERNEL_WAVEFIELDS       %s\n' %(input['solver_kernel_wavefields']))
+            inparam_advanced_input.append('KERNEL_SPP              %s\n' %(input['solver_kernel_spp']))
+            inparam_advanced_input.append('KERNEL_SOURCE           %s\n' %(input['solver_kernel_source']))
+            inparam_advanced_input.append('KERNEL_IBEG             %s\n' %(input['solver_kernel_ibeg']))
+            inparam_advanced_input.append('KERNEL_IEND             %s\n' %(input['solver_kernel_iend']))
+            inparam_advanced_input.append('NR_LIN_SOLIDS           %s\n' %(input['solver_nr_lin_solids']))
+            inparam_advanced_input.append('F_MIN                   %s\n' %(input['solver_fmin']))
+            inparam_advanced_input.append('F_MAX                   %s\n' %(input['solver_fmax']))
+            inparam_advanced_input.append('F_REFERENCE             %s\n' %(input['solver_fref']))
+            inparam_advanced_input.append('SMALL_Q_CORRECTION      %s\n' %(input['solver_small_q_correction']))
+            inparam_advanced_input.append('NR_F_SAMPLE             %s\n' %(input['solver_nr_f_sample']))
+            inparam_advanced_input.append('MAXINT_SA               %s\n' %(input['solver_maxint_sa']))
+            inparam_advanced_input.append('TSTART_SR               %s\n' %(input['solver_tstart_sr']))
+            inparam_advanced_input.append('TSTART_AMP              %s\n' %(input['solver_tstart_amp']))
+            inparam_advanced_input.append('T_DECAY                 %s\n' %(input['solver_t_decay']))
+            inparam_advanced_input.append('FIX_FREQ                %s\n' %(input['solver_fix_freq']))
+            inparam_advanced_input.append('DUMP_VTK                %s\n' %(input['solver_dump_vtk']))
+            inparam_advanced_input.append('COARSE_GRAINED          %s\n' %(input['solver_coarse_grained']))
+            inparam_advanced_input.append('SAVE_ENERGY             %s\n' %(input['solver_save_energy']))
+            inparam_advanced_input.append('HOMO_MODEL              %s\n' %(input['solver_homo_model']))
+            inparam_advanced_input.append('HOMO_VP                 %s\n' %(input['solver_homo_vp']))
+            inparam_advanced_input.append('HOMO_VS                 %s\n' %(input['solver_homo_vs']))
+            inparam_advanced_input.append('HOMO_RHO                %s\n' %(input['solver_homo_rho']))
+            inparam_advanced_input.append('FORCE_ANISO             %s\n' %(input['solver_force_aniso']))
           
             inparam_solver_open = open('./inparam_advanced', 'w')
             for i in range(0, len(inparam_advanced_input)):
@@ -422,54 +423,62 @@ def PyAxi(**kwargs):
                 for advanced_line in inparam_advanced_input: print advanced_line,
             else:
                 print 'DONE'
-   
-            if input['source_type'] == 'sourceparams':
+  
+            print 'source_type: ' + input['source_type'];
+            if input['sourcefile_type'] == 'sourceparams':
                 if input['verbose'] != 'N':
                     print "\n==========================================="
-                    print "Change the Source params (sourceparams.dat)"
+                    print "Change the Source params (inparams_source)"
                     print "==========================================="
                 else:
-                    sys.stdout.write('Change the Source params (sourceparams.dat)...')
+                    sys.stdout.write('Change the Source params (inparams_source)...')
                     sys.stdout.flush()
 
-                if os.path.isfile('sourceparams.dat'):
-                    subprocess.check_call(['rm', 'sourceparams.dat'])
-                subprocess.check_call(['cp', 'sourceparams.dat.TEMPLATE', 'sourceparams.dat'])
+                #if os.path.isfile('sourceparams.dat'):
+                #    subprocess.check_call(['rm', 'sourceparams.dat'])
+                #subprocess.check_call(['cp', 'sourceparams.dat.TEMPLATE', 'sourceparams.dat'])
                 
-                source_open = open('./sourceparams.dat', 'r')
-                source_read = source_open.readlines()
-                source_read[0] = input['src_Mzz'] + ' ' + input['src_Mxx'] + ' ' + \
-                                input['src_Myy'] + ' ' + input['src_Mxz'] + ' ' + \
-                                input['src_Myz'] + ' ' + input['src_Mxy'] + ' ' + \
-                "  moment tensor (Mzz Mxx Myy Mxz Myz Mxy) [Nm]\n"
-                source_read[1] = input['sourceparams_type'] + \
-                    "       excitation type: 'monopole', 'dipole', 'quadpole'\n"
-                source_read[2] = input['sourceparams_MDQ'] + \
-                    "            'explosion','mxx_p_myy','mzz','vertforce' (MONOPOLE) \n"
-                source_read[5] = input['source_dp'] + \
-                    '              source depth [km]\n'
-                source_read[6] = input['source_colat'] + \
-                    '              source colatitude [degrees]  \n'
-                source_read[7] = input['source_lon'] + \
-                    '              source longitude [ldegrees]\n'
-                source_read[8] = input['source_stf'] + \
-                    "        source time function: \n"
+                #source_open = open('./sourceparams.dat', 'r')
+                #source_read = source_open.readlines()
+                #source_read[0] = input['src_Mzz'] + ' ' + input['src_Mxx'] + ' ' + \
+                #                input['src_Myy'] + ' ' + input['src_Mxz'] + ' ' + \
+                #                input['src_Myz'] + ' ' + input['src_Mxy'] + ' ' + \
+                #"  moment tensor (Mzz Mxx Myy Mxz Myz Mxy) [Nm]\n"
+                #source_read[1] = input['sourceparams_type'] + \
+                #    "       excitation type: 'monopole', 'dipole', 'quadpole'\n"
+                #source_read[2] = input['sourceparams_MDQ'] + \
+                #    "            'explosion','mxx_p_myy','mzz','vertforce' (MONOPOLE) \n"
+                #source_read[5] = input['source_dp'] + \
+                #    '              source depth [km]\n'
+                #source_read[6] = input['source_colat'] + \
+                #    '              source colatitude [degrees]  \n'
+                #source_read[7] = input['source_lon'] + \
+                #    '              source longitude [ldegrees]\n'
+                #source_read[8] = input['source_stf'] + \
+                #    "        source time function: \n"
+                source_text = [];
+                source_text.append("SOURCE_TYPE  "     + input['source_type'] + "\n")
+                source_text.append("SOURCE_DEPTH "     + input['source_depth'] + "\n")
+                source_text.append("SOURCE_LAT   "     + input['source_lat'] + "\n")
+                source_text.append("SOURCE_LON   "     + input['source_lon'] + "\n")
+                source_text.append("SOURCE_AMPLITUDE " + input['source_amp'] + "\n")
 
-                source_open.close()
-                source_open = open('./sourceparams.dat', 'w')
+                #source_open.close()
+                if os.path.isfile('inparam_source'):
+                    subprocess.check_call(['rm', 'inparam_source'])
+                source_open = open('./inparam_source', 'w')
 
-                for i in range(0, len(source_read)):
-                    source_open.write(source_read[i])
+                for i in range(0, len(source_text)):
+                    source_open.write(source_text[i])
 
                 source_open.close()
                 if input['verbose'] != 'N':
-                    print source_read[1] + source_read[2] + \
-                                source_read[5] + source_read[6] + \
-                                source_read[7] + source_read[8]
+                    for i in range(0, len(source_text)):
+                        print source_text[i]; 
                 else:
                     print 'DONE'
 
-            elif input['source_type'] == 'cmtsolut':
+            elif input['sourcefile_type'] == 'cmtsolut':
                 if input['verbose'] != 'N':
                     print "\n======================================"
                     print "Change the Source params (CMTSOLUTION)"
@@ -485,12 +494,10 @@ def PyAxi(**kwargs):
                 source_open = open('./CMTSOLUTION', 'r')
                 source_read = source_open.readlines()
                 
-                source_read[0] = input['cmt_STF'] + \
-                                " PDE 1994  6  9  0 33 16.40 -13.8300  " + \
-                                "-67.5600 637.0 6.9 6.8 NORTHERNBOLIVIA" + '\n'
+                source_read[0] = "PyAxi generated" + '\n'
                 source_read[4] = 'latitude:      ' + input['cmt_lat'] + '\n'
                 source_read[5] = 'longitude:     ' + input['cmt_lon'] + '\n'
-                source_read[6] = 'depth:         ' + input['cmt_dp'] + '\n'
+                source_read[6] = 'depth:         ' + input['cmt_depth'] + '\n'
                 source_read[7] = 'Mrr:      ' + input['cmt_Mrr'] + '\n'
                 source_read[8] = 'Mtt:       ' + input['cmt_Mtt'] + '\n'
                 source_read[9] = 'Mpp:      ' + input['cmt_Mpp'] + '\n'
@@ -598,7 +605,7 @@ def PyAxi(**kwargs):
             time.sleep(2)
             print_output = "Just after 2 seconds!"
             
-            if input['source_type'] == 'sourceparams':
+            if input['sourcefile_type'] == 'sourceparams':
                 if not os.path.exists('OUTPUT_' + input['solver_name']):
                     print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
                                 %('OUTPUT_' + input['solver_name'])
@@ -616,7 +623,7 @@ def PyAxi(**kwargs):
                     print print_output
                     time.sleep(2)
                     
-            elif input['source_type'] == 'cmtsolut':
+            elif input['sourcefile_type'] == 'cmtsolut':
                 
                 if not os.path.exists(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY')):
                     print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
@@ -651,41 +658,49 @@ def PyAxi(**kwargs):
                                     %(os.path.join('MZZ', 'OUTPUT_MZZ')))
 
                 while (test_1 == -1 or test_2 == -1 or test_3 == -1 or test_4 == -1):
-                        output_file_open =  open(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'), 'r')
-                        output_file_read = output_file_open.readlines()
-                        test_1 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        # for k in range(0, int(input['mesher_ncpu'])):
+                        output_file =  open(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'), 'r')
+                        output_file_read = output_file.readlines()
+                        #test_1 = output_file_read[-1].find('PROGRAM axisem FINISHED')
+                        print_output_1 = output_file_read[-1].split('\n')[0]
                         if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
                             test_1 = -1
-                            print_output = output_file_read[-1].split('\n')[0]
-                        print 'MXX_P_MYY:     ' + print_output
-                        
-                        output_file_open =  open(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'), 'r')
-                        output_file_read = output_file_open.readlines()
-                        test_2 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        # for k in range(0, int(input['mesher_ncpu'])):
+                        else:
+                            test_1 = 0
+                        print 'MXX_P_MYY:     ' + print_output_1
+                        output_file.close
+                    
+                        output_file =  open(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'), 'r')
+                        output_file_read = output_file.readlines()
+                        #test_2 = output_file_read[-1].find('PROGRAM axisem FINISHED')
+                        print_output_2 = output_file_read[-1].split('\n')[0]
                         if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
                             test_2 = -1
-                            print_output = output_file_read[-1].split('\n')[0]
-                        print 'MXY_MXX_M_MYY: ' + print_output
+                        else: 
+                            test_2 = 0
+                        print 'MXY_MXX_M_MYY: ' + print_output_2
+                        output_file.close
                         
-                        output_file_open =  open(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'), 'r')
-                        output_file_read = output_file_open.readlines()
-                        test_3 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        # for k in range(0, int(input['mesher_ncpu'])):
+                        output_file =  open(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'), 'r')
+                        output_file_read = output_file.readlines()
+                        #test_3 = output_file_read[-1].find('PROGRAM axisem FINISHED')
+                        print_output_3 = output_file_read[-1].split('\n')[0]
                         if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
                             test_3 = -1
-                            print_output = output_file_read[-1].split('\n')[0]
-                        print 'MXZ_MYZ:       ' + print_output
+                        else: 
+                            test_3 = 0
+                        print 'MXZ_MYZ:       ' + print_output_3
+                        output_file.close
                         
-                        output_file_open =  open(os.path.join('MZZ', 'OUTPUT_MZZ'), 'r')
-                        output_file_read = output_file_open.readlines()
-                        test_4 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        # for k in range(0, int(input['mesher_ncpu'])):
+                        output_file =  open(os.path.join('MZZ', 'OUTPUT_MZZ'), 'r')
+                        output_file_read = output_file.readlines()
+                        #test_4 = output_file_read[-1].find('PROGRAM axisem FINISHED')
+                        print_output_4 = output_file_read[-1].split('\n')[0]
                         if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
                             test_4 = -1
-                            print_output = output_file_read[-1].split('\n')[0]
-                        print 'MZZ:           ' + print_output
+                        else:
+                            test_4 = 0
+                        print 'MZZ:           ' + print_output_4
+                        output_file.close
                         
                         time.sleep(2)
                         print '--------------------------------'
@@ -713,7 +728,7 @@ def PyAxi(**kwargs):
             subprocess.check_call(['rm', '-rf', os.path.join(input['axi_address'], 'SOLVER',
                             input['solver_name'], 'Data_Postprocessing')])
         
-        if input['source_type'] == 'sourceparams':
+        if input['sourcefile_type'] == 'sourceparams':
             os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
             post_process_open = open('./param_post_processing', 'r')
             post_process_read_fio = post_process_open.readlines()
@@ -734,7 +749,7 @@ def PyAxi(**kwargs):
             output = subprocess.check_call(['./post_processing.csh'], stdout = stdout_param)
             if output != 0: print output_print
 
-        elif input['source_type'] == 'cmtsolut':
+        elif input['sourcefile_type'] == 'cmtsolut':
             os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
             post_process_open = open('./param_post_processing', 'r')
             post_process_read_fio = post_process_open.readlines()
@@ -1038,9 +1053,9 @@ def read_input_file():
 
     input['solver_sim_type'] = config.get('SOLVER_BASIC', 'SIMULATION_TYPE')
     if input['solver_sim_type'] == 'single':
-        input['source_type'] = 'sourceparams'
+        input['sourcefile_type'] = 'sourceparams'
     elif input['solver_sim_type'] == 'moment':
-        input['source_type'] = 'cmtsolut'
+        input['sourcefile_type'] = 'cmtsolut'
     else:
         print 'Check your simulation type, you entered:'
         print input['solver_simu_type']
@@ -1089,31 +1104,23 @@ def read_input_file():
     input['solver_force_aniso'] = config.get('SOLVER_ADVANCED', 'FORCE_ANISO')
     
     input['receiver_type'] = input['solver_recfile_type']
-    input['sourceparams_type'] = config.get('SOURCE_INFO', 'SOURCEPARAMS_TYPE')
-    input['sourceparams_MDQ'] = config.get('SOURCE_INFO', 'SOURCEPARAMS_MDQ')
+    input['source_type'] = config.get('SOURCE_INFO', 'SOURCE_TYPE')
     
-    input['src_Mzz'] = config.get('SOURCE_INFO', 'SOURCE_MZZ')
-    input['src_Mxx'] = config.get('SOURCE_INFO', 'SOURCE_MXX')
-    input['src_Myy'] = config.get('SOURCE_INFO', 'SOURCE_MYY')
-    input['src_Mxz'] = config.get('SOURCE_INFO', 'SOURCE_MXZ')
-    input['src_Myz'] = config.get('SOURCE_INFO', 'SOURCE_MYZ')
-    input['src_Mxy'] = config.get('SOURCE_INFO', 'SOURCE_MXY')
-    
-    input['source_dp'] = config.get('SOURCE_INFO', 'SOURCE_DEPTH')
-    input['source_colat'] = config.get('SOURCE_INFO', 'SOURCE_COLAT')
-    input['source_lon'] = config.get('SOURCE_INFO', 'SOURCE_LON')
+    input['source_depth'] = config.get('SOURCE_INFO', 'SOURCE_DEPTH')
+    input['source_lat'] = config.get('SOURCE_INFO', 'SOURCE_LATITUDE')
+    input['source_lon'] = config.get('SOURCE_INFO', 'SOURCE_LONGITUDE')
     input['source_stf'] = config.get('SOURCE_INFO', 'SOURCE_STF')
+    input['source_amp'] = config.get('SOURCE_INFO', 'SOURCE_AMPLITUDE')
     
-    input['cmt_STF'] = config.get('SOURCE_INFO', 'CMT_STF')
-    input['cmt_lat'] = config.get('SOURCE_INFO', 'CMT_LAT')
-    input['cmt_lon'] = config.get('SOURCE_INFO', 'CMT_LON')
-    input['cmt_dp'] = config.get('SOURCE_INFO', 'CMT_DEPTH')
-    input['cmt_Mrr'] = config.get('SOURCE_INFO', 'CMT_MRR')
-    input['cmt_Mtt'] = config.get('SOURCE_INFO', 'CMT_MTT')
-    input['cmt_Mpp'] = config.get('SOURCE_INFO', 'CMT_MPP')
-    input['cmt_Mrt'] = config.get('SOURCE_INFO', 'CMT_MRT')
-    input['cmt_Mrp'] = config.get('SOURCE_INFO', 'CMT_MRP')
-    input['cmt_Mtp'] = config.get('SOURCE_INFO', 'CMT_MTP')
+    input['cmt_lat']   = config.get('SOURCE_INFO', 'CMT_LAT')
+    input['cmt_lon']   = config.get('SOURCE_INFO', 'CMT_LON')
+    input['cmt_depth'] = config.get('SOURCE_INFO', 'CMT_DEPTH')
+    input['cmt_Mrr']   = config.get('SOURCE_INFO', 'CMT_MRR')
+    input['cmt_Mtt']   = config.get('SOURCE_INFO', 'CMT_MTT')
+    input['cmt_Mpp']   = config.get('SOURCE_INFO', 'CMT_MPP')
+    input['cmt_Mrt']   = config.get('SOURCE_INFO', 'CMT_MRT')
+    input['cmt_Mrp']   = config.get('SOURCE_INFO', 'CMT_MRP')
+    input['cmt_Mtp']   = config.get('SOURCE_INFO', 'CMT_MTP')
    
     input['post_rec_comp_sys'] = config.get('POST_PROCESSING', 'REC_COMP_SYS')
     input['post_conv_period'] = config.get('POST_PROCESSING', 'CONV_PERIOD')
