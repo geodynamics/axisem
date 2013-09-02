@@ -895,7 +895,7 @@ subroutine define_search_sflobal_index
                enddo
                
                nbelong2_solid(nsearch,iglob_solid(ipt)) = iproc
-               nprocbmax_solid = nsearch
+               nprocbmax_solid = max(nsearch, nprocbmax_solid)
            end do outer
         end do
      end do
@@ -918,7 +918,7 @@ subroutine define_search_sflobal_index
   ! fluid 
   if (have_fluid) then
      allocate(nbelong_fluid(nglobflob))
-     allocate(nbelong2_fluid(1:2,nglobflob))
+     allocate(nbelong2_fluid(1:nneighbours,nglobflob))
 
      nbelong2_fluid(:,:) = -1 
      nbelong_fluid(:)    = 0
@@ -942,7 +942,7 @@ subroutine define_search_sflobal_index
                  enddo
                  
                  nbelong2_fluid(nsearch,iglob_fluid(ipt)) = iproc
-                 nprocbmax_fluid = nsearch
+                 nprocbmax_fluid = max(nsearch, nprocbmax_fluid)
               end do outerfl
            end do
         end do 
