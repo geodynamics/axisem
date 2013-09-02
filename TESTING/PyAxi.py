@@ -235,7 +235,8 @@ def PyAxi(**kwargs):
             inparam_mesh_input.append('BACKGROUND_MODEL     %s\n' %(input['mesher_bg_model']))
             inparam_mesh_input.append('EXT_MODEL     %s\n' %(input['mesher_ext_model']))
             inparam_mesh_input.append('DOMINANT_PERIOD     %s\n' %(input['mesher_dominant_period']))
-            inparam_mesh_input.append('NCPU     %s\n' %(input['mesher_ncpu']))
+            inparam_mesh_input.append('NTHETA_SLICES     %s\n' %(input['mesher_ntheta']))
+            inparam_mesh_input.append('NRADIAL_SLICES     %s\n' %(input['mesher_nradial']))
             inparam_mesh_input.append('WRITE_VTK     %s\n' %(input['mesher_write_vtk']))
             inparam_mesh_input.append('COARSENING_LAYERS     %s\n' %(input['mesher_coarsening_layers']))
             inparam_mesh_input.append('IC_SHEAR_WAVE     %s\n' %(input['mesher_ic_shear_wave']))
@@ -584,7 +585,7 @@ def PyAxi(**kwargs):
 
             if not os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])):
                 print 'WARNING: $s is not created! Wait for 10 sec and re-check.' \
-                            %(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
+                        %(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
                 time.sleep(10)
                 if not os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])):
                     sys.exit('...ERROR...%s is not created.' 
@@ -1039,7 +1040,8 @@ def read_input_file():
     input['mesher_bg_model'] = config.get('MESHER_BASIC', 'BACKGROUND_MODEL')
     input['mesher_ext_model'] = config.get('MESHER_BASIC', 'EXT_MODEL')
     input['mesher_dominant_period'] = config.get('MESHER_BASIC', 'DOMINANT_PERIOD')
-    input['mesher_ncpu'] = config.get('MESHER_BASIC', 'NCPU')
+    input['mesher_ntheta'] = config.get('MESHER_BASIC', 'NTHETA_SLICES')
+    input['mesher_nradial'] = config.get('MESHER_BASIC', 'NRADIAL_SLICES')
     input['mesher_write_vtk'] = config.get('MESHER_BASIC', 'WRITE_VTK')
     input['mesher_coarsening_layers'] = config.get('MESHER_BASIC', 'COARSENING_LAYERS')
     input['mesh_name'] = config.get('MESHER_BASIC', 'MESHNAME')
