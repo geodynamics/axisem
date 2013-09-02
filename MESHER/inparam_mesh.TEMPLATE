@@ -24,13 +24,15 @@ BACKGROUND_MODEL    'prem_iso'
 # Dominant period [s]
 DOMINANT_PERIOD     20.0
 
-# Number of processors to be used 
-# (will be overwritten with 4 if ONLY_SUGGEST_NPROC is set true)
-NCPU                2
+# Number of slices in the mesh decomposition in latitude and radius.
+# The resulting number of processors is NTHETA_SLICES * NRADIAL_SLICES
+# (will be overwritten if ONLY_SUGGEST_NPROC is set true)
+NTHETA_SLICES       2
+NRADIAL_SLICES      1 # (default: 1)
 
-# will not generate a mesh, but only suggested numbers for nproc for optimal mesh
+# will not generate a mesh, but only suggested numbers for NTHETA_SLICES for optimal mesh
 # decomposition
-ONLY_SUGGEST_NPROC  false
+ONLY_SUGGEST_NTHETA false
 
 # write vtk output
 WRITE_VTK           true

@@ -49,7 +49,7 @@ subroutine create_domain_decomposition
 
   write(6,*)'     creating domain decomposition....'
 
-  nproc = nproc_target
+  nproc = nthetaslices
   call check_nproc(nproc) ! checks if number of elements at ICB is multiple of nproc
 
   attributed(:) = .false.

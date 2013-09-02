@@ -28,7 +28,7 @@ module data_diag
   logical               :: dump_mesh_info_files
   logical               :: dump_mesh_info_screen
   logical               :: dump_mesh_vtk
-  logical               :: only_suggest_nproc
+  logical               :: only_suggest_ntheta
   character(len=200)    :: diagpath
   integer               :: lfdiag
 

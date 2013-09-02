@@ -895,7 +895,7 @@ subroutine define_central_region
   ! define number of divisions in one direction for central square
   ndivs = ns_ib/2
   
-  if (only_suggest_nproc) then 
+  if (only_suggest_ntheta) then 
      write(6,*)
      write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
      write(6,*) '   suggested number of processors for optimal mesh decomposition:'
@@ -1355,7 +1355,7 @@ end subroutine def_ref_cart_coordinates
 subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
 
   use data_grid
-  use data_bkgrdmodel, only: nc_init, nproc_target
+  use data_bkgrdmodel, only: nc_init, nthetaslices
   use data_pdb,        only: theta_max_proc, theta_min_proc
 
   integer, intent(in) :: nst, nzt
@@ -1399,16 +1399,16 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
   write(6,*) ds1, ds2, nst
   
   pi2 = 2.d0 * dasin(1.d0)
-  allocate(theta_min_proc(0:nproc_target-1), theta_max_proc(0:nproc_target-1))
+  allocate(theta_min_proc(0:nthetaslices-1), theta_max_proc(0:nthetaslices-1))
   theta_min_proc(:) = 0.d0
   theta_max_proc(:) = 0.d0
-  theta_max_proc(nproc_target-1) = pi2
+  theta_max_proc(nthetaslices-1) = pi2
 
-  do iproc = 0, nproc_target-2
+  do iproc = 0, nthetaslices-2
      theta_min_proc(iproc+1) = 0.5d0 * pi2 * (ds1 * 2**nc_init &
-                       + ds2 * (nst * 2 / nproc_target * (iproc + 1) - 2**nc_init))
+                       + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
      theta_max_proc(iproc)   = 0.5d0 * pi2 * (ds1 * 2**nc_init &
-                       + ds2 * (nst * 2 / nproc_target * (iproc + 1) - 2**nc_init))
+                       + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
   end do
 
 end subroutine def_ref_cart_coordinates_discont

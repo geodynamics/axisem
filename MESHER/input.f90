@@ -49,7 +49,8 @@ subroutine read_params
  
   ! Default values
   bkgrdmodel = 'UNDEFINED'
-  nproc_target = -1
+  nthetaslices = -1
+  nradialslices = 1
   period = -1
   dump_mesh_vtk = .true.
   nc_init = 3
@@ -60,7 +61,7 @@ subroutine read_params
   router = 6.371e6
   dump_mesh_info_files = .false.
   dump_mesh_info_screen = .false.
-  only_suggest_nproc = .false.
+  only_suggest_ntheta = .false.
   diagpath = 'Diags'
   lfdiag = index(diagpath,' ') - 1 
 
@@ -87,11 +88,14 @@ subroutine read_params
       case('DOMINANT_PERIOD')
           read(keyvalue, *) period
 
-      case('NCPU')
-          read(keyvalue, *) nproc_target
+      case('NTHETA_SLICES')
+          read(keyvalue, *) nthetaslices
 
-      case('ONLY_SUGGEST_NPROC')
-          read(keyvalue, *) only_suggest_nproc
+      case('NRADIAL_SLICES')
+          read(keyvalue, *) nradialslices
+
+      case('ONLY_SUGGEST_NTHETA')
+          read(keyvalue, *) only_suggest_ntheta
       
       case('WRITE_VTK')
           read(keyvalue, *) dump_mesh_vtk
@@ -128,12 +132,12 @@ subroutine read_params
       stop
   end if
 
-  if (nproc_target==-1) then
+  if (nthetaslices==-1) then
       write(6,20) 'NCPU'
       stop
   end if
 
-  if (only_suggest_nproc) nproc_target = 4
+  if (only_suggest_ntheta) nthetaslices = 4
 
   if (period==-1) then
       write(6,20) 'DOMINANT_PERIOD'
@@ -151,7 +155,7 @@ subroutine read_params
   write(6,*) 'Elements per dominant wavelength : ',pts_wavelngth
   write(6,*) 'Courant number                   : ',courant
   write(6,*) 'coarsening levels                : ',nc_init
-  write(6,*) 'processors used in solver        : ',nproc_target
+  write(6,*) 'processors used in solver        : ',nthetaslices
   write(6,*) 'outer radius [m]                 : ',router
   write(6,*) 'save mesh info files?            : ',dump_mesh_info_files
   write(6,*) 'print mesh info to screen?       : ',dump_mesh_info_screen

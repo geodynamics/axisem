@@ -154,15 +154,15 @@ subroutine create_subregions
   endif
 
   ! (2**nc / 2 ) nc = number of coarsening levels. /2 because NH/SH dichotomy)
-  !  ns_ref=(2**nc_init*nproc_target/2)*( ns_ref/(2**nc_init*nproc_target/2)+2)
-  !      if ( mod(ns_ref, 2**nc_init*nproc_target/2) /= 0 ) &
-  !      ns_ref = (2**nc_init*nproc_target/2)* &
-  !               ( ns_ref/(2**nc_init*nproc_target/2) + 1 )
+  !  ns_ref=(2**nc_init*nthetaslices/2)*( ns_ref/(2**nc_init*nthetaslices/2)+2)
+  !      if ( mod(ns_ref, 2**nc_init*nthetaslices/2) /= 0 ) &
+  !      ns_ref = (2**nc_init*nthetaslices/2)* &
+  !               ( ns_ref/(2**nc_init*nthetaslices/2) + 1 )
   
   ! need to make sure that ns_ref is defined such that ns is even below 
   ! last coarsening level (fix to make sure nel and lnodes counts are correct)
-  if ( mod(ns_ref, 2**nc_init*nproc_target*2) /= 0 ) &
-        ns_ref = (2**nc_init*nproc_target*2)* ( ns_ref/(2**nc_init*nproc_target*2) + 1 )
+  if ( mod(ns_ref, 2**nc_init*nthetaslices*2) /= 0 ) &
+        ns_ref = (2**nc_init*nthetaslices*2)* ( ns_ref/(2**nc_init*nthetaslices*2) + 1 )
 
   if (dump_mesh_info_screen) write(6,*)'ns_ref fixed with procs & coarsenings:',ns_ref
 
@@ -265,9 +265,9 @@ subroutine create_subregions
 
   ! need to make sure that ns_ref is defined such that ns is even below 
   ! last coarsening level (fix to make sure nel and lnodes counts are correct)
-  if ( mod(ns_ref, 2**nc_init*nproc_target*2) /= 0 ) &
-  ns_ref = (2**nc_init*nproc_target*2)* &
-           ( ns_ref/(2**nc_init*nproc_target*2) + 1 )
+  if ( mod(ns_ref, 2**nc_init*nthetaslices*2) /= 0 ) &
+  ns_ref = (2**nc_init*nthetaslices*2)* &
+           ( ns_ref/(2**nc_init*nthetaslices*2) + 1 )
 
   if (dump_mesh_info_screen) write(6,*) 'ns_ref fixed with # processors/coarsenings:' , ns_ref
   ns_glob = ns_ref

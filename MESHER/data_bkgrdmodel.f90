@@ -37,7 +37,7 @@ module data_bkgrdmodel
   real(kind=dp)              :: pts_wavelngth
   real(kind=dp)              :: period, courant
   real(kind=dp)              :: dt
-  integer                    :: nc_init, nproc_target
+  integer                    :: nc_init, nthetaslices, nradialslices
   
   ! the sole quantities to be created in create_subregions
   ! that are needed by the rest of the mesher
