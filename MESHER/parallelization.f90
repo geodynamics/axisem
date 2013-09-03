@@ -187,12 +187,12 @@ subroutine create_domain_decomposition
 
   if (dump_mesh_vtk) call plot_dd_vtk
 
-  !if (nradialslices > 1) then
-  !   write(6,*)
-  !   write(6,*) 'ERROR: Radial slicing not yet finished.'
-  !   write(6,*) '       Set NRADIAL_SLICES to 1 to actually produce a mesh'
-  !   stop
-  !endif
+  if (nradialslices > 1) then
+     write(6,*)
+     write(6,*) 'ERROR: Radial slicing not yet finished.'
+     write(6,*) '       Set NRADIAL_SLICES to 1 to actually produce a mesh'
+     stop
+  endif
 
 end subroutine create_domain_decomposition
 !-----------------------------------------------------------------------------------------
