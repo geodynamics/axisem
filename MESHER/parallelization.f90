@@ -181,18 +181,18 @@ subroutine create_domain_decomposition
         write(6,'("Proc ",i3, " has ",i8, " solid,",i6," fluid,",i9," total elements")') &
                 iproc, nel_solid(iproc), nel_fluid(iproc), nel(iproc) 
      enddo
-     call flush(6)
      write(6,*)
+     call flush(6)
   end if
 
   if (dump_mesh_vtk) call plot_dd_vtk
 
-  if (nradialslices > 1) then
-     write(6,*)
-     write(6,*) 'ERROR: Radial slicing not yet finished.'
-     write(6,*) '       Set NRADIAL_SLICES to 1 to actually produce a mesh'
-     stop
-  endif
+  !if (nradialslices > 1) then
+  !   write(6,*)
+  !   write(6,*) 'ERROR: Radial slicing not yet finished.'
+  !   write(6,*) '       Set NRADIAL_SLICES to 1 to actually produce a mesh'
+  !   stop
+  !endif
 
 end subroutine create_domain_decomposition
 !-----------------------------------------------------------------------------------------
@@ -472,15 +472,14 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   endif
   ! **************** END OF INNER CUBE****************
 
-
   ! add the extra requirement that element iel to be in appropriate theta slice
   do itheta = 0, nthetal-1
 
      mycount = 0
      do iel = 1, neltot
         if (fluid(iel) .and. &
-            (thetacom(iel) >= theta_min_proc(itheta)) .and.  &
-            (thetacom(iel) <= theta_max_proc(itheta)) ) then
+               (thetacom(iel) >= theta_min_proc(itheta)) .and.  &
+               (thetacom(iel) <= theta_max_proc(itheta)) ) then
             mycount = mycount + 1
             thetaslel_fluid(mycount,itheta) = iel
             attributed(iel) = .true.
@@ -492,10 +491,10 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   
      do iel = 1, neltot
         if ( .not. fluid(iel) .and. .not.(attributed(iel)) .and. &
-             (thetacom(iel) >= theta_min_proc(itheta)) .and. &
-             (thetacom(iel) <= theta_max_proc(itheta)) ) then
+              (thetacom(iel) >= theta_min_proc(itheta)) .and. &
+              (thetacom(iel) <= theta_max_proc(itheta)) ) then
            thetaslel_solid(sum(nel_solid(itheta:itheta+nrl-1)) &
-                             - mycount + central_count(itheta),itheta) = iel
+                           - mycount + central_count(itheta),itheta) = iel
            mycount = mycount + 1
            !thetaslel_solid(mycount,itheta) = iel
            attributed(iel) = .true.

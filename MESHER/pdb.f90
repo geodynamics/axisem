@@ -363,7 +363,7 @@ subroutine define_glocal_numbering
      do iel = 1, nel(iproc)
        do ipol = 0, npol
          do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+           ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
            idest = wigloc(ipt)
            uglob2(idest) = uglob2(idest) + val(ipol,jpol,iel)
          end do
@@ -373,7 +373,7 @@ subroutine define_glocal_numbering
      do iel = 1, nel(iproc)
        do ipol = 0, npol
          do jpol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+           ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
            idest = wigloc(ipt)
            val(ipol,jpol,iel) = uglob2(idest)
 
@@ -901,6 +901,10 @@ subroutine define_search_sflobal_index
      end do
   end do !iproc
 
+  if (dump_mesh_info_screen) then 
+      write(6,*) 'Maximum number of neighbours in the solid:', nprocbmax_solid
+  endif
+  
   allocate(lprocb_solid(nprocbmax_solid,nglobslob))
 
   do ipt=1, nglobslob
@@ -929,10 +933,10 @@ subroutine define_search_sflobal_index
            ielg = procel_fluid(iel,iproc) ! global element number
            do jpol = 0, npol
               outerfl: do ipol = 0, npol
-                 ipt = (inv_ielem_fluid(ielg)-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
+                 ipt = (inv_ielem_fluid(ielg) - 1) * (npol + 1)**2 &
+                        + jpol * (npol + 1) + ipol + 1
      
-                 nbelong_fluid(iglob_fluid(ipt)) = &
-                            nbelong_fluid(iglob_fluid(ipt)) + 1 
+                 nbelong_fluid(iglob_fluid(ipt)) = nbelong_fluid(iglob_fluid(ipt)) + 1 
 
                  nsearch = 1
                  do while (nbelong2_fluid(nsearch,iglob_fluid(ipt)) /= -1)
@@ -948,6 +952,9 @@ subroutine define_search_sflobal_index
         end do 
      end do
 
+     if (dump_mesh_info_screen) then 
+         write(6,*) 'Maximum number of neighbours in the solid:', nprocbmax_solid
+     endif
      allocate(lprocb_fluid(nprocbmax_fluid,nglobflob))
   
      do ipt=1, nglobflob
