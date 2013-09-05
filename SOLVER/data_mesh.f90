@@ -64,7 +64,7 @@ module data_mesh
   logical                           :: do_mesh_tests
 
   ! global numbering array for the solid and fluid assembly
-  real(kind=realkind), allocatable  :: gvec_solid(:) 
+  real(kind=realkind), allocatable  :: gvec_solid(:,:) 
   real(kind=realkind), allocatable  :: gvec_fluid(:)
 
   ! Deprecated elemental mesh (radius & colatitude of elemental midpoint)
@@ -252,14 +252,16 @@ subroutine read_mesh_advanced(iounit)
    if (verbose > 1) write(69,*) 'reading solid/fluid boundary info...'
    read(iounit) have_bdry_elem
  
-   allocate(bdry_solid_el(1:nel_bdry))
-   allocate(bdry_fluid_el(1:nel_bdry))
-   allocate(bdry_jpol_solid(1:nel_bdry))
-   allocate(bdry_jpol_fluid(1:nel_bdry))
-   read(iounit) bdry_solid_el(1:nel_bdry)
-   read(iounit) bdry_fluid_el(1:nel_bdry)
-   read(iounit) bdry_jpol_solid(1:nel_bdry)
-   read(iounit) bdry_jpol_fluid(1:nel_bdry)
+   if (have_bdry_elem) then
+      allocate(bdry_solid_el(1:nel_bdry))
+      allocate(bdry_fluid_el(1:nel_bdry))
+      allocate(bdry_jpol_solid(1:nel_bdry))
+      allocate(bdry_jpol_fluid(1:nel_bdry))
+      read(iounit) bdry_solid_el(1:nel_bdry)
+      read(iounit) bdry_fluid_el(1:nel_bdry)
+      read(iounit) bdry_jpol_solid(1:nel_bdry)
+      read(iounit) bdry_jpol_fluid(1:nel_bdry)
+   endif
 end subroutine
 !-----------------------------------------------------------------------------------------
 

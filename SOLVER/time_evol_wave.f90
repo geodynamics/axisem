@@ -426,11 +426,12 @@ subroutine sf_time_loop_newmark
 
      ! SOLID: 3-component stiffness term assembly ==> w^T K_s u
      iclockcomm = tick()
-     if (npol==4) then
-        call pdistsum_solid_4(acc1)
-     else
+     !if (npol==4) then
+     !   ! @TODO needs updating to the new commucication pattern
+     !   call pdistsum_solid_4(acc1)
+     !else
         call pdistsum_solid(acc1, 3) 
-     end if
+     ! end if
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ! SOLID: add source, only in source elements and for stf/=0

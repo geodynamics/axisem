@@ -246,13 +246,15 @@ subroutine compute_src
 
   call find_srcloc(iel_src2, ipol_src2, jpol_src2)
 
-  if (have_src .and. mynum /= 0) then 
-     write(6,'(a,a,i4,a)') &
-        'PROBLEM with the source location!', &
-        'I have the source and am processor',mynum, &
-        '...when source should always be on the northern axis (mynum=0)'
-     stop
-  endif
+  ! @TODO: should add a test whether it is the first theta slice
+
+  !if (have_src .and. mynum /= 0) then 
+  !   write(6,'(a,a,i4,a)') &
+  !      'PROBLEM with the source location!', &
+  !      'I have the source and am processor',mynum, &
+  !      '...when source should always be on the northern axis (mynum=0)'
+  !   stop
+  !endif
 
   call broadcast_int(iel_src, 0)
   call broadcast_int(ipol_src, 0)

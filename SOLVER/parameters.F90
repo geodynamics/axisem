@@ -744,7 +744,6 @@ subroutine compute_numerical_parameters
               'Maximal time step for this mesh [s]:', deltat, '\n', &
               'Change time step in input file to lower than this max\n', &
               'or to zero to use precalculated (recommended)'
-        print *, 'bla'
         call pcheck(.true., errmsg)
      else
         if (lpr .and. verbose > 1) then 

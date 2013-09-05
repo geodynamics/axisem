@@ -125,8 +125,8 @@ subroutine read_model_compute_terms
   if (lpr .and. verbose > 1) write(6,*) '   define solid stiffness terms....'
   call def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
                                  eta_ani, fa_ani_theta, fa_ani_phi)
+
   deallocate(xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
-  
   deallocate(lambda,mu)
   
   if (have_fluid) then
@@ -135,13 +135,13 @@ subroutine read_model_compute_terms
 
      if (lpr .and. verbose > 1) write(6,*) '   define solid-fluid boundary terms....'
      call def_solid_fluid_boundary_terms
-  else
-     M_w_fl = zero
-     M0_w_fl = zero
-     M1chi_fl = zero
-     M2chi_fl = zero
-     M4chi_fl = zero    
-     bdry_matr = zero
+  !else not allocated
+  !   M_w_fl = zero
+  !   M0_w_fl = zero
+  !   M1chi_fl = zero
+  !   M2chi_fl = zero
+  !   M4chi_fl = zero    
+  !   bdry_matr = zero
   endif
 
   if (lpr .and. verbose > 1) write(6,*) '   ...defined all precomputed arrays'
@@ -2610,11 +2610,12 @@ subroutine def_solid_fluid_boundary_terms
 
   bdry_sum = zero
 
+  count_lower_disc = 0
+  count_upper_disc = 0
+
+
   ! check if proc has boundary elements
   if (have_bdry_elem) then
-
-     count_lower_disc = 0
-     count_upper_disc = 0
 
      do iel=1,nel_bdry
 

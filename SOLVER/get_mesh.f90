@@ -221,11 +221,13 @@ subroutine read_db
            write(69,*) '      number of solid axial elements:', naxel_solid
            write(69,*) '      number of fluid axial elements:', naxel_fluid
         endif
-        if (naxel == 0 .or. naxel_solid == 0 .and. naxel_fluid == 0) then 
-           write(6,*)'PROBLEM: Logically supposed to have the axis &
-                              & but have no axial elements!'
-           stop
-        endif
+        ! This is not true anymore
+        ! @TODO remove
+        !if (naxel == 0 .or. naxel_solid == 0 .and. naxel_fluid == 0) then 
+        !   write(6,*)'PROBLEM: Logically supposed to have the axis &
+        !                      & but have no axial elements!'
+        !   stop
+        !endif
      endif
      call barrier
   enddo
