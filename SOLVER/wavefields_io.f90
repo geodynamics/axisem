@@ -265,45 +265,6 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     call xdmf_mapping(f_sol_spz, mapping_ijel_iplot(:,:,nel_fluid+1:), & 
                       plotting_mask(:,:,nel_fluid+1:), &
                       i_arr_xdmf, j_arr_xdmf, u(:,:))
-    !do iel=1, nel_solid
-    !    do i=1, i_n_xdmf - 1
-    !        ipol = i_arr_xdmf(i)
-    !        ipol1 = i_arr_xdmf(i+1)
-
-    !        do j=1, j_n_xdmf - 1
-    !            jpol = j_arr_xdmf(j)
-    !            jpol1 = j_arr_xdmf(j+1)
-    !
-    !            if (plotting_mask(i,j,iel + nel_fluid)) then
-    !                ct = mapping_ijel_iplot(i,j,iel + nel_fluid)
-    !                u(1, ct) = f_sol_spz(ipol,jpol,iel,1)
-    !                u(2, ct) = f_sol_spz(ipol,jpol,iel,2)
-    !                u(3, ct) = f_sol_spz(ipol,jpol,iel,3)
-    !            endif
-    !            
-    !            if (plotting_mask(i+1,j,iel + nel_fluid)) then
-    !                ct = mapping_ijel_iplot(i+1,j,iel + nel_fluid)
-    !                u(1, ct) = f_sol_spz(ipol1,jpol,iel,1)
-    !                u(2, ct) = f_sol_spz(ipol1,jpol,iel,2)
-    !                u(3, ct) = f_sol_spz(ipol1,jpol,iel,3)
-    !            endif
-    !            
-    !            if (plotting_mask(i+1,j+1,iel + nel_fluid)) then
-    !                ct = mapping_ijel_iplot(i+1,j+1,iel + nel_fluid)
-    !                u(1, ct) = f_sol_spz(ipol1,jpol1,iel,1)
-    !                u(2, ct) = f_sol_spz(ipol1,jpol1,iel,2)
-    !                u(3, ct) = f_sol_spz(ipol1,jpol1,iel,3)
-    !            endif
-    !            
-    !            if (plotting_mask(i,j+1,iel + nel_fluid)) then
-    !                ct = mapping_ijel_iplot(i,j+1,iel + nel_fluid)
-    !                u(1, ct) = f_sol_spz(ipol,jpol1,iel,1)
-    !                u(2, ct) = f_sol_spz(ipol,jpol1,iel,2)
-    !                u(3, ct) = f_sol_spz(ipol,jpol1,iel,3)
-    !            endif
-    !        enddo
-    !    enddo
-    !enddo
    
     call calc_straintrace(f_sol, chi, straintrace)
     call xdmf_mapping(straintrace, mapping_ijel_iplot(:,:,:), & 
@@ -710,48 +671,28 @@ end subroutine glob_snapshot_xdmf
 
 !-----------------------------------------------------------------------------------------
 subroutine calc_curlinplane(f_sol,chi,curlinplane)
-    use data_pointwise, only : inv_rho_fluid, prefac_inv_s_rho_fluid
-    use pointwise_derivatives, only: axisym_gradient_solid, axisym_gradient_solid_add
-    use pointwise_derivatives, only: axisym_gradient_fluid, axisym_gradient_fluid_add
-    use pointwise_derivatives, only: f_over_s_solid, f_over_s_fluid
-    use data_source, only : src_type
-    real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
-    real(kind=realkind), intent(out) :: curlinplane(0:,0:,:,:)
-  !  real(kind=realkind), allocatable :: grad_sol(:,:,:,:)
-  !  real(kind=realkind), allocatable :: buff_solid(:,:,:)
+  use data_pointwise, only : inv_rho_fluid, prefac_inv_s_rho_fluid
+  use pointwise_derivatives, only: axisym_gradient_solid, axisym_gradient_solid_add
+  use pointwise_derivatives, only: axisym_gradient_fluid, axisym_gradient_fluid_add
+  use pointwise_derivatives, only: f_over_s_solid, f_over_s_fluid
+  use data_source, only : src_type
+  real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
+  real(kind=realkind), intent(out) :: curlinplane(0:,0:,:,:)
 
-    real(kind=realkind)             :: grad_sol_s(0:npol,0:npol,nel_solid,2)
-    real(kind=realkind)             :: grad_sol_z(0:npol,0:npol,nel_solid,2)
-    !real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
-    !real(kind=realkind)             :: usz_fluid(0:npol,0:npol,nel_fluid,2)
-    !real(kind=realkind)             :: up_fluid(0:npol,0:npol,nel_fluid)
-    !real(kind=realkind)             :: grad_flu(0:npol,0:npol,nel_fluid,2)
-    !real(kind=realkind)             :: two_rk = 2
-    ! Calculate strain trace (for P-wave visualisation)
-  !  allocate(grad_sol(0:npol,0:npol,nel_solid,2))
-  !  allocate(buff_solid(0:npol,0:npol,nel_solid))
+  real(kind=realkind)             :: grad_sol_s(0:npol,0:npol,nel_solid,2)
+  real(kind=realkind)             :: grad_sol_z(0:npol,0:npol,nel_solid,2)
 
-    curlinplane = 0
-    if (src_type(1)=='dipole') then
-       call axisym_gradient_solid(f_sol(:,:,:,1) + f_sol(:,:,:,2), grad_sol_s)
-    else
-       call axisym_gradient_solid(f_sol(:,:,:,1), grad_sol_s) ! 1: dsus, 2: dzus
-    endif
+  curlinplane = 0
+  if (src_type(1)=='dipole') then
+     call axisym_gradient_solid(f_sol(:,:,:,1) + f_sol(:,:,:,2), grad_sol_s)
+  else
+     call axisym_gradient_solid(f_sol(:,:,:,1), grad_sol_s) ! 1: dsus, 2: dzus
+  endif
 
-    !call axisym_gradient_solid_add(f_sol(:,:,:,3), grad_sol) ! 1:dsuz-dzus,2:dzuz-dsus
-    call axisym_gradient_solid(f_sol(:,:,:,3), grad_sol_z) ! 1:dsuz 2:dzuz 
-    
-    !grad_sol(:,:,:,1) = grad_sol(:,:,:,1) / two_rk
-
-   ! if (src_type(1) == 'monopole') then
-   !    buff_solid = f_over_s_solid(f_sol(:,:,:,1))
-   ! elseif (src_type(1) == 'dipole') then 
-   !    buff_solid = two_rk * f_over_s_solid(f_sol(:,:,:,2))
-   ! elseif (src_type(1) == 'quadpole') then
-   !    buff_solid = f_over_s_solid(f_sol(:,:,:,1) - two_rk * f_sol(:,:,:,2))
-   ! end if
-    !curlinplane(:,:,nel_fluid+1:nel_fluid+nel_solid,1) = buff_solid + grad_sol(:,:,:,2)
-    curlinplane(:,:,nel_fluid+1:nel_fluid+nel_solid,1) = grad_sol_s(:,:,:,2) - grad_sol_z(:,:,:,1)
+  call axisym_gradient_solid(f_sol(:,:,:,3), grad_sol_z) ! 1:dsuz 2:dzuz 
+  
+  curlinplane(:,:,nel_fluid+1:nel_fluid+nel_solid,1) &
+            = grad_sol_s(:,:,:,2) - grad_sol_z(:,:,:,1)
 
 
 end subroutine
@@ -760,79 +701,72 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 subroutine calc_straintrace(f_sol,chi,straintrace)
-    use data_pointwise, only : inv_rho_fluid, prefac_inv_s_rho_fluid
-    use pointwise_derivatives, only: axisym_gradient_solid, axisym_gradient_solid_add
-    use pointwise_derivatives, only: axisym_gradient_fluid, axisym_gradient_fluid_add
-    use pointwise_derivatives, only: f_over_s_solid, f_over_s_fluid
-    use data_source, only : src_type
-    real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
-    real(kind=realkind), intent(out) :: straintrace(0:,0:,:,:)
-  !  real(kind=realkind), allocatable :: grad_sol(:,:,:,:)
-  !  real(kind=realkind), allocatable :: buff_solid(:,:,:)
+  use data_pointwise, only : inv_rho_fluid, prefac_inv_s_rho_fluid
+  use pointwise_derivatives, only: axisym_gradient_solid, axisym_gradient_solid_add
+  use pointwise_derivatives, only: axisym_gradient_fluid, axisym_gradient_fluid_add
+  use pointwise_derivatives, only: f_over_s_solid, f_over_s_fluid
+  use data_source, only : src_type
+  real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
+  real(kind=realkind), intent(out) :: straintrace(0:,0:,:,:)
 
-    real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
-    real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
-    real(kind=realkind)             :: usz_fluid(0:npol,0:npol,nel_fluid,2)
-    real(kind=realkind)             :: up_fluid(0:npol,0:npol,nel_fluid)
-    real(kind=realkind)             :: grad_flu(0:npol,0:npol,nel_fluid,2)
-    real(kind=realkind)             :: two_rk = 2
-    ! Calculate strain trace (for P-wave visualisation)
-  !  allocate(grad_sol(0:npol,0:npol,nel_solid,2))
-  !  allocate(buff_solid(0:npol,0:npol,nel_solid))
+  real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
+  real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
+  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,nel_fluid,2)
+  real(kind=realkind)             :: up_fluid(0:npol,0:npol,nel_fluid)
+  real(kind=realkind)             :: grad_flu(0:npol,0:npol,nel_fluid,2)
+  real(kind=realkind)             :: two_rk = 2
+  ! Calculate strain trace (for P-wave visualisation)
 
-    if (src_type(1)=='dipole') then
-       call axisym_gradient_solid(f_sol(:,:,:,1) + f_sol(:,:,:,2), grad_sol)
-    else
-       call axisym_gradient_solid(f_sol(:,:,:,1), grad_sol) ! 1: dsus, 2: dzus
-    endif
+  if (src_type(1)=='dipole') then
+     call axisym_gradient_solid(f_sol(:,:,:,1) + f_sol(:,:,:,2), grad_sol)
+  else
+     call axisym_gradient_solid(f_sol(:,:,:,1), grad_sol) ! 1: dsus, 2: dzus
+  endif
 
-    call axisym_gradient_solid_add(f_sol(:,:,:,3), grad_sol) ! 1:dsuz+dzus,2:dzuz+dsus
+  call axisym_gradient_solid_add(f_sol(:,:,:,3), grad_sol) ! 1:dsuz+dzus,2:dzuz+dsus
 
-    !allocate(straintrace(0:npol,0:npol,1:nel_fluid))
-    if (src_type(1) == 'monopole') then
-       buff_solid = f_over_s_solid(f_sol(:,:,:,1))
-    elseif (src_type(1) == 'dipole') then 
-       buff_solid = two_rk * f_over_s_solid(f_sol(:,:,:,2))
-    elseif (src_type(1) == 'quadpole') then
-       buff_solid = f_over_s_solid(f_sol(:,:,:,1) - two_rk * f_sol(:,:,:,2))
-    end if
-    straintrace(:,:,nel_fluid+1:nel_fluid+nel_solid,1) = buff_solid + grad_sol(:,:,:,2)
-    !deallocate(grad_sol, buff_solid)
+  if (src_type(1) == 'monopole') then
+     buff_solid = f_over_s_solid(f_sol(:,:,:,1))
+  elseif (src_type(1) == 'dipole') then 
+     buff_solid = two_rk * f_over_s_solid(f_sol(:,:,:,2))
+  elseif (src_type(1) == 'quadpole') then
+     buff_solid = f_over_s_solid(f_sol(:,:,:,1) - two_rk * f_sol(:,:,:,2))
+  end if
+  straintrace(:,:,nel_fluid+1:nel_fluid+nel_solid,1) = buff_solid + grad_sol(:,:,:,2)
 
-
-    if (have_fluid) then
-   
-       ! construct displacements in the fluid
-       call axisym_gradient_fluid(chi, usz_fluid)
-       usz_fluid(:,:,:,1) = usz_fluid(:,:,:,1) * inv_rho_fluid
-       usz_fluid(:,:,:,2) = usz_fluid(:,:,:,2) * inv_rho_fluid
-    
-       ! gradient of s component
-       call axisym_gradient_fluid(usz_fluid(:,:,:,1), grad_flu)   ! 1:dsus, 2:dzus
-   
-       ! gradient of z component added to s-comp gradient for strain trace and E13
-       call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)   !1:dsuz+dzus 
-                                                                      !2:dzuz+dsus
-   
-       ! Components involving phi................................................
-   
-       if (src_type(1) == 'monopole') then
-          ! Calculate us/s and straintrace
-          straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1)) + grad_flu(:,:,:,2) 
-   
-       elseif (src_type(1) == 'dipole') then
-          up_fluid = prefac_inv_s_rho_fluid * chi
-          straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid) & 
-                                         + grad_flu(:,:,:,2)
-   
-       elseif (src_type(1) == 'quadpole') then
-          up_fluid = prefac_inv_s_rho_fluid * chi
-          straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) - two_rk * up_fluid) &  !Ekk
-                                         + grad_flu(:,:,:,2)
-   
-       endif   !src_type
-    end if
-    
+  if (have_fluid) then
+     ! construct displacements in the fluid
+     call axisym_gradient_fluid(chi, usz_fluid)
+     usz_fluid(:,:,:,1) = usz_fluid(:,:,:,1) * inv_rho_fluid
+     usz_fluid(:,:,:,2) = usz_fluid(:,:,:,2) * inv_rho_fluid
+  
+     ! gradient of s component
+     call axisym_gradient_fluid(usz_fluid(:,:,:,1), grad_flu)   ! 1:dsus, 2:dzus
+  
+     ! gradient of z component added to s-comp gradient for strain trace and E13
+     call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)   !1:dsuz+dzus 
+                                                                    !2:dzuz+dsus
+  
+     ! Components involving phi................................................
+  
+     if (src_type(1) == 'monopole') then
+        ! Calculate us/s and straintrace
+        straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1)) &
+                                            + grad_flu(:,:,:,2) 
+  
+     elseif (src_type(1) == 'dipole') then
+        up_fluid = prefac_inv_s_rho_fluid * chi
+        straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid) & 
+                                            + grad_flu(:,:,:,2)
+  
+     elseif (src_type(1) == 'quadpole') then
+        up_fluid = prefac_inv_s_rho_fluid * chi
+        straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) &
+                                            - two_rk * up_fluid) &  !Ekk
+                                            + grad_flu(:,:,:,2)
+  
+     endif   !src_type
+  end if
 
 end subroutine
 !-----------------------------------------------------------------------------------------
