@@ -487,19 +487,6 @@ subroutine testing_asynch_messaging_solid(gvec_solid2,nc)
   ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
   if (verbose > 1) write(69,*)' Asynchrounous solid communication test:'
 
-  ! This is not the case with the new scheme
-  ! @TODO remove
-  !if (sizesend_solid > 1) then
-  !   write(6,*) '  PROBLEM:', procstrg, 'sending more than one message!',&
-  !              sizesend_solid
-  !   stop
-  !endif
-  !if (sizerecv_solid>1) then 
-  !   write(6,*) '  PROBLEM:', procstrg, 'receiving more than one message!',&
-  !              sizerecv_solid
-  !   stop
-  !endif
-
   if (sizesend_solid > 0) then
      do imsg = 1, sizesend_solid
         sizemsg_solid = sizemsgsend_solid(imsg)
