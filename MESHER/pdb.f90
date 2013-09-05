@@ -892,6 +892,10 @@ subroutine define_search_sflobal_index
                   if (nbelong2_solid(nsearch,iglob_solid(ipt)) == iproc) &
                         cycle outer
                   nsearch = nsearch + 1
+                  if (nsearch == nneighbours + 1) then
+                     write(6,*) 'ERROR: too many neighbours in solid'
+                     stop
+                  endif
                enddo
                
                nbelong2_solid(nsearch,iglob_solid(ipt)) = iproc
@@ -943,6 +947,10 @@ subroutine define_search_sflobal_index
                     if (nbelong2_fluid(nsearch,iglob_fluid(ipt)) == iproc) &
                           cycle outerfl
                     nsearch = nsearch + 1
+                    if (nsearch == nneighbours + 1) then
+                       write(6,*) 'ERROR: too many neighbours in fluid'
+                       stop
+                    endif
                  enddo
                  
                  nbelong2_fluid(nsearch,iglob_fluid(ipt)) = iproc
@@ -1237,8 +1245,8 @@ subroutine partition_sflobal_index
 ! DATABASE: sizemsgsendpg_fluid
 ! DATABASE: glocal_index_msg_sendp_fluid
 
-  integer :: ipt,iproct,ibp,ibel,ig,ip
-  integer :: ipdes,ipsrc,imsg
+  integer :: ipt, iproct, ibp, ibel, ig, ip
+  integer :: ipdes, ipsrc, imsg
   
   integer, dimension(:), allocatable        :: ibin_solid
   integer, dimension(:,:), allocatable      :: sizemsg_solid
@@ -1259,10 +1267,10 @@ subroutine partition_sflobal_index
   integer :: sizerecvpmax_fluid, sizesendpmax_fluid
 
   ! valence test
-  integer :: idest, iel, ipol, jpol
-  character(len=4) :: appiproc
-  integer, dimension(:), allocatable :: uglob2_solid
-  integer, dimension(:,:,:), allocatable :: val_solid
+  integer           :: idest, iel, ipol, jpol
+  character(len=4)  :: appiproc
+  integer, dimension(:), allocatable        :: uglob2_solid
+  integer, dimension(:,:,:), allocatable    :: val_solid
 
   if (dump_mesh_info_screen) then 
      write(6,*)
@@ -1275,23 +1283,29 @@ subroutine partition_sflobal_index
 
   if (dump_mesh_info_screen) write(6,*) 'Creating solid bins ' 
   allocate(sizebin_solid(0:nproc-1))
+
   sizebin_solid(0:nproc-1) = 0
   do ipt = 1, nglobslob
-     iproct = lprocb_solid(1,ipt) ! completely ad hoc choice
-     sizebin_solid(iproct) = sizebin_solid(iproct) + 1
+     do ibel = 1, nprocb_solid(ipt)
+        iproct = lprocb_solid(ibel,ipt)
+        sizebin_solid(iproct) = sizebin_solid(iproct) + 1
+     enddo
   end do
 
   if (dump_mesh_info_screen) then 
-   do iproct = 0, nproc - 1
-      write(6,*) 'proc:', iproct, 'size solid bin:', sizebin_solid(iproct)
-   end do
+     do iproct = 0, nproc - 1
+        write(6,*) 'proc:', iproct, 'size solid bin:', sizebin_solid(iproct)
+     end do
   end if
  
-  if (dump_mesh_info_screen) write(6,*) 'sum sizebin,slobal:', sum(sizebin_solid),nglobslob
-  if (sum(sizebin_solid) /= nglobslob) then 
-     write(6,*)'PROBLEM: sum of solid bins not equal to slobal num!'
-     stop
-  endif
+  if (dump_mesh_info_screen) &
+     write(6,*) 'sum sizebin,slobal:', sum(sizebin_solid),nglobslob
+    
+  !!! this is not the case anymore in the new communication scheme
+  !if (sum(sizebin_solid) /= nglobslob) then 
+  !   write(6,*)'PROBLEM: sum of solid bins not equal to slobal num!'
+  !   stop
+  !endif
   sizebinmax_solid = maxval(sizebin_solid(:)) 
 
   if (dump_mesh_info_screen) write(6,*) ' sizebinmax_solid = ' , sizebinmax_solid
@@ -1303,10 +1317,13 @@ subroutine partition_sflobal_index
   ibin_solid(0:nproc-1) = 0  
 
   do ipt = 1, nglobslob
-     iproct =  lprocb_solid(1,ipt) ! same choice 
-     ibin_solid(iproct) = ibin_solid(iproct) + 1
-     ibp = ibin_solid(iproct)
-     binp_solid(ibp,iproct) = ipt
+     !!! NEW  loop
+     do ibel = 1, nprocb_solid(ipt)
+        iproct = lprocb_solid(ibel,ipt)
+        ibin_solid(iproct) = ibin_solid(iproct) + 1
+        ibp = ibin_solid(iproct)
+        binp_solid(ibp,iproct) = ipt
+     enddo
   end do
   deallocate(ibin_solid)
 
@@ -1316,11 +1333,13 @@ subroutine partition_sflobal_index
   do iproct = 0, nproc - 1
      do ipt = 1, sizebin_solid(iproct)
         ig = binp_solid(ipt,iproct)
-        do ibel = 2, nprocb_solid(ig)
-           ipdes = lprocb_solid(1,ig) ! same choice           
-           ipsrc = lprocb_solid(ibel,ig)
-           sizemsg_solid(ipsrc,ipdes) = sizemsg_solid(ipsrc,ipdes) + 1 
-        end do
+        if (nprocb_solid(ig) > 1) then
+           do ibel = 1, nprocb_solid(ig)
+              ipdes = lprocb_solid(ibel,ig)
+              if (ipdes /= iproct) &
+                 sizemsg_solid(iproct,ipdes) = sizemsg_solid(iproct,ipdes) + 1 
+           end do
+        endif
      end do
   end do
 
@@ -1344,13 +1363,16 @@ subroutine partition_sflobal_index
   do iproct = 0, nproc-1
      do ipt = 1, sizebin_solid(iproct)
         ig = binp_solid(ipt,iproct)
-        do ibel = 2, nprocb_solid(ig)
-           ipdes = lprocb_solid(1,ig) ! same choice again
-           ipsrc = lprocb_solid(ibel,ig)
-           index_msg_solid(ipsrc,ipdes) = index_msg_solid(ipsrc,ipdes) + 1
-           imsg = index_msg_solid(ipsrc,ipdes)
-           global_index_msg_solid(imsg,ipsrc,ipdes) = ig
-        end do
+        if (nprocb_solid(ig) > 1) then
+           do ibel = 1, nprocb_solid(ig)
+              ipdes = lprocb_solid(ibel,ig)
+              if (ipdes /= iproct) then
+                 index_msg_solid(iproct,ipdes) = index_msg_solid(iproct,ipdes) + 1
+                 imsg = index_msg_solid(iproct,ipdes)
+                 global_index_msg_solid(imsg,iproct,ipdes) = ig
+              endif
+           end do
+        endif
      end do
   end do
 
@@ -1361,6 +1383,7 @@ subroutine partition_sflobal_index
   allocate(sizesendp_solid(0:nproc-1))
   sizerecvp_solid(0:nproc-1) = 0
   sizesendp_solid(0:nproc-1) = 0 
+
   do iproct = 0, nproc -1
      do ipsrc = 0, nproc-1
         if ( sizemsg_solid(ipsrc,iproct) > 0 ) &
@@ -1495,7 +1518,7 @@ subroutine partition_sflobal_index
         do ip = 1, sizesendp_solid(iproct)
            ipdes = listsendp_solid(ip,iproct)
            if (dump_mesh_info_screen) &
-           write(6,*) ipdes, sizemsgsendp_solid(ip,iproct)
+               write(6,*) ipdes, sizemsgsendp_solid(ip,iproct)
            do ipt = 1, sizemsgsendp_solid(ip,iproct)
               ig = global_index_msg_solid(ipt,iproct,ipdes)
               glocal_index_msg_sendp_solid(ipt,ip,iproct) = slob2sloc(ig)
@@ -1589,8 +1612,10 @@ subroutine partition_sflobal_index
      allocate(sizebin_fluid(0:nproc-1))
      sizebin_fluid(0:nproc-1) = 0 
      do ipt = 1, nglobflob
-        iproct = lprocb_fluid(1,ipt) ! completely ad hoc choice
-        sizebin_fluid(iproct) = sizebin_fluid(iproct) + 1
+        do ibel = 1, nprocb_fluid(ipt)
+           iproct = lprocb_fluid(ibel,ipt)
+           sizebin_fluid(iproct) = sizebin_fluid(iproct) + 1
+        enddo
      end do
    
      if (dump_mesh_info_screen) then 
@@ -1600,10 +1625,11 @@ subroutine partition_sflobal_index
      end if
    
      if (dump_mesh_info_screen) write(6,*) sum(sizebin_fluid),nglobflob
-     if (sum(sizebin_fluid) /= nglobflob) then 
-        write(6,*)'PROBLEM: sum of fluid bins not equal to flobal num!'
-        stop
-     endif
+     !!! this is not the case anymore in the new communication scheme
+     !if (sum(sizebin_fluid) /= nglobflob) then 
+     !   write(6,*)'PROBLEM: sum of fluid bins not equal to flobal num!'
+     !   stop
+     !endif
      sizebinmax_fluid = maxval(sizebin_fluid(:)) 
    
      if (dump_mesh_info_screen) &
@@ -1616,11 +1642,14 @@ subroutine partition_sflobal_index
      ibin_fluid(0:nproc-1) = 0
    
      do ipt = 1, nglobflob
-        iproct =  lprocb_fluid(1,ipt) ! same choice 
-        ibin_fluid(iproct) = ibin_fluid(iproct) + 1
-        ibp = ibin_fluid(iproct)
-        binp_fluid(ibp,iproct) = ipt
-     end do
+        !!! NEW  loop
+        do ibel = 1, nprocb_fluid(ipt)
+           iproct =  lprocb_fluid(ibel,ipt)
+           ibin_fluid(iproct) = ibin_fluid(iproct) + 1
+           ibp = ibin_fluid(iproct)
+           binp_fluid(ibp,iproct) = ipt
+        enddo
+     enddo
      deallocate(ibin_fluid)
    
      allocate(sizemsg_fluid(0:nproc-1,0:nproc-1))
@@ -1629,11 +1658,13 @@ subroutine partition_sflobal_index
      do iproct = 0, nproc - 1
         do ipt = 1, sizebin_fluid(iproct)
            ig = binp_fluid(ipt,iproct)
-           do ibel = 2, nprocb_fluid(ig)
-              ipdes = lprocb_fluid(1,ig) ! same choice 
-              ipsrc = lprocb_fluid(ibel,ig)
-              sizemsg_fluid(ipsrc,ipdes) = sizemsg_fluid(ipsrc,ipdes) + 1 
-           end do
+           if (nprocb_fluid(ig) > 1) then
+              do ibel = 1, nprocb_fluid(ig)
+                 ipdes = lprocb_fluid(ibel,ig)
+                 if (ipdes /= iproct) &
+                    sizemsg_fluid(iproct,ipdes) = sizemsg_fluid(iproct,ipdes) + 1 
+              end do
+           endif
         end do
      end do
    
@@ -1657,13 +1688,16 @@ subroutine partition_sflobal_index
      do iproct = 0, nproc-1
         do ipt = 1, sizebin_fluid(iproct)
            ig = binp_fluid(ipt,iproct)
-           do ibel = 2, nprocb_fluid(ig)
-              ipdes = lprocb_fluid(1,ig) ! same choice again
-              ipsrc = lprocb_fluid(ibel,ig)
-              index_msg_fluid(ipsrc,ipdes) = index_msg_fluid(ipsrc,ipdes) + 1
-              imsg = index_msg_fluid(ipsrc,ipdes)
-              global_index_msg_fluid(imsg,ipsrc,ipdes) = ig
-           end do
+           if (nprocb_fluid(ig) > 1) then
+              do ibel = 1, nprocb_fluid(ig)
+                 ipdes = lprocb_fluid(ibel,ig)
+                 if (ipdes /= iproct) then
+                    index_msg_fluid(iproct,ipdes) = index_msg_fluid(iproct,ipdes) + 1
+                    imsg = index_msg_fluid(iproct,ipdes)
+                    global_index_msg_fluid(imsg,iproct,ipdes) = ig
+                 endif
+              end do
+           endif
         end do
      end do
    
@@ -1938,7 +1972,7 @@ subroutine define_local_bdry_elem
 
            endif
 
-           tmpsolid ( solid_count(myproc), myproc) = &
+           tmpsolid(solid_count(myproc),myproc) = &
               inv_procel_solidp( inv_procel(myielglob,myproc), myproc)
 
            tmpfluid(solid_count(myproc),herproc) = &
@@ -1964,6 +1998,9 @@ subroutine define_local_bdry_elem
   allocate(bdry_solid_elp(maxval(nbdry_el),0:nproc-1))
   allocate(bdry_fluid_elp(maxval(nbdry_el),0:nproc-1))
 
+  bdry_solid_elp = -1
+  bdry_fluid_elp = -1
+
   do iproc=0, nproc-1
      if (minval(tmpsolid(1:nbdry_el(iproc),iproc)) < 1) then 
         write(6,*) 'Problem with bdry_solid count!'
@@ -1972,15 +2009,17 @@ subroutine define_local_bdry_elem
         stop
      endif
 
-     if (minval(tmpfluid(1:nbdry_el(iproc),iproc)) <1) then 
+     if (minval(tmpfluid(1:nbdry_el(iproc),iproc)) < 1) then 
         write(6,*) 'Problem with bdry_fluid count!'
         write(6,*) minval(tmpfluid(1:nbdry_el(iproc),iproc))
         write(6,*) 'Unassigned elements...'
         stop
      endif
 
-     bdry_solid_elp(1:nbdry_el(iproc),iproc) = tmpsolid(1:nbdry_el(iproc),iproc)
-     bdry_fluid_elp(1:nbdry_el(iproc),iproc) = tmpfluid(1:nbdry_el(iproc),iproc)
+     if (nbdry_el(iproc) > 0) then
+        bdry_solid_elp(1:nbdry_el(iproc),iproc) = tmpsolid(1:nbdry_el(iproc),iproc)
+        bdry_fluid_elp(1:nbdry_el(iproc),iproc) = tmpfluid(1:nbdry_el(iproc),iproc)
+     endif
 
      if (dump_mesh_info_screen) then
         write(6,'("Proc", i3, " has ", i5, " S/F boundary elements (on one side)")') &
@@ -2018,12 +2057,14 @@ subroutine define_local_bdry_elem
   if (dump_mesh_info_screen .and. have_fluid) then 
      write(6,*) 'BOUNDARY TERMS:'
      do iproc=0, nproc-1
-        write(6,*) iproc, 'minmax bdry sol:', &
-                   minval(bdry_solid_elp(1:nbdry_el(iproc),iproc)), &
-                   maxval(bdry_solid_elp(1:nbdry_el(iproc),iproc))
-        write(6,*) iproc, 'minmax bdry flu:', &
-                   minval(bdry_fluid_elp(1:nbdry_el(iproc),iproc)), &
-                   maxval(bdry_fluid_elp(1:nbdry_el(iproc),iproc))
+        if (have_bdry_elemp(iproc)) then
+           write(6,*) iproc, 'minmax bdry sol:', &
+                      minval(bdry_solid_elp(1:nbdry_el(iproc),iproc)), &
+                      maxval(bdry_solid_elp(1:nbdry_el(iproc),iproc))
+           write(6,*) iproc, 'minmax bdry flu:', &
+                      minval(bdry_fluid_elp(1:nbdry_el(iproc),iproc)), &
+                      maxval(bdry_fluid_elp(1:nbdry_el(iproc),iproc))
+        endif
      enddo
   end if
 end subroutine define_local_bdry_elem
@@ -2400,10 +2441,12 @@ subroutine write_db
         write(6,*)'PARALLEL DATABASE: writing solid/fluid boundary info...',iproc
      write(10) have_bdry_elemp(iproc)
   
-     write(10) bdry_solid_elp(1:nbdry_el(iproc),iproc)
-     write(10) bdry_fluid_elp(1:nbdry_el(iproc),iproc)
-     write(10) bdry_jpol_solidp(1:nbdry_el(iproc),iproc)
-     write(10) bdry_jpol_fluidp(1:nbdry_el(iproc),iproc)
+     if (have_bdry_elemp(iproc)) then
+        write(10) bdry_solid_elp(1:nbdry_el(iproc),iproc)
+        write(10) bdry_fluid_elp(1:nbdry_el(iproc),iproc)
+        write(10) bdry_jpol_solidp(1:nbdry_el(iproc),iproc)
+        write(10) bdry_jpol_fluidp(1:nbdry_el(iproc),iproc)
+     endif
   
      !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
      ! General numerical input/output parameters

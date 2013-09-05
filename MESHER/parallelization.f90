@@ -187,13 +187,6 @@ subroutine create_domain_decomposition
 
   if (dump_mesh_vtk) call plot_dd_vtk
 
-  if (nradialslices > 1) then
-     write(6,*)
-     write(6,*) 'ERROR: Radial slicing not yet finished.'
-     write(6,*) '       Set NRADIAL_SLICES to 1 to actually produce a mesh'
-     stop
-  endif
-
 end subroutine create_domain_decomposition
 !-----------------------------------------------------------------------------------------
 
@@ -423,7 +416,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   
   integer                   :: itheta, iitheta, iel
   integer                   :: irad, iproc
-  integer                   :: mycount
+  integer                   :: mycount, nicb
   real(kind=dp)             :: deltatheta
   integer, allocatable      :: central_count(:)
   real(kind=dp)             :: pi2
@@ -555,15 +548,44 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
 
 
   ! Now decomposition in radius
+  write(6,*) 'ndivs =', ndivs
+  write(6,*) 'ndivs/4 =', ndivs / 4
 
   do itheta = 0, nthetal-1
      mycount = 1
      do irad = 0, nrl-1
         iproc = itheta * nrl + irad
-        do iel = 1, nel_fluid(iproc)
-           procel_fluid(iel, iproc) = thetaslel_fluid(mycount,itheta)
-           mycount = mycount + 1
-        end do ! iel
+        ! special treatment of the first processor in the theta slice to make
+        ! sure it includes both solid/fluid boundaries
+        ! kind of hacky, but should work for most cases of earth like models
+        if (irad == 0) then
+           ! special case of ntheta = 2, which has the same ndivs as theta = 4
+           if (nthetal == 2) then
+              nicb = ndivs * 2
+           else
+              nicb = ndivs
+           endif
+
+           ! take the lowest layer in the fluid of the theta slice
+           do iel = 1, nicb
+              procel_fluid(iel, iproc) = thetaslel_fluid(sum(nel_fluid(itheta:itheta+nrl-1)) &
+                                                         - mycount + 1,itheta)
+              mycount = mycount + 1
+           end do ! iel
+
+           ! take the upper most layer in the fluid and fill up until having
+           ! enogh elements
+           do iel = nicb+1, nel_fluid(iproc)
+              procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
+              mycount = mycount + 1
+           end do ! iel
+        else
+           ! just go inwards radially
+           do iel = 1, nel_fluid(iproc)
+              procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
+              mycount = mycount + 1
+           end do ! iel
+        endif
      enddo
      
      !mycount = sum(nel_solid(itheta:itheta+nrl-1))
