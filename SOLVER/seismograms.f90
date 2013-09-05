@@ -330,11 +330,12 @@ subroutine prepare_from_recfile_seis
   count_diff_loc=0
   dtheta_rec=0. ! default for all cases but database (which has regular spacing)
 
-  ! Read receiver location file:
-  ! line1: number of receivers
-  ! line2 --> line(number of receivers+1): colatitudes [deg]
 
-  if (rec_file_type=='colatlon') then
+  select case(trim(rec_file_type))
+  case('colatlon')
+     ! Read receiver location file:
+     ! line1: number of receivers
+     ! line2 --> line(number of receivers+1): colatitudes [deg]
      if (lpr) write(6,*)'  reading receiver colatitudes and longitudes from receivers.dat...'
      open(unit=34, file='receivers.dat', iostat=ierror, status='old', position='rewind')
      read(34,*) num_rec_glob
@@ -360,7 +361,8 @@ subroutine prepare_from_recfile_seis
      close(34) 
      close(30)
 
-  elseif (rec_file_type=='database') then 
+
+  case('database') 
      if (lpr) write(6,*)'  generating receiver colatitudes at every element edge and midpoint...'
      if (lpr) write(6,*)'  ... which is useful for databases and sinc interpolation'
      dtheta_rec = abs( (thetacoord(npol,npol,ielsolid(surfelem(1))) &
@@ -389,13 +391,14 @@ subroutine prepare_from_recfile_seis
         !call define_io_appendix(appielem,i) Does only work for nrec<9999
         !receiver_name(i) = 'recfile_'//appielem
         write(receiver_name(i),112) i
-112      format('recfile_',I6.6)          
+112     format('recfile_',I6.6)          
         if (mynum==0) write(30,*)trim(receiver_name(i)),recfile_readth(i),recfile_readph(i)
      enddo
      if (mynum==0) close(30)
      if (lpr) write(6,*)mynum,'done with database receiver writing.';call flush(6)
 
-   elseif (rec_file_type=='stations') then 
+
+  case('stations')
      if (lpr) write(6,*)'  reading receiver colatitudes and longitudes from STATIONS...'
      ! count number of receivers first
      open(unit=34,file='STATIONS',iostat=ierror,status='old',action='read',position='rewind')
@@ -431,10 +434,11 @@ subroutine prepare_from_recfile_seis
      enddo
      close(34); close(30)
 
-  else 
+     
+  case default   
      write(6,*)procstrg, 'Undefined receiver file format!!'
      stop
-  endif !Receiver type rec_file_type
+  end select !Receiver type rec_file_type
 
   num_rec_tot = num_rec_glob ! to be known later/globally
 

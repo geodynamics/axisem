@@ -68,6 +68,7 @@ subroutine read_sourceparams
 
     case('SOURCE_DEPTH')
         read(keyvalue,*) src_depth 
+        src_depth = src_depth * 1000 ! The solver works in meters
 
     case('SOURCE_LAT')
         read(keyvalue,*) srclat
@@ -96,6 +97,8 @@ subroutine read_sourceparams
           'All rotation is done in postprocessing.'
        stop
      end if
+  else
+     rot_src = .false.
   endif
 
   if (lpr .and. verbose > 0) then
