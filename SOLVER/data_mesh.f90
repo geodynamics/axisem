@@ -178,7 +178,6 @@ subroutine read_mesh_basics(iounit)
 
    integer, intent(in)   :: iounit
 
-   print *, iounit
    read(iounit) nproc_mesh
    read(iounit) npol
    read(iounit) nelem
