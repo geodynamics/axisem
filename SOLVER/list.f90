@@ -191,8 +191,6 @@ subroutine free(this)
         next => current%getNextLink()
         deallocate( current )
      enddo
-     ! MvD: seem to be necessary, but I don get why
-     deallocate( this%firstLink )
      this%firstLink => null()
   endif
 end subroutine free
@@ -227,8 +225,6 @@ program test_list
   write(6,*) l%getPrev()
   write(6,*) l%getPrev()
 
-  write(6,*) 'bla'
-  call l%free()
   write(6,*) 'bla'
   call l%free()
   write(6,*) 'bla'
