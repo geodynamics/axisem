@@ -27,7 +27,8 @@ module linked_list
      class(link), pointer :: lastLink => null()     ! last link in list
      class(link), pointer :: currentLink => null()  ! iterator
      contains
-     procedure, pass :: append          ! append an element to the list
+     procedure, pass :: append          ! append an element to the end of the list
+     procedure, pass :: insert          ! insert an element to beginning of the list
      procedure, pass :: getFirst        ! return first element
      procedure, pass :: getLast         ! return last element
      procedure, pass :: getCurrent      ! iterator, can be moved with getNext
@@ -91,13 +92,28 @@ subroutine append(this, ldata)
      this%firstLink => link(ldata, null(), null())
      this%lastLink => this%firstLink
   else
-     write(6,*) 'new', ldata
      newLink => link(ldata, null(), this%lastLink)
      call this%lastLink%setNextLink(newLink)
      this%lastLink => newLink
   end if
 
 end subroutine append
+
+subroutine insert(this, ldata)
+  class(list)             :: this
+  integer                 :: ldata
+  class(link), pointer    :: newLink
+
+  if (.not. associated(this%firstLink)) then
+     this%firstLink => link(ldata, null(), null())
+     this%lastLink => this%firstLink
+  else
+     newLink => link(ldata, this%firstLink, null())
+     call this%firstLink%setPrevLink(newLink)
+     this%firstLink => newLink
+  end if
+
+end subroutine insert
 
 integer function getFirst(this)
   class(list)           :: this
@@ -161,6 +177,7 @@ program test_list
   write(6,*) l%getFirst()
   write(6,*) l%getCurrent()
   write(6,*) l%getLast()
+  call l%insert(0)
   call l%append(2)
   write(6,*) 'bla'
   write(6,*) l%getFirst()
