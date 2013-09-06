@@ -782,8 +782,8 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
      case('mrr')
          Mij(1) =  amplitude
      case('mtt_p_mpp') 
-         Mij(2) =  amplitude / 2
-         Mij(3) =  amplitude / 2
+         Mij(2) =  amplitude !/ 2
+         Mij(3) =  amplitude !/ 2
      case('mtr', 'mrt')
          Mij(4) =  amplitude
      case('mpr', 'mrp')
@@ -791,12 +791,12 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
      case('mtp', 'mpt')
          Mij(6) =  amplitude
      case('mtt_m_mpp')
-         Mij(2) =  amplitude / 2
-         Mij(3) = -amplitude / 2
+         Mij(2) =  amplitude !/ 2
+         Mij(3) = -amplitude !/ 2
      case('explosion')
-         Mij(1) =  amplitude / 3
-         Mij(2) =  amplitude / 3
-         Mij(3) =  amplitude / 3
+         Mij(1) =  amplitude !/ 3
+         Mij(2) =  amplitude !/ 3
+         Mij(3) =  amplitude !/ 3
      case default
          write(6,*) 'unknown source type: ', src_type(1,2)
      end select
@@ -864,7 +864,6 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
                    mij_prefact(1,isim,3)
  
      case('explosion')
-         !elseif(src_type(isim,2) == 'explosion') then 
         mij_prefact(:,isim,:) = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
         write(6,*) isim, 'Simulation is explosion, prefact:', &
                    mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
@@ -875,11 +874,6 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
          stop
  
      end select
-!        else
-!            write(6,*) 'unknown source type ', src_type(isim,2)
-!            stop
-!        endif
-!     enddo
 
      write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
                 maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
