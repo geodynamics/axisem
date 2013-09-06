@@ -60,7 +60,7 @@ subroutine read_sourceparams
     case('SOURCE_TYPE') 
         read(keyvalue, *) src_type(2)
         select case(src_type(2))
-        case('mrr', 'explosion', 'mtt_p_mpp', 'mpp_p_mtt' 'vertforce')
+        case('mrr', 'explosion', 'mtt_p_mpp', 'mpp_p_mtt', 'vertforce')
             src_type(1) = 'monopole'
         case('mtr', 'mpr', 'mrt', 'mrp', 'thetaforce', 'phiforce')
             src_type(1) = 'dipole'
