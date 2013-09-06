@@ -36,9 +36,11 @@ contains
 
 !-----------------------------------------------------------------------------
 subroutine read_sourceparams
-  
+ 
+  use commun, only       : pcheck
   real(kind=realkind)   :: srclat
   character(len=256)    :: keyword, keyvalue, line
+  character(len=512)    :: errmsg
   integer               :: iinparam_source=500, ioerr
  
   
@@ -58,12 +60,19 @@ subroutine read_sourceparams
     case('SOURCE_TYPE') 
         read(keyvalue, *) src_type(2)
         select case(src_type(2))
-        case('mrr', 'explosion', 'mtt_p_mpp', 'vertforce')
+        case('mrr', 'explosion', 'mtt_p_mpp', 'mpp_p_mtt' 'vertforce')
             src_type(1) = 'monopole'
-        case('mtr', 'mpr', 'thetaforce', 'phiforce')
+        case('mtr', 'mpr', 'mrt', 'mrp', 'thetaforce', 'phiforce')
             src_type(1) = 'dipole'
-        case('mtp', 'mtt_m_mpp')
+        case('mtp', 'mpt', 'mtt_m_mpp')
             src_type(1) = 'quadpole'
+        case default
+            write(errmsg,*) 'Unknown SOURCE_TYPE in inparam_source: ', trim(src_type(2)), '\n', &
+                 'Allowed are:  mrr, explosion, mtt_p_mpp, vertforce  (monopole) \n', &
+                 '              mtr, mpr, thetaforce, phiforce        (dipole)\n', &
+                 '              mtp, mtt_m_mpp                        (quadpole)\n'
+            call pcheck(.true., errmsg)
+            
         end select
 
     case('SOURCE_DEPTH')
