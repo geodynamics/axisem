@@ -246,6 +246,7 @@ def PyAxi(**kwargs):
             inparam_mesh_input.append('RADIUS     %s\n' %(input['mesher_radius']))
             inparam_mesh_input.append('SAVE_MESH     %s\n' %(input['mesher_save_mesh']))
             inparam_mesh_input.append('VERBOSE     %s\n' %(input['mesher_verbose']))
+            inparam_mesh_input.append('NCPU      4')
             
             inparam_mesh_open = open('./inparam_mesh', 'w')
             for i in range(0, len(inparam_mesh_input)):
