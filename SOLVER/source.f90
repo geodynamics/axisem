@@ -82,9 +82,11 @@ subroutine read_sourceparams
     case('SOURCE_LAT')
         read(keyvalue,*) srclat
         srccolat = 90.0 - srclat
+        srccolat = srccolat * pi / 180.d0 
 
     case('SOURCE_LON')
         read(keyvalue,*) srclon
+        srclon = srclon * pi / 180.d0 
 
     case('SOURCE_AMPLITUDE')
         read(keyvalue,*) magnitude
@@ -1046,7 +1048,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
            do ipol=0,npol
               select case (src_type(2))
 
-              case('mtt_p_mpp')
+              case('mtt_p_mpp','mpp_p_mtt')
                  source_term(ipol,ljpol_src,liel_src,1) = two * ds(ipol)
 
               case('mrr')
@@ -1056,11 +1058,11 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                  source_term(ipol,ljpol_src,liel_src,1) = two * ds(ipol)
                  source_term(0,ipol,liel_src,3) = dz(ipol)
 
-              case('mtr')
+              case('mtr','mrt')
                  source_term(0,ipol,liel_src,1) = dz(ipol)
                  source_term(ipol,ljpol_src,liel_src,3) = ds(ipol)
 
-              case('mpr')
+              case('mpr','mrp')
                  source_term(0,ipol,liel_src,1) = dz(ipol ) 
                  source_term(ipol,ljpol_src,liel_src,3) = ds(ipol)
 
@@ -1068,7 +1070,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                  source_term(ipol,ljpol_src,liel_src,1) = ds(ipol)
                  source_term(ipol,ljpol_src,liel_src,2) = ds(ipol)
 
-              case('mtp')
+              case('mtp','mpt')
                  source_term(ipol,ljpol_src,liel_src,1) = ds(ipol)
                  source_term(ipol,ljpol_src,liel_src,2) = ds(ipol)
 
