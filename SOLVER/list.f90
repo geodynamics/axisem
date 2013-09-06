@@ -27,6 +27,7 @@ module linked_list
      class(link), pointer :: lastLink => null()     ! last link in list
      class(link), pointer :: currentLink => null()  ! iterator
      contains
+     procedure, pass :: free            ! empty the list and free the memory
      procedure, pass :: append          ! append an element to the end of the list
      procedure, pass :: insert          ! insert an element to beginning of the list
      procedure, pass :: getFirst        ! return first element
@@ -117,18 +118,33 @@ end subroutine insert
 
 integer function getFirst(this)
   class(list)           :: this
-  getFirst = this%firstLink%getData()
+
+  if(associated(this%firstLink)) then
+     getFirst = this%firstLink%getData()
+  else
+     error stop 'trying to go access data, but list is empty'
+  endif
 end function getFirst
 
 integer function getLast(this)
   class(list)           :: this
-  getLast = this%lastLink%getData()
+
+  if(associated(this%lastLink)) then
+     getLast = this%lastLink%getData()
+  else
+     error stop 'trying to go access data, but list is empty'
+  endif
 end function getLast
 
 integer function getCurrent(this)
   class(list)           :: this
-  if (.not. associated(this%currentLink)) &
-     this%currentLink => this%firstLink
+  if (.not. associated(this%currentLink)) then
+     if(associated(this%firstLink)) then
+        this%currentLink => this%firstLink
+     else
+        error stop 'trying to go access data, but list is empty'
+     endif
+  endif
   getCurrent = this%currentLink%getData()
 end function getCurrent
 
@@ -163,6 +179,24 @@ integer function getPrev(this)
   end if 
 end function getPrev
 
+subroutine free(this)
+  class(list)               :: this
+  class(link), pointer      :: current, next
+
+  if(associated(this%firstLink)) then
+     next => this%firstLink
+     do while ( associated(next) )
+        current => next
+        write(6,*) 'free', current%getData()
+        next => current%getNextLink()
+        deallocate( current )
+     enddo
+     ! MvD: seem to be necessary, but I don get why
+     deallocate( this%firstLink )
+     this%firstLink => null()
+  endif
+end subroutine free
+
 end module
 
 
@@ -192,4 +226,11 @@ program test_list
   call l%resetCurrent()
   write(6,*) l%getPrev()
   write(6,*) l%getPrev()
+
+  write(6,*) 'bla'
+  call l%free()
+  write(6,*) 'bla'
+  call l%free()
+  write(6,*) 'bla'
+  write(6,*) l%getFirst()
 end program
