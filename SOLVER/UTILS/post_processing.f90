@@ -621,7 +621,7 @@ subroutine read_input
      read(99,*) use_netcdf
      close(99)
      
-     if (src_type(isim,2)=='xforce' .or.  src_type(isim,2)=='yforce') then
+     if (src_type(isim,2)=='thetaforce' .or.  src_type(isim,2)=='phiforce') then
         write(6,'(a,/,a)') 'ERROR: postprocessing for forces with dipole radiation', &
                            '       pattern not yet implemented'
         stop 2
@@ -740,7 +740,8 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
      trans_rot_mat(:,:,isim) = transpose(rot_mat)
   enddo
 
-  if (src_file_type == 'cmtsolut') then
+  select case(src_file_type)
+  case('cmtsolut') 
      write(6,*)'  reading CMTSOLUTION file....'
      open(unit=20000,file='CMTSOLUTION',POSITION='REWIND',status='old')
      read(20000,*) junk
@@ -760,7 +761,8 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
 
-  else if (src_file_type=='sourceparams') then
+  !else if (src_file_type=='sourceparams') then
+  case('sourceparams')
      open(unit=iinparam_source, file='inparam_source', status='old', action='read',  iostat=ioerr)
      if (ioerr /= 0) stop 'Check input file ''inparam_source''! Is it still there?' 
  
@@ -775,13 +777,39 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
             read(keyvalue,*) amplitude
         end if
      end do
-     Mij = amplitude ! The whole tensor is set to amplitude. That's okay, since later only the terms
+     Mij = 0.0
+     select case(src_type(1,2))
+     case('mrr')
+         Mij(1) =  amplitude
+     case('mtt_p_mpp') 
+         Mij(2) =  amplitude / 2
+         Mij(3) =  amplitude / 2
+     case('mtr', 'mrt')
+         Mij(4) =  amplitude
+     case('mpr', 'mrp')
+         Mij(5) =  amplitude
+     case('mtp', 'mpt')
+         Mij(6) =  amplitude
+     case('mtt_m_mpp')
+         Mij(2) =  amplitude / 2
+         Mij(3) = -amplitude / 2
+     case('explosion')
+         Mij(1) =  amplitude / 3
+         Mij(2) =  amplitude / 3
+         Mij(3) =  amplitude / 3
+     case default
+         write(6,*) 'unknown source type: ', src_type(1,2)
+     end select
+
+     !Mij = amplitude ! The whole tensor is set to amplitude. That's okay, since later only the terms
                      ! are used, which are nonzero for this simulation.
 
-  else
+  case default
+  !  else
      write(6,*)'unknown source file type!',src_file_type
      stop
-  endif
+  end select
+  !endif
 
   fmtstring = '(6(E12.5))'
   write(6,*) 'Original moment tensor: (Mrr, Mtt, Mpp, Mrt, Mrp, Mtp)'
@@ -796,53 +824,62 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
      write(6,*)'Mij scaled:'
      write(6,fmtstring) Mij_scale
 
+     select case(src_type(isim,2))
+     case('mrr')
+       mij_prefact(:,isim,:) = Mij_scale(1)
+       mij_prefact(:,isim,2) = 0.
+       write(6,*) isim, 'Simulation is mrr, prefact:', &
+                  mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+                  mij_prefact(1,isim,3)
 
-     do i=1,npts
-
-        if (src_type(isim,2) == 'mrr') then
-           mij_prefact(i,isim,:) = Mij_scale(1)
-           mij_prefact(i,isim,2) = 0.
-           if (i==1) write(6,*) isim, 'Simulation is mrr, prefact:', &
-                                mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                mij_prefact(i,isim,3)
-
-        elseif (src_type(isim,2) == 'mtt_p_mpp') then
-           mij_prefact(i,isim,:) = Mij_scale(2) + Mij_scale(3)
-           mij_prefact(i,isim,2) = 0.
-           if (i==1) write(6,*) isim, 'Simulation is mxx, prefact:', &
-                                mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                mij_prefact(i,isim,3)
-
-        elseif (src_type(isim,2) == 'mtr' .or. src_type(isim,2)=='mpr') then
-           mij_prefact(i,isim,:) = Mij_scale(4) * cos(longit(i)) &
-                                + Mij_scale(5) * sin(longit(i))
-           mij_prefact(i,isim,2) = - Mij_scale(4) * sin(longit(i)) &
-                                + Mij_scale(5) * cos(longit(i))
-
-           if (i==1) write(6,*) isim, 'Simulation is mtr, prefact:', &
-                                mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                mij_prefact(i,isim,3)
-
-        elseif (src_type(isim,2) == 'mtp' .or. src_type(isim,2)=='mtt_m_mpp') then
-           mij_prefact(i,isim,:) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit(i))  &
-                                     + 2. * Mij_scale(6) * sin(2. * longit(i)) 
-           mij_prefact(i,isim,2) = (Mij_scale(3) - Mij_scale(2)) * sin(2. * longit(i)) &
-                                     + 2. * Mij_scale(6)*cos(2. * longit(i))
-
-           if (i==1) write(6,*) isim, 'Simulation is mtp, prefact:', &
-                                mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                mij_prefact(i,isim,3)
-
-        elseif(src_type(isim,2) == 'explosion') then 
-           mij_prefact(i,isim,:) = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
-           if (i==1) write(6,*) isim, 'Simulation is explosion, prefact:', &
-                                mij_prefact(i,isim,1), mij_prefact(i,isim,2), &
-                                mij_prefact(i,isim,3)
-        else
-            write(6,*) 'unknown source type ', src_type(isim,2)
-            stop
-        endif
-     enddo
+     case('mtt_p_mpp')
+        mij_prefact(:,isim,:) = Mij_scale(2) + Mij_scale(3)
+        mij_prefact(:,isim,2) = 0.
+        write(6,*) isim, 'Simulation is mpp, prefact:', &
+                   mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+                   mij_prefact(1,isim,3)
+ 
+     case('mtr', 'mrt', 'mpr', 'mrp')
+        mij_prefact(:,isim,1) =   Mij_scale(4) * cos(longit) &
+                                + Mij_scale(5) * sin(longit)
+        mij_prefact(:,isim,2) = - Mij_scale(4) * sin(longit) &
+                                + Mij_scale(5) * cos(longit)
+        mij_prefact(:,isim,3) =   Mij_scale(4) * cos(longit) &
+                                + Mij_scale(5) * sin(longit)
+ 
+        write(6,*) isim, 'Simulation is mtr, prefact:', &
+                   mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+                   mij_prefact(1,isim,3)
+ 
+     case('mtp', 'mpt', 'mtt_m_mpp')
+        mij_prefact(:,isim,1) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit)  &
+                                         + 2. * Mij_scale(6)  * sin(2. * longit) 
+        mij_prefact(:,isim,2) = (Mij_scale(3) - Mij_scale(2)) * sin(2. * longit) &
+                                         + 2. * Mij_scale(6)  * cos(2. * longit)
+        mij_prefact(:,isim,3) = (Mij_scale(2) - Mij_scale(3)) * cos(2. * longit)  &
+                                         + 2. * Mij_scale(6)  * sin(2. * longit) 
+ 
+        write(6,*) isim, 'Simulation is mtp, prefact:', &
+                   mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+                   mij_prefact(1,isim,3)
+ 
+     case('explosion')
+         !elseif(src_type(isim,2) == 'explosion') then 
+        mij_prefact(:,isim,:) = (Mij_scale(1) + Mij_scale(2) + Mij_scale(3)) / 3.
+        write(6,*) isim, 'Simulation is explosion, prefact:', &
+                   mij_prefact(1,isim,1), mij_prefact(1,isim,2), &
+                   mij_prefact(1,isim,3)
+ 
+     case default
+         write(6,*) 'unknown source type ', src_type(isim,2)
+         stop
+ 
+     end select
+!        else
+!            write(6,*) 'unknown source type ', src_type(isim,2)
+!            stop
+!        endif
+!     enddo
 
      write(6,*) 'Mij phi prefactor:', maxval(mij_prefact(:,isim,1)), &
                 maxval(mij_prefact(:,isim,2)), maxval(mij_prefact(:,isim,3))
