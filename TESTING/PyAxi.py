@@ -590,10 +590,12 @@ def PyAxi(**kwargs):
             test = -1; test_1 = -1; test_2 = -1; test_3 = -1; test_4 = -1
             solverended = 0
             solvercrashed = 0
+            same_output = 0
             time.sleep(10)
             #print_output = "Just after 2 seconds!"
             
             if input['sourcefile_type'] == 'sourceparams':
+                print_output = ""
                 if not os.path.exists('OUTPUT_' + input['solver_name']):
                     print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
                                 %('OUTPUT_' + input['solver_name'])
@@ -604,14 +606,27 @@ def PyAxi(**kwargs):
                     if howmanyofthisprocess('axisem') == 0:
                         solverended = 1
 
-                    #print howmanyofthisprocess('axisem') 
                     output_file_open =  open('OUTPUT_' + input['solver_name'], 'r')
                     output_file_read = output_file_open.readlines()
                     test = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                    # for k in range(0, int(input['mesher_ncpu'])):
                     if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
                         test = -1
+                        last_output = print_output
                         print_output = output_file_read[-1].split('\n')[0]
+                        # Check whether Output is stagnant since more than one minute.
+                        if (last_output == print_output) :
+                            same_output = same_output + 1
+                        else :
+                            same_output = 0
+                        if (same_output >= 30) :
+                            print "\n============================="
+                            print '\n       SOLVER froze'
+                            print '\n      killing axisem'
+                            print '\n        I love it!'
+                            print "\n============================="
+                            temp = killprocess('axisem')
+                            return
+
                     print print_output
                     time.sleep(2)
                 
@@ -619,7 +634,11 @@ def PyAxi(**kwargs):
                     solvercrashed = 1
                     
             elif input['sourcefile_type'] == 'cmtsolut':
-                
+               
+                print_output_1 = ""
+                print_output_2 = ""
+                print_output_3 = ""
+                print_output_4 = ""
                 if not os.path.exists(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY')):
                     print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
                                 %(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'))
@@ -655,8 +674,22 @@ def PyAxi(**kwargs):
                 while ((test_1 == -1 or test_2 == -1 or test_3 == -1 or test_4 == -1) and solverended == 0):
                     output_file =  open(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'), 'r')
                     output_file_read = output_file.readlines()
+                    last_output_1 = print_output_1
                     print_output_1 = output_file_read[-1].split('\n')[0]
                     if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                        if (last_output_1 == print_output_1) :
+                            same_output_1 = same_output_1 + 1
+                        else :
+                            same_output_1 = 0
+                        if (same_output_1 >= 30) :
+                            print "\n============================="
+                            print '\n       SOLVER froze'
+                            print '\n         MXX_P_MYY   '
+                            print '\n      killing axisem'
+                            print '\n        I love it!'
+                            print "\n============================="
+                            temp = killprocess('axisem')
+                            return
                         test_1 = -1
                     else:
                         test_1 = 0
@@ -665,8 +698,23 @@ def PyAxi(**kwargs):
                     
                     output_file =  open(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'), 'r')
                     output_file_read = output_file.readlines()
+                    last_output_2 = print_output_2
                     print_output_2 = output_file_read[-1].split('\n')[0]
                     if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                        # Check whether Output is stagnant since more than one minute.
+                        if (last_output_2 == print_output_2) :
+                            same_output_2 = same_output_2 + 1
+                        else :
+                            same_output_2 = 0
+                        if (same_output_2 >= 30) :
+                            print "\n============================="
+                            print '\n       SOLVER froze'
+                            print '\n      MXY_MXX_M_MYY'
+                            print '\n      killing axisem'
+                            print '\n        I love it!'
+                            print "\n============================="
+                            temp = killprocess('axisem')
+                            return
                         test_2 = -1
                     else: 
                         test_2 = 0
@@ -675,9 +723,24 @@ def PyAxi(**kwargs):
                     
                     output_file =  open(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'), 'r')
                     output_file_read = output_file.readlines()
+                    last_output_3 = print_output_3
                     print_output_3 = output_file_read[-1].split('\n')[0]
                     if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
                         test_3 = -1
+                        # Check whether Output is stagnant since more than one minute.
+                        if (last_output_3 == print_output_3) :
+                            same_output_3 = same_output_3 + 1
+                        else :
+                            same_output_3 = 0
+                        if (same_output_3 >= 30) :
+                            print "\n============================="
+                            print '\n       SOLVER froze'
+                            print '\n          MXZ_MYZ   '
+                            print '\n      killing axisem'
+                            print '\n        I love it!'
+                            print "\n============================="
+                            temp = killprocess('axisem')
+                            return
                     else: 
                         test_3 = 0
                     print 'MXZ_MYZ:       ' + print_output_3
@@ -685,8 +748,23 @@ def PyAxi(**kwargs):
                     
                     output_file =  open(os.path.join('MZZ', 'OUTPUT_MZZ'), 'r')
                     output_file_read = output_file.readlines()
+                    last_output_4 = print_output_4
                     print_output_4 = output_file_read[-1].split('\n')[0]
                     if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                        # Check whether Output is stagnant since more than one minute.
+                        if (last_output_4 == print_output_4) :
+                            same_output_4 = same_output_4 + 1
+                        else :
+                            same_output_4 = 0
+                        if (same_output_4 >= 30) :
+                            print "\n============================="
+                            print '\n       SOLVER froze'
+                            print '\n            MZZ'
+                            print '\n      killing axisem'
+                            print '\n        I love it!'
+                            print "\n============================="
+                            temp = killprocess('axisem')
+                            return
                         test_4 = -1
                     else:
                         test_4 = 0
@@ -698,7 +776,7 @@ def PyAxi(**kwargs):
                     time.sleep(2)
                     print '--------------------------------'
                         
-                if  test==-1:
+                if (test_1 == -1 or test_2 == -1 or test_3 == -1 or test_4 == -1):
                     solvercrashed = 1
     t2_solver = time.time()
 
@@ -1383,6 +1461,13 @@ def howmanyofthisprocess( process_name ):
     tmp = os.popen("ps ").read()
     proccount = tmp.count(process_name)
     return proccount
+
+########################## killprocess #################################
+
+def killprocess( process_name ):
+    os.system("killall "+process_name);
+    time.sleep(10)
+    os.system("killall -9 "+process_name);
 
 ########################## manual_which ################################
 def manual_which(program):
