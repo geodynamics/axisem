@@ -65,6 +65,10 @@ module linked_list
      procedure, pass :: getPrev         ! get the previous element
                                         ! if current not set, returns last element
      procedure, pass :: getLength       ! return length of the list
+     procedure, pass :: eol             ! return .true. if current iterator element is
+                                        ! the last element
+     procedure, pass :: bol             ! return .true. if current iterator element is
+                                        ! the first element
   end type list
 
 contains
@@ -242,6 +246,23 @@ end function getLength
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+logical function eol(this)
+  class(list)           :: this
+  ! MvD: not sure about logics here: currentLink => null beeing the default,
+  !      same for first and last link, so what about initialization of current link?
+  eol = associated(this%currentLink, target=this%lastLink) .or. (this%length == 0)
+end function eol
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+logical function bol(this)
+  class(list)           :: this
+  ! MvD: same as in eol
+  bol = associated(this%currentLink, target=this%firstLink) .or. (this%length == 0)
+end function bol
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine free(this)
   class(list)               :: this
   class(link), pointer      :: current, next
@@ -250,7 +271,6 @@ subroutine free(this)
      next => this%firstLink
      do while ( associated(next) )
         current => next
-        write(6,*) 'free', current%getData()
         next => current%getNextLink()
         deallocate( current )
      enddo
@@ -272,10 +292,15 @@ program test_list
 
   type(list)                :: l
 
+  write(6,*) 'eol', l%eol()
+  write(6,*) 'bol', l%bol()
   call l%append(1)
   write(6,*) 'bla'
+  write(6,*) 'eol', l%eol()
+  write(6,*) 'bol', l%bol()
   write(6,*) l%getFirst()
   write(6,*) l%getCurrent()
+  write(6,*) 'bol', l%bol()
   write(6,*) l%getLast()
   call l%insert(0)
   call l%append(2)
@@ -286,15 +311,22 @@ program test_list
   call l%append(3)
   write(6,*) 'bla'
   write(6,*) 'length', l%getLength()
-  write(6,*) l%getFirst()
-  write(6,*) l%getCurrent()
-  write(6,*) l%getLast()
   write(6,*) 'bla'
   call l%resetCurrent()
   write(6,*) l%getPrev()
   write(6,*) l%getPrev()
-
   write(6,*) 'bla'
+
+  call l%resetCurrent()
+  do while(.not. l%eol())
+     write(6,*) 'fw loop', l%getNext()
+  enddo
+
+  call l%resetCurrent()
+  do while(.not. l%bol())
+     write(6,*) 'bw loop', l%getPrev()
+  enddo
+
   call l%free()
   write(6,*) 'length', l%getLength()
   write(6,*) 'bla'
