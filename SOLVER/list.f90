@@ -50,6 +50,7 @@ module linked_list
      class(link), pointer :: firstLink => null()    ! first link in list
      class(link), pointer :: lastLink => null()     ! last link in list
      class(link), pointer :: currentLink => null()  ! iterator
+     integer              :: length = 0
      contains
      procedure, pass :: free            ! empty the list and free the memory
      procedure, pass :: append          ! append an element to the end of the list
@@ -63,6 +64,7 @@ module linked_list
                                         ! if current not set, returns first element
      procedure, pass :: getPrev         ! get the previous element
                                         ! if current not set, returns last element
+     procedure, pass :: getLength       ! return length of the list
   end type list
 
 contains
@@ -125,7 +127,6 @@ subroutine append(this, ldata)
   integer                 :: ldata
   class(link), pointer    :: newLink
 
-
   if (.not. associated(this%firstLink)) then
      this%firstLink => link(ldata, null(), null())
      this%lastLink => this%firstLink
@@ -134,7 +135,8 @@ subroutine append(this, ldata)
      call this%lastLink%setNextLink(newLink)
      this%lastLink => newLink
   end if
-
+   
+  this%length = this%length + 1
 end subroutine append
 !-----------------------------------------------------------------------------------------
 
@@ -153,6 +155,7 @@ subroutine insert(this, ldata)
      this%firstLink => newLink
   end if
 
+  this%length = this%length + 1
 end subroutine insert
 !-----------------------------------------------------------------------------------------
 
@@ -232,6 +235,13 @@ end function getPrev
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+integer function getLength(this)
+  class(list)           :: this
+  getLength = this%length
+end function getLength
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine free(this)
   class(list)               :: this
   class(link), pointer      :: current, next
@@ -246,6 +256,8 @@ subroutine free(this)
      enddo
      this%firstLink => null()
   endif
+
+  this%length = 0
 end subroutine free
 !-----------------------------------------------------------------------------------------
 
@@ -273,6 +285,7 @@ program test_list
   write(6,*) l%getLast()
   call l%append(3)
   write(6,*) 'bla'
+  write(6,*) 'length', l%getLength()
   write(6,*) l%getFirst()
   write(6,*) l%getCurrent()
   write(6,*) l%getLast()
@@ -283,6 +296,7 @@ program test_list
 
   write(6,*) 'bla'
   call l%free()
+  write(6,*) 'length', l%getLength()
   write(6,*) 'bla'
   write(6,*) l%getFirst()
 end program
