@@ -286,6 +286,14 @@ def PyAxi(**kwargs):
                     time.sleep(1)
                     t_check+=2
                 else:
+                    output_file_open =  open('OUTPUT', 'r')
+                    output_file_read = output_file_open.readlines()
+                    test = output_file_read[-1].find('....DONE WITH MESHER !')
+                    if test==-1:
+                        print "\n============================="
+                        print '\n       MESHER crashed'
+                        print "\n============================="
+                        return
                     check_process='DONE'
             print 'DONE'
             print '--------------------------'
@@ -436,28 +444,6 @@ def PyAxi(**kwargs):
                     sys.stdout.write('Change the Source params (inparams_source)...')
                     sys.stdout.flush()
 
-                #if os.path.isfile('sourceparams.dat'):
-                #    subprocess.check_call(['rm', 'sourceparams.dat'])
-                #subprocess.check_call(['cp', 'sourceparams.dat.TEMPLATE', 'sourceparams.dat'])
-                
-                #source_open = open('./sourceparams.dat', 'r')
-                #source_read = source_open.readlines()
-                #source_read[0] = input['src_Mzz'] + ' ' + input['src_Mxx'] + ' ' + \
-                #                input['src_Myy'] + ' ' + input['src_Mxz'] + ' ' + \
-                #                input['src_Myz'] + ' ' + input['src_Mxy'] + ' ' + \
-                #"  moment tensor (Mzz Mxx Myy Mxz Myz Mxy) [Nm]\n"
-                #source_read[1] = input['sourceparams_type'] + \
-                #    "       excitation type: 'monopole', 'dipole', 'quadpole'\n"
-                #source_read[2] = input['sourceparams_MDQ'] + \
-                #    "            'explosion','mxx_p_myy','mzz','vertforce' (MONOPOLE) \n"
-                #source_read[5] = input['source_dp'] + \
-                #    '              source depth [km]\n'
-                #source_read[6] = input['source_colat'] + \
-                #    '              source colatitude [degrees]  \n'
-                #source_read[7] = input['source_lon'] + \
-                #    '              source longitude [ldegrees]\n'
-                #source_read[8] = input['source_stf'] + \
-                #    "        source time function: \n"
                 source_text = [];
                 source_text.append("SOURCE_TYPE  "     + input['source_type'] + "\n")
                 source_text.append("SOURCE_DEPTH "     + input['source_depth'] + "\n")
@@ -465,7 +451,6 @@ def PyAxi(**kwargs):
                 source_text.append("SOURCE_LON   "     + input['source_lon'] + "\n")
                 source_text.append("SOURCE_AMPLITUDE " + input['source_amp'] + "\n")
 
-                #source_open.close()
                 if os.path.isfile('inparam_source'):
                     subprocess.check_call(['rm', 'inparam_source'])
                 source_open = open('./inparam_source', 'w')
@@ -603,9 +588,10 @@ def PyAxi(**kwargs):
             os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
             
             test = -1; test_1 = -1; test_2 = -1; test_3 = -1; test_4 = -1
-            
-            time.sleep(2)
-            print_output = "Just after 2 seconds!"
+            solverended = 0
+            solvercrashed = 0
+            time.sleep(10)
+            #print_output = "Just after 2 seconds!"
             
             if input['sourcefile_type'] == 'sourceparams':
                 if not os.path.exists('OUTPUT_' + input['solver_name']):
@@ -614,7 +600,11 @@ def PyAxi(**kwargs):
                     time.sleep(10)
                     if not os.path.exists('OUTPUT_' + input['solver_name']):
                         sys.exit('...ERROR...%s is not created.' %('OUTPUT_' + input['solver_name']))
-                while (test == -1):
+                while (test == -1 and solverended == 0):
+                    if howmanyofthisprocess('axisem') == 0:
+                        solverended = 1
+
+                    #print howmanyofthisprocess('axisem') 
                     output_file_open =  open('OUTPUT_' + input['solver_name'], 'r')
                     output_file_read = output_file_open.readlines()
                     test = output_file_read[-1].find('PROGRAM axisem FINISHED')
@@ -624,6 +614,9 @@ def PyAxi(**kwargs):
                         print_output = output_file_read[-1].split('\n')[0]
                     print print_output
                     time.sleep(2)
+                
+                if  test==-1:
+                    solvercrashed = 1
                     
             elif input['sourcefile_type'] == 'cmtsolut':
                 
@@ -659,55 +652,61 @@ def PyAxi(**kwargs):
                         sys.exit('...ERROR...%s is not created.' 
                                     %(os.path.join('MZZ', 'OUTPUT_MZZ')))
 
-                while (test_1 == -1 or test_2 == -1 or test_3 == -1 or test_4 == -1):
-                        output_file =  open(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'), 'r')
-                        output_file_read = output_file.readlines()
-                        #test_1 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        print_output_1 = output_file_read[-1].split('\n')[0]
-                        if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
-                            test_1 = -1
-                        else:
-                            test_1 = 0
-                        print 'MXX_P_MYY:     ' + print_output_1
-                        output_file.close
+                while ((test_1 == -1 or test_2 == -1 or test_3 == -1 or test_4 == -1) and solverended == 0):
+                    output_file =  open(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'), 'r')
+                    output_file_read = output_file.readlines()
+                    print_output_1 = output_file_read[-1].split('\n')[0]
+                    if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                        test_1 = -1
+                    else:
+                        test_1 = 0
+                    print 'MXX_P_MYY:     ' + print_output_1
+                    output_file.close
                     
-                        output_file =  open(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'), 'r')
-                        output_file_read = output_file.readlines()
-                        #test_2 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        print_output_2 = output_file_read[-1].split('\n')[0]
-                        if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
-                            test_2 = -1
-                        else: 
-                            test_2 = 0
-                        print 'MXY_MXX_M_MYY: ' + print_output_2
-                        output_file.close
+                    output_file =  open(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'), 'r')
+                    output_file_read = output_file.readlines()
+                    print_output_2 = output_file_read[-1].split('\n')[0]
+                    if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                        test_2 = -1
+                    else: 
+                        test_2 = 0
+                    print 'MXY_MXX_M_MYY: ' + print_output_2
+                    output_file.close
+                    
+                    output_file =  open(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'), 'r')
+                    output_file_read = output_file.readlines()
+                    print_output_3 = output_file_read[-1].split('\n')[0]
+                    if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                        test_3 = -1
+                    else: 
+                        test_3 = 0
+                    print 'MXZ_MYZ:       ' + print_output_3
+                    output_file.close
+                    
+                    output_file =  open(os.path.join('MZZ', 'OUTPUT_MZZ'), 'r')
+                    output_file_read = output_file.readlines()
+                    print_output_4 = output_file_read[-1].split('\n')[0]
+                    if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
+                        test_4 = -1
+                    else:
+                        test_4 = 0
+                    print 'MZZ:           ' + print_output_4
+                    output_file.close
+                    
+                    if howmanyofthisprocess('axisem') == 0:
+                        solverended = 1
+                    time.sleep(2)
+                    print '--------------------------------'
                         
-                        output_file =  open(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'), 'r')
-                        output_file_read = output_file.readlines()
-                        #test_3 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        print_output_3 = output_file_read[-1].split('\n')[0]
-                        if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
-                            test_3 = -1
-                        else: 
-                            test_3 = 0
-                        print 'MXZ_MYZ:       ' + print_output_3
-                        output_file.close
-                        
-                        output_file =  open(os.path.join('MZZ', 'OUTPUT_MZZ'), 'r')
-                        output_file_read = output_file.readlines()
-                        #test_4 = output_file_read[-1].find('PROGRAM axisem FINISHED')
-                        print_output_4 = output_file_read[-1].split('\n')[0]
-                        if output_file_read[-1].find('PROGRAM axisem FINISHED') == -1:
-                            test_4 = -1
-                        else:
-                            test_4 = 0
-                        print 'MZZ:           ' + print_output_4
-                        output_file.close
-                        
-                        time.sleep(2)
-                        print '--------------------------------'
-                        
+                if  test==-1:
+                    solvercrashed = 1
     t2_solver = time.time()
+
+    if solvercrashed == 1:
+        print "\n============================="
+        print '\n       SOLVER crashed'
+        print "\n============================="
+        return
 
     ##############################################################
     ######################## Post-Processing #####################
@@ -1377,6 +1376,13 @@ def convSTF(st, sigma=30.):
         tr.data = np.fft.irfft(stff * trf)[sigma*10*df:sigma*10*df+len(tr.data)] * df
 
     return 1
+
+########################## isProcessRunning #############################
+
+def howmanyofthisprocess( process_name ):
+    tmp = os.popen("ps ").read()
+    proccount = tmp.count(process_name)
+    return proccount
 
 ########################## manual_which ################################
 def manual_which(program):
