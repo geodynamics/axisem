@@ -3,7 +3,6 @@
 #       Standard Makefile Macro Setup for Axisem                               #
 #       The variables set here will affect MESHER, SOLVER and Postprocessing   # 
 #       compilation and submitting.                                            #
-#       Note that you must edit this file to suit your platform                #
 #                                                                              #
 #------------------------------------------------------------------------------#
 
