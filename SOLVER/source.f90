@@ -267,10 +267,10 @@ subroutine compute_src
   !   stop
   !endif
 
-  call broadcast_int(iel_src, 0)
-  call broadcast_int(ipol_src, 0)
-  call broadcast_int(jpol_src, 0)
-  call broadcast_dble(zsrc, 0)
+  !call broadcast_int(iel_src, 0)
+  !call broadcast_int(ipol_src, 0)
+  !call broadcast_int(jpol_src, 0)
+  !call broadcast_dble(zsrc, 0)
 
   poletype: select case(src_type(1))
 
@@ -806,7 +806,7 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
 
   use data_mesh
   use utlity
-  use commun
+  use commun, only: comm2d
   
   real(kind=realkind), intent(out) :: f(0:npol,0:npol,nel_solid)
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
@@ -877,7 +877,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   use apply_masks
   use utlity
   use pointwise_derivatives
-  use commun
+  use commun, only: comm2d
   
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
   real(kind=realkind), intent(out) :: source_term(0:npol,0:npol,nel_solid,3)
