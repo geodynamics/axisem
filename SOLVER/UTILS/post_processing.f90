@@ -62,9 +62,9 @@ module data_all
   character(len=100)                  :: outdir
   character(len=4)                    :: seistype
 
-  real, allocatable :: period_final(:)
-  real, allocatable :: trans_rot_mat(:,:,:)
-  real, allocatable :: colat(:,:),lon(:,:)
+  real, allocatable                   :: period_final(:)
+  real, allocatable                   :: trans_rot_mat(:,:,:)
+  real, allocatable                   :: colat(:,:), lon(:,:)
 
 end module data_all
 !=============================================================================
@@ -217,7 +217,7 @@ program post_processing_seis
         
         ! write exact receiver locations (gll points) in the earth fixed coordinate system to file
         write(21,'(a15,3f15.8)') recname(i), rloc_rtp(2) / pi * 180., &
-                                 rloc_rtp(2) / pi * 180. - 90., &
+                                 90. - rloc_rtp(2) / pi * 180. , &
                                  rloc_rtp(3) / pi * 180.
      enddo
      if (.not.use_netcdf) close(20)
@@ -422,7 +422,7 @@ program post_processing_seis
   ! plot original source and receiver locations in google earth kml file with link 
   ! to seismogram images
   call save_google_earth_kml(srccolat, srclon, src_depth, Mij,period_final(1), &
-                             thr_orig,phr_orig, reccomp, src_type(1,1), &
+                             thr_orig, phr_orig, reccomp, src_type(1,1), &
                              nsim,nrec, outdir, rec_full_name(:,1))
   
   write(6,*) 'writing matlab input files for record sections...'
@@ -905,7 +905,7 @@ subroutine rotate_receiver_comp(isim, rec_comp_sys, srccolat, srclon, th_rot, ph
   use data_all,     only : nsim, trans_rot_mat
   use global_par
   implicit none
-  include '../mesh_params.h'
+  !include '../mesh_params.h'
   
   character(len=3)      :: rec_comp_sys
   real, intent(in)      :: th_rot, ph_rot ! coordinates in the rotated (src at pole) system
