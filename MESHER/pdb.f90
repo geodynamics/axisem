@@ -1939,6 +1939,7 @@ subroutine define_local_bdry_elem
               write(6,*) 'solid domain proc:', myproc
               write(6,*) 'fluid domain proc:', herproc
               write(6,*) 'boundary,global element num:',j,iel,myielglob
+              write(6,*) 'One possible reaon: NRADIAL_SLICES > 8 in inparam_mesh might lead to this problem'
               stop
            endif
 

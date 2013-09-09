@@ -548,9 +548,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
 
 
   ! Now decomposition in radius
-  write(6,*) 'ndivs =', ndivs
-  write(6,*) 'ndivs/4 =', ndivs / 4
-
   do itheta = 0, nthetal-1
      mycount = 1
      do irad = 0, nrl-1
@@ -563,7 +560,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
            if (nthetal == 2) then
               nicb = ndivs * 2
            else
-              nicb = ndivs
+              nicb = ndivs * 4 / nthetal
            endif
 
            ! take the lowest layer in the fluid of the theta slice
