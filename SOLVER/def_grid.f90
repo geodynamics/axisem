@@ -228,7 +228,7 @@ subroutine deallocate_preloop_arrays
 
   ! These terms are needed to compute the gradient!
   if (.not. dump_wavefields .or. dump_type/='fullfields') then
-     if (.not. anel_true) then
+     if (.not. anel_true .and. .not. dump_snaps_glob) then
         if (lpr) write(6,*)'  deallocating pointwise solid arrays...'
         deallocate(DsDeta_over_J_sol)
         deallocate(DzDeta_over_J_sol)
