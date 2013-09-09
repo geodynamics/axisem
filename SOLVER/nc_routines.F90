@@ -762,11 +762,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         !                         nc_lon_varid) )
         !call check( nf90_def_var(ncid_recout, "Lat", NF90_FLOAT, (/nc_rec_dimid/), &
         !                         nc_lat_varid) )
-        call check( nf90_def_var(ncid_recout, "azimuths", NF90_FLOAT, (/nc_rec_dimid/),  &
+        call check( nf90_def_var(ncid_recout, "phi", NF90_FLOAT, (/nc_rec_dimid/),  &
                                  nc_ph_varid) )
-        call check( nf90_def_var(ncid_recout, "distances_requested", NF90_FLOAT, &
+        call check( nf90_def_var(ncid_recout, "theta_requested", NF90_FLOAT, &
                                  (/nc_rec_dimid/), nc_thr_varid) )
-        call check( nf90_def_var(ncid_recout, "distances", NF90_FLOAT, &
+        call check( nf90_def_var(ncid_recout, "theta", NF90_FLOAT, &
                                  (/nc_rec_dimid/), nc_th_varid) )
         call check( nf90_def_var(ncid_recout, "processor_of_receiver", NF90_INT, &
                                  (/nc_rec_dimid/), nc_proc_varid) )

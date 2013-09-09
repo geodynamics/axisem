@@ -148,24 +148,24 @@ program post_processing_seis
   else
       open(unit=61, file=trim(simdir(1))//'/Data/receiver_names.dat')
       do i=1, nrec
-         read(61,*) recname(i), thr_orig(i), phr_orig(i)
-         ! @TODO == on a float? maybe > 360 -> - 360
-         if (phr_orig(i) >= 360.) phr_orig(i) = phr_orig(i) - 360.
+         read(61,*) recname(i) !, thr_orig(i), phr_orig(i)
+   !      ! @TODO == on a float? maybe > 360 -> - 360
+   !      if (phr_orig(i) >= 360.) phr_orig(i) = phr_orig(i) - 360.
       enddo
       close(61)
   end if
-  thr_orig = thr_orig / 180. * pi 
-  phr_orig = phr_orig / 180. * pi
+  !thr_orig = thr_orig / 180. * pi 
+  !phr_orig = phr_orig / 180. * pi
 
   ! compute exact receiver locations (GLL points they are mapped to) and write
   ! to file, should be the same for all subfolders
-  do isim=1, nsim
+  do isim=1, 1 !, nsim
      if (.not.use_netcdf) then
          open(unit=20, file=trim(simdir(isim))//'/Data/receiver_pts.dat')
      end if
 
      open(unit=21, file=trim(outdir)//'/receiver_gll_locs_'//trim(src_type(isim,2))//'.dat')
-     write(21,'(4a15)') ' ', 'colat', 'lat', 'lon'
+     write(21,'(6a15)') ' ', 'colat', 'lat', 'lon', 'colat_unrot', 'lon_unrot'
      do i=1,nrec
         if (.not.use_netcdf) then
             read(20,*) colat(i,isim), lon(i,isim), junk
@@ -195,13 +195,13 @@ program post_processing_seis
         if (rloc_xyz(3) > 1.) rloc_xyz(3) = 1.
         if (rloc_xyz(3) < -1.) rloc_xyz(3) = -1.
         
-        rloc_xyz = rloc_xyz / (rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)**.5
+        rloc_xyz = rloc_xyz / sqrt(rloc_xyz(1)**2 + rloc_xyz(2)**2 + rloc_xyz(3)**2)
 
         ! compute colat and lon
         rloc_rtp(2) = acos(rloc_xyz(3))
 
         arg1 = (rloc_xyz(1)  + smallval_dble) / &
-               ((rloc_xyz(1)**2 + rloc_xyz(2)**2)**.5 + smallval_dble)
+               (sqrt(rloc_xyz(1)**2 + rloc_xyz(2)**2) + smallval_dble)
         
         if (arg1 > 1.) arg1 = 1.
         if (arg1 < -1.) arg1 = -1.
@@ -211,14 +211,17 @@ program post_processing_seis
         else
            rloc_rtp(3) = 2.*pi - acos(arg1)
         end if
+        
+        ! write exact receiver locations (gll points) in the earth fixed coordinate system to file
+        write(21,'(a15,5f15.8)') recname(i), rloc_rtp(2) / pi * 180., &
+                                 90. - rloc_rtp(2) / pi * 180. ,      &
+                                 rloc_rtp(3) / pi * 180.,             &
+                                 thr_orig(i),                         &
+                                 phr_orig(i)
+
 
         thr_orig(i) = rloc_rtp(2)
         phr_orig(i) = rloc_rtp(3)
-        
-        ! write exact receiver locations (gll points) in the earth fixed coordinate system to file
-        write(21,'(a15,3f15.8)') recname(i), rloc_rtp(2) / pi * 180., &
-                                 90. - rloc_rtp(2) / pi * 180. , &
-                                 rloc_rtp(3) / pi * 180.
      enddo
      if (.not.use_netcdf) close(20)
      close(21)
@@ -379,7 +382,7 @@ program post_processing_seis
      if (conv_period > 0.)  then 
         write(6,*) 'conv period:', conv_stf
         call convolve_with_stf(conv_period, dt_seis, nt_seis, src_type(1,1), conv_stf,&
-                                               outdir, seis, seis_fil)
+                               outdir, seis, seis_fil)
      else
         seis_fil = seis
      endif
@@ -389,8 +392,8 @@ program post_processing_seis
      ! this is fine within a Mij set, but NOT for a finite fault: In that case, we will have to 
      ! amend this by another loop over fault points. 
      call rotate_receiver_comp(1, rec_comp_sys, srccolat, srclon, &
-                                      colat(i,1), lon(i,1), thr_orig(i), phr_orig(i), &
-                                      nt_seis, seis_fil)
+                               colat(i,1), lon(i,1), thr_orig(i), phr_orig(i), &
+                               nt_seis, seis_fil)
 
      ! write processed seismograms into joint outdir
      open(unit=50, file=trim(outname(i,1))//'_'//reccomp(1)//'.dat', status='new')

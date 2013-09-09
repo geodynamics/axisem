@@ -55,10 +55,10 @@ subroutine nc_open(ncid, nsim, simdir)
                                  ncid%disp_varid(isim)) )
       call check( nf90_inq_varid(ncid%seis_grpid(isim), 'receiver_name', &
                                  ncid%recnam_varid(isim)))
-      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'azimuths', ncid%phi_varid(isim)))
-      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'distances', &
+      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'phi', ncid%phi_varid(isim)))
+      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'theta', &
                                  ncid%theta_varid(isim)))
-      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'distances_requested', &
+      call check( nf90_inq_varid(ncid%seis_grpid(isim), 'theta_requested', &
                                  ncid%thetar_varid(isim)))
   end do
 #endif
