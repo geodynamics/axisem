@@ -141,7 +141,7 @@ program post_processing_seis
   if (use_netcdf) then
       call nc_read_recnames(ncparams, nrec, recname, th_orig, thr_orig, phr_orig)
       do isim = 1, nsim
-          colat(:,isim) = th_orig(:)
+          colat(:,isim) = 90 - th_orig(:)
           lon(:, isim)  = phr_orig(:)
       end do
       ! @TODO
@@ -216,8 +216,8 @@ program post_processing_seis
         write(21,'(a15,5f15.8)') recname(i), rloc_rtp(2) / pi * 180., &
                                  90. - rloc_rtp(2) / pi * 180. ,      &
                                  rloc_rtp(3) / pi * 180.,             &
-                                 thr_orig(i),                         &
-                                 phr_orig(i)
+                                 colat(i,isim),                       &
+                                 lon(i,isim)
 
 
         thr_orig(i) = rloc_rtp(2)
