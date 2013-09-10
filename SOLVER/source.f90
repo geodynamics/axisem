@@ -805,7 +805,6 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
   if (iel_src2 /= iel_src) nsrcelem = 2
   f(:,:,:) = zero
 
-  ! @TODO check this for a source on proc boundary
   if (have_src) then
      f(ipol_src, jpol_src, iel_src) = one
      f(ipol_src2, jpol_src2, iel_src2) = one
