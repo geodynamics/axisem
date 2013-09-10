@@ -259,19 +259,6 @@ subroutine compute_src
 
   ! @TODO: should add a test whether it is the first theta slice
 
-  !if (have_src .and. mynum /= 0) then 
-  !   write(6,'(a,a,i4,a)') &
-  !      'PROBLEM with the source location!', &
-  !      'I have the source and am processor',mynum, &
-  !      '...when source should always be on the northern axis (mynum=0)'
-  !   stop
-  !endif
-
-  !call broadcast_int(iel_src, 0)
-  !call broadcast_int(ipol_src, 0)
-  !call broadcast_int(jpol_src, 0)
-  !call broadcast_dble(zsrc, 0)
-
   poletype: select case(src_type(1))
 
   ! MONOPOLE
@@ -332,7 +319,6 @@ subroutine compute_src
 
   ! if I don't have the source
   if (.not. have_src) then 
-     source_term = zero
      if (verbose > 1) write(69,'(/,a,/)') &
             "******  I  D O N ' T   H A V E   T H E   S O U R C E *******"
   endif
@@ -374,16 +360,16 @@ subroutine compute_src
   allocate(source_term_el(0:npol,0:npol,8,3))
   source_term_el = zero
   k = 0 
-  if (have_src) then
-     do ielem = 1, nel_solid
-        if ( maxval(abs(source_term(:,:,ielem,:))) > zero) then
-           k = k + 1
-           ielsrc(k) = ielem
-           source_term_el(:,:,k,:) = source_term(:,:,ielem,:)
-        endif
-     enddo
-  endif
+  do ielem = 1, nel_solid
+     if ( maxval(abs(source_term(:,:,ielem,:))) > zero) then
+        k = k + 1
+        ielsrc(k) = ielem
+        source_term_el(:,:,k,:) = source_term(:,:,ielem,:)
+     endif
+  enddo
   nelsrc = k
+     
+  if (verbose > 1) write(69,*) 'nelsrc =', nelsrc
 
   deallocate(source_term)
 
@@ -460,6 +446,7 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
      if (mydzsrc < dzsrc) have_src = .false.
 
      ! Check how many/which processors have the source
+     ! @TODO: generalize for source on proc boundary
      count_src_procs = 0
      if (have_src) count_src_procs = 1
      count_src_procs = psum_int(count_src_procs)
@@ -917,7 +904,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
   if (have_src) then 
      ! physical source location can only be in 2 elements
-     do i=1,nsrcelem
+     do i=1, nsrcelem
 
         if (i == 2) then 
            liel_src = iel_src2
@@ -1116,21 +1103,23 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                                procstrg, 'Bye from define_mono_moment'
         stop
      endif
+  endif
 
-     ! mask source
-     select case (src_type(1))
-     case ('monopole')
-        call apply_axis_mask_onecomp(source_term, nel_solid, ax_el_solid, &
-                                     naxel_solid)
-     case ('dipole') 
-        call apply_axis_mask_twocomp(source_term, nel_solid, ax_el_solid, &
-                                     naxel_solid)
-     case ('quadpole') 
-        call apply_axis_mask_threecomp(source_term, nel_solid, ax_el_solid, &
-                                       naxel_solid)
-     end select
-     write(6,*)'  ...masked the source'
+  ! mask source
+  select case (src_type(1))
+  case ('monopole')
+     call apply_axis_mask_onecomp(source_term, nel_solid, ax_el_solid, &
+                                  naxel_solid)
+  case ('dipole') 
+     call apply_axis_mask_twocomp(source_term, nel_solid, ax_el_solid, &
+                                  naxel_solid)
+  case ('quadpole') 
+     call apply_axis_mask_threecomp(source_term, nel_solid, ax_el_solid, &
+                                    naxel_solid)
+  end select
+  write(6,*)'  ...masked the source'
 
+  if (have_src) then
      ! write out the source element only
      fmt1 = "(K(1pe12.3))"
      write(fmt1(2:2),'(i1.1)') npol + 1

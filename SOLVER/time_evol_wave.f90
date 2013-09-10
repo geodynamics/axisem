@@ -435,7 +435,7 @@ subroutine sf_time_loop_newmark
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ! SOLID: add source, only in source elements and for stf/=0
-     if (have_src) call add_source(acc1, stf(iter))
+     call add_source(acc1, stf(iter))
 
      ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
      acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
@@ -629,7 +629,7 @@ subroutine symplectic_time_loop
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         ! SOLID: add source, only in source elements and for stf/=0
-        if (have_src) call add_source(acc,real(stf_symp(i),kind=realkind))
+        call add_source(acc,real(stf_symp(i),kind=realkind))
 
         ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
         velo(:,:,:,1) = velo(:,:,:,1) - acc(:,:,:,1) * coefv(i) * inv_mass_rho
@@ -971,17 +971,16 @@ end subroutine runtime_info
 !! and I have the source.
 pure subroutine add_source(acc1, stf1)
   
-  
   real(kind=realkind), intent(in)    :: stf1
   real(kind=realkind), intent(inout) :: acc1(0:,0:,:,:)
-  integer             :: iel,i
+  integer                            :: iel,i
 
-  i=0
-  if ( have_src .and. stf1 /= zero) then 
+  i = 0
+  if ( stf1 /= zero) then 
      do iel=1, nelsrc
-        i=i+1
-        acc1(:,:,ielsrc(iel),:) = acc1(:,:,ielsrc(iel),:) - & 
-             source_term_el(:,:,i,:) * stf1
+        i = i + 1
+        acc1(:,:,ielsrc(iel),:) = acc1(:,:,ielsrc(iel),:) & 
+             - source_term_el(:,:,i,:) * stf1
      enddo
   endif
 
