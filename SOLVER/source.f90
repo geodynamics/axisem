@@ -446,16 +446,15 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
      if (mydzsrc < dzsrc) have_src = .false.
 
      ! Check how many/which processors have the source
-     ! @TODO: generalize for source on proc boundary
      count_src_procs = 0
      if (have_src) count_src_procs = 1
      count_src_procs = psum_int(count_src_procs)
 
-     if (count_src_procs > 1) then 
+     if (count_src_procs > 2) then 
         if (lpr) then 
            write(6,*)
            write(6,*) 'PROBLEM with source & processors!'
-           write(6,*) 'More than one processor have the source:'
+           write(6,*) 'More than two processors have the source:'
         endif
         if (have_src) write(6,*) procstrg, 'has it.'
         stop
@@ -806,6 +805,7 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
   if (iel_src2 /= iel_src) nsrcelem = 2
   f(:,:,:) = zero
 
+  ! @TODO check this for a source on proc boundary
   if (have_src) then
      f(ipol_src, jpol_src, iel_src) = one
      f(ipol_src2, jpol_src2, iel_src2) = one
@@ -832,7 +832,7 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
      lipol_src = ipol_src
      ljpol_src = jpol_src
 
-     do i =1, nsrcelem
+     do i=1, nsrcelem
         if (i == 2) then
            liel_src = iel_src2
            lipol_src = ipol_src2
@@ -864,7 +864,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   use apply_masks
   use utlity
   use pointwise_derivatives
-  use commun, only: comm2d
+  use commun, only: comm2d, psum_int
   
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
   real(kind=realkind), intent(out) :: source_term(0:npol,0:npol,nel_solid,3)
@@ -874,7 +874,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   real(kind=realkind), allocatable :: ws_over_s(:,:,:), dzwz(:,:,:)
   real(kind=realkind), allocatable :: ds(:), dz(:)
   
-  integer                          :: ielem, ipol, jpol, i, nsrcelem
+  integer                          :: ielem, ipol, jpol, i, nsrcelem, nsrcelem_glob
   real(kind=dp)                    :: s, z, r, theta, r1, r2
   logical                          :: oldway
   character(len=16)                :: fmt1
@@ -899,8 +899,20 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   lipol_src = ipol_src
   ljpol_src = jpol_src
 
-  nsrcelem = 1
-  if (iel_src2 /= iel_src) nsrcelem = 2
+  nsrcelem = 0
+  if (have_src) then
+     nsrcelem = 1
+     if (iel_src2 /= iel_src) then 
+        nsrcelem = 2
+     else
+        nsrcelem = 1
+     endif
+  endif
+
+  ! global number of source elements (in case source is on processor boundary)
+  nsrcelem_glob = psum_int(nsrcelem)
+
+  if (verbose > 1 ) write(69,*) 'nsrcelem_glob =', nsrcelem_glob
 
   if (have_src) then 
      ! physical source location can only be in 2 elements
@@ -1071,7 +1083,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
      ! If spread over two elements (i.e., if point source coincides 
      ! with element edge/corner), need to divide by two
-     source_term = source_term / real(nsrcelem)
+     source_term = source_term / real(nsrcelem_glob)
 
      if (verbose > 1) write(69,*) 'source term minmax:', &
                                   minval(source_term), maxval(source_term)
