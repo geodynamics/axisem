@@ -23,18 +23,18 @@
 module linked_list
 !=================
 
+  use global_parameters
   implicit none
 
   private
-  public :: list
+  public :: list, link
 
   type :: link
      private
      type(link), pointer        :: next => null()   ! next link in list
      type(link), pointer        :: prev => null()   ! next link in list
-     integer                    :: ldata
+     real(kind=realkind), public, allocatable :: ldata(:,:)
      contains
-     procedure, pass :: getData      ! return value pointer
      procedure, pass :: getNextLink  ! return next pointer
      procedure, pass :: setNextLink  ! set next pointer
      procedure, pass :: getPrevLink  ! return next pointer
@@ -55,8 +55,10 @@ module linked_list
      procedure, pass :: free            ! empty the list and free the memory
      procedure, pass :: append          ! append an element to the end of the list
      procedure, pass :: insert          ! insert an element to beginning of the list
-     procedure, pass :: getFirst        ! return first element
-     procedure, pass :: getLast         ! return last element
+     procedure, pass :: getFirst        ! return first element and set iterator
+                                        ! to first element
+     procedure, pass :: getLast         ! return last element and set iterator
+                                        ! to last element
      procedure, pass :: getCurrent      ! iterator, can be moved with getNext
                                         ! if not set, returns first element
      procedure, pass :: resetCurrent    ! reset the iterator
@@ -106,21 +108,15 @@ end subroutine setPrevLink
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-integer function getData(this)
-  class(link)           :: this
-  getData = this%ldata
-end function getData
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
 function constructor(ldata, next, prev)
   class(link), pointer    :: constructor
-  integer                 :: ldata
+  real(kind=realkind)     :: ldata(:,:)
   type(link), pointer     :: next, prev
 
   allocate(constructor)
   constructor%next => next
   constructor%prev => prev
+  ! Make a copy of the data !
   constructor%ldata = ldata
 end function constructor
 !-----------------------------------------------------------------------------------------
@@ -128,7 +124,7 @@ end function constructor
 !-----------------------------------------------------------------------------------------
 subroutine append(this, ldata)
   class(list)             :: this
-  integer                 :: ldata
+  real(kind=realkind)     :: ldata(:,:)
   class(link), pointer    :: newLink
 
   if (.not. associated(this%firstLink)) then
@@ -147,7 +143,7 @@ end subroutine append
 !-----------------------------------------------------------------------------------------
 subroutine insert(this, ldata)
   class(list)             :: this
-  integer                 :: ldata
+  real(kind=realkind)     :: ldata(:,:)
   class(link), pointer    :: newLink
 
   if (.not. associated(this%firstLink)) then
@@ -164,11 +160,13 @@ end subroutine insert
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-integer function getFirst(this)
+function getFirst(this)
   class(list)           :: this
+  class(link),pointer   :: getFirst
 
   if(associated(this%firstLink)) then
-     getFirst = this%firstLink%getData()
+     getFirst => this%firstLink
+     this%currentLink => this%firstLink
   else
      error stop 'trying to go access data, but list is empty'
   endif
@@ -176,11 +174,13 @@ end function getFirst
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-integer function getLast(this)
+function getLast(this)
   class(list)           :: this
+  class(link),pointer   :: getLast
 
   if(associated(this%lastLink)) then
-     getLast = this%lastLink%getData()
+     getLast => this%lastLink
+     this%currentLink => this%lastLink
   else
      error stop 'trying to go access data, but list is empty'
   endif
@@ -188,8 +188,10 @@ end function getLast
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-integer function getCurrent(this)
+function getCurrent(this)
   class(list)           :: this
+  class(link),pointer   :: getCurrent
+
   if (.not. associated(this%currentLink)) then
      if(associated(this%firstLink)) then
         this%currentLink => this%firstLink
@@ -197,7 +199,7 @@ integer function getCurrent(this)
         error stop 'trying to go access data, but list is empty'
      endif
   endif
-  getCurrent = this%currentLink%getData()
+  getCurrent => this%currentLink
 end function getCurrent
 !-----------------------------------------------------------------------------------------
 
@@ -209,14 +211,16 @@ end subroutine resetCurrent
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-integer function getNext(this)
+function getNext(this)
   class(list)           :: this
+  class(link),pointer   :: getNext
+
   if (.not. associated(this%currentLink)) then
      this%currentLink => this%firstLink
-     getNext = this%currentLink%getData()
+     getNext => this%currentLink
   elseif (associated(this%currentLink%getNextLink())) then
      this%currentLink => this%currentLink%getNextLink()
-     getNext = this%currentLink%getData()
+     getNext => this%currentLink
   else
      error stop 'trying to go beyond last element in list'
   end if 
@@ -224,14 +228,16 @@ end function getNext
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-integer function getPrev(this)
+function getPrev(this)
   class(list)           :: this
+  class(link),pointer   :: getPrev
+
   if (.not. associated(this%currentLink)) then
      this%currentLink => this%lastLink
-     getPrev = this%currentLink%getData()
+     getPrev => this%currentLink
   elseif (associated(this%currentLink%getPrevLink())) then
      this%currentLink => this%currentLink%getPrevLink()
-     getPrev = this%currentLink%getData()
+     getPrev => this%currentLink
   else
      error stop 'trying to go beyond first element in list'
   end if 
@@ -272,6 +278,7 @@ subroutine free(this)
      do while ( associated(next) )
         current => next
         next => current%getNextLink()
+        deallocate( current%ldata )
         deallocate( current )
      enddo
      this%firstLink => null()
@@ -288,47 +295,43 @@ end module linked_list
 
 program test_list
   use linked_list
+  use global_parameters
   implicit none
 
-  type(list)                :: l
+  type(list)            :: l
+  class(link), pointer  :: ll
+  real(kind=realkind)   :: a(2,2), b(1,2)
 
+  a = 0
+  b = 1
   write(6,*) 'eol', l%eol()
   write(6,*) 'bol', l%bol()
-  call l%append(1)
-  write(6,*) 'bla'
-  write(6,*) 'eol', l%eol()
-  write(6,*) 'bol', l%bol()
-  write(6,*) l%getFirst()
-  write(6,*) l%getCurrent()
-  write(6,*) 'bol', l%bol()
-  write(6,*) l%getLast()
-  call l%insert(0)
-  call l%append(2)
-  write(6,*) 'bla'
-  write(6,*) l%getFirst()
-  write(6,*) l%getCurrent()
-  write(6,*) l%getLast()
-  call l%append(3)
-  write(6,*) 'bla'
-  write(6,*) 'length', l%getLength()
-  write(6,*) 'bla'
-  call l%resetCurrent()
-  write(6,*) l%getPrev()
-  write(6,*) l%getPrev()
-  write(6,*) 'bla'
+  call l%append(a)
+  call l%append(b)
+
+  write(6,*) 'first'
+  ll => l%getFirst()
+  write(6,*) ll%ldata
+  a = 2
+  call l%append(a)
+  a = -1
+  call l%insert(a)
+  ll => l%getFirst()
+
+  write(6,*) ll%ldata
+  ll => l%getNext()
+  write(6,*) ll%ldata
 
   call l%resetCurrent()
   do while(.not. l%eol())
-     write(6,*) 'fw loop', l%getNext()
+    ll => l%getNext()
+    write(6,*) 'fw loop', ll%ldata
+    ll%ldata = 10
   enddo
 
   call l%resetCurrent()
-  do while(.not. l%bol())
-     write(6,*) 'bw loop', l%getPrev()
+  do while(.not. l%eol())
+    ll => l%getNext()
+    write(6,*) 'fw loop', ll%ldata
   enddo
-
-  call l%free()
-  write(6,*) 'length', l%getLength()
-  write(6,*) 'bla'
-  write(6,*) l%getFirst()
 end program
