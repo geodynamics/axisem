@@ -54,76 +54,76 @@ contains
 !! Convention for order in the file: First the fluid, then the solid domain.
 subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
 
-  use data_source, only : src_type
-  use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
-  
-  use data_mesh, only: npol, nel_solid, nel_fluid
-  
-  integer, intent(in)             :: ibeg, iend, jbeg, jend
-  real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
-  real(kind=realkind), intent(in) :: chi(0:,0:,:)
-  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
-  character(len=4)                :: appisnap
-  integer                         :: iel, iidim
-  real(kind=realkind)             :: dsdchi, prefac
-  
-  ! When reading the fluid wavefield, one needs to multiply all components 
-  ! with inv_rho_fluid and the phi component with one/scoord!!
-  
-  if (src_type(1) == 'monopole') prefac = zero
-  if (src_type(1) == 'dipole')   prefac = one
-  if (src_type(1) == 'quadpole') prefac = two
-  
-  call define_io_appendix(appisnap, isnap)
-  
-  open(unit=2500+mynum, file=datapath(1:lfdata)//'/snap_'&
-                            //appmynum//'_'//appisnap//'.dat')
-  
-  if (have_fluid) then
-     call axisym_gradient_fluid(chi, usz_fluid)
-     do iel=1, nel_fluid
-  
-        if (axis_fluid(iel)) then
-           call dsdf_fluid_axis(chi(:,:,iel), iel, 0, dsdchi)
-           write(2500+mynum,*) usz_fluid(0,0,iel,1), &
-                               prefac * dsdchi * chi(0,0,iel), &
-                               usz_fluid(0,0,iel,2)
-        else
-           write(2500+mynum,*) usz_fluid(0,0,iel,1), &
-                               prefac * chi(0,0,iel), &
-                               usz_fluid(0,0,iel,2)
-        endif
-  
-           write(2500+mynum,*) usz_fluid(npol,0,iel,1), &
-                               prefac * chi(npol,0,iel), &
-                               usz_fluid(npol,0,iel,2)
-  
-           write(2500+mynum,*) usz_fluid(npol,npol,iel,1), &
-                               prefac * chi(npol,npol,iel), &
-                               usz_fluid(npol,npol,iel,2)
-  
-        if ( axis_fluid(iel)) then
-           call dsdf_fluid_axis(chi(:,:,iel), iel, npol, dsdchi)
-           write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
-                               prefac * dsdchi * chi(0,npol,iel), &
-                               usz_fluid(0,npol,iel,2)
-        else
-           write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
-                               prefac * chi(0,npol,iel), &
-                               usz_fluid(0,npol,iel,2)
-        endif
-  
-     enddo
-  endif ! have_fluid
-  
-  do iel=1, nel_solid
-     write(2500+mynum,*) (f_sol(0,0,iel,iidim), iidim=1,3)
-     write(2500+mynum,*) (f_sol(npol,0,iel,iidim), iidim=1,3)
-     write(2500+mynum,*) (f_sol(npol,npol,iel,iidim), iidim=1,3)
-     write(2500+mynum,*) (f_sol(0,npol,iel,iidim), iidim=1,3)
-  enddo
-  
-  close(2500+mynum)
+   use data_source,            only : src_type
+   use pointwise_derivatives,  only : axisym_gradient_fluid, dsdf_fluid_axis
+   use data_mesh,              only : npol, nel_solid, nel_fluid
+   
+   integer, intent(in)             :: ibeg, iend, jbeg, jend
+   real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
+   real(kind=realkind), intent(in) :: chi(0:,0:,:)
+ 
+   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
+   character(len=4)                :: appisnap
+   integer                         :: iel, iidim
+   real(kind=realkind)             :: dsdchi, prefac
+   
+   ! When reading the fluid wavefield, one needs to multiply all components 
+   ! with inv_rho_fluid and the phi component with one/scoord!!
+   
+   if (src_type(1) == 'monopole') prefac = zero
+   if (src_type(1) == 'dipole')   prefac = one
+   if (src_type(1) == 'quadpole') prefac = two
+   
+   call define_io_appendix(appisnap, isnap)
+   
+   open(unit=2500+mynum, file=datapath(1:lfdata)//'/snap_'&
+                             //appmynum//'_'//appisnap//'.dat')
+   
+   if (have_fluid) then
+      call axisym_gradient_fluid(chi, usz_fluid)
+      do iel=1, nel_fluid
+   
+         if (axis_fluid(iel)) then
+            call dsdf_fluid_axis(chi(:,:,iel), iel, 0, dsdchi)
+            write(2500+mynum,*) usz_fluid(0,0,iel,1), &
+                                prefac * dsdchi * chi(0,0,iel), &
+                                usz_fluid(0,0,iel,2)
+         else
+            write(2500+mynum,*) usz_fluid(0,0,iel,1), &
+                                prefac * chi(0,0,iel), &
+                                usz_fluid(0,0,iel,2)
+         endif
+   
+            write(2500+mynum,*) usz_fluid(npol,0,iel,1), &
+                                prefac * chi(npol,0,iel), &
+                                usz_fluid(npol,0,iel,2)
+   
+            write(2500+mynum,*) usz_fluid(npol,npol,iel,1), &
+                                prefac * chi(npol,npol,iel), &
+                                usz_fluid(npol,npol,iel,2)
+   
+         if ( axis_fluid(iel)) then
+            call dsdf_fluid_axis(chi(:,:,iel), iel, npol, dsdchi)
+            write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
+                                prefac * dsdchi * chi(0,npol,iel), &
+                                usz_fluid(0,npol,iel,2)
+         else
+            write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
+                                prefac * chi(0,npol,iel), &
+                                usz_fluid(0,npol,iel,2)
+         endif
+   
+      enddo
+   endif ! have_fluid
+   
+   do iel=1, nel_solid
+      write(2500+mynum,*) (f_sol(0,0,iel,iidim), iidim=1,3)
+      write(2500+mynum,*) (f_sol(npol,0,iel,iidim), iidim=1,3)
+      write(2500+mynum,*) (f_sol(npol,npol,iel,iidim), iidim=1,3)
+      write(2500+mynum,*) (f_sol(0,npol,iel,iidim), iidim=1,3)
+   enddo
+   
+   close(2500+mynum)
 
 end subroutine glob_snapshot
 !-----------------------------------------------------------------------------------------
@@ -137,61 +137,61 @@ end subroutine glob_snapshot
 !! MvD: loop increment npol/2 -> what if npol odd?
 subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
 
-  use data_source, only : src_type
-  use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
-  
-  use data_mesh, only: npol, nel_solid, nel_fluid
-  
-  integer, intent(in)             :: ibeg, iend, jbeg, jend
-  real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
-  real(kind=realkind), intent(in) :: chi(0:,0:,:)
-  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
-  character(len=4)                :: appisnap
-  integer                         :: iel, ipol, jpol, iidim
-  real(kind=realkind)             :: dsdchi, prefac
-  
-  ! When reading the fluid wavefield, one needs to multiply all components 
-  ! with inv_rho_fluid and the phi component with one/scoord!!
-  
-  if (src_type(1) == 'monopole') prefac = zero
-  if (src_type(1) == 'dipole')   prefac = one
-  if (src_type(1) == 'quadpole') prefac = two
-
-  call define_io_appendix(appisnap, isnap)
-
-  open(unit=2500+mynum, &
-       file=datapath(1:lfdata)//'/snap_'//appmynum//'_'//appisnap//'.dat', &
-       FORM="UNFORMATTED", STATUS="REPLACE")
-
-  if (have_fluid) then
-     call axisym_gradient_fluid(chi, usz_fluid)
-     do iel=1, nel_fluid
-        do jpol=0, npol, npol/2
-           do ipol=0, npol, npol/2
-
-              if (axis_fluid(iel)) then
-                 call dsdf_fluid_axis(chi(:,:,iel), iel, jpol, dsdchi)
-                 write(2500+mynum) usz_fluid(ipol,jpol,iel,1), &
-                                   prefac * dsdchi * chi(ipol,jpol,iel), &
-                                   usz_fluid(ipol,jpol,iel,2)
-              else
-                 write(2500+mynum) usz_fluid(ipol,jpol,iel,1), &
-                                   prefac * chi(ipol,jpol,iel), &
-                                   usz_fluid(ipol,jpol,iel,2)
-              endif
-           enddo
-        enddo
-     enddo
-  endif ! have_fluid
-
-  do iel=1, nel_solid
-     do jpol=0, npol, npol/2
-        do ipol=0, npol, npol/2
-           write(2500+mynum) (f_sol(ipol,jpol,iel,iidim), iidim=1,3)
-        enddo
-     enddo
-  enddo
-  close(2500+mynum)
+   use data_source,            only : src_type
+   use pointwise_derivatives,  only : axisym_gradient_fluid, dsdf_fluid_axis
+   use data_mesh,              only : npol, nel_solid, nel_fluid
+   
+   integer, intent(in)             :: ibeg, iend, jbeg, jend
+   real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
+   real(kind=realkind), intent(in) :: chi(0:,0:,:)
+ 
+   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
+   character(len=4)                :: appisnap
+   integer                         :: iel, ipol, jpol, iidim
+   real(kind=realkind)             :: dsdchi, prefac
+   
+   ! When reading the fluid wavefield, one needs to multiply all components 
+   ! with inv_rho_fluid and the phi component with one/scoord!!
+   
+   if (src_type(1) == 'monopole') prefac = zero
+   if (src_type(1) == 'dipole')   prefac = one
+   if (src_type(1) == 'quadpole') prefac = two
+ 
+   call define_io_appendix(appisnap, isnap)
+ 
+   open(unit=2500+mynum, &
+        file=datapath(1:lfdata)//'/snap_'//appmynum//'_'//appisnap//'.dat', &
+        FORM="UNFORMATTED", STATUS="REPLACE")
+ 
+   if (have_fluid) then
+      call axisym_gradient_fluid(chi, usz_fluid)
+      do iel=1, nel_fluid
+         do jpol=0, npol, npol/2
+            do ipol=0, npol, npol/2
+ 
+               if (axis_fluid(iel)) then
+                  call dsdf_fluid_axis(chi(:,:,iel), iel, jpol, dsdchi)
+                  write(2500+mynum) usz_fluid(ipol,jpol,iel,1), &
+                                    prefac * dsdchi * chi(ipol,jpol,iel), &
+                                    usz_fluid(ipol,jpol,iel,2)
+               else
+                  write(2500+mynum) usz_fluid(ipol,jpol,iel,1), &
+                                    prefac * chi(ipol,jpol,iel), &
+                                    usz_fluid(ipol,jpol,iel,2)
+               endif
+            enddo
+         enddo
+      enddo
+   endif ! have_fluid
+ 
+   do iel=1, nel_solid
+      do jpol=0, npol, npol/2
+         do ipol=0, npol, npol/2
+            write(2500+mynum) (f_sol(ipol,jpol,iel,iidim), iidim=1,3)
+         enddo
+      enddo
+   enddo
+   close(2500+mynum)
 
 end subroutine glob_snapshot_midpoint
 !-----------------------------------------------------------------------------------------
@@ -200,163 +200,157 @@ end subroutine glob_snapshot_midpoint
 !> Dumps the global displacement snapshots in binary plus XDMF descriptor
 subroutine glob_snapshot_xdmf(f_sol, chi)
 
-    use data_source,            only: src_type
-    use data_pointwise,         only: inv_rho_fluid, prefac_inv_s_rho_fluid
-    use pointwise_derivatives,  only: axisym_gradient_fluid, dsdf_fluid_axis
-    use data_time,              only: t
-    use nc_routines,            only: nc_dump_snapshot
-    use data_mesh,              only: npol, nel_solid, nel_fluid
-    
-    real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
-    real(kind=realkind), intent(in) :: chi(0:,0:,:)
-    character(len=4)                :: appisnap
-    integer                         :: iel, ct, ipol, jpol, ipol1, jpol1, i, j
-    integer                         :: n_xdmf_fl, n_xdmf_sol
-    real(sp), allocatable           :: u(:,:), usz_fl(:,:,:,:), u_fl(:,:,:,:)
-    real(sp), allocatable           :: straintrace(:,:,:,:), straintrace_mask(:,:)
-    real(sp), allocatable           :: curlinplane(:,:,:,:), curlinplane_mask(:,:)
-    real(kind=realkind)             :: f_sol_spz(0:npol,0:npol,1:nel_solid,3)
-    character(len=120)              :: fname
-
-    
-    allocate(u(1:3,1:npoint_plot))
-    allocate(straintrace_mask(1, npoint_plot))
-    allocate(straintrace(0:npol, 0:npol, nel_fluid + nel_solid,1))
-    allocate(curlinplane_mask(1, npoint_plot))
-    allocate(curlinplane(0:npol, 0:npol, nel_fluid + nel_solid,1))
-
-    ! convert +- to sp in case of monopole
-    if (src_type(1) == 'dipole') then
-       f_sol_spz(:,:,:,1) = f_sol(:,:,:,1) + f_sol(:,:,:,2)
-       f_sol_spz(:,:,:,2) = f_sol(:,:,:,1) - f_sol(:,:,:,2)
-       f_sol_spz(:,:,:,3) = f_sol(:,:,:,3)
-    else
-       f_sol_spz = f_sol
-    endif
- 
-    call define_io_appendix(appisnap, isnap)
-
-
-    ! Collect displacements in variable U
-    if (have_fluid) then
-       allocate(usz_fl(0:npol,0:npol,1:nel_fluid,2))
-       allocate(u_fl(0:npol,0:npol,1:nel_fluid,3))
-       call axisym_gradient_fluid(chi, usz_fl)
-       !usz_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
-       !usz_fl(:,:,:,2) = usz_fl(:,:,:,2) * inv_rho_fluid
-
-       !up_fl(:,:,:) = chi * prefac_inv_s_rho_fluid
-       ! (n.b. up_fl is zero at the axes for all source types, prefac = 0 for
-       ! monopole and chi -> 0 for dipole and quadrupole EQ 73-77 in TNM 2007)
-
-       n_xdmf_fl = count(plotting_mask(:,:,1:nel_fluid))
-
-       u_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
-       u_fl(:,:,:,2) = chi * prefac_inv_s_rho_fluid
-       u_fl(:,:,:,3) = usz_fl(:,:,:,2) * inv_rho_fluid
-
-       call xdmf_mapping(u_fl, mapping_ijel_iplot(:,:,1:nel_fluid), plotting_mask(:,:,1:nel_fluid), &
-                         i_arr_xdmf, j_arr_xdmf, u(:,1:n_xdmf_fl))
-       
-       deallocate(usz_fl, u_fl)
-    end if
+   use data_source,             only: src_type
+   use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
+   use pointwise_derivatives,   only: axisym_gradient_fluid, dsdf_fluid_axis
+   use data_time,               only: t
+   use nc_routines,             only: nc_dump_snapshot
+   use data_mesh,               only: npol, nel_solid, nel_fluid
    
-    n_xdmf_sol = count(plotting_mask(:,:,nel_fluid+1:))
-    call xdmf_mapping(f_sol_spz, mapping_ijel_iplot(:,:,nel_fluid+1:), & 
-                      plotting_mask(:,:,nel_fluid+1:), &
-                      i_arr_xdmf, j_arr_xdmf, u(:,:))
+   real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
+   real(kind=realkind), intent(in) :: chi(0:,0:,:)
+
+   character(len=4)                :: appisnap
+   integer                         :: iel, ct, ipol, jpol, ipol1, jpol1, i, j
+   integer                         :: n_xdmf_fl, n_xdmf_sol
+   real(sp), allocatable           :: u(:,:), usz_fl(:,:,:,:), u_fl(:,:,:,:)
+   real(sp), allocatable           :: straintrace(:,:,:,:), straintrace_mask(:,:)
+   real(sp), allocatable           :: curlinplane(:,:,:,:), curlinplane_mask(:,:)
+   real(kind=realkind)             :: f_sol_spz(0:npol,0:npol,1:nel_solid,3)
+   character(len=120)              :: fname
+
    
-    call calc_straintrace(f_sol, chi, straintrace)
-    call xdmf_mapping(straintrace, mapping_ijel_iplot(:,:,:), & 
-                      plotting_mask(:,:,:), &
-                      i_arr_xdmf, j_arr_xdmf, straintrace_mask)
-    
-    call calc_curlinplane(f_sol, chi, curlinplane)
-    call xdmf_mapping(curlinplane, mapping_ijel_iplot(:,:,:), & 
-                      plotting_mask(:,:,:), &
-                      i_arr_xdmf, j_arr_xdmf, curlinplane_mask)
-    ! Write variable u to respective file (binary or netcdf)
-    if (use_netcdf) then
-        call nc_dump_snapshot(u, straintrace_mask, curlinplane_mask)
-    else
-        write(13100) u(1,:)
-        if (src_type(1) /= 'monopole') write(13101) u(2,:)
-        write(13102) u(3,:)
-        write(13103) straintrace_mask
-        write(13104) curlinplane_mask
-    end if
+   allocate(u(1:3,1:npoint_plot))
+   allocate(straintrace_mask(1, npoint_plot))
+   allocate(straintrace(0:npol, 0:npol, nel_fluid + nel_solid,1))
+   allocate(curlinplane_mask(1, npoint_plot))
+   allocate(curlinplane(0:npol, 0:npol, nel_fluid + nel_solid,1))
 
-    deallocate(u)
+   ! convert +- to sp in case of monopole
+   if (src_type(1) == 'dipole') then
+      f_sol_spz(:,:,:,1) = f_sol(:,:,:,1) + f_sol(:,:,:,2)
+      f_sol_spz(:,:,:,2) = f_sol(:,:,:,1) - f_sol(:,:,:,2)
+      f_sol_spz(:,:,:,3) = f_sol(:,:,:,3)
+   else
+      f_sol_spz = f_sol
+   endif
+
+   call define_io_appendix(appisnap, isnap)
+
+
+   ! Collect displacements in variable U
+   if (have_fluid) then
+      allocate(usz_fl(0:npol,0:npol,1:nel_fluid,2))
+      allocate(u_fl(0:npol,0:npol,1:nel_fluid,3))
+      call axisym_gradient_fluid(chi, usz_fl)
+
+      n_xdmf_fl = count(plotting_mask(:,:,1:nel_fluid))
+
+      u_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
+      u_fl(:,:,:,2) = chi * prefac_inv_s_rho_fluid
+      u_fl(:,:,:,3) = usz_fl(:,:,:,2) * inv_rho_fluid
+
+      call xdmf_mapping(u_fl, mapping_ijel_iplot(:,:,1:nel_fluid), plotting_mask(:,:,1:nel_fluid), &
+                        i_arr_xdmf, j_arr_xdmf, u(:,1:n_xdmf_fl))
+      
+      deallocate(usz_fl, u_fl)
+   end if
+  
+   n_xdmf_sol = count(plotting_mask(:,:,nel_fluid+1:))
+   call xdmf_mapping(f_sol_spz, mapping_ijel_iplot(:,:,nel_fluid+1:), & 
+                     plotting_mask(:,:,nel_fluid+1:), &
+                     i_arr_xdmf, j_arr_xdmf, u(:,:))
+  
+   call calc_straintrace(f_sol, chi, straintrace)
+   call xdmf_mapping(straintrace, mapping_ijel_iplot(:,:,:), & 
+                     plotting_mask(:,:,:), &
+                     i_arr_xdmf, j_arr_xdmf, straintrace_mask)
    
+   call calc_curlinplane(f_sol, chi, curlinplane)
+   call xdmf_mapping(curlinplane, mapping_ijel_iplot(:,:,:), & 
+                     plotting_mask(:,:,:), &
+                     i_arr_xdmf, j_arr_xdmf, curlinplane_mask)
+   ! Write variable u to respective file (binary or netcdf)
+   if (use_netcdf) then
+       call nc_dump_snapshot(u, straintrace_mask, curlinplane_mask)
+   else
+       write(13100) u(1,:)
+       if (src_type(1) /= 'monopole') write(13101) u(2,:)
+       write(13102) u(3,:)
+       write(13103) straintrace_mask
+       write(13104) curlinplane_mask
+   end if
 
+   deallocate(u)
+  
 
-    ! Write header into XDMF (text) file
-    fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
-    open(100, file=trim(fname), access='append')
+   ! Write header into XDMF (text) file
+   fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
+   open(100, file=trim(fname), access='append')
 
-    if (use_netcdf) then
-        if (src_type(1)=='monopole') then
-            write(100, 736) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, appisnap, appisnap, &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc'
-        else
-            write(100, 737) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, appisnap, appisnap, appisnap, &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc', &
-                        npoint_plot, isnap-1, npoint_plot, &
-                        nsnap, npoint_plot, &
-                        'netcdf_snap_'//appmynum//'.nc'
-        endif !monopole
+   if (use_netcdf) then
+       if (src_type(1)=='monopole') then
+           write(100, 736) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc', &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc', &
+                       npoint_plot, appisnap, appisnap, &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc', &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc'
+       else
+           write(100, 737) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc', &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc', &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc', &
+                       npoint_plot, appisnap, appisnap, appisnap, &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc', &
+                       npoint_plot, isnap-1, npoint_plot, &
+                       nsnap, npoint_plot, &
+                       'netcdf_snap_'//appmynum//'.nc'
+       endif !monopole
 
-    else
-        if (src_type(1)=='monopole') then
-            write(100, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_s_'//appmynum//'.dat', &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_z_'//appmynum//'.dat', &
-                        npoint_plot, appisnap, appisnap, &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_trace_'//appmynum//'.dat', &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_curlip_'//appmynum//'.dat'
-        else
-            write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_s_'//appmynum//'.dat', &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_p_'//appmynum//'.dat', &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_z_'//appmynum//'.dat', &
-                        npoint_plot, appisnap, appisnap, appisnap, &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_trace_'//appmynum//'.dat', &
-                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
-                        'xdmf_snap_curlip_'//appmynum//'.dat'
-        endif !monopole
-    end if !use_netcdf
+   else
+       if (src_type(1)=='monopole') then
+           write(100, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_s_'//appmynum//'.dat', &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_z_'//appmynum//'.dat', &
+                       npoint_plot, appisnap, appisnap, &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_trace_'//appmynum//'.dat', &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_curlip_'//appmynum//'.dat'
+       else
+           write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_s_'//appmynum//'.dat', &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_p_'//appmynum//'.dat', &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_z_'//appmynum//'.dat', &
+                       npoint_plot, appisnap, appisnap, appisnap, &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_trace_'//appmynum//'.dat', &
+                       npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
+                       'xdmf_snap_curlip_'//appmynum//'.dat'
+       endif !monopole
+   end if !use_netcdf
 
 734 format(&    
     '    <Grid Name="', A,'" GridType="Uniform">',/&
@@ -671,28 +665,30 @@ end subroutine glob_snapshot_xdmf
 
 !-----------------------------------------------------------------------------------------
 subroutine calc_curlinplane(f_sol,chi,curlinplane)
-  use data_pointwise, only : inv_rho_fluid, prefac_inv_s_rho_fluid
-  use pointwise_derivatives, only: axisym_gradient_solid, axisym_gradient_solid_add
-  use pointwise_derivatives, only: axisym_gradient_fluid, axisym_gradient_fluid_add
-  use pointwise_derivatives, only: f_over_s_solid, f_over_s_fluid
-  use data_source, only : src_type
-  real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
-  real(kind=realkind), intent(out) :: curlinplane(0:,0:,:,:)
-
-  real(kind=realkind)             :: grad_sol_s(0:npol,0:npol,nel_solid,2)
-  real(kind=realkind)             :: grad_sol_z(0:npol,0:npol,nel_solid,2)
-
-  curlinplane = 0
-  if (src_type(1)=='dipole') then
-     call axisym_gradient_solid(f_sol(:,:,:,1) + f_sol(:,:,:,2), grad_sol_s)
-  else
-     call axisym_gradient_solid(f_sol(:,:,:,1), grad_sol_s) ! 1: dsus, 2: dzus
-  endif
-
-  call axisym_gradient_solid(f_sol(:,:,:,3), grad_sol_z) ! 1:dsuz 2:dzuz 
   
-  curlinplane(:,:,nel_fluid+1:nel_fluid+nel_solid,1) &
-            = grad_sol_s(:,:,:,2) - grad_sol_z(:,:,:,1)
+   use data_pointwise,          only : inv_rho_fluid, prefac_inv_s_rho_fluid
+   use pointwise_derivatives,   only : axisym_gradient_solid, axisym_gradient_solid_add
+   use pointwise_derivatives,   only : axisym_gradient_fluid, axisym_gradient_fluid_add
+   use pointwise_derivatives,   only : f_over_s_solid, f_over_s_fluid
+   use data_source,             only : src_type
+ 
+   real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
+   real(kind=realkind), intent(out) :: curlinplane(0:,0:,:,:)
+ 
+   real(kind=realkind)              :: grad_sol_s(0:npol,0:npol,nel_solid,2)
+   real(kind=realkind)              :: grad_sol_z(0:npol,0:npol,nel_solid,2)
+ 
+   curlinplane = 0
+   if (src_type(1)=='dipole') then
+      call axisym_gradient_solid(f_sol(:,:,:,1) + f_sol(:,:,:,2), grad_sol_s)
+   else
+      call axisym_gradient_solid(f_sol(:,:,:,1), grad_sol_s) ! 1: dsus, 2: dzus
+   endif
+ 
+   call axisym_gradient_solid(f_sol(:,:,:,3), grad_sol_z) ! 1:dsuz 2:dzuz 
+   
+   curlinplane(:,:,nel_fluid+1:nel_fluid+nel_solid,1) &
+              = grad_sol_s(:,:,:,2) - grad_sol_z(:,:,:,1)
 
 
 end subroutine
@@ -701,72 +697,75 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 subroutine calc_straintrace(f_sol,chi,straintrace)
-  use data_pointwise, only : inv_rho_fluid, prefac_inv_s_rho_fluid
-  use pointwise_derivatives, only: axisym_gradient_solid, axisym_gradient_solid_add
-  use pointwise_derivatives, only: axisym_gradient_fluid, axisym_gradient_fluid_add
-  use pointwise_derivatives, only: f_over_s_solid, f_over_s_fluid
-  use data_source, only : src_type
-  real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
-  real(kind=realkind), intent(out) :: straintrace(0:,0:,:,:)
+!< Calculate strain trace (for P-wave visualisation)
+  
+   use data_pointwise,        only   : inv_rho_fluid, prefac_inv_s_rho_fluid
+   use pointwise_derivatives, only   : axisym_gradient_solid, axisym_gradient_solid_add
+   use pointwise_derivatives, only   : axisym_gradient_fluid, axisym_gradient_fluid_add
+   use pointwise_derivatives, only   : f_over_s_solid, f_over_s_fluid
+   use data_source,           only   : src_type
+ 
+   real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
+   real(kind=realkind), intent(out) :: straintrace(0:,0:,:,:)
+ 
+   real(kind=realkind)              :: grad_sol(0:npol,0:npol,nel_solid,2)
+   real(kind=realkind)              :: buff_solid(0:npol,0:npol,nel_solid)
+   real(kind=realkind)              :: usz_fluid(0:npol,0:npol,nel_fluid,2)
+   real(kind=realkind)              :: up_fluid(0:npol,0:npol,nel_fluid)
+   real(kind=realkind)              :: grad_flu(0:npol,0:npol,nel_fluid,2)
+   real(kind=realkind)              :: two_rk = 2
 
-  real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
-  real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
-  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,nel_fluid,2)
-  real(kind=realkind)             :: up_fluid(0:npol,0:npol,nel_fluid)
-  real(kind=realkind)             :: grad_flu(0:npol,0:npol,nel_fluid,2)
-  real(kind=realkind)             :: two_rk = 2
-  ! Calculate strain trace (for P-wave visualisation)
-
-  if (src_type(1)=='dipole') then
-     call axisym_gradient_solid(f_sol(:,:,:,1) + f_sol(:,:,:,2), grad_sol)
-  else
-     call axisym_gradient_solid(f_sol(:,:,:,1), grad_sol) ! 1: dsus, 2: dzus
-  endif
-
-  call axisym_gradient_solid_add(f_sol(:,:,:,3), grad_sol) ! 1:dsuz+dzus,2:dzuz+dsus
-
-  if (src_type(1) == 'monopole') then
-     buff_solid = f_over_s_solid(f_sol(:,:,:,1))
-  elseif (src_type(1) == 'dipole') then 
-     buff_solid = two_rk * f_over_s_solid(f_sol(:,:,:,2))
-  elseif (src_type(1) == 'quadpole') then
-     buff_solid = f_over_s_solid(f_sol(:,:,:,1) - two_rk * f_sol(:,:,:,2))
-  end if
-  straintrace(:,:,nel_fluid+1:nel_fluid+nel_solid,1) = buff_solid + grad_sol(:,:,:,2)
-
-  if (have_fluid) then
-     ! construct displacements in the fluid
-     call axisym_gradient_fluid(chi, usz_fluid)
-     usz_fluid(:,:,:,1) = usz_fluid(:,:,:,1) * inv_rho_fluid
-     usz_fluid(:,:,:,2) = usz_fluid(:,:,:,2) * inv_rho_fluid
-  
-     ! gradient of s component
-     call axisym_gradient_fluid(usz_fluid(:,:,:,1), grad_flu)   ! 1:dsus, 2:dzus
-  
-     ! gradient of z component added to s-comp gradient for strain trace and E13
-     call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)   !1:dsuz+dzus 
-                                                                    !2:dzuz+dsus
-  
-     ! Components involving phi................................................
-  
-     if (src_type(1) == 'monopole') then
-        ! Calculate us/s and straintrace
-        straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1)) &
-                                            + grad_flu(:,:,:,2) 
-  
-     elseif (src_type(1) == 'dipole') then
-        up_fluid = prefac_inv_s_rho_fluid * chi
-        straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid) & 
-                                            + grad_flu(:,:,:,2)
-  
-     elseif (src_type(1) == 'quadpole') then
-        up_fluid = prefac_inv_s_rho_fluid * chi
-        straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) &
-                                            - two_rk * up_fluid) &  !Ekk
-                                            + grad_flu(:,:,:,2)
-  
-     endif   !src_type
-  end if
+ 
+   if (src_type(1)=='dipole') then
+      call axisym_gradient_solid(f_sol(:,:,:,1) + f_sol(:,:,:,2), grad_sol)
+   else
+      call axisym_gradient_solid(f_sol(:,:,:,1), grad_sol) ! 1: dsus, 2: dzus
+   endif
+ 
+   call axisym_gradient_solid_add(f_sol(:,:,:,3), grad_sol) ! 1:dsuz+dzus,2:dzuz+dsus
+ 
+   if (src_type(1) == 'monopole') then
+      buff_solid = f_over_s_solid(f_sol(:,:,:,1))
+   elseif (src_type(1) == 'dipole') then 
+      buff_solid = two_rk * f_over_s_solid(f_sol(:,:,:,2))
+   elseif (src_type(1) == 'quadpole') then
+      buff_solid = f_over_s_solid(f_sol(:,:,:,1) - two_rk * f_sol(:,:,:,2))
+   end if
+   straintrace(:,:,nel_fluid+1:nel_fluid+nel_solid,1) = buff_solid + grad_sol(:,:,:,2)
+ 
+   if (have_fluid) then
+      ! construct displacements in the fluid
+      call axisym_gradient_fluid(chi, usz_fluid)
+      usz_fluid(:,:,:,1) = usz_fluid(:,:,:,1) * inv_rho_fluid
+      usz_fluid(:,:,:,2) = usz_fluid(:,:,:,2) * inv_rho_fluid
+   
+      ! gradient of s component
+      call axisym_gradient_fluid(usz_fluid(:,:,:,1), grad_flu)   ! 1:dsus, 2:dzus
+   
+      ! gradient of z component added to s-comp gradient for strain trace and E13
+      call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)   !1:dsuz+dzus 
+                                                                     !2:dzuz+dsus
+   
+      ! Components involving phi................................................
+   
+      if (src_type(1) == 'monopole') then
+         ! Calculate us/s and straintrace
+         straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1)) &
+                                             + grad_flu(:,:,:,2) 
+   
+      elseif (src_type(1) == 'dipole') then
+         up_fluid = prefac_inv_s_rho_fluid * chi
+         straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid) & 
+                                             + grad_flu(:,:,:,2)
+   
+      elseif (src_type(1) == 'quadpole') then
+         up_fluid = prefac_inv_s_rho_fluid * chi
+         straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) &
+                                             - two_rk * up_fluid) &  !Ekk
+                                             + grad_flu(:,:,:,2)
+   
+      endif   !src_type
+   end if
 
 end subroutine
 !-----------------------------------------------------------------------------------------
@@ -780,84 +779,81 @@ subroutine xdmf_mapping(u_in, mapping_ijel_iplot, plotting_mask, i_arr_xdmf, j_a
     logical,             intent(in)    :: plotting_mask(:,:,:)
     integer,             intent(in)    :: i_arr_xdmf(:), j_arr_xdmf(:)
     real(kind=realkind), intent(inout) :: u_out(:,:)
-    integer                            :: i_n_xdmf, j_n_xdmf, i, j 
-    integer                            :: nelem 
-    integer                            :: iel, ipol, ipol1, jpol, jpol1, ct
 
-    nelem = size(u_in,3)
+   integer                            :: i_n_xdmf, j_n_xdmf, i, j 
+   integer                            :: nelem 
+   integer                            :: iel, ipol, ipol1, jpol, jpol1, ct
 
-    i_n_xdmf = size(mapping_ijel_iplot,1)
-    j_n_xdmf = size(mapping_ijel_iplot,2)
-       do iel=1, nelem
-           do i=1, i_n_xdmf - 1
-               ipol = i_arr_xdmf(i)
-               ipol1 = i_arr_xdmf(i+1)
+   nelem = size(u_in,3)
 
-               do j=1, j_n_xdmf - 1
-                   jpol = j_arr_xdmf(j)
-                   jpol1 = j_arr_xdmf(j+1)
-       
-                   if (plotting_mask(i,j,iel)) then
-                       ct = mapping_ijel_iplot(i,j,iel)
-                       u_out(:, ct) = u_in(ipol,jpol,iel,:)
-                   endif
+   i_n_xdmf = size(mapping_ijel_iplot,1)
+   j_n_xdmf = size(mapping_ijel_iplot,2)
+   do iel=1, nelem
+      do i=1, i_n_xdmf - 1
+         ipol = i_arr_xdmf(i)
+         ipol1 = i_arr_xdmf(i+1)
 
-                   if (plotting_mask(i+1,j,iel)) then
-                       ct = mapping_ijel_iplot(i+1,j,iel)
-                       u_out(:, ct) = u_in(ipol1,jpol,iel,:)
-                   endif
+         do j=1, j_n_xdmf - 1
+            jpol = j_arr_xdmf(j)
+            jpol1 = j_arr_xdmf(j+1)
+   
+            if (plotting_mask(i,j,iel)) then
+               ct = mapping_ijel_iplot(i,j,iel)
+               u_out(:, ct) = u_in(ipol,jpol,iel,:)
+            endif
 
-                   if (plotting_mask(i+1,j+1,iel)) then
-                       ct = mapping_ijel_iplot(i+1,j+1,iel)
-                       u_out(:, ct) = u_in(ipol1,jpol1,iel,:)
-                   endif
+            if (plotting_mask(i+1,j,iel)) then
+               ct = mapping_ijel_iplot(i+1,j,iel)
+               u_out(:, ct) = u_in(ipol1,jpol,iel,:)
+            endif
 
-                   if (plotting_mask(i,j+1,iel)) then
-                       ct = mapping_ijel_iplot(i,j+1,iel)
-                       u_out(:, ct) = u_in(ipol,jpol1,iel,:)
-                   endif
-               enddo
-           enddo
-       enddo
+            if (plotting_mask(i+1,j+1,iel)) then
+               ct = mapping_ijel_iplot(i+1,j+1,iel)
+               u_out(:, ct) = u_in(ipol1,jpol1,iel,:)
+            endif
+
+            if (plotting_mask(i,j+1,iel)) then
+               ct = mapping_ijel_iplot(i,j+1,iel)
+               u_out(:, ct) = u_in(ipol,jpol1,iel,:)
+            endif
+         enddo
+      enddo
+   enddo
 
 end subroutine
 
 !-----------------------------------------------------------------------------------------
 subroutine snapshot_memoryvar_vtk(memvar, iter)
 
-  use data_source,    only: src_type
-  use data_time,      only: t 
-  use attenuation,    only: n_sls_attenuation
-  use data_matr,      only: points_solid
-  use lateral_heterogeneities, only: write_VTK_bin_scal_pts
-  use data_mesh,             only: npol, nel_solid, nel_fluid 
-  
-  real(kind=realkind), intent(in)   :: memvar(0:,0:,:,:,:)
-  integer, intent(in)               :: iter
-  
-  character(len=8)                  :: appisnap
-  character(len=2)                  :: nchar, lchar
-  character(len=200)                :: filename, varname
-  integer                           :: l, n
-  
-  write(appisnap, "(I0.8)") iter
-  do l=1, 6
-     write(lchar, "(I0.2)") l
-     do n=1, n_sls_attenuation
-        write(nchar, "(I0.2)") n
-        filename = trim(infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appmynum &
-                        //'_'//appisnap)
-        varname = 'memvar_'//lchar//'_'//nchar
-
-        !if (lpr) print *, trim(filename)
-        !call write_VTK_bin_scal_pts(memvar(2,2,l,n,:), points_solid(2,2,:,:), &
-        !                            nel_solid, filename, varname)
-        call write_VTK_bin_scal_pts(&
-                reshape(memvar(:,:,l,n,:), (/(npol + 1)**2 * nel_solid/)), &
-                reshape(points_solid(:,:,:,:), (/(npol + 1)**2 * nel_solid, 2/)), &
-                (npol + 1)**2 * nel_solid, filename, varname)
-     enddo
-  enddo
+   use data_source,               only: src_type
+   use attenuation,               only: n_sls_attenuation
+   use data_matr,                 only: points_solid
+   use lateral_heterogeneities,   only: write_VTK_bin_scal_pts
+   use data_mesh,                 only: npoint_solid 
+   
+   real(kind=realkind), intent(in)   :: memvar(0:,0:,:,:,:)
+   integer, intent(in)               :: iter
+   
+   character(len=8)                  :: appisnap
+   character(len=2)                  :: nchar, lchar
+   character(len=200)                :: filename, varname
+   integer                           :: l, n
+   
+   write(appisnap, "(I0.8)") iter
+   do l=1, 6
+      write(lchar, "(I0.2)") l
+      do n=1, n_sls_attenuation
+         write(nchar, "(I0.2)") n
+         filename = trim(infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appmynum &
+                         //'_'//appisnap)
+         varname = 'memvar_'//lchar//'_'//nchar
+ 
+         call write_VTK_bin_scal_pts(&
+                 reshape(memvar(:,:,l,n,:), [npoint_solid]), &
+                 reshape(points_solid(:,:,:,:), [npoint_solid, 2]), &
+                 npoint_solid, filename, varname)
+      enddo
+   enddo
     
 
 end subroutine snapshot_memoryvar_vtk
@@ -895,53 +891,53 @@ end subroutine solid_snapshot
 !-----------------------------------------------------------------------------------------
 subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
 
-  use data_source, only : src_type
-  use pointwise_derivatives, only: axisym_gradient_fluid, dsdf_fluid_axis
-  
-  use data_mesh, only: npol, nel_fluid
-  
-  integer, intent(in)             :: ibeg, iend, jbeg, jend
-  real(kind=realkind), intent(in) :: chi(0:,0:,:)
-  real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
-  character(len=4)                :: appisnap
-  integer                         :: iel, ipol, jpol
-  real(kind=realkind)             :: dsdchi, prefac
-  
-  ! When reading the fluid wavefield, one needs to multiply all components 
-  ! with inv_rho_fluid and the phi component with one/scoord!!
+   use data_source,            only : src_type
+   use pointwise_derivatives,  only : axisym_gradient_fluid, dsdf_fluid_axis
+   use data_mesh,              only : npol, nel_fluid
+   
+   integer, intent(in)             :: ibeg, iend, jbeg, jend
+   real(kind=realkind), intent(in) :: chi(0:,0:,:)
 
-  if (src_type(1) == 'monopole') prefac = zero
-  if (src_type(1) == 'dipole')   prefac = one
-  if (src_type(1) == 'quadpole') prefac = two
-
-  call axisym_gradient_fluid(chi, usz_fluid)
-
-  call define_io_appendix(appisnap, isnap)
-
-  open(unit=4500+mynum, file=datapath(1:lfdata)//'/snap_fluid_'&
-                             //appmynum//'_'//appisnap//'.dat')
-
-  do iel=1, nel_fluid
-     do jpol=jbeg, jend
-        do ipol=ibeg, iend
-           if ( axis_fluid(iel) .and. ipol==0 ) then
-              call dsdf_fluid_axis(chi(:,:,iel), iel, jpol, dsdchi)
-              write(4500+mynum,*) usz_fluid(ipol,jpol,iel,1), &
-                                  !prefac * dsdchi * chi(ipol,jpol,iel), &
-                                  0., &
-                                  usz_fluid(ipol,jpol,iel,2)
-       ! (n.b. up_fl is zero at the axes for all source types, prefac = 0 for
-       ! monopole and chi -> 0 for dipole and quadrupole EQ 73-77 in TNM 2007)
-           else
-              write(4500+mynum,*) usz_fluid(ipol,jpol,iel,1), &
-                                  prefac * chi(ipol,jpol,iel), &
-                                  usz_fluid(ipol,jpol,iel,2)
-           endif
-        enddo
-     enddo
-  enddo
-
-  close(4500+mynum)
+   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
+   character(len=4)                :: appisnap
+   integer                         :: iel, ipol, jpol
+   real(kind=realkind)             :: dsdchi, prefac
+   
+   ! When reading the fluid wavefield, one needs to multiply all components 
+   ! with inv_rho_fluid and the phi component with one/scoord!!
+ 
+   if (src_type(1) == 'monopole') prefac = zero
+   if (src_type(1) == 'dipole')   prefac = one
+   if (src_type(1) == 'quadpole') prefac = two
+ 
+   call axisym_gradient_fluid(chi, usz_fluid)
+ 
+   call define_io_appendix(appisnap, isnap)
+ 
+   open(unit=4500+mynum, file=datapath(1:lfdata)//'/snap_fluid_'&
+                              //appmynum//'_'//appisnap//'.dat')
+ 
+   do iel=1, nel_fluid
+      do jpol=jbeg, jend
+         do ipol=ibeg, iend
+            if ( axis_fluid(iel) .and. ipol==0 ) then
+               call dsdf_fluid_axis(chi(:,:,iel), iel, jpol, dsdchi)
+               write(4500+mynum,*) usz_fluid(ipol,jpol,iel,1), &
+                                   !prefac * dsdchi * chi(ipol,jpol,iel), &
+                                   0., &
+                                   usz_fluid(ipol,jpol,iel,2)
+               ! (n.b. up_fl is zero at the axes for all source types, prefac = 0 for
+               ! monopole and chi -> 0 for dipole and quadrupole EQ 73-77 in TNM 2007)
+            else
+               write(4500+mynum,*) usz_fluid(ipol,jpol,iel,1), &
+                                   prefac * chi(ipol,jpol,iel), &
+                                   usz_fluid(ipol,jpol,iel,2)
+            endif
+         enddo
+      enddo
+   enddo
+ 
+   close(4500+mynum)
 
 end subroutine fluid_snapshot
 !-----------------------------------------------------------------------------------------
@@ -949,40 +945,39 @@ end subroutine fluid_snapshot
 !-----------------------------------------------------------------------------------------
 subroutine dump_field_1d(f, filename, appisnap, n)
 
-  !use data_proc,    only : appmynum
-  use data_source,  only : have_src, src_dump_type
-  
-  use data_mesh, only : nel_solid, nel_fluid
-  
-  integer, intent(in)                 :: n
-  real(kind=realkind),intent(in)      :: f(0:,0:,:)
-  real(kind=realkind)                 :: floc(0:size(f,1)-1, 0:size(f,2)-1, 1:size(f,3))
-  character(len=16), intent(in)       :: filename
-  character(len=4), intent(in)        :: appisnap
+   use data_source,                only : have_src, src_dump_type
+   use data_mesh,                  only : nel_solid, nel_fluid
+   
+   integer, intent(in)                 :: n
+   real(kind=realkind),intent(in)      :: f(0:,0:,:)
+   character(len=16), intent(in)       :: filename
+   character(len=4), intent(in)        :: appisnap
+ 
+   real(kind=realkind)                 :: floc(0:size(f,1)-1, 0:size(f,2)-1, 1:size(f,3))
 
-  floc = f
-
-  if (have_src .and. src_dump_type == 'mask' .and. n==nel_solid) &
-       call eradicate_src_elem_values(floc)
-
-  if (use_netcdf) then
-      if (n==nel_solid) then
-          call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
-                                   filename(2:))
-      elseif (n==nel_fluid) then
-          call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
-                                   filename(2:))
-      else
-          write(6,*) 'Neither solid nor fluid. What''s wrong here?'
-          stop 2
-      end if
-  else
-     open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_' &
-                                 //appmynum//'_'//appisnap//'.bindat', &
-          FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
-     write(25000+mynum) pack(floc(ibeg:iend,ibeg:iend,:), .true.)
-     close(25000+mynum)
-  end if
+   floc = f
+ 
+   if (src_dump_type == 'mask' .and. n==nel_solid) &
+        call eradicate_src_elem_values(floc)
+ 
+   if (use_netcdf) then
+       if (n==nel_solid) then
+           call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
+                                    filename(2:))
+       elseif (n==nel_fluid) then
+           call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
+                                    filename(2:))
+       else
+           write(6,*) 'Neither solid nor fluid. What''s wrong here?'
+           stop 2
+       end if
+   else
+      open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_' &
+                                  //appmynum//'_'//appisnap//'.bindat', &
+           FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
+      write(25000+mynum) pack(floc(ibeg:iend,ibeg:iend,:), .true.)
+      close(25000+mynum)
+   end if
 
 end subroutine dump_field_1d
 !-----------------------------------------------------------------------------------------
@@ -990,44 +985,44 @@ end subroutine dump_field_1d
 !-----------------------------------------------------------------------------------------
 subroutine dump_disp(u, chi)
 
-  use data_source, only : src_type,src_dump_type
-  
-  
-  real(kind=realkind),intent(in) :: u(0:,0:,:,:)
-  real(kind=realkind),intent(in) :: chi(0:,0:,:)
-  integer                        :: i
-  character(len=4)               :: appisnap
-  real(kind=realkind)            :: f(0:size(u,1)-1, 0:size(u,1)-1,size(u,3),3)
+   use data_source,            only : src_type,src_dump_type
+   
+   real(kind=realkind), intent(in) :: u(0:,0:,:,:)
+   real(kind=realkind), intent(in) :: chi(0:,0:,:)
 
-  call define_io_appendix(appisnap,istrain)
-
-  f = u
-
-  if (src_dump_type == 'mask') then
-    call eradicate_src_elem_vec_values(f)
-  end if
-
-  ! Dump solid displacement
-  open(unit=75000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
-                            //appmynum//'_'//appisnap//'.bindat',&
-                            FORM="UNFORMATTED",STATUS="REPLACE")
-
-  if (src_type(1)/='monopole') then
-     write(75000+mynum) (f(ibeg:iend,ibeg:iend,:,i),i=1,3)
-  else
-     write(75000+mynum) f(ibeg:iend,ibeg:iend,:,1:3:2)
-  endif
-  close(75000+mynum)
-
-  ! Dump fluid potential 
-  if (have_fluid) then 
-     open(unit=76000+mynum,file=datapath(1:lfdata)//'/chi_flu_'&
-                               //appmynum//'_'//appisnap//'.bindat',&
-                               FORM="UNFORMATTED",STATUS="REPLACE")
-  
-     write(76000+mynum)chi
-     close(76000+mynum)
-  endif 
+   integer                         :: i
+   character(len=4)                :: appisnap
+   real(kind=realkind)             :: f(0:size(u,1)-1, 0:size(u,1)-1,size(u,3),3)
+ 
+   call define_io_appendix(appisnap,istrain)
+ 
+   f = u
+ 
+   if (src_dump_type == 'mask') then
+      call eradicate_src_elem_vec_values(f)
+   end if
+ 
+   ! Dump solid displacement
+   open(unit=75000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
+                             //appmynum//'_'//appisnap//'.bindat',&
+                             FORM="UNFORMATTED",STATUS="REPLACE")
+ 
+   if (src_type(1)/='monopole') then
+      write(75000+mynum) (f(ibeg:iend,ibeg:iend,:,i),i=1,3)
+   else
+      write(75000+mynum) f(ibeg:iend,ibeg:iend,:,1:3:2)
+   endif
+   close(75000+mynum)
+ 
+   ! Dump fluid potential 
+   if (have_fluid) then 
+      open(unit=76000+mynum,file=datapath(1:lfdata)//'/chi_flu_'&
+                                //appmynum//'_'//appisnap//'.bindat',&
+                                FORM="UNFORMATTED",STATUS="REPLACE")
+   
+      write(76000+mynum)chi
+      close(76000+mynum)
+   endif 
 
 end subroutine dump_disp
 !-----------------------------------------------------------------------------------------
@@ -1035,45 +1030,44 @@ end subroutine dump_disp
 !-----------------------------------------------------------------------------------------
 subroutine dump_velo_dchi(v, dchi)
 
-  use data_source, only : src_type, src_dump_type
-  
-  
-  real(kind=realkind),intent(in) :: v(0:,0:,:,:)
-  real(kind=realkind),intent(in) :: dchi(0:,0:,:)
-  integer                        :: i
-  character(len=4)               :: appisnap
-  real(kind=realkind)            :: f(0:size(v,1)-1, 0:size(v,1)-1,size(v,3),3)
-  !real(kind=realkind)            :: f(0:npol,0:npol,nel_solid,3)
+   use data_source,           only : src_type, src_dump_type
+   
+   real(kind=realkind),intent(in) :: v(0:,0:,:,:)
+   real(kind=realkind),intent(in) :: dchi(0:,0:,:)
 
-  call define_io_appendix(appisnap,istrain)
-
-  f = v
-
-  if (src_dump_type == 'mask') then
-       call eradicate_src_elem_vec_values(f)
-  end if
-  
-  ! Dump solid velocity vector
-  open(unit=85000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
-                             //appmynum//'_'//appisnap//'.bindat',&
-                             FORM="UNFORMATTED",STATUS="REPLACE")
-
-  if (src_type(1)/='monopole') then 
-     write(85000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
-  else
-     write(85000+mynum) f(ibeg:iend,ibeg:iend,:,1), f(ibeg:iend,ibeg:iend,:,3)
-  endif
-  close(85000+mynum)
-
-  ! Dump fluid potential 1st derivative
-  if (have_fluid) then 
-     open(unit=86000+mynum,file=datapath(1:lfdata)//'/dchi_flu_'&
-                                //appmynum//'_'//appisnap//'.bindat',&
-                                FORM="UNFORMATTED",STATUS="REPLACE")
-  
-     write(86000+mynum) dchi
-     close(86000+mynum)
-  endif
+   integer                        :: i
+   character(len=4)               :: appisnap
+   real(kind=realkind)            :: f(0:size(v,1)-1, 0:size(v,1)-1,size(v,3),3)
+ 
+   call define_io_appendix(appisnap,istrain)
+ 
+   f = v
+ 
+   if (src_dump_type == 'mask') then
+      call eradicate_src_elem_vec_values(f)
+   end if
+   
+   ! Dump solid velocity vector
+   open(unit=85000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
+                              //appmynum//'_'//appisnap//'.bindat',&
+                              FORM="UNFORMATTED",STATUS="REPLACE")
+ 
+   if (src_type(1)/='monopole') then 
+      write(85000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
+   else
+      write(85000+mynum) f(ibeg:iend,ibeg:iend,:,1), f(ibeg:iend,ibeg:iend,:,3)
+   endif
+   close(85000+mynum)
+ 
+   ! Dump fluid potential 1st derivative
+   if (have_fluid) then 
+      open(unit=86000+mynum,file=datapath(1:lfdata)//'/dchi_flu_'&
+                                 //appmynum//'_'//appisnap//'.bindat',&
+                                 FORM="UNFORMATTED",STATUS="REPLACE")
+   
+      write(86000+mynum) dchi
+      close(86000+mynum)
+   endif
 
 end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------------------
@@ -1081,82 +1075,81 @@ end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------------------
 subroutine dump_velo_global(v,dchi)
 
-  use data_pointwise,           only: inv_rho_fluid, prefac_inv_s_rho_fluid
-  use data_source,              only: src_type, src_dump_type
-  use pointwise_derivatives,    only: axisym_gradient_fluid, dsdf_fluid_allaxis
-  
-  use data_mesh
-  
-  real(kind=realkind),intent(in) :: v(:,:,:,:)
-  real(kind=realkind),intent(in) :: dchi(:,:,:)
-  
-  real(kind=realkind)            :: phicomp(0:npol,0:npol,nel_fluid)
-  integer                        :: i
-  character(len=4)               :: appisnap
-  real(kind=realkind)            :: f(0:npol,0:npol,1:nel_solid,3)
-  real(kind=realkind)            :: fflu(0:npol,0:npol,1:nel_fluid,3)
-  real(kind=realkind)            :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
-
-  call define_io_appendix(appisnap,istrain)
-
-  ! sssssssssssss dump velocity vector inside solid ssssssssssssssssssssssssssss
-
-  f = v
-  if (src_dump_type == 'mask') then
-     call eradicate_src_elem_vec_values(f)
-  end if
-
-  if (use_netcdf) then
-     if (src_type(1)/='monopole') then
-        call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,2),.true.), 'velo_sol_p')
-     end if
-     call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,1),.true.), 'velo_sol_s')
-     call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,3),.true.), 'velo_sol_z')
-  else
-     open(unit=95000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
-                                //appmynum//'_'//appisnap//'.bindat',&
-                                FORM="UNFORMATTED",STATUS="REPLACE")
-     if (src_type(1)/='monopole') then
-        write(95000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
-     else
-        write(95000+mynum) f(ibeg:iend,ibeg:iend,:,1), &
-                           f(ibeg:iend,ibeg:iend,:,3)
-     end if
-     close(95000+mynum)
-  end if
-
-  ! ffffffff fluid region ffffffffffffffffffffffffffffffffffffffffffffffffffffff
-
-  if (have_fluid) then 
-     ! compute velocity vector inside fluid
-    call axisym_gradient_fluid(dchi, usz_fluid)
-
-    ! phi component needs special care: m/(s rho) dchi
-    phicomp = prefac_inv_s_rho_fluid * dchi
-
-    call define_io_appendix(appisnap,istrain)
-    fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
-                                    usz_fluid(ibeg:iend,ibeg:iend,:,1)
-    fflu(ibeg:iend,ibeg:iend,:,2) = phicomp(ibeg:iend,ibeg:iend,:)
-    fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
-                                    usz_fluid(ibeg:iend,ibeg:iend,:,2)      
-
-    ! dump velocity vector inside fluid
-    if (use_netcdf) then
-       call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,1), .true.), 'velo_flu_s')
-       call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,3), .true.), 'velo_flu_z')
-       if (src_type(1)/='monopole') then
-         call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,2), .true.), 'velo_flu_p')
-       end if
-    else
-       open(unit=960000+mynum,file=datapath(1:lfdata)//'/velo_flu_'&
+   use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
+   use data_source,             only: src_type, src_dump_type
+   use pointwise_derivatives,   only: axisym_gradient_fluid, dsdf_fluid_allaxis
+   use data_mesh,               only: npol, nel_solid, nel_fluid
+   
+   real(kind=realkind), intent(in) :: v(:,:,:,:)
+   real(kind=realkind), intent(in) :: dchi(:,:,:)
+   
+   real(kind=realkind)             :: phicomp(0:npol,0:npol,nel_fluid)
+   integer                         :: i
+   character(len=4)                :: appisnap
+   real(kind=realkind)             :: f(0:npol,0:npol,1:nel_solid,3)
+   real(kind=realkind)             :: fflu(0:npol,0:npol,1:nel_fluid,3)
+   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
+ 
+   call define_io_appendix(appisnap,istrain)
+ 
+   ! sssssssssssss dump velocity vector inside solid ssssssssssssssssssssssssssss
+ 
+   f = v
+   if (src_dump_type == 'mask') then
+      call eradicate_src_elem_vec_values(f)
+   end if
+ 
+   if (use_netcdf) then
+      if (src_type(1)/='monopole') then
+         call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,2),.true.), 'velo_sol_p')
+      end if
+      call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,1),.true.), 'velo_sol_s')
+      call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,3),.true.), 'velo_sol_z')
+   else
+      open(unit=95000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
-                                  FORM="UNFORMATTED",STATUS="REPLACE")
-
-       write(960000+mynum) (fflu(ibeg:iend,ibeg:iend,:,i), i=1,3)
-       close(960000+mynum)
-    end if ! netcdf
-  endif ! have_fluid
+                                 FORM="UNFORMATTED",STATUS="REPLACE")
+      if (src_type(1)/='monopole') then
+         write(95000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
+      else
+         write(95000+mynum) f(ibeg:iend,ibeg:iend,:,1), &
+                            f(ibeg:iend,ibeg:iend,:,3)
+      end if
+      close(95000+mynum)
+   end if
+ 
+   ! ffffffff fluid region ffffffffffffffffffffffffffffffffffffffffffffffffffffff
+ 
+   if (have_fluid) then 
+      ! compute velocity vector inside fluid
+     call axisym_gradient_fluid(dchi, usz_fluid)
+ 
+     ! phi component needs special care: m/(s rho) dchi
+     phicomp = prefac_inv_s_rho_fluid * dchi
+ 
+     call define_io_appendix(appisnap,istrain)
+     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
+                                     usz_fluid(ibeg:iend,ibeg:iend,:,1)
+     fflu(ibeg:iend,ibeg:iend,:,2) = phicomp(ibeg:iend,ibeg:iend,:)
+     fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
+                                     usz_fluid(ibeg:iend,ibeg:iend,:,2)      
+ 
+     ! dump velocity vector inside fluid
+     if (use_netcdf) then
+        call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,1), .true.), 'velo_flu_s')
+        call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,3), .true.), 'velo_flu_z')
+        if (src_type(1)/='monopole') then
+          call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,2), .true.), 'velo_flu_p')
+        end if
+     else
+        open(unit=960000+mynum,file=datapath(1:lfdata)//'/velo_flu_'&
+                                  //appmynum//'_'//appisnap//'.bindat',&
+                                   FORM="UNFORMATTED",STATUS="REPLACE")
+ 
+        write(960000+mynum) (fflu(ibeg:iend,ibeg:iend,:,i), i=1,3)
+        close(960000+mynum)
+     end if ! netcdf
+   endif ! have_fluid
 
 end subroutine dump_velo_global
 !-----------------------------------------------------------------------------------------
@@ -1168,17 +1161,14 @@ end subroutine dump_velo_global
 !! This is a preliminary test for the wavefield dumps.
 pure subroutine eradicate_src_elem_vec_values(u)
 
-  use data_source, only : nelsrc,ielsrc,have_src
-  
-  
-  real(kind=realkind),intent(inout) :: u(0:,0:,:,:)
-  integer :: iel
-  
-  if (have_src) then
-     do iel=1,nelsrc
-        u(:,:,ielsrc(iel),:) = 0.0
-     enddo
-  endif
+   use data_source,               only : nelsrc, ielsrc
+   
+   real(kind=realkind), intent(inout) :: u(0:,0:,:,:)
+   integer                            :: iel
+   
+   do iel = 1, nelsrc
+      u(:,:,ielsrc(iel),:) = 0.0
+   enddo
 
 end subroutine eradicate_src_elem_vec_values
 !-----------------------------------------------------------------------------------------
@@ -1190,17 +1180,14 @@ end subroutine eradicate_src_elem_vec_values
 !! This is a preliminary test for the wavefield dumps.
 pure subroutine eradicate_src_elem_values(u)
 
-  use data_source, only : nelsrc,ielsrc,have_src
+   use data_source,               only : nelsrc, ielsrc
  
-
-  real(kind=realkind),intent(inout) :: u(0:,0:,:)
-  integer :: iel
-  
-  if (have_src) then
-     do iel=1,nelsrc
-        u(:,:,ielsrc(iel)) = 0.0
-     enddo
-  endif
+   real(kind=realkind), intent(inout) :: u(0:,0:,:)
+   integer                            :: iel
+   
+   do iel = 1, nelsrc
+      u(:,:,ielsrc(iel)) = 0.0
+   enddo
 
 end subroutine eradicate_src_elem_values
 !-----------------------------------------------------------------------------------------
