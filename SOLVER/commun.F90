@@ -41,7 +41,7 @@ module commun
   public :: pinit, pend
   public :: pmin, pmax, pmax_int, psum, psum_int, psum_dble
   public :: barrier, pcheck
-  public :: mpi_asynch_messaging_test_solid, mpi_asynch_messaging_test_fluid
+  !public :: mpi_asynch_messaging_test_solid, mpi_asynch_messaging_test_fluid
   private
 
 contains
@@ -391,58 +391,58 @@ end subroutine pdistsum_fluid
 !!
 !! The local arrays are allocatable since this routine is only called before 
 !! the time loop.
-subroutine mpi_asynch_messaging_test_solid
-  
-  use data_mesh, only: igloc_solid, nglob_solid
-  use data_mesh,      only: npol, nel_solid, nel_fluid
-  
-  real(kind=realkind),allocatable   :: vec(:,:,:,:)
-  real(kind=realkind),allocatable   :: gvec_solid2(:,:)
-  integer                           :: ic, iel, jpol, ipol, idest, ipt
-
-  allocate(vec(0:npol,0:npol,nel_solid,3))
-  allocate(gvec_solid2(nglob_solid,3))
-
-  gvec_solid2(:,:) = 0.d0
-
-  do ic = 1, 3
-
-     vec(:,:,:,ic)=real(ic,kind=realkind)
-
-     ! Gather
-     do iel = 1, nel_solid
-        do jpol = 0, npol
-           do ipol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-              idest = igloc_solid(ipt)
-              gvec_solid2(idest,ic) = vec(ipol,jpol,iel,ic)
-           end do
-        end do
-     end do
-  end do
-
-#ifndef serial
-  if (nproc > 1) &
-        call testing_asynch_messaging_solid(gvec_solid2,3)
-#endif
-
-  do ic = 1, 3
-     ! Scatter
-     do iel = 1, nel_solid
-        do jpol = 0, npol
-           do ipol = 0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-              idest = igloc_solid(ipt)
-              vec(ipol,jpol,iel,ic) = gvec_solid2(idest,ic)
-           end do
-        end do
-     end do
-  end do
-
-  deallocate(gvec_solid2)
-  deallocate(vec)
-
-end subroutine mpi_asynch_messaging_test_solid
+!subroutine mpi_asynch_messaging_test_solid
+!  
+!  use data_mesh, only: igloc_solid, nglob_solid
+!  use data_mesh,      only: npol, nel_solid, nel_fluid
+!  
+!  real(kind=realkind),allocatable   :: vec(:,:,:,:)
+!  real(kind=realkind),allocatable   :: gvec_solid2(:,:)
+!  integer                           :: ic, iel, jpol, ipol, idest, ipt
+!
+!  allocate(vec(0:npol,0:npol,nel_solid,3))
+!  allocate(gvec_solid2(nglob_solid,3))
+!
+!  gvec_solid2(:,:) = 0.d0
+!
+!  do ic = 1, 3
+!
+!     vec(:,:,:,ic)=real(ic,kind=realkind)
+!
+!     ! Gather
+!     do iel = 1, nel_solid
+!        do jpol = 0, npol
+!           do ipol = 0, npol
+!              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+!              idest = igloc_solid(ipt)
+!              gvec_solid2(idest,ic) = vec(ipol,jpol,iel,ic)
+!           end do
+!        end do
+!     end do
+!  end do
+!
+!#ifndef serial
+!  if (nproc > 1) &
+!        call testing_asynch_messaging_solid(gvec_solid2,3)
+!#endif
+!
+!  do ic = 1, 3
+!     ! Scatter
+!     do iel = 1, nel_solid
+!        do jpol = 0, npol
+!           do ipol = 0, npol
+!              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+!              idest = igloc_solid(ipt)
+!              vec(ipol,jpol,iel,ic) = gvec_solid2(idest,ic)
+!           end do
+!        end do
+!     end do
+!  end do
+!
+!  deallocate(gvec_solid2)
+!  deallocate(vec)
+!
+!end subroutine mpi_asynch_messaging_test_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -456,49 +456,49 @@ end subroutine mpi_asynch_messaging_test_solid
 !!
 !! The local arrays are allocatable since this routine is only called before 
 !! the time loop.
-subroutine mpi_asynch_messaging_test_fluid
-  
-  use data_mesh,   only: igloc_fluid
-  use data_mesh,        only: gvec_fluid, npol, nel_fluid
-  
-  
-  real(kind=realkind),allocatable :: vec(:,:,:)
-  integer                         :: iel,jpol,ipol,idest,ipt
-
-  allocate(vec(0:npol,0:npol,nel_fluid))
-
-  gvec_fluid(:) = 0.d0
-  vec(:,:,:) = 1.d0
-
-  ! Gather
-  do iel = 1, nel_fluid
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-           idest = igloc_fluid(ipt)
-           gvec_fluid(idest) = vec(ipol,jpol,iel)
-        end do
-     end do
-  end do
-
-#ifndef serial
-  if (nproc>1) call testing_asynch_messaging_fluid
-#endif
-
-  ! Scatter
-  do iel = 1, nel_fluid
-     do jpol = 0, npol
-        do ipol = 0, npol
-           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-           idest = igloc_fluid(ipt)
-           vec(ipol,jpol,iel) = gvec_fluid(idest)
-        end do
-     end do
-  end do
-
-  deallocate(vec)
-
-end subroutine mpi_asynch_messaging_test_fluid
+!subroutine mpi_asynch_messaging_test_fluid
+!  
+!  use data_mesh,   only: igloc_fluid
+!  use data_mesh,        only: gvec_fluid, npol, nel_fluid
+!  
+!  
+!  real(kind=realkind),allocatable :: vec(:,:,:)
+!  integer                         :: iel,jpol,ipol,idest,ipt
+!
+!  allocate(vec(0:npol,0:npol,nel_fluid))
+!
+!  gvec_fluid(:) = 0.d0
+!  vec(:,:,:) = 1.d0
+!
+!  ! Gather
+!  do iel = 1, nel_fluid
+!     do jpol = 0, npol
+!        do ipol = 0, npol
+!           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+!           idest = igloc_fluid(ipt)
+!           gvec_fluid(idest) = vec(ipol,jpol,iel)
+!        end do
+!     end do
+!  end do
+!
+!#ifndef serial
+!  if (nproc>1) call testing_asynch_messaging_fluid
+!#endif
+!
+!  ! Scatter
+!  do iel = 1, nel_fluid
+!     do jpol = 0, npol
+!        do ipol = 0, npol
+!           ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+!           idest = igloc_fluid(ipt)
+!           vec(ipol,jpol,iel) = gvec_fluid(idest)
+!        end do
+!     end do
+!  end do
+!
+!  deallocate(vec)
+!
+!end subroutine mpi_asynch_messaging_test_fluid
 !=============================================================================
 
 !-----------------------------------------------------------------------------

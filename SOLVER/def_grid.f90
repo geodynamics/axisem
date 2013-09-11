@@ -395,12 +395,12 @@ subroutine mesh_tests
   call check_solid_fluid_boundaries
 
   ! Check message passing <><><><><><><><><><><><><><>><><><><><><><><><><><>
-  if (nproc>1) then
-     if (lpr) write(6,*)'  Checking message-passing for solid...'
-     call mpi_asynch_messaging_test_solid
-     if (lpr) write(6,*)'  Checking message-passing for fluid...'
-     call mpi_asynch_messaging_test_fluid
-  endif
+  !if (nproc>1) then
+  !   if (lpr) write(6,*)'  Checking message-passing for solid...'
+  !   call mpi_asynch_messaging_test_solid
+  !   if (lpr) write(6,*)'  Checking message-passing for fluid...'
+  !   call mpi_asynch_messaging_test_fluid
+  !endif
 
   if (lpr) write(6,'(/,a,/)')'  >>> FINISHED mesh tests.'
 

@@ -57,6 +57,7 @@ module data_comm
   integer                              :: sizemsgsendmax_fluid
   integer                              :: sizemsgmax_fluid
   real(kind=realkind), allocatable     :: buffs_fluid(:), buffr_fluid(:)
+  !type(list)                           :: buffs_all_fluid, buffr_all_fluid
   integer                              :: sizerecv_fluid, sizesend_fluid
   integer, dimension(:),   allocatable :: listrecv_fluid, sizemsgrecv_fluid
   integer, dimension(:),   allocatable :: listsend_fluid, sizemsgsend_fluid
