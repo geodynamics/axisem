@@ -484,8 +484,11 @@ subroutine asynch_messaging_fluid
 #ifndef serial
   integer               :: imsg, ipg, ip, sizeb, ipdes, ipsrc
   integer               :: msgnum, msgnum1, msgnum2
-  integer               :: status(MPI_STATUS_SIZE), sizemsg_fluid
+  integer               :: sizemsg_fluid
   integer               :: ierror
+  integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_fluid)
+  integer               :: send_status(MPI_STATUS_SIZE, sizesend_fluid)
+  integer               :: recv_request(1:sizerecv_fluid), send_request(1:sizesend_fluid)
   class(link), pointer  :: buffs, buffr
   
   ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
@@ -502,8 +505,8 @@ subroutine asynch_messaging_fluid
      sizeb  = sizemsg_fluid
      ipdes  = listsend_fluid(imsg)
      msgnum = mynum*nproc + ipdes
-     call MPI_SEND(buffs%ldata, sizeb, mpi_realkind, &
-                   ipdes, msgnum, MPI_COMM_WORLD, ierror)
+     call MPI_ISEND(buffs%ldata, sizeb, mpi_realkind, ipdes, msgnum, &
+                   MPI_COMM_WORLD, send_request(imsg), ierror)
   end do
 
   ! Receive data, sum things up
@@ -514,8 +517,17 @@ subroutine asynch_messaging_fluid
      sizeb = sizemsg_fluid
      ipsrc = listrecv_fluid(imsg)
      msgnum1 = ipsrc*nproc + mynum
-     call MPI_RECV(buffr%ldata, sizeb, mpi_realkind, &
-                   ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
+     call MPI_IRECV(buffr%ldata, sizeb, mpi_realkind, ipsrc, msgnum1, &
+                   MPI_COMM_WORLD, recv_request(imsg), ierror)
+  end do
+
+  call MPI_WAITALL(sizerecv_fluid, recv_request, recv_status, ierror)
+  call MPI_WAITALL(sizesend_fluid, send_request, send_status, ierror)
+
+  call buffr_all_fluid%resetcurrent()
+  do imsg = 1, sizerecv_fluid
+     buffr => buffr_all_fluid%getnext()
+     sizemsg_fluid = sizemsgrecv_fluid(imsg)
      do ip = 1, sizemsg_fluid
         ipg = glocal_index_msg_recv_fluid(ip,imsg)
         ! add received buffer to own field at same global point
