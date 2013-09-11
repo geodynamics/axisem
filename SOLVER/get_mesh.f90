@@ -346,7 +346,12 @@ subroutine read_db
         
         allocate(glocal_index_msg_recv_fluid(1:sizemsgrecvmax_fluid,1:sizerecv_fluid))
         glocal_index_msg_recv_fluid(:,:) = 0
-        allocate(buffr_fluid(1:sizemsgrecvmax_fluid))
+        allocate(buffr_fluid(1:sizemsgrecvmax_fluid,1))
+        buffr_fluid = 0
+        ! fill buffer list with arrays of appropriate size
+        do imsg = 1, sizerecv_fluid
+            call buffr_all_fluid%append(buffr_fluid(1:sizemsgrecv_fluid(imsg),:))
+        end do
         
         do imsg = 1, sizerecv_fluid
            ipsrc = listrecv_fluid(imsg) 
@@ -373,7 +378,13 @@ subroutine read_db
         if (verbose > 1) write(69,*)'max size of fluid messages sent:',sizemsgsendmax_fluid
         allocate(glocal_index_msg_send_fluid(1:sizemsgsendmax_fluid,1:sizesend_fluid))
         glocal_index_msg_send_fluid(:,:) = 0
-        allocate(buffs_fluid(1:sizemsgsendmax_fluid))
+
+        allocate(buffs_fluid(1:sizemsgsendmax_fluid,1))
+        buffs_fluid = 0
+        ! fill buffer list with arrays of appropriate size
+        do imsg = 1, sizesend_fluid
+            call buffs_all_fluid%append(buffs_fluid(1:sizemsgsend_fluid(imsg),:))
+        end do
 
         do imsg = 1, sizesend_fluid
            ipdes = listsend_fluid(imsg)

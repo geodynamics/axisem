@@ -43,7 +43,6 @@ module data_comm
   integer                              :: sizemsgmax_solid
   integer, allocatable                 :: glob2el_send(:,:), glob2el_recv(:,:)
   real(kind=realkind), allocatable     :: buffs_solid(:,:), buffr_solid(:,:)
-  !real(kind=realkind), allocatable     :: buffs_all(:,:,:), buffr_all(:,:,:)
   type(list)                           :: buffs_all, buffr_all
 
   integer                              :: sizerecv_solid, sizesend_solid
@@ -56,8 +55,8 @@ module data_comm
   integer                              :: sizemsgrecvmax_fluid
   integer                              :: sizemsgsendmax_fluid
   integer                              :: sizemsgmax_fluid
-  real(kind=realkind), allocatable     :: buffs_fluid(:), buffr_fluid(:)
-  !type(list)                           :: buffs_all_fluid, buffr_all_fluid
+  real(kind=realkind), allocatable     :: buffs_fluid(:,:), buffr_fluid(:,:)
+  type(list)                           :: buffs_all_fluid, buffr_all_fluid
   integer                              :: sizerecv_fluid, sizesend_fluid
   integer, dimension(:),   allocatable :: listrecv_fluid, sizemsgrecv_fluid
   integer, dimension(:),   allocatable :: listsend_fluid, sizemsgsend_fluid

@@ -369,7 +369,6 @@ subroutine feed_buffer(nc)
      do ip = 1, sizemsg_solid
         ipg = glocal_index_msg_send_solid(ip,imsg)
         do ic = 1, nc
-           !buffs_all(ip,ic,imsg) = gvec_solid(ipg,ic)
            buffs%ldata(ip,ic) = gvec_solid(ipg,ic)
         enddo
      end do
@@ -404,17 +403,12 @@ subroutine send_recv_buffers_solid(nc)
   do imsg = 1, sizesend_solid
      buffs => buffs_all%getnext()
      sizemsg_solid = sizemsgsend_solid(imsg)
-     !buffs_solid(1:sizemsg_solid,1:nc) = buffs_all(1:sizemsg_solid,1:nc,imsg)
      sizeb  = nc * sizemsg_solid
      ipdes  = listsend_solid(imsg)
      msgnum = mynum * nproc + ipdes
-     !write(6,*) 'send', mynum, 'to', ipdes, 'msg', msgnum
-     !call MPI_SEND(buffs_solid(1:sizemsg_solid,1:nc), sizeb, mpi_realkind, &
-     !              ipdes, msgnum, MPI_COMM_WORLD, ierror)
      call MPI_SEND(buffs%ldata, sizeb, mpi_realkind, &
                    ipdes, msgnum, MPI_COMM_WORLD, ierror)
   end do
-  !write(6,*) 'sending done', mynum
 
   ! Receive data
   call buffr_all%resetcurrent()
@@ -424,12 +418,8 @@ subroutine send_recv_buffers_solid(nc)
      sizeb = nc * sizemsg_solid
      ipsrc = listrecv_solid(imsg)
      msgnum1 = ipsrc * nproc + mynum
-     !write(6,*) 'recv', mynum, 'to', ipsrc, 'msg', msgnum1
-     !call MPI_RECV(buffr_solid(1:sizemsg_solid,1:nc), sizeb, mpi_realkind, &
-     !              ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
      call MPI_RECV(buffr%ldata, sizeb, mpi_realkind, &
                    ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
-     !buffr_all(1:sizemsg_solid,1:nc,imsg) = buffr_solid(1:sizemsg_solid,1:nc)
   enddo
 #endif
 
@@ -458,7 +448,6 @@ subroutine extract_from_buffer(vec,nc)
         sizemsg_solid = sizemsgrecv_solid(imsg)
         do ip = 1, sizemsg_solid
            ipg = glocal_index_msg_recv_solid(ip,imsg)
-           !gvec_solid(ipg,ic) = gvec_solid(ipg,ic) + buffr_all(ip,ic,imsg)
            gvec_solid(ipg,ic) = gvec_solid(ipg,ic) + buffr%ldata(ip,ic)
         enddo
      enddo
@@ -581,48 +570,49 @@ subroutine asynch_messaging_fluid
   ! (consulation thereof to be avoided if at all possible...)
 
   use data_comm
-  
+  use linked_list
   
 #ifndef serial
-  integer :: imsg, ipg, ip, sizeb, ipdes, ipsrc
-  integer :: msgnum, msgnum1, msgnum2
-  integer :: status(MPI_STATUS_SIZE), sizemsg_fluid
-  integer :: ierror
+  integer               :: imsg, ipg, ip, sizeb, ipdes, ipsrc
+  integer               :: msgnum, msgnum1, msgnum2
+  integer               :: status(MPI_STATUS_SIZE), sizemsg_fluid
+  integer               :: ierror
+  class(link), pointer  :: buffs, buffr
   
   ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
-  if (sizesend_fluid > 0) then
-     do imsg = 1, sizesend_fluid
-        sizemsg_fluid = sizemsgsend_fluid(imsg)
-        do ip = 1, sizemsg_fluid
-           ipg = glocal_index_msg_send_fluid(ip,imsg)
-           buffs_fluid(ip) = gvec_fluid(ipg)
-        end do
-        
-        ! Send stuff around
-        sizeb  = sizemsg_fluid
-        ipdes  = listsend_fluid(imsg)
-        msgnum = mynum*nproc + ipdes
-        call MPI_SEND(buffs_fluid, sizeb, mpi_realkind, &
-                      ipdes, msgnum, MPI_COMM_WORLD, ierror)
+  call buffs_all_fluid%resetcurrent()
+  do imsg = 1, sizesend_fluid
+     buffs => buffs_all_fluid%getnext()
+     sizemsg_fluid = sizemsgsend_fluid(imsg)
+     do ip = 1, sizemsg_fluid
+        ipg = glocal_index_msg_send_fluid(ip,imsg)
+        buffs%ldata(ip,1) = gvec_fluid(ipg)
      end do
-  endif
+     
+     ! Send stuff around
+     sizeb  = sizemsg_fluid
+     ipdes  = listsend_fluid(imsg)
+     msgnum = mynum*nproc + ipdes
+     call MPI_SEND(buffs%ldata, sizeb, mpi_realkind, &
+                   ipdes, msgnum, MPI_COMM_WORLD, ierror)
+  end do
 
   ! Receive data, sum things up
-  if (sizerecv_fluid > 0) then 
-     do imsg = 1, sizerecv_fluid
-        sizemsg_fluid = sizemsgrecv_fluid(imsg)
-        sizeb = sizemsg_fluid
-        ipsrc = listrecv_fluid(imsg)
-        msgnum1 = ipsrc*nproc + mynum
-        call MPI_RECV(buffr_fluid, sizeb, mpi_realkind, &
-                      ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
-        do ip = 1, sizemsg_fluid
-           ipg = glocal_index_msg_recv_fluid(ip,imsg)
-           ! add received buffer to own field at same global point
-           gvec_fluid(ipg) = gvec_fluid(ipg) + buffr_fluid(ip)
-        end do
+  call buffr_all_fluid%resetcurrent()
+  do imsg = 1, sizerecv_fluid
+     buffr => buffr_all_fluid%getnext()
+     sizemsg_fluid = sizemsgrecv_fluid(imsg)
+     sizeb = sizemsg_fluid
+     ipsrc = listrecv_fluid(imsg)
+     msgnum1 = ipsrc*nproc + mynum
+     call MPI_RECV(buffr%ldata, sizeb, mpi_realkind, &
+                   ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
+     do ip = 1, sizemsg_fluid
+        ipg = glocal_index_msg_recv_fluid(ip,imsg)
+        ! add received buffer to own field at same global point
+        gvec_fluid(ipg) = gvec_fluid(ipg) + buffr%ldata(ip,1)
      end do
-  endif
+  end do
 #endif
 
 end subroutine asynch_messaging_fluid
