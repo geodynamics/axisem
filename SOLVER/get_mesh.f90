@@ -273,8 +273,14 @@ subroutine read_db
      glocal_index_msg_recv_solid(:,:) = 0
      
      allocate(buffr_solid(1:sizemsgrecvmax_solid,1:3))
-     allocate(buffr_all(1:sizemsgrecvmax_solid,1:3,1:sizerecv_solid))
-     buffr_all(:,:,:) = 0.
+     buffr_solid = 0
+     !allocate(buffr_all(1:sizemsgrecvmax_solid,1:3,1:sizerecv_solid))
+     !buffr_all(:,:,:) = 0.
+
+     ! fill buffer list with arrays of appropriate size
+     do imsg = 1, sizerecv_solid
+         call buffr_all%append(buffr_solid(1:sizemsgrecv_solid(imsg),:))
+     end do
 
      do imsg = 1, sizerecv_solid
         ipsrc = listrecv_solid(imsg) 
@@ -303,8 +309,14 @@ subroutine read_db
      glocal_index_msg_send_solid(:,:) = 0
      
      allocate(buffs_solid(1:sizemsgsendmax_solid,1:3))
-     allocate(buffs_all(1:sizemsgsendmax_solid,1:3,1:sizesend_solid))
-     buffs_all(:,:,:) = 0.
+     buffs_solid = 0
+     !allocate(buffs_all(1:sizemsgsendmax_solid,1:3,1:sizesend_solid))
+     !buffs_all(:,:,:) = 0.
+     
+     ! fill buffer list with arrays of appropriate size
+     do imsg = 1, sizesend_solid
+         call buffs_all%append(buffs_solid(1:sizemsgsend_solid(imsg),:))
+     end do
 
      do imsg = 1, sizesend_solid
         ipdes = listsend_solid(imsg)

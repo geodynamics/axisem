@@ -293,45 +293,45 @@ end module linked_list
 !=====================
 
 
-program test_list
-  use linked_list
-  use global_parameters
-  implicit none
-
-  type(list)            :: l
-  class(link), pointer  :: ll
-  real(kind=realkind)   :: a(2,2), b(1,2)
-
-  a = 0
-  b = 1
-  write(6,*) 'eol', l%eol()
-  write(6,*) 'bol', l%bol()
-  call l%append(a)
-  call l%append(b)
-
-  write(6,*) 'first'
-  ll => l%getFirst()
-  write(6,*) ll%ldata
-  a = 2
-  call l%append(a)
-  a = -1
-  call l%insert(a)
-  ll => l%getFirst()
-
-  write(6,*) ll%ldata
-  ll => l%getNext()
-  write(6,*) ll%ldata
-
-  call l%resetCurrent()
-  do while(.not. l%eol())
-    ll => l%getNext()
-    write(6,*) 'fw loop', ll%ldata
-    ll%ldata = 10
-  enddo
-
-  call l%resetCurrent()
-  do while(.not. l%eol())
-    ll => l%getNext()
-    write(6,*) 'fw loop', ll%ldata
-  enddo
-end program
+!program test_list
+!  use linked_list
+!  use global_parameters
+!  implicit none
+!
+!  type(list)            :: l
+!  class(link), pointer  :: ll
+!  real(kind=realkind)   :: a(2,2), b(1,2)
+!
+!  a = 0
+!  b = 1
+!  write(6,*) 'eol', l%eol()
+!  write(6,*) 'bol', l%bol()
+!  call l%append(a)
+!  call l%append(b)
+!
+!  write(6,*) 'first'
+!  ll => l%getFirst()
+!  write(6,*) ll%ldata
+!  a = 2
+!  call l%append(a(1:1,1:1))
+!  a = -1
+!  call l%insert(a)
+!  ll => l%getFirst()
+!
+!  write(6,*) ll%ldata
+!  ll => l%getNext()
+!  write(6,*) ll%ldata
+!
+!  call l%resetCurrent()
+!  do while(.not. l%eol())
+!    ll => l%getNext()
+!    write(6,*) 'fw loop', ll%ldata
+!    ll%ldata = 10
+!  enddo
+!
+!  call l%resetCurrent()
+!  do while(.not. l%eol())
+!    ll => l%getNext()
+!    write(6,*) 'fw loop', ll%ldata
+!  enddo
+!end program

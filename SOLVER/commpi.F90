@@ -352,24 +352,27 @@ subroutine feed_buffer(nc)
 
   use data_comm
   use data_mesh, only: gvec_solid
+  use linked_list
   
   integer, intent(in)            :: nc
   integer                        :: ic, imsg, ipg, ip
   integer                        :: sizemsg_solid
+  class(link), pointer           :: buffs
   
 #ifndef serial
-  ! Fill send buffer
-  if (sizesend_solid > 0) then
-     do imsg = 1, sizesend_solid
-        sizemsg_solid = sizemsgsend_solid(imsg)
-        do ip = 1, sizemsg_solid
-           ipg = glocal_index_msg_send_solid(ip,imsg)
-           do ic = 1, nc
-              buffs_all(ip,ic,imsg) = gvec_solid(ipg,ic)
-           enddo
-        end do
-     enddo
-  endif
+  ! fill send buffer
+  call buffs_all%resetcurrent()
+  do imsg = 1, sizesend_solid
+     buffs => buffs_all%getNext()
+     sizemsg_solid = sizemsgsend_solid(imsg)
+     do ip = 1, sizemsg_solid
+        ipg = glocal_index_msg_send_solid(ip,imsg)
+        do ic = 1, nc
+           !buffs_all(ip,ic,imsg) = gvec_solid(ipg,ic)
+           buffs%ldata(ip,ic) = gvec_solid(ipg,ic)
+        enddo
+     end do
+  enddo
 #endif
 
 end subroutine feed_buffer
@@ -383,44 +386,50 @@ subroutine send_recv_buffers_solid(nc)
   ! (consulation thereof to be avoided if at all possible...)
   
   use data_comm
+  use linked_list
   
   integer, intent(in) :: nc
 
 #ifndef serial
-  integer             :: imsg, sizeb, ipdes, ipsrc
-  integer             :: ic, ip, ipg
-  integer             :: msgnum, msgnum1, msgnum2
-  integer             :: status(MPI_STATUS_SIZE), sizemsg_solid
-  integer             :: ierror
+  integer               :: imsg, sizeb, ipdes, ipsrc
+  integer               :: ic, ip, ipg
+  integer               :: msgnum, msgnum1, msgnum2
+  integer               :: status(MPI_STATUS_SIZE), sizemsg_solid
+  integer               :: ierror
+  class(link), pointer  :: buffs, buffr
   
   ! Send stuff around
-  if (sizesend_solid > 0) then
-     do imsg = 1, sizesend_solid
-        sizemsg_solid = sizemsgsend_solid(imsg)
-        buffs_solid(1:sizemsg_solid,1:nc) = buffs_all(1:sizemsg_solid,1:nc,imsg)
-        sizeb  = nc * sizemsg_solid
-        ipdes  = listsend_solid(imsg)
-        msgnum = mynum * nproc + ipdes
-        !write(6,*) 'send', mynum, 'to', ipdes, 'msg', msgnum
-        call MPI_SEND(buffs_solid(1:sizemsg_solid,1:nc), sizeb, mpi_realkind, &
-                      ipdes, msgnum, MPI_COMM_WORLD, ierror)
-     end do
-     !write(6,*) 'sending done', mynum
-  endif
+  call buffs_all%resetcurrent()
+  do imsg = 1, sizesend_solid
+     buffs => buffs_all%getnext()
+     sizemsg_solid = sizemsgsend_solid(imsg)
+     !buffs_solid(1:sizemsg_solid,1:nc) = buffs_all(1:sizemsg_solid,1:nc,imsg)
+     sizeb  = nc * sizemsg_solid
+     ipdes  = listsend_solid(imsg)
+     msgnum = mynum * nproc + ipdes
+     !write(6,*) 'send', mynum, 'to', ipdes, 'msg', msgnum
+     !call MPI_SEND(buffs_solid(1:sizemsg_solid,1:nc), sizeb, mpi_realkind, &
+     !              ipdes, msgnum, MPI_COMM_WORLD, ierror)
+     call MPI_SEND(buffs%ldata, sizeb, mpi_realkind, &
+                   ipdes, msgnum, MPI_COMM_WORLD, ierror)
+  end do
+  !write(6,*) 'sending done', mynum
 
   ! Receive data
-  if (sizerecv_solid > 0) then 
-     do imsg = 1, sizerecv_solid
-        sizemsg_solid = sizemsgrecv_solid(imsg)
-        sizeb = nc * sizemsg_solid
-        ipsrc = listrecv_solid(imsg)
-        msgnum1 = ipsrc * nproc + mynum
-        !write(6,*) 'recv', mynum, 'to', ipsrc, 'msg', msgnum1
-        call MPI_RECV(buffr_solid(1:sizemsg_solid,1:nc), sizeb, mpi_realkind, &
-                      ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
-        buffr_all(1:sizemsg_solid,1:nc,imsg) = buffr_solid(1:sizemsg_solid,1:nc)
-     enddo
-  endif
+  call buffr_all%resetcurrent()
+  do imsg = 1, sizerecv_solid
+     buffr => buffr_all%getnext()
+     sizemsg_solid = sizemsgrecv_solid(imsg)
+     sizeb = nc * sizemsg_solid
+     ipsrc = listrecv_solid(imsg)
+     msgnum1 = ipsrc * nproc + mynum
+     !write(6,*) 'recv', mynum, 'to', ipsrc, 'msg', msgnum1
+     !call MPI_RECV(buffr_solid(1:sizemsg_solid,1:nc), sizeb, mpi_realkind, &
+     !              ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
+     call MPI_RECV(buffr%ldata, sizeb, mpi_realkind, &
+                   ipsrc, msgnum1, MPI_COMM_WORLD, status, ierror)
+     !buffr_all(1:sizemsg_solid,1:nc,imsg) = buffr_solid(1:sizemsg_solid,1:nc)
+  enddo
 #endif
 
 end subroutine send_recv_buffers_solid
@@ -431,33 +440,35 @@ subroutine extract_from_buffer(vec,nc)
 
   use data_mesh, only: npol, gvec_solid, igloc_solid
   use data_comm            
+  use linked_list
   
-  integer, intent(in) :: nc
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
-  integer             :: imsg, ipg, ip, ipol, jpol, iel, ipt, ic
-  integer             :: sizemsg_solid
+  integer, intent(in)   :: nc
+  integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt, ic
+  integer               :: sizemsg_solid
+  class(link), pointer  :: buffr
   
 #ifndef serial
   do ic = 1, nc
-
      ! Extract received from buffer
-     if (sizerecv_solid > 0) then
-        do imsg = 1, sizerecv_solid
-           sizemsg_solid = sizemsgrecv_solid(imsg)
-           do ip = 1, sizemsg_solid
-              ipg = glocal_index_msg_recv_solid(ip,imsg)
-              gvec_solid(ipg,ic) = gvec_solid(ipg,ic) + buffr_all(ip,ic,imsg)
-           enddo
+     call buffr_all%resetcurrent()
+     do imsg = 1, sizerecv_solid
+        buffr => buffr_all%getnext()
+        sizemsg_solid = sizemsgrecv_solid(imsg)
+        do ip = 1, sizemsg_solid
+           ipg = glocal_index_msg_recv_solid(ip,imsg)
+           !gvec_solid(ipg,ic) = gvec_solid(ipg,ic) + buffr_all(ip,ic,imsg)
+           gvec_solid(ipg,ic) = gvec_solid(ipg,ic) + buffr%ldata(ip,ic)
         enddo
-        do ip = 1, num_recv_gll
-           ipol = glob2el_recv(ip,1)
-           jpol = glob2el_recv(ip,2)
-           iel =  glob2el_recv(ip,3)
-           ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
-           ipg = igloc_solid(ipt)
-           vec(ipol,jpol,iel,ic) = gvec_solid(ipg,ic)
-        enddo
-     endif
+     enddo
+     do ip = 1, num_recv_gll
+        ipol = glob2el_recv(ip,1)
+        jpol = glob2el_recv(ip,2)
+        iel =  glob2el_recv(ip,3)
+        ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
+        ipg = igloc_solid(ipt)
+        vec(ipol,jpol,iel,ic) = gvec_solid(ipg,ic)
+     enddo
 
   end do
 #endif
