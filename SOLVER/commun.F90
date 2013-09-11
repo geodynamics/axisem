@@ -31,9 +31,8 @@ module commun
   use data_proc
   
   implicit none
-  public :: comm2d ! the general assembly & communication routine
   !public :: pdistsum_solid_4
-  public :: pdistsum_solid, pdistsum_fluid
+  public :: pdistsum_solid, pdistsum_solid_1D, pdistsum_fluid
   
   public :: assembmass_sum_solid, assembmass_sum_fluid ! assemble and sum massmat
   public :: broadcast_int, broadcast_int_arr
@@ -47,33 +46,15 @@ module commun
 contains
 
 !-----------------------------------------------------------------------------
-!> This is a driver routine to call the assembly of field f of dimension nc
-!! and either solid or fluid subdomains.
-!! The global assembly is discarded as it is not necessary during the time loop
-!! and therefore chose not to store any global numbering arrays.
-!! If nproc>1, then internode message passing is applied where necessary.
-subroutine comm2d(f, nel, nc, domainin)
-  use data_mesh, only: npol 
-  character(len=5), intent(in)       :: domainin
-  integer, intent(in)                :: nc,nel
-  real(kind=realkind), intent(inout) :: f(0:npol,0:npol,1:nel,1:nc)
-  
-    if (domainin=='total') then
-       if (lpr) &
-          write(6,'(a/a)') 'PROBLEM: Discarded this case since igloc is not',&
-                           '         known in the solver any longer...'
-       stop
-    elseif (domainin=='solid') then
-       call pdistsum_solid(f,nc)
-    elseif (domainin=='fluid') then
-       call pdistsum_fluid(f)
-    else
-       if (lpr) write(6,*) 'Assembly: Domain', domainin, ' non-existent!' 
-       stop
-    end if
-  
-end subroutine comm2d
-!=============================================================================
+!> Wrapper routine to use the standard solid communication routine also with
+!! arrays with one rank less, i.e. skalar fields
+subroutine pdistsum_solid_1D(vec)
+  use data_mesh, only: npol, nel_solid
+  real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,1:nel_solid,1:1)
+
+  call pdistsum_solid(vec)
+end subroutine pdistsum_solid_1D
+!-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
 !> This is a driver routine to perform the assembly of field f of dimension nc
@@ -83,17 +64,17 @@ end subroutine comm2d
 !! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
 !! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
 !! sum & exchange values on processor boundary points.
-subroutine pdistsum_solid(vec, nc)
+subroutine pdistsum_solid(vec)
   
   use data_mesh,        only: gvec_solid, npol, nel_solid, igloc_solid
   use data_time,        only: idmpi, iclockmpi
   use clocks_mod
-  
-  
-  integer, intent(in)                :: nc
+
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
+  integer                            :: nc
   integer                            :: ic, iel, jpol, ipol, idest, ipt
   
+  nc = size(vec, dim=4)
   gvec_solid = 0
   do ic = 1, nc
      ! Gather element boundaries

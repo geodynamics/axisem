@@ -792,7 +792,7 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
 
   use data_mesh
   use utlity
-  use commun, only: comm2d
+  use commun, only: pdistsum_solid_1D
   
   real(kind=realkind), intent(out) :: f(0:npol,0:npol,nel_solid)
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
@@ -817,7 +817,7 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
   call flush(6)
 
   ! assembly
-  call comm2d(f, nel_solid, 1, 'solid')
+  call pdistsum_solid_1D(f)
 
   if (have_src .and. verbose > 1) then
 
@@ -863,7 +863,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   use apply_masks
   use utlity
   use pointwise_derivatives
-  use commun, only: comm2d, psum_int
+  use commun, only: pdistsum_solid, psum_int
   
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
   real(kind=realkind), intent(out) :: source_term(0:npol,0:npol,nel_solid,3)
@@ -1091,7 +1091,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
   ! assembly
   if (verbose > 1) write(69,*) '  ', procstrg, 'assembling the source term....'
-  call comm2d(source_term, nel_solid, 3, 'solid') 
+  call pdistsum_solid(source_term) 
 
   ! cut out round-off errors
   do ielem=1, nel_solid

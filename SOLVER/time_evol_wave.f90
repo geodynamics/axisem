@@ -430,7 +430,7 @@ subroutine sf_time_loop_newmark
      !   ! @TODO needs updating to the new commucication pattern
      !   call pdistsum_solid_4(acc1)
      !else
-        call pdistsum_solid(acc1, 3) 
+        call pdistsum_solid(acc1) 
      ! end if
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
@@ -586,7 +586,7 @@ subroutine symplectic_time_loop
 
         ! FLUID: stiffness term assembly
         iclockcomm = tick()
-        call comm2d(ddchi,nel_fluid,1,'fluid')
+        call pdistsum_fluid(ddchi)
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         ! FLUID: update 1st derivative of potential
@@ -625,7 +625,7 @@ subroutine symplectic_time_loop
 
         ! SOLID: stiffness term assembly ==> w^T K_s u
         iclockcomm = tick()
-        call comm2d(acc,nel_solid,3,'solid')
+        call pdistsum_solid(acc)
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         ! SOLID: add source, only in source elements and for stf/=0

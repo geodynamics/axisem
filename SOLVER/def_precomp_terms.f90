@@ -721,7 +721,7 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
 !! jacob: just defined locally for check on extrema further below....
   
   use data_io,          only : need_fluid_displ, dump_energy
-  use commun,           only : comm2d
+  use commun,           only : pdistsum_solid_1D, pdistsum_fluid
   use data_pointwise,   only : inv_rho_fluid
   use data_matr,        only : set_mass_matrices, unassem_mass_rho_solid, unassem_mass_lam_fluid
 
@@ -867,7 +867,7 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
 
   ! Exchange boundary information
   if(lpr .and. verbose > 1) write(6,*) '   assemble solid mass matrix...'
-  call comm2d(inv_mass_rho,nel_solid,1,'solid')
+  call pdistsum_solid_1D(inv_mass_rho)
 
   if(lpr .and. verbose > 1) write(6,*) '   compute inverse solid mass matrix...'
   do iel=1,nel_solid
@@ -927,7 +927,7 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
 
   ! Exchange boundary information
   if(lpr .and. verbose > 1) write(6,*) '   assemble fluid mass matrix...'
-  call comm2d(inv_mass_fluid,nel_fluid,1,'fluid')
+  call pdistsum_fluid(inv_mass_fluid)
 
   if(lpr .and. verbose > 1) write(6,*) '   compute inverse fluid mass matrix...'
   do iel=1,nel_fluid
