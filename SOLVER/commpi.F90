@@ -440,32 +440,29 @@ subroutine extract_from_buffer(vec,nc)
   
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
   integer, intent(in)   :: nc
-  integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt, ic
+  integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer               :: sizemsg_solid
   class(link), pointer  :: buffr
   
 #ifndef serial
-  do ic = 1, nc
-     ! Extract received from buffer
-     call buffr_all%resetcurrent()
-     do imsg = 1, sizerecv_solid
-        buffr => buffr_all%getnext()
-        sizemsg_solid = sizemsgrecv_solid(imsg)
-        do ip = 1, sizemsg_solid
-           ipg = glocal_index_msg_recv_solid(ip,imsg)
-           gvec_solid(ipg,ic) = gvec_solid(ipg,ic) + buffr%ldata(ip,ic)
-        enddo
+  ! Extract received from buffer
+  call buffr_all%resetcurrent()
+  do imsg = 1, sizerecv_solid
+     buffr => buffr_all%getnext()
+     sizemsg_solid = sizemsgrecv_solid(imsg)
+     do ip = 1, sizemsg_solid
+        ipg = glocal_index_msg_recv_solid(ip,imsg)
+        gvec_solid(ipg,1:nc) = gvec_solid(ipg,1:nc) + buffr%ldata(ip,1:nc)
      enddo
-     do ip = 1, num_recv_gll
-        ipol = glob2el_recv(ip,1)
-        jpol = glob2el_recv(ip,2)
-        iel =  glob2el_recv(ip,3)
-        ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
-        ipg = igloc_solid(ipt)
-        vec(ipol,jpol,iel,ic) = gvec_solid(ipg,ic)
-     enddo
-
-  end do
+  enddo
+  do ip = 1, num_recv_gll
+     ipol = glob2el_recv(ip,1)
+     jpol = glob2el_recv(ip,2)
+     iel =  glob2el_recv(ip,3)
+     ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
+     ipg = igloc_solid(ipt)
+     vec(ipol,jpol,iel,1:nc) = gvec_solid(ipg,1:nc)
+  enddo
 #endif
 
 end subroutine extract_from_buffer
@@ -491,7 +488,7 @@ subroutine asynch_messaging_fluid
   integer               :: recv_request(1:sizerecv_fluid), send_request(1:sizesend_fluid)
   class(link), pointer  :: buffs, buffr
   
-  ! Prepare arrays to be sent.... MIGHT USE A POWER OF 2 STATEMENT THERE
+  ! Prepare arrays to be sent
   call buffs_all_fluid%resetcurrent()
   do imsg = 1, sizesend_fluid
      buffs => buffs_all_fluid%getnext()
@@ -500,8 +497,13 @@ subroutine asynch_messaging_fluid
         ipg = glocal_index_msg_send_fluid(ip,imsg)
         buffs%ldata(ip,1) = gvec_fluid(ipg)
      end do
+  end do
      
-     ! Send stuff around
+  ! Send stuff around
+  call buffs_all_fluid%resetcurrent()
+  do imsg = 1, sizesend_fluid
+     buffs => buffs_all_fluid%getnext()
+     sizemsg_fluid = sizemsgsend_fluid(imsg)
      sizeb  = sizemsg_fluid
      ipdes  = listsend_fluid(imsg)
      msgnum = mynum*nproc + ipdes
@@ -509,7 +511,7 @@ subroutine asynch_messaging_fluid
                    MPI_COMM_WORLD, send_request(imsg), ierror)
   end do
 
-  ! Receive data, sum things up
+  ! Receive data
   call buffr_all_fluid%resetcurrent()
   do imsg = 1, sizerecv_fluid
      buffr => buffr_all_fluid%getnext()
@@ -524,6 +526,7 @@ subroutine asynch_messaging_fluid
   call MPI_WAITALL(sizerecv_fluid, recv_request, recv_status, ierror)
   call MPI_WAITALL(sizesend_fluid, send_request, send_status, ierror)
 
+  ! extract from buffer and add to local values
   call buffr_all_fluid%resetcurrent()
   do imsg = 1, sizerecv_fluid
      buffr => buffr_all_fluid%getnext()
