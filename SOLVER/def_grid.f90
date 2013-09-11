@@ -367,8 +367,8 @@ end subroutine massmatrix_dble
 !! Yet again, maybe not...
 subroutine mesh_tests
 
-  use commun, only: mpi_asynch_messaging_test_solid
-  use commun, only: mpi_asynch_messaging_test_fluid
+  !use commun, only: mpi_asynch_messaging_test_solid
+  !use commun, only: mpi_asynch_messaging_test_fluid
   
   ! Checking coordinate conformity 
   if (lpr) write(6,*)'  dumping element information...'
