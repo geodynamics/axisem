@@ -934,6 +934,9 @@ subroutine open_hyp_epi_equ_anti
 
   if (maxind>0) then
 
+    ! @TODO: this might be problematic if two processors have the source - then
+    !        both open the same file. IMHO these files are pretty useless
+    !        anyway, so not fixing it for now
     if (have_src) then
        open(10001,file=datapath(1:lfdata)//'/seishypocenter1.dat') 
        if (src_type(1)/='monopole') &
