@@ -395,7 +395,6 @@ subroutine send_recv_buffers_solid(nc)
   integer               :: ic, ip, ipg
   integer               :: msgnum, msgnum1, msgnum2
   integer               :: sizemsg_solid
-  !integer               :: recv_status(MPI_STATUS_SIZE), send_status(MPI_STATUS_SIZE)
   integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_solid)
   integer               :: send_status(MPI_STATUS_SIZE, sizesend_solid)
   integer               :: ierror
@@ -412,7 +411,6 @@ subroutine send_recv_buffers_solid(nc)
      msgnum = mynum * nproc + ipdes
      call MPI_ISEND(buffs%ldata, sizeb, mpi_realkind, ipdes, msgnum, &
                     MPI_COMM_WORLD, send_request(imsg), ierror)
-     !call MPI_WAIT(send_request(imsg), send_status, ierror)
   end do
 
   ! Receive data
@@ -425,7 +423,6 @@ subroutine send_recv_buffers_solid(nc)
      msgnum1 = ipsrc * nproc + mynum
      call MPI_IRECV(buffr%ldata, sizeb, mpi_realkind, ipsrc, msgnum1, &
                     MPI_COMM_WORLD, recv_request(imsg), ierror)
-     !call MPI_WAIT(recv_request(imsg), recv_status, ierror)
   enddo
   call MPI_WAITALL(sizerecv_solid, recv_request, recv_status, ierror)
   call MPI_WAITALL(sizesend_solid, send_request, send_status, ierror)
