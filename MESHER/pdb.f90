@@ -1300,12 +1300,7 @@ subroutine partition_sflobal_index
  
   if (dump_mesh_info_screen) &
      write(6,*) 'sum sizebin,slobal:', sum(sizebin_solid),nglobslob
-    
-  !!! this is not the case anymore in the new communication scheme
-  !if (sum(sizebin_solid) /= nglobslob) then 
-  !   write(6,*)'PROBLEM: sum of solid bins not equal to slobal num!'
-  !   stop
-  !endif
+
   sizebinmax_solid = maxval(sizebin_solid(:)) 
 
   if (dump_mesh_info_screen) write(6,*) ' sizebinmax_solid = ' , sizebinmax_solid
@@ -1317,7 +1312,6 @@ subroutine partition_sflobal_index
   ibin_solid(0:nproc-1) = 0  
 
   do ipt = 1, nglobslob
-     !!! NEW  loop
      do ibel = 1, nprocb_solid(ipt)
         iproct = lprocb_solid(ibel,ipt)
         ibin_solid(iproct) = ibin_solid(iproct) + 1
@@ -1529,73 +1523,18 @@ subroutine partition_sflobal_index
   end do
   
   deallocate(slob2sloc)
-  
-  ! Write out domain for each processor and an array that is iproc on its 
-  ! non-communicating points, and assumes the processor number of its partner
-  ! for send/receive on these communicating global points.
-  ! Use GMT script plot_proc_messaging.csh to plot processor domains 
-  
-  ! MvD: seem like this is pretty useless without writing to a file, which was
-  !      removed in r320 for a reason I don't remember. maybe this should be a
-  !      vtk file?
 
-  !do iproct=0, nproc-1
-  !  allocate(uglob2_solid(nglobp_solid(iproct))) 
-  !  allocate(val_solid(0:npol,0:npol,nel_solid(iproct)))
-  !  call define_io_appendix(appiproc,iproct)
-  !
-  !  ! send
-  !  uglob2_solid(:) = iproct
-  !  val_solid(:,:,:) = 0
-  !  if (sizesendp_solid(iproct)>0) then 
-  !     do ip = 1, sizesendp_solid(iproct)
-  !        ipdes = listsendp_solid(ip,iproct)
-  !        do ipt = 1, sizemsgsendp_solid(ip,iproct)
-  !           ig = global_index_msg_solid(ipt,iproct,ipdes)
-  !           uglob2_solid(glocal_index_msg_sendp_solid(ipt,ip,iproct)) = ipdes
-  !        enddo
-  !     enddo
-  !
-  !     do iel = 1, nel_solid(iproct)
-  !        do ipol = 0, npol
-  !           do jpol = 0, npol
-  !              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-  !              idest = igloc_solid(ipt,iproct)
-  !              val_solid(ipol,jpol,iel) = uglob2_solid(idest)
-  !           enddo
-  !        enddo
-  !     enddo
-  !  endif
-  !
-  !  call define_io_appendix(appiproc, iproct)
-  !
-  !  ! receive
-  !  uglob2_solid(:) = iproct
-  !  val_solid(:,:,:) = 0
-  !
-  !  if (sizerecvp_solid(iproct)>0) then 
-  !     do ip = 1, sizerecvp_solid(iproct)
-  !        ipdes = listrecvp_solid(ip,iproct)
-  !        do ipt = 1, sizemsgrecvp_solid(ip,iproct)
-  !           ig = global_index_msg_solid(ipt,iproct,ipdes)
-  !           uglob2_solid(glocal_index_msg_recvp_solid(ipt,ip,iproct)) = ipdes
-  !        enddo
-  !     enddo
-  !
-  !     do iel = 1, nel_solid(iproct)
-  !        do ipol = 0, npol
-  !           do jpol = 0, npol
-  !              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol+1
-  !              idest = igloc_solid(ipt,iproct)
-  !              val_solid(ipol,jpol,iel) = uglob2_solid(idest)
-  !           enddo
-  !        enddo
-  !     enddo
-  !  endif
-  !
-  !  deallocate(uglob2_solid, val_solid)
-  !
-  !enddo
+  if (any(glocal_index_msg_sendp_solid /= glocal_index_msg_recvp_solid)) then
+      write(6,*) 'ERROR: Index Array for send and recv should be identical in'
+      write(6,*) '       the new communication scheme, but are not!'
+      stop
+  endif
+
+  if (any(sizesendp_solid /= sizerecvp_solid)) then
+      write(6,*) 'ERROR: Messages for send and recv should have same size in'
+      write(6,*) '       the new communication scheme, but are not!'
+      stop
+  endif
 
   deallocate(sizebin_solid, binp_solid)
   deallocate(global_index_msg_solid)
@@ -1625,11 +1564,6 @@ subroutine partition_sflobal_index
      end if
    
      if (dump_mesh_info_screen) write(6,*) sum(sizebin_fluid),nglobflob
-     !!! this is not the case anymore in the new communication scheme
-     !if (sum(sizebin_fluid) /= nglobflob) then 
-     !   write(6,*)'PROBLEM: sum of fluid bins not equal to flobal num!'
-     !   stop
-     !endif
      sizebinmax_fluid = maxval(sizebin_fluid(:)) 
    
      if (dump_mesh_info_screen) &
@@ -1642,7 +1576,6 @@ subroutine partition_sflobal_index
      ibin_fluid(0:nproc-1) = 0
    
      do ipt = 1, nglobflob
-        !!! NEW  loop
         do ibel = 1, nprocb_fluid(ipt)
            iproct =  lprocb_fluid(ibel,ipt)
            ibin_fluid(iproct) = ibin_fluid(iproct) + 1
@@ -1672,7 +1605,7 @@ subroutine partition_sflobal_index
         write(6,*) 'Size of fluid messages for each proc-proc pair:'
         write(6,*) '---> destination proc, down: my proc'
         do iproct = 0,  nproc-1
-           ! MvD: 80 beeing the maximum number of procs???
+           ! @TODO: 80 beeing the maximum number of procs???
            write(6,'(80(i3,1x))') (sizemsg_fluid(iproct,ipdes),ipdes=0,nproc-1)
         end do
         write(6,*) 'Total fluid messages size:', SUM(SUM(sizemsg_fluid,DIM=1))
@@ -1722,7 +1655,8 @@ subroutine partition_sflobal_index
    
      if (dump_mesh_info_screen) then 
         do iproct = 0, nproc -1
-           write(6,'("Proc", i3, " receives fluid stuff from",i3, " procs and sends to", i3, " procs")') &
+           write(6,'("Proc", i3, " receives fluid stuff from",i3, &
+                    " procs and sends to", i3, " procs")') &
                  iproct, sizerecvp_fluid(iproct), sizesendp_fluid(iproct)
         end do
      end if
@@ -1761,12 +1695,14 @@ subroutine partition_sflobal_index
    
      if (dump_mesh_info_screen .and. nproc>1) then 
         do iproct = 0, nproc-1
-           write(6,'("Proc", i2, " will receive ", i2, " fluid messages from procs ", 20(i3,1x))') &
+           write(6,'("Proc", i2, " will receive ", i2, &
+                    " fluid messages from procs ", 20(i3,1x))') &
                  iproct, sizerecvp_fluid(iproct), &
-                 (listrecvp_fluid(ip,iproct),ip=1,sizerecvp_fluid(iproct))
-           write(6,'("Proc", i2, " will send    ", i2, " fluid messages to   procs ", 20(i3,1x))') &
+                 (listrecvp_fluid(ip,iproct), ip=1,sizerecvp_fluid(iproct))
+           write(6,'("Proc", i2, " will send    ", i2, &
+                    " fluid messages to   procs ", 20(i3,1x))') &
                  iproct, sizesendp_fluid(iproct), &
-                 (listsendp_fluid(ip,iproct),ip=1,sizesendp_fluid(iproct))
+                 (listsendp_fluid(ip,iproct), ip=1,sizesendp_fluid(iproct))
         end do
      end if
    
@@ -1847,6 +1783,18 @@ subroutine partition_sflobal_index
   end if ! have_fluid
   
   if (allocated(flob2floc)) deallocate(flob2floc)
+
+  if (any(glocal_index_msg_sendp_fluid /= glocal_index_msg_recvp_fluid)) then
+      write(6,*) 'ERROR: Index Array for send and recv should be identical in'
+      write(6,*) '       the new communication scheme, but are not!'
+      stop
+  endif
+
+  if (any(sizesendp_fluid /= sizerecvp_fluid)) then
+      write(6,*) 'ERROR: Messages for send and recv should have same size in'
+      write(6,*) '       the new communication scheme, but are not!'
+      stop
+  endif
 
   if (dump_mesh_info_screen .and. nproc>1) then 
      write(6,*)
@@ -2108,7 +2056,6 @@ subroutine define_axial_elem
      ! glocal domain
      do iel=1, nel(iproc)
         ! jpol=npol is random choice 
-        ! MvD: ???
         ielg = procel(iel,iproc)
         
         if ( sgll(0,npol,ielg) < min_distance_nondim ) then 
@@ -2122,7 +2069,6 @@ subroutine define_axial_elem
      do iel=1, nel_solid(iproc)
         ielg = procel_solid(iel,iproc)
         ! jpol=npol is random choice
-        ! MvD: ???
         if ( sgll(0,npol,ielg) < min_distance_nondim ) then 
            axis_solid(iel,iproc) = 1
            naxel_solidp(iproc) = naxel_solidp(iproc) + 1
@@ -2134,7 +2080,6 @@ subroutine define_axial_elem
      do iel=1, nel_fluid(iproc)
         ielg = procel_fluid(iel,iproc)
         ! jpol=npol is random choice
-        ! MvD: ???
         if ( sgll(0,npol,ielg) < min_distance_nondim ) then 
            axis_fluid(iel,iproc) = 1
            naxel_fluidp(iproc) = naxel_fluidp(iproc) + 1
@@ -2490,11 +2435,11 @@ subroutine write_db
      if (dump_mesh_info_screen) write(6,*)'PARALLEL DATABASE: writing communication info...',iproc
   
      ! SSSSSSSSSSSS SOLID MESSAGING SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
-     ! number of processors to receive data from
+     ! number of processors to communicate with
      write(10) sizerecvp_solid(iproc)
   
      if (sizerecvp_solid(iproc) > 0 ) then
-        ! list of processors to receive data from
+        ! list of processors to communicate with
         write(10) listrecvp_solid(1:sizerecvp_solid(iproc),iproc)
   
         ! size of messages coming from each of these processors
@@ -2509,37 +2454,18 @@ subroutine write_db
         end do
      end if
   
-     ! number of processors to send data to
-     write(10) sizesendp_solid(iproc)
-  
-     ! list of processors to send data to
-     if (sizesendp_solid(iproc) > 0 ) then
-        write(10) listsendp_solid(1:sizesendp_solid(iproc),iproc)
-  
-        ! size of messages going to each of these processors
-        write(10) sizemsgsendp_solid(1:sizesendp_solid(iproc),iproc)
-  
-        ! glocal_index corresponding to each of these messages
-        do imsg = 1, sizesendp_solid(iproc)
-           ipdes = listsendp_solid(imsg,iproc) ! to be deleted
-           do iptp = 1, sizemsgsendp_solid(imsg,iproc)
-              write(10) glocal_index_msg_sendp_solid(iptp,imsg,iproc)
-           end do
-        end do
-     end if
-  
      ! FFFFFFFFFFFFF FLUID MESSAGING FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
      ! Only written if there is a fluid!
      if (have_fluid) then
         if (dump_mesh_info_screen) write(6,*)'writing fluid messaging'
-        ! number of processors to receive data from
+        ! number of processors to communicate with
         write(10) sizerecvp_fluid(iproc)
   
         if (sizerecvp_fluid(iproc) > 0 ) then
-           ! list of processors to receive data from
+           ! list of processors to communicate with
            write(10) listrecvp_fluid(1:sizerecvp_fluid(iproc),iproc)
   
-           ! size of messages coming from each of these processors
+           ! size of messages for each of these processors
            write(10) sizemsgrecvp_fluid(1:sizerecvp_fluid(iproc),iproc)
   
            ! glocal_index corresponding to each of these messages
@@ -2551,24 +2477,6 @@ subroutine write_db
            end do
         end if
   
-        ! number of processors to send data to
-        write(10) sizesendp_fluid(iproc)
-  
-        ! list of processors to send data to
-        if (sizesendp_fluid(iproc) > 0 ) then
-           write(10) listsendp_fluid(1:sizesendp_fluid(iproc),iproc)
-  
-           ! size of messages going to each of these processors
-           write(10) sizemsgsendp_fluid(1:sizesendp_fluid(iproc),iproc)
-  
-           ! glocal_index corresponding to each of these messages
-           do imsg = 1, sizesendp_fluid(iproc)
-              ipdes = listsendp_fluid(imsg,iproc) ! to be deleted
-              do iptp = 1, sizemsgsendp_fluid(imsg,iproc)
-                 write(10) glocal_index_msg_sendp_fluid(iptp,imsg,iproc)
-              end do
-           end do
-        end if
      endif ! have_fluid
   
      close(10)

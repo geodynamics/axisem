@@ -253,7 +253,8 @@ subroutine read_db
 
   ! SOLID message passing SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
   read(1000+mynum) sizerecv_solid
-  if (verbose > 1) write(69,*) 'number of solid messages received:', sizerecv_solid
+  !if (verbose > 1) write(69,*) 'number of solid messages received:', sizerecv_solid
+  if (verbose > 1) write(69,*) 'number of solid messages:', sizerecv_solid
 
   if ( sizerecv_solid > 0) then 
      allocate(listrecv_solid(1:sizerecv_solid))
@@ -274,8 +275,6 @@ subroutine read_db
      
      allocate(buffr_solid(1:sizemsgrecvmax_solid,1:3))
      buffr_solid = 0
-     !allocate(buffr_all(1:sizemsgrecvmax_solid,1:3,1:sizerecv_solid))
-     !buffr_all(:,:,:) = 0.
 
      ! fill buffer list with arrays of appropriate size
      do imsg = 1, sizerecv_solid
@@ -288,48 +287,33 @@ subroutine read_db
            read(1000+mynum) glocal_index_msg_recv_solid(iptp,imsg)
         end do
      end do
-  end if
-
-  read(1000+mynum) sizesend_solid
-  if (verbose > 1) write(69,*) 'number of solid messages sent:', sizesend_solid
-  if ( sizesend_solid > 0) then 
-     allocate(listsend_solid(1:sizesend_solid))
-     listsend_solid(:) = -1
-     
-     allocate(sizemsgsend_solid(1:sizesend_solid))
-     sizemsgsend_solid(:) = 0
-     
-     read(1000+mynum) listsend_solid(:)
-     read(1000+mynum) sizemsgsend_solid(:) 
-     sizemsgsendmax_solid = maxval(sizemsgsend_solid(:))
-     
-     if (verbose > 1) write(69,*) 'max size of solid messages sent:', sizemsgsendmax_solid
-     
-     allocate(glocal_index_msg_send_solid(1:sizemsgsendmax_solid,1:sizesend_solid))
-     glocal_index_msg_send_solid(:,:) = 0
+  
+     sizesend_solid = sizerecv_solid
+     listsend_solid = listrecv_solid
+     sizemsgsend_solid = sizemsgrecv_solid
+     sizemsgsendmax_solid = sizemsgrecvmax_solid
+     glocal_index_msg_send_solid = glocal_index_msg_recv_solid
      
      allocate(buffs_solid(1:sizemsgsendmax_solid,1:3))
      buffs_solid = 0
-     !allocate(buffs_all(1:sizemsgsendmax_solid,1:3,1:sizesend_solid))
-     !buffs_all(:,:,:) = 0.
      
      ! fill buffer list with arrays of appropriate size
      do imsg = 1, sizesend_solid
          call buffs_all%append(buffs_solid(1:sizemsgsend_solid(imsg),:))
      end do
+    
+     allocate(recv_request_solid(1:sizerecv_solid))
+     allocate(send_request_solid(1:sizesend_solid))
 
-     do imsg = 1, sizesend_solid
-        ipdes = listsend_solid(imsg)
-        do iptp = 1, sizemsgsend_solid(imsg)
-         read(1000+mynum) glocal_index_msg_send_solid(iptp,imsg)
-        end do
-     end do
   end if
  
   ! FLUID message passing FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
   if (have_fluid) then
+
      read(1000+mynum) sizerecv_fluid
+
      if (verbose > 1) write(69,*)'number of fluid messages received:', sizerecv_fluid
+
      if ( sizerecv_fluid > 0) then 
         allocate(listrecv_fluid(1:sizerecv_fluid))
         listrecv_fluid(:) = -1
@@ -359,25 +343,12 @@ subroutine read_db
               read(1000+mynum) glocal_index_msg_recv_fluid(iptp,imsg)
            end do
         end do
-     end if
 
-     read(1000+mynum) sizesend_fluid
-     if (verbose > 1) write(69,*) '# fluid messages sent:', sizesend_fluid
-     
-     if ( sizesend_fluid > 0) then 
-        allocate(listsend_fluid(1:sizesend_fluid))
-        listsend_fluid(:) = -1
-        
-        allocate(sizemsgsend_fluid(1:sizesend_fluid)) 
-        sizemsgsend_fluid(:) = 0
-        
-        read(1000+mynum) listsend_fluid(:)
-        read(1000+mynum) sizemsgsend_fluid(:) 
-        
-        sizemsgsendmax_fluid = maxval(sizemsgsend_fluid(:))
-        if (verbose > 1) write(69,*)'max size of fluid messages sent:',sizemsgsendmax_fluid
-        allocate(glocal_index_msg_send_fluid(1:sizemsgsendmax_fluid,1:sizesend_fluid))
-        glocal_index_msg_send_fluid(:,:) = 0
+        sizesend_fluid = sizerecv_fluid
+        listsend_fluid = listrecv_fluid
+        sizemsgsend_fluid = sizemsgrecv_fluid
+        sizemsgsendmax_fluid = sizemsgrecvmax_fluid
+        glocal_index_msg_send_fluid = glocal_index_msg_recv_fluid
 
         allocate(buffs_fluid(1:sizemsgsendmax_fluid,1))
         buffs_fluid = 0
@@ -386,13 +357,8 @@ subroutine read_db
             call buffs_all_fluid%append(buffs_fluid(1:sizemsgsend_fluid(imsg),:))
         end do
 
-        do imsg = 1, sizesend_fluid
-           ipdes = listsend_fluid(imsg)
-           do iptp = 1, sizemsgsend_fluid(imsg)
-              read(1000+mynum) glocal_index_msg_send_fluid(iptp,imsg)
-           end do
-        end do
      end if
+
   endif ! have_fluid
 
   if (verbose > 1) write(69,*) 'Successfully read parallel database'
