@@ -39,17 +39,14 @@ module linked_list
      procedure, pass :: setNextLink  ! set next pointer
      procedure, pass :: getPrevLink  ! return next pointer
      procedure, pass :: setPrevLink  ! set next pointer
+     procedure, pass :: init
   end type link
-
-  interface link
-     procedure constructor ! construct/initialize a link
-  end interface
 
   type :: list
      private
-     class(link), pointer :: firstLink => null()    ! first link in list
-     class(link), pointer :: lastLink => null()     ! last link in list
-     class(link), pointer :: currentLink => null()  ! iterator
+     type(link), pointer :: firstLink => null()    ! first link in list
+     type(link), pointer :: lastLink => null()     ! last link in list
+     type(link), pointer :: currentLink => null()  ! iterator
      integer              :: length = 0
      contains
      procedure, pass :: free            ! empty the list and free the memory
@@ -100,7 +97,7 @@ end function
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine setPrevLink(this,prev)
+subroutine setPrevLink(this, prev)
   class(link)           :: this
   type(link), pointer   :: prev
   this%prev => prev
@@ -108,30 +105,34 @@ end subroutine setPrevLink
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-function constructor(ldata, next, prev)
-  class(link), pointer    :: constructor
+subroutine init(this, ldata, next, prev)
+  class(link)             :: this
   real(kind=realkind)     :: ldata(:,:)
   type(link), pointer     :: next, prev
 
-  allocate(constructor)
-  constructor%next => next
-  constructor%prev => prev
+  this%next => next
+  this%prev => prev
   ! Make a copy of the data !
-  constructor%ldata = ldata
-end function constructor
+
+  allocate(this%ldata(size(ldata, dim=1),size(ldata, dim=2)))
+  this%ldata = ldata
+end subroutine init
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 subroutine append(this, ldata)
   class(list)             :: this
   real(kind=realkind)     :: ldata(:,:)
-  class(link), pointer    :: newLink
+  type(link), pointer     :: newLink
+
+  allocate(newLink)
 
   if (.not. associated(this%firstLink)) then
-     this%firstLink => link(ldata, null(), null())
+     call newLink%init(ldata, null(), null())
+     this%firstLink => newLink
      this%lastLink => this%firstLink
   else
-     newLink => link(ldata, null(), this%lastLink)
+     call newLink%init(ldata, null(), this%lastLink)
      call this%lastLink%setNextLink(newLink)
      this%lastLink => newLink
   end if
@@ -144,13 +145,16 @@ end subroutine append
 subroutine insert(this, ldata)
   class(list)             :: this
   real(kind=realkind)     :: ldata(:,:)
-  class(link), pointer    :: newLink
+  type(link), pointer     :: newLink
 
+  allocate(newLink)
+  
   if (.not. associated(this%firstLink)) then
-     this%firstLink => link(ldata, null(), null())
+     call newLink%init(ldata, null(), null())
+     this%firstLink => newLink
      this%lastLink => this%firstLink
   else
-     newLink => link(ldata, this%firstLink, null())
+     call newLink%init(ldata, this%firstLink, null())
      call this%firstLink%setPrevLink(newLink)
      this%firstLink => newLink
   end if
