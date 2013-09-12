@@ -54,16 +54,15 @@ module data_mesh
   integer , protected :: lfbkgrdmodel !<   length of bkgrdmodel name
 
   ! global number in solid varies across procs due to central cube domain decomposition
-  integer                            :: nglob
+  integer                                       :: nglob
+  ! global numbering array for the solid and fluid assembly
   integer, protected, allocatable, dimension(:) :: igloc_solid ! (npoint_solid)
   integer, protected, allocatable, dimension(:) :: igloc_fluid ! (npoint_fluid)
 
-
   ! Misc definitions
-  integer                           :: nsize, npoint_solid3
+  integer                           :: nsize
   logical                           :: do_mesh_tests
 
-  ! global numbering array for the solid and fluid assembly
   real(kind=realkind), allocatable  :: gvec_solid(:,:) 
   real(kind=realkind), allocatable  :: gvec_fluid(:)
 
