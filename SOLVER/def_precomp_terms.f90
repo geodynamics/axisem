@@ -135,13 +135,6 @@ subroutine read_model_compute_terms
 
      if (lpr .and. verbose > 1) write(6,*) '   define solid-fluid boundary terms....'
      call def_solid_fluid_boundary_terms
-  !else not allocated
-  !   M_w_fl = zero
-  !   M0_w_fl = zero
-  !   M1chi_fl = zero
-  !   M2chi_fl = zero
-  !   M4chi_fl = zero    
-  !   bdry_matr = zero
   endif
 
   if (lpr .and. verbose > 1) write(6,*) '   ...defined all precomputed arrays'
