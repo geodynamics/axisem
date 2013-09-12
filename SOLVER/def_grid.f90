@@ -52,7 +52,7 @@ subroutine init_grid
   use splib, only: zemngl2, get_welegl_axial, zelegl, get_welegl
   
   
-  integer :: iel, ipol, jpol, idest, ipt, icount, iicount, ipg, ip, imsg
+  integer :: iel, ipol, jpol, idest, ipt, icount, ipg, ip, imsg
   
   ! Axial elements, s-direction: Gauss-Lobatto-Jacobi (0,1) quadrature
   call zemngl2(npol, xi_k)                   
@@ -99,7 +99,6 @@ subroutine init_grid
 
   ! Set some misc. parameters for faster access in time loop
   nsize = (npol+1)**2
-  npoint_solid3 = npoint_solid*3 ! for three-component arrays
 
   ! Initialize the solid global number array needed for the assembly
   allocate(gvec_solid(nglob_solid,3))
@@ -107,31 +106,21 @@ subroutine init_grid
   ! Initialize the fluid global number array needed for the assembly
   allocate(gvec_fluid(nglob_fluid))
   
-
   ! Initialize solid array that maps global numbers into elemental numbers for 
   ! processor boundaries
 
   if (nproc>1) then
      if (sizesend_solid>0) then
         allocate(glob2el_send(2*sizesend_solid*maxval(sizemsgsend_solid),3))
-        glob2el_send=0
+        glob2el_send = 0
      endif
-     if (sizerecv_solid>0) then
-        allocate(glob2el_recv(2*sizerecv_solid*maxval(sizemsgrecv_solid),3))
-        glob2el_recv=0
-     endif
-     
-     icount = 0
-     iicount = 0
-     
-     if (diagfiles) then
-         open(unit=8978,file=infopath(1:lfinfo)//'/mpi_gll_send.dat'//appmynum)
-         open(unit=8979,file=infopath(1:lfinfo)//'/mpi_gll_recv.dat'//appmynum)
-     end if
 
-     do iel=1,nel_solid
+     icount = 0
+     if (diagfiles) open(unit=8978,file=infopath(1:lfinfo)//'/mpi_gll_send.dat'//appmynum)
+
+     do iel=1, nel_solid
         do jpol=0, npol
-           do ipol=0, npol
+           outer: do ipol=0, npol
               ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
               idest = igloc_solid(ipt)
               if (sizesend_solid>0) then
@@ -143,35 +132,23 @@ subroutine init_grid
                           glob2el_send(icount,1) = ipol
                           glob2el_send(icount,2) = jpol
                           glob2el_send(icount,3) = iel
-                          if (diagfiles) write(8978,*)icount,iel,ipol,jpol
+                          if (diagfiles) write(8978,*) icount, iel, ipol, jpol
+                          cycle outer
                        endif
                     enddo
                  enddo
               endif
-              if (sizerecv_solid>0) then
-                 do imsg = 1, sizerecv_solid
-                    do ip = 1, sizemsgrecv_solid(imsg)
-                       ipg = glocal_index_msg_recv_solid(ip,imsg)
-                       if (idest==ipg) then 
-                          iicount = iicount + 1
-                          glob2el_recv(iicount,1) = ipol
-                          glob2el_recv(iicount,2) = jpol
-                          glob2el_recv(iicount,3) = iel
-                          if (diagfiles) write(8979,*)iicount,iel,ipol,jpol
-                       endif
-                    enddo
-                 enddo
-              endif
-           end do
+           end do outer
         end do
      end do
-     if (diagfiles) then
-         close(8978)
-         close(8979)
-     end if
+
+     if (diagfiles) close(8978)
      
      num_send_gll = icount
-     num_recv_gll = iicount
+     num_recv_gll = icount
+     glob2el_recv = glob2el_send
+     glob2el_recv = glob2el_send
+     glob2el_recv = glob2el_send
     
      if (verbose > 1) then
         do iel=0, nproc-1
