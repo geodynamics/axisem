@@ -28,7 +28,7 @@ module commpi
 
   use global_parameters
   use data_proc
-  use data_mesh,        only : gvec_solid,gvec_fluid
+  use data_mesh,        only : gvec_solid, gvec_fluid
   use data_io,          only : verbose
 
   ! in case you have problems with the mpi module, you might try to use the
@@ -349,28 +349,36 @@ end subroutine pbarrier
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine feed_buffer(nc)
+subroutine feed_buffer(vec, nc)
 
   use data_comm
-  use data_mesh, only: gvec_solid
+  use data_mesh, only: npol, gvec_solid, igloc_solid
   use linked_list
   
-  integer, intent(in)            :: nc
-  integer                        :: ic, imsg, ipg, ip
-  integer                        :: sizemsg_solid
-  class(link), pointer           :: buffs
+  real(kind=realkind), intent(in) :: vec(0:,0:,:,:)
+  integer, intent(in)             :: nc
+  integer                         :: imsg, ipg, ip, ipol, jpol, iel, ipt
+  integer                         :: sizemsg_solid
+  class(link), pointer            :: buffs
   
 #ifndef serial
   ! fill send buffer
+  gvec_solid = 0
+  do ip = 1, num_send_gll
+     ipol = glob2el_send(ip,1)
+     jpol = glob2el_send(ip,2)
+     iel =  glob2el_send(ip,3)
+     ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
+     ipg = igloc_solid(ipt)
+     gvec_solid(ipg,1:nc) = gvec_solid(ipg,1:nc) + vec(ipol,jpol,iel,1:nc)
+  enddo
   call buffs_all%resetcurrent()
   do imsg = 1, sizesend_solid
      buffs => buffs_all%getNext()
      sizemsg_solid = sizemsgsend_solid(imsg)
      do ip = 1, sizemsg_solid
         ipg = glocal_index_msg_send_solid(ip,imsg)
-        do ic = 1, nc
-           buffs%ldata(ip,ic) = gvec_solid(ipg,ic)
-        enddo
+        buffs%ldata(ip,1:nc) = gvec_solid(ipg,1:nc)
      end do
   enddo
 #endif
@@ -395,10 +403,7 @@ subroutine send_recv_buffers_solid(nc)
   integer               :: ic, ip, ipg
   integer               :: msgnum, msgnum1, msgnum2
   integer               :: sizemsg_solid
-  integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_solid)
-  integer               :: send_status(MPI_STATUS_SIZE, sizesend_solid)
   integer               :: ierror
-  integer               :: recv_request(1:sizerecv_solid), send_request(1:sizesend_solid)
   class(link), pointer  :: buffs, buffr
   
   ! Send stuff around
@@ -410,7 +415,7 @@ subroutine send_recv_buffers_solid(nc)
      ipdes  = listsend_solid(imsg)
      msgnum = mynum * nproc + ipdes
      call MPI_ISEND(buffs%ldata, sizeb, mpi_realkind, ipdes, msgnum, &
-                    MPI_COMM_WORLD, send_request(imsg), ierror)
+                    MPI_COMM_WORLD, send_request_solid(imsg), ierror)
   end do
 
   ! Receive data
@@ -422,10 +427,8 @@ subroutine send_recv_buffers_solid(nc)
      ipsrc = listrecv_solid(imsg)
      msgnum1 = ipsrc * nproc + mynum
      call MPI_IRECV(buffr%ldata, sizeb, mpi_realkind, ipsrc, msgnum1, &
-                    MPI_COMM_WORLD, recv_request(imsg), ierror)
+                    MPI_COMM_WORLD, recv_request_solid(imsg), ierror)
   enddo
-  call MPI_WAITALL(sizerecv_solid, recv_request, recv_status, ierror)
-  call MPI_WAITALL(sizesend_solid, send_request, send_status, ierror)
 #endif
 
 end subroutine send_recv_buffers_solid
@@ -443,8 +446,14 @@ subroutine extract_from_buffer(vec,nc)
   integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer               :: sizemsg_solid
   class(link), pointer  :: buffr
+  integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_solid)
+  integer               :: send_status(MPI_STATUS_SIZE, sizesend_solid)
+  integer               :: ierror
   
 #ifndef serial
+  ! wait until all receiving communication is done
+  call MPI_WAITALL(sizerecv_solid, recv_request_solid, recv_status, ierror)
+
   ! Extract received from buffer
   call buffr_all%resetcurrent()
   do imsg = 1, sizerecv_solid
@@ -463,6 +472,9 @@ subroutine extract_from_buffer(vec,nc)
      ipg = igloc_solid(ipt)
      vec(ipol,jpol,iel,1:nc) = gvec_solid(ipg,1:nc)
   enddo
+
+  ! wait until all sending communication is done
+  call MPI_WAITALL(sizesend_solid, send_request_solid, send_status, ierror)
 #endif
 
 end subroutine extract_from_buffer
