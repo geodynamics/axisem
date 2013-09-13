@@ -443,7 +443,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   integer, intent(in)       :: nelmax, nelmax_fluid, nelmax_solid
   
   integer                   :: itheta, iitheta, iel
-  integer                   :: irad, iproc
+  integer                   :: irad, iproc, iradb
   integer                   :: mycount, nicb
   real(kind=dp)             :: deltatheta
   integer, allocatable      :: central_count(:)
@@ -574,52 +574,57 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
 
   end do !nthetal-1
 
-
   ! Now decomposition in radius
   do itheta = 0, nthetal-1
      mycount = 1
      do irad = 0, nrl-1
         iproc = itheta * nrl + irad
-        ! special treatment of the first processor in the theta slice to make
-        ! sure it includes both solid/fluid boundaries
-        ! kind of hacky, but should work for most cases of earth like models
-        if (irad == 0) then
-           ! special case of ntheta = 2, which has the same ndivs as theta = 4
-           if (nthetal == 2) then
-              nicb = ndivs * 2
-           else
-              nicb = ndivs * 4 / nthetal
-           endif
-
-           ! take the lowest layer in the fluid of the theta slice
-           do iel = 1, nicb
-              procel_fluid(iel, iproc) = thetaslel_fluid(sum(nel_fluid(itheta:itheta+nrl-1)) &
-                                                         - mycount + 1,itheta)
-              mycount = mycount + 1
-           end do ! iel
-
-           ! take the upper most layer in the fluid and fill up until having
-           ! enogh elements
-           do iel = nicb+1, nel_fluid(iproc)
-              procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
-              mycount = mycount + 1
-           end do ! iel
-        else
-           ! just go inwards radially
-           do iel = 1, nel_fluid(iproc)
-              procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
-              mycount = mycount + 1
-           end do ! iel
-        endif
-     enddo
-     
-     !mycount = sum(nel_solid(itheta:itheta+nrl-1))
-     mycount = 1
-     do irad = 0, nrl-1
-        iproc = itheta * nrl + irad
-
+        ! @TODO: is not really radially, but along global element number, which
+        !        is along theta/radius in the shell, but along s and z in the inner
+        !        core. for nradialslices > 12 this leads to uggly blocks in the
+        !        inner core. solution: sort the inner core elements along
+        !        radius/theta
         do iel = 1, nel_solid(iproc)
            procel_solid(iel, iproc) = thetaslel_solid(mycount,itheta)
+           mycount = mycount + 1
+        end do ! iel
+     enddo
+     
+     ! special treatment of the processor with sol/flu boundary
+     ! kind of hacky, but should work for most cases of earth like models
+     mycount = 1
+     iradb = (nel_region(ndisc-1) / nthetaslices) / nel_solid(iproc)
+     iproc = itheta * nrl + iradb
+        
+     ! special case of ntheta = 2, which has the same ndivs as theta = 4
+     if (nthetal == 2) then
+        nicb = ndivs * 2
+     else
+        nicb = ndivs * 4 / nthetal
+     endif
+
+     ! take the lowest layer in the fluid of the theta slice
+     do iel = 1, nicb
+        procel_fluid(iel, iproc) = thetaslel_fluid(sum(nel_fluid(itheta:itheta+nrl-1)) &
+                                                   - mycount + 1,itheta)
+        mycount = mycount + 1
+     end do ! iel
+
+     ! take the upper most layer in the fluid and fill up until having
+     ! enough elements
+     do iel = nicb+1, nel_fluid(iproc)
+        procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
+        mycount = mycount + 1
+     end do ! iel
+     
+     
+     do irad = 0, nrl-1
+        if (irad == iradb) cycle
+
+        iproc = itheta * nrl + irad
+        ! just go inwards radially
+        do iel = 1, nel_fluid(iproc)
+           procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
            mycount = mycount + 1
         end do ! iel
      enddo

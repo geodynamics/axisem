@@ -28,8 +28,9 @@ DOMINANT_PERIOD     20.0
 # The resulting number of processors is NTHETA_SLICES * NRADIAL_SLICES
 # (will be overwritten if ONLY_SUGGEST_NPROC is set true)
 NTHETA_SLICES       2
-NRADIAL_SLICES      1 # (default: 1, unlikely to work for values larger 8, will
-                      #  produce solid/fluid boundary errors in pdb.f90)
+NRADIAL_SLICES      1 # (default: 1, stable for values < 8, might work for larger values
+                      #  and throws an error if not successful. Decomposition likely to be
+                      #  uggly in the inner core for values > 12)
 
 # will not generate a mesh, but only suggested numbers for NTHETA_SLICES for optimal mesh
 # decomposition
