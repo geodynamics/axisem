@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 import numpy as np
 
-nproc = 1104
 
-nrep = np.ceil(nproc / 16.)
+nproc = 1104
+nradialslices = 12
+
+nrep = nproc / nradialslices / 2
 
 f = open('hot_scale_%04d.xml' % (nrep,), 'w')
 
