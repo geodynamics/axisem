@@ -146,9 +146,11 @@ subroutine init_grid
      
      num_send_gll = icount
      num_recv_gll = icount
+
+     allocate(glob2el_recv(num_recv_gll,3))
      glob2el_recv = glob2el_send
-     glob2el_recv = glob2el_send
-     glob2el_recv = glob2el_send
+     !glob2el_recv = glob2el_send
+     !glob2el_recv = glob2el_send
     
      if (verbose > 1) then
         do iel=0, nproc-1

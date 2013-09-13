@@ -348,9 +348,12 @@ subroutine read_db
         end do
 
         sizesend_fluid = sizerecv_fluid
+        allocate(listsend_fluid(1:sizesend_fluid))
         listsend_fluid = listrecv_fluid
+        allocate(sizemsgsend_fluid(1:sizesend_fluid))
         sizemsgsend_fluid = sizemsgrecv_fluid
         sizemsgsendmax_fluid = sizemsgrecvmax_fluid
+        allocate(glocal_index_msg_send_fluid(1:sizemsgsendmax_fluid,1:sizesend_fluid))
         glocal_index_msg_send_fluid = glocal_index_msg_recv_fluid
 
         allocate(buffs_fluid(1:sizemsgsendmax_fluid,1))
