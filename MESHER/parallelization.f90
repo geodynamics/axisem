@@ -45,6 +45,9 @@ subroutine create_domain_decomposition
 ! procel: 
 
   integer :: iproc, iel, nelmax, nelmax_fluid, nelmax_solid
+  integer :: itheta, irad
+  integer :: nelsolid_per_tsl, nelsolid_per_trsl
+  integer :: nelfluid_per_tsl, nelfluid_per_trsl
   logical :: attributed(1:neltot)
 
   write(6,*)'     creating domain decomposition....'
@@ -68,20 +71,45 @@ subroutine create_domain_decomposition
      nel_solid(:) = neltot_solid / nproc
   else
      ! exact load balancing not possible. This scheme attributes the same number
-     ! of elements to all but the last processors. The last has at maximum
-     ! nproc-1 elements less then the others (both in solid and fluid domain).
+     ! of elements +/- 1 to all processors. The element numbers are the same in
+     ! each thetaslice
+     if (mod(neltot,nthetaslices) /= 0 .or. mod(neltot_solid,nthetaslices) /= 0 &
+           .or. mod(neltot_fluid,nthetaslices) /= 0) then
+        write(6,*) 'ERROR: programming error, should not end up here'
+        write(6,*) '       - each theta slice should have same number of elements!'
+        stop
+     endif
+     
+     nelsolid_per_tsl = neltot_solid / nthetaslices
+     nelfluid_per_tsl = neltot_fluid / nthetaslices
+     
+     nelsolid_per_trsl = nelsolid_per_tsl / nradialslices
+     nelfluid_per_trsl = nelfluid_per_tsl / nradialslices
+        
+     nel_solid(:) = nelsolid_per_trsl
+     nel_fluid(:) = nelfluid_per_trsl
 
-     ! @TODO: Maybe it is a requirement further below to have the same number of
-     !        elements in each thetaslice...
-     do iproc = 0, nproc - 2
-        nel_fluid(iproc) = neltot_fluid / nproc + 1
-        nel_solid(iproc) = neltot_solid / nproc + 1
-        nel(iproc) = nel_solid(iproc) + nel_fluid(iproc)
-     end do
-     nel_fluid(nproc-1) = neltot_fluid - sum(nel_fluid(0:nproc-2))
-     nel_solid(nproc-1) = neltot_solid - sum(nel_solid(0:nproc-2))
-     nel(nproc-1) = nel_solid(nproc-1) + nel_fluid(nproc-1)
+     do itheta = 0, nthetaslices-1
+        do irad = 0, nradialslices-1
+           iproc = itheta * nradialslices + irad
+           if (sum(nel_solid(itheta*nradialslices:(itheta+1)*nradialslices-1)) &
+                == nelsolid_per_tsl) exit
+           nel_solid(iproc) = nel_solid(iproc) + 1
+        enddo
+     enddo
+     
+     do itheta = 0, nthetaslices-1
+        do irad = 0, nradialslices-1
+           iproc = itheta * nradialslices + irad
+           if (sum(nel_fluid(itheta*nradialslices:(itheta+1)*nradialslices-1)) &
+                == nelfluid_per_tsl) exit
+           nel_fluid(iproc) = nel_fluid(iproc) + 1
+        enddo
+     enddo
+     
+     nel(:) = nel_solid(:) + nel_fluid(:)
   end if
+  
 
   nelmax = maxval(nel)
   nelmax_solid = maxval(nel_solid)
