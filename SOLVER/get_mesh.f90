@@ -289,9 +289,12 @@ subroutine read_db
      end do
   
      sizesend_solid = sizerecv_solid
+     allocate(listsend_solid(1:sizesend_solid))
      listsend_solid = listrecv_solid
+     allocate(sizemsgsend_solid(1:sizesend_solid))
      sizemsgsend_solid = sizemsgrecv_solid
      sizemsgsendmax_solid = sizemsgrecvmax_solid
+     allocate(glocal_index_msg_send_solid(1:sizemsgsendmax_solid,1:sizesend_solid))
      glocal_index_msg_send_solid = glocal_index_msg_recv_solid
      
      allocate(buffs_solid(1:sizemsgsendmax_solid,1:3))
