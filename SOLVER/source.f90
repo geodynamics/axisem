@@ -875,24 +875,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   
   integer                          :: ielem, ipol, jpol, i, nsrcelem, nsrcelem_glob
   real(kind=dp)                    :: s, z, r, theta, r1, r2
-  logical                          :: oldway
   character(len=16)                :: fmt1
-
-  allocate(ws(0:npol,0:npol,1:nel_solid))
-  allocate(dsws(0:npol,0:npol,1:nel_solid))
-  allocate(ws_over_s(0:npol,0:npol,1:nel_solid))
-  allocate(dzwz(0:npol,0:npol,1:nel_solid))
-  allocate(ds(0:npol),dz(0:npol))
-
-  oldway = .true.
-  ! oldway: numerical derivatives
-  ! newway: analytical derivatives, only in circular elements (not in doubling
-  ! layer)
-  
-  dzwz(:,:,:) = zero
-  dsws(:,:,:) = zero
-  ws_over_s(:,:,:) = zero
-  source_term(:,:,:,:) = zero
 
   liel_src = iel_src
   lipol_src = ipol_src
@@ -908,6 +891,17 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
      endif
   endif
 
+  allocate(ws(0:npol,0:npol,1:nsrcelem))
+  allocate(dsws(0:npol,0:npol,1:nsrcelem))
+  allocate(ws_over_s(0:npol,0:npol,1:nsrcelem))
+  allocate(dzwz(0:npol,0:npol,1:nsrcelem))
+  allocate(ds(0:npol),dz(0:npol))
+
+  dzwz(:,:,:) = zero
+  dsws(:,:,:) = zero
+  ws_over_s(:,:,:) = zero
+  source_term(:,:,:,:) = zero
+
   ! global number of source elements (in case source is on processor boundary)
   nsrcelem_glob = psum_int(nsrcelem)
 
@@ -916,177 +910,104 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   if (have_src) then 
      ! physical source location can only be in 2 elements
      do i=1, nsrcelem
-
         if (i == 2) then 
            liel_src = iel_src2
            lipol_src = ipol_src2
            ljpol_src = jpol_src2
         endif
 
-        if (oldway) then
+        do ipol = 0,npol
+           do jpol = 0,npol
 
-           do ipol = 0,npol
-              do jpol = 0,npol
+              ws(:,:,:) = zero 
+              ws(ipol,jpol,i) = one
+              call dsdf_elem_solid(dsws(:,:,i), ws(:,:,i), liel_src)
+              call dzdf_elem_solid(dzwz(:,:,i), ws(:,:,i), liel_src)
 
-                 ws(:,:,:) = zero 
-                 ws(ipol,jpol,liel_src) = one
-                 call dsdf_elem_solid(dsws(:,:,liel_src), ws(:,:,liel_src), liel_src)
-                 call dzdf_elem_solid(dzwz(:,:,liel_src), ws(:,:,liel_src), liel_src)
+              poletype:  select case (src_type(1))
 
-                 poletype:  select case (src_type(1))
+              ! monopole
+              case ('monopole') poletype
+                 select case (src_type(2))
 
-                 ! monopole
-                 case ('monopole') poletype
-                    select case (src_type(2))
+                 case ('explosion')
+                    if (ipol==0 .and. jpol==0  .and. lpr) &
+                         write(6,*)'  ',procstrg, &
+                        'computing source s- and z-components for explosion'
 
-                    case ('explosion')
-                       if (ipol==0 .and. jpol==0  .and. lpr) &
-                            write(6,*)'  ',procstrg, &
-                           'computing source s- and z-components for explosion'
+                    source_term(ipol,jpol,liel_src,1) = &
+                         two * dsws(lipol_src,ljpol_src,i)
+                    source_term(ipol,jpol,liel_src,3) = &
+                         dzwz(lipol_src,ljpol_src,i)
+                 
+                 case ('mtt_p_mpp' ) 
+                    if (ipol==0 .and. jpol==0 .and. lpr)  &
+                         write(6,*)'  ',procstrg, &
+                         'computing source s-component for Mxx+Myy'
+                    source_term(ipol,jpol,liel_src,1) = &
+                          dsws(lipol_src,ljpol_src,i)
 
-                       source_term(ipol,jpol,liel_src,1) = &
-                            two*dsws(lipol_src,ljpol_src,liel_src)
-                       source_term(ipol,jpol,liel_src,3) = &
-                            dzwz(lipol_src,ljpol_src,liel_src)
-                    
-                    case ('mtt_p_mpp' ) 
-                       if (ipol==0 .and. jpol==0 .and. lpr)  &
-                            write(6,*)'  ',procstrg, &
-                            'computing source s-component for Mxx+Myy'
-                       source_term(ipol,jpol,liel_src,1) = &
-                             dsws(lipol_src,ljpol_src,liel_src)
+                 case ('mrr')
+                    if (ipol==0 .and. jpol==0 .and. lpr)  &
+                         write(6,*)'  ',procstrg, &
+                         'computing source field z-component for Mzz'
+                    source_term(ipol,jpol,liel_src,3) = &
+                         dzwz(lipol_src,ljpol_src,i)
 
-                    case ('mrr')
-                       if (ipol==0 .and. jpol==0 .and. lpr)  &
-                            write(6,*)'  ',procstrg, &
-                            'computing source field z-component for Mzz'
-                       source_term(ipol,jpol,liel_src,3) = &
-                            dzwz(lipol_src,ljpol_src,liel_src)
+                 case default
+                    write(6,'(a,a,/,a,a,a)') &
+                         procstrg, 'PROBLEM: Didn"t compute any source: ', &
+                         procstrg, 'Monopole source doesn"t exist for ', src_type(2)
+                    stop
+                 end select
 
-                    case default
-                       write(6,'(a,a,/,a,a,a)') &
-                            procstrg, 'PROBLEM: Didn"t compute any source: ', &
-                            procstrg, 'Monopole source doesn"t exist for ', src_type(2)
-                       stop
-                    end select
+              ! dipole
+              case ('dipole') poletype
+                 select case(src_type(2))
 
-                 ! dipole
-                 case ('dipole') poletype
-                    select case(src_type(2))
+                 case ('mtr','mpr')
+                    if (ipol==0 .and. jpol==0 .and. lpr)  &
+                         write(6,*) '  computing source + and z-components for Mtr'
+                    source_term(ipol, jpol, liel_src, 1) =  &
+                         dzwz(lipol_src, ljpol_src, i)
+                    source_term(ipol, jpol, liel_src, 3) =  &
+                         dsws(lipol_src, ljpol_src, i)
 
-                    case ('mtr','mpr')
-                       if (ipol==0 .and. jpol==0 .and. lpr)  &
-                            write(6,*) '  computing source + and z-components for Mtr'
-                       source_term(ipol, jpol, liel_src, 1) =  &
-                            dzwz(lipol_src, ljpol_src, liel_src)
-                       source_term(ipol, jpol, liel_src, 3) =  &
-                            dsws(lipol_src, ljpol_src, liel_src)
+                 case default
+                    write(6,'(a,a,/,a,a,a)') &
+                         procstrg, 'PROBLEM: Didn"t compute any source!', &
+                         procstrg, 'Dipole source doesn"t exist for ', src_type(2)
+                    stop
+                 end select
 
-                    case default
-                       write(6,'(a,a,/,a,a,a)') &
-                            procstrg, 'PROBLEM: Didn"t compute any source!', &
-                            procstrg, 'Dipole source doesn"t exist for ', src_type(2)
-                       stop
-                    end select
+              ! quadrupole
+              case ('quadpole') poletype
+                 select case (src_type(2))
 
-                 ! quadrupole
-                 case ('quadpole') poletype
-                    select case (src_type(2))
-
-                    case ('mtp','mtt_m_mpp') 
-                       if (ipol==0 .and. jpol==0 .and. lpr)  &
-                            write(6,*) '  computing source s- and phi-components for Mtp'
-                       source_term(ipol,jpol,liel_src,1) = &
-                            dsws(lipol_src,ljpol_src,liel_src) 
-                       source_term(ipol,jpol,liel_src,2) = &
-                            ws_over_s(lipol_src,ljpol_src,liel_src) 
-                    case default
-                       write(6,'(a,a,/,a,a,a)') &
-                            procstrg, "PROBLEM: Didn't compute any source!", &
-                            procstrg, "Quadrupole doesn't exist for", src_type(2)
-                       stop
-                    end select
-                 end select poletype
-
-              end do !jpol
-           end do ! ipol
-
-        else ! new way
-           if (eltype(ielsolid(iel_src)) /= 'curved') then 
-              call compute_coordinates(s, z, r, theta, ielsolid(iel_src),  lipol_src, &
-                                       ljpol_src)
-              write(6,'(/,a,/,a,/,a,i7,a,i2,e11.3)') &
-                    'source is in (partly linear) element', &
-                    'PROBLEM: mapping derivatives at axis only analytical with "new way"', &
-                    'source location iel, type, jpol, r:', &
-                    iel_src, eltype(ielsolid(iel_src)), ljpol_src, r 
-              stop
-           endif
-
-           ds = zero
-           dz = zero
-
-           call compute_coordinates(s, z, r1, theta, ielsolid(iel_src), 0, 0)
-           call compute_coordinates(s, z, r2, theta, ielsolid(iel_src), 0, npol)
-           call compute_coordinates(s, z, r, theta, ielsolid(iel_src), npol, jpol_src)
-        
-           if (verbose > 1) then
-              write(69,*) '  THETA (rad),Z (m):',theta,z
-              write(69,*) '  R1 (m),R2 (m)',r1,r2
-           endif
-
-           do ipol=0,npol
-              ds(ipol) = shp_deri_k(ipol,0,2,1)*two / (theta * z)
-           enddo
-
-           do jpol=0,npol
-              dz(jpol) = shp_deri_k(jpol,jpol_src,2,2) * two / (r2 - r1)
-           enddo
-
-           do ipol=0,npol
-              select case (src_type(2))
-
-              case('mtt_p_mpp','mpp_p_mtt')
-                 source_term(ipol,ljpol_src,liel_src,1) = two * ds(ipol)
-
-              case('mrr')
-                 source_term(0,ipol,liel_src,3) = dz(ipol)
-
-              case('explosion')
-                 source_term(ipol,ljpol_src,liel_src,1) = two * ds(ipol)
-                 source_term(0,ipol,liel_src,3) = dz(ipol)
-
-              case('mtr','mrt')
-                 source_term(0,ipol,liel_src,1) = dz(ipol)
-                 source_term(ipol,ljpol_src,liel_src,3) = ds(ipol)
-
-              case('mpr','mrp')
-                 source_term(0,ipol,liel_src,1) = dz(ipol ) 
-                 source_term(ipol,ljpol_src,liel_src,3) = ds(ipol)
-
-              case('mtt_m_mpp')
-                 source_term(ipol,ljpol_src,liel_src,1) = ds(ipol)
-                 source_term(ipol,ljpol_src,liel_src,2) = ds(ipol)
-
-              case('mtp','mpt')
-                 source_term(ipol,ljpol_src,liel_src,1) = ds(ipol)
-                 source_term(ipol,ljpol_src,liel_src,2) = ds(ipol)
-
-              case default
-                 write(6,*) 'PROBLEM: Don"t know any moment tensor component ', src_type(2)
-                 stop
-              end select
-           enddo
-        endif ! new way
+                 case ('mtp','mtt_m_mpp') 
+                    if (ipol==0 .and. jpol==0 .and. lpr)  &
+                         write(6,*) '  computing source s- and phi-components for Mtp'
+                    source_term(ipol,jpol,liel_src,1) = &
+                         dsws(lipol_src,ljpol_src,i) 
+                    source_term(ipol,jpol,liel_src,2) = &
+                         ws_over_s(lipol_src,ljpol_src,i) 
+                 case default
+                    write(6,'(a,a,/,a,a,a)') &
+                         procstrg, "PROBLEM: Didn't compute any source!", &
+                         procstrg, "Quadrupole doesn't exist for", src_type(2)
+                    stop
+                 end select
+              end select poletype
+           end do !jpol
+        end do ! ipol
      enddo ! multiple source elements
 
-     ! If spread over two elements (i.e., if point source coincides 
-     ! with element edge/corner), need to divide by two
+     ! If spread over multiple elements (i.e., if point source coincides 
+     ! with element edge/corner), need to divide by global source element number
      source_term = source_term / real(nsrcelem_glob)
 
      if (verbose > 1) write(69,*) 'source term minmax:', &
                                   minval(source_term), maxval(source_term)
-
   endif ! have_src
 
   ! assembly
@@ -1108,7 +1029,6 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   enddo
 
   if (have_src) then
-
      if (maxval(abs(source_term)) == zero) then
         write(6,'(a,a,/,a,a)') procstrg, 'PROBLEM: No source generated!', &
                                procstrg, 'Bye from define_mono_moment'
@@ -1182,10 +1102,6 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
         enddo
      endif
   endif ! have_src
-
-  deallocate(ws, dsws)
-  deallocate(ws_over_s, dzwz)
-  deallocate(ds, dz)
 
 end subroutine define_moment_tensor
 !=============================================================================

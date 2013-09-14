@@ -43,8 +43,6 @@ module commpi
   public :: ppsum, ppsum_int, ppsum_dble
   public :: ppmin, ppmax, ppmax_int
   public :: ppinit, pbarrier, ppend
-  !public :: testing_asynch_messaging_fluid
-  !public :: testing_asynch_messaging_solid
   public :: asynch_messaging_fluid
   public :: feed_buffer, send_recv_buffers_solid, extract_from_buffer
   public :: pbroadcast_dble, pbroadcast_char, pbroadcast_log

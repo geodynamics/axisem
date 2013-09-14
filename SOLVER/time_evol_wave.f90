@@ -277,16 +277,6 @@ subroutine sf_time_loop_newmark
   ! some more reading:
   ! http://stackoverflow.com/questions/9314534/why-does-changing-0-1f-to-0-slow-down-performance-by-10x
 
-  !disp = 1.d-30
-  !velo = 1.d-30
-  !acc0 = 1.d-30
-  !acc1 = 1.d-30
-
-  !chi = 1.d-30
-  !dchi = 1.d-30
-  !ddchi0 = 1.d-30
-  !ddchi1 = 1.d-30
-
   disp = zero
   velo = zero 
   acc0 = zero
