@@ -492,17 +492,8 @@ subroutine sf_time_loop_newmark
     
 
 
-
      iclockdump = tick()
-     if (anel_true) then
-        if (att_coarse_grained) then ! (memvar dump not implemented for cg)
-           call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
-        else
-           call dump_stuff(iter, disp, velo, chi, dchi, ddchi0, memory_var)
-        endif
-     else
-        call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
-     endif
+     call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
      iclockdump = tick(id=iddump, since=iclockdump)
   end do ! time loop
   
@@ -1005,7 +996,7 @@ end subroutine add_source
 !> Includes all output action done during the time loop such as
 !! various receiver definitions, wavefield snapshots, velocity field & strain 
 !! tensor for 3-D kernels 
-subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
+subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
 
   use data_io
   use data_mesh
@@ -1019,9 +1010,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
   real(kind=realkind),intent(in) :: chi(0:,  0:, :)
   real(kind=realkind),intent(in) :: dchi(0:, 0:, :)
   real(kind=realkind),intent(in) :: ddchi(0:,0:, :)
-  real(kind=realkind),intent(in), optional :: &
-        memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
-  real(kind=realkind) :: time
+  real(kind=realkind)            :: time
   
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   !^-^-^-^-^-^- Time series^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^
@@ -1082,12 +1071,6 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, memvar)
         endif
         call glob_snapshot_xdmf(disp, chi)
      endif
-  endif
-
-  if (anel_true .and. dump_memory_vars) then
-    if (mod(iter,snap_it)==0 .or. iter==1) then
-       call snapshot_memoryvar_vtk(memvar, iter)
-    endif
   endif
 
   !if (dump_snaps_solflu) then

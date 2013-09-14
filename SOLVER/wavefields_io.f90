@@ -42,7 +42,6 @@ module wavefields_io
   public :: dump_disp
   public :: dump_velo_dchi
   public :: fluid_snapshot
-  public :: snapshot_memoryvar_vtk
 
 contains
 
@@ -694,7 +693,6 @@ subroutine calc_curlinplane(f_sol,chi,curlinplane)
 end subroutine
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 subroutine calc_straintrace(f_sol,chi,straintrace)
 !< Calculate strain trace (for P-wave visualisation)
@@ -821,42 +819,6 @@ subroutine xdmf_mapping(u_in, mapping_ijel_iplot, plotting_mask, i_arr_xdmf, j_a
    enddo
 
 end subroutine
-
-!-----------------------------------------------------------------------------------------
-subroutine snapshot_memoryvar_vtk(memvar, iter)
-
-   use data_source,               only: src_type
-   use attenuation,               only: n_sls_attenuation
-   use data_matr,                 only: points_solid
-   use lateral_heterogeneities,   only: write_VTK_bin_scal_pts
-   use data_mesh,                 only: npoint_solid 
-   
-   real(kind=realkind), intent(in)   :: memvar(0:,0:,:,:,:)
-   integer, intent(in)               :: iter
-   
-   character(len=8)                  :: appisnap
-   character(len=2)                  :: nchar, lchar
-   character(len=200)                :: filename, varname
-   integer                           :: l, n
-   
-   write(appisnap, "(I0.8)") iter
-   do l=1, 6
-      write(lchar, "(I0.2)") l
-      do n=1, n_sls_attenuation
-         write(nchar, "(I0.2)") n
-         filename = trim(infopath(1:lfinfo)//'/memvar_'//lchar//'_'//nchar//'_'//appmynum &
-                         //'_'//appisnap)
-         varname = 'memvar_'//lchar//'_'//nchar
- 
-         call write_VTK_bin_scal_pts(&
-                 reshape(memvar(:,:,l,n,:), [npoint_solid]), &
-                 reshape(points_solid(:,:,:,:), [npoint_solid, 2]), &
-                 npoint_solid, filename, varname)
-      enddo
-   enddo
-    
-
-end subroutine snapshot_memoryvar_vtk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
