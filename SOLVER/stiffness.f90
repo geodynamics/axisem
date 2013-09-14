@@ -35,17 +35,17 @@ module stiffness
   
   public :: glob_stiffness_mono
   public :: glob_anel_stiffness_mono
-  public :: glob_anel_stiffness_mono_4
+  !public :: glob_anel_stiffness_mono_4
   public :: glob_anel_stiffness_mono_cg4
 
   public :: glob_stiffness_di
   public :: glob_anel_stiffness_di
-  public :: glob_anel_stiffness_di_4
+  !public :: glob_anel_stiffness_di_4
   public :: glob_anel_stiffness_di_cg4
 
   public :: glob_stiffness_quad
   public :: glob_anel_stiffness_quad
-  public :: glob_anel_stiffness_quad_4
+  !public :: glob_anel_stiffness_quad_4
   public :: glob_anel_stiffness_quad_cg4
 
   public :: glob_fluid_stiffness
@@ -321,6 +321,23 @@ end subroutine glob_stiffness_mono_generic
 
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono(glob_stiffness, R)
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: npol, nel_solid
+  
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
+  real(kind=realkind), intent(in)    :: R(0:,0:,:,:,:)
+
+  if (npol == 4) then
+     call glob_anel_stiffness_mono_4(glob_stiffness, R)
+  else
+     call glob_anel_stiffness_mono_generic(glob_stiffness, R)
+  endif
+
+end subroutine glob_anel_stiffness_mono
+!-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+pure subroutine glob_anel_stiffness_mono_generic(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
   use data_mesh,    only: npol, nel_solid
@@ -418,9 +435,8 @@ pure subroutine glob_anel_stiffness_mono(glob_stiffness, R)
             glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
   enddo
 
-end subroutine glob_anel_stiffness_mono
+end subroutine glob_anel_stiffness_mono_generic
 !=============================================================================
-
 
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono_4(glob_stiffness, R)
@@ -1025,6 +1041,23 @@ end subroutine glob_stiffness_di_generic
 
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di(glob_stiffness, R)
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: npol, nel_solid
+  
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
+  real(kind=realkind), intent(in)    :: R(0:,0:,:,:,:)
+
+  if (npol == 4) then
+     call glob_anel_stiffness_di_4(glob_stiffness, R)
+  else
+     call glob_anel_stiffness_di_generic(glob_stiffness, R)
+  endif
+
+end subroutine glob_anel_stiffness_di
+!-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+pure subroutine glob_anel_stiffness_di_generic(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
   use data_mesh,    only: npol, nel_solid
@@ -1143,7 +1176,7 @@ pure subroutine glob_anel_stiffness_di(glob_stiffness, R)
             glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
   enddo
 
-end subroutine glob_anel_stiffness_di
+end subroutine glob_anel_stiffness_di_generic
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -1747,6 +1780,23 @@ end subroutine glob_stiffness_quad_4
 
 !-----------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_quad(glob_stiffness, R)
+  use attenuation,  only: n_sls_attenuation
+  use data_mesh,    only: npol, nel_solid
+  
+  real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
+  real(kind=realkind), intent(in)    :: R(0:,0:,:,:,:)
+
+  if (npol == 4) then
+     call glob_anel_stiffness_quad_4(glob_stiffness, R)
+  else
+     call glob_anel_stiffness_quad_generic(glob_stiffness, R)
+  endif
+
+end subroutine glob_anel_stiffness_quad
+!-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+pure subroutine glob_anel_stiffness_quad_generic(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
   use data_mesh,    only: npol, nel_solid
@@ -1859,7 +1909,7 @@ pure subroutine glob_anel_stiffness_quad(glob_stiffness, R)
             glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
   enddo
 
-end subroutine glob_anel_stiffness_quad
+end subroutine glob_anel_stiffness_quad_generic
 !=============================================================================
 
 !-----------------------------------------------------------------------------

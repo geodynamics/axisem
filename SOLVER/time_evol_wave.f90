@@ -325,11 +325,7 @@ subroutine sf_time_loop_newmark
            if (att_coarse_grained) then
               call glob_anel_stiffness_mono_cg4(acc1, memory_var_cg4)
            else
-              if (npol==4) then
-                 call glob_anel_stiffness_mono_4(acc1, memory_var)
-              else
-                 call glob_anel_stiffness_mono(acc1, memory_var)
-              endif
+              call glob_anel_stiffness_mono(acc1, memory_var)
            endif
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
@@ -338,13 +334,7 @@ subroutine sf_time_loop_newmark
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
         iclockcomm = tick()
-        !if (npol==4) then
-        !   ! @TODO needs updating to the new commucication pattern
-        !   call pdistsum_solid_4(acc1)
-        !else
-           ! @TODO This includes communication of a lot of zeros !!
-           call pdistsum_solid(acc1) 
-        ! end if
+        call pdistsum_solid(acc1) 
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         call add_source(acc1, stf(iter))
@@ -388,11 +378,7 @@ subroutine sf_time_loop_newmark
            if (att_coarse_grained) then
               call glob_anel_stiffness_di_cg4(acc1, memory_var_cg4)
            else
-              if (npol==4) then
-                 call glob_anel_stiffness_di_4(acc1, memory_var)
-              else
-                 call glob_anel_stiffness_di(acc1, memory_var)
-              endif
+              call glob_anel_stiffness_di(acc1, memory_var)
            endif
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
@@ -402,12 +388,7 @@ subroutine sf_time_loop_newmark
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
         iclockcomm = tick()
-        !if (npol==4) then
-        !   ! @TODO needs updating to the new commucication pattern
-        !   call pdistsum_solid_4(acc1)
-        !else
-           call pdistsum_solid(acc1) 
-        ! end if
+        call pdistsum_solid(acc1) 
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         call add_source(acc1, stf(iter))
@@ -452,11 +433,7 @@ subroutine sf_time_loop_newmark
            if (att_coarse_grained) then
               call glob_anel_stiffness_quad_cg4(acc1, memory_var_cg4)
            else
-              if (npol==4) then
-                 call glob_anel_stiffness_quad_4(acc1, memory_var)
-              else
-                 call glob_anel_stiffness_quad(acc1, memory_var)
-              endif
+              call glob_anel_stiffness_quad(acc1, memory_var)
            endif
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
@@ -466,12 +443,7 @@ subroutine sf_time_loop_newmark
         iclockstiff = tick(id=idstiff, since=iclockstiff)
    
         iclockcomm = tick()
-        !if (npol==4) then
-        !   ! @TODO needs updating to the new commucication pattern
-        !   call pdistsum_solid_4(acc1)
-        !else
-           call pdistsum_solid(acc1) 
-        ! end if
+        call pdistsum_solid(acc1) 
         iclockcomm = tick(id=idcomm, since=iclockcomm)
    
         call add_source(acc1, stf(iter))
