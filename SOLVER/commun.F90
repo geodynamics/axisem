@@ -281,6 +281,15 @@ subroutine pdistsum_fluid(vec)
   real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_fluid)
   integer                            :: iel, jpol, ipol, idest, ipt
 
+#ifndef serial
+  iclockmpi = tick()
+  if (nproc>1) then
+     call feed_buffer_fluid(vec)
+     call send_recv_buffers_fluid()
+  endif
+  iclockmpi = tick(id=idmpi, since=iclockmpi)
+#endif
+
   gvec_fluid(:) = 0.d0
 
   ! Gather
@@ -318,8 +327,6 @@ subroutine pdistsum_fluid(vec)
 #ifndef serial
   iclockmpi = tick()
   if (nproc>1) then
-     call feed_buffer_fluid()
-     call send_recv_buffers_fluid()
      call extract_from_buffer_fluid()
   endif
   iclockmpi = tick(id=idmpi, since=iclockmpi)

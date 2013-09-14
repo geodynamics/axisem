@@ -485,30 +485,42 @@ end subroutine extract_from_buffer_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine feed_buffer_fluid
+subroutine feed_buffer_fluid(f)
   ! Fluid asynchronous communication pattern with one message per proc-proc pair
   ! for a single-component field gvec. The arrays to map global numbers along 
   ! processor-processor boundaries are determined in the mesher, routine pdb.f90
   ! (consulation thereof to be avoided if at all possible...)
 
+  use data_mesh, only: npol, gvec_fluid, igloc_fluid
   use data_comm
   use linked_list
   
 #ifndef serial
-  integer               :: imsg, ipg, ip
-  integer               :: sizemsg_fluid
-  class(link), pointer  :: buffs, buffr
+  real(kind=realkind), intent(in) :: f(0:,0:,:)
+  integer                         :: imsg, ipg, ip, ipol, jpol, iel, ipt
+  integer                         :: sizemsg_fluid
+  class(link), pointer            :: buffs, buffr
   
   ! Prepare arrays to be sent
+  gvec_fluid = 0
+  do ip = 1, num_comm_gll_fluid
+     ipol = glob2el_fluid(ip,1)
+     jpol = glob2el_fluid(ip,2)
+     iel =  glob2el_fluid(ip,3)
+     ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
+     ipg = igloc_fluid(ipt)
+     gvec_fluid(ipg) = gvec_fluid(ipg) + f(ipol,jpol,iel)
+  enddo
+
   call buffs_all_fluid%resetcurrent()
   do imsg = 1, sizesend_fluid
-     buffs => buffs_all_fluid%getnext()
+     buffs => buffs_all_fluid%getNext()
      sizemsg_fluid = sizemsgsend_fluid(imsg)
      do ip = 1, sizemsg_fluid
         ipg = glocal_index_msg_send_fluid(ip,imsg)
         buffs%ldata(ip,1) = gvec_fluid(ipg)
      end do
-  end do
+  enddo
 #endif
 
 end subroutine feed_buffer_fluid
