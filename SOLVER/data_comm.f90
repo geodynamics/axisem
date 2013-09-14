@@ -43,7 +43,7 @@ module data_comm
   integer                              :: sizemsgmax_solid
   integer, allocatable                 :: glob2el_solid(:,:)
   real(kind=realkind), allocatable     :: buffs_solid(:,:), buffr_solid(:,:)
-  type(list)                           :: buffs_all, buffr_all
+  type(list)                           :: buffs_all_solid, buffr_all_solid
 
   integer                              :: sizerecv_solid, sizesend_solid
   integer, dimension(:),   allocatable :: listrecv_solid, sizemsgrecv_solid

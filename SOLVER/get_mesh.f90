@@ -278,7 +278,7 @@ subroutine read_db
 
      ! fill buffer list with arrays of appropriate size
      do imsg = 1, sizerecv_solid
-         call buffr_all%append(buffr_solid(1:sizemsgrecv_solid(imsg),:))
+         call buffr_all_solid%append(buffr_solid(1:sizemsgrecv_solid(imsg),:))
      end do
 
      do imsg = 1, sizerecv_solid
@@ -302,7 +302,7 @@ subroutine read_db
      
      ! fill buffer list with arrays of appropriate size
      do imsg = 1, sizesend_solid
-         call buffs_all%append(buffs_solid(1:sizemsgsend_solid(imsg),:))
+         call buffs_all_solid%append(buffs_solid(1:sizemsgsend_solid(imsg),:))
      end do
     
      allocate(recv_request_solid(1:sizerecv_solid))

@@ -370,9 +370,9 @@ subroutine feed_buffer_solid(vec, nc)
      ipg = igloc_solid(ipt)
      gvec_solid(ipg,1:nc) = gvec_solid(ipg,1:nc) + vec(ipol,jpol,iel,1:nc)
   enddo
-  call buffs_all%resetcurrent()
+  call buffs_all_solid%resetcurrent()
   do imsg = 1, sizesend_solid
-     buffs => buffs_all%getNext()
+     buffs => buffs_all_solid%getNext()
      sizemsg_solid = sizemsgsend_solid(imsg)
      do ip = 1, sizemsg_solid
         ipg = glocal_index_msg_send_solid(ip,imsg)
@@ -405,9 +405,9 @@ subroutine send_recv_buffers_solid(nc)
   class(link), pointer  :: buffs, buffr
   
   ! Send stuff around
-  call buffs_all%resetcurrent()
+  call buffs_all_solid%resetcurrent()
   do imsg = 1, sizesend_solid
-     buffs => buffs_all%getnext()
+     buffs => buffs_all_solid%getnext()
      sizemsg_solid = sizemsgsend_solid(imsg)
      sizeb  = nc * sizemsg_solid
      ipdes  = listsend_solid(imsg)
@@ -417,9 +417,9 @@ subroutine send_recv_buffers_solid(nc)
   end do
 
   ! Receive data
-  call buffr_all%resetcurrent()
+  call buffr_all_solid%resetcurrent()
   do imsg = 1, sizerecv_solid
-     buffr => buffr_all%getnext()
+     buffr => buffr_all_solid%getnext()
      sizemsg_solid = sizemsgrecv_solid(imsg)
      sizeb = nc * sizemsg_solid
      ipsrc = listrecv_solid(imsg)
@@ -457,9 +457,9 @@ subroutine extract_from_buffer_solid(vec,nc)
   iclockmpi = tick(id=idmpi,since=iclockmpi)
 
   ! Extract received from buffer
-  call buffr_all%resetcurrent()
+  call buffr_all_solid%resetcurrent()
   do imsg = 1, sizerecv_solid
-     buffr => buffr_all%getnext()
+     buffr => buffr_all_solid%getnext()
      sizemsg_solid = sizemsgrecv_solid(imsg)
      do ip = 1, sizemsg_solid
         ipg = glocal_index_msg_recv_solid(ip,imsg)
