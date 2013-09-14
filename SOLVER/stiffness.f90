@@ -34,25 +34,21 @@ module stiffness
   implicit none
   
   public :: glob_stiffness_mono
-  public :: glob_stiffness_mono_4
   public :: glob_anel_stiffness_mono
   public :: glob_anel_stiffness_mono_4
   public :: glob_anel_stiffness_mono_cg4
 
   public :: glob_stiffness_di
-  public :: glob_stiffness_di_4
   public :: glob_anel_stiffness_di
   public :: glob_anel_stiffness_di_4
   public :: glob_anel_stiffness_di_cg4
 
   public :: glob_stiffness_quad
-  public :: glob_stiffness_quad_4
   public :: glob_anel_stiffness_quad
   public :: glob_anel_stiffness_quad_4
   public :: glob_anel_stiffness_quad_cg4
 
   public :: glob_fluid_stiffness
-  public :: glob_fluid_stiffness_4
   
   private
 
@@ -78,6 +74,23 @@ pure function outerprod_4(a,b)
 
   outerprod_4 = spread(a, dim=2, ncopies=5) * spread(b, dim=1, ncopies=5)
 end function outerprod_4
+!-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+!> Wrapper routine to avoid if statements in the timeloop
+pure subroutine glob_stiffness_mono(glob_stiffness,u)
+  use data_mesh, only: npol, nel_solid
+  
+  real(kind=realkind), intent(in)  :: u(0:,0:,:,:)
+  real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,3)
+
+  if (npol == 4) then
+     call glob_stiffness_mono_4(glob_stiffness, u)
+  else
+     call glob_stiffness_mono_generic(glob_stiffness, u)
+  endif
+
+end subroutine glob_stiffness_mono
 !-----------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------
@@ -183,7 +196,7 @@ end subroutine glob_stiffness_mono_4
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-pure subroutine glob_stiffness_mono(glob_stiffness,u)
+pure subroutine glob_stiffness_mono_generic(glob_stiffness,u)
 
   use data_mesh, only: npol, nel_solid
   
@@ -303,7 +316,7 @@ pure subroutine glob_stiffness_mono(glob_stiffness,u)
 
   enddo
 
-end subroutine glob_stiffness_mono
+end subroutine glob_stiffness_mono_generic
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -594,6 +607,23 @@ end subroutine glob_anel_stiffness_mono_cg4
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Wrapper routine to avoid if statements in the timeloop
+pure subroutine glob_stiffness_di(glob_stiffness,u)
+  use data_mesh, only: npol, nel_solid
+  
+  real(kind=realkind), intent(in)  :: u(0:,0:,:,:)
+  real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,3)
+
+  if (npol == 4) then
+     call glob_stiffness_di_4(glob_stiffness, u)
+  else
+     call glob_stiffness_di_generic(glob_stiffness, u)
+  endif
+
+end subroutine glob_stiffness_di
+!-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
 pure subroutine glob_stiffness_di_4(glob_stiffness,u)
 
   use data_mesh, only: nel_solid
@@ -795,7 +825,7 @@ end subroutine glob_stiffness_di_4
 
 
 !-----------------------------------------------------------------------------
-pure subroutine glob_stiffness_di(glob_stiffness,u)
+pure subroutine glob_stiffness_di_generic(glob_stiffness,u)
 
   use data_mesh, only: npol, nel_solid
 
@@ -990,7 +1020,7 @@ pure subroutine glob_stiffness_di(glob_stiffness,u)
 
   enddo
 
-end subroutine glob_stiffness_di
+end subroutine glob_stiffness_di_generic
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -1342,7 +1372,24 @@ end subroutine glob_anel_stiffness_di_cg4
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Wrapper routine to avoid if statements in the timeloop
 pure subroutine glob_stiffness_quad(glob_stiffness,u)
+  use data_mesh, only: npol, nel_solid
+  
+  real(kind=realkind), intent(in)  :: u(0:,0:,:,:)
+  real(kind=realkind), intent(out) :: glob_stiffness(0:npol,0:npol,nel_solid,3)
+
+  if (npol == 4) then
+     call glob_stiffness_quad_4(glob_stiffness, u)
+  else
+     call glob_stiffness_quad_generic(glob_stiffness, u)
+  endif
+
+end subroutine glob_stiffness_quad
+!-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+pure subroutine glob_stiffness_quad_generic(glob_stiffness,u)
 
   use data_mesh, only: npol, nel_solid
   
@@ -1516,7 +1563,7 @@ pure subroutine glob_stiffness_quad(glob_stiffness,u)
 
   enddo
 
-end subroutine glob_stiffness_quad
+end subroutine glob_stiffness_quad_generic
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -2039,7 +2086,24 @@ end subroutine glob_anel_stiffness_quad_cg4
 !=============================================================================
 
 !-----------------------------------------------------------------------------
+!> Wrapper routine to avoid if statements in the timeloop
 pure subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
+  use data_mesh, only: npol, nel_fluid
+  
+  real(kind=realkind), intent(in)  :: chi(0:,0:,:)
+  real(kind=realkind), intent(out) :: glob_stiffness_fl(0:npol,0:npol,nel_fluid)
+
+  if (npol == 4) then
+     call glob_fluid_stiffness_4(glob_stiffness_fl, chi)
+  else
+     call glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
+  endif
+
+end subroutine glob_fluid_stiffness
+!-----------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------
+pure subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
 
   use data_mesh, only: npol, nel_fluid
   
@@ -2107,7 +2171,7 @@ pure subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
 
   enddo
 
-end subroutine glob_fluid_stiffness
+end subroutine glob_fluid_stiffness_generic
 !=============================================================================
 
 !-----------------------------------------------------------------------------

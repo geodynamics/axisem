@@ -305,11 +305,7 @@ subroutine sf_time_loop_newmark
         disp(:,:,:,3) = disp(:,:,:,3) + deltat * velo(:,:,:,3) + half_dt_sq * acc0(:,:,:,3)
 
         iclockstiff = tick()
-        if (npol==4) then
-           call glob_fluid_stiffness_4(ddchi1, chi) 
-        else
-           call glob_fluid_stiffness(ddchi1, chi) 
-        endif
+        call glob_fluid_stiffness(ddchi1, chi) 
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
         call bdry_copy2fluid(ddchi1, disp)
@@ -322,11 +318,7 @@ subroutine sf_time_loop_newmark
 
         iclockstiff = tick()
         call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
-        if (npol==4) then
-           call glob_stiffness_mono_4(acc1, disp)
-        else
-           call glob_stiffness_mono(acc1, disp)
-        end if
+        call glob_stiffness_mono(acc1, disp)
 
         if (anel_true) then
            iclockanelst = tick()
@@ -374,32 +366,22 @@ subroutine sf_time_loop_newmark
         call apply_axis_mask_scal(chi, nel_fluid, ax_el_fluid, naxel_fluid) 
 
         iclockstiff = tick()
-        if (npol==4) then
-           call glob_fluid_stiffness_4(ddchi1, chi) 
-        else
-           call glob_fluid_stiffness(ddchi1, chi) 
-        endif
+        call glob_fluid_stiffness(ddchi1, chi) 
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
         call bdry_copy2fluid(ddchi1, disp)
 
         call apply_axis_mask_scal(ddchi1, nel_fluid, ax_el_fluid, naxel_fluid)
 
-        ! FLUID: stiffness term assembly
         iclockcomm = tick()
         call pdistsum_fluid(ddchi1)
         iclockcomm = tick(id=idcomm, since=iclockcomm)
-
-        ! FLUID: update 2nd derivative of potential
+        
         ddchi1 = - inv_mass_fluid * ddchi1
 
         iclockstiff = tick()
         call apply_axis_mask_twocomp(disp, nel_solid, ax_el_solid, naxel_solid)
-        if (npol==4) then
-           call glob_stiffness_di_4(acc1, disp)
-        else
-           call glob_stiffness_di(acc1, disp)
-        end if
+        call glob_stiffness_di(acc1, disp)
 
         if (anel_true) then
            iclockanelst = tick()
@@ -449,11 +431,7 @@ subroutine sf_time_loop_newmark
         call apply_axis_mask_scal(chi, nel_fluid, ax_el_fluid, naxel_fluid) 
    
         iclockstiff = tick()
-        if (npol==4) then
-           call glob_fluid_stiffness_4(ddchi1, chi) 
-        else
-           call glob_fluid_stiffness(ddchi1, chi) 
-        endif
+        call glob_fluid_stiffness(ddchi1, chi) 
         iclockstiff = tick(id=idstiff, since=iclockstiff)
    
         call bdry_copy2fluid(ddchi1, disp)
@@ -467,11 +445,7 @@ subroutine sf_time_loop_newmark
    
         iclockstiff = tick()
         call apply_axis_mask_threecomp(disp, nel_solid, ax_el_solid, naxel_solid)
-        if (npol==4) then
-           call glob_stiffness_quad_4(acc1, disp)
-        else
-           call glob_stiffness_quad(acc1, disp) 
-        end if
+        call glob_stiffness_quad(acc1, disp) 
 
         if (anel_true) then
            iclockanelst = tick()
