@@ -295,7 +295,6 @@ subroutine pdistsum_fluid(vec)
   ! Gather
   ipt = 1
   do iel = 1, nel_fluid
-
      jpol = 0
      do ipol = 0, npol
         idest = igloc_fluid(ipt)
@@ -321,21 +320,11 @@ subroutine pdistsum_fluid(vec)
         gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
         ipt = ipt + 1
      end do
-
   end do
-
-#ifndef serial
-  iclockmpi = tick()
-  if (nproc>1) then
-     call extract_from_buffer_fluid()
-  endif
-  iclockmpi = tick(id=idmpi, since=iclockmpi)
-#endif
 
   ! Scatter
   ipt = 1
   do iel = 1, nel_fluid
-
      jpol = 0
      do ipol = 0, npol
         idest = igloc_fluid(ipt)
@@ -361,8 +350,15 @@ subroutine pdistsum_fluid(vec)
         vec(ipol,jpol,iel) = gvec_fluid(idest)
         ipt = ipt + 1
      end do
-
   end do
+
+#ifndef serial
+  iclockmpi = tick()
+  if (nproc>1) &
+     call extract_from_buffer_fluid(vec)
+  iclockmpi = tick(id=idmpi, since=iclockmpi)
+#endif
+
 
 end subroutine pdistsum_fluid
 !=============================================================================

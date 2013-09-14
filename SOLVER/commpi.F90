@@ -370,6 +370,7 @@ subroutine feed_buffer_solid(vec, nc)
      ipg = igloc_solid(ipt)
      gvec_solid(ipg,1:nc) = gvec_solid(ipg,1:nc) + vec(ipol,jpol,iel,1:nc)
   enddo
+
   call buffs_all_solid%resetcurrent()
   do imsg = 1, sizesend_solid
      buffs => buffs_all_solid%getNext()
@@ -466,6 +467,7 @@ subroutine extract_from_buffer_solid(vec,nc)
         gvec_solid(ipg,1:nc) = gvec_solid(ipg,1:nc) + buffr%ldata(ip,1:nc)
      enddo
   enddo
+
   do ip = 1, num_comm_gll_solid
      ipol = glob2el_solid(ip,1)
      jpol = glob2el_solid(ip,2)
@@ -574,17 +576,21 @@ end subroutine send_recv_buffers_fluid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine extract_from_buffer_fluid
+subroutine extract_from_buffer_fluid(f)
   ! Fluid asynchronous communication pattern with one message per proc-proc pair
   ! for a single-component field gvec. The arrays to map global numbers along 
   ! processor-processor boundaries are determined in the mesher, routine pdb.f90
   ! (consulation thereof to be avoided if at all possible...)
 
+  use data_mesh, only: npol, gvec_fluid, igloc_fluid
+  use data_time, only: idmpi, iclockmpi
+  use clocks_mod
   use data_comm
   use linked_list
   
 #ifndef serial
-  integer               :: imsg, ipg, ip
+  real(kind=realkind), intent(inout) :: f(0:,0:,:)
+  integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer               :: msgnum, msgnum1
   integer               :: sizemsg_fluid
   integer               :: ierror
@@ -592,7 +598,11 @@ subroutine extract_from_buffer_fluid
   integer               :: send_status(MPI_STATUS_SIZE, sizesend_fluid)
   class(link), pointer  :: buffs, buffr
   
+  ! wait until all receiving communication is done
+  iclockmpi = tick()
   call MPI_WAITALL(sizerecv_fluid, recv_request_fluid, recv_status, ierror)
+  iclockmpi = tick(id=idmpi,since=iclockmpi)
+
   ! extract from buffer and add to local values
   call buffr_all_fluid%resetcurrent()
   do imsg = 1, sizerecv_fluid
@@ -600,11 +610,23 @@ subroutine extract_from_buffer_fluid
      sizemsg_fluid = sizemsgrecv_fluid(imsg)
      do ip = 1, sizemsg_fluid
         ipg = glocal_index_msg_recv_fluid(ip,imsg)
-        ! add received buffer to own field at same global point
         gvec_fluid(ipg) = gvec_fluid(ipg) + buffr%ldata(ip,1)
-     end do
-  end do
+     enddo
+  enddo
+
+  do ip = 1, num_comm_gll_fluid
+     ipol = glob2el_fluid(ip,1)
+     jpol = glob2el_fluid(ip,2)
+     iel =  glob2el_fluid(ip,3)
+     ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
+     ipg = igloc_fluid(ipt)
+     f(ipol,jpol,iel) = gvec_fluid(ipg)
+  enddo
+
+  ! wait until all sending communication is done
+  iclockmpi = tick()
   call MPI_WAITALL(sizesend_fluid, send_request_fluid, send_status, ierror)
+  iclockmpi = tick(id=idmpi,since=iclockmpi)
 #endif
 
 end subroutine extract_from_buffer_fluid
