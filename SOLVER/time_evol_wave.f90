@@ -298,8 +298,6 @@ subroutine sf_time_loop_newmark
      t = t + deltat
      call runtime_info(iter,disp,chi)
 
-     ! ::::::::::::::::::::::::: ACTUAL NEWMARK SOLVER :::::::::::::::::::::::::
-
      select case (src_type(1))
      case ('monopole')
         chi = chi +  deltat * dchi + half_dt_sq * ddchi0

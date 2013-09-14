@@ -38,7 +38,7 @@ contains
   ! for the non-axisymmetric components of the variables have to vanish on the axis of 
   ! rotation
 !-----------------------------------------------------------------------------------------
-subroutine apply_axis_mask_scal(u, nel, ax_array, nax_array)
+pure subroutine apply_axis_mask_scal(u, nel, ax_array, nax_array)
   ! for a scalar array
 
   integer, intent(in)               :: nel, nax_array
@@ -54,7 +54,7 @@ end subroutine apply_axis_mask_scal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine apply_axis_mask_onecomp(u, nel, ax_array, nax_array)
+pure subroutine apply_axis_mask_onecomp(u, nel, ax_array, nax_array)
   ! for the first component of the array
 
   integer, intent(in)               :: nel,nax_array
@@ -70,7 +70,7 @@ end subroutine apply_axis_mask_onecomp
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine apply_axis_mask_twocomp(u, nel, ax_array, nax_array)
+pure subroutine apply_axis_mask_twocomp(u, nel, ax_array, nax_array)
   ! for the 2nd and 3rd component of the array
   
   integer, intent(in)               :: nel, nax_array
@@ -86,7 +86,7 @@ end subroutine apply_axis_mask_twocomp
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine apply_axis_mask_threecomp(u, nel, ax_array, nax_array)
+pure subroutine apply_axis_mask_threecomp(u, nel, ax_array, nax_array)
   ! for the all components of the array
 
   integer, intent(in)               :: nel, nax_array
