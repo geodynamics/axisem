@@ -363,6 +363,9 @@ subroutine read_db
             call buffs_all_fluid%append(buffs_fluid(1:sizemsgsend_fluid(imsg),:))
         end do
 
+        allocate(recv_request_fluid(1:sizerecv_fluid))
+        allocate(send_request_fluid(1:sizesend_fluid))
+
      end if
 
   endif ! have_fluid

@@ -66,6 +66,8 @@ module data_comm
   integer, dimension(:,:), allocatable :: glocal_index_msg_recv_fluid
   integer, dimension(:,:), allocatable :: glocal_index_msg_send_fluid
 
+  integer, dimension(:), allocatable   :: recv_request_fluid, send_request_fluid
+
 !=======================
 end module data_comm
 !=======================

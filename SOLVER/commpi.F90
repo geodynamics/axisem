@@ -43,8 +43,8 @@ module commpi
   public :: ppsum, ppsum_int, ppsum_dble
   public :: ppmin, ppmax, ppmax_int
   public :: ppinit, pbarrier, ppend
-  public :: asynch_messaging_fluid
-  public :: feed_buffer, send_recv_buffers_solid, extract_from_buffer
+  public :: feed_buffer_solid, send_recv_buffers_solid, extract_from_buffer_solid
+  public :: feed_buffer_fluid, send_recv_buffers_fluid, extract_from_buffer_fluid
   public :: pbroadcast_dble, pbroadcast_char, pbroadcast_log
   public :: pbroadcast_int_arr, pbroadcast_int
   public :: ppcheck, parse_nl
@@ -347,7 +347,7 @@ end subroutine pbarrier
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine feed_buffer(vec, nc)
+subroutine feed_buffer_solid(vec, nc)
 
   use data_comm
   use data_mesh, only: npol, gvec_solid, igloc_solid
@@ -381,7 +381,7 @@ subroutine feed_buffer(vec, nc)
   enddo
 #endif
 
-end subroutine feed_buffer
+end subroutine feed_buffer_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -399,7 +399,7 @@ subroutine send_recv_buffers_solid(nc)
 #ifndef serial
   integer               :: imsg, sizeb, ipdes, ipsrc
   integer               :: ic, ip, ipg
-  integer               :: msgnum, msgnum1, msgnum2
+  integer               :: msgnum, msgnum1
   integer               :: sizemsg_solid
   integer               :: ierror
   class(link), pointer  :: buffs, buffr
@@ -433,7 +433,7 @@ end subroutine send_recv_buffers_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine extract_from_buffer(vec,nc)
+subroutine extract_from_buffer_solid(vec,nc)
 
   use data_mesh,        only: npol, gvec_solid, igloc_solid
   use data_time,        only: idmpi, iclockmpi
@@ -481,11 +481,11 @@ subroutine extract_from_buffer(vec,nc)
   iclockmpi = tick(id=idmpi,since=iclockmpi)
 #endif
 
-end subroutine extract_from_buffer
+end subroutine extract_from_buffer_solid
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine asynch_messaging_fluid
+subroutine feed_buffer_fluid
   ! Fluid asynchronous communication pattern with one message per proc-proc pair
   ! for a single-component field gvec. The arrays to map global numbers along 
   ! processor-processor boundaries are determined in the mesher, routine pdb.f90
@@ -495,13 +495,8 @@ subroutine asynch_messaging_fluid
   use linked_list
   
 #ifndef serial
-  integer               :: imsg, ipg, ip, sizeb, ipdes, ipsrc
-  integer               :: msgnum, msgnum1, msgnum2
+  integer               :: imsg, ipg, ip
   integer               :: sizemsg_fluid
-  integer               :: ierror
-  integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_fluid)
-  integer               :: send_status(MPI_STATUS_SIZE, sizesend_fluid)
-  integer               :: recv_request(1:sizerecv_fluid), send_request(1:sizesend_fluid)
   class(link), pointer  :: buffs, buffr
   
   ! Prepare arrays to be sent
@@ -514,7 +509,30 @@ subroutine asynch_messaging_fluid
         buffs%ldata(ip,1) = gvec_fluid(ipg)
      end do
   end do
-     
+#endif
+
+end subroutine feed_buffer_fluid
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine send_recv_buffers_fluid
+  ! Fluid asynchronous communication pattern with one message per proc-proc pair
+  ! for a single-component field gvec. The arrays to map global numbers along 
+  ! processor-processor boundaries are determined in the mesher, routine pdb.f90
+  ! (consulation thereof to be avoided if at all possible...)
+
+  use data_comm
+  use linked_list
+  
+#ifndef serial
+  integer               :: imsg, ipg, ip, sizeb, ipdes, ipsrc
+  integer               :: msgnum, msgnum1
+  integer               :: sizemsg_fluid
+  integer               :: ierror
+  integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_fluid)
+  integer               :: send_status(MPI_STATUS_SIZE, sizesend_fluid)
+  class(link), pointer  :: buffs, buffr
+  
   ! Send stuff around
   call buffs_all_fluid%resetcurrent()
   do imsg = 1, sizesend_fluid
@@ -524,7 +542,7 @@ subroutine asynch_messaging_fluid
      ipdes  = listsend_fluid(imsg)
      msgnum = mynum*nproc + ipdes
      call MPI_ISEND(buffs%ldata, sizeb, mpi_realkind, ipdes, msgnum, &
-                   MPI_COMM_WORLD, send_request(imsg), ierror)
+                   MPI_COMM_WORLD, send_request_fluid(imsg), ierror)
   end do
 
   ! Receive data
@@ -536,12 +554,33 @@ subroutine asynch_messaging_fluid
      ipsrc = listrecv_fluid(imsg)
      msgnum1 = ipsrc*nproc + mynum
      call MPI_IRECV(buffr%ldata, sizeb, mpi_realkind, ipsrc, msgnum1, &
-                   MPI_COMM_WORLD, recv_request(imsg), ierror)
+                   MPI_COMM_WORLD, recv_request_fluid(imsg), ierror)
   end do
+#endif
 
-  call MPI_WAITALL(sizerecv_fluid, recv_request, recv_status, ierror)
-  call MPI_WAITALL(sizesend_fluid, send_request, send_status, ierror)
+end subroutine send_recv_buffers_fluid
+!=============================================================================
 
+!-----------------------------------------------------------------------------
+subroutine extract_from_buffer_fluid
+  ! Fluid asynchronous communication pattern with one message per proc-proc pair
+  ! for a single-component field gvec. The arrays to map global numbers along 
+  ! processor-processor boundaries are determined in the mesher, routine pdb.f90
+  ! (consulation thereof to be avoided if at all possible...)
+
+  use data_comm
+  use linked_list
+  
+#ifndef serial
+  integer               :: imsg, ipg, ip
+  integer               :: msgnum, msgnum1
+  integer               :: sizemsg_fluid
+  integer               :: ierror
+  integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_fluid)
+  integer               :: send_status(MPI_STATUS_SIZE, sizesend_fluid)
+  class(link), pointer  :: buffs, buffr
+  
+  call MPI_WAITALL(sizerecv_fluid, recv_request_fluid, recv_status, ierror)
   ! extract from buffer and add to local values
   call buffr_all_fluid%resetcurrent()
   do imsg = 1, sizerecv_fluid
@@ -553,9 +592,10 @@ subroutine asynch_messaging_fluid
         gvec_fluid(ipg) = gvec_fluid(ipg) + buffr%ldata(ip,1)
      end do
   end do
+  call MPI_WAITALL(sizesend_fluid, send_request_fluid, send_status, ierror)
 #endif
 
-end subroutine asynch_messaging_fluid
+end subroutine extract_from_buffer_fluid
 !=============================================================================
 
 !===================

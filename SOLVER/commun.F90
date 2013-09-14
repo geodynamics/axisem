@@ -85,7 +85,7 @@ subroutine pdistsum_solid(vec, phase)
 
 #ifndef serial
      if (nproc>1) then
-        call feed_buffer(vec, nc)
+        call feed_buffer_solid(vec, nc)
         ! Do message-passing for all components at once
         call send_recv_buffers_solid(nc)
      endif
@@ -156,7 +156,7 @@ subroutine pdistsum_solid(vec, phase)
 #ifndef serial
   if (nproc>1) then
      if (phase_loc == 0 .or. phase_loc == 2) &
-        call extract_from_buffer(vec,nc)
+        call extract_from_buffer_solid(vec,nc)
   endif ! nproc>1
 #endif
   
@@ -317,7 +317,11 @@ subroutine pdistsum_fluid(vec)
 
 #ifndef serial
   iclockmpi = tick()
-  if (nproc>1) call asynch_messaging_fluid
+  if (nproc>1) then
+     call feed_buffer_fluid()
+     call send_recv_buffers_fluid()
+     call extract_from_buffer_fluid()
+  endif
   iclockmpi = tick(id=idmpi, since=iclockmpi)
 #endif
 
