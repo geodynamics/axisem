@@ -111,60 +111,100 @@ subroutine init_grid
 
   if (nproc>1) then
      if (sizesend_solid>0) then
-        allocate(glob2el_send(2*sizesend_solid*maxval(sizemsgsend_solid),3))
-        glob2el_send = 0
-     endif
+        allocate(glob2el_solid(2*sizesend_solid*maxval(sizemsgsend_solid),3))
+        glob2el_solid = 0
 
-     icount = 0
-     if (diagfiles) open(unit=8978,file=infopath(1:lfinfo)//'/mpi_gll_send.dat'//appmynum)
+        icount = 0
+        if (diagfiles) open(unit=8978,file=infopath(1:lfinfo)//'/mpi_gll_solid.dat'//appmynum)
 
-     do iel=1, nel_solid
-        do jpol=0, npol
-           outer: do ipol=0, npol
-              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-              idest = igloc_solid(ipt)
-              if (sizesend_solid>0) then
+        do iel=1, nel_solid
+           do jpol=0, npol
+              outer: do ipol=0, npol
+                 ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+                 idest = igloc_solid(ipt)
                  do imsg = 1, sizesend_solid
                     do ip = 1, sizemsgsend_solid(imsg)
                        ipg = glocal_index_msg_send_solid(ip,imsg)
                        if (idest==ipg) then 
                           icount = icount + 1
-                          glob2el_send(icount,1) = ipol
-                          glob2el_send(icount,2) = jpol
-                          glob2el_send(icount,3) = iel
+                          glob2el_solid(icount,1) = ipol
+                          glob2el_solid(icount,2) = jpol
+                          glob2el_solid(icount,3) = iel
                           if (diagfiles) write(8978,*) icount, iel, ipol, jpol
                           cycle outer
                        endif
                     enddo
                  enddo
-              endif
-           end do outer
+              end do outer
+           end do
         end do
-     end do
 
-     if (diagfiles) close(8978)
-     
-     num_send_gll = icount
-     num_recv_gll = icount
-
-     allocate(glob2el_recv(num_recv_gll,3))
-     glob2el_recv = glob2el_send
-     !glob2el_recv = glob2el_send
-     !glob2el_recv = glob2el_send
+        if (diagfiles) close(8978)
+        
+        num_comm_gll_solid = icount
     
-     if (verbose > 1) then
-        do iel=0, nproc-1
+        if (verbose > 1) then
+           do iel=0, nproc-1
+              call barrier
+              if (mynum==iel) then 
+                 write(6,'("   ",a8,a33,i6)') procstrg, &
+                    'counted sent/received GLL points, solid:', num_comm_gll_solid
+              endif
+           enddo
+           call flush(6) 
            call barrier
-           if (mynum==iel) then 
-              write(6,'("   ",a8,a33,2(i6))') procstrg, &
-                 'counted sent/received GLL points:', num_send_gll,num_recv_gll
-           endif
-        enddo
-        call flush(6) 
-        call barrier
-        if (lpr) write(6,*)
+           if (lpr) write(6,*)
+        endif
      endif
      
+     if (have_fluid) then
+        if (sizesend_fluid>0) then
+           allocate(glob2el_fluid(2*sizesend_fluid*maxval(sizemsgsend_fluid),3))
+           glob2el_fluid = 0
+
+           icount = 0
+           if (diagfiles) open(unit=8978,file=infopath(1:lfinfo)//'/mpi_gll_fluid.dat'//appmynum)
+
+           do iel=1, nel_fluid
+              do jpol=0, npol
+                 outerfl: do ipol=0, npol
+                    ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+                    idest = igloc_fluid(ipt)
+                    do imsg = 1, sizesend_fluid
+                       do ip = 1, sizemsgsend_fluid(imsg)
+                          ipg = glocal_index_msg_send_fluid(ip,imsg)
+                          if (idest==ipg) then 
+                             icount = icount + 1
+                             glob2el_fluid(icount,1) = ipol
+                             glob2el_fluid(icount,2) = jpol
+                             glob2el_fluid(icount,3) = iel
+                             if (diagfiles) write(8978,*) icount, iel, ipol, jpol
+                             cycle outerfl
+                          endif
+                       enddo
+                    enddo
+                 end do outerfl
+              end do
+           end do
+
+           if (diagfiles) close(8978)
+           
+           num_comm_gll_fluid = icount
+    
+           if (verbose > 1) then
+              do iel=0, nproc-1
+                 call barrier
+                 if (mynum==iel) then 
+                    write(6,'("   ",a8,a33,i6)') procstrg, &
+                       'counted sent/received GLL points, fluid:', num_comm_gll_fluid
+                 endif
+              enddo
+              call flush(6) 
+              call barrier
+              if (lpr) write(6,*)
+           endif
+        endif
+     endif
   endif ! nproc>1
 
 

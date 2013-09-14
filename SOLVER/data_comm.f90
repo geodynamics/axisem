@@ -37,11 +37,11 @@ module data_comm
 
   ! Solid domain message passing
 
-  integer                              :: num_send_gll, num_recv_gll !only solid!
+  integer                              :: num_comm_gll_solid
   integer                              :: sizemsgrecvmax_solid
   integer                              :: sizemsgsendmax_solid
   integer                              :: sizemsgmax_solid
-  integer, allocatable                 :: glob2el_send(:,:), glob2el_recv(:,:)
+  integer, allocatable                 :: glob2el_solid(:,:)
   real(kind=realkind), allocatable     :: buffs_solid(:,:), buffr_solid(:,:)
   type(list)                           :: buffs_all, buffr_all
 
@@ -54,9 +54,11 @@ module data_comm
   integer, dimension(:), allocatable   :: recv_request_solid, send_request_solid
 
   ! Fluid domain message passing
+  integer                              :: num_comm_gll_fluid
   integer                              :: sizemsgrecvmax_fluid
   integer                              :: sizemsgsendmax_fluid
   integer                              :: sizemsgmax_fluid
+  integer, allocatable                 :: glob2el_fluid(:,:)
   real(kind=realkind), allocatable     :: buffs_fluid(:,:), buffr_fluid(:,:)
   type(list)                           :: buffs_all_fluid, buffr_all_fluid
 

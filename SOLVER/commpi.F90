@@ -362,10 +362,10 @@ subroutine feed_buffer_solid(vec, nc)
 #ifndef serial
   ! fill send buffer
   gvec_solid = 0
-  do ip = 1, num_send_gll
-     ipol = glob2el_send(ip,1)
-     jpol = glob2el_send(ip,2)
-     iel =  glob2el_send(ip,3)
+  do ip = 1, num_comm_gll_solid
+     ipol = glob2el_solid(ip,1)
+     jpol = glob2el_solid(ip,2)
+     iel =  glob2el_solid(ip,3)
      ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
      ipg = igloc_solid(ipt)
      gvec_solid(ipg,1:nc) = gvec_solid(ipg,1:nc) + vec(ipol,jpol,iel,1:nc)
@@ -466,10 +466,10 @@ subroutine extract_from_buffer_solid(vec,nc)
         gvec_solid(ipg,1:nc) = gvec_solid(ipg,1:nc) + buffr%ldata(ip,1:nc)
      enddo
   enddo
-  do ip = 1, num_recv_gll
-     ipol = glob2el_recv(ip,1)
-     jpol = glob2el_recv(ip,2)
-     iel =  glob2el_recv(ip,3)
+  do ip = 1, num_comm_gll_solid
+     ipol = glob2el_solid(ip,1)
+     jpol = glob2el_solid(ip,2)
+     iel =  glob2el_solid(ip,3)
      ipt = (iel - 1) * (npol + 1)**2 + jpol * (npol + 1) + ipol + 1
      ipg = igloc_solid(ipt)
      vec(ipol,jpol,iel,1:nc) = gvec_solid(ipg,1:nc)
