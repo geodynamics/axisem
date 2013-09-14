@@ -329,6 +329,7 @@ subroutine sf_time_loop_newmark
            endif
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
+
         call bdry_copy2solid(acc1, ddchi1)
         call apply_axis_mask_onecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
         iclockstiff = tick(id=idstiff, since=iclockstiff)

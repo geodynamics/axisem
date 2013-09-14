@@ -435,7 +435,9 @@ end subroutine send_recv_buffers_solid
 !-----------------------------------------------------------------------------
 subroutine extract_from_buffer(vec,nc)
 
-  use data_mesh, only: npol, gvec_solid, igloc_solid
+  use data_mesh,        only: npol, gvec_solid, igloc_solid
+  use data_time,        only: idmpi, iclockmpi
+  use clocks_mod
   use data_comm            
   use linked_list
   
@@ -450,7 +452,9 @@ subroutine extract_from_buffer(vec,nc)
   
 #ifndef serial
   ! wait until all receiving communication is done
+  iclockmpi = tick()
   call MPI_WAITALL(sizerecv_solid, recv_request_solid, recv_status, ierror)
+  iclockmpi = tick(id=idmpi,since=iclockmpi)
 
   ! Extract received from buffer
   call buffr_all%resetcurrent()
@@ -472,7 +476,9 @@ subroutine extract_from_buffer(vec,nc)
   enddo
 
   ! wait until all sending communication is done
+  iclockmpi = tick()
   call MPI_WAITALL(sizesend_solid, send_request_solid, send_status, ierror)
+  iclockmpi = tick(id=idmpi,since=iclockmpi)
 #endif
 
 end subroutine extract_from_buffer

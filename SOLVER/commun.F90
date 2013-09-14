@@ -64,94 +64,100 @@ end subroutine pdistsum_solid_1D
 !! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
 !! If nproc>1, the asynchronous messaging scheme is invoked to additionally 
 !! sum & exchange values on processor boundary points.
-subroutine pdistsum_solid(vec)
+subroutine pdistsum_solid(vec, phase)
   
   use data_mesh,        only: gvec_solid, npol, nel_solid, igloc_solid
-  use data_time,        only: idmpi, iclockmpi
-  use clocks_mod
 
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
+  integer, optional, intent(in)      :: phase 
+  ! phase == 0  =>  do all (default)
+  ! phase == 1  =>  feed buffer start communication, gather/scatter
+  ! phase == 2  =>  wait for communication to finish, extract buffer
+  integer                            :: phase_loc
   integer                            :: nc
   integer                            :: iel, jpol, ipol, idest, ipt
   
   nc = size(vec, dim=4)
+  phase_loc = 0 ! Default value
+  if (present(phase)) phase_loc = phase
+
+  if (phase_loc == 0 .or. phase_loc == 1) then
 
 #ifndef serial
-  if (nproc>1) then
-     call feed_buffer(vec, nc)
-     ! Do message-passing for all components at once
-     call send_recv_buffers_solid(nc)
-  endif
+     if (nproc>1) then
+        call feed_buffer(vec, nc)
+        ! Do message-passing for all components at once
+        call send_recv_buffers_solid(nc)
+     endif
 #endif
 
-  gvec_solid = 0
-  ! Gather element boundaries
-  ipt = 1
-  do iel = 1, nel_solid
-     jpol = 0
-     do ipol = 0, npol
-        idest = igloc_solid(ipt)
-        gvec_solid(idest,1:nc) = gvec_solid(idest,1:nc) + vec(ipol,jpol,iel,1:nc)
-        ipt = ipt + 1
+     gvec_solid = 0
+     ! Gather element boundaries
+     ipt = 1
+     do iel = 1, nel_solid
+        jpol = 0
+        do ipol = 0, npol
+           idest = igloc_solid(ipt)
+           gvec_solid(idest,1:nc) = gvec_solid(idest,1:nc) + vec(ipol,jpol,iel,1:nc)
+           ipt = ipt + 1
+        end do
+
+        do jpol = 1, npol-1
+           ipol = 0
+           idest = igloc_solid(ipt)
+           gvec_solid(idest,1:nc) = gvec_solid(idest,1:nc) + vec(ipol,jpol,iel,1:nc)
+           ipt = ipt + npol
+
+           ipol = npol
+           idest = igloc_solid(ipt)
+           gvec_solid(idest,1:nc) = gvec_solid(idest,1:nc) + vec(ipol,jpol,iel,1:nc)
+           ipt = ipt + 1
+        end do
+
+        jpol = npol
+        do ipol = 0, npol
+           idest = igloc_solid(ipt)
+           gvec_solid(idest,1:nc) = gvec_solid(idest,1:nc) + vec(ipol,jpol,iel,1:nc)
+           ipt = ipt + 1
+        end do
      end do
 
-     do jpol = 1, npol-1
-        ipol = 0
-        idest = igloc_solid(ipt)
-        gvec_solid(idest,1:nc) = gvec_solid(idest,1:nc) + vec(ipol,jpol,iel,1:nc)
-        ipt = ipt + npol
+     ! Scatter
+     ipt = 1
+     do iel = 1, nel_solid
+        jpol = 0
+        do ipol = 0, npol
+           idest = igloc_solid(ipt)
+           vec(ipol,jpol,iel,1:nc) = gvec_solid(idest,1:nc)
+           ipt = ipt + 1
+        end do
 
-        ipol = npol
-        idest = igloc_solid(ipt)
-        gvec_solid(idest,1:nc) = gvec_solid(idest,1:nc) + vec(ipol,jpol,iel,1:nc)
-        ipt = ipt + 1
+        do jpol = 1, npol-1
+           ipol = 0
+           idest = igloc_solid(ipt)
+           vec(ipol,jpol,iel,1:nc) = gvec_solid(idest,1:nc)
+           ipt = ipt + npol
+
+           ipol = npol
+           idest = igloc_solid(ipt)
+           vec(ipol,jpol,iel,1:nc) = gvec_solid(idest,1:nc)
+           ipt = ipt + 1
+        end do
+
+        jpol = npol
+        do ipol = 0, npol
+           idest = igloc_solid(ipt)
+           vec(ipol,jpol,iel,1:nc) = gvec_solid(idest,1:nc)
+           ipt = ipt + 1
+        end do
      end do
-
-     jpol = npol
-     do ipol = 0, npol
-        idest = igloc_solid(ipt)
-        gvec_solid(idest,1:nc) = gvec_solid(idest,1:nc) + vec(ipol,jpol,iel,1:nc)
-        ipt = ipt + 1
-     end do
-  end do
-
-  ! Scatter
-  ipt = 1
-  do iel = 1, nel_solid
-     jpol = 0
-     do ipol = 0, npol
-        idest = igloc_solid(ipt)
-        vec(ipol,jpol,iel,1:nc) = gvec_solid(idest,1:nc)
-        ipt = ipt + 1
-     end do
-
-     do jpol = 1, npol-1
-        ipol = 0
-        idest = igloc_solid(ipt)
-        vec(ipol,jpol,iel,1:nc) = gvec_solid(idest,1:nc)
-        ipt = ipt + npol
-
-        ipol = npol
-        idest = igloc_solid(ipt)
-        vec(ipol,jpol,iel,1:nc) = gvec_solid(idest,1:nc)
-        ipt = ipt + 1
-     end do
-
-     jpol = npol
-     do ipol = 0, npol
-        idest = igloc_solid(ipt)
-        vec(ipol,jpol,iel,1:nc) = gvec_solid(idest,1:nc)
-        ipt = ipt + 1
-     end do
-  end do
+  endif
   
 #ifndef serial
-  iclockmpi = tick()
   if (nproc>1) then
-     ! Extract back into each component sequentially
-     call extract_from_buffer(vec,nc)
+     if (phase_loc == 0 .or. phase_loc == 2) &
+        call extract_from_buffer(vec,nc)
   endif ! nproc>1
-  iclockmpi = tick(id=idmpi,since=iclockmpi)
 #endif
   
 end subroutine pdistsum_solid
