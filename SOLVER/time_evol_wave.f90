@@ -297,26 +297,33 @@ subroutine sf_time_loop_newmark
 
      t = t + deltat
      call runtime_info(iter,disp,chi)
+     
+     chi = chi +  deltat * dchi + half_dt_sq * ddchi0
+     
+     disp(:,:,:,1) = disp(:,:,:,1) + deltat * velo(:,:,:,1) + half_dt_sq * acc0(:,:,:,1)
+     if (src_type(1) .ne. 'monopole') &
+        disp(:,:,:,2) = disp(:,:,:,2) + deltat * velo(:,:,:,2) + half_dt_sq * acc0(:,:,:,2)
+     disp(:,:,:,3) = disp(:,:,:,3) + deltat * velo(:,:,:,3) + half_dt_sq * acc0(:,:,:,3)
+        
+     if (src_type(1) .ne. 'monopole') &
+        call apply_axis_mask_scal(chi, nel_fluid, ax_el_fluid, naxel_fluid) 
+     
+     iclockstiff = tick()
+     call glob_fluid_stiffness(ddchi1, chi) 
+     iclockstiff = tick(id=idstiff, since=iclockstiff)
 
+     call bdry_copy2fluid(ddchi1, disp)
+     
+     if (src_type(1) .ne. 'monopole') &
+        call apply_axis_mask_scal(ddchi1, nel_fluid, ax_el_fluid, naxel_fluid)
+
+     iclockcomm = tick()
+     call pdistsum_fluid(ddchi1) !phase = 1
+     iclockcomm = tick(id=idcomm, since=iclockcomm)
+        
+     iclockstiff = tick()
      select case (src_type(1))
      case ('monopole')
-        chi = chi +  deltat * dchi + half_dt_sq * ddchi0
-        disp(:,:,:,1) = disp(:,:,:,1) + deltat * velo(:,:,:,1) + half_dt_sq * acc0(:,:,:,1)
-        disp(:,:,:,3) = disp(:,:,:,3) + deltat * velo(:,:,:,3) + half_dt_sq * acc0(:,:,:,3)
-
-        iclockstiff = tick()
-        call glob_fluid_stiffness(ddchi1, chi) 
-        iclockstiff = tick(id=idstiff, since=iclockstiff)
-
-        call bdry_copy2fluid(ddchi1, disp)
-
-        iclockcomm = tick()
-        call pdistsum_fluid(ddchi1)
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-
-        ddchi1 = - inv_mass_fluid * ddchi1
-
-        iclockstiff = tick()
         call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
         call glob_stiffness_mono(acc1, disp)
 
@@ -327,57 +334,7 @@ subroutine sf_time_loop_newmark
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
 
-        call bdry_copy2solid(acc1, ddchi1)
-        call apply_axis_mask_onecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
-        iclockstiff = tick(id=idstiff, since=iclockstiff)
-
-        iclockcomm = tick()
-        call pdistsum_solid(acc1, phase=1) 
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-
-        if (anel_true) then
-           iclockanelts = tick()
-           call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
-           iclockanelts = tick(id=idanelts, since=iclockanelts)
-        endif
-
-        dchi = dchi + half_dt * (ddchi0 + ddchi1)
-        ddchi0 = ddchi1
-
-        iclockcomm = tick()
-        call pdistsum_solid(acc1, phase=2) 
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-
-        call add_source(acc1, stf(iter))
-
-        acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
-        acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
-
-        velo(:,:,:,1) = velo(:,:,:,1) + half_dt * (acc0(:,:,:,1) + acc1(:,:,:,1))
-        velo(:,:,:,3) = velo(:,:,:,3) + half_dt * (acc0(:,:,:,3) + acc1(:,:,:,3))
-        acc0 = acc1
-
      case ('dipole')
-        chi = chi +  deltat * dchi + half_dt_sq * ddchi0
-        disp = disp + deltat * velo + half_dt_sq * acc0
-
-        call apply_axis_mask_scal(chi, nel_fluid, ax_el_fluid, naxel_fluid) 
-
-        iclockstiff = tick()
-        call glob_fluid_stiffness(ddchi1, chi) 
-        iclockstiff = tick(id=idstiff, since=iclockstiff)
-
-        call bdry_copy2fluid(ddchi1, disp)
-
-        call apply_axis_mask_scal(ddchi1, nel_fluid, ax_el_fluid, naxel_fluid)
-
-        iclockcomm = tick()
-        call pdistsum_fluid(ddchi1)
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-        
-        ddchi1 = - inv_mass_fluid * ddchi1
-
-        iclockstiff = tick()
         call apply_axis_mask_twocomp(disp, nel_solid, ax_el_solid, naxel_solid)
         call glob_stiffness_di(acc1, disp)
 
@@ -388,58 +345,7 @@ subroutine sf_time_loop_newmark
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
 
-        call bdry_copy2solid(acc1,ddchi1)
-        call apply_axis_mask_twocomp(acc1, nel_solid, ax_el_solid, naxel_solid)
-        iclockstiff = tick(id=idstiff, since=iclockstiff)
-
-        iclockcomm = tick()
-        call pdistsum_solid(acc1, phase=1) 
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-
-        if (anel_true) then
-           iclockanelts = tick()
-           call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
-           iclockanelts = tick(id=idanelts, since=iclockanelts)
-        endif
-        
-        dchi = dchi + half_dt * (ddchi0 + ddchi1)
-        ddchi0 = ddchi1
-        
-        iclockcomm = tick()
-        call pdistsum_solid(acc1, phase=2) 
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-
-        call add_source(acc1, stf(iter))
-
-        acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
-        acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
-        ! for the factor 2 compare eq 32 in TNM (2006)
-        acc1(:,:,:,3) = - two * inv_mass_rho * acc1(:,:,:,3)
-
-        velo = velo + half_dt * (acc0 + acc1)
-        acc0 = acc1
-
      case ('quadpole')
-
-        chi = chi +  deltat * dchi + half_dt_sq * ddchi0
-        disp = disp + deltat * velo + half_dt_sq * acc0
-   
-        call apply_axis_mask_scal(chi, nel_fluid, ax_el_fluid, naxel_fluid) 
-   
-        iclockstiff = tick()
-        call glob_fluid_stiffness(ddchi1, chi) 
-        iclockstiff = tick(id=idstiff, since=iclockstiff)
-   
-        call bdry_copy2fluid(ddchi1, disp)
-        call apply_axis_mask_scal(ddchi1, nel_fluid, ax_el_fluid, naxel_fluid)
-   
-        iclockcomm = tick()
-        call pdistsum_fluid(ddchi1)
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-   
-        ddchi1 = - inv_mass_fluid * ddchi1
-   
-        iclockstiff = tick()
         call apply_axis_mask_threecomp(disp, nel_solid, ax_el_solid, naxel_solid)
         call glob_stiffness_quad(acc1, disp) 
 
@@ -449,40 +355,70 @@ subroutine sf_time_loop_newmark
                                          att_coarse_grained)
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
+     end select
+     iclockstiff = tick(id=idstiff, since=iclockstiff)
+     
+     !iclockcomm = tick()
+     !call pdistsum_fluid(ddchi1) !phase = 2
+     !iclockcomm = tick(id=idcomm, since=iclockcomm)
 
+     ddchi1 = - inv_mass_fluid * ddchi1
+
+     select case (src_type(1))
+     case ('monopole')
+        call bdry_copy2solid(acc1, ddchi1)
+        call apply_axis_mask_onecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
+
+     case ('dipole')
+        call bdry_copy2solid(acc1,ddchi1)
+        call apply_axis_mask_twocomp(acc1, nel_solid, ax_el_solid, naxel_solid)
+
+     case ('quadpole')
         call bdry_copy2solid(acc1,ddchi1)
         call apply_axis_mask_threecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
-        iclockstiff = tick(id=idstiff, since=iclockstiff)
-   
-        iclockcomm = tick()
-        call pdistsum_solid(acc1, phase=1) 
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-
-        if (anel_true) then
-           iclockanelts = tick()
-           call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
-           iclockanelts = tick(id=idanelts, since=iclockanelts)
-        endif
-
-        dchi = dchi + half_dt * (ddchi0 + ddchi1)
-        ddchi0 = ddchi1
-        
-        iclockcomm = tick()
-        call pdistsum_solid(acc1, phase=2) 
-        iclockcomm = tick(id=idcomm, since=iclockcomm)
-   
-        call add_source(acc1, stf(iter))
-   
-        acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
-        acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
-        acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
-   
-        velo = velo + half_dt * (acc0 + acc1)
-        acc0 = acc1
      end select
-    
+        
+     iclockcomm = tick()
+     call pdistsum_solid(acc1, phase=1) 
+     iclockcomm = tick(id=idcomm, since=iclockcomm)
 
+     if (anel_true) then
+        iclockanelts = tick()
+        call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
+        iclockanelts = tick(id=idanelts, since=iclockanelts)
+     endif
 
+     dchi = dchi + half_dt * (ddchi0 + ddchi1)
+     ddchi0 = ddchi1
+     
+     iclockcomm = tick()
+     call pdistsum_solid(acc1, phase=2) 
+     iclockcomm = tick(id=idcomm, since=iclockcomm)
+
+     call add_source(acc1, stf(iter))
+        
+     acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
+     
+     if (src_type(1) .ne. 'monopole') &
+        acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
+     
+     if (src_type(1) == 'dipole') then 
+        ! for the factor 2 compare eq 32 in TNM (2006)
+        acc1(:,:,:,3) = - two * inv_mass_rho * acc1(:,:,:,3)
+     else
+        acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
+     endif
+        
+     velo(:,:,:,1) = velo(:,:,:,1) + half_dt * (acc0(:,:,:,1) + acc1(:,:,:,1))
+     if (src_type(1) .ne. 'monopole') &
+        velo(:,:,:,2) = velo(:,:,:,2) + half_dt * (acc0(:,:,:,2) + acc1(:,:,:,2))
+     velo(:,:,:,3) = velo(:,:,:,3) + half_dt * (acc0(:,:,:,3) + acc1(:,:,:,3))
+     
+     acc0(:,:,:,1) = acc1(:,:,:,1)
+     if (src_type(1) .ne. 'monopole') &
+        acc0(:,:,:,2) = acc1(:,:,:,2)
+     acc0(:,:,:,3) = acc1(:,:,:,3)
+     
      iclockdump = tick()
      call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
      iclockdump = tick(id=iddump, since=iclockdump)
