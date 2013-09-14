@@ -344,6 +344,9 @@ subroutine sf_time_loop_newmark
            iclockanelts = tick(id=idanelts, since=iclockanelts)
         endif
 
+        dchi = dchi + half_dt * (ddchi0 + ddchi1)
+        ddchi0 = ddchi1
+
         iclockcomm = tick()
         call pdistsum_solid(acc1, phase=2) 
         iclockcomm = tick(id=idcomm, since=iclockcomm)
@@ -353,11 +356,8 @@ subroutine sf_time_loop_newmark
         acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
         acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
 
-        dchi = dchi + half_dt * (ddchi0 + ddchi1)
         velo(:,:,:,1) = velo(:,:,:,1) + half_dt * (acc0(:,:,:,1) + acc1(:,:,:,1))
         velo(:,:,:,3) = velo(:,:,:,3) + half_dt * (acc0(:,:,:,3) + acc1(:,:,:,3))
-
-        ddchi0 = ddchi1
         acc0 = acc1
 
      case ('dipole')
@@ -408,6 +408,9 @@ subroutine sf_time_loop_newmark
            iclockanelts = tick(id=idanelts, since=iclockanelts)
         endif
         
+        dchi = dchi + half_dt * (ddchi0 + ddchi1)
+        ddchi0 = ddchi1
+        
         iclockcomm = tick()
         call pdistsum_solid(acc1, phase=2) 
         iclockcomm = tick(id=idcomm, since=iclockcomm)
@@ -419,10 +422,7 @@ subroutine sf_time_loop_newmark
         ! for the factor 2 compare eq 32 in TNM (2006)
         acc1(:,:,:,3) = - two * inv_mass_rho * acc1(:,:,:,3)
 
-        dchi = dchi + half_dt * (ddchi0 + ddchi1)
         velo = velo + half_dt * (acc0 + acc1)
-
-        ddchi0 = ddchi1
         acc0 = acc1
 
      case ('quadpole')
@@ -472,6 +472,9 @@ subroutine sf_time_loop_newmark
            call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
            iclockanelts = tick(id=idanelts, since=iclockanelts)
         endif
+
+        dchi = dchi + half_dt * (ddchi0 + ddchi1)
+        ddchi0 = ddchi1
         
         iclockcomm = tick()
         call pdistsum_solid(acc1, phase=2) 
@@ -483,10 +486,7 @@ subroutine sf_time_loop_newmark
         acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
         acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
    
-        dchi = dchi + half_dt * (ddchi0 + ddchi1)
         velo = velo + half_dt * (acc0 + acc1)
-   
-        ddchi0 = ddchi1
         acc0 = acc1
      end select
     

@@ -32,8 +32,6 @@ module attenuation
   public :: n_sls_attenuation
   public :: dump_memory_vars
   public :: time_step_memvars
-  !public :: time_step_memvars_4
-  !public :: time_step_memvars_cg4
   public :: att_coarse_grained
 
   real(kind=dp), allocatable       :: y_j_attenuation(:)

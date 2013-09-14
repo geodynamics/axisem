@@ -35,17 +35,14 @@ module stiffness
   
   public :: glob_stiffness_mono
   public :: glob_anel_stiffness_mono
-  !public :: glob_anel_stiffness_mono_4
   public :: glob_anel_stiffness_mono_cg4
 
   public :: glob_stiffness_di
   public :: glob_anel_stiffness_di
-  !public :: glob_anel_stiffness_di_4
   public :: glob_anel_stiffness_di_cg4
 
   public :: glob_stiffness_quad
   public :: glob_anel_stiffness_quad
-  !public :: glob_anel_stiffness_quad_4
   public :: glob_anel_stiffness_quad_cg4
 
   public :: glob_fluid_stiffness
