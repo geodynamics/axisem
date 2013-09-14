@@ -226,8 +226,8 @@ subroutine sf_time_loop_newmark
   use clocks_mod
   use data_matr,            only: inv_mass_rho, inv_mass_fluid
   use attenuation,          only: time_step_memvars
-  use attenuation,          only: time_step_memvars_4
-  use attenuation,          only: time_step_memvars_cg4
+  !use attenuation,          only: time_step_memvars_4
+  !use attenuation,          only: time_step_memvars_cg4
   use attenuation,          only: n_sls_attenuation
   use attenuation,          only: att_coarse_grained
   use data_mesh
@@ -465,15 +465,7 @@ subroutine sf_time_loop_newmark
      ! memory variable time evolution with strain as source
      if (anel_true) then
         iclockanelts = tick()
-        if (att_coarse_grained) then
-           call time_step_memvars_cg4(memory_var_cg4, disp)
-        else
-           if (npol==4) then
-              call time_step_memvars_4(memory_var, disp)
-           else
-              call time_step_memvars(memory_var, disp)
-           endif
-        endif
+        call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
         iclockanelts = tick(id=idanelts, since=iclockanelts)
      endif
 

@@ -32,8 +32,8 @@ module attenuation
   public :: n_sls_attenuation
   public :: dump_memory_vars
   public :: time_step_memvars
-  public :: time_step_memvars_4
-  public :: time_step_memvars_cg4
+  !public :: time_step_memvars_4
+  !public :: time_step_memvars_cg4
   public :: att_coarse_grained
 
   real(kind=dp), allocatable       :: y_j_attenuation(:)
@@ -50,6 +50,30 @@ module attenuation
   real(kind=realkind), allocatable :: src_tr_tm1_glob_cg4(:,:)
   
 contains
+
+!-----------------------------------------------------------------------------------------
+!> Wrapper routine to avoid if statements in the time loop
+subroutine time_step_memvars(memvar, memvar_cg, disp, cg)
+  use data_mesh,            only: npol
+
+  real(kind=realkind), intent(in)                 :: disp(*) 
+  real(kind=realkind), optional, intent(inout)    :: memvar(*)
+  real(kind=realkind), optional, intent(inout)    :: memvar_cg(*)
+  logical, intent(in)                             :: cg
+
+  if (cg) then
+     call time_step_memvars_cg4(memvar_cg, disp)
+  else 
+     if (npol==4) then
+        call time_step_memvars_4(memvar, disp)
+     else
+        call time_step_memvars_generic(memvar, disp)
+     endif
+  endif
+    
+
+end subroutine time_step_memvars
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 !> analytical time integration of memory variables (linear interpolation for
@@ -322,7 +346,7 @@ end subroutine
 !> analytical time integration of memory variables (linear interpolation for
 !! the strain)
 !! MvD, attenutation notes, p 13.2
-subroutine time_step_memvars(memvar, disp)
+subroutine time_step_memvars_generic(memvar, disp)
 
   use data_time,            only: deltat
   use data_matr,            only: Q_mu, Q_kappa
