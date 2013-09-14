@@ -318,7 +318,7 @@ subroutine sf_time_loop_newmark
         call apply_axis_mask_scal(ddchi1, nel_fluid, ax_el_fluid, naxel_fluid)
 
      iclockcomm = tick()
-     call pdistsum_fluid(ddchi1) !phase = 1
+     call pdistsum_fluid(ddchi1, phase=1)
      iclockcomm = tick(id=idcomm, since=iclockcomm)
         
      iclockstiff = tick()
@@ -358,9 +358,9 @@ subroutine sf_time_loop_newmark
      end select
      iclockstiff = tick(id=idstiff, since=iclockstiff)
      
-     !iclockcomm = tick()
-     !call pdistsum_fluid(ddchi1) !phase = 2
-     !iclockcomm = tick(id=idcomm, since=iclockcomm)
+     iclockcomm = tick()
+     call pdistsum_fluid(ddchi1, phase=2)
+     iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ddchi1 = - inv_mass_fluid * ddchi1
 

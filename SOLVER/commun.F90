@@ -271,7 +271,7 @@ end subroutine pdistsum_solid
 !! the "gather" and "scatter" operations, i.e. to add up all element-edge 
 !! contributions at the global stage and place them back into local arrays.
 !! Nissen-Meyer et al., GJI 2007, "A 2-D spectral-element method...", section 4.
-subroutine pdistsum_fluid(vec)
+subroutine pdistsum_fluid(vec, phase)
   
   use data_mesh,    only: igloc_fluid
   use data_time,    only: idmpi, iclockmpi
@@ -279,83 +279,96 @@ subroutine pdistsum_fluid(vec)
   use clocks_mod
   
   real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_fluid)
+  integer, optional, intent(in)      :: phase 
+  ! phase == 0  =>  do all (default)
+  ! phase == 1  =>  feed buffer start communication, gather/scatter
+  ! phase == 2  =>  wait for communication to finish, extract buffer
+  integer                            :: phase_loc
   integer                            :: iel, jpol, ipol, idest, ipt
+  
+  phase_loc = 0 ! Default value
+  if (present(phase)) phase_loc = phase
+
+  if (phase_loc == 0 .or. phase_loc == 1) then
+
+#ifndef serial
+     iclockmpi = tick()
+     if (nproc>1) then
+        call feed_buffer_fluid(vec)
+        call send_recv_buffers_fluid()
+     endif
+     iclockmpi = tick(id=idmpi, since=iclockmpi)
+#endif
+
+     gvec_fluid(:) = 0.d0
+   
+     ! Gather
+     ipt = 1
+     do iel = 1, nel_fluid
+        jpol = 0
+        do ipol = 0, npol
+           idest = igloc_fluid(ipt)
+           gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
+           ipt = ipt + 1
+        end do
+   
+        do jpol = 1, npol-1
+           ipol = 0
+           idest = igloc_fluid(ipt)
+           gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
+           ipt = ipt + npol
+   
+           ipol = npol
+           idest = igloc_fluid(ipt)
+           gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
+           ipt = ipt + 1
+        end do
+   
+        jpol = npol
+        do ipol = 0, npol
+           idest = igloc_fluid(ipt)
+           gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
+           ipt = ipt + 1
+        end do
+     end do
+   
+     ! Scatter
+     ipt = 1
+     do iel = 1, nel_fluid
+        jpol = 0
+        do ipol = 0, npol
+           idest = igloc_fluid(ipt)
+           vec(ipol,jpol,iel) = gvec_fluid(idest)
+           ipt = ipt + 1
+        end do
+   
+        do jpol = 1, npol-1
+           ipol = 0
+           idest = igloc_fluid(ipt)
+           vec(ipol,jpol,iel) = gvec_fluid(idest)
+           ipt = ipt + npol
+   
+           ipol = npol
+           idest = igloc_fluid(ipt)
+           vec(ipol,jpol,iel) = gvec_fluid(idest)
+           ipt = ipt + 1
+        end do
+   
+        jpol = npol
+        do ipol = 0, npol
+           idest = igloc_fluid(ipt)
+           vec(ipol,jpol,iel) = gvec_fluid(idest)
+           ipt = ipt + 1
+        end do
+     end do
+  endif
 
 #ifndef serial
   iclockmpi = tick()
   if (nproc>1) then
-     call feed_buffer_fluid(vec)
-     call send_recv_buffers_fluid()
+     if (phase_loc == 0 .or. phase_loc == 2) &
+        call extract_from_buffer_fluid(vec)
   endif
-  iclockmpi = tick(id=idmpi, since=iclockmpi)
-#endif
-
-  gvec_fluid(:) = 0.d0
-
-  ! Gather
-  ipt = 1
-  do iel = 1, nel_fluid
-     jpol = 0
-     do ipol = 0, npol
-        idest = igloc_fluid(ipt)
-        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
-        ipt = ipt + 1
-     end do
-
-     do jpol = 1, npol-1
-        ipol = 0
-        idest = igloc_fluid(ipt)
-        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
-        ipt = ipt + npol
-
-        ipol = npol
-        idest = igloc_fluid(ipt)
-        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
-        ipt = ipt + 1
-     end do
-
-     jpol = npol
-     do ipol = 0, npol
-        idest = igloc_fluid(ipt)
-        gvec_fluid(idest) = gvec_fluid(idest) + vec(ipol,jpol,iel)
-        ipt = ipt + 1
-     end do
-  end do
-
-  ! Scatter
-  ipt = 1
-  do iel = 1, nel_fluid
-     jpol = 0
-     do ipol = 0, npol
-        idest = igloc_fluid(ipt)
-        vec(ipol,jpol,iel) = gvec_fluid(idest)
-        ipt = ipt + 1
-     end do
-
-     do jpol = 1, npol-1
-        ipol = 0
-        idest = igloc_fluid(ipt)
-        vec(ipol,jpol,iel) = gvec_fluid(idest)
-        ipt = ipt + npol
-
-        ipol = npol
-        idest = igloc_fluid(ipt)
-        vec(ipol,jpol,iel) = gvec_fluid(idest)
-        ipt = ipt + 1
-     end do
-
-     jpol = npol
-     do ipol = 0, npol
-        idest = igloc_fluid(ipt)
-        vec(ipol,jpol,iel) = gvec_fluid(idest)
-        ipt = ipt + 1
-     end do
-  end do
-
-#ifndef serial
-  iclockmpi = tick()
-  if (nproc>1) &
-     call extract_from_buffer_fluid(vec)
   iclockmpi = tick(id=idmpi, since=iclockmpi)
 #endif
 
