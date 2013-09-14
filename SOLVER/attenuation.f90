@@ -54,10 +54,10 @@ contains
 subroutine time_step_memvars(memvar, memvar_cg, disp, cg)
   use data_mesh,            only: npol
 
-  real(kind=realkind), intent(in)                 :: disp(*) 
-  real(kind=realkind), optional, intent(inout)    :: memvar(*)
-  real(kind=realkind), optional, intent(inout)    :: memvar_cg(*)
-  logical, intent(in)                             :: cg
+  real(kind=realkind), intent(in)     :: disp(*) 
+  real(kind=realkind), intent(inout)  :: memvar(*)
+  real(kind=realkind), intent(inout)  :: memvar_cg(*)
+  logical, intent(in)                 :: cg
 
   if (cg) then
      call time_step_memvars_cg4(memvar_cg, disp)
