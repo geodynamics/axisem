@@ -335,7 +335,17 @@ subroutine sf_time_loop_newmark
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
         iclockcomm = tick()
-        call pdistsum_solid(acc1) 
+        call pdistsum_solid(acc1, phase=1) 
+        iclockcomm = tick(id=idcomm, since=iclockcomm)
+
+        if (anel_true) then
+           iclockanelts = tick()
+           call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
+           iclockanelts = tick(id=idanelts, since=iclockanelts)
+        endif
+
+        iclockcomm = tick()
+        call pdistsum_solid(acc1, phase=2) 
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         call add_source(acc1, stf(iter))
@@ -389,7 +399,17 @@ subroutine sf_time_loop_newmark
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
         iclockcomm = tick()
-        call pdistsum_solid(acc1) 
+        call pdistsum_solid(acc1, phase=1) 
+        iclockcomm = tick(id=idcomm, since=iclockcomm)
+
+        if (anel_true) then
+           iclockanelts = tick()
+           call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
+           iclockanelts = tick(id=idanelts, since=iclockanelts)
+        endif
+        
+        iclockcomm = tick()
+        call pdistsum_solid(acc1, phase=2) 
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         call add_source(acc1, stf(iter))
@@ -444,7 +464,17 @@ subroutine sf_time_loop_newmark
         iclockstiff = tick(id=idstiff, since=iclockstiff)
    
         iclockcomm = tick()
-        call pdistsum_solid(acc1) 
+        call pdistsum_solid(acc1, phase=1) 
+        iclockcomm = tick(id=idcomm, since=iclockcomm)
+
+        if (anel_true) then
+           iclockanelts = tick()
+           call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
+           iclockanelts = tick(id=idanelts, since=iclockanelts)
+        endif
+        
+        iclockcomm = tick()
+        call pdistsum_solid(acc1, phase=2) 
         iclockcomm = tick(id=idcomm, since=iclockcomm)
    
         call add_source(acc1, stf(iter))
@@ -462,12 +492,6 @@ subroutine sf_time_loop_newmark
     
 
 
-     ! memory variable time evolution with strain as source
-     if (anel_true) then
-        iclockanelts = tick()
-        call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
-        iclockanelts = tick(id=idanelts, since=iclockanelts)
-     endif
 
      iclockdump = tick()
      if (anel_true) then
