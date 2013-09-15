@@ -37,7 +37,7 @@ cd $homepath
 
 echo "Moving mesh to" $meshpath
 
-mv meshdb.dat0* $meshpath
+mv meshdb.dat* $meshpath
 mv mesh_params.h* $meshpath
 mv OUTPUT $meshpath
 #mv Diags $meshpath
