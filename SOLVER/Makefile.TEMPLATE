@@ -130,12 +130,11 @@ time_evol_wave.o: apply_masks.o attenuation.o clocks.o commun.o data_io.o \
 	seismograms.o source.o stiffness.o wavefields_io.o Makefile ../make_axisem.macros 
 unrolled_loops.o: data_mesh.o global_parameters.o Makefile ../make_axisem.macros 
 utlity.o: data_mesh.o data_spec.o geom_transf.o global_parameters.o Makefile ../make_axisem.macros 
-wavefields_io.o: attenuation.o data_io.o data_matr.o data_mesh.o \
-	data_pointwise.o data_proc.o data_source.o data_time.o \
-	global_parameters.o lateral_heterogeneities.o nc_routines.o \
+wavefields_io.o: data_io.o data_mesh.o data_pointwise.o data_proc.o \
+	data_source.o data_time.o global_parameters.o nc_routines.o \
 	pointwise_derivatives.o Makefile ../make_axisem.macros 
-commpi.o: data_comm.o data_io.o data_mesh.o data_proc.o global_parameters.o \
-	list.o Makefile ../make_axisem.macros 
+commpi.o: clocks.o data_comm.o data_io.o data_mesh.o data_proc.o data_time.o \
+	global_parameters.o list.o Makefile ../make_axisem.macros 
 commun.o: clocks.o commpi.o data_mesh.o data_proc.o data_time.o \
 	global_parameters.o Makefile ../make_axisem.macros 
 nc_routines.o: clocks.o commun.o data_io.o data_mesh.o data_proc.o \
