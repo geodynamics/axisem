@@ -47,6 +47,8 @@ public
   integer             :: iclockold, idold   !< tick labels for timer
   integer             :: iclockcomm, idcomm !< tick labels for comm timer
   integer             :: iclockmpi, idmpi   !< tick labels for mpi timer
+  integer             :: iclockmpiws, idmpiws   !< tick labels for solid mpi wait timer
+  integer             :: iclockmpiwf, idmpiwf   !< tick labels for fluid mpi wait timer
   integer             :: iclockanelst, idanelst !< tick labels for anelastic stiffness timer
   integer             :: iclockanelts, idanelts !< tick labels for anelastic time step timer
   integer             :: iclockstiff, idstiff !< tick labels for stiffness timer

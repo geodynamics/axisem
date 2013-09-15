@@ -123,7 +123,8 @@ subroutine start_clock
   !
   !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
-  use data_time,  only : idcomm, iddump, idmpi, idnbio, idold, idstiff, idanelts, idanelst
+  use data_time,  only : idcomm, iddump, idmpi, idmpiws, idmpiwf, idnbio, idold, &
+                         idstiff, idanelts, idanelst
   use data_proc,  only : lpr, mynum
   use clocks_mod, only : clock_id, clocks_init
   use data_io,    only : verbose
@@ -149,6 +150,8 @@ subroutine start_clock
   idold    = clock_id('Time loop routine')
   idcomm   = clock_id('Assembly/MPI routines')
   idmpi    = clock_id(' > Only MPI routine')
+  idmpiws  = clock_id(' > Only solid MPI_WAIT')
+  idmpiwf  = clock_id(' > Only fluid MPI_WAIT')
   idstiff  = clock_id('Stiffness routine')
   idanelst = clock_id(' > Anelastic stiffness routine')
   idanelts = clock_id('Anelastic time step routine')

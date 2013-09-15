@@ -66,7 +66,9 @@ end subroutine pdistsum_solid_1D
 !! sum & exchange values on processor boundary points.
 subroutine pdistsum_solid(vec, phase)
   
-  use data_mesh,        only: gvec_solid, npol, nel_solid, igloc_solid
+  use data_mesh,    only: gvec_solid, npol, nel_solid, igloc_solid
+  use data_time,    only: idmpi, iclockmpi
+  use clocks_mod
 
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
   integer, optional, intent(in)      :: phase 
@@ -85,9 +87,10 @@ subroutine pdistsum_solid(vec, phase)
 
 #ifndef serial
      if (nproc>1) then
+        iclockmpi = tick()
         call feed_buffer_solid(vec, nc)
-        ! Do message-passing for all components at once
         call send_recv_buffers_solid(nc)
+        iclockmpi = tick(id=idmpi, since=iclockmpi)
      endif
 #endif
 
@@ -155,8 +158,11 @@ subroutine pdistsum_solid(vec, phase)
   
 #ifndef serial
   if (nproc>1) then
-     if (phase_loc == 0 .or. phase_loc == 2) &
+     if (phase_loc == 0 .or. phase_loc == 2) then
+        iclockmpi = tick()
         call extract_from_buffer_solid(vec,nc)
+        iclockmpi = tick(id=idmpi, since=iclockmpi)
+     endif
   endif ! nproc>1
 #endif
   
@@ -275,8 +281,8 @@ subroutine pdistsum_fluid(vec, phase)
   
   use data_mesh,    only: igloc_fluid
   use data_time,    only: idmpi, iclockmpi
-  use data_mesh,    only: gvec_fluid, npol, nel_fluid
   use clocks_mod
+  use data_mesh,    only: gvec_fluid, npol, nel_fluid
   
   real(kind=realkind), intent(inout) :: vec(0:npol,0:npol,nel_fluid)
   integer, optional, intent(in)      :: phase 
@@ -292,12 +298,12 @@ subroutine pdistsum_fluid(vec, phase)
   if (phase_loc == 0 .or. phase_loc == 1) then
 
 #ifndef serial
-     iclockmpi = tick()
      if (nproc>1) then
+        iclockmpi = tick()
         call feed_buffer_fluid(vec)
         call send_recv_buffers_fluid()
+        iclockmpi = tick(id=idmpi, since=iclockmpi)
      endif
-     iclockmpi = tick(id=idmpi, since=iclockmpi)
 #endif
 
      gvec_fluid(:) = 0.d0
@@ -364,12 +370,13 @@ subroutine pdistsum_fluid(vec, phase)
   endif
 
 #ifndef serial
-  iclockmpi = tick()
   if (nproc>1) then
-     if (phase_loc == 0 .or. phase_loc == 2) &
+     if (phase_loc == 0 .or. phase_loc == 2) then
+        iclockmpi = tick()
         call extract_from_buffer_fluid(vec)
+        iclockmpi = tick(id=idmpi, since=iclockmpi)
+     endif
   endif
-  iclockmpi = tick(id=idmpi, since=iclockmpi)
 #endif
 
 

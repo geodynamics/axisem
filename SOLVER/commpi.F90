@@ -437,7 +437,7 @@ end subroutine send_recv_buffers_solid
 subroutine extract_from_buffer_solid(vec,nc)
 
   use data_mesh,        only: npol, gvec_solid, igloc_solid
-  use data_time,        only: idmpi, iclockmpi
+  use data_time,        only: idmpiws, iclockmpiws
   use clocks_mod
   use data_comm            
   use linked_list
@@ -453,9 +453,9 @@ subroutine extract_from_buffer_solid(vec,nc)
   
 #ifndef serial
   ! wait until all receiving communication is done
-  iclockmpi = tick()
+  iclockmpiws = tick()
   call MPI_WAITALL(sizerecv_solid, recv_request_solid, recv_status, ierror)
-  iclockmpi = tick(id=idmpi,since=iclockmpi)
+  iclockmpiws = tick(id=idmpiws,since=iclockmpiws)
 
   ! Extract received from buffer
   call buffr_all_solid%resetcurrent()
@@ -478,9 +478,9 @@ subroutine extract_from_buffer_solid(vec,nc)
   enddo
 
   ! wait until all sending communication is done
-  iclockmpi = tick()
+  iclockmpiws = tick()
   call MPI_WAITALL(sizesend_solid, send_request_solid, send_status, ierror)
-  iclockmpi = tick(id=idmpi,since=iclockmpi)
+  iclockmpiws = tick(id=idmpiws,since=iclockmpiws)
 #endif
 
 end subroutine extract_from_buffer_solid
@@ -583,7 +583,7 @@ subroutine extract_from_buffer_fluid(f)
   ! (consulation thereof to be avoided if at all possible...)
 
   use data_mesh, only: npol, gvec_fluid, igloc_fluid
-  use data_time, only: idmpi, iclockmpi
+  use data_time, only: idmpiwf, iclockmpiwf
   use clocks_mod
   use data_comm
   use linked_list
@@ -599,9 +599,9 @@ subroutine extract_from_buffer_fluid(f)
   class(link), pointer  :: buffs, buffr
   
   ! wait until all receiving communication is done
-  iclockmpi = tick()
+  iclockmpiwf = tick()
   call MPI_WAITALL(sizerecv_fluid, recv_request_fluid, recv_status, ierror)
-  iclockmpi = tick(id=idmpi,since=iclockmpi)
+  iclockmpiwf = tick(id=idmpiwf,since=iclockmpiwf)
 
   ! extract from buffer and add to local values
   call buffr_all_fluid%resetcurrent()
@@ -624,9 +624,9 @@ subroutine extract_from_buffer_fluid(f)
   enddo
 
   ! wait until all sending communication is done
-  iclockmpi = tick()
+  iclockmpiwf = tick()
   call MPI_WAITALL(sizesend_fluid, send_request_fluid, send_status, ierror)
-  iclockmpi = tick(id=idmpi,since=iclockmpi)
+  iclockmpiwf = tick(id=idmpiwf,since=iclockmpiwf)
 #endif
 
 end subroutine extract_from_buffer_fluid
