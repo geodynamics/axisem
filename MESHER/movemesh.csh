@@ -38,7 +38,7 @@ cd $homepath
 echo "Moving mesh to" $meshpath
 
 mv meshdb.dat* $meshpath
-mv mesh_params.h* $meshpath
+mv mesh_params.h $meshpath
 mv OUTPUT $meshpath
 #mv Diags $meshpath
 cp -p inparam_mesh $meshpath

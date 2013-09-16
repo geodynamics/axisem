@@ -2493,61 +2493,13 @@ subroutine create_static_header
     integer           :: iproc
     character(len=8)  :: mydate
     character(len=10) :: mytime
-    character(len=4)  :: appiproc
-    character(len=80) :: dbname, dbname2
-    integer           :: lfdbname
+    character(len=80) :: dbname
 
     call date_and_time(mydate,mytime)
-    do iproc=0, nproc-1
-    call define_io_appendix(appiproc,iproc)
-    dbname = 'mesh_params.h'//appiproc
-    dbname2 = 'mesh_params.h'
-    lfdbname = index(dbname,' ')-1
-    open(98,file=dbname(1:lfdbname), STATUS="REPLACE")
-    write(98,10) nproc
-    write(98,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
-    write(98,*)''
-    write(98,29)
-    write(98,12)'Background model     :',bkgrdmodel(1:lfbkgrdmodel) ! af
-    write(98,13)'Inner-core shear wave:',resolve_inner_shear
-    write(98,14)'Dominant period [s]  :',period
-    write(98,14)'Elements/wavelength  :',pts_wavelngth
-    write(98,14)'Courant number       :',courant
-    write(98,15)'Coarsening levels    :',nc_init
-    write(98,30)
-    write(98,*)''
-    write(98,9)'npol',npol,'polynomial order'
-    write(98,9)'nelem',nel(iproc),'proc. els'
-    write(98,9)'npoint',nel(iproc)*(npol+1)**2,'proc. all pts'
-    write(98,9)'nel_solid',nel_solid(iproc),'proc. solid els'
-    write(98,9)'nel_fluid',nel_fluid(iproc),'proc. fluid els'
-    write(98,9)'npoint_solid',nel_solid(iproc)*(npol+1)**2,'proc. solid pts'
-    write(98,9)'npoint_fluid',nel_fluid(iproc)*(npol+1)**2,'proc. fluid pts'
-    write(98,9)'nglob',nglobp(iproc),'proc. glocal pts'
-    write(98,9)'nglob_solid',nglobp_solid(iproc),'proc. slocal pts'
-    write(98,9)'nglob_fluid',nglobp_fluid(iproc),'proc. flocal pts'
-    write(98,9)'nel_bdry',nbdry_el(iproc),'proc. solid-fluid bndry els'
-    write(98,9)'npoin',nglobmeshp(iproc),'proc. control nodes'
-    write(98,9)'ndisc',ndisc,'# disconts in bkgrd model'
-    write(98,9)'nproc_mesh',nproc,'number of processors'
-    write(98,9)'lfbkgrdmodel',lfbkgrdmodel,'length of bkgrdmodel name'
-    write(98,*)''
-    write(98,31)
-    write(98,14)'Time step [s]        :',dt
-    write(98,16)'Min(h/vp),dt/courant :',minhvp,dt/courant*real(npol)
-    write(98,16)'max(h/vs),T0/wvlngth :',maxhvs,period/pts_wavelngth
-    write(98,14)'Inner core r_min [km]:',rmin/1.d3
-    write(98,14)'Max(h) r/ns(icb) [km]:',maxhnsicb/1.d3
-    write(98,14)'Max(h) precalc.  [km]:',maxh_icb/1.d3
-    write(98,30)
-    write(98,*)''
-    close(98)
-    write(6,*)'wrote parameters for static solver into ',dbname(1:lfdbname)
-    enddo
 
-    lfdbname=index(dbname2,' ')-1
-    open(97,file=dbname2(1:lfdbname), STATUS="REPLACE")
-    iproc=0
+    dbname = 'mesh_params.h'
+    open(97,file=trim(dbname), STATUS="REPLACE")
+    iproc = 0
     write(97,10) nproc
     write(97,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
     write(97,*)''
@@ -2584,7 +2536,7 @@ subroutine create_static_header
     write(97,30)
     write(97,*)''
     close(97)
-    write(6,*)'wrote parameters for static solver into ',dbname2(1:lfdbname)
+    write(6,*)'wrote parameters for static solver into ', trim(dbname)
 
 9 format(' integer, parameter :: ',A12,' =',i10,'  ! ',A27)
 10 format('! Proc ',i3,': Header for mesh information to run static solver')
