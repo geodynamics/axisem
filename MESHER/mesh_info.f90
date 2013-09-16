@@ -306,7 +306,7 @@ subroutine define_boundaries
         bdry_radius(j) = rbound
      end do
      nbelemmax = maxval(nbelem(:))
-     allocate ( belem(nbelemmax,nbcnd))
+     allocate (belem(nbelemmax,nbcnd))
      do j = 1, nbcnd
         if (mod(j,2)/=0) then ! upper boundary of fluid region
            rbound = discont(idom_fluid(j))/router
@@ -539,9 +539,9 @@ subroutine define_my_boundary_neighbour
 
   tolerance = min_distance_nondim
   if (dump_mesh_info_screen) &
-       write(6,*)'Tolerance to find boundary-hugging partner:',tolerance
+       write(6,*) 'Tolerance to find boundary-hugging partner:', tolerance
 
-  do j = 1, nbcnd
+  do j=1, nbcnd
 
      if (mod(j,2)/=0) then ! upper boundary of fluid region
         rbound = discont(idom_fluid(j))/router
@@ -553,28 +553,30 @@ subroutine define_my_boundary_neighbour
      ! as the min_(jneqi) r_{ij}
 
      do ibelem = 1, nbelem(j)
-        foundone=.false.
+        foundone = .false.
         myel = belem(ibelem,j)
         mytheta = thetacom(myel)
+
         do jbelem = 1, nbelem(j)
            herel = belem(jbelem,j)
            hertheta = thetacom(herel)
            dist = dabs(hertheta-mytheta)*rbound
-           if (dist < tolerance .AND. myel /= herel ) then 
+           if (dist < tolerance .and. myel /= herel ) then 
                my_neighbour(ibelem,j) = jbelem
-               foundone=.true.
+               foundone = .true.
                exit
            endif
         end do
+
         if ( .not. foundone) then 
            distmin = rbound
            do  jbelem = 1, nbelem(j)
               herel = belem(jbelem,j)
               hertheta = thetacom(herel)
               dist = dabs(hertheta-mytheta)*rbound
-              if (dist<distmin .AND. myel /= herel ) then
-                 jbelemmin=jbelem
-                 distmin=dist
+              if (dist < distmin .and. myel /= herel ) then
+                 jbelemmin = jbelem
+                 distmin = dist
               end if 
            end do  
            my_neighbour(ibelem,j) = jbelemmin

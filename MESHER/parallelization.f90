@@ -576,24 +576,18 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
 
   ! Now decomposition in radius
   do itheta = 0, nthetal-1
-     mycount = 1
-     do irad = 0, nrl-1
-        iproc = itheta * nrl + irad
-        ! @TODO: is not really radially, but along global element number, which
-        !        is along theta/radius in the shell, but along s and z in the inner
-        !        core. for nradialslices > 12 this leads to uggly blocks in the
-        !        inner core. solution: sort the inner core elements along
-        !        radius/theta
-        do iel = 1, nel_solid(iproc)
-           procel_solid(iel, iproc) = thetaslel_solid(mycount,itheta)
-           mycount = mycount + 1
-        end do ! iel
-     enddo
      
      ! special treatment of the processor with sol/flu boundary
      ! kind of hacky, but should work for most cases of earth like models
      mycount = 1
-     iradb = (nel_region(ndisc-1) / nthetaslices) / nel_solid(iproc)
+     iradb = (nel_region(ndisc) / nthetaslices) / nel_solid(iproc)
+     write(6,*) '--------------------------'
+     write(6,*) 'nel region  ', nel_region(ndisc)
+     write(6,*) 'ne th slices', nthetaslices
+     write(6,*) 'nel solid   ', nel_solid(iproc)
+     write(6,*) 'iradb       ', iradb
+     write(6,*) '--------------------------'
+
      iproc = itheta * nrl + iradb
         
      ! special case of ntheta = 2, which has the same ndivs as theta = 4
@@ -603,6 +597,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
         nicb = ndivs * 4 / nthetal
      endif
 
+     ! FFFFFFFFF FLUID FFFFFFFFFFF
      ! take the lowest layer in the fluid of the theta slice
      do iel = 1, nicb
         procel_fluid(iel, iproc) = thetaslel_fluid(sum(nel_fluid(itheta:itheta+nrl-1)) &
@@ -616,8 +611,8 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
         procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
         mycount = mycount + 1
      end do ! iel
-     
-     
+    
+     ! fill up the bulk
      do irad = 0, nrl-1
         if (irad == iradb) cycle
 
@@ -628,6 +623,27 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
            mycount = mycount + 1
         end do ! iel
      enddo
+
+     
+     ! SSSSSSSSSSS SOLID SSSSSSSSSSS
+
+     ! First put all the solid/fluid boundary element to its neighbours value
+
+
+     mycount = 1
+     do irad = 0, nrl-1
+        iproc = itheta * nrl + irad
+        ! @TODO: is not really radially, but along global element number, which
+        !        is along theta/radius in the shell, but along s and z in the inner
+        !        core. for nradialslices > 12 this leads to uggly blocks in the
+        !        inner core. solution: sort the inner core elements along
+        !        radius/theta
+        do iel = 1, nel_solid(iproc)
+           procel_solid(iel, iproc) = thetaslel_solid(mycount,itheta)
+           mycount = mycount + 1
+        end do ! iel
+     enddo
+
      
      do irad = 0, nrl-1
         iproc = itheta * nrl + irad
