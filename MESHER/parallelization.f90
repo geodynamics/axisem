@@ -214,7 +214,7 @@ subroutine create_domain_decomposition
   end if
 
   if (dump_mesh_vtk) call plot_dd_vtk
-
+     
 end subroutine create_domain_decomposition
 !-----------------------------------------------------------------------------------------
 
@@ -444,7 +444,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   
   integer                   :: itheta, iitheta, iel
   integer                   :: irad, iproc, iradb
-  integer                   :: mycount, nicb
+  integer                   :: mycount, mycount_rad, nicb, ncmb
   real(kind=dp)             :: deltatheta
   integer, allocatable      :: central_count(:)
   real(kind=dp)             :: pi2
@@ -461,12 +461,18 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   thetaslel       = -1
   thetaslel_fluid = -1
   thetaslel_solid = -1
-  el2thetaslel     = -1
+  el2thetaslel    = -1
   inv_thetaslel   = -1
 
   pi2 = two * dasin(one)
 
   write(6,*)'     THETA+RADIAL-SLICING as domain decomposition....'
+
+  if (nbcnd > 2) then
+     write(6,*) 'ERROR: radial slicing only implemented for a single fluid layer'
+     write(6,*) '       workaround: set NRADIAL_SLICES to 1'
+     stop
+  endif
 
   allocate(central_count(0:nthetal-1))
 
@@ -574,6 +580,11 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
 
   end do !nthetal-1
 
+
+
+  ! reset, as we have to touch each element again!
+  attributed = .false.
+
   ! Now decomposition in radius
   do itheta = 0, nthetal-1
      
@@ -582,53 +593,77 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
      mycount = 1
      iradb = (nel_region(ndisc) / nthetaslices) / nel_solid(iproc)
      write(6,*) '--------------------------'
-     write(6,*) 'nel region  ', nel_region(ndisc)
-     write(6,*) 'ne th slices', nthetaslices
-     write(6,*) 'nel solid   ', nel_solid(iproc)
-     write(6,*) 'iradb       ', iradb
-     write(6,*) '--------------------------'
 
      iproc = itheta * nrl + iradb
         
-     ! special case of ntheta = 2, which has the same ndivs as theta = 4
-     if (nthetal == 2) then
-        nicb = ndivs * 2
-     else
-        nicb = ndivs * 4 / nthetal
+     ! take the lower most layer in the fluid (ICB)
+     write(6,*) '.......'
+     do iel = 1, nbelem(2)
+        if (fluid(belem(iel,2)) .and.  el2thetaslel(belem(iel,2)) == itheta &
+                .and. .not. attributed(belem(iel,2))) then
+            procel_fluid(mycount, iproc) = belem(iel,2)
+            attributed(belem(iel,2)) = .true.
+            write(6,*) belem(iel,2)
+            mycount = mycount + 1
+        endif
+     enddo
+
+     nicb = mycount - 1
+     write(6,*) 'nicb', nicb
+     
+     ! take the upper most layer in the fluid (CMB)
+     do iel = 1, nbelem(1)
+        if (fluid(belem(iel,1)) .and. el2thetaslel(belem(iel,1)) == itheta &
+                .and. .not. attributed(belem(iel,1))) then
+            procel_fluid(mycount, iproc) = belem(iel,1)
+            attributed(belem(iel,1)) = .true.
+            write(6,*) belem(iel,1)
+            mycount = mycount + 1
+        endif
+     enddo
+     
+     ncmb = mycount - 1 - nicb
+     write(6,*) 'ncmb', ncmb
+
+     if (ncmb + nicb > nel_fluid(iproc)) then
+        write(6,*) 'too many boundary elements'
+        ! @TODO: see below
+        stop
      endif
 
-     ! FFFFFFFFF FLUID FFFFFFFFFFF
-     ! take the lowest layer in the fluid of the theta slice
-     do iel = 1, nicb
-        procel_fluid(iel, iproc) = thetaslel_fluid(sum(nel_fluid(itheta:itheta+nrl-1)) &
-                                                   - mycount + 1,itheta)
-        mycount = mycount + 1
+     ! fill up with stuff from below CMB
+     !do iel = 1, nel_fluid(iproc)
+     do iel = 1, neltot_fluid / nthetal
+        if (mycount == nel_fluid(iproc) + 1) exit
+        if (.not. attributed(thetaslel_fluid(iel,itheta))) then
+           procel_fluid(mycount, iproc) = thetaslel_fluid(iel,itheta)
+           attributed(thetaslel_fluid(iel,itheta)) = .true.
+           mycount = mycount + 1
+        endif
      end do ! iel
-
-     ! take the upper most layer in the fluid and fill up until having
-     ! enough elements
-     do iel = nicb+1, nel_fluid(iproc)
-        procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
-        mycount = mycount + 1
-     end do ! iel
-    
-     ! fill up the bulk
+     
+     ! fill up the bulk with the other processors
      do irad = 0, nrl-1
         if (irad == iradb) cycle
 
         iproc = itheta * nrl + irad
         ! just go inwards radially
-        do iel = 1, nel_fluid(iproc)
-           procel_fluid(iel, iproc) = thetaslel_fluid(mycount - nicb,itheta)
-           mycount = mycount + 1
+        mycount_rad = 1
+        do iel = 1, neltot_fluid / nthetal
+           if (mycount_rad == nel_fluid(iproc) + 1) exit
+           if (.not. attributed(thetaslel_fluid(iel,itheta))) then
+              procel_fluid(mycount_rad, iproc) = thetaslel_fluid(iel,itheta)
+              attributed(thetaslel_fluid(iel,itheta)) = .true.
+              mycount = mycount + 1
+              mycount_rad = mycount_rad + 1
+           endif
         end do ! iel
      enddo
 
      
      ! SSSSSSSSSSS SOLID SSSSSSSSSSS
 
-     ! First put all the solid/fluid boundary element to its neighbours value
-
+     ! @TODO: First put all the solid/fluid boundary element to its neighbours value
 
      mycount = 1
      do irad = 0, nrl-1
@@ -640,6 +675,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
         !        radius/theta
         do iel = 1, nel_solid(iproc)
            procel_solid(iel, iproc) = thetaslel_solid(mycount,itheta)
+           attributed(thetaslel_solid(mycount,itheta)) = .true.
            mycount = mycount + 1
         end do ! iel
      enddo
