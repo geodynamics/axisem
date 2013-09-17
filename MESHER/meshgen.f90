@@ -1428,8 +1428,8 @@ subroutine gather_skeleton
   write(6,*)
   write(6,"(10x,'Number of elements in the outer shell:    ',i10)")  nelo
   write(6,"(10x,'Number of elements in the inner shell:    ',i10)")  neli
-  write(6,"(10x,'Number of elements in the central square: ',i10)")  nelsq
   write(6,"(10x,'Number of elements in the buffer layer:   ',i10)")  nelbuf
+  write(6,"(10x,'Number of elements in the central square: ',i10)")  nelsq
 
   neltot = nelo + neli + nelsq + nelbuf
   write(6,*)
@@ -1438,7 +1438,9 @@ subroutine gather_skeleton
   write(6,*)
 
   npointot = 4 * neltot
-  allocate(sg(npointot),zg(npointot)) ; sg(:) = 0.d0 ; zg(:) = 0.d0 
+  allocate(sg(npointot),zg(npointot))
+  sg(:) = 0.d0
+  zg(:) = 0.d0 
 
   ! outer shell
   istart = 1
@@ -1449,34 +1451,38 @@ subroutine gather_skeleton
   istart = 4*nelo + 1
   if(allocated(si)) sg(istart:istart+4*neli-1) = si(1:4*neli)
   if(allocated(zi)) zg(istart:istart+4*neli-1) = zi(1:4*neli)
+  
+  ! buffer
+  istart = 4*(nelo+neli) + 1
+  if (allocated(sbuf)) sg(istart:istart+4*nelbuf-1) = sbuf(1:4*nelbuf)
+  if (allocated(zbuf)) zg(istart:istart+4*nelbuf-1) = zbuf(1:4*nelbuf)
 
   ! central square region
-  istart = 4*(nelo+neli) + 1
+  !istart = 4*(nelo+neli) + 1
+  istart = 4*(nelo+neli+nelbuf) + 1
   if(allocated(ssq)) sg(istart:istart+4*nelsq-1) = ssq(1:4*nelsq)
   if(allocated(zsq)) zg(istart:istart+4*nelsq-1) = zsq(1:4*nelsq)
 
   ! define a mapping array for domain decomposition: is,iz ==> global iel
   allocate(central_is_iz_to_globiel(1:ndivs,1:ndivs))
-  iel=0
+  iel = 0
   do iz = 1, ndivs
      do is = 1, ndivs
        iel = iel + 1
-       central_is_iz_to_globiel(is,iz) = nelo+neli+iel
+
+       central_is_iz_to_globiel(is,iz) = nelo + neli + nelbuf + iel
     enddo
   enddo
-  
-  ! buffer
-  istart = 4*(nelo+neli+nelsq) + 1
-  if (allocated(sbuf)) sg(istart:istart+4*nelbuf-1) = sbuf(1:4*nelbuf)
-  if (allocated(zbuf)) zg(istart:istart+4*nelbuf-1) = zbuf(1:4*nelbuf)
+
 
   ! gather element type
-  allocate(lnodesg(4,neltot)) ; lnodesg(:,:) = 0 
-  allocate(eltypeg(neltot),coarsing(neltot)) ;
+  allocate(lnodesg(4,neltot))
+  lnodesg(:,:) = 0 
+  allocate(eltypeg(neltot),coarsing(neltot))
   if (allocated(eltypeo)) eltypeg(1:nelo) = eltypeo(1:nelo)
   if (allocated(eltypei)) eltypeg(nelo+1:nelo+neli) = eltypei(1:neli)
-  if (allocated(eltypeg)) eltypeg(nelo+neli+1:nelo+neli+nelsq) = eltypesq(1:nelsq)
-  if (allocated(eltypebuf)) eltypeg(nelo+neli+nelsq+1:neltot) = eltypebuf(1:nelbuf)
+  if (allocated(eltypebuf)) eltypeg(nelo+neli+1:nelo+neli+nelbuf) = eltypebuf(1:nelbuf)
+  if (allocated(eltypeg)) eltypeg(nelo+neli+nelbuf+1:neltot) = eltypesq(1:nelsq)
 
   coarsing = .false.
   coarsing(1:nelo) = coarsingo(1:nelo)
