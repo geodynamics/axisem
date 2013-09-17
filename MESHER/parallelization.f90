@@ -455,19 +455,17 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   integer, allocatable          :: thetaslel(:,:), thetaslel_fluid(:,:), thetaslel_solid(:,:)
   integer, allocatable          :: inner_core_buf(:)
   real(kind=dp), allocatable    :: inner_core_r(:)
-  integer, allocatable          :: el2thetaslel(:), inv_thetaslel(:,:)
+  integer, allocatable          :: el2thetaslel(:)
 
   allocate(thetaslel(nelmax*nrl,0:nthetal-1))
   allocate(thetaslel_fluid(nelmax_fluid*nrl,0:nthetal-1))
   allocate(thetaslel_solid(nelmax_solid*nrl,0:nthetal-1))
   allocate(el2thetaslel(neltot))
-  allocate(inv_thetaslel(neltot*nrl,0:nthetal-1))
 
   thetaslel       = -1
   thetaslel_fluid = -1
   thetaslel_solid = -1
   el2thetaslel    = -1
-  inv_thetaslel   = -1
 
   pi2 = two * dasin(one)
 
@@ -604,11 +602,9 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
            endif
         end if
         el2thetaslel(thetaslel(iel,itheta)) = itheta
-        inv_thetaslel(thetaslel(iel,itheta),itheta) = iel
      end do
 
   end do !nthetal-1
-
 
   if (any(.not. attributed)) then
      write(6,*) 'ERROR: not all elements assigned to a theta-slice'
