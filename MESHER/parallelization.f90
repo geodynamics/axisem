@@ -146,7 +146,7 @@ subroutine create_domain_decomposition
   allocate(procel_fluid(nelmax_fluid,0:nproc-1))
   allocate(procel_solid(nelmax_solid,0:nproc-1))
   allocate(el2proc(neltot))
-  allocate(inv_procel(neltot,0:nproc-1))
+  allocate(inv_procel(neltot))
 
   procel_fluid = -1
   procel_solid = -1
@@ -169,8 +169,8 @@ subroutine create_domain_decomposition
      do iproc=0, nproc-1
        do iel=1, neltot
           if (el2proc(iel) == iproc) then 
-             write(666,*) iproc, iel, inv_procel(iel,iproc), &
-                          procel(inv_procel(iel,iproc),iproc)
+             write(666,*) iproc, iel, inv_procel(iel), &
+                          procel(inv_procel(iel),iproc)
           endif
        enddo
      enddo
@@ -179,7 +179,7 @@ subroutine create_domain_decomposition
      open(unit=666,file=diagpath(1:lfdiag)//'/procel.dat')
      do iproc=0, nproc-1
        do iel=1, nel(iproc)
-          write(666,*) iproc, iel, procel(iel,iproc), inv_procel(procel(iel,iproc),iproc)
+          write(666,*) iproc, iel, procel(iel,iproc), inv_procel(procel(iel,iproc))
        enddo
      enddo
      close(666)
@@ -398,7 +398,7 @@ subroutine domain_decomposition_theta(attributed, nprocl)
            endif
         end if
         el2proc(procel(iel,iproc)) = iproc
-        inv_procel(procel(iel,iproc),iproc) = iel
+        inv_procel(procel(iel,iproc)) = iel
      end do
 
   end do !nprocl-1
@@ -649,7 +649,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
               stop
            endif
            el2proc(procel(iel,iproc)) = iproc
-           inv_procel(procel(iel,iproc),iproc) = iel
+           inv_procel(procel(iel,iproc)) = iel
         end do
      enddo
 
@@ -771,7 +771,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
         do iel = 1, nel_fluid(iproc)
            procel(iel,iproc) = procel_fluid(iel,iproc)
            el2proc(procel(iel,iproc)) = iproc
-           inv_procel(procel(iel,iproc),iproc) = iel
+           inv_procel(procel(iel,iproc)) = iel
         end do
      enddo
 

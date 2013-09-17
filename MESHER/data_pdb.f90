@@ -31,7 +31,8 @@ module data_pdb
   integer, dimension(:), allocatable        :: nel
   integer, dimension(:), allocatable        :: nel_fluid
   integer, dimension(:), allocatable        :: nel_solid
-  integer, dimension(:,:), allocatable      :: procel, inv_procel
+  integer, dimension(:,:), allocatable      :: procel
+  integer, dimension(:), allocatable        :: inv_procel
   integer, dimension(:,:), allocatable      :: procel_fluid, procel_fluidp
   integer, dimension(:,:), allocatable      :: procel_solid, procel_solidp
   integer, dimension(:,:), allocatable      :: inv_procel_solidp

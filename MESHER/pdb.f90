@@ -198,11 +198,11 @@ subroutine define_sflocal_coordinates
 
   do iproc=0, nproc-1
      do iel=1, nel_solid(iproc)
-        procel_solidp(iel,iproc) = inv_procel(procel_solid(iel,iproc),iproc)
+        procel_solidp(iel,iproc) = inv_procel(procel_solid(iel,iproc))
         inv_procel_solidp(procel_solidp(iel,iproc),iproc) = iel
      enddo
      do iel=1, nel_fluid(iproc)
-        procel_fluidp(iel,iproc) = inv_procel(procel_fluid(iel,iproc),iproc)
+        procel_fluidp(iel,iproc) = inv_procel(procel_fluid(iel,iproc))
         inv_procel_fluidp(procel_fluidp(iel,iproc),iproc) = iel
      enddo
   enddo
@@ -1868,7 +1868,7 @@ subroutine define_local_bdry_elem
 
         ! belemp: given element counter on boundary for a proc, return glocal element number
         belemp(nbdry_el(el2proc(belem(iel,j))),el2proc(belem(iel,j))) = &
-             inv_procel(belem(iel,j),el2proc(belem(iel,j)))
+             inv_procel(belem(iel,j))
 
         if (solid(belem(iel,j))) then
 
@@ -1922,10 +1922,10 @@ subroutine define_local_bdry_elem
            endif
 
            tmpsolid(solid_count(myproc),myproc) = &
-              inv_procel_solidp( inv_procel(myielglob,myproc), myproc)
+              inv_procel_solidp( inv_procel(myielglob), myproc)
 
            tmpfluid(solid_count(myproc),herproc) = &
-              inv_procel_fluidp( inv_procel(herielglob,herproc), herproc)
+              inv_procel_fluidp( inv_procel(herielglob), herproc)
 
         else
            fluid_count(myproc)=fluid_count(myproc)+1
