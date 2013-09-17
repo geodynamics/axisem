@@ -504,7 +504,9 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   endif
   ! **************** END OF INNER CUBE****************
 
-  !! Using same stupid choice as in inner core decomposition:
+  ! sort inner core elements according to radius
+  ! Using same stupid choice as in inner core decomposition (fully fluid sphere
+  ! will just not do the sorting 
   if (neltot_solid > 0 ) then 
      do itheta = 0, nthetal-1
         allocate(inner_core_buf(central_count(itheta)))
