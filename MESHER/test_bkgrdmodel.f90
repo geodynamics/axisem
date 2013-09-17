@@ -641,7 +641,7 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   !data
   write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
   write(100) char(10)//ss//char(10)
-  write(100) 'SCALARS data float 1'//char(10)
+  write(100) 'SCALARS '//trim(filename)//' float 1'//char(10)
   write(100) 'LOOKUP_TABLE default'//char(10) !color table?
   write(100) u1
   close(100)
