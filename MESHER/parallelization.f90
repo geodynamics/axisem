@@ -214,6 +214,8 @@ subroutine create_domain_decomposition
   end if
 
   if (dump_mesh_vtk) call plot_dd_vtk
+
+  !stop
      
 end subroutine create_domain_decomposition
 !-----------------------------------------------------------------------------------------
@@ -444,7 +446,8 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   
   integer                   :: itheta, iitheta, iel
   integer                   :: irad, iproc, iradb
-  integer                   :: mycount, mycount_rad, nicb, ncmb
+  integer                   :: mycount, nicb, ncmb
+  integer                   :: iprocb(2), mycountb(2), j1, j2
   real(kind=dp)             :: deltatheta
   integer, allocatable      :: central_count(:)
   real(kind=dp)             :: pi2
@@ -581,6 +584,10 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   end do !nthetal-1
 
 
+  if (any(.not. attributed)) then
+     write(6,*) 'ERROR: not all elements assigned to a theta-slice'
+     stop
+  endif
 
   ! reset, as we have to touch each element again!
   attributed = .false.
@@ -588,83 +595,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   ! Now decomposition in radius
   do itheta = 0, nthetal-1
      
-     ! special treatment of the processor with sol/flu boundary
-     ! kind of hacky, but should work for most cases of earth like models
-     mycount = 1
-     iradb = (nel_region(ndisc) / nthetaslices) / nel_solid(iproc)
-     write(6,*) '--------------------------'
-
-     iproc = itheta * nrl + iradb
-        
-     ! take the lower most layer in the fluid (ICB)
-     write(6,*) '.......'
-     do iel = 1, nbelem(2)
-        if (fluid(belem(iel,2)) .and.  el2thetaslel(belem(iel,2)) == itheta &
-                .and. .not. attributed(belem(iel,2))) then
-            procel_fluid(mycount, iproc) = belem(iel,2)
-            attributed(belem(iel,2)) = .true.
-            write(6,*) belem(iel,2)
-            mycount = mycount + 1
-        endif
-     enddo
-
-     nicb = mycount - 1
-     write(6,*) 'nicb', nicb
-     
-     ! take the upper most layer in the fluid (CMB)
-     do iel = 1, nbelem(1)
-        if (fluid(belem(iel,1)) .and. el2thetaslel(belem(iel,1)) == itheta &
-                .and. .not. attributed(belem(iel,1))) then
-            procel_fluid(mycount, iproc) = belem(iel,1)
-            attributed(belem(iel,1)) = .true.
-            write(6,*) belem(iel,1)
-            mycount = mycount + 1
-        endif
-     enddo
-     
-     ncmb = mycount - 1 - nicb
-     write(6,*) 'ncmb', ncmb
-
-     if (ncmb + nicb > nel_fluid(iproc)) then
-        write(6,*) 'too many boundary elements'
-        ! @TODO: see below
-        stop
-     endif
-
-     ! fill up with stuff from below CMB
-     !do iel = 1, nel_fluid(iproc)
-     do iel = 1, neltot_fluid / nthetal
-        if (mycount == nel_fluid(iproc) + 1) exit
-        if (.not. attributed(thetaslel_fluid(iel,itheta))) then
-           procel_fluid(mycount, iproc) = thetaslel_fluid(iel,itheta)
-           attributed(thetaslel_fluid(iel,itheta)) = .true.
-           mycount = mycount + 1
-        endif
-     end do ! iel
-     
-     ! fill up the bulk with the other processors
-     do irad = 0, nrl-1
-        if (irad == iradb) cycle
-
-        iproc = itheta * nrl + irad
-        ! just go inwards radially
-        mycount_rad = 1
-        do iel = 1, neltot_fluid / nthetal
-           if (mycount_rad == nel_fluid(iproc) + 1) exit
-           if (.not. attributed(thetaslel_fluid(iel,itheta))) then
-              procel_fluid(mycount_rad, iproc) = thetaslel_fluid(iel,itheta)
-              attributed(thetaslel_fluid(iel,itheta)) = .true.
-              mycount = mycount + 1
-              mycount_rad = mycount_rad + 1
-           endif
-        end do ! iel
-     enddo
-
-     
-     ! SSSSSSSSSSS SOLID SSSSSSSSSSS
-
-     ! @TODO: First put all the solid/fluid boundary element to its neighbours value
-
+     ! SOLID domain first
      mycount = 1
      do irad = 0, nrl-1
         iproc = itheta * nrl + irad
@@ -677,31 +608,149 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
            procel_solid(iel, iproc) = thetaslel_solid(mycount,itheta)
            attributed(thetaslel_solid(mycount,itheta)) = .true.
            mycount = mycount + 1
-        end do ! iel
+        end do
      enddo
 
-     
+     ! fill solid mapping arrays (used in the fluid decomposition)
      do irad = 0, nrl-1
         iproc = itheta * nrl + irad
 
-        do iel = 1, nel(iproc)
-           if (iel <= nel_fluid(iproc) ) then
-              procel(iel,iproc) = procel_fluid(iel,iproc)
-           else
-              procel(iel,iproc) = procel_solid(iel-nel_fluid(iproc),iproc)
-              if (procel(iel,iproc)<=0) then
-                 write(6,*) 'PROCEL ZERO!', iproc, eltypeg(iel), iel, nel_fluid(iproc)
-                 write(6,*) '            ', thetacom(iel), pi/nprocl * iproc, &
-                            pi/nprocl * (iproc + 1)
-                 stop
-              endif
-           end if
+        do iel = nel_fluid(iproc)+1, nel(iproc)
+           procel(iel,iproc) = procel_solid(iel-nel_fluid(iproc),iproc)
+           if (procel(iel,iproc)<=0) then
+              write(6,*) 'PROCEL ZERO!', iproc, eltypeg(iel), iel, nel_fluid(iproc)
+              write(6,*) '            ', thetacom(iel), pi/nprocl * iproc, &
+                         pi/nprocl * (iproc + 1)
+              stop
+           endif
            el2proc(procel(iel,iproc)) = iproc
            inv_procel(procel(iel,iproc),iproc) = iel
         end do
+     enddo
 
-     enddo !nrl-1
-  end do !nthetal-1
+     ! FLUID
+     ! special treatment of the processors with sol/flu boundary
+     ! kind of hacky, but should work for most cases of earth like models
+     iprocb = -1
+     mycountb = 1
+        
+     ! take the lower most layer in the fluid (ICB) and account to the
+     ! processor having the solid neighbour
+     do iel = 1, nbelem(2)
+        if (fluid(belem(iel,2)) .and.  el2thetaslel(belem(iel,2)) == itheta &
+                .and. .not. attributed(belem(iel,2))) then
+            iproc = el2proc(belem(my_neighbour(iel,2),2))
+            if (iprocb(1) == iproc .or. iprocb(1) == -1) then
+               iprocb(1) = iproc
+               procel_fluid(mycountb(1), iproc) = belem(iel,2)
+               mycountb(1) = mycountb(1) + 1
+            elseif (iprocb(2) == iproc .or. iprocb(2) == -1) then
+               iprocb(2) = iproc
+               procel_fluid(mycountb(2), iproc) = belem(iel,2)
+               mycountb(2) = mycountb(2) + 1
+            else
+               write(6,*) 'ERROR: more then two procs involved in s/f boundary of one theta slice'
+            endif
+            attributed(belem(iel,2)) = .true.
+        endif
+     enddo
+
+     nicb = mycountb(1) + mycountb(2) - 2
+     
+     ! take the upper most layer in the fluid (CMB) and account to the
+     ! processor having the solid neighbour
+     do iel = 1, nbelem(1)
+        if (fluid(belem(iel,1)) .and. el2thetaslel(belem(iel,1)) == itheta &
+                .and. .not. attributed(belem(iel,1))) then
+            iproc = el2proc(belem(my_neighbour(iel,1),1))
+            if (iprocb(1) == iproc .or. iprocb(1) == -1) then
+               iprocb(1) = iproc
+               procel_fluid(mycountb(1), iproc) = belem(iel,1)
+               mycountb(1) = mycountb(1) + 1
+            elseif (iprocb(2) == iproc .or. iprocb(2) == -1) then
+               iprocb(2) = iproc
+               procel_fluid(mycountb(2), iproc) = belem(iel,1)
+               mycountb(2) = mycountb(2) + 1
+            else
+               write(6,*) 'ERROR: more then two procs involved in s/f boundary of one theta slice'
+            endif
+            attributed(belem(iel,1)) = .true.
+        endif
+     enddo
+     
+     ncmb = mycountb(1) + mycountb(2) - 2 - nicb
+
+     if (any(mycountb - 1 > nel_fluid(iproc))) then
+        write(6,*) 'ERROR: more boundary elements than fluid elements. try less NRADIAL_SLICES'
+        stop
+     endif
+   
+     ! depending on whether a possible proc boundary on the sf boundary (on the
+     ! solid side) is on CMB or ICB decide which processor should take stuff
+     ! from below CMB / above ICB
+     ! this choice leads to one processor having just one contiguous domain and
+     ! the other having two domains, one of which is very small (just boundary
+     ! elements)
+     if (mycountb(2) - 1 > nicb) then
+        j1 = 2
+        j2 = 1
+     else
+        j1 = 1
+        j2 = 2
+     endif
+
+     ! fill up j1 with stuff from below CMB
+     if (iprocb(j1) /= -1) then
+        do iel = 1, neltot_fluid / nthetal
+           if (mycountb(j1) == nel_fluid(iproc) + 1) exit
+           if (.not. attributed(thetaslel_fluid(iel,itheta))) then
+              procel_fluid(mycountb(j1), iprocb(j1)) = thetaslel_fluid(iel,itheta)
+              attributed(thetaslel_fluid(iel,itheta)) = .true.
+              mycountb(j1) = mycountb(j1) + 1
+           endif
+        end do
+     endif
+     
+     ! fill up j2 with stuff from above ICB
+     if (iprocb(j2) /= -1) then
+        do iel = neltot_fluid / nthetal, 1, -1
+           if (mycountb(j2) == nel_fluid(iproc) + 1) exit
+           if (.not. attributed(thetaslel_fluid(iel,itheta))) then
+              procel_fluid(mycountb(j2), iprocb(j2)) = thetaslel_fluid(iel,itheta)
+              attributed(thetaslel_fluid(iel,itheta)) = .true.
+              mycountb(j2) = mycountb(j2) + 1
+           endif
+        end do
+     endif
+     
+     ! fill up the bulk with the other processors
+     do irad = 0, nrl-1
+        iproc = itheta * nrl + irad
+        if (any(iproc == iprocb)) cycle
+
+        ! just go inwards radially
+        mycount = 1
+        do iel = 1, neltot_fluid / nthetal
+           if (mycount == nel_fluid(iproc) + 1) exit
+           if (.not. attributed(thetaslel_fluid(iel,itheta))) then
+              procel_fluid(mycount, iproc) = thetaslel_fluid(iel,itheta)
+              attributed(thetaslel_fluid(iel,itheta)) = .true.
+              mycount = mycount + 1
+           endif
+        end do
+     enddo
+     
+     ! fill up fluid part of the mapping arrays
+     do irad = 0, nrl-1
+        iproc = itheta * nrl + irad
+        do iel = 1, nel_fluid(iproc)
+           procel(iel,iproc) = procel_fluid(iel,iproc)
+           el2proc(procel(iel,iproc)) = iproc
+           inv_procel(procel(iel,iproc),iproc) = iel
+        end do
+     enddo
+
+  end do ! itheta
 
 end subroutine domain_decomposition_theta_r
 !-----------------------------------------------------------------------------------------
