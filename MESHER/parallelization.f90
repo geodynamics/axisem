@@ -214,53 +214,8 @@ subroutine create_domain_decomposition
   end if
 
   if (dump_mesh_vtk) call plot_dd_vtk
-  if (dump_mesh_vtk) call plot_globiel_vtk
 
 end subroutine create_domain_decomposition
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-subroutine plot_globiel_vtk
-  use test_bkgrdmodel, only : write_VTK_bin_scal_old, write_VTK_bin_scal
-
-  real(kind=realkind), dimension(:), allocatable :: wel2proc
-  integer                                        :: iel
-  character(len=200)                             :: fname
-
-  integer                                        :: ct
-  real(kind=sp), allocatable, dimension(:)       :: x, y, z
-
-  allocate(wel2proc(1:neltot*4))
-
-  fname = trim(diagpath)//'/mesh_globiel'
-
-  allocate(x(neltot*4), y(neltot*4), z(neltot*4))
-  z = 0.d0
-  ct = 0
-
-  do iel=1, neltot
-      x(ct+1) = sgll(0,0,iel)
-      x(ct+2) = sgll(npol,0,iel)
-      x(ct+3) = sgll(npol,npol,iel)
-      x(ct+4) = sgll(0,npol,iel)
-      y(ct+1) = zgll(0,0,iel)
-      y(ct+2) = zgll(npol,0,iel)
-      y(ct+3) = zgll(npol,npol,iel)
-      y(ct+4) = zgll(0,npol,iel)
-      wel2proc(ct+1) = real(iel)
-      wel2proc(ct+2) = real(iel)
-      wel2proc(ct+3) = real(iel)
-      wel2proc(ct+4) = real(iel)
-      
-      ct = ct + 4
-  enddo
-  
-  call write_VTK_bin_scal(x, y, z, wel2proc, neltot, fname)
-
-  deallocate(x, y, z)
-  deallocate(wel2proc)
-
-end subroutine plot_globiel_vtk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
