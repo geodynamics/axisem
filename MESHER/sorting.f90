@@ -256,16 +256,21 @@ subroutine mergesort_3(a, b, il, p)
   !$ use omp_lib     
   
   real(kind=dp), intent(inout) :: a(:)
-  real(kind=dp), intent(inout) :: b(size(a))
-  integer, intent(inout)       :: il(size(a))
-  integer, intent(in)          :: p
+  real(kind=dp), intent(inout), optional :: b(size(a))
+  integer, intent(inout), optional       :: il(size(a))
+  integer, intent(in), optional          :: p
   
   real(kind=dp), allocatable   :: bbuff(:)
   integer, allocatable         :: ibuff(:)
-  integer                      :: na, i
+  integer                      :: na, i, p_loc
   integer, allocatable         :: ind(:)
   !$ integer                   :: nthreads
-  
+ 
+  if (present(p)) then
+     p_loc = p
+  else
+     p_loc = 1
+  endif
 
   na = size(a)
   allocate(ind(na))
@@ -275,37 +280,41 @@ subroutine mergesort_3(a, b, il, p)
   enddo
   
   iclock01 = tick()
-  call pmsort(a, ind, p) 
+  call pmsort(a, ind, p_loc) 
   iclock01 = tick(id=idold01, since=iclock01)
 
   iclock05 = tick()
-  allocate(ibuff(na))
-  allocate(bbuff(na))
+  if (present(il)) then
+     allocate(ibuff(na))
+     ibuff(:) = il(:)
+  endif
+
+  if (present(b)) then
+     allocate(bbuff(na))
+     bbuff(:) = b(:)
+  endif
   
-  !$ nthreads = min(OMP_get_max_threads(), p)
+  !$ nthreads = min(OMP_get_max_threads(), p_loc)
   !$ call omp_set_num_threads(nthreads)
   !$omp parallel shared (il, ibuff, b, bbuff)
   
-  !$omp workshare
-  ibuff(:) = il(:)
-  bbuff(:) = b(:)
-  !$omp end workshare
+  if (present(il)) then
+     !$omp do
+     do i=1, na
+        il(i) = ibuff(ind(i))
+     enddo
+     !$omp end do
+  endif
   
-  !$omp do
-  do i=1, na
-     il(i) = ibuff(ind(i))
-  enddo
-  !$omp end do
-  
-  !$omp do
-  do i=1, na
-     b(i) = bbuff(ind(i))
-  enddo
-  !$omp end do
+  if (present(b)) then
+     !$omp do
+     do i=1, na
+        b(i) = bbuff(ind(i))
+     enddo
+     !$omp end do
+  endif
   !$omp end parallel
   
-  deallocate(ibuff)
-  deallocate(bbuff)
   iclock05 = tick(id=idold05, since=iclock05)
 
 end subroutine
