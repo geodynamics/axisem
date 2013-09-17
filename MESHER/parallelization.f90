@@ -214,10 +214,53 @@ subroutine create_domain_decomposition
   end if
 
   if (dump_mesh_vtk) call plot_dd_vtk
+  if (dump_mesh_vtk) call plot_globiel_vtk
 
-  !stop
-     
 end subroutine create_domain_decomposition
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine plot_globiel_vtk
+  use test_bkgrdmodel, only : write_VTK_bin_scal_old, write_VTK_bin_scal
+
+  real(kind=realkind), dimension(:), allocatable :: wel2proc
+  integer                                        :: iel
+  character(len=200)                             :: fname
+
+  integer                                        :: ct
+  real(kind=sp), allocatable, dimension(:)       :: x, y, z
+
+  allocate(wel2proc(1:neltot*4))
+
+  fname = trim(diagpath)//'/mesh_globiel'
+
+  allocate(x(neltot*4), y(neltot*4), z(neltot*4))
+  z = 0.d0
+  ct = 0
+
+  do iel=1, neltot
+      x(ct+1) = sgll(0,0,iel)
+      x(ct+2) = sgll(npol,0,iel)
+      x(ct+3) = sgll(npol,npol,iel)
+      x(ct+4) = sgll(0,npol,iel)
+      y(ct+1) = zgll(0,0,iel)
+      y(ct+2) = zgll(npol,0,iel)
+      y(ct+3) = zgll(npol,npol,iel)
+      y(ct+4) = zgll(0,npol,iel)
+      wel2proc(ct+1) = real(iel)
+      wel2proc(ct+2) = real(iel)
+      wel2proc(ct+3) = real(iel)
+      wel2proc(ct+4) = real(iel)
+      
+      ct = ct + 4
+  enddo
+  
+  call write_VTK_bin_scal(x, y, z, wel2proc, neltot, fname)
+
+  deallocate(x, y, z)
+  deallocate(wel2proc)
+
+end subroutine plot_globiel_vtk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
@@ -335,7 +378,7 @@ subroutine domain_decomposition_theta(attributed, nprocl)
      do iel = 1, neltot
   
         ! add the extra requirement that element iel to be in appropriate theta slice
-        if (fluid(iel) .and. &
+        if (fluid(iel) .and. .not. attributed(iel) .and. &
             (thetacom(iel) >= theta_min_proc(iproc)) .and.  &
             (thetacom(iel) <= theta_max_proc(iproc)) ) then
             mycount = mycount + 1
@@ -353,7 +396,7 @@ subroutine domain_decomposition_theta(attributed, nprocl)
      !  Here we start the loop over solid elements and try to assign them to iproc
      
      do iel = 1, neltot
-        if ( .not. fluid(iel) .and. .not.(attributed(iel)) .and. &
+        if ( .not. fluid(iel) .and. .not. attributed(iel) .and. &
              (thetacom(iel) >= theta_min_proc(iproc)) .and. &
              (thetacom(iel) <= theta_max_proc(iproc)) ) then
            mycount = mycount + 1
@@ -439,6 +482,8 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
 ! nelmax: maximal number of glocal elements
 ! neltot: global total number of elements
 ! procel: 
+  
+  use sorting
 
   logical, intent(inout)    :: attributed(:)
   integer, intent(in)       :: nprocl, nthetal, nrl
@@ -452,8 +497,10 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   integer, allocatable      :: central_count(:)
   real(kind=dp)             :: pi2
 
-  integer, allocatable      :: thetaslel(:,:), thetaslel_fluid(:,:), thetaslel_solid(:,:)
-  integer, allocatable      :: el2thetaslel(:), inv_thetaslel(:,:)
+  integer, allocatable          :: thetaslel(:,:), thetaslel_fluid(:,:), thetaslel_solid(:,:)
+  integer, allocatable          :: inner_core_buf(:)
+  real(kind=dp), allocatable    :: inner_core_r(:)
+  integer, allocatable          :: el2thetaslel(:), inv_thetaslel(:,:)
 
   allocate(thetaslel(nelmax*nrl,0:nthetal-1))
   allocate(thetaslel_fluid(nelmax_fluid*nrl,0:nthetal-1))
@@ -502,12 +549,32 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   endif
   ! **************** END OF INNER CUBE****************
 
+  !! Using same stupid choice as in inner core decomposition:
+  if (neltot_solid > 0 ) then 
+     do itheta = 0, nthetal-1
+        allocate(inner_core_buf(central_count(itheta)))
+        allocate(inner_core_r(central_count(itheta)))
+        inner_core_buf(:) = thetaslel_solid(1:central_count(itheta),itheta)
+
+        do iel = 1, central_count(itheta)
+           inner_core_r(iel) = rcom(inner_core_buf(iel))
+        enddo
+  
+        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
+        
+        thetaslel_solid(1:central_count(itheta),itheta) = inner_core_buf(:)
+
+        deallocate(inner_core_buf)
+        deallocate(inner_core_r)
+     enddo
+  endif
+
   ! add the extra requirement that element iel to be in appropriate theta slice
   do itheta = 0, nthetal-1
 
      mycount = 0
      do iel = 1, neltot
-        if (fluid(iel) .and. &
+        if (fluid(iel) .and. .not. attributed(iel) .and. &
                (thetacom(iel) >= theta_min_proc(itheta)) .and.  &
                (thetacom(iel) <= theta_max_proc(itheta)) ) then
             mycount = mycount + 1
@@ -520,7 +587,8 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
      mycount = central_count(itheta)
   
      do iel = 1, neltot
-        if ( .not. fluid(iel) .and. .not.(attributed(iel)) .and. &
+        
+        if ( .not. fluid(iel) .and. .not. attributed(iel) .and. &
               (thetacom(iel) >= theta_min_proc(itheta)) .and. &
               (thetacom(iel) <= theta_max_proc(itheta)) ) then
            thetaslel_solid(sum(nel_solid(itheta:itheta+nrl-1)) &
@@ -574,6 +642,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
               write(6,*) 'PROCEL ZERO!', itheta, eltypeg(iel), iel, nel_fluid(itheta)
               write(6,*) '            ', thetacom(iel), pi/nthetal * itheta, &
                          pi/nthetal * (itheta + 1)
+              write(6,*) iel, sum(nel(itheta:itheta+nrl-1))
               stop
            endif
         end if
@@ -596,18 +665,16 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   do itheta = 0, nthetal-1
      
      ! SOLID domain first
-     mycount = 1
      do irad = 0, nrl-1
         iproc = itheta * nrl + irad
-        ! @TODO: is not really radially, but along global element number, which
-        !        is along theta/radius in the shell, but along s and z in the inner
-        !        core. for nradialslices > 12 this leads to uggly blocks in the
-        !        inner core. solution: sort the inner core elements along
-        !        radius/theta
-        do iel = 1, nel_solid(iproc)
-           procel_solid(iel, iproc) = thetaslel_solid(mycount,itheta)
-           attributed(thetaslel_solid(mycount,itheta)) = .true.
-           mycount = mycount + 1
+        mycount = 1
+        do iel = 1, neltot_solid / nthetal
+           if (mycount == nel_solid(iproc) + 1) exit
+           if (.not. attributed(thetaslel_solid(iel,itheta))) then
+              procel_solid(mycount, iproc) = thetaslel_solid(iel,itheta)
+              attributed(thetaslel_solid(iel,itheta)) = .true.
+              mycount = mycount + 1
+           endif
         end do
      enddo
 
@@ -617,10 +684,11 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
 
         do iel = nel_fluid(iproc)+1, nel(iproc)
            procel(iel,iproc) = procel_solid(iel-nel_fluid(iproc),iproc)
-           if (procel(iel,iproc)<=0) then
+           if (procel(iel,iproc) <= 0) then
               write(6,*) 'PROCEL ZERO!', iproc, eltypeg(iel), iel, nel_fluid(iproc)
               write(6,*) '            ', thetacom(iel), pi/nprocl * iproc, &
                          pi/nprocl * (iproc + 1)
+              write(6,*) iel, nel(iproc)
               stop
            endif
            el2proc(procel(iel,iproc)) = iproc
@@ -1280,6 +1348,8 @@ subroutine decompose_inner_cube_opt(central_count, attributed, nthetal, &
           attributed(central_is_iz_to_globiel(is,iz)) = .true.
           attributed(central_is_iz_to_globiel(is,iz) + neltot / 2) = .true.
 
+          ! @TODO is this supposed to test for fluid inner core? Actually tests
+          ! for whole fluid planets
           if (neltot_solid > 0 ) then 
               procel_solidl(central_count(proc(is-1,iz-1)), &
                       proc(is-1,iz-1)) = central_is_iz_to_globiel(is,iz)
@@ -1288,7 +1358,7 @@ subroutine decompose_inner_cube_opt(central_count, attributed, nthetal, &
                       proc(is-1,iz-1)) = central_is_iz_to_globiel(is,iz)
           endif
 
-      ! South: inverted copy
+          ! South: inverted copy
           if (nthetal > 1) then 
               if (neltot_solid>0 ) then 
                   procel_solidl(central_count(proc(is-1,iz-1)), &
