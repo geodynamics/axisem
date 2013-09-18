@@ -1502,8 +1502,7 @@ subroutine partition_sflobal_index
      allocate(index_msg_fluid(0:nproc-1,nneighbours))
      index_msg_fluid = 0
 
-     !allocate(global_index_msg_fluid(sizemsgmax_fluid,0:nproc-1,nneighbours))
-     allocate(global_index_msg_fluid(sizemsgmax_fluid,0:nproc-1,0:nproc-1))
+     allocate(global_index_msg_fluid(sizemsgmax_fluid,0:nproc-1,nneighbours))
      do iproct = 0, nproc-1
         do ipt = 1, sizebin_fluid(iproct)
            ig = binp_fluid(ipt,iproct)
@@ -1518,8 +1517,7 @@ subroutine partition_sflobal_index
 
                     index_msg_fluid(iproct,inbr) = index_msg_fluid(iproct,inbr) + 1
                     imsg = index_msg_fluid(iproct,inbr)
-                    !global_index_msg_fluid(imsg,iproct,inbr) = ig
-                    global_index_msg_fluid(imsg,iproct,ipdes) = ig
+                    global_index_msg_fluid(imsg,iproct,inbr) = ig
                  endif
               end do
            endif
@@ -1669,29 +1667,44 @@ subroutine partition_sflobal_index
      glocal_index_msg_sendp_fluid = 0
    
      allocate(flob2floc(nglobflob))
-   
+
      do iproct = 0, nproc-1
+
         call define_sflobal2sflocal(iproct, .false.)
-        
-        if (sizerecvp_fluid(iproct)>0) then 
-           do ip = 1, sizerecvp_fluid(iproct)
+
+        if (sizerecvp_fluid(iproct) > 0) then 
+           do ip=1, sizerecvp_fluid(iproct)
               ipsrc = listrecvp_fluid(ip,iproct)
+              if (dump_mesh_info_screen) &
+                  write(6,*) ip, sizerecvp_fluid(iproct), ipsrc, sizemsgrecvp_fluid(ip,iproct)
               do ipt = 1, sizemsgrecvp_fluid(ip,iproct)  
-                 ig = global_index_msg_fluid(ipt,ipsrc,iproct)
+                 do inbr=1, nneighbours
+                    if (iproct == myneighbours_fluid(ipsrc,inbr)) exit
+                 end do
+                 if (inbr > nneighbours) exit
+                 ig = global_index_msg_fluid(ipt,ipsrc,inbr)
+                 if (ig < 1) write(6,*) ipsrc, ipt, ip, ig
                  glocal_index_msg_recvp_fluid(ipt,ip,iproct) = flob2floc(ig)
               end do
            end do
         endif
-   
+
         if (sizesendp_fluid(iproct)>0) then 
            do ip = 1, sizesendp_fluid(iproct)
               ipdes = listsendp_fluid(ip,iproct)
+              if (dump_mesh_info_screen) &
+                  write(6,*) ipdes, sizemsgsendp_fluid(ip,iproct)
               do ipt = 1, sizemsgsendp_fluid(ip,iproct)
-                 ig = global_index_msg_fluid(ipt,iproct,ipdes)
+                 do inbr=1, nneighbours
+                    if (ipdes == myneighbours_fluid(iproct,inbr)) exit
+                 end do
+                 if (inbr > nneighbours) exit
+                 ig = global_index_msg_fluid(ipt,iproct,inbr)
                  glocal_index_msg_sendp_fluid(ipt,ip,iproct) = flob2floc(ig)
               end do
            end do
         endif
+        call flush(6)
      end do
    
   end if ! have_fluid
