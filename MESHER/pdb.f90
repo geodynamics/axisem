@@ -1027,7 +1027,7 @@ subroutine partition_sflobal_index
   
   integer, dimension(:), allocatable        :: ibin_solid
   integer, dimension(:,:), allocatable      :: myneighbours_solid
-  integer, dimension(:,:), allocatable      :: sizemsg_solid_nbr
+  integer, dimension(:,:), allocatable      :: sizemsg_solid
   integer, dimension(:,:), allocatable      :: index_msg_solid
   integer, dimension(:,:,:), allocatable    :: global_index_msg_solid
   integer, dimension(:,:), allocatable      :: binp_solid
@@ -1037,8 +1037,7 @@ subroutine partition_sflobal_index
   
   integer, dimension(:), allocatable        :: ibin_fluid
   integer, dimension(:,:), allocatable      :: myneighbours_fluid
-  !integer, dimension(:,:), allocatable      :: sizemsg_fluid
-  integer, dimension(:,:), allocatable      :: sizemsg_fluid_nbr
+  integer, dimension(:,:), allocatable      :: sizemsg_fluid
   integer, dimension(:,:), allocatable      :: index_msg_fluid
   integer, dimension(:,:,:), allocatable    :: global_index_msg_fluid
   integer, dimension(:,:), allocatable      :: binp_fluid
@@ -1113,8 +1112,8 @@ subroutine partition_sflobal_index
   end do
   deallocate(ibin_solid)
 
-  allocate(sizemsg_solid_nbr(0:nproc-1,nneighbours))
-  sizemsg_solid_nbr = 0
+  allocate(sizemsg_solid(0:nproc-1,nneighbours))
+  sizemsg_solid = 0
   allocate(myneighbours_solid(0:nproc-1,nneighbours))
   myneighbours_solid = -1
   
@@ -1136,7 +1135,7 @@ subroutine partition_sflobal_index
                     stop
                  endif
                  if (myneighbours_solid(iproct,inbr) == -1) myneighbours_solid(iproct,inbr) = ipdes
-                 sizemsg_solid_nbr(iproct,inbr) = sizemsg_solid_nbr(iproct,inbr) + 1 
+                 sizemsg_solid(iproct,inbr) = sizemsg_solid(iproct,inbr) + 1 
               endif
            end do
         endif
@@ -1153,7 +1152,7 @@ subroutine partition_sflobal_index
      endif
      sort_buf(1:inbr) = dble(myneighbours_solid(iproct,1:inbr))
      call mergesort_3(sort_buf(1:inbr), il=myneighbours_solid(iproct,1:inbr), &
-                      il2=sizemsg_solid_nbr(iproct,1:inbr), p=1)
+                      il2=sizemsg_solid(iproct,1:inbr), p=1)
      write(6,'(100(i4))') myneighbours_solid(iproct,:)
   enddo
   deallocate(sort_buf)
@@ -1162,12 +1161,12 @@ subroutine partition_sflobal_index
      write(6,*) 'Size of solid messages for each proc-proc pair:'
      do iproct = 0,  nproc-1
         ! MvD: 100 beeing the maximum number of procs??? yes, but is debuggin only
-        write(6,'(100(i4))') sizemsg_solid_nbr(iproct,:)
+        write(6,'(100(i4))') sizemsg_solid(iproct,:)
      end do
-     write(6,*) 'Total solid messages size:',SUM(SUM(sizemsg_solid_nbr,DIM=1))
+     write(6,*) 'Total solid messages size:',SUM(SUM(sizemsg_solid,DIM=1))
   end if
  
-  sizemsgmax_solid = maxval(maxval(sizemsg_solid_nbr,DIM=1))
+  sizemsgmax_solid = maxval(maxval(sizemsg_solid,DIM=1))
   if (dump_mesh_info_screen) write(6,*) 'size msg max solid is ' , sizemsgmax_solid
 
   allocate(index_msg_solid(0:nproc-1,nneighbours))
@@ -1289,7 +1288,7 @@ subroutine partition_sflobal_index
      do inbr=1, nneighbours
         ipsrc = myneighbours_solid(iproct,inbr)
         if (ipsrc == -1) exit
-        sizemsgrecvp_solid(inbr,iproct) = sizemsg_solid_nbr(iproct,inbr)
+        sizemsgrecvp_solid(inbr,iproct) = sizemsg_solid(iproct,inbr)
      enddo
   end do
 
@@ -1299,7 +1298,7 @@ subroutine partition_sflobal_index
         do inbr=1, nneighbours
            ipsrc = myneighbours_solid(ipdes,inbr)
            if (ipsrc == iproct) then
-              sizemsgsendp_solid(inbr,ipdes) = sizemsg_solid_nbr(ipdes,inbr)
+              sizemsgsendp_solid(inbr,ipdes) = sizemsg_solid(ipdes,inbr)
            endif
         end do
      end do
@@ -1440,40 +1439,9 @@ subroutine partition_sflobal_index
         enddo
      enddo
      deallocate(ibin_fluid)
-   
-     ! delete
-     !allocate(sizemsg_fluid(0:nproc-1,0:nproc-1))
-     !sizemsg_fluid = 0 
-   
-     !do iproct = 0, nproc - 1
-     !   do ipt = 1, sizebin_fluid(iproct)
-     !      ig = binp_fluid(ipt,iproct)
-     !      if (nprocb_fluid(ig) > 1) then
-     !         do ibel = 1, nprocb_fluid(ig)
-     !            ipdes = lprocb_fluid(ibel,ig)
-     !            if (ipdes /= iproct) &
-     !               sizemsg_fluid(iproct,ipdes) = sizemsg_fluid(iproct,ipdes) + 1 
-     !         end do
-     !      endif
-     !   end do
-     !end do
-   
-     !if (dump_mesh_info_screen) then 
-     !   write(6,*) 'Size of fluid messages for each proc-proc pair:'
-     !   write(6,*) '---> destination proc, down: my proc'
-     !   do iproct = 0,  nproc-1
-     !      ! @TODO: 80 beeing the maximum number of procs???
-     !      write(6,'(80(i3,1x))') (sizemsg_fluid(iproct,ipdes),ipdes=0,nproc-1)
-     !   end do
-     !   write(6,*) 'Total fluid messages size:', SUM(SUM(sizemsg_fluid,DIM=1))
-     !end if
-     !
-     !sizemsgmax_fluid = maxval(maxval(sizemsg_fluid,DIM=1))
-     !if (dump_mesh_info_screen) write(6,*) 'size msg max fluid is ' , sizemsgmax_fluid
-     ! /delete
 
-     allocate(sizemsg_fluid_nbr(0:nproc-1,nneighbours))
-     sizemsg_fluid_nbr = 0
+     allocate(sizemsg_fluid(0:nproc-1,nneighbours))
+     sizemsg_fluid = 0
      allocate(myneighbours_fluid(0:nproc-1,nneighbours))
      myneighbours_fluid = -1
      
@@ -1495,7 +1463,7 @@ subroutine partition_sflobal_index
                        stop
                     endif
                     if (myneighbours_fluid(iproct,inbr) == -1) myneighbours_fluid(iproct,inbr) = ipdes
-                    sizemsg_fluid_nbr(iproct,inbr) = sizemsg_fluid_nbr(iproct,inbr) + 1 
+                    sizemsg_fluid(iproct,inbr) = sizemsg_fluid(iproct,inbr) + 1 
                  endif
               end do
            endif
@@ -1512,7 +1480,7 @@ subroutine partition_sflobal_index
         endif
         sort_buf(1:inbr) = dble(myneighbours_fluid(iproct,1:inbr))
         call mergesort_3(sort_buf(1:inbr), il=myneighbours_fluid(iproct,1:inbr), &
-                         il2=sizemsg_fluid_nbr(iproct,1:inbr), p=1)
+                         il2=sizemsg_fluid(iproct,1:inbr), p=1)
         write(6,'(100(i4))') myneighbours_fluid(iproct,:)
      enddo
      deallocate(sort_buf)
@@ -1521,12 +1489,12 @@ subroutine partition_sflobal_index
         write(6,*) 'Size of fluid messages for each proc-proc pair:'
         do iproct = 0,  nproc-1
            ! MvD: 100 beeing the maximum number of procs??? yes, but is debuggin only
-           write(6,'(100(i4))') sizemsg_fluid_nbr(iproct,:)
+           write(6,'(100(i4))') sizemsg_fluid(iproct,:)
         end do
-        write(6,*) 'Total fluid messages size:',SUM(SUM(sizemsg_fluid_nbr,DIM=1))
+        write(6,*) 'Total fluid messages size:',SUM(SUM(sizemsg_fluid,DIM=1))
      end if
  
-     sizemsgmax_fluid = maxval(maxval(sizemsg_fluid_nbr,DIM=1))
+     sizemsgmax_fluid = maxval(maxval(sizemsg_fluid,DIM=1))
 
 
      if (dump_mesh_info_screen) write(6,*) 'size msg max fluid is ' , sizemsgmax_fluid
@@ -1556,31 +1524,6 @@ subroutine partition_sflobal_index
      ! How many messages am I sending / receiving ? 
      allocate(sizerecvp_fluid(0:nproc-1))
      allocate(sizesendp_fluid(0:nproc-1))
-
-     ! delete
-     !sizerecvp_fluid = 0
-     !sizesendp_fluid = 0 
-
-     !do iproct = 0, nproc -1
-     !   do ipsrc = 0, nproc-1
-     !      if ( sizemsg_fluid(ipsrc,iproct) > 0 ) &
-     !           sizerecvp_fluid(iproct) = sizerecvp_fluid(iproct) + 1 
-     !   end do
-     !   do ipdes = 0, nproc-1 
-     !      if ( sizemsg_fluid(iproct,ipdes) > 0 ) &
-     !           sizesendp_fluid(iproct) = sizesendp_fluid(iproct) + 1 
-     !   end do
-     !end do
-   
-     !if (dump_mesh_info_screen) then 
-     !   do iproct = 0, nproc -1
-     !      write(6,'("Proc", i3, " receives fluid stuff from",i3, &
-     !               " procs and sends to", i3, " procs")') &
-     !            iproct, sizerecvp_fluid(iproct), sizesendp_fluid(iproct)
-     !   end do
-     !end if
-     ! /delete
-
      sizerecvp_fluid = 0
      sizesendp_fluid = 0
 
@@ -1622,43 +1565,6 @@ subroutine partition_sflobal_index
      ! To which processor ? 
      allocate(listrecvp_fluid(sizerecvpmax_fluid,0:nproc-1))
      allocate(listsendp_fluid(sizesendpmax_fluid,0:nproc-1))
-
-     ! delete
-     !listrecvp_fluid = -1
-     !listsendp_fluid = -1
-     !
-     !do iproct = 0, nproc -1
-     !   ip = 0
-     !   do ipsrc = 0, nproc -1
-     !      if ( sizemsg_fluid(ipsrc,iproct) > 0 ) then
-     !         ip = ip + 1
-     !         listrecvp_fluid(ip,iproct) = ipsrc
-     !      end if
-     !   end do
-
-     !   ip = 0
-     !   do ipdes = 0, nproc -1
-     !      if ( sizemsg_fluid(iproct,ipdes) > 0 ) then
-     !         ip = ip + 1
-     !         listsendp_fluid(ip,iproct) = ipdes
-     !      end if
-     !   end do
-     !end do
-   
-     !if (dump_mesh_info_screen .and. nproc>1) then 
-     !   do iproct = 0, nproc-1
-     !      write(6,'("Proc", i2, " will receive ", i2, &
-     !               " fluid messages from procs ", 20(i3,1x))') &
-     !            iproct, sizerecvp_fluid(iproct), &
-     !            (listrecvp_fluid(ip,iproct), ip=1,sizerecvp_fluid(iproct))
-     !      write(6,'("Proc", i2, " will send    ", i2, &
-     !               " fluid messages to   procs ", 20(i3,1x))') &
-     !            iproct, sizesendp_fluid(iproct), &
-     !            (listsendp_fluid(ip,iproct), ip=1,sizesendp_fluid(iproct))
-     !   end do
-     !end if
-     ! /delete
-
      listrecvp_fluid = -1 
      listsendp_fluid = -1
 
@@ -1703,45 +1609,6 @@ subroutine partition_sflobal_index
      ! What size ? 
      allocate(sizemsgrecvp_fluid(sizerecvpmax_fluid,0:nproc-1))
      allocate(sizemsgsendp_fluid(sizesendpmax_fluid,0:nproc-1))
-
-     ! delete
-     !do iproct = 0, nproc-1
-     !   if (sizerecvp_fluid(iproct)>0) then 
-     !      do ip = 1, sizerecvp_fluid(iproct)
-     !         ipsrc = listrecvp_fluid(ip,iproct)
-     !         sizemsgrecvp_fluid(ip,iproct) = sizemsg_fluid(ipsrc,iproct)
-     !      end do
-     !   endif
-   
-     !   if (sizesendp_fluid(iproct)>0) then 
-     !      do ip = 1, sizesendp_fluid(iproct) 
-     !         ipdes = listsendp_fluid(ip,iproct)
-     !         sizemsgsendp_fluid(ip,iproct) = sizemsg_fluid(iproct,ipdes)
-     !      end do
-     !   endif
-     !end do
-   
-     !! OUTPUT message size
-     !if (dump_mesh_info_screen .and. nproc > 1) then
-     !   write(6,*)
-     !   do iproct = 0, nproc -1
-     !      if (sizerecvp_fluid(iproct)>0) then 
-     !         do ip = 1, sizerecvp_fluid(iproct)
-     !            write(6,'("Proc",i3," receiving fluid message from",i3," sized",i6)') &
-     !                  iproct, listrecvp_fluid(ip,iproct), sizemsgrecvp_fluid(ip,iproct)
-     !         end do
-     !      endif
-   
-     !      if (sizesendp_fluid(iproct)>0) then
-     !         do ip = 1, sizesendp_fluid(iproct)
-     !            write(6,'("Proc",i3," sending   fluid message to  ",i3," sized",i6)') &
-     !                  iproct, listsendp_fluid(ip,iproct), sizemsgsendp_fluid(ip,iproct)
-     !         end do
-     !      endif
-     !   end do
-     !end if
-     ! /delete
-
      sizemsgrecvp_fluid = 0
      sizemsgsendp_fluid = 0
      
@@ -1749,7 +1616,7 @@ subroutine partition_sflobal_index
         do inbr=1, nneighbours
            ipsrc = myneighbours_fluid(iproct,inbr)
            if (ipsrc == -1) exit
-           sizemsgrecvp_fluid(inbr,iproct) = sizemsg_fluid_nbr(iproct,inbr)
+           sizemsgrecvp_fluid(inbr,iproct) = sizemsg_fluid(iproct,inbr)
         enddo
      end do
 
@@ -1759,7 +1626,7 @@ subroutine partition_sflobal_index
            do inbr=1, nneighbours
               ipsrc = myneighbours_fluid(ipdes,inbr)
               if (ipsrc == iproct) then
-                 sizemsgsendp_fluid(inbr,ipdes) = sizemsg_fluid_nbr(ipdes,inbr)
+                 sizemsgsendp_fluid(inbr,ipdes) = sizemsg_fluid(ipdes,inbr)
               endif
            end do
         end do
@@ -1838,23 +1705,23 @@ subroutine partition_sflobal_index
   if (dump_mesh_info_screen .and. nproc>1) then 
      write(6,*)
      write(6,*) '----------------------------------------------------------------'
-     write(6,*) 'Sum over all solid message sizes  :', SUM(SUM(sizemsg_solid_nbr,DIM=1))
+     write(6,*) 'Sum over all solid message sizes  :', SUM(SUM(sizemsg_solid,DIM=1))
      write(6,*) 'Total global points in solid,ratio:', nglobslob, &
-                              real(SUM(SUM(sizemsg_solid_nbr,DIM=1))) / real(nglobslob)
+                              real(SUM(SUM(sizemsg_solid,DIM=1))) / real(nglobslob)
      write(6,*) '----------------------------------------------------------------'
 
      if (have_fluid) then
         write(6,*) '----------------------------------------------------------------'
-        write(6,*) 'Sum over all fluid message sizes  :', SUM(SUM(sizemsg_fluid_nbr,DIM=1))
+        write(6,*) 'Sum over all fluid message sizes  :', SUM(SUM(sizemsg_fluid,DIM=1))
         write(6,*) 'Total global points in fluid,ratio:', nglobflob, &
-                                real(SUM(SUM(sizemsg_fluid_nbr,DIM=1))) / real(nglobflob)
+                                real(SUM(SUM(sizemsg_fluid,DIM=1))) / real(nglobflob)
         write(6,*) '----------------------------------------------------------------'
         write(6,*) '----------------------------------------------------------------'
-        write(6,*) 'Sum over all s/f message sizes:', SUM(SUM(sizemsg_fluid_nbr,DIM=1)) + &
-                                                      SUM(SUM(sizemsg_solid_nbr,DIM=1)) 
+        write(6,*) 'Sum over all s/f message sizes:', SUM(SUM(sizemsg_fluid,DIM=1)) + &
+                                                      SUM(SUM(sizemsg_solid,DIM=1)) 
         write(6,*) 'Total global points, ratio    :', nglobglob, &
-                      real(SUM(SUM(sizemsg_fluid_nbr,DIM=1)) + &
-                           SUM(SUM(sizemsg_solid_nbr,DIM=1))) / real(nglobglob)
+                      real(SUM(SUM(sizemsg_fluid,DIM=1)) + &
+                           SUM(SUM(sizemsg_solid,DIM=1))) / real(nglobglob)
         write(6,*) '----------------------------------------------------------------'
      end if !have_fluid 
 
