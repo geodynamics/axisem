@@ -869,7 +869,7 @@ subroutine define_search_sflobal_index
   if (nradialslices == 1) then
      nneighbours = 2
   else
-     nneighbours = 9
+     nneighbours = 8
   endif
   allocate(nbelong2_solid(1:nneighbours,nglobslob))
 
@@ -1020,12 +1020,13 @@ subroutine partition_sflobal_index
 ! DATABASE: sizesendp_fluid, listsendp_fluid
 ! DATABASE: sizemsgsendpg_fluid
 ! DATABASE: glocal_index_msg_sendp_fluid
+  use sorting
 
   integer :: ipt, iproct, ibp, ibel, ig, ip
   integer :: ipdes, ipsrc, imsg
   
   integer, dimension(:), allocatable        :: ibin_solid
-  integer, dimension(:,:), allocatable      :: sizemsg_solid
+  integer, dimension(:,:), allocatable      :: sizemsg_solid, sizemsg_solid_nbr
   integer, dimension(:,:), allocatable      :: index_msg_solid
   integer, dimension(:,:,:), allocatable    :: global_index_msg_solid
   integer, dimension(:,:), allocatable      :: binp_solid
@@ -1041,6 +1042,10 @@ subroutine partition_sflobal_index
   integer, dimension(:), allocatable        :: sizebin_fluid
   integer :: sizebinmax_fluid, sizemsgmax_fluid
   integer :: sizerecvpmax_fluid, sizesendpmax_fluid
+  integer :: nneighbours, inbr
+  integer, dimension(:,:), allocatable      :: myneighbours
+  real(kind=dp), dimension(:), allocatable  :: sort_buf
+
 
   ! valence test
   integer           :: idest, iel, ipol, jpol
@@ -1054,6 +1059,14 @@ subroutine partition_sflobal_index
      write(6,*)'******************* CREATING MESSAGING ARRAYS ******************'
      write(6,*)'****************************************************************'
   end if
+  
+  if (nradialslices == 1) then
+     nneighbours = 2
+  else
+     nneighbours = 8
+  endif
+
+  write(6,*) 'nneighbours', nneighbours
   
   ! SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS SOLID SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS 
 
@@ -1097,33 +1110,61 @@ subroutine partition_sflobal_index
   end do
   deallocate(ibin_solid)
 
-  allocate(sizemsg_solid(0:nproc-1,0:nproc-1))
-  sizemsg_solid(0:nproc-1,0:nproc-1) = 0 
-
+  allocate(sizemsg_solid_nbr(0:nproc-1,nneighbours))
+  sizemsg_solid_nbr = 0
+  allocate(myneighbours(0:nproc-1,nneighbours))
+  myneighbours = -1
+  
   do iproct = 0, nproc - 1
      do ipt = 1, sizebin_solid(iproct)
         ig = binp_solid(ipt,iproct)
         if (nprocb_solid(ig) > 1) then
            do ibel = 1, nprocb_solid(ig)
               ipdes = lprocb_solid(ibel,ig)
-              if (ipdes /= iproct) &
-                 sizemsg_solid(iproct,ipdes) = sizemsg_solid(iproct,ipdes) + 1 
+              if (ipdes /= iproct) then
+                 ! find first empty neighbour location
+                 do inbr=1, nneighbours
+                    if (myneighbours(iproct,inbr) == ipdes .or. &
+                        myneighbours(iproct,inbr) == -1) exit
+                 enddo
+                 if (inbr > 8) then
+                    write(6,*) 'ERORR: having more then 8 neighbours (+myself)'
+                    write(6,*) '       check mesh decomposition)'
+                    stop
+                 endif
+                 if (myneighbours(iproct,inbr) == -1) myneighbours(iproct,inbr) = ipdes
+                 sizemsg_solid_nbr(iproct,inbr) = sizemsg_solid_nbr(iproct,inbr) + 1 
+              endif
            end do
         endif
      end do
   end do
 
+  ! sort neighbours and messaging array according to processor number
+  allocate(sort_buf(nneighbours))
+  do iproct = 0, nproc - 1
+     if (any(myneighbours(iproct,:) == -1)) then
+        inbr = minval(minloc(myneighbours(iproct,:))) - 1
+     else
+        inbr = nneighbours
+     endif
+     sort_buf = dble(myneighbours(iproct,1:inbr))
+     call mergesort_3(sort_buf, il=myneighbours(iproct,1:inbr), &
+                      il2=sizemsg_solid_nbr(iproct,1:inbr), p=1)
+     write(6,'(100(i4))') myneighbours(iproct,:)
+  enddo
+  deallocate(sort_buf)
+
   if (dump_mesh_info_screen) then 
      write(6,*) 'Size of solid messages for each proc-proc pair:'
-     write(6,*) '---> destination proc, down: my proc'
      do iproct = 0,  nproc-1
-        ! MvD: 80 beeing the maximum number of procs???
-        write(6,'(80(i3,1x))') (sizemsg_solid(iproct,ipdes), ipdes=0, nproc-1)
+        ! MvD: 100 beeing the maximum number of procs??? yes, but is debuggin only
+        write(6,'(100(i4))') sizemsg_solid_nbr(iproct,:)
      end do
-     write(6,*) 'Total solid messages size:',SUM(SUM(sizemsg_solid,DIM=1))
+     write(6,*) 'Total solid messages size:',SUM(SUM(sizemsg_solid_nbr,DIM=1))
   end if
-
-  sizemsgmax_solid = maxval(maxval(sizemsg_solid,DIM=1))
+ 
+  sizemsgmax_solid = maxval(maxval(sizemsg_solid_nbr,DIM=1))
   if (dump_mesh_info_screen) write(6,*) 'size msg max solid is ' , sizemsgmax_solid
 
   allocate(index_msg_solid(0:nproc-1,0:nproc-1))
@@ -1154,14 +1195,21 @@ subroutine partition_sflobal_index
   sizerecvp_solid(0:nproc-1) = 0
   sizesendp_solid(0:nproc-1) = 0 
 
-  do iproct = 0, nproc -1
-     do ipsrc = 0, nproc-1
-        if ( sizemsg_solid(ipsrc,iproct) > 0 ) &
-             sizerecvp_solid(iproct) = sizerecvp_solid(iproct) + 1 
+  do iproct = 0, nproc-1
+     do inbr=1, nneighbours
+        ipsrc = myneighbours(iproct,inbr)
+        if (ipsrc == -1) exit
      end do
+     sizerecvp_solid(iproct) = inbr - 1
+  end do
+ 
+  ! somewhat redundant, but makes sure symmetry of the communication
+  do iproct = 0, nproc -1
      do ipdes = 0, nproc-1 
-        if ( sizemsg_solid(iproct,ipdes) > 0 ) &
-             sizesendp_solid(iproct) = sizesendp_solid(iproct) + 1 
+        do inbr=1, nneighbours
+           ipsrc = myneighbours(ipdes,inbr)
+           if (ipsrc == iproct) sizesendp_solid(iproct) = sizesendp_solid(iproct) + 1
+        end do
      end do
   end do
 
@@ -1186,21 +1234,27 @@ subroutine partition_sflobal_index
   listrecvp_solid(1:sizerecvpmax_solid,0:nproc-1) = -1 
   listsendp_solid(1:sizesendpmax_solid,0:nproc-1) = -1
 
+  do iproct = 0, nproc-1
+     ip = 0
+     do inbr=1, nneighbours
+        ipsrc = myneighbours(iproct,inbr)
+        if (ipsrc == -1) exit
+        ip = ip + 1
+        listrecvp_solid(ip,iproct) = ipsrc
+     end do
+  end do
+  
+  ! somewhat redundant, but makes sure symmetry of the communication
   do iproct = 0, nproc -1
      ip = 0
-     do ipsrc = 0, nproc -1
-        if ( sizemsg_solid(ipsrc,iproct) > 0 ) then
-           ip = ip + 1
-           listrecvp_solid(ip,iproct) = ipsrc
-        end if
-     end do
-
-     ip = 0
-     do ipdes = 0, nproc -1
-        if ( sizemsg_solid(iproct,ipdes) > 0 ) then
-           ip = ip + 1
-           listsendp_solid(ip,iproct) = ipdes
-        end if
+     do ipdes = 0, nproc-1 
+        do inbr=1, nneighbours
+           ipsrc = myneighbours(ipdes,inbr)
+           if (ipsrc == iproct) then
+              ip = ip + 1
+              listsendp_solid(ip,iproct) = ipdes
+           endif
+        end do
      end do
   end do
 
@@ -1214,25 +1268,33 @@ subroutine partition_sflobal_index
               (listsendp_solid(ip,iproct),ip=1,sizesendp_solid(iproct))
      end do
   end if
+
   
   ! What size ? 
   allocate(sizemsgrecvp_solid(sizerecvpmax_solid,0:nproc-1))
   allocate(sizemsgsendp_solid(sizesendpmax_solid,0:nproc-1))
-
+  
+  sizemsgrecvp_solid = 0
+  sizemsgsendp_solid = 0
+  
   do iproct = 0, nproc-1
-     if (sizerecvp_solid(iproct) > 0) then 
-        do ip = 1, sizerecvp_solid(iproct)
-           ipsrc = listrecvp_solid(ip,iproct)
-           sizemsgrecvp_solid(ip,iproct) = sizemsg_solid(ipsrc,iproct)
-        end do
-     endif 
+     do inbr=1, nneighbours
+        ipsrc = myneighbours(iproct,inbr)
+        if (ipsrc == -1) exit
+        sizemsgrecvp_solid(inbr,iproct) = sizemsg_solid_nbr(iproct,inbr)
+     enddo
+  end do
 
-     if (sizesendp_solid(iproct) > 0) then 
-        do ip = 1, sizesendp_solid(iproct) 
-           ipdes = listsendp_solid(ip,iproct)
-           sizemsgsendp_solid(ip,iproct) = sizemsg_solid(iproct,ipdes)
+  ! somewhat redundant, but makes sure symmetry of the communication
+  do iproct = 0, nproc -1
+     do ipdes = 0, nproc-1 
+        do inbr=1, nneighbours
+           ipsrc = myneighbours(ipdes,inbr)
+           if (ipsrc == iproct) then
+              sizemsgsendp_solid(inbr,ipdes) = sizemsg_solid_nbr(ipdes,inbr)
+           endif
         end do
-     endif
+     end do
   end do
 
   ! OUTPUT message size
@@ -1254,6 +1316,8 @@ subroutine partition_sflobal_index
         endif
      end do
   end if
+  
+  !stop
 
   ! NOW CREATE GLOCAL INDEX FOR MESSAGES
   ! Which glocal indices?

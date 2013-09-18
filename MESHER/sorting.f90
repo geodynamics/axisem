@@ -249,7 +249,7 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------
-subroutine mergesort_3(a, b, il, p)
+subroutine mergesort_3(a, b, il, il2, p)
     
   use data_time
   use clocks_mod
@@ -258,10 +258,12 @@ subroutine mergesort_3(a, b, il, p)
   real(kind=dp), intent(inout) :: a(:)
   real(kind=dp), intent(inout), optional :: b(size(a))
   integer, intent(inout), optional       :: il(size(a))
+  integer, intent(inout), optional       :: il2(size(a))
   integer, intent(in), optional          :: p
   
   real(kind=dp), allocatable   :: bbuff(:)
   integer, allocatable         :: ibuff(:)
+  integer, allocatable         :: i2buff(:)
   integer                      :: na, i, p_loc
   integer, allocatable         :: ind(:)
   !$ integer                   :: nthreads
@@ -289,6 +291,11 @@ subroutine mergesort_3(a, b, il, p)
      ibuff(:) = il(:)
   endif
 
+  if (present(il2)) then
+     allocate(i2buff(na))
+     i2buff(:) = il2(:)
+  endif
+
   if (present(b)) then
      allocate(bbuff(na))
      bbuff(:) = b(:)
@@ -296,12 +303,20 @@ subroutine mergesort_3(a, b, il, p)
   
   !$ nthreads = min(OMP_get_max_threads(), p_loc)
   !$ call omp_set_num_threads(nthreads)
-  !$omp parallel shared (il, ibuff, b, bbuff)
+  !$omp parallel shared (il, ibuff, il2, i2buff, b, bbuff)
   
   if (present(il)) then
      !$omp do
      do i=1, na
         il(i) = ibuff(ind(i))
+     enddo
+     !$omp end do
+  endif
+  
+  if (present(il2)) then
+     !$omp do
+     do i=1, na
+        il2(i) = i2buff(ind(i))
      enddo
      !$omp end do
   endif

@@ -253,7 +253,7 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
   ifseg2(1) = .true.
   ninseg(1) = npointot2
 
-  call mergesort_3(xp, yp, loc2, nmax_threads)
+  call mergesort_3(xp, b=yp, il=loc2, p=nmax_threads)
 
   ! check for jumps in current coordinate
   ! compare the coordinates of the points within a small tolerance
@@ -393,9 +393,9 @@ subroutine swapall(IA,A,B,ind,n)
   W2(:) = B(:)
 
   do i=1,n
-     IA(i)=IW(ind(i))
-     A(i)=W(ind(i))
-     B(i)=W2(ind(i))
+     IA(i) = IW(ind(i))
+     A(i)  = W(ind(i))
+     B(i)  = W2(ind(i))
   enddo
 
 end subroutine swapall
