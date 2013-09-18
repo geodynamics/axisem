@@ -1068,7 +1068,7 @@ subroutine partition_sflobal_index
      nneighbours = 8
   endif
 
-  write(6,*) 'nneighbours', nneighbours
+  if (dump_mesh_info_screen) write(6,*) 'nneighbours', nneighbours
   
   ! SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS SOLID SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS 
 
@@ -1083,18 +1083,15 @@ subroutine partition_sflobal_index
      enddo
   end do
 
+  sizebinmax_solid = maxval(sizebin_solid(:)) 
+
   if (dump_mesh_info_screen) then 
      do iproct = 0, nproc - 1
         write(6,*) 'proc:', iproct, 'size solid bin:', sizebin_solid(iproct)
      end do
-  end if
- 
-  if (dump_mesh_info_screen) &
      write(6,*) 'sum sizebin,slobal:', sum(sizebin_solid),nglobslob
-
-  sizebinmax_solid = maxval(sizebin_solid(:)) 
-
-  if (dump_mesh_info_screen) write(6,*) ' sizebinmax_solid = ' , sizebinmax_solid
+     write(6,*) ' sizebinmax_solid = ' , sizebinmax_solid
+  end if
 
   allocate(binp_solid(sizebinmax_solid,0:nproc-1)) 
   binp_solid = 0 
@@ -1153,7 +1150,8 @@ subroutine partition_sflobal_index
      sort_buf(1:inbr) = dble(myneighbours_solid(iproct,1:inbr))
      call mergesort_3(sort_buf(1:inbr), il=myneighbours_solid(iproct,1:inbr), &
                       il2=sizemsg_solid(iproct,1:inbr), p=1)
-     write(6,'(100(i4))') myneighbours_solid(iproct,:)
+     if (dump_mesh_info_screen) &
+         write(6,'(100(i4))') myneighbours_solid(iproct,1:inbr)
   enddo
   deallocate(sort_buf)
 
@@ -1345,15 +1343,12 @@ subroutine partition_sflobal_index
      if (sizerecvp_solid(iproct) > 0) then 
         do ip=1, sizerecvp_solid(iproct)
            ipsrc = listrecvp_solid(ip,iproct)
-           if (dump_mesh_info_screen) &
-               write(6,*) ip, sizerecvp_solid(iproct), ipsrc, sizemsgrecvp_solid(ip,iproct)
            do ipt = 1, sizemsgrecvp_solid(ip,iproct)  
               do inbr=1, nneighbours
                  if (iproct == myneighbours_solid(ipsrc,inbr)) exit
               end do
               if (inbr > nneighbours) exit
               ig = global_index_msg_solid(ipt,ipsrc,inbr)
-              if (ig < 1) write(6,*) ipsrc, ipt, ip, ig
               glocal_index_msg_recvp_solid(ipt,ip,iproct) = slob2sloc(ig)
            end do
         end do
@@ -1362,8 +1357,6 @@ subroutine partition_sflobal_index
      if (sizesendp_solid(iproct)>0) then 
         do ip = 1, sizesendp_solid(iproct)
            ipdes = listsendp_solid(ip,iproct)
-           if (dump_mesh_info_screen) &
-               write(6,*) ipdes, sizemsgsendp_solid(ip,iproct)
            do ipt = 1, sizemsgsendp_solid(ip,iproct)
               do inbr=1, nneighbours
                  if (ipdes == myneighbours_solid(iproct,inbr)) exit
@@ -1480,7 +1473,8 @@ subroutine partition_sflobal_index
         sort_buf(1:inbr) = dble(myneighbours_fluid(iproct,1:inbr))
         call mergesort_3(sort_buf(1:inbr), il=myneighbours_fluid(iproct,1:inbr), &
                          il2=sizemsg_fluid(iproct,1:inbr), p=1)
-        write(6,'(100(i4))') myneighbours_fluid(iproct,:)
+        if (dump_mesh_info_screen) &
+           write(6,'(100(i4))') myneighbours_fluid(iproct,1:inbr)
      enddo
      deallocate(sort_buf)
 
@@ -1675,15 +1669,12 @@ subroutine partition_sflobal_index
         if (sizerecvp_fluid(iproct) > 0) then 
            do ip=1, sizerecvp_fluid(iproct)
               ipsrc = listrecvp_fluid(ip,iproct)
-              if (dump_mesh_info_screen) &
-                  write(6,*) ip, sizerecvp_fluid(iproct), ipsrc, sizemsgrecvp_fluid(ip,iproct)
               do ipt = 1, sizemsgrecvp_fluid(ip,iproct)  
                  do inbr=1, nneighbours
                     if (iproct == myneighbours_fluid(ipsrc,inbr)) exit
                  end do
                  if (inbr > nneighbours) exit
                  ig = global_index_msg_fluid(ipt,ipsrc,inbr)
-                 if (ig < 1) write(6,*) ipsrc, ipt, ip, ig
                  glocal_index_msg_recvp_fluid(ipt,ip,iproct) = flob2floc(ig)
               end do
            end do
@@ -1692,8 +1683,6 @@ subroutine partition_sflobal_index
         if (sizesendp_fluid(iproct)>0) then 
            do ip = 1, sizesendp_fluid(iproct)
               ipdes = listsendp_fluid(ip,iproct)
-              if (dump_mesh_info_screen) &
-                  write(6,*) ipdes, sizemsgsendp_fluid(ip,iproct)
               do ipt = 1, sizemsgsendp_fluid(ip,iproct)
                  do inbr=1, nneighbours
                     if (ipdes == myneighbours_fluid(iproct,inbr)) exit
