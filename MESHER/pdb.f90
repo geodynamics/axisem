@@ -1499,9 +1499,10 @@ subroutine partition_sflobal_index
 
      if (dump_mesh_info_screen) write(6,*) 'size msg max fluid is ' , sizemsgmax_fluid
    
-     allocate(index_msg_fluid(0:nproc-1,0:nproc-1))
+     allocate(index_msg_fluid(0:nproc-1,nneighbours))
      index_msg_fluid = 0
-   
+
+     !allocate(global_index_msg_fluid(sizemsgmax_fluid,0:nproc-1,nneighbours))
      allocate(global_index_msg_fluid(sizemsgmax_fluid,0:nproc-1,0:nproc-1))
      do iproct = 0, nproc-1
         do ipt = 1, sizebin_fluid(iproct)
@@ -1510,16 +1511,23 @@ subroutine partition_sflobal_index
               do ibel = 1, nprocb_fluid(ig)
                  ipdes = lprocb_fluid(ibel,ig)
                  if (ipdes /= iproct) then
-                    index_msg_fluid(iproct,ipdes) = index_msg_fluid(iproct,ipdes) + 1
-                    imsg = index_msg_fluid(iproct,ipdes)
+
+                    do inbr=1, nneighbours
+                       if (ipdes == myneighbours_fluid(iproct,inbr)) exit
+                    end do
+
+                    index_msg_fluid(iproct,inbr) = index_msg_fluid(iproct,inbr) + 1
+                    imsg = index_msg_fluid(iproct,inbr)
+                    !global_index_msg_fluid(imsg,iproct,inbr) = ig
                     global_index_msg_fluid(imsg,iproct,ipdes) = ig
                  endif
               end do
            endif
         end do
      end do
-   
+
      deallocate(index_msg_fluid)
+
    
      ! How many messages am I sending / receiving ? 
      allocate(sizerecvp_fluid(0:nproc-1))
