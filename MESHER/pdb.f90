@@ -1026,7 +1026,7 @@ subroutine partition_sflobal_index
   integer :: ipdes, ipsrc, imsg
   
   integer, dimension(:), allocatable        :: ibin_solid
-  integer, dimension(:,:), allocatable      :: sizemsg_solid, sizemsg_solid_nbr
+  integer, dimension(:,:), allocatable      :: sizemsg_solid_nbr
   integer, dimension(:,:), allocatable      :: index_msg_solid
   integer, dimension(:,:,:), allocatable    :: global_index_msg_solid
   integer, dimension(:,:), allocatable      :: binp_solid
@@ -1148,8 +1148,8 @@ subroutine partition_sflobal_index
      else
         inbr = nneighbours
      endif
-     sort_buf = dble(myneighbours(iproct,1:inbr))
-     call mergesort_3(sort_buf, il=myneighbours(iproct,1:inbr), &
+     sort_buf(1:inbr) = dble(myneighbours(iproct,1:inbr))
+     call mergesort_3(sort_buf(1:inbr), il=myneighbours(iproct,1:inbr), &
                       il2=sizemsg_solid_nbr(iproct,1:inbr), p=1)
      write(6,'(100(i4))') myneighbours(iproct,:)
   enddo
@@ -1644,9 +1644,9 @@ subroutine partition_sflobal_index
   if (dump_mesh_info_screen .and. nproc>1) then 
      write(6,*)
      write(6,*) '----------------------------------------------------------------'
-     write(6,*) 'Sum over all solid message sizes  :', SUM(SUM(sizemsg_solid,DIM=1))
+     write(6,*) 'Sum over all solid message sizes  :', SUM(SUM(sizemsg_solid_nbr,DIM=1))
      write(6,*) 'Total global points in solid,ratio:', nglobslob, &
-                              real(SUM(SUM(sizemsg_solid,DIM=1))) / real(nglobslob)
+                              real(SUM(SUM(sizemsg_solid_nbr,DIM=1))) / real(nglobslob)
      write(6,*) '----------------------------------------------------------------'
 
      if (have_fluid) then
@@ -1657,10 +1657,10 @@ subroutine partition_sflobal_index
         write(6,*) '----------------------------------------------------------------'
         write(6,*) '----------------------------------------------------------------'
         write(6,*) 'Sum over all s/f message sizes:', SUM(SUM(sizemsg_fluid,DIM=1)) + &
-                                                      SUM(SUM(sizemsg_solid,DIM=1)) 
+                                                      SUM(SUM(sizemsg_solid_nbr,DIM=1)) 
         write(6,*) 'Total global points, ratio    :', nglobglob, &
                       real(SUM(SUM(sizemsg_fluid,DIM=1)) + &
-                           SUM(SUM(sizemsg_solid,DIM=1))) / real(nglobglob)
+                           SUM(SUM(sizemsg_solid_nbr,DIM=1))) / real(nglobglob)
         write(6,*) '----------------------------------------------------------------'
      end if !have_fluid 
 
