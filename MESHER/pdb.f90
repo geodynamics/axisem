@@ -1167,8 +1167,8 @@ subroutine partition_sflobal_index
   sizemsgmax_solid = maxval(maxval(sizemsg_solid_nbr,DIM=1))
   if (dump_mesh_info_screen) write(6,*) 'size msg max solid is ' , sizemsgmax_solid
 
-  allocate(index_msg_solid(0:nproc-1,0:nproc-1))
-  index_msg_solid(0:nproc-1,0:nproc-1) = 0
+  allocate(index_msg_solid(0:nproc-1,nneighbours))
+  index_msg_solid = 0
 
   allocate(global_index_msg_solid(sizemsgmax_solid,0:nproc-1,0:nproc-1))
   do iproct = 0, nproc-1
@@ -1178,8 +1178,13 @@ subroutine partition_sflobal_index
            do ibel = 1, nprocb_solid(ig)
               ipdes = lprocb_solid(ibel,ig)
               if (ipdes /= iproct) then
-                 index_msg_solid(iproct,ipdes) = index_msg_solid(iproct,ipdes) + 1
-                 imsg = index_msg_solid(iproct,ipdes)
+
+                 do inbr=1, nneighbours
+                    if (ipdes == myneighbours(iproct,inbr)) exit
+                 end do
+
+                 index_msg_solid(iproct,inbr) = index_msg_solid(iproct,inbr) + 1
+                 imsg = index_msg_solid(iproct,inbr)
                  global_index_msg_solid(imsg,iproct,ipdes) = ig
               endif
            end do
