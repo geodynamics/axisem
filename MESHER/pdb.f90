@@ -1097,7 +1097,7 @@ subroutine partition_sflobal_index
   if (dump_mesh_info_screen) write(6,*) ' sizebinmax_solid = ' , sizebinmax_solid
 
   allocate(binp_solid(sizebinmax_solid,0:nproc-1)) 
-  binp_solid(1:sizebinmax_solid,0:nproc-1) = 0 
+  binp_solid = 0 
 
   allocate(ibin_solid(0:nproc-1))
   ibin_solid(0:nproc-1) = 0  
@@ -1173,6 +1173,8 @@ subroutine partition_sflobal_index
   index_msg_solid = 0
 
   allocate(global_index_msg_solid(sizemsgmax_solid,0:nproc-1,nneighbours))
+  global_index_msg_solid = -1
+
   do iproct = 0, nproc-1
      do ipt = 1, sizebin_solid(iproct)
         ig = binp_solid(ipt,iproct)
@@ -1195,6 +1197,8 @@ subroutine partition_sflobal_index
   end do
 
   deallocate(index_msg_solid)
+  deallocate(sizebin_solid)
+  deallocate(binp_solid)
 
   ! How many messages am I sending / receiving ? 
   allocate(sizerecvp_solid(0:nproc-1))
@@ -1324,14 +1328,10 @@ subroutine partition_sflobal_index
      end do
   end if
   
-  !stop
-
   ! NOW CREATE GLOCAL INDEX FOR MESSAGES
   ! Which glocal indices?
   allocate(glocal_index_msg_recvp_solid(sizemsgmax_solid,sizerecvpmax_solid,0:nproc-1))
   allocate(glocal_index_msg_sendp_solid(sizemsgmax_solid,sizesendpmax_solid,0:nproc-1))
-
-  write(6,*)
 
   glocal_index_msg_recvp_solid = 0
   glocal_index_msg_sendp_solid = 0
@@ -1378,6 +1378,8 @@ subroutine partition_sflobal_index
   end do
   
   deallocate(slob2sloc)
+  deallocate(myneighbours_solid)
+  deallocate(global_index_msg_solid)
 
   if (any(glocal_index_msg_sendp_solid /= glocal_index_msg_recvp_solid)) then
       write(6,*) 'ERROR: Index Array for send and recv should be identical in'
@@ -1390,9 +1392,6 @@ subroutine partition_sflobal_index
       write(6,*) '       the new communication scheme, but are not!'
       stop
   endif
-
-  deallocate(sizebin_solid, binp_solid)
-  deallocate(global_index_msg_solid)
 
   write(6,*)'End of solid messaging'
   write(6,*)
@@ -1496,13 +1495,13 @@ subroutine partition_sflobal_index
  
      sizemsgmax_fluid = maxval(maxval(sizemsg_fluid,DIM=1))
 
-
      if (dump_mesh_info_screen) write(6,*) 'size msg max fluid is ' , sizemsgmax_fluid
    
      allocate(index_msg_fluid(0:nproc-1,nneighbours))
      index_msg_fluid = 0
-
      allocate(global_index_msg_fluid(sizemsgmax_fluid,0:nproc-1,nneighbours))
+     global_index_msg_fluid = -1
+
      do iproct = 0, nproc-1
         do ipt = 1, sizebin_fluid(iproct)
            ig = binp_fluid(ipt,iproct)
@@ -1525,7 +1524,8 @@ subroutine partition_sflobal_index
      end do
 
      deallocate(index_msg_fluid)
-
+     deallocate(sizebin_fluid)
+     deallocate(binp_fluid)
    
      ! How many messages am I sending / receiving ? 
      allocate(sizerecvp_fluid(0:nproc-1))
@@ -1706,6 +1706,9 @@ subroutine partition_sflobal_index
         endif
         call flush(6)
      end do
+    
+     deallocate(myneighbours_fluid)
+     deallocate(global_index_msg_fluid)
    
   end if ! have_fluid
   
