@@ -1170,7 +1170,7 @@ subroutine partition_sflobal_index
   allocate(index_msg_solid(0:nproc-1,nneighbours))
   index_msg_solid = 0
 
-  allocate(global_index_msg_solid(sizemsgmax_solid,0:nproc-1,0:nproc-1))
+  allocate(global_index_msg_solid(sizemsgmax_solid,0:nproc-1,nneighbours))
   do iproct = 0, nproc-1
      do ipt = 1, sizebin_solid(iproct)
         ig = binp_solid(ipt,iproct)
@@ -1185,7 +1185,7 @@ subroutine partition_sflobal_index
 
                  index_msg_solid(iproct,inbr) = index_msg_solid(iproct,inbr) + 1
                  imsg = index_msg_solid(iproct,inbr)
-                 global_index_msg_solid(imsg,iproct,ipdes) = ig
+                 global_index_msg_solid(imsg,iproct,inbr) = ig
               endif
            end do
         endif
@@ -1346,7 +1346,11 @@ subroutine partition_sflobal_index
            if (dump_mesh_info_screen) &
                write(6,*) ip, sizerecvp_solid(iproct), ipsrc, sizemsgrecvp_solid(ip,iproct)
            do ipt = 1, sizemsgrecvp_solid(ip,iproct)  
-              ig = global_index_msg_solid(ipt,ipsrc,iproct)
+              do inbr=1, nneighbours
+                 if (iproct == myneighbours(ipsrc,inbr)) exit
+              end do
+              if (inbr > nneighbours) exit
+              ig = global_index_msg_solid(ipt,ipsrc,inbr)
               if (ig < 1) write(6,*) ipsrc, ipt, ip, ig
               glocal_index_msg_recvp_solid(ipt,ip,iproct) = slob2sloc(ig)
            end do
@@ -1359,7 +1363,11 @@ subroutine partition_sflobal_index
            if (dump_mesh_info_screen) &
                write(6,*) ipdes, sizemsgsendp_solid(ip,iproct)
            do ipt = 1, sizemsgsendp_solid(ip,iproct)
-              ig = global_index_msg_solid(ipt,iproct,ipdes)
+              do inbr=1, nneighbours
+                 if (ipdes == myneighbours(iproct,inbr)) exit
+              end do
+              if (inbr > nneighbours) exit
+              ig = global_index_msg_solid(ipt,iproct,inbr)
               glocal_index_msg_sendp_solid(ipt,ip,iproct) = slob2sloc(ig)
            end do
         end do
