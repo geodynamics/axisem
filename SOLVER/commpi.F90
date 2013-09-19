@@ -412,7 +412,7 @@ subroutine send_recv_buffers_solid(nc)
      sizemsg_solid = sizemsgsend_solid(imsg)
      sizeb  = nc * sizemsg_solid
      ipdes  = listsend_solid(imsg)
-     msgnum = mynum * nproc + ipdes
+     msgnum = ipdes
      call MPI_ISEND(buffs%ldata, sizeb, mpi_realkind, ipdes, msgnum, &
                     MPI_COMM_WORLD, send_request_solid(imsg), ierror)
   end do
@@ -424,7 +424,7 @@ subroutine send_recv_buffers_solid(nc)
      sizemsg_solid = sizemsgrecv_solid(imsg)
      sizeb = nc * sizemsg_solid
      ipsrc = listrecv_solid(imsg)
-     msgnum1 = ipsrc * nproc + mynum
+     msgnum1 = mynum
      call MPI_IRECV(buffr%ldata, sizeb, mpi_realkind, ipsrc, msgnum1, &
                     MPI_COMM_WORLD, recv_request_solid(imsg), ierror)
   enddo
@@ -554,7 +554,7 @@ subroutine send_recv_buffers_fluid
      sizemsg_fluid = sizemsgsend_fluid(imsg)
      sizeb  = sizemsg_fluid
      ipdes  = listsend_fluid(imsg)
-     msgnum = mynum*nproc + ipdes
+     msgnum = ipdes
      call MPI_ISEND(buffs%ldata, sizeb, mpi_realkind, ipdes, msgnum, &
                    MPI_COMM_WORLD, send_request_fluid(imsg), ierror)
   end do
@@ -566,7 +566,7 @@ subroutine send_recv_buffers_fluid
      sizemsg_fluid = sizemsgrecv_fluid(imsg)
      sizeb = sizemsg_fluid
      ipsrc = listrecv_fluid(imsg)
-     msgnum1 = ipsrc*nproc + mynum
+     msgnum1 = mynum
      call MPI_IRECV(buffr%ldata, sizeb, mpi_realkind, ipsrc, msgnum1, &
                    MPI_COMM_WORLD, recv_request_fluid(imsg), ierror)
   end do
@@ -591,7 +591,6 @@ subroutine extract_from_buffer_fluid(f)
 #ifndef serial
   real(kind=realkind), intent(inout) :: f(0:,0:,:)
   integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt
-  integer               :: msgnum, msgnum1
   integer               :: sizemsg_fluid
   integer               :: ierror
   integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_fluid)
