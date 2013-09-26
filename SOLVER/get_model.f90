@@ -85,6 +85,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   use lateral_heterogeneities
   use data_source, ONLY : rot_src
   use data_mesh, only: npol, nelem, nel_solid, ielsolid
+  use nc_routines, only: nc_dump_elastic_parameters
 
   real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: rho
   real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: lambda, mu
@@ -265,9 +266,20 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                              fa_ani_phi, Q_mu, Q_kappa)
       else
          call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                             fa_ani_phi)
+                                 fa_ani_phi)
       endif
   end if
+
+  if (use_netcdf) then
+      if (anel_true) then
+          call nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                                          fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
+      else
+          call nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                                          fa_ani_theta, fa_ani_phi)
+      endif
+  end if
+
 
   ! Some tests....
   if (do_mesh_tests) then

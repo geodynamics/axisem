@@ -50,6 +50,8 @@ module nc_routines
     !> Buffer variable for everything dumped in nc_dump_field_1d
     real(sp), allocatable   :: oneddumpvar(:,:,:)
     real(sp), allocatable   :: scoord1d(:), zcoord1d(:)
+    real(sp), allocatable   :: rho1d(:), mu1d(:), lambda1d(:)
+    real(sp), allocatable   :: vp1d(:), vs1d(:)
     
     !> Number of steps before kernel specific stuff is dumped 
     integer             :: dumpstepsnap
@@ -115,7 +117,7 @@ module nc_routines
     public              :: nc_write_att_char, nc_write_att_real, nc_write_att_int
     public              :: nc_define_outputfile, nc_finish_prepare, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
-    public              :: nc_write_el_domains
+    public              :: nc_write_el_domains, nc_dump_elastic_parameters
     public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
     public              :: nc_make_snapfile, nc_dump_stf, nc_rec_checkpoint
 contains
@@ -530,8 +532,27 @@ subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 #endif
 end subroutine nc_dump_mesh_sol
 !-----------------------------------------------------------------------------------------
+subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                                      fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
+
+    use data_io, ONLY: ndumppts_el
+    use data_mesh, ONLY: nelem
+
+    real(kind=dp), dimension(:,:,:), intent(in)  :: rho, lambda, mu, xi_ani, &
+                                                    phi_ani, eta_ani, &
+                                                    fa_ani_theta, fa_ani_phi
+    real(kind=sp), dimension(:), intent(in), optional :: Q_mu, Q_kappa
 
 
+    rho1d     = real(pack(rho    ,.true.), kind=sp)
+    lambda1d  = real(pack(lambda ,.true.), kind=sp)
+    mu1d      = real(pack(mu     ,.true.), kind=sp)
+    vp1d      = sqrt( (lambda1d + 2.*mu1d ) / rho1d  )
+    vs1d      = sqrt( mu1d  / rho1d )
+
+    !if (present(Q_mu) .and. present(Q_kappa)) then
+
+end subroutine nc_dump_elastic_parameters
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
 
@@ -611,6 +632,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_recnam_varid, nc_surf_dimid
     integer                              :: nc_pt_dimid
     integer                              :: nc_mesh_s_varid, nc_mesh_z_varid   
+    integer                              :: nc_mesh_vs_varid, nc_mesh_vp_varid   
+    integer                              :: nc_mesh_mu_varid, nc_mesh_rho_varid   
+    integer                              :: nc_mesh_lambda_varid
     integer                              :: nc_disc_dimid, nc_disc_varid
 
     if ((mynum == 0) .and. (verbose > 1)) then
@@ -821,6 +845,31 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       xtype  = NF90_FLOAT, &
                                       dimids = nc_pt_dimid,&
                                       varid  = nc_mesh_z_varid) )
+            call check( nf90_def_var( ncid   = ncid_meshout,  &
+                                      name   ='mesh_vp', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_vp_varid) )
+            call check( nf90_def_var( ncid   = ncid_meshout, &
+                                      name   = 'mesh_vs', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_vs_varid) )
+            call check( nf90_def_var( ncid   = ncid_meshout,  &
+                                      name   ='mesh_rho', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_rho_varid) )
+            call check( nf90_def_var( ncid   = ncid_meshout, &
+                                      name   = 'mesh_lambda', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_lambda_varid) )
+            call check( nf90_def_var( ncid   = ncid_meshout, &
+                                      name   = 'mesh_mu', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_mu_varid) )
 
             call check( nf90_def_var( ncid   = ncid_meshout, &
                                       name   = 'model_domain', &
@@ -1039,6 +1088,9 @@ subroutine nc_finish_prepare
     use data_mesh, ONLY  : maxind, surfcoord
     integer             :: status, ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
+    integer             :: nc_mesh_vs_varid, nc_mesh_vp_varid   
+    integer             :: nc_mesh_mu_varid, nc_mesh_rho_varid   
+    integer             :: nc_mesh_lambda_varid
     
     if (mynum == 0) then
         call check(nf90_close(ncid_out))
@@ -1090,14 +1142,53 @@ subroutine nc_finish_prepare
                 call check( nf90_inq_varid( ncid_surfout, "disp_src", &
                                         nc_surfelem_disp_src_varid ) )
             
+                ! S-Coordinate
                 call check( nf90_inq_varid( ncid_meshout, "mesh_S", nc_mesh_s_varid ) )
                 call check( nf90_put_var(ncid_meshout, varid = nc_mesh_s_varid, &
                                          values = scoord1d, &
                                          start  = (/mynum*npoints+1/), &
                                          count  = (/npoints/) ))
+                
+                ! Z-Coordinate
                 call check( nf90_inq_varid( ncid_meshout, "mesh_Z", nc_mesh_z_varid ) )
                 call check( nf90_put_var(ncid_meshout, varid = nc_mesh_z_varid, &
                                          values = zcoord1d, &
+                                         start  = (/mynum*npoints+1/), &
+                                         count  = (/npoints/) ))
+
+                ! Vp
+                call check( nf90_inq_varid( ncid_meshout, "mesh_vp", nc_mesh_vp_varid ) )
+                call check( nf90_put_var(ncid_meshout, varid = nc_mesh_vp_varid, &
+                                         values = vp1d, &
+                                         start  = (/mynum*npoints+1/), &
+                                         count  = (/npoints/) ))
+
+                ! Vs
+                call check( nf90_inq_varid( ncid_meshout, "mesh_vs", nc_mesh_vs_varid ) )
+                call check( nf90_put_var(ncid_meshout, varid = nc_mesh_vs_varid, &
+                                         values = vs1d, &
+                                         start  = (/mynum*npoints+1/), &
+                                         count  = (/npoints/) ))
+
+                ! Rho                     
+                call check( nf90_inq_varid( ncid_meshout, "mesh_rho", nc_mesh_rho_varid ) )
+                call check( nf90_put_var(ncid_meshout, varid = nc_mesh_rho_varid, &
+                                         values = rho1d, &
+                                         start  = (/mynum*npoints+1/), &
+                                         count  = (/npoints/) ))
+
+                ! Lambda
+                call check( nf90_inq_varid( ncid_meshout, "mesh_lambda", &
+                                           nc_mesh_lambda_varid ) )
+                call check( nf90_put_var(ncid_meshout, varid = nc_mesh_lambda_varid, &
+                                         values = lambda1d, &
+                                         start  = (/mynum*npoints+1/), &
+                                         count  = (/npoints/) ))
+
+                ! Mu
+                call check( nf90_inq_varid( ncid_meshout, "mesh_mu", nc_mesh_mu_varid ) )
+                call check( nf90_put_var(ncid_meshout, varid = nc_mesh_mu_varid, &
+                                         values = mu1d, &
                                          start  = (/mynum*npoints+1/), &
                                          count  = (/npoints/) ))
 
