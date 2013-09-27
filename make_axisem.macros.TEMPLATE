@@ -47,7 +47,7 @@ LDFLAGS = -O3 #-march=native -fopenmp
 # Intel Compiler suite (fast)
 #CC      = mpiicc
 #FC      = mpiifort
-#FFLAGS  = -=vec-report:0 -shared-intel  -heap-arrays 10 -O3 -xHOST
+#FFLAGS  = -vec-report:0 -shared-intel  -heap-arrays 10 -O3 -xHOST
 #CFLAGS  = -O3 -xHost
 #LDFLAGS = -O3 -xHost 
 
