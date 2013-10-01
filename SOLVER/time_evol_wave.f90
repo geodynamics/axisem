@@ -226,8 +226,6 @@ subroutine sf_time_loop_newmark
   use clocks_mod
   use data_matr,            only: inv_mass_rho, inv_mass_fluid
   use attenuation,          only: time_step_memvars
-  !use attenuation,          only: time_step_memvars_4
-  !use attenuation,          only: time_step_memvars_cg4
   use attenuation,          only: n_sls_attenuation
   use attenuation,          only: att_coarse_grained
   use data_mesh

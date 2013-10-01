@@ -967,23 +967,27 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         if (verbose > 1) write(6,*) '...done'
 
         ! Write out STFs
+        if (verbose > 1) write(6,*) 'Writing stf into NetCDF file...'
         call check( nf90_put_var(ncid = ncid_recout, varid = nc_stf_iter_varid, &
                                  values = stf_dumpvar) )
         call check( nf90_put_var(ncid = ncid_recout, varid = nc_stf_seis_varid, &
                                  values = stf_seis_dumpvar) )
 
-        ! Write out strain dump times
         if (dump_wavefields) then
+            ! Write out strain dump times
+            if (verbose > 1) write(6,*) 'Writing strain dump times into NetCDF file...'
             time_strain = dble((/ (i, i = 1, nstrain) /))
             time_strain = time_strain * t_0 / strain_samp
             call check( nf90_put_var(ncid   = ncid_out, &
                                      varid  = nc_snaptime_varid, &
                                      values = time_strain ) ) 
             ! Write out discontinuity depths
-            call check( nf90_put_var(ncid   = ncid_snapout, &
+            if (verbose > 1) write(6,*) 'Writing discontinuity depths into NetCDF file...'
+            call check( nf90_put_var(ncid   = ncid_meshout, &
                                      varid  = nc_disc_varid, &
                                      values = discont) )
                                      
+            if (verbose > 1) write(6,*) '...done'
         end if
     
     end if ! (mynum == 0)
