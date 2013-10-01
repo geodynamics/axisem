@@ -10,8 +10,10 @@ endif
 
 # tidy up:
 rm -rf OUTPUT
-rm -rf meshdb.dat0*
+rm -rf meshdb.dat*
 rm -rf mesh_params.h*
+# create emtpy output file
+touch OUTPUT
 
 if ( ! -d Diags ) then
   mkdir Diags
