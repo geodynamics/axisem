@@ -52,9 +52,9 @@ else if ( $1 == 'torque' ) then
 
 else if ( $1 == 'slurm' ) then 
     echo '#\!/bin/bash -l' > sbatch.sh
-    echo "#sbatch --ntasks=1" >> sbatch.sh
-    echo "#sbatch --nodes=1" >> sbatch.sh
-    echo "#sbatch --time=00:59:00" >> sbatch.sh
+    echo "#SBATCH --ntasks=1" >> sbatch.sh
+    echo "#SBATCH --nodes=1" >> sbatch.sh
+    echo "#SBATCH --time=00:59:00" >> sbatch.sh
     echo "export OMP_NUM_THREADS=4" >> sbatch.sh
     echo "aprun -n 1 -d 4 ./xmesh > OUTPUT" >> sbatch.sh
 
