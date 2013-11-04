@@ -57,4 +57,9 @@ LDFLAGS = -O3 #-march=native -fopenmp
 #FFLAGS  = -vec-report:0 -g -shared-intel  -mcmodel=medium -check all -traceback -heap-arrays 10
 #CFLAGS  = -g -traceback
 #LDFLAGS = -g -traceback
-	
+
+# Cray: byteswapio needed to produce vtk files with big-endian
+#FFLAGS = -h byteswapio -O3
+#CFLAGS = -O3
+#LDFLAGS = -h byteswapio -O3
+
