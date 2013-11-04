@@ -547,8 +547,17 @@ subroutine write_VTK_bin_scal_old(u2,mesh,rows,filename)
   enddo
   
   write(6,*)'computing vtk file ',trim(filename),' ...'
+
+#if defined(__GFORTRAN_)
   open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
            convert='big_endian', form='unformatted')
+#elif defined(__INTEL_COMPILER)
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
+           convert='big_endian', form='unformatted')
+#else
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
+           form='unformatted')
+#endif
   
   write(100) '# vtk DataFile Version 4.0'//char(10)
   write(100) 'mittico'//char(10)
@@ -613,8 +622,18 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   enddo
   
   cell_type=9
+
+#if defined(__GFORTRAN_)
   open(100,file=trim(filename)//'.vtk',access='stream',status='replace', &
            convert='big_endian', form='unformatted')
+#elif defined(__INTEL_COMPILER)
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace', &
+           convert='big_endian', form='unformatted')
+#else
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace', &
+           form='unformatted')
+#endif
+
   write(100) '# vtk DataFile Version 4.0'//char(10)
   write(100) 'mittico'//char(10)
   write(100) 'BINARY'//char(10)
