@@ -896,6 +896,7 @@ subroutine define_central_region
   ndivs = ns_ib/2
   
   if (only_suggest_ntheta) then 
+     ntheta_opt_buff = -1
      write(6,*)
      write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
      write(6,*) '   suggested number of theta slices for optimal mesh decomposition:'
