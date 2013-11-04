@@ -1548,7 +1548,7 @@ subroutine partition_sflobal_index
      if (dump_mesh_info_screen) then 
         do iproct = 0, nproc -1
            write(6,'("Proc", i3, " receives fluid stuff from",i3, &
-                    " procs and sends to", i3, " procs")') &
+                    &" procs and sends to", i3, " procs")') &
                  iproct, sizerecvp_fluid(iproct), sizesendp_fluid(iproct)
         end do
      end if
@@ -1595,11 +1595,11 @@ subroutine partition_sflobal_index
      if (dump_mesh_info_screen .and. nproc>1) then 
         do iproct = 0, nproc-1
            write(6,'("Proc", i2, " will receive ", i2, &
-                    " fluid messages from procs ", 20(i3,1x))') &
+                    &" fluid messages from procs ", 20(i3,1x))') &
                  iproct, sizerecvp_fluid(iproct), &
                  (listrecvp_fluid(ip,iproct), ip=1,sizerecvp_fluid(iproct))
            write(6,'("Proc", i2, " will send    ", i2, &
-                    " fluid messages to   procs ", 20(i3,1x))') &
+                    &" fluid messages to   procs ", 20(i3,1x))') &
                  iproct, sizesendp_fluid(iproct), &
                  (listsendp_fluid(ip,iproct), ip=1,sizesendp_fluid(iproct))
         end do
