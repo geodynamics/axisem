@@ -549,48 +549,48 @@ subroutine write_VTK_bin_scal_old(u2,mesh,rows,filename)
   write(6,*)'computing vtk file ',trim(filename),' ...'
 
 #if defined(__GFORTRAN_)
-  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
+  open(110,file=trim(filename)//'.vtk',access='stream',status='replace',&
            convert='big_endian', form='unformatted')
 #elif defined(__INTEL_COMPILER)
-  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
+  open(110,file=trim(filename)//'.vtk',access='stream',status='replace',&
            convert='big_endian', form='unformatted')
 #else
-  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',&
+  open(110,file=trim(filename)//'.vtk',access='stream',status='replace',&
            form='unformatted')
 #endif
   
-  write(100) '# vtk DataFile Version 4.0'//char(10)
-  write(100) 'mittico'//char(10)
-  write(100) 'BINARY'//char(10)
-  write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
+  write(110) '# vtk DataFile Version 4.0'//char(10)
+  write(110) 'mittico'//char(10)
+  write(110) 'BINARY'//char(10)
+  write(110) 'DATASET UNSTRUCTURED_GRID'//char(10)
   write(ss,fmt='(A6,I10,A5)') 'POINTS',rows,'float'
-  write(100) ss//char(10)
+  write(110) ss//char(10)
   
   !points
   do i=1,rows
-  write(100) mesh(i,1),mesh(i,2),0.0
+  write(110) mesh(i,1),mesh(i,2),0.0
   enddo
-  write(100) char(10)
+  write(110) char(10)
   
   !cell topology
   write(ss,fmt='(A5,2I10)') 'CELLS',rows,rows*2
-  write(100) char(10)//ss//char(10)
-  write(100) cell
-  write(100) char(10)
+  write(110) char(10)//ss//char(10)
+  write(110) cell
+  write(110) char(10)
   
   !cell type
   write(ss,fmt='(A10,2I10)') 'CELL_TYPES',rows
-  write(100) char(10)//ss//char(10)
-  write(100) cell_type
-  write(100) char(10)
+  write(110) char(10)//ss//char(10)
+  write(110) cell_type
+  write(110) char(10)
   
   !data
   write(ss,fmt='(A10,I10)') 'CELL_DATA',rows
-  write(100) char(10)//ss//char(10)
-  write(100) 'SCALARS '//trim(filename)//' float 1'//char(10)
-  write(100) 'LOOKUP_TABLE default'//char(10) !color table?
-  write(100) real(u1)
-  close(100)
+  write(110) char(10)//ss//char(10)
+  write(110) 'SCALARS '//trim(filename)//' float 1'//char(10)
+  write(110) 'LOOKUP_TABLE default'//char(10) !color table?
+  write(110) real(u1)
+  close(110)
   write(6,*)'...saved ',trim(filename)//'.vtk'
 end subroutine write_VTK_bin_scal_old
 !-----------------------------------------------------------------------------------------
@@ -624,46 +624,46 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   cell_type=9
 
 #if defined(__GFORTRAN_)
-  open(100,file=trim(filename)//'.vtk',access='stream',status='replace', &
+  open(110,file=trim(filename)//'.vtk',access='stream',status='replace', &
            convert='big_endian', form='unformatted')
 #elif defined(__INTEL_COMPILER)
-  open(100,file=trim(filename)//'.vtk',access='stream',status='replace', &
+  open(110,file=trim(filename)//'.vtk',access='stream',status='replace', &
            convert='big_endian', form='unformatted')
 #else
-  open(100,file=trim(filename)//'.vtk',access='stream',status='replace', &
+  open(110,file=trim(filename)//'.vtk',access='stream',status='replace', &
            form='unformatted')
 #endif
 
-  write(100) '# vtk DataFile Version 4.0'//char(10)
-  write(100) 'mittico'//char(10)
-  write(100) 'BINARY'//char(10)
-  write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
+  write(110) '# vtk DataFile Version 4.0'//char(10)
+  write(110) 'mittico'//char(10)
+  write(110) 'BINARY'//char(10)
+  write(110) 'DATASET UNSTRUCTURED_GRID'//char(10)
   write(ss,fmt='(A6,I10,A5)') 'POINTS',elems*4,'float'
-  write(100) ss//char(10)
+  write(110) ss//char(10)
   
   !points
-  write(100) (x(i),y(i),z(i),i=1,elems*4)
-  write(100) char(10)
+  write(110) (x(i),y(i),z(i),i=1,elems*4)
+  write(110) char(10)
   
   !cell topology
   write(ss,fmt='(A5,2I10)') 'CELLS',elems,elems*5
-  write(100) char(10)//ss//char(10)
-  write(100) cell
-  write(100) char(10)
+  write(110) char(10)//ss//char(10)
+  write(110) cell
+  write(110) char(10)
   
   !cell type
   write(ss,fmt='(A10,2I10)') 'CELL_TYPES',elems
-  write(100) char(10)//ss//char(10)
-  write(100) cell_type
-  write(100) char(10)
+  write(110) char(10)//ss//char(10)
+  write(110) cell_type
+  write(110) char(10)
   
   !data
   write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
-  write(100) char(10)//ss//char(10)
-  write(100) 'SCALARS '//trim(filename)//' float 1'//char(10)
-  write(100) 'LOOKUP_TABLE default'//char(10) !color table?
-  write(100) u1
-  close(100)
+  write(110) char(10)//ss//char(10)
+  write(110) 'SCALARS '//trim(filename)//' float 1'//char(10)
+  write(110) 'LOOKUP_TABLE default'//char(10) !color table?
+  write(110) u1
+  close(110)
   write(6,*)'...saved ',trim(filename)//'.vtk'
 end subroutine write_VTK_bin_scal
 !-----------------------------------------------------------------------------------------
