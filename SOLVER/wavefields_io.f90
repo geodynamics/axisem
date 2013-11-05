@@ -285,7 +285,8 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
 
    ! Write header into XDMF (text) file
    fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
-   open(100, file=trim(fname), access='append')
+   !open(100, file=trim(fname), access='append')
+   open(100, file=trim(fname), position='append')
 
    if (use_netcdf) then
        if (src_type(1)=='monopole') then

@@ -111,7 +111,6 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
   
   integer :: ielem
 
-  !dir$ loop count min(256)
   do ielem = 1, nel_solid
 
      us(:,:) = u(:,:,ielem,1)

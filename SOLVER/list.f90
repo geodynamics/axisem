@@ -172,7 +172,7 @@ function getFirst(this)
      getFirst => this%firstLink
      this%currentLink => this%firstLink
   else
-     error stop 'trying to go access data, but list is empty'
+     stop 'trying to go access data, but list is empty'
   endif
 end function getFirst
 !-----------------------------------------------------------------------------------------
@@ -186,7 +186,7 @@ function getLast(this)
      getLast => this%lastLink
      this%currentLink => this%lastLink
   else
-     error stop 'trying to go access data, but list is empty'
+     stop 'trying to go access data, but list is empty'
   endif
 end function getLast
 !-----------------------------------------------------------------------------------------
@@ -200,7 +200,7 @@ function getCurrent(this)
      if(associated(this%firstLink)) then
         this%currentLink => this%firstLink
      else
-        error stop 'trying to go access data, but list is empty'
+        stop 'trying to go access data, but list is empty'
      endif
   endif
   getCurrent => this%currentLink
@@ -226,7 +226,7 @@ function getNext(this)
      this%currentLink => this%currentLink%getNextLink()
      getNext => this%currentLink
   else
-     error stop 'trying to go beyond last element in list'
+     stop 'trying to go beyond last element in list'
   end if 
 end function getNext
 !-----------------------------------------------------------------------------------------
@@ -243,7 +243,7 @@ function getPrev(this)
      this%currentLink => this%currentLink%getPrevLink()
      getPrev => this%currentLink
   else
-     error stop 'trying to go beyond first element in list'
+     stop 'trying to go beyond first element in list'
   end if 
 end function getPrev
 !-----------------------------------------------------------------------------------------

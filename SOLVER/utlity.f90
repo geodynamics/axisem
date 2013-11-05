@@ -153,9 +153,10 @@ subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
-  real(kind=dp)    :: s,z,r,theta
-  integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)    :: nodes_crd(8,2)
+  real(kind=dp), intent(out)    :: s,z,r,theta
+  integer, intent(in)           :: ielem,ipol,jpol
+  integer                       :: ipt,inode
+  real(kind=dp)                 :: nodes_crd(8,2)
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -199,8 +200,9 @@ real(kind=dp)    function scoord(ipol,jpol,ielem)
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
-  integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)    :: nodes_crd(8,2)
+  integer, intent(in)  :: ielem, ipol, jpol
+  integer              :: ipt, inode
+  real(kind=dp)        :: nodes_crd(8,2)
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -234,8 +236,9 @@ real(kind=dp)    function zcoord(ipol,jpol,ielem)
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
-  integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)    :: nodes_crd(8,2)
+  integer, intent(in)  :: ielem, ipol, jpol
+  integer              :: ipt, inode
+  real(kind=dp)        :: nodes_crd(8,2)
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -269,8 +272,9 @@ real(kind=dp)    function rcoord(ipol,jpol,ielem)
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
-  integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)    :: nodes_crd(8,2),s,z
+  integer, intent(in)  :: ielem, ipol, jpol
+  integer              :: ipt, inode
+  real(kind=dp)        :: nodes_crd(8,2),s,z
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)
@@ -307,8 +311,9 @@ real(kind=dp)    function thetacoord(ipol,jpol,ielem)
   use data_spec,            ONLY: xi_k, eta
   use geom_transf,          ONLY: mapping
   
-  integer          :: ielem,ipol,jpol,ipt,inode
-  real(kind=dp)    :: nodes_crd(8,2),s,z
+  integer, intent(in)  :: ielem, ipol, jpol
+  integer              :: ipt, inode
+  real(kind=dp)        :: nodes_crd(8,2),s,z
 
   do inode = 1, 8
      ipt = lnods(ielem,inode)

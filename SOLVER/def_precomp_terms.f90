@@ -1169,6 +1169,7 @@ subroutine compute_mass_earth(rho)
   
   mass_glob_num=zero; mass_solid_num=zero; mass_fluid_num=zero
   mass_sic_num=zero
+  mass_layer = 0
 
   ! numerically computed masses
   call massmatrix(massmat,nelem,'total')
