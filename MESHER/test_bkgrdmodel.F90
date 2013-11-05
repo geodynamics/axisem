@@ -548,7 +548,7 @@ subroutine write_VTK_bin_scal_old(u2,mesh,rows,filename)
   
   write(6,*)'computing vtk file ',trim(filename),' ...'
 
-#if defined(__GFORTRAN_)
+#if defined(__GFORTRAN__)
   open(110,file=trim(filename)//'.vtk',access='stream',status='replace',&
            convert='big_endian', form='unformatted')
 #elif defined(__INTEL_COMPILER)
@@ -623,7 +623,7 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   
   cell_type=9
 
-#if defined(__GFORTRAN_)
+#if defined(__GFORTRAN__)
   open(110,file=trim(filename)//'.vtk',access='stream',status='replace', &
            convert='big_endian', form='unformatted')
 #elif defined(__INTEL_COMPILER)
