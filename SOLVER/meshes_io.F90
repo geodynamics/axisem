@@ -306,12 +306,9 @@ subroutine dump_xdmf_grid()
   else
       fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
 
-#if defined(__GFORTRAN__)
+#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
       open(100, file=trim(fname), access='stream', status='replace', &
-          form='unformatted', convert='little_endian')
-#elif defined(__INTEL_COMPILER)
-      open(100, file=trim(fname), access='stream', status='replace', &
-          form='unformatted', convert='little_endian')
+          form='unformatted', convert='big_endian')
 #else
       open(100, file=trim(fname), access='stream', status='replace', &
           form='unformatted')
@@ -362,12 +359,9 @@ subroutine dump_xdmf_grid()
   else
       fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
 
-#if defined(__GFORTRAN__)
+#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
       open(100, file=trim(fname), access='stream', status='replace', &
-          form='unformatted', convert='little_endian')
-#elif defined(__INTEL_COMPILER)
-      open(100, file=trim(fname), access='stream', status='replace', &
-          form='unformatted', convert='little_endian')
+          form='unformatted', convert='big_endian')
 #else
       open(100, file=trim(fname), access='stream', status='replace', &
           form='unformatted')
@@ -397,12 +391,12 @@ subroutine dump_xdmf_grid()
     '  <Grid GridType="Uniform">',/&
     '    <Time Value="0.000" />',/&
     '    <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
-    '      <DataItem Dimensions="',i10,' 4" NumberType="Int" Format="',A,'">',/&
+    '      <DataItem Dimensions="',i10,' 4" NumberType="Int" Format="',A,'" Endian="Big">',/&
     '        ',A,/&
     '      </DataItem>',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
-    '      <DataItem Dimensions="',i10,' 2" NumberType="Float" Format="',A,'">',/&
+    '      <DataItem Dimensions="',i10,' 2" NumberType="Float" Format="',A,'" Endian="Big">',/&
     '        ',A/&
     '      </DataItem>',/&
     '    </Geometry>',/&
@@ -428,10 +422,10 @@ subroutine dump_xdmf_grid()
     '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
     '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
     '<Domain>',/,/&
-    '<DataItem Name="grid" Dimensions="',i10,' 4" NumberType="Int" Format="',A,'">',/&
+    '<DataItem Name="grid" Dimensions="',i10,' 4" NumberType="Int" Format="',A,'" Endian="Big">',/&
     '  ', A,/&
     '</DataItem>',/&
-    '<DataItem Name="points" Dimensions="',i10,' 2" NumberType="Float" Format="',A,'">',/&
+    '<DataItem Name="points" Dimensions="',i10,' 2" NumberType="Float" Format="',A,'" Endian="Big">',/&
     '  ', A,/&
     '</DataItem>',/,/&
     '<Grid Name="CellsTime" GridType="Collection" CollectionType="Temporal">',/)

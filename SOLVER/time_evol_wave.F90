@@ -114,12 +114,9 @@ subroutine prepare_waves
      if (.not. use_netcdf) then
          fname = datapath(1:lfdata)//'/xdmf_snap_s_' //appmynum//'.dat'
 
-#if defined(__GFORTRAN__)
+#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
          open(13100, file=trim(fname), access='stream', status='unknown', &
-             form='unformatted', convert='little_endian', position='append')
-#elif defined(__INTEL_COMPILER)
-         open(13100, file=trim(fname), access='stream', status='unknown', &
-             form='unformatted', convert='little_endian', position='append')
+             form='unformatted', convert='big_endian', position='append')
 #else
          open(13100, file=trim(fname), access='stream', status='unknown', &
              form='unformatted', position='append')
@@ -127,12 +124,9 @@ subroutine prepare_waves
 
          if (.not. src_type(1)=='monopole') then
              fname = datapath(1:lfdata)//'/xdmf_snap_p_' //appmynum//'.dat'
-#if defined(__GFORTRAN__)
+#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
              open(13101, file=trim(fname), access='stream', status='unknown', &
-                 form='unformatted', convert='little_endian', position='append')
-#elif defined(__INTEL_COMPILER)
-             open(13101, file=trim(fname), access='stream', status='unknown', &
-                 form='unformatted', convert='little_endian', position='append')
+                 form='unformatted', convert='big_endian', position='append')
 #else
              open(13101, file=trim(fname), access='stream', status='unknown', &
                  form='unformatted', position='append')
@@ -140,36 +134,27 @@ subroutine prepare_waves
          endif
 
          fname = datapath(1:lfdata)//'/xdmf_snap_z_' //appmynum//'.dat'
-#if defined(__GFORTRAN__)
+#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
          open(13102, file=trim(fname), access='stream', status='unknown', &
-             form='unformatted', convert='little_endian', position='append')
-#elif defined(__INTEL_COMPILER)
-         open(13102, file=trim(fname), access='stream', status='unknown', &
-             form='unformatted', convert='little_endian', position='append')
+             form='unformatted', convert='big_endian', position='append')
 #else
          open(13102, file=trim(fname), access='stream', status='unknown', &
              form='unformatted', position='append')
 #endif
          
          fname = datapath(1:lfdata)//'/xdmf_snap_trace_' //appmynum//'.dat'
-#if defined(__GFORTRAN__)
+#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
          open(13103, file=trim(fname), access='stream', status='unknown', &
-             form='unformatted', convert='little_endian', position='append')
-#elif defined(__INTEL_COMPILER)
-         open(13103, file=trim(fname), access='stream', status='unknown', &
-             form='unformatted', convert='little_endian', position='append')
+             form='unformatted', convert='big_endian', position='append')
 #else
          open(13103, file=trim(fname), access='stream', status='unknown', &
              form='unformatted', position='append')
 #endif
          
          fname = datapath(1:lfdata)//'/xdmf_snap_curlip_' //appmynum//'.dat'
-#if defined(__GFORTRAN__)
+#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
          open(13104, file=trim(fname), access='stream', status='unknown', &
-             form='unformatted', convert='little_endian', position='append')
-#elif defined(__INTEL_COMPILER)
-         open(13104, file=trim(fname), access='stream', status='unknown', &
-             form='unformatted', convert='little_endian', position='append')
+             form='unformatted', convert='big_endian', position='append')
 #else
          open(13104, file=trim(fname), access='stream', status='unknown', &
              form='unformatted', position='append')

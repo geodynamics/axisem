@@ -368,7 +368,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -380,7 +380,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -402,7 +402,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -414,7 +414,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -437,7 +437,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -449,7 +449,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -461,7 +461,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -486,7 +486,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&
@@ -498,7 +498,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                             1          1 ',/&
     '                             1 ', i10,/&
     '                </DataItem>',/&
-    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary">',/&
+    '                <DataItem Dimensions="', i10, i10, '" NumberType="Float" Format="binary" Endian="Big">',/&
     '                   ', A,/&
     '                </DataItem>',/&
     '            </DataItem>',/&

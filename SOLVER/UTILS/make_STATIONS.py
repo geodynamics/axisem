@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import numpy as np
 
-nstat = 101
+nstat = 91
 
-lat_min = -50
-lat_max = -75
+lat_min = -90
+lat_max = 90
 
 lon = np.zeros(nstat)
 lat = np.linspace(lat_min, lat_max, nstat)
