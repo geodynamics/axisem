@@ -628,6 +628,13 @@ subroutine get_runinfo
 #undef ifortversion
 #endif
 
+#if defined(_CRAYFTN)
+   compiler = 'crayfortran'
+#define crayfortversion _CRAYFTN
+   write(compilerversion, *) crayfortversion
+#undef ifortversion
+#endif
+
 end subroutine
 !-----------------------------------------------------------------------------
 
