@@ -1258,44 +1258,44 @@ subroutine write_VTK_bin_scal(x,y,z,u1,elems,filename)
   cell_type = 9
 
 #if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
-   open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
+   open(110, file=trim(filename)//'.vtk', access='stream', status='replace', &
         form='unformatted', convert='big_endian')
 #else
-   open(100, file=trim(filename)//'.vtk', access='stream', status='replace', &
+   open(110, file=trim(filename)//'.vtk', access='stream', status='replace', &
         form='unformatted')
 #endif
 
-  write(100) '# vtk DataFile Version 4.0'//char(10)
-  write(100) 'mittico'//char(10)
-  write(100) 'BINARY'//char(10)
-  write(100) 'DATASET UNSTRUCTURED_GRID'//char(10)
+  write(110) '# vtk DataFile Version 4.0'//char(10)
+  write(110) 'mittico'//char(10)
+  write(110) 'BINARY'//char(10)
+  write(110) 'DATASET UNSTRUCTURED_GRID'//char(10)
   write(ss,fmt='(A6,I10,A5)') 'POINTS',elems*4,'float'
-  write(100) ss//char(10)
+  write(110) ss//char(10)
 
   !points
-  write(100) (x(i),y(i),z(i),i=1,elems*4)
-  write(100) char(10)
+  write(110) (x(i),y(i),z(i),i=1,elems*4)
+  write(110) char(10)
 
   !cell topology
   write(ss,fmt='(A5,2I10)') 'CELLS',elems,elems*5
-  write(100) char(10)//ss//char(10)
-  write(100) cell
-  write(100) char(10)
+  write(110) char(10)//ss//char(10)
+  write(110) cell
+  write(110) char(10)
 
   !cell type
   write(ss,fmt='(A10,2I10)') 'CELL_TYPES',elems
-  write(100) char(10)//ss//char(10)
-  write(100) cell_type
-  write(100) char(10)
+  write(110) char(10)//ss//char(10)
+  write(110) cell_type
+  write(110) char(10)
 
   !data
   write(ss,fmt='(A10,I10)') 'POINT_DATA',elems*4
-  write(100) char(10)//ss//char(10)
-  write(100) 'SCALARS data float 1'//char(10)
-  write(100) 'LOOKUP_TABLE default'//char(10) !color table?
-  write(100) u1
+  write(110) char(10)//ss//char(10)
+  write(110) 'SCALARS data float 1'//char(10)
+  write(110) 'LOOKUP_TABLE default'//char(10) !color table?
+  write(110) u1
 
-  close(100)
+  close(110)
   if (verbose > 1) write(6,*)'...saved ',trim(filename)//'.vtk'
 
 end subroutine write_VTK_bin_scal

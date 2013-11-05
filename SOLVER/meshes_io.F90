@@ -307,15 +307,15 @@ subroutine dump_xdmf_grid()
       fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
 
 #if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
-      open(100, file=trim(fname), access='stream', status='replace', &
+      open(110, file=trim(fname), access='stream', status='replace', &
           form='unformatted', convert='big_endian')
 #else
-      open(100, file=trim(fname), access='stream', status='replace', &
+      open(110, file=trim(fname), access='stream', status='replace', &
           form='unformatted')
 #endif
 
-      write(100) points
-      close(100)
+      write(110) points
+      close(110)
   end if
 
   deallocate(points)
@@ -360,27 +360,27 @@ subroutine dump_xdmf_grid()
       fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
 
 #if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
-      open(100, file=trim(fname), access='stream', status='replace', &
+      open(110, file=trim(fname), access='stream', status='replace', &
           form='unformatted', convert='big_endian')
 #else
-      open(100, file=trim(fname), access='stream', status='replace', &
+      open(110, file=trim(fname), access='stream', status='replace', &
           form='unformatted')
 #endif
 
-      write(100) grid
-      close(100)
+      write(110) grid
+      close(110)
   end if
   
   fname = datapath(1:lfdata) // '/xdmf_meshonly_' // appmynum // '.xdmf'
-  open(100, file=trim(fname))
+  open(110, file=trim(fname))
   if (use_netcdf) then
-      write(100, 732) nelem_plot, nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
+      write(110, 732) nelem_plot, nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
                       npoint_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/points'
   else
-      write(100, 732) nelem_plot, nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
+      write(110, 732) nelem_plot, nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
                       npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
   endif
-  close(100)
+  close(110)
 
 732 format(&    
     '<?xml version="1.0" ?>',/&
@@ -407,15 +407,15 @@ subroutine dump_xdmf_grid()
     
     
   fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
-  open(100, file=trim(fname))
+  open(110, file=trim(fname))
   if (use_netcdf) then
-     write(100, 733) nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
+     write(110, 733) nelem_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/grid', &
                      npoint_plot, 'hdf', 'netcdf_snap_'//appmynum//'.nc:/points'
   else
-     write(100, 733) nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
+     write(110, 733) nelem_plot, 'binary', 'xdmf_grid_' // appmynum // '.dat', &
                      npoint_plot, 'binary', 'xdmf_points_' // appmynum // '.dat'
   endif
-  close(100)
+  close(110)
 
 733 format(&    
     '<?xml version="1.0" ?>',/&
@@ -442,16 +442,16 @@ subroutine finish_xdmf_xml()
   character(len=120) :: fname
 
   fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
-  !open(100, file=trim(fname), access='append')
-  open(100, file=trim(fname), position='append')
-  write(100, 736) 
+  !open(110, file=trim(fname), access='append')
+  open(110, file=trim(fname), position='append')
+  write(110, 736) 
 
 736 format(&    
     '</Grid>',/&
     '</Domain>',/&
     '</Xdmf>')
   
-  close(100)
+  close(110)
   close(13100)
   if (.not. src_type(1)=='monopole') close(13101)
   close(13102)

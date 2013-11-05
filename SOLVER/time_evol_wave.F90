@@ -886,8 +886,8 @@ subroutine runtime_info(iter, disp, chi)
   if (lpr .and. mod(iter,time_stamp)==0) then 
      call define_io_appendix(appistamp, floor(real(iter)/real(time_stamp)))
      open(unit=100, file='timestamp'//appistamp//'.txt')
-     write(100,13) iter, t, real(iter) / real(niter) * 100.
-     close(100)
+     write(110,13) iter, t, real(iter) / real(niter) * 100.
+     close(110)
   endif
 
   ! Check on min/max. displacement/potential values globally

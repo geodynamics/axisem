@@ -285,12 +285,12 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
 
    ! Write header into XDMF (text) file
    fname = datapath(1:lfdata) // '/xdmf_xml_' // appmynum // '.xdmf'
-   !open(100, file=trim(fname), access='append')
-   open(100, file=trim(fname), position='append')
+   !open(110, file=trim(fname), access='append')
+   open(110, file=trim(fname), position='append')
 
    if (use_netcdf) then
        if (src_type(1)=='monopole') then
-           write(100, 736) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+           write(110, 736) appisnap, t, nelem_plot, "'", "'", "'", "'", &
                        npoint_plot, isnap-1, npoint_plot, &
                        nsnap, npoint_plot, &
                        'netcdf_snap_'//appmynum//'.nc', &
@@ -305,7 +305,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
                        nsnap, npoint_plot, &
                        'netcdf_snap_'//appmynum//'.nc'
        else
-           write(100, 737) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+           write(110, 737) appisnap, t, nelem_plot, "'", "'", "'", "'", &
                        npoint_plot, isnap-1, npoint_plot, &
                        nsnap, npoint_plot, &
                        'netcdf_snap_'//appmynum//'.nc', &
@@ -326,7 +326,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
 
    else
        if (src_type(1)=='monopole') then
-           write(100, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+           write(110, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
                        'xdmf_snap_s_'//appmynum//'.dat', &
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
@@ -337,7 +337,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
                        'xdmf_snap_curlip_'//appmynum//'.dat'
        else
-           write(100, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+           write(110, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
                        'xdmf_snap_s_'//appmynum//'.dat', &
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
@@ -658,7 +658,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '        </Attribute>',/&
     '    </Grid>',/)
     
-    close(100)
+    close(110)
 
 end subroutine glob_snapshot_xdmf
 !-----------------------------------------------------------------------------------------
