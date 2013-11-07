@@ -239,7 +239,7 @@ foreach isrc (${num_src_arr})
         
         cp $homedir/axisem .
         cp $homedir/mesh_params.h .
-        cp $homedir/mesh_params.dat .
+        #cp $homedir/mesh_params.dat .
         cp $homedir/runinfo .
         cp $homedir/$recfile . 
         cp $homedir/inparam_basic .
