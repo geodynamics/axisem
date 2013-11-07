@@ -30,6 +30,7 @@ module commpi
   use data_proc
   use data_mesh,        only : gvec_solid, gvec_fluid
   use data_io,          only : verbose
+  use linked_list
 
   ! in case you have problems with the mpi module, you might try to use the
   ! include below, in which case you will have to specify the location in the 
@@ -351,13 +352,11 @@ subroutine feed_buffer_solid(vec, nc)
 
   use data_comm
   use data_mesh, only: npol, gvec_solid, igloc_solid
-  use linked_list
   
   real(kind=realkind), intent(in) :: vec(0:,0:,:,:)
   integer, intent(in)             :: nc
   integer                         :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer                         :: sizemsg_solid
-  class(link), pointer            :: buffs
   
 #ifndef serial
   ! fill send buffer
@@ -393,7 +392,6 @@ subroutine send_recv_buffers_solid(nc)
   ! (consulation thereof to be avoided if at all possible...)
   
   use data_comm
-  use linked_list
   
   integer, intent(in) :: nc
 
@@ -403,7 +401,6 @@ subroutine send_recv_buffers_solid(nc)
   integer               :: msgnum, msgnum1
   integer               :: sizemsg_solid
   integer               :: ierror
-  class(link), pointer  :: buffs, buffr
   
   ! Send stuff around
   call buffs_all_solid%resetcurrent()
@@ -440,13 +437,11 @@ subroutine extract_from_buffer_solid(vec,nc)
   use data_time,        only: idmpiws, iclockmpiws
   use clocks_mod
   use data_comm            
-  use linked_list
   
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
   integer, intent(in)   :: nc
   integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer               :: sizemsg_solid
-  class(link), pointer  :: buffr
   integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_solid)
   integer               :: send_status(MPI_STATUS_SIZE, sizesend_solid)
   integer               :: ierror
@@ -495,13 +490,11 @@ subroutine feed_buffer_fluid(f)
 
   use data_mesh, only: npol, gvec_fluid, igloc_fluid
   use data_comm
-  use linked_list
   
 #ifndef serial
   real(kind=realkind), intent(in) :: f(0:,0:,:)
   integer                         :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer                         :: sizemsg_fluid
-  class(link), pointer            :: buffs, buffr
   
   ! Prepare arrays to be sent
   gvec_fluid = 0
@@ -536,7 +529,6 @@ subroutine send_recv_buffers_fluid
   ! (consulation thereof to be avoided if at all possible...)
 
   use data_comm
-  use linked_list
   
 #ifndef serial
   integer               :: imsg, ipg, ip, sizeb, ipdes, ipsrc
@@ -545,7 +537,6 @@ subroutine send_recv_buffers_fluid
   integer               :: ierror
   integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_fluid)
   integer               :: send_status(MPI_STATUS_SIZE, sizesend_fluid)
-  class(link), pointer  :: buffs, buffr
   
   ! Send stuff around
   call buffs_all_fluid%resetcurrent()
@@ -586,7 +577,6 @@ subroutine extract_from_buffer_fluid(f)
   use data_time, only: idmpiwf, iclockmpiwf
   use clocks_mod
   use data_comm
-  use linked_list
   
 #ifndef serial
   real(kind=realkind), intent(inout) :: f(0:,0:,:)
@@ -595,7 +585,6 @@ subroutine extract_from_buffer_fluid(f)
   integer               :: ierror
   integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_fluid)
   integer               :: send_status(MPI_STATUS_SIZE, sizesend_fluid)
-  class(link), pointer  :: buffs, buffr
   
   ! wait until all receiving communication is done
   iclockmpiwf = tick()

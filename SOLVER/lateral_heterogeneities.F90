@@ -2026,12 +2026,12 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename, varname)
   
    !if (lpr) print *, 'computing vtk file ', trim(filename),' ...'
 
-#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
-   open(110, file=trim(filename)//'.vtk', access='stream', status='replace', &
-        form='unformatted', convert='big_endian')
-#else
+#if defined(_CRAYFTN)
    open(110, file=trim(filename)//'.vtk', access='stream', status='replace', &
         form='unformatted')
+#else
+   open(110, file=trim(filename)//'.vtk', access='stream', status='replace', &
+        form='unformatted', convert='big_endian')
 #endif
   
    write(110) '# vtk DataFile Version 4.0'//char(10)

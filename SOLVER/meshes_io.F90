@@ -306,12 +306,12 @@ subroutine dump_xdmf_grid()
   else
       fname = datapath(1:lfdata) // '/xdmf_points_' // appmynum // '.dat'
 
-#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
-      open(110, file=trim(fname), access='stream', status='replace', &
-          form='unformatted', convert='big_endian')
-#else
+#if defined(_CRAYFTN)
       open(110, file=trim(fname), access='stream', status='replace', &
           form='unformatted')
+#else
+      open(110, file=trim(fname), access='stream', status='replace', &
+          form='unformatted', convert='big_endian')
 #endif
 
       write(110) points
@@ -359,12 +359,12 @@ subroutine dump_xdmf_grid()
   else
       fname = datapath(1:lfdata) // '/xdmf_grid_' // appmynum // '.dat'
 
-#if (defined(__GFORTRAN__) || defined(__INTEL_COMPILER))
-      open(110, file=trim(fname), access='stream', status='replace', &
-          form='unformatted', convert='big_endian')
-#else
+#if defined(_CRAYFTN)
       open(110, file=trim(fname), access='stream', status='replace', &
           form='unformatted')
+#else
+      open(110, file=trim(fname), access='stream', status='replace', &
+          form='unformatted', convert='big_endian')
 #endif
 
       write(110) grid

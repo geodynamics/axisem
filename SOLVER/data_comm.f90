@@ -45,6 +45,8 @@ module data_comm
   real(kind=realkind), allocatable     :: buffs_solid(:,:), buffr_solid(:,:)
   type(list)                           :: buffs_all_solid, buffr_all_solid
 
+  class(link), pointer                 :: buffs, buffr
+
   integer                              :: sizerecv_solid, sizesend_solid
   integer, dimension(:),   allocatable :: listrecv_solid, sizemsgrecv_solid
   integer, dimension(:),   allocatable :: listsend_solid, sizemsgsend_solid
