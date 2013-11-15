@@ -766,7 +766,8 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
   !else if (src_file_type=='sourceparams') then
   case('sourceparams')
-     open(unit=iinparam_source, file='inparam_source', status='old', action='read',  iostat=ioerr)
+     iinparam_source = 1132
+     open(unit=iinparam_source, file='inparam_source', status='old', action='read', iostat=ioerr)
      if (ioerr /= 0) stop 'Check input file ''inparam_source''! Is it still there?' 
  
      do
@@ -1039,8 +1040,8 @@ subroutine convolve_with_stf(t_0, dt, nt, src_type, stf, outdir, seis, seis_fil)
           else
              source = 0.
           endif
-       elseif (stf == 'quheavi') then 
-          source = 0.5 * (1.0 + erf((tau_j - shift_fact1 * t_0) / t_0))
+       !elseif (stf == 'quheavi') then 
+       !   source = 0.5 * (1.0 + erf((tau_j - shift_fact1 * t_0) / t_0))
        elseif (stf == 'gauss_1') then 
           source = -2. * (decay / t_0)**2 * (tau_j - shift_fact1 * t_0) * &
                            exp(-( (decay / t_0 * (tau_j - shift_fact1 * t_0))**2) )
@@ -2161,9 +2162,16 @@ subroutine write_VTK_bin_scal(x,y,z,u1,rows,nelem_disk,filename1)
   
    write(6,*)'computing VTK bin file ',trim(filename1)//'.vtk  ...'
   
-  ! 1 IS WRONG FOR OUTDIR !!!!! 
+#if defined(__GFORTRAN__)
   open(100,file=trim(filename1)//'.vtk',access='stream',&
                           status='replace',convert='big_endian')
+#elif defined(__INTEL_COMPILER)
+  open(100,file=trim(filename1)//'.vtk',access='stream',&
+                          status='replace',convert='big_endian')
+#else
+  open(100,file=trim(filename1)//'.vtk',access='stream',&
+                          status='replace')
+#endif
   
   write(100) '# vtk DataFile Version 3.0'//char(10)
   write(100) 'Cell Fractions'//char(10)
@@ -2231,7 +2239,14 @@ subroutine write_VTK_bin_scal_topology(x,y,z,u1,elems,filename)
   !enddo
   cell_type=9
   ! write(6,*)'computing vtk file ',trim(filename),' ...'
+#if defined(__GFORTRAN__)
   open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+#elif defined(__INTEL_COMPILER)
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace',convert='big_endian')
+#else
+  open(100,file=trim(filename)//'.vtk',access='stream',status='replace')
+#endif
+
   write(100) '# vtk DataFile Version 4.0'//char(10)
   write(100) 'mittico'//char(10)
   write(100) 'BINARY'//char(10)
