@@ -492,7 +492,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     real(kind=dp), allocatable   :: fa_theta2(:), fa_phi2(:)
     real(kind=dp), allocatable   :: rho2(:), vp2(:), vs2(:)
 
-    type(kdtree2), pointer          :: tree
+    type(kdtree2), pointer       :: tree
     
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 

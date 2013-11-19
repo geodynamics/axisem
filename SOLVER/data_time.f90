@@ -58,7 +58,7 @@ public
   integer             :: seis_it            !< seismogram sampling rate in time steps
   real(kind=dp)       :: snap_dt            !< time interval between snaps in seconds
   integer             :: snap_it            !< equivalent as snap_dt in time steps
-  integer             :: strain_it          !< strain dump interval in time steps
+  integer             :: strain_it          !< strain/kernel dump interval in time steps
   integer             :: check_it           !< Checkpointing of seismograms in NetCDF output
   integer             :: nstages            !< number of substages in symplectic schemes
   real(kind=realkind) :: decay, shift_fact

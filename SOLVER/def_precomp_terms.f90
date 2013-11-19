@@ -2847,16 +2847,17 @@ subroutine def_solid_fluid_boundary_terms
      stop
   endif
   
-  if (verbose > 1) then
-     write(69,*)
-     write(69,*)'saving boundary matrix with solid radius/colatitude into ',&
-                 'boundary_term_sol_'//appmynum//'.dat'
-     write(69,*)'saving boundary matrix with fluid radius/colatitude into ',&
-                 'boundary_term_flu_'//appmynum//'.dat'
-     write(69,*)
-  endif
-  
   if (diagfiles) then
+  
+      if (verbose > 1) then
+         write(69,*)
+         write(69,*)'saving boundary matrix with solid radius/colatitude into ',&
+                     'boundary_term_sol_'//appmynum//'.dat'
+         write(69,*)'saving boundary matrix with fluid radius/colatitude into ',&
+                     'boundary_term_flu_'//appmynum//'.dat'
+         write(69,*)
+      endif
+  
       ! output boundary precomputable matrix with radius [k]m and colatitude [deg]
       open(unit=500+mynum,file=infopath(1:lfinfo)//'/boundary_term_sol'&
                                //appmynum//'.dat')
