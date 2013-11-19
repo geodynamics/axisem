@@ -25,8 +25,6 @@
 module parameters
 
     use global_parameters
-    !use data_mesh 
-    !use data_mesh_preloop 
     use data_proc
     use data_time 
     use data_source
@@ -930,14 +928,15 @@ subroutine compute_numerical_parameters
   if (dump_wavefields) then 
      ! define coarse time step for strain wavefield dumps
      if (discrete_dirac) strain_samp = ceiling(period_vs_discrete_halfwidth*sampling_per_a)
-     strain_it = floor(period/strain_samp / deltat)
-     deltat_coarse=max(deltat_coarse,deltat*strain_it)
-     strain_samp = period/deltat_coarse
+     strain_it     = floor(period / strain_samp / deltat)
+     deltat_coarse = max(deltat_coarse, deltat * strain_it)
+     strain_samp   = period / deltat_coarse
+     strain_it     = floor(t_0 / strain_samp / deltat)
+     deltat_coarse = deltat * strain_it
+     !@TODO: This is a mess, but this way it is at least consistent between output and the actual value
      if (lpr) then
-       write(6,*)'   dumping wavefields at sampling rate and deltat:',strain_samp,deltat_coarse
+       write(6,*)'   dumping wavefields at sampling rate and deltat:', strain_samp, deltat_coarse
      end if
-     strain_it=floor(t_0/real(strain_samp)/deltat)
-     deltat_coarse=deltat*strain_it
   else
      strain_it=seis_it
   endif
@@ -1295,7 +1294,7 @@ subroutine write_parameters
         write(6,19)'     Dump wavefields   :',dump_wavefields
         if (dump_wavefields) then 
             write(6,12)'     Dumping type      :',dump_type
-            write(6,11)'     dump interval [s] :',period/real(strain_samp)
+            write(6,11)'     dump interval [s] :',deltat_coarse !period/real(strain_samp)
             write(6,10)'     # wavefield dumps :',strain_it
         endif
         write(6,19)'     Need fluid displ. :',need_fluid_displ
@@ -1330,7 +1329,7 @@ subroutine write_parameters
         write(55,21)real(deltat)*real(seis_it),'seismogram sampling [s]'
         if (dump_wavefields) then
             write(55,22) nstrain,'number of strain dumps'
-            write(55,21) real(period)/real(strain_samp),'strain dump sampling rate [s]'
+            write(55,21) deltat_coarse, 'strain dump sampling rate [s]'
         else
             write(55,22)0,'number of strain dumps'       
             write(55,21)0.,'strain dump sampling rate [s]' 
@@ -1397,10 +1396,10 @@ subroutine write_parameters
         call nc_write_att_real( real(deltat)*real(seis_it), 'seismogram sampling in sec')
         if (dump_wavefields) then
            call nc_write_att_int(nstrain,              'number of strain dumps')
-           call nc_write_att_real(real(period)/real(strain_samp), 'strain dump sampling rate in sec')
+           call nc_write_att_dble(deltat_coarse,       'strain dump sampling rate in sec')
         else
            call nc_write_att_int(0,                    'number of strain dumps')       
-           call nc_write_att_real(0.,                  'strain dump sampling rate in sec' )
+           call nc_write_att_dble(0.d0,                'strain dump sampling rate in sec' )
         endif
         if (dump_vtk .or. dump_snaps_solflu) then
            call nc_write_att_int(nsnap,                'number of snapshot dumps')
