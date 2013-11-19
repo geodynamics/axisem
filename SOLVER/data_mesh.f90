@@ -132,8 +132,10 @@ module data_mesh
   !--------------------------------------------------------------------------
 
   ! Receiver locations
-  integer                      :: maxind, num_rec, num_surf_el, num_rec_tot
-  integer, allocatable         :: surfelem(:), jsurfel(:), surfcoord(:)
+  integer                      :: maxind_glob, maxind, ind_first, ind_last
+  integer                      :: num_rec, num_rec_tot
+  integer, allocatable         :: surfelem(:), jsurfel(:)
+  real(kind=sp), allocatable   :: surfcoord(:)
   integer                      :: ielepi, ielantipode, ielequ
   integer, allocatable         :: recfile_el(:,:), loc2globrec(:)
   logical                      :: have_epi, have_equ, have_antipode

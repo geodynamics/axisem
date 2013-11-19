@@ -39,12 +39,19 @@ contains
 subroutine prepare_seismograms
 
   use utlity
-  use data_mesh
+  use data_mesh,   only : maxind, maxind_glob, ind_first, ind_last, &
+                          surfelem, jsurfel, surfcoord, surfelem,   &
+                          have_epi, have_equ, have_antipode,        &
+                          ielantipode, ielequ, ielepi,              &
+                          min_distance_dim, min_distance_nondim,    &
+                          north, ielsolid, nel_solid, npol, router
+
   use data_source, only : have_src
-  use commun, only : psum_int,barrier
-  character(len=4)             :: appielem
-  integer          :: j,iel,ielem,ind,epicount,equcount,anticount,iproc,maxind_glob
-  real(kind=dp)    :: s,z,r,theta
+  use commun,      only : psum_int, barrier, comm_elem_number
+  character(len=4)     :: appielem
+  integer              :: j, iel, ielem, ind, epicount, equcount, anticount
+  integer              :: iproc
+  real(kind=dp)        :: s, z, r, theta
 
   if (lpr) &
   write(6,*)'  locating surface elements and generic receivers...'
@@ -69,8 +76,8 @@ subroutine prepare_seismograms
      endif
   enddo
 
-  num_surf_el = ind
-  allocate(surfelem(num_surf_el))
+  maxind=ind
+  allocate(surfelem(maxind))
 
   if (diagfiles) open(1000+mynum,file=datapath(1:lfdata)//'/surfelem_'//appmynum//'.dat') 
   ind=0
@@ -138,7 +145,6 @@ subroutine prepare_seismograms
 
      endif
   enddo
-  maxind=ind
 
   if(diagfiles) close(1000+mynum)
 
@@ -203,7 +209,7 @@ subroutine prepare_seismograms
   do iel=0,nproc-1
      call barrier
      if (mynum==iel) then
-        if (verbose > 1) write(69,*)'  number of surface elements:',maxind
+        if (verbose > 1) write(69,*)'  number of surface elements:', maxind
         if (have_epi) write(6,12)procstrg,'epicenter at', &
                                 thetacoord(0,npol,ielsolid(ielepi))/pi*180.
         if (have_equ) write(6,12)procstrg,'equator at', &
@@ -215,8 +221,8 @@ subroutine prepare_seismograms
   enddo
 12 format('   ',a8,'has the ',a13,f9.3,' degrees.')
 
-  maxind_glob = psum_int(maxind)
 
+  call comm_elem_number(maxind, maxind_glob, ind_first, ind_last)
   if (lpr) write(6,*)'  global number of surface elements:',maxind_glob
 
   ! open files for displacement and velocity traces in each surface element
@@ -224,50 +230,50 @@ subroutine prepare_seismograms
   allocate(jsurfel(maxind)) ! for surface strain
   allocate(surfcoord(maxind)) ! theta of surface elements dumped for surface strain
 
-     do iproc=0,nproc-1
+  do iproc=0,nproc-1
+     call barrier
+     if (mynum==iproc) then 
         call barrier
-        if (mynum==iproc) then 
-           call barrier
-           if (diagfiles) then
-               open(33333,file=datapath(1:lfdata)// &
-                                '/surfelem_coords.dat',position='append')
-               open(33334,file=datapath(1:lfdata)// &
-                                '/surfelem_coords_jpol.dat',position='append')
-               if (mynum==0) write(33334,*)maxind_glob
-               if (mynum==0) write(33333,*)maxind_glob
-           end if
+        if (diagfiles) then
+            open(33333,file=datapath(1:lfdata)// &
+                             '/surfelem_coords.dat',position='append')
+            open(33334,file=datapath(1:lfdata)// &
+                             '/surfelem_coords_jpol.dat',position='append')
+            if (mynum==0) write(33334,*)maxind_glob
+            if (mynum==0) write(33333,*)maxind_glob
+        end if
 
-           do iel=1,maxind
-              if (thetacoord(npol/2,npol/2,ielsolid(surfelem(iel)))<=pi/2) then
-                 jsurfel(iel)=npol
-              else
-                 jsurfel(iel)=0
-              endif
+        do iel=1,maxind
+           if (thetacoord(npol/2,npol/2,ielsolid(surfelem(iel)))<=pi/2) then
+              jsurfel(iel)=npol
+           else
+              jsurfel(iel)=0
+           endif
 
-              surfcoord(iel) = 180. / pi * &
-                               thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
-              if (diagfiles) then
-                  write(33333,*) surfcoord(iel) 
-                  write(33334,11) 180./pi* &
-                       thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),&
-                       (rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
-              end if
-           enddo
+           surfcoord(iel) = 180. / pi * &
+                            thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
            if (diagfiles) then
-               close(33333)
-               close(33334)
+               write(33333,*) surfcoord(iel) 
+               write(33334,11) 180./pi* &
+                    thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),&
+                    (rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
            end if
-           call barrier
-        endif
+        enddo
+        if (diagfiles) then
+            close(33333)
+            close(33334)
+        end if
         call barrier
-     enddo
+     endif
+     call barrier
+  enddo
 
 11 format(6(1pe11.4))
 
   if (dump_wavefields) then
     if(use_netcdf)   then
-       print *, ' General wavefield dump with NetCDF is not yet implemented!'
-       stop
+       !print *, ' General wavefield dump with NetCDF is not yet implemented!'
+       !stop
     else 
 
        do iel=1,maxind
@@ -468,7 +474,8 @@ subroutine prepare_from_recfile_seis
   if (rot_src ) then 
      call rotate_receivers_recfile(num_rec_glob, recfile_readth, recfile_readph, receiver_name)
   else
-    ! @TODO Why only save the kml if the source is at the northpole?
+    ! Why only save the kml if the source is at the northpole?
+    ! The kml file is saved in rotate_receivers_recfile as well.
     if ((lpr).and.(.not.(rec_file_type=='database'))) then
       call save_google_earth_kml( real(srccolat * 180.0 / pi), real(srclon * 180.d0 / pi), &
                                   real(recfile_readth), real(recfile_readph), &

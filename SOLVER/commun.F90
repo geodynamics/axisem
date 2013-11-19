@@ -40,6 +40,7 @@ module commun
   public :: pinit, pend
   public :: pmin, pmax, pmax_int, psum, psum_int, psum_dble
   public :: barrier, pcheck
+  public :: comm_elem_number
   private
 
 contains
@@ -685,6 +686,37 @@ subroutine pcheck(test, errmsg)
   endif
 
 end subroutine pcheck
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine comm_elem_number(my_elems, glob_elems, my_first, my_last)
+!< Communicates the number of elements this processor has to the others and
+!! retrieves global number of local first and last element
+
+integer, intent(in)              :: my_elems
+integer, intent(out)             :: glob_elems, my_first, my_last
+integer                          :: all_elems(0:nproc-1), iproc
+
+  if (nproc>1) then
+#ifndef serial
+     my_first = 0
+     my_last  = 0
+     all_elems(mynum) = my_elems
+     do iproc = 0, nproc-1
+        call pbroadcast_int(all_elems(iproc), iproc)
+     end do
+     my_first = sum(all_elems(0:mynum-1))+1
+     my_last  = sum(all_elems(0:mynum))
+     glob_elems = sum(all_elems(:))
+     print *, 'Proc: ', mynum, ', first elem: ', my_first, ', last elem: ', my_last 
+#endif
+  else
+     my_first = 1
+     my_last  = my_elems
+     glob_elems = my_elems
+  end if
+
+end subroutine comm_elem_number
 !=============================================================================
 
 !====================
