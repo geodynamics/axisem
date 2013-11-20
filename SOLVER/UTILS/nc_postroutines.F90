@@ -106,7 +106,14 @@ subroutine nc_read_recnames(ncid, nrec, recname, theta, thetar, phi)
                            values  = thetar) )
   thetar = 90. - thetar
   theta = 90. - theta
-  
+
+#else
+  ! To stop Ifort complaining that intent(out)-variables are not set
+  phi     = 0.0
+  theta   = 0.0
+  thetar  = 0.0
+  recname = ''
+
 #endif
 end subroutine nc_read_recnames
 !-----------------------------------------------------------------------------------------
@@ -120,13 +127,16 @@ subroutine nc_read_seismograms(ncid, nt, nrec, nsim, seis_snglcomp)
   integer                        :: isim
 
 #ifdef unc
-
   do isim = 1, nsim
       call check( nf90_get_var( ncid%seis_grpid(isim), ncid%disp_varid(isim), &
                                 start=(/1, 1, 1/), &
                                 count = (/nt, 3, nrec/), &
                                 values = seis_snglcomp(:,:,:,isim)) )
   end do
+#else
+  ! To stop Ifort complaining that intent(out)-variables are not set
+  seis_snglcomp = 0.0
+
 #endif
 end subroutine nc_read_seismograms
 !-----------------------------------------------------------------------------------------
