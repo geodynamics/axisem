@@ -19,7 +19,9 @@
 //    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+#ifndef _CRAYC
 #include <xmmintrin.h>
+#endif
 
 // A Fortran callable function to activate flush to zero for denormal float handling
 // http://software.intel.com/en-us/articles/how-to-avoid-performance-penalties-for-gradual-underflow-behavior
@@ -30,6 +32,8 @@
 #endif
 
 void set_ftz(){
+#ifndef _CRAYC
   _MM_SET_FLUSH_ZERO_MODE (_MM_FLUSH_ZERO_ON);
+#endif
 }
 
