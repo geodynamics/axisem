@@ -97,9 +97,10 @@ subroutine read_sourceparams
   close(iinparam_source)
 
   if (srccolat /= 0.d0 .or. srclon /= 0.d0 ) then
-     write(6,'(/,a,a,/,a,a)')&
-        procstrg, '  Source not along the axis!', &
-        procstrg,'  ...therefore applying rotations to source and receivers.'
+     if (lpr .and. verbose > 0) &
+        write(6,'(/,a,a,/,a,a)')&
+            procstrg, '  Source not along the axis!', &
+            procstrg,'  ...therefore applying rotations to source and receivers.'
      rot_src = .true.
 
      if (rec_file_type.eq.'database') then
@@ -1048,7 +1049,9 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
      call apply_axis_mask_threecomp(source_term, nel_solid, ax_el_solid, &
                                     naxel_solid)
   end select
-  write(6,*)'  ...masked the source'
+
+  if (lpr .and. verbose > 0) &
+     write(6,*)'  ...masked the source'
 
   if (have_src) then
      ! write out the source element only
