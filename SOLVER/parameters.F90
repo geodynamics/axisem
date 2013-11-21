@@ -718,6 +718,7 @@ subroutine check_basic_parameters
               write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
               write(6,7)'444   Running the solver time loop with SINGLE PRECISION   444'
               write(6,7)'44444444444444444444444444444444444444444444444444444444444444'
+              write(6,7)
           endif
       elseif (realkind==8) then       
           if (lpr) then
@@ -725,10 +726,10 @@ subroutine check_basic_parameters
               write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
               write(6,7)'888   Running the solver time loop with DOUBLE PRECISION   888'
               write(6,7)'88888888888888888888888888888888888888888888888888888888888888'
+              write(6,7)
           endif
       endif
   endif
-  write(6,*)
 
 end subroutine check_basic_parameters
 !=============================================================================
