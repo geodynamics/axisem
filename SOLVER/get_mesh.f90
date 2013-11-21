@@ -215,8 +215,8 @@ subroutine read_db
   do i=0, nproc-1
      call barrier
      if (mynum==i) then 
-        write(6,11) procstrg, naxel, naxel_solid, naxel_fluid
         if (verbose > 1) then
+           write(6,11) procstrg, naxel, naxel_solid, naxel_fluid
            write(69,*) '      number of total axial elements:', naxel
            write(69,*) '      number of solid axial elements:', naxel_solid
            write(69,*) '      number of fluid axial elements:', naxel_fluid
