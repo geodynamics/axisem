@@ -54,6 +54,7 @@ subroutine prepare_waves
   use clocks_mod
   use meshes_io
   use attenuation, only: dump_memory_vars
+  use commun
     
   character(len=120) :: fname
 
@@ -201,7 +202,8 @@ subroutine prepare_waves
   ! and run some tests on consistency of mesh/spacing/element types/messaging
   call write_parameters
 
-  write(6,*) procstrg, 'done preparing waves.'
+  call barrier
+  if (lpr) write(6,*) 'done preparing waves.'
 
 end subroutine prepare_waves
 !=============================================================================
