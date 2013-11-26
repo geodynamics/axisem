@@ -28,8 +28,8 @@ program field_transformation
 
     implicit none
 
-    include 'fftw3.f03'
 #ifdef unc
+    include 'fftw3.f03'
     include 'netcdf.inc'
 #endif
 

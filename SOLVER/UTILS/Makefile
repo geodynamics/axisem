@@ -4,7 +4,7 @@ ifeq ($(strip $(USE_NETCDF)),true)
    LIBS = -L $(strip $(NETCDF_PATH))/lib -lnetcdff -Wl,-rpath,$(strip $(NETCDF_PATH))/lib -L/usr/lib -lfftw3 -lfftw3f
    INCLUDE = -I $(strip $(NETCDF_PATH))/include -I/usr/include
 else
-   LIBS =  -L/usr/lib -lfftw3 -lfftw3f
+   LIBS =  -L/usr/lib 
    INCLUDE = -I/usr/include
 endif
 
