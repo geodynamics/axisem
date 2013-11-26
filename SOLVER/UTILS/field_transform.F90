@@ -21,14 +21,19 @@
 
 program field_transformation
 
+#ifdef unc
     use netcdf
+#endif
     use, intrinsic :: iso_c_binding
 
     implicit none
 
     include 'fftw3.f03'
+#ifdef unc
     include 'netcdf.inc'
+#endif
 
+#ifdef unc
     integer                         :: nvar, ivar
     integer                         :: nsnap, ntimes, ngll, ngllread
     integer                         :: nmode
@@ -397,6 +402,11 @@ program field_transformation
     print *, ''
     print *, 'MB I: ', space_i, ' MB, av. speed: ', space_i / time_i, 'MB/s'
     print *, 'MB O: ', space_o, ' MB, av. speed: ', space_o / time_o, 'MB/s'
+
+#else
+
+    stop 'This program can only be run with NetCDF enabled'
+#endif
     
 contains
 !-----------------------------------------------------------------------------------------
@@ -406,12 +416,14 @@ subroutine check(status)
     implicit none
     integer, intent ( in) :: status !< Error code
     integer, allocatable  :: test(:)
+#ifdef unc
     if(status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
         test = test - 100
         stop 0
 
     end if
+#endif
 end subroutine
 !-----------------------------------------------------------------------------------------
 
