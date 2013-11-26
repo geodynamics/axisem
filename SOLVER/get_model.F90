@@ -117,7 +117,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   eta_ani(0:npol,0:npol,1:nelem) = -1.E30
 
   ! check for each element which domain it belongs to
-  open(unit=65,file=infopath(1:lfinfo)//'/elems_bkgrdmodel_domain.dat'&
+  if (diagfiles) open(unit=65,file=infopath(1:lfinfo)//'/elems_bkgrdmodel_domain.dat'&
                                        //appmynum)
   
   if (do_mesh_tests) open(60000+mynum,file='Data/model_r_th_rho_vp_vs_'&
@@ -130,13 +130,13 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           if (r1<discont(iidom) .and. r1> discont(iidom+1)) then
               ieldom(iel) = iidom
               foundit = .true.
-              write(65,10)iel,r1,iidom,discont(iidom),discont(iidom+1)
+              if (diagfiles) write(65,10)iel,r1,iidom,discont(iidom),discont(iidom+1)
           endif
       enddo
       if (r1 < discont(ndisc)) then
           ieldom(iel) = ndisc
           foundit = .true.
-          write(65,10)iel,r1,ndisc,discont(ndisc)
+          if (diagfiles) write(65,10)iel,r1,ndisc,discont(ndisc)
       endif
       if (.not. foundit) then 
           write(6,*)'Processor', mynum, ' reports problem:'
@@ -147,7 +147,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           stop
       endif
   enddo
-  close(65)
+  if (diagfiles) close(65)
 
 10 format(i9,1pe11.3,i3,2(1pe11.3))
 11 format(e11.3)
