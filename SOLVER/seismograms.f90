@@ -56,6 +56,8 @@ subroutine prepare_seismograms
   if (lpr) &
   write(6,*)'  locating surface elements and generic receivers...'
 
+  call barrier()
+
   ielantipode=1; ielequ=1
   have_epi=.false.
   have_equ=.false.
@@ -92,7 +94,7 @@ subroutine prepare_seismograms
      if ( dabs(r-router)< min_distance_dim ) then
         ind=ind+1
         surfelem(ind)=iel
-        if(diagfiles) write(1000+mynum,*)ind,iel,r,theta*180./pi
+        if(diagfiles) write(1000+mynum,*) ind, iel, r, theta*180./pi
 
         ! find epicenter
         if (north(ielem)) then
@@ -101,6 +103,13 @@ subroutine prepare_seismograms
                 dabs(z-router) < smallval*router)  then
               ielepi = iel
               if (verbose > 1) then
+                 !write(6,*)'Proc ', mynum, ' found: '
+                 !write(6,*)'Epicenter element:',ielepi
+                 !write(6,*)'Epicenter radius [km], colat [deg]:', &
+                 !          r/1000.,theta/pi*180. 
+                 !write(6,*)''
+                 !call flush(6)
+                 write(69,*)'Proc ', mynum, ' found: '
                  write(69,*)'Epicenter element:',ielepi
                  write(69,*)'Epicenter radius [km], colat [deg]:', &
                             r/1000.,theta/pi*180. 
@@ -117,6 +126,13 @@ subroutine prepare_seismograms
           if ( dabs(theta-pi) < min_distance_nondim*pi) then 
              ielantipode=iel
              if (verbose > 1) then
+                !write(6,*)'Proc ', mynum, ' found: '
+                !write(6,*)'Antipodal element:',ielantipode
+                !write(6,*)'Antipode radius [km], colat [deg]:',&
+                !           r/1000.,theta/pi*180.
+                !write(6,*)''
+                ! call flush(6)
+                write(69,*)'Proc ', mynum, ' found: '
                 write(69,*)'Antipodal element:',ielantipode
                 write(69,*)'Antipode radius [km], colat [deg]:',&
                             r/1000.,theta/pi*180.
@@ -130,9 +146,17 @@ subroutine prepare_seismograms
         ! find equator (take northern element)
         if (north(ielem)) then
            call compute_coordinates(s,z,r,theta,ielem,npol,npol)
-           if ( dabs(z) < 1.e-8)  then 
+           if ( dabs(z) < smallval_sngl)  then 
               ielequ=iel
               if (verbose > 1) then
+                 !write(6,*)'Proc ', mynum, ' found: '
+                 !write(6,*)'Equatorial element:',ielequ
+                 !write(6,*)'Equatorial radius [km], colat [deg]:',&
+                 !           r/1000.,theta/pi*180.
+                 !write(6,*)''
+                 !call flush(6)
+
+                 write(69,*)'Proc ', mynum, ' found: '
                  write(69,*)'Equatorial element:',ielequ
                  write(69,*)'Equatorial radius [km], colat [deg]:',&
                              r/1000.,theta/pi*180.
@@ -146,7 +170,7 @@ subroutine prepare_seismograms
      endif
   enddo
 
-  if(diagfiles) close(1000+mynum)
+  if (diagfiles) close(1000+mynum)
 
   ! make sure only one processor has each location
   if (lpr) &
@@ -590,16 +614,13 @@ subroutine prepare_from_recfile_seis
 
   ! Output colatitudes globally (this is the file needed to plot seismograms)
   ! NOTE: recfile_th is in degrees!!!
-  !@TODO: The gnuplot scripts in postprocessing.csh still need it.
-  !if ((.not.use_netcdf).or.(diagfiles)) then
-     if (lpr) then
-        open(99997,file=datapath(1:lfdata)//'/receiver_pts.dat')
-        do i=1,num_rec_glob
-           write(99997,*)recfile_th_glob(i),recfile_readph(i),rec2proc(i)
-        enddo
-        close(99997)
-     end if
-  !endif
+  if (lpr) then
+     open(99997,file=datapath(1:lfdata)//'/receiver_pts.dat')
+     do i=1,num_rec_glob
+        write(99997,*)recfile_th_glob(i),recfile_readph(i),rec2proc(i)
+     enddo
+     close(99997)
+  end if
 
   ! Output colatitudes locally to infopath (this file is for info purposes!)
 
@@ -705,227 +726,6 @@ end subroutine prepare_from_recfile_seis
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-!> Read colatitudes [deg] from a file receivers.dat and locate closest grid 
-!! point for seismograms, output grid point locations in 
-!! receiver_pts.dat<PROCID>
-!! 
-!! This is the exact same routine as the above, but instead of finding 
-!! locations on the earth's surface rather locating them in the element 
-!! above the CMB, with the same colatitude.
-!! As for the surface, take "above" location, i.e. one element above the CMB
-!subroutine prepare_from_recfile_cmb
-!
-!  use utlity
-!  use data_mesh
-!  use commun
-!  
-!  integer                      :: i,iel,ipol,icmb,num_cmb_glob
-!  integer                      :: count_diff_loc,count_procs,ielglob
-!  real(kind=dp)                :: s,z,r,theta,cmbdist,mycmbdist
-!  real(kind=dp)                :: tmpcmbfile_th,tmpcmbfile_r,tmpcmbfile_el(3)
-!  real(kind=dp)   ,allocatable :: cmbfile_readth(:),cmbfile_th_glob(:)
-!  real(kind=dp)   ,allocatable :: cmbfile_r_glob(:),cmbfile_r_loc(:)
-!  real(kind=dp)   ,allocatable :: cmbfile_th_loc(:),cmbfile_el_loc(:,:)
-!  real(kind=dp)   ,allocatable :: cmbfile_th(:),cmbfile_r(:)
-!  integer,allocatable          :: cmb2proc(:),loc2globcmb_loc(:),loc2globcmb(:)
-!  character(len=4)             :: appielem
-!  real(kind=dp)                :: maxcmblocerr
-!
-!  icmb=0
-!  count_diff_loc=0
-!
-!  if (lpr) write(6,*)'  reading cmbrec colatitudes from receivers.dat...'
-!
-!  ! Read receiver location file:
-!  ! line1: number of receivers
-!  ! line2 --> line(number of receivers+1): colatitudes [deg]
-!  open(99999,file='receivers.dat',status='old',POSITION='REWIND')
-!    read(99999,*)num_cmb_glob
-!    allocate(cmbfile_readth(1:num_cmb_glob),cmbfile_th_glob(1:num_cmb_glob))
-!    allocate(cmbfile_th_loc(1:num_cmb_glob),cmbfile_el_loc(1:num_cmb_glob,3))
-!    allocate(cmbfile_r_glob(1:num_cmb_glob),cmbfile_r_loc(1:num_cmb_glob))
-!    allocate(loc2globcmb_loc(1:num_cmb_glob),cmb2proc(1:num_cmb_glob))
-!    do i=1,num_cmb_glob
-!       read(99999,*)cmbfile_readth(i)
-!    enddo
-!  close(99999)
-!
-!  cmbfile_th_glob(:) = zero
-!  cmbfile_r_glob(:) = zero
-!  cmb2proc(:) = 0
-!
-!  ! find closest grid points
-!  do i=1,num_cmb_glob
-!     cmbdist=10.d0*router
-!
-!     do iel=1,nel_bdry
-!
-!     ! Map from boundary to global indexing. Choice of the solid side is random...
-!     ielglob=ielsolid(bdry_solid_el(iel))
-!
-!        do ipol=0,npol
-!           if (north(ielglob)) then ! NORTH
-!              call compute_coordinates(s,z,r,theta,ielglob,ipol,npol)
-!              if (z < zero ) then
-!                 write(6,*)'PROBLEM! north but z<0: ', north(ielglob),z
-!                 write(6,*)'r,theta:',r/1000.,theta*180/pi
-!                 write(6,*)iel,bdry_solid_el(iel),ielglob
-!                 stop
-!              endif
-!
-!           else ! SOUTH
-!              call compute_coordinates(s,z,r,theta,ielglob,ipol,0)
-!              if (z > zero ) then
-!                 write(6,*)'PROBLEM! south but z>0: ',north(ielglob),z
-!                 write(6,*)'r,theta:',r/1000.,theta*180/pi
-!                 write(6,*)iel,bdry_solid_el(iel),ielglob
-!                 stop
-!              endif
-!
-!           endif
-!           
-!           ! Make sure that we're only dealing with the CMB, not ICB
-!           if (r>=3480000.) then 
-!
-!              if (dabs(theta/pi*180.d0-cmbfile_readth(i)) < cmbdist) then
-!                 cmbdist=dabs(theta/pi*180.d0-cmbfile_readth(i))
-!                 tmpcmbfile_th=theta/pi*180.d0
-!                 tmpcmbfile_r=r
-!                 tmpcmbfile_el(1)=bdry_solid_el(iel) ! only in the solid domain
-!                 tmpcmbfile_el(2)=ipol
-!                 if (north(ielglob)) tmpcmbfile_el(3)=npol
-!                 if (.not. north(ielglob)) tmpcmbfile_el(3)=0 
-!              endif
-!              
-!           endif
-!
-!        enddo
-!
-!     enddo ! boundary elements
-!
-!     ! Make sure only one processor takes on each location
-!     mycmbdist=cmbdist
-!     cmbdist=pmin(cmbdist)
-!     count_procs=0
-!     if (dblreldiff_small(mycmbdist,cmbdist)) count_procs=mynum
-!     ! take as default the larger processor ID to take on the receiver
-!     count_procs=pmax_int(count_procs)
-!     if (mynum==count_procs) then 
-!        icmb=icmb+1
-!        cmbfile_th_loc(icmb)=tmpcmbfile_th
-!        cmbfile_r_loc(icmb)=tmpcmbfile_r
-!        cmbfile_el_loc(icmb,1:3)=tmpcmbfile_el(1:3)
-!        loc2globcmb_loc(icmb)=i
-!        cmb2proc(i)=mynum
-!        cmbfile_th_glob(i)=tmpcmbfile_th
-!        cmbfile_r_glob(i)=tmpcmbfile_r
-!     endif
-!
-!     ! Can do that since NOW only one proc has non-zero values
-!     cmbfile_th_glob(i) = psum_dble(cmbfile_th_glob(i))
-!     cmbfile_r_glob(i) = psum_dble(cmbfile_r_glob(i))
-!     cmb2proc(i) = psum_int(cmb2proc(i))
-!
-!  enddo ! num_cmb_glob
-!  
-!  ! Form local arrays depending on how many receivers each processor has
-!  num_cmb=icmb
-!  allocate(cmbfile_el(1:num_cmb,1:3),loc2globcmb(1:num_cmb))
-!  allocate(cmbfile_th(1:num_cmb))
-!  allocate(cmbfile_r(1:num_cmb))
-!  cmbfile_el(1:num_cmb,1:3)=cmbfile_el_loc(1:num_cmb,1:3)
-!  loc2globcmb(1:num_cmb)=loc2globcmb_loc(1:num_cmb)
-!  cmbfile_th(1:num_cmb)=cmbfile_th_loc(1:num_cmb)
-!  cmbfile_r(1:num_cmb)=cmbfile_r_loc(1:num_cmb)
-!
-!  ! How many receivers does each processor have, do they sum to global number?
-!  if ( psum_int(num_cmb) /= num_cmb_glob ) then
-!     write(6,*)'PROBLEM: sum of local cmbcmbs is different than global!'
-!     if (lpr) write(6,*)'Global number of cmbrecs:',num_cmb_glob
-!     write(6,*)procstrg,'Number of cmbrecs:',num_cmb
-!     stop
-!  endif
-!
-!  if (lpr) write(6,*)
-!  do icmb=0,nproc-1
-!     call barrier
-!     if (mynum==icmb) write(6,14)procstrg,num_cmb,num_cmb_glob
-!     call barrier
-!  enddo
-!  if (verbose > 1) write(69,14)procstrg,num_cmb,num_cmb_glob
-!14 format(/,'   ',a8,'has',i4,' out of',i6,' cmbrecs')
-!
-!  ! Output colatitudes globally (this is the file needed to plot seismograms)
-!  if (lpr) then
-!     open(99997,file=datapath(1:lfdata)//'/cmbrec_pts.dat')
-!     do i=1,num_cmb_glob
-!        write(99997,*)cmbfile_th_glob(i),cmb2proc(i)
-!     enddo
-!     close(99997)
-!  endif
-!
-!  ! Output colatitudes locally to infopath (this file is for info purposes!)
-!  maxcmblocerr=zero
-!  open(9998+mynum,file=infopath(1:lfinfo)//'/cmbrec_pts_'//appmynum//'.dat')
-!  write(9998+mynum,*)num_cmb
-!  
-!  do i=1,num_cmb ! Only over newly found local receiver locations
-!
-!     write(9998+mynum,12)i,cmbfile_readth(loc2globcmb(i)),cmbfile_th(i), &
-!                           cmbfile_r(i), &
-!                           cmbfile_el(i,1),cmbfile_el(i,2),cmbfile_el(i,3)
-!
-!     call define_io_appendix(appielem,loc2globcmb(i))
-!
-!     if ( pi/180*router*abs(cmbfile_readth(loc2globcmb(i))-cmbfile_th(i) ) >  &
-!          min_distance_dim) then
-!        count_diff_loc=count_diff_loc+1
-!        if (verbose > 1) write(6,22) procstrg, &
-!                  cmbfile_readth(loc2globcmb(i)),cmbfile_th(i),cmbfile_r(i)/1.d3
-!
-!        if (dabs(cmbfile_readth(loc2globcmb(i))-cmbfile_th(i))> maxcmblocerr) &
-!             maxcmblocerr=dabs(cmbfile_readth(loc2globcmb(i))-cmbfile_th(i))/ &
-!                          180.*pi*router
-!
-!     endif
-!
-!22 format('   WARNING:',a8,' cmbrec location file/mesh:',3(f9.3))
-!
-!     if (verbose > 1) write(6,*)'  ',procstrg,'opening cmbrec file:',i,appielem
-!
-!     open(200000+i,file=datapath(1:lfdata)//'/cmbfile_seis.dat'//appielem)
-!     open(250000+i,file=datapath(1:lfdata)//'/cmbfile_straintrace.dat'//appielem)
-!
-!  enddo
-!  
-!  close(9998+mynum)
-!
-!  if (verbose > 1) then
-!     write(69,15)count_diff_loc,num_cmb
-!     write(69,*)'  Maximal cmbrec location error [m]:',maxcmblocerr
-!     write(69,*)
-!  endif
-!15 format(i4,' out of',i4,' cmbrecs are located at wrong points.')
-!
-!  maxcmblocerr=pmax(maxcmblocerr)
-!  if (lpr) then 
-!     write(6,*)
-!     write(6,*)'  maximal cmbrec location error [m]:',maxcmblocerr
-!     write(6,*)
-!  endif
-!
-!12 format(i3,3(1pe12.4),i8,2(i2))
-!
-!  deallocate(cmbfile_readth)
-!  deallocate(cmbfile_th_glob,cmbfile_th,cmbfile_th_loc)
-!  deallocate(cmbfile_r_glob,cmbfile_r,cmbfile_r_loc)
-!  deallocate(cmbfile_el_loc,loc2globcmb_loc,loc2globcmb,cmb2proc)
-!
-!end subroutine prepare_from_recfile_cmb
-!!=============================================================================
-
-
-!-----------------------------------------------------------------------------
 !> Open files for generic checks: hypocenter,epicenter,equator,antipode.
 !! File output names: seis<LOCATION>{1,2,3}.dat
 !!                    where 1=s-component, 2=phi-component, 3=z-component.
@@ -944,12 +744,12 @@ subroutine open_hyp_epi_equ_anti
     ! @TODO: this might be problematic if two processors have the source - then
     !        both open the same file. IMHO these files are pretty useless
     !        anyway, so not fixing it for now
-    if (have_src) then
-       open(10001,file=datapath(1:lfdata)//'/seishypocenter1.dat') 
-       if (src_type(1)/='monopole') &
-            open(10002,file=datapath(1:lfdata)//'/seishypocenter2.dat') 
-       open(10003,file=datapath(1:lfdata)//'/seishypocenter3.dat') 
-    endif
+    !if (have_src) then
+    !   open(10001,file=datapath(1:lfdata)//'/seishypocenter1.dat') 
+    !   if (src_type(1)/='monopole') &
+    !        open(10002,file=datapath(1:lfdata)//'/seishypocenter2.dat') 
+    !   open(10003,file=datapath(1:lfdata)//'/seishypocenter3.dat') 
+    !endif
 
     if (have_epi) then
        open(900,file=datapath(1:lfdata)//'/seisepicenter1.dat') 
@@ -986,32 +786,32 @@ subroutine compute_hyp_epi_equ_anti(t,disp)
   use data_mesh,   only: have_epi, have_equ, have_antipode, npol, &
                          ielepi, ielantipode, ielequ, recfile_el, maxind
   use data_source, only: iel_src,ipol_src,jpol_src,have_src,src_type
-  real(kind=dp)    :: t
+  real(kind=dp)                   :: t
   real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
 
   if (maxind>0) then
-     if (mynum==0) then
-        if (ipol_src /= 0 ) then
-           write(6,*)'PROBLEM in hypocenter location!'
-           write(6,*)'ipol  is not equal to zero, hence off the axis!',ipol_src
-           stop
-        endif
-     endif
+     !if (mynum==0) then
+     !   if (ipol_src /= 0 ) then
+     !      write(6,*)'PROBLEM in hypocenter location!'
+     !      write(6,*)'ipol  is not equal to zero, hence off the axis!',ipol_src
+     !      stop
+     !   endif
+     !endif
 
-    ! hypocenter
-    if (have_src) then
-       if (src_type(1)=='dipole') then 
-          write(10001,*)t,disp(ipol_src,jpol_src,iel_src,1)+&
-                        disp(ipol_src,jpol_src,iel_src,2) ! s
-          write(10002,*)t,disp(ipol_src,jpol_src,iel_src,1)-&
-                        disp(ipol_src,jpol_src,iel_src,2) ! phi
-       else
-          write(10001,*)t,disp(ipol_src,jpol_src,iel_src,1) ! s
-          if (src_type(1)=='quadpole') &
-               write(10002,*)t,disp(ipol_src,jpol_src,iel_src,2) ! phi
-        endif
-        write(10003,*)t,disp(ipol_src,jpol_src,iel_src,3)  ! z
-     endif
+     ! hypocenter
+     !if (have_src) then
+     !  if (src_type(1)=='dipole') then 
+     !     write(10001,*)t,disp(ipol_src,jpol_src,iel_src,1)+&
+     !                   disp(ipol_src,jpol_src,iel_src,2) ! s
+     !     write(10002,*)t,disp(ipol_src,jpol_src,iel_src,1)-&
+     !                   disp(ipol_src,jpol_src,iel_src,2) ! phi
+     !  else
+     !     write(10001,*)t,disp(ipol_src,jpol_src,iel_src,1) ! s
+     !     if (src_type(1)=='quadpole') &
+     !          write(10002,*)t,disp(ipol_src,jpol_src,iel_src,2) ! phi
+     !   endif
+     !   write(10003,*)t,disp(ipol_src,jpol_src,iel_src,3)  ! z
+     !endif
    
      ! epicenter
      if (have_epi) then
@@ -1026,27 +826,27 @@ subroutine compute_hyp_epi_equ_anti(t,disp)
         write(906,*)t,disp(0,npol,ielepi,3)  ! z
      endif
 
-    ! antipode
-    if (have_antipode) then
-       if (src_type(1)=='dipole') then 
-          write(901,*)t,disp(0,0,ielantipode,1)+disp(0,0,ielantipode,2) ! s
-          write(905,*)t,disp(0,0,ielantipode,1)-disp(0,0,ielantipode,2) ! phi
-       else
-          write(901,*)t,disp(0,0,ielantipode,1) ! s
-          if (src_type(1)=='quadpole') &
-               write(905,*)t,disp(0,0,ielantipode,2) ! phi
+     ! antipode
+     if (have_antipode) then
+        if (src_type(1)=='dipole') then 
+           write(901,*)t,disp(0,0,ielantipode,1)+disp(0,0,ielantipode,2) ! s
+           write(905,*)t,disp(0,0,ielantipode,1)-disp(0,0,ielantipode,2) ! phi
+        else
+           write(901,*)t,disp(0,0,ielantipode,1) ! s
+           if (src_type(1)=='quadpole') &
+                write(905,*)t,disp(0,0,ielantipode,2) ! phi
         endif
         write(908,*)t,disp(0,0,ielantipode,3)  ! z
      endif
 
-    ! equator
-    if (have_equ) then
-       if (src_type(1)=='dipole') then 
-          write(902,*)t,disp(npol,npol,ielequ,1)+disp(npol,npol,ielequ,2) ! s
-          write(904,*)t,disp(npol,npol,ielequ,1)-disp(npol,npol,ielequ,2) ! phi
-       else
-          write(902,*)t,disp(npol,npol,ielequ,1) ! s
-          if (src_type(1)=='quadpole') &
+     ! equator
+     if (have_equ) then
+        if (src_type(1)=='dipole') then 
+           write(902,*)t,disp(npol,npol,ielequ,1)+disp(npol,npol,ielequ,2) ! s
+           write(904,*)t,disp(npol,npol,ielequ,1)-disp(npol,npol,ielequ,2) ! phi
+        else
+           write(902,*)t,disp(npol,npol,ielequ,1) ! s
+           if (src_type(1)=='quadpole') &
                write(904,*)t,disp(npol,npol,ielequ,2) ! phi
         endif
         write(907,*)t,disp(npol,npol,ielequ,3)  ! z

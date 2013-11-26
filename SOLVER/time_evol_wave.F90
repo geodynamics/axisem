@@ -175,14 +175,10 @@ subroutine prepare_waves
 
   ! Various seismogram output preparations...
   call prepare_seismograms
-  if (diagfiles) call open_hyp_epi_equ_anti
+  call open_hyp_epi_equ_anti
 
   ! allow for different types of receiver files
   call prepare_from_recfile_seis
-
-  !if (rec_file_type=='colatlon' .and.  &
-  !    (trim(bkgrdmodel(1:4))=='prem_iso' .or. trim(bkgrdmodel(1:4))=='iasp')) &
-  !   call prepare_from_recfile_cmb
 
   ! Need to reload old seismograms and add results
   if (isim>1 .and. sum_seis ) then  
@@ -981,12 +977,8 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
   
      time = real(iter)*deltat
      
-     ! cmbrec locations read in from file (only velocity & tr(E))
-     !    call dump_velo_straintrace_cmb(disp,velo)
-     
-     
      ! Generic synthetics at hypo-/epicenter, equator, antipode (including time)
-     if (diagfiles) call compute_hyp_epi_equ_anti(t,disp)
+     call compute_hyp_epi_equ_anti(real(time, kind=dp), disp)
 
   endif
 
