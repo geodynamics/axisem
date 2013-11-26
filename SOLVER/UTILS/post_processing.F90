@@ -50,6 +50,7 @@ module data_all
   character(len=3)                    :: rec_comp_sys
   logical                             :: load_snaps
   logical                             :: negative_time
+  logical                             :: detailed_output
   character(len=12)                   :: src_file_type
   logical                             :: use_netcdf
 
@@ -98,7 +99,6 @@ program post_processing_seis
   real(4), allocatable :: nc_seis(:,:,:,:)
 
   call read_input
-  !use_netcdf = .true.
   if (use_netcdf) call nc_open(ncparams, nsim, simdir)
 
   if (rec_comp_sys == 'sph') then
@@ -345,7 +345,7 @@ program post_processing_seis
             close(60)
         end if
 
-        if (nsim > 1) then 
+        if (nsim > 1 .and. detailed_output) then 
            ! output seismograms for individual runs into UNPROCESSED/ folder
            ! In original rotated cylindrical frame, without azimuthal radiation factor
            open(unit=150, file=trim(outname2(i,isim))//'_s0.dat', status='new')
@@ -534,13 +534,14 @@ subroutine read_input
 
 
   ! default values:
-  rec_comp_sys  = 'enz'
-  conv_period   = 0.
-  conv_stf      = 'gauss_0'
-  seistype      = 'disp'
-  load_snaps    = .false.
-  outdir        = './Data_Postprocessing'
-  negative_time = .true.
+  rec_comp_sys    = 'enz'
+  conv_period     = 0.
+  conv_stf        = 'gauss_0'
+  seistype        = 'disp'
+  load_snaps      = .false.
+  outdir          = './Data_Postprocessing'
+  negative_time   = .true.
+  detailed_output = .false.
 
   write(6,'(A)', advance='no') '    Reading param_post_processing...'
   open(unit=i_param_post, file='param_post_processing', status='old', action='read', &
@@ -573,6 +574,8 @@ subroutine read_input
        outdir = keyvalue
     case('NEGATIVE_TIME')
        read(keyvalue, *) negative_time
+    case('DETAILED_OUTPUT')
+       read(keyvalue, *) detailed_output 
             
     end select parameter_to_read
 

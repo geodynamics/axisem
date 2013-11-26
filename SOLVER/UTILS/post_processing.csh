@@ -66,7 +66,7 @@ cp -p param_* $outdir
 /bin/cp -p -f param_* $outdir
 cp -p post_processing.csh $outdir
 cp -p xpost_processing $outdir
-cp -p post_processing.f90 $outdir 
+cp -p post_processing.F90 $outdir 
 
 cp -p plot_record_section.m $outdir
 
