@@ -512,7 +512,7 @@ subroutine symplectic_time_loop
 
      ! compute external force/source time function at 4 time intervals coeff(1:4)
      subdt = t - deltat + coeff
-     call compute_stf_t(nstages,subdt,stf_symp)
+     call compute_stf_t(nstages, subdt, stf_symp)
 
      do i = 1, nstages  ! substages 
 
@@ -583,7 +583,7 @@ subroutine symplectic_time_loop
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         ! SOLID: add source, only in source elements and for stf/=0
-        call add_source(acc,real(stf_symp(i),kind=realkind))
+        call add_source(acc, real(stf_symp(i), kind=realkind))
 
         ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
         velo(:,:,:,1) = velo(:,:,:,1) - acc(:,:,:,1) * coefv(i) * inv_mass_rho

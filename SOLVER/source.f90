@@ -764,13 +764,13 @@ end subroutine wtcoef
 subroutine delta_src_t(nstf_t, t,stf_t)
 
   integer, intent(in)             :: nstf_t
-  real(kind=dp)   , intent(in)    :: t(nstf_t)
-  real(kind=dp)   , intent(out)   :: stf_t(nstf_t)
+  real(kind=dp), intent(in)       :: t(nstf_t)
+  real(kind=dp), intent(out)      :: stf_t(nstf_t)
 
   stf_t(1:nstf_t) = zero
 
-  if (t(1) > 3.d0 * deltat .and. t(1) <= 4.d0 * deltat) stf_t(nstf_t) = magnitude
-  if (t(1) >= 4.d0 * deltat .and. t(1) < 5.d0 * deltat) stf_t(1) = magnitude
+  if (t(1) > 3.d0 * deltat .and. t(1) <= 4.d0 * deltat) stf_t = (t - t(1)) / deltat * magnitude / deltat
+  if (t(1) >= 4.d0 * deltat .and. t(1) < 5.d0 * deltat) stf_t = (1. - (t - t(1)) / deltat) * magnitude / deltat
 
 end subroutine delta_src_t
 !=============================================================================
