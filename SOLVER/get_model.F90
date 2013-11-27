@@ -118,7 +118,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 
   ! check for each element which domain it belongs to
   if (diagfiles) open(unit=65,file=infopath(1:lfinfo)//'/elems_bkgrdmodel_domain.dat'&
-                                       //appmynum)
+                                   //appmynum)
   
   if (do_mesh_tests) open(60000+mynum,file='Data/model_r_th_rho_vp_vs_'&
                                           //appmynum//'.dat')
@@ -130,18 +130,18 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           if (r1<discont(iidom) .and. r1> discont(iidom+1)) then
               ieldom(iel) = iidom
               foundit = .true.
-              if (diagfiles) write(65,10)iel,r1,iidom,discont(iidom),discont(iidom+1)
+              if (diagfiles) write(65,10) iel, r1, iidom, discont(iidom), discont(iidom+1)
           endif
       enddo
       if (r1 < discont(ndisc)) then
           ieldom(iel) = ndisc
           foundit = .true.
-          if (diagfiles) write(65,10)iel,r1,ndisc,discont(ndisc)
+          if (diagfiles) write(65,10) iel, r1, ndisc, discont(ndisc)
       endif
       if (.not. foundit) then 
           write(6,*)'Processor', mynum, ' reports problem:'
-          write(6,*)'havent found domain for element',iel
-          write(6,*)'...of radius',r1
+          write(6,*)'havent found domain for element', iel
+          write(6,*)'...of radius', r1
           write(6,*)'Disconts are located at:'
           write(6,11) discont(1:ndisc)
           stop
