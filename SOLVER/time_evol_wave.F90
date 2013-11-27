@@ -516,80 +516,78 @@ subroutine symplectic_time_loop
 
      do i = 1, nstages  ! substages 
 
-        ! FLUID: update fluid potential
         chi = chi + dchi * coefd(i)
 
-        ! SOLID: update displacement
-        disp = disp + velo * coefd(i)
+        disp(:,:,:,1) = disp(:,:,:,1) + velo(:,:,:,1) * coefd(i)
+        if (src_type(1) .ne. 'monopole') &
+           disp(:,:,:,2) = disp(:,:,:,2) + velo(:,:,:,2) * coefd(i)
+        disp(:,:,:,3) = disp(:,:,:,3) + velo(:,:,:,3) * coefd(i)
 
-        ! FLUID: Axial masking of \chi (dipole,quadrupole)
         if (src_type(1) .ne. 'monopole') & 
-             call apply_axis_mask_scal(chi,nel_fluid,ax_el_fluid,naxel_fluid) 
+             call apply_axis_mask_scal(chi, nel_fluid, ax_el_fluid,naxel_fluid) 
 
-        ! FLUID: stiffness term K_f
         iclockstiff = tick()
-        call glob_fluid_stiffness(ddchi,chi) 
+        call glob_fluid_stiffness(ddchi, chi) 
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
-        ! FLUID: solid-fluid boundary term (solid displ.) added to fluid stiffness
-        call bdry_copy2fluid(ddchi,disp)
+        call bdry_copy2fluid(ddchi, disp)
 
-        ! FLUID: axial masking of w (dipole,quadrupole)
         if (src_type(1) .ne. 'monopole') & 
-             call apply_axis_mask_scal(ddchi,nel_fluid,ax_el_fluid,naxel_fluid)
+             call apply_axis_mask_scal(ddchi, nel_fluid, ax_el_fluid, naxel_fluid)
 
-        ! FLUID: stiffness term assembly
         iclockcomm = tick()
-        call pdistsum_fluid(ddchi)
+        call pdistsum_fluid(ddchi, phase=1)
         iclockcomm = tick(id=idcomm, since=iclockcomm)
-
-        ! FLUID: update 1st derivative of potential
-        dchi = dchi - coefv(i) * inv_mass_fluid * ddchi
-
-        ! SOLID: For each source type, apply the following sequence respectively:
-        !        1) masking of u 
-        !        2) stiffness term K_s u
-        !        3) solid-fluid bdry term (fluid potential) added to solid stiffness
-        !        4) masking of w
-        ! MvD: masking of w?? you mean acc?
-
-        ddchi = - ddchi * inv_mass_fluid
 
         iclockstiff = tick()
         select case (src_type(1))
            case ('monopole')
               call apply_axis_mask_onecomp(disp,nel_solid, ax_el_solid,naxel_solid)
               call glob_stiffness_mono(acc,disp)
-              call bdry_copy2solid(acc,ddchi)
-              call apply_axis_mask_onecomp(acc,nel_solid, ax_el_solid,naxel_solid)
-
            case ('dipole') 
               call apply_axis_mask_twocomp(disp,nel_solid, ax_el_solid,naxel_solid)
               call glob_stiffness_di(acc,disp) 
-              call bdry_copy2solid(acc,ddchi)
-              call apply_axis_mask_twocomp(acc,nel_solid, ax_el_solid,naxel_solid)
-
            case ('quadpole') 
               call apply_axis_mask_threecomp(disp,nel_solid, ax_el_solid,naxel_solid)
               call glob_stiffness_quad(acc,disp) 
-              call bdry_copy2solid(acc,ddchi)
-              call apply_axis_mask_threecomp(acc,nel_solid, ax_el_solid,naxel_solid)
         end select
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
-        ! SOLID: stiffness term assembly ==> w^T K_s u
         iclockcomm = tick()
-        call pdistsum_solid(acc)
+        call pdistsum_fluid(ddchi, phase=2)
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
-        ! SOLID: add source, only in source elements and for stf/=0
+        ddchi = - ddchi * inv_mass_fluid
+
+        select case (src_type(1))
+           case ('monopole')
+              call bdry_copy2solid(acc, ddchi)
+              call apply_axis_mask_onecomp(acc,nel_solid, ax_el_solid,naxel_solid)
+           case ('dipole') 
+              call bdry_copy2solid(acc, ddchi)
+              call apply_axis_mask_twocomp(acc,nel_solid, ax_el_solid,naxel_solid)
+           case ('quadpole') 
+              call bdry_copy2solid(acc, ddchi)
+              call apply_axis_mask_threecomp(acc,nel_solid, ax_el_solid,naxel_solid)
+        end select
+
+        iclockcomm = tick()
+        call pdistsum_solid(acc, phase=1)
+        iclockcomm = tick(id=idcomm, since=iclockcomm)
+
+        dchi = dchi + coefv(i) * ddchi
+
+        iclockcomm = tick()
+        call pdistsum_solid(acc, phase=2)
+        iclockcomm = tick(id=idcomm, since=iclockcomm)
+
         call add_source(acc, real(stf_symp(i), kind=realkind))
 
-        ! SOLID: new acceleration (dipole has factor two due to (+,-,z) coord. system)
         velo(:,:,:,1) = velo(:,:,:,1) - acc(:,:,:,1) * coefv(i) * inv_mass_rho
 
-        if (src_type(1)/='monopole') &
+        if (src_type(1) /= 'monopole') &
            velo(:,:,:,2) = velo(:,:,:,2) - acc(:,:,:,2) * coefv(i) * inv_mass_rho
+
         if (src_type(1)=='dipole') then !factor 2 b/c inv_rho has 1/2 embedded
            velo(:,:,:,3) = velo(:,:,:,3) - two * acc(:,:,:,3) * coefv(i) * inv_mass_rho
         else
@@ -598,11 +596,12 @@ subroutine symplectic_time_loop
 
      enddo ! ... nstages substages
 
-     ! FLUID: final potential
      chi = chi + dchi * coefd(nstages+1)
 
-     ! SOLID: final displacement
-     disp = disp + velo * coefd(nstages+1)
+     disp(:,:,:,1) = disp(:,:,:,1) + velo(:,:,:,1) * coefd(nstages+1)
+     if (src_type(1) .ne. 'monopole') &
+        disp(:,:,:,2) = disp(:,:,:,2) + velo(:,:,:,2) * coefd(nstages+1)
+     disp(:,:,:,3) = disp(:,:,:,3) + velo(:,:,:,3) * coefd(nstages+1)
 
      ! ::::::::::::::::::::::::: END SYMPLECTIC SOLVER ::::::::::::::::::::::::::
 
