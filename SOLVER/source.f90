@@ -696,7 +696,7 @@ subroutine gauss_t(nstf_t,t,stf_t)
   do i=1,nstf_t
      stf_t(i) = dexp(-( (decay/t_0*(t(i)-shift_fact))**2) )
   enddo
-  dt_src_shift=shift_fact
+  dt_src_shift = shift_fact
   stf_t = stf_t * magnitude * decay / ( t_0 * sqrt(pi) )
 
 end subroutine gauss_t
@@ -769,8 +769,11 @@ subroutine delta_src_t(nstf_t, t,stf_t)
 
   stf_t(1:nstf_t) = zero
 
-  if (t(1) > 3.d0 * deltat .and. t(1) <= 4.d0 * deltat) stf_t = (t - t(1)) / deltat * magnitude / deltat
-  if (t(1) >= 4.d0 * deltat .and. t(1) < 5.d0 * deltat) stf_t = (1. - (t - t(1)) / deltat) * magnitude / deltat
+  if (t(1) > (shift_fact - deltat) .and. t(1) <= shift_fact) &
+     stf_t = (t - t(1)) / deltat * magnitude / deltat
+
+  if (t(1) >= shift_fact .and. t(1) < (shift_fact + deltat)) &
+     stf_t = (1. - (t - t(1)) / deltat) * magnitude / deltat
 
 end subroutine delta_src_t
 !=============================================================================
