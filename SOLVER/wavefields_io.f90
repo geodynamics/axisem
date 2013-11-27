@@ -548,7 +548,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                </DataItem>',/&
     '            </DataItem>',/&
     '        </Attribute>',/&
-    '        <Attribute Name="gradient(u)" AttributeType="Scalar" Center="Node">',/&
+    '        <Attribute Name="divergence(u)" AttributeType="Scalar" Center="Node">',/&
     '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
     '                <DataItem Dimensions="3 2" Format="XML">',/&
     '                      ', i10,  '         0  ',/&
@@ -632,7 +632,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi)
     '                </DataItem>',/&
     '            </DataItem>',/&
     '        </Attribute>',/&
-    '        <Attribute Name="gradient(u)" AttributeType="Scalar" Center="Node">',/&
+    '        <Attribute Name="divergence(u)" AttributeType="Scalar" Center="Node">',/&
     '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
     '                <DataItem Dimensions="3 2" Format="XML">',/&
     '                      ', i10,  '         0  ',/&
