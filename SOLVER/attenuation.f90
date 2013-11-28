@@ -688,7 +688,7 @@ end subroutine compute_strain_att_el
 !> read 'inparam_attenuation' file and compute precomputable terms
 subroutine prepare_attenuation(lambda, mu)
 
-  use data_io,              only: infopath, lfinfo
+  use data_io,              only: infopath, lfinfo, diagfiles
   use data_proc,            only: lpr, mynum
   use data_time,            only: deltat
   use global_parameters,    only: pi
@@ -881,16 +881,18 @@ subroutine prepare_attenuation(lambda, mu)
         print *, '  ...coefficients y_j : ', y_j_attenuation
         print *, '  ...coarse grained   : ', att_coarse_grained
         
-        print *, '  ...writing fitted Q to file...'
      endif
-     open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='replace')
-     write(165,*) (w_samp(i), q_fit(i), char(10), i=1,nfsamp)
-     close(unit=165)
-     
-     if (verbose > 1) print *, '  ...writing convergence of chi to file...'
-     open(unit=166, file=infopath(1:lfinfo)//'/attenuation_convergence', status='replace')
-     write(166,*) (chil(i), char(10), i=1,max_it)
-     close(unit=166)
+     if (diagfiles) then
+        print *, '  ...writing fitted Q to file...'
+        open(unit=165, file=infopath(1:lfinfo)//'/attenuation_q_fitted', status='replace')
+        write(165,*) (w_samp(i), q_fit(i), char(10), i=1,nfsamp)
+        close(unit=165)
+        
+        if (verbose > 1) print *, '  ...writing convergence of chi to file...'
+        open(unit=166, file=infopath(1:lfinfo)//'/attenuation_convergence', status='replace')
+        write(166,*) (chil(i), char(10), i=1,max_it)
+        close(unit=166)
+     endif
   endif
 
 
