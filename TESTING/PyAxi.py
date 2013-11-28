@@ -160,13 +160,13 @@ def PyAxi(**kwargs):
     ##############################################################
     stdout_param = None
     os.chdir(input['axi_address'])
-    #output = subprocess.check_call(['./copytemplates.sh'], stdout = stdout_param)
-    output = subprocess.check_call(['cp', os.path.join('.', 'MESHER', 'Makefile.TEMPLATE'), \
-                                        os.path.join('.', 'MESHER', 'Makefile')], stdout = stdout_param)
-    if output != 0: print output_print
-    output = subprocess.check_call(['cp', os.path.join('.', 'SOLVER', 'Makefile.TEMPLATE'), \
-                                        os.path.join('.', 'SOLVER', 'Makefile')], stdout = stdout_param)
-    if output != 0: print output_print
+    output = subprocess.check_call(['./copytemplates.sh'], stdout = stdout_param)
+    #output = subprocess.check_call(['cp', os.path.join('.', 'MESHER', 'Makefile.TEMPLATE'), \
+    #                                    os.path.join('.', 'MESHER', 'Makefile')], stdout = stdout_param)
+    #if output != 0: print output_print
+    #output = subprocess.check_call(['cp', os.path.join('.', 'SOLVER', 'Makefile.TEMPLATE'), \
+    #                                    os.path.join('.', 'SOLVER', 'Makefile')], stdout = stdout_param)
+    #if output != 0: print output_print
     
     ##############################################################
     ################CREATE make_axisem.macros ####################
