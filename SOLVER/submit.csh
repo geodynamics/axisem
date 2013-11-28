@@ -28,6 +28,17 @@ set infopath = `grep "INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g
 set meshdir = "MESHES/"`grep "^MESHNAME" inparam_basic | awk '{print $2}'`
 set mpiruncmd = `grep "^MPIRUN" ../make_axisem.macros | awk '{print $3}'`
 
+#Check whether NetCDF is requested and whether the code is compiled with it
+set netcdf_compiled = `grep "^USE_NETCDF" ../make_axisem.macros | awk '{print $3}'`
+set netcdf_requested = `grep "^USE_NETCDF" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
+if ( $netcdf_requested == 'true' && $netcdf_compiled != 'true') then 
+  echo "NetCDF compiled  (../make_axisem.macros): " $netcdf_compiled
+  echo "NetCDF requested (inparam_advanced):      " $netcdf_requested
+  echo "ERROR: NetCDF is requested in inparam_advanced, but disabled in ../make_axisem.macros"
+  exit
+endif
+
+
 set svnrevision = `svnversion`
 echo $svnrevision "SVN_VERSION      " > runinfo
 set username = `whoami`
@@ -42,12 +53,12 @@ set LDFLAGS = `grep "^LDFLAGS" ../make_axisem.macros`
 echo $LDFLAGS >> runinfo 
 
 if ( -d $meshdir) then
-    echo "Using mesh " $meshdir
+  echo "Using mesh " $meshdir
 else
-    echo "Mesh " $meshdir " not found."
-    echo "Available meshes:"
-    ls MESHES
-    exit
+  echo "Mesh " $meshdir " not found."
+  echo "Available meshes:"
+  ls MESHES
+  exit
 endif
 
 set bgmodel = `grep BACKGROUND_MODEL $meshdir/inparam_mesh | awk '{print $2}'`
