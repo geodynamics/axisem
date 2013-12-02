@@ -1,13 +1,13 @@
-dirac_0 PDE 1994  6  9  0 33 16.40 -13.8300  -67.5600 637.0 6.9 6.8 NORTHERNBOLIVIA
-event name:     060994A
-time shift:      0.0000
-half duration:  20.0000
-latitude:      -45.850
-longitude:     166.260
-depth:         24.0
-Mrr:      0.324e21
-Mtt:      0.303e20
-Mpp:     -0.354e21
-Mrt:      0.161e21
-Mrp:     -0.439e21
-Mtp:      0.455e20
+PDEW2011  8 23 17 51  4.60  37.9400  -77.9300   6.0 5.9 5.8 VIRGINIA                                
+event name:     201108231751A  
+time shift:      1.1100
+half duration:   1.8000
+latitude:       37.9100
+longitude:     -77.9300
+depth:          12.0000
+Mrr:       4.710000e+24
+Mtt:       3.810000e+22
+Mpp:      -4.740000e+24
+Mrt:       3.990000e+23
+Mrp:      -8.050000e+23
+Mtp:      -1.230000e+24
