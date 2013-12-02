@@ -1355,7 +1355,7 @@ end subroutine def_ref_cart_coordinates
 !-----------------------------------------------------------------------------------------
 subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
 
-  use data_grid
+  use data_grid,       only: axisfac
   use data_bkgrdmodel, only: nc_init, nthetaslices
   use data_pdb,        only: theta_max_proc, theta_min_proc
 
@@ -1364,19 +1364,15 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
   real(kind=dp), dimension(1:nzt) :: dz
 
   integer           :: is, iz
-  real(kind=dp)     :: ds1, ds2, sizefac
+  real(kind=dp)     :: ds1, ds2
 
   real(kind=dp)     :: deltatheta
   real(kind=dp)     :: pi2
   integer           :: iproc
 
  
-  !sizefac = .7
-  sizefac = 1.
-  !@ TODO this value needs to be tested!
-
   !Make axial elements a bit smaller, to avoid artifacts from axial integration scheme
-  ds1 = 2.d0 / dble(nst) * sizefac
+  ds1 = 2.d0 / dble(nst) * axisfac
   ds2 = (2.d0 - 2**nc_init * ds1) / dble(nst - 2**nc_init)
 
   do is = 1, nst+1
@@ -1394,7 +1390,7 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
   end do
   
   ! Create colatitude bounds array for outer shell
-  ds1 = 1.d0 / dble(nst) * sizefac
+  ds1 = 1.d0 / dble(nst) * axisfac 
   ds2 = (1.d0 - 2**nc_init * ds1) / dble(nst - 2**nc_init)
 
   write(6,*) ds1, ds2, nst

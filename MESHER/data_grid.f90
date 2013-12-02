@@ -32,6 +32,11 @@ module data_grid
   real(kind=dp), dimension(:), allocatable    :: radius
   real(kind=dp), dimension(:), allocatable    :: ndeta
   
+  ! Shrinking factor for axis elements
+  real(kind=dp)                               :: axisfac
+  ! Shrinking factor for fluid elements
+  real(kind=dp)                               :: fluidfac
+  
   !number of subdivisions for central square
   integer            :: ndivs 
   real(kind=dp)      :: lsq

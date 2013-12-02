@@ -50,7 +50,17 @@ COARSENING_LAYERS   3
 # IC_SHEAR_WAVE     true
 
 # Polynomial order of basis for GLL points inside elements (default: 4)
-#NPOL                4
+# NPOL                4
+
+# Mesh element shrinking factor at the axes to avoid artifacts from axial 
+# integration scheme (default: 0.7) 
+# AXIS_SHRINKING_FACTOR  0.7
+
+# Shrinking factor for fluid elements
+# Outer Core P-Waves see a lot more dispersion error than in the
+# mantle, due to beeing on the resolution edge. But as the fluid is
+# really cheap, we can just make the elements smaller... (default: 0.9)
+# FLUID_SHRINKING_FACTOR   0.9
 
 # Number of elements per DOMINANT wavelength (default: 1.5)
 # EL_PER_LAMBDA      1.5

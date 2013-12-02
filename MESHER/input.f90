@@ -48,22 +48,24 @@ subroutine read_params
   line = ' ' 
  
   ! Default values
-  bkgrdmodel = 'UNDEFINED'
-  nthetaslices = -1
-  nradialslices = 1
-  period = -1
-  dump_mesh_vtk = .true.
-  nc_init = 3
+  bkgrdmodel      = 'UNDEFINED'
+  nthetaslices    = -1
+  nradialslices   = 1
+  period          = -1
+  dump_mesh_vtk   = .true.
+  nc_init         = 3
   resolve_inner_shear = .true.
-  npol = 4
-  pts_wavelngth = 1.5
-  courant = 0.6
-  router = 6.371e6
+  npol            = 4
+  pts_wavelngth   = 1.5
+  courant         = 0.6
+  router          = 6.371e6
+  axisfac         = 0.7
+  fluidfac        = 0.9
   dump_mesh_info_files = .false.
   dump_mesh_info_screen = .false.
   only_suggest_ntheta = .false.
-  diagpath = 'Diags'
-  lfdiag = index(diagpath,' ') - 1 
+  diagpath        = 'Diags'
+  lfdiag          = index(diagpath,' ') - 1 
 
 
   write(6, '(A)', advance='no') 'Reading inparam_mesh...'
@@ -117,6 +119,12 @@ subroutine read_params
 
       case('RADIUS') 
           read(keyvalue, *) router
+
+      case('AXIS_SHRINKING_FACTOR') 
+          read(keyvalue, *) axisfac 
+
+      case('FLUID_SHRINKING_FACTOR') 
+          read(keyvalue, *) fluidfac 
 
       case('SAVE_DEBUG_FILES')
           read(keyvalue, *) dump_mesh_info_files

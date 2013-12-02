@@ -397,6 +397,8 @@ end subroutine create_subregions
 subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz,  &
                          icount_glob, ic, ns_ref)
 
+  use data_grid, only: fluidfac
+
   integer, intent(in)           :: idom
   real(kind=dp), intent(in)     :: rdisc_bot(ndisc)
   real(kind=dp), intent(inout)  :: current_radius, dz, ds
@@ -418,8 +420,7 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
      !       Outer Core P-Waves see a lot more dispersion error than in the
      !       mantle, due to beeing on the resolution edge. But as the fluid is
      !       really cheap, we could just make the elements smaller...
-     !velo = .9 * velocity(current_radius,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
-     velo = 1. * velocity(current_radius,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
+     velo = fluidfac * velocity(current_radius,'v_p',idom,bkgrdmodel,lfbkgrdmodel)
   end if
   ns_trial = estimate_ns(pts_wavelngth,current_radius,velo,period)
   icount_glob = icount_glob+1
