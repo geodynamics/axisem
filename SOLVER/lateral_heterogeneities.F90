@@ -65,7 +65,7 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
        write(6,*) 'read parameter file for heterogeneities: inparam_hetero'
        write(6,*)
        write(6,*) ' !!!!!!!!! W A R N I N G !!!!!!!! '
-       write(6,*) 'These lateral additions have not been thoroughly tested yet!'
+       write(6,*) 'Gradients have not been thoroughly tested yet, are thus switched off!'
        write(6,*)
     endif
 
@@ -492,7 +492,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     real(kind=dp), allocatable   :: fa_theta2(:), fa_phi2(:)
     real(kind=dp), allocatable   :: rho2(:), vp2(:), vs2(:)
 
-    type(kdtree2), pointer       :: tree
+    type(kdtree2), pointer          :: tree
     
     write(6,*) mynum, 'reading discrete heterogeneity file...'
 
@@ -1320,7 +1320,7 @@ end subroutine load_random
 !-----------------------------------------------------------------------------------------
 subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
 
-  ! added by fanie for sharp discontinuites
+  ! added by fanie for sharp discontinuites ! dont need this anymore
     use background_models, only : velocity
     use data_mesh, only : discont, bkgrdmodel, lfbkgrdmodel, nelem, npol
 
@@ -1336,8 +1336,11 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
     real(kind=dp), allocatable :: rhet(:), thhet(:)
 
     ! start elastic property values
-    real(kind=dp) :: vpst, vsst, rhost
-    integer :: iel, ipol, jpol, icount, jj, ij, idom
+    real(kind=dp) :: vptmp2, vstmp2, radst
+    real(kind=dp) :: rhost, must, lambdast
+    integer :: iel, ipol, jpol, icount, idom!, iel_count !, ij
+    real(kind=dp)   :: rand
+    integer :: foundcount
     logical :: foundit
     real(kind=dp) :: r1, r2, r3, r4, th1, th2, th3, th4
     real(kind=dp) :: rmin, rmax, thetamin, thetamax
@@ -1347,6 +1350,8 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
     real(kind=dp) :: grad_r_het, grad_th_het2, grad_th_het1
     real(kind=dp) :: dr_outer, dr_inner, dth_outer, dth_inner
     real(kind=dp) :: val, gradwidth
+    integer(kind=dp), allocatable :: saveiel(:), saveipol(:), savejpol(:)
+    real(kind=dp), allocatable :: saveval(:)
 
     if (het_funct_type(hetind) == 'gauss') then 
        decay = 3.5d0
@@ -1403,142 +1408,17 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
 
        deallocate(rhet,thhet)
 
-    elseif (het_funct_type(hetind)=='spher') then 
-       ! gaussian with cutoff at 0.9
-       decay = 0.5d0
-       r_center_gauss = (r_het1(hetind) + r_het2(hetind)) / 2.
-       th_center_gauss = (th_het1(hetind) + th_het2(hetind)) / 2. * r_center_gauss
-       halfwidth_r = abs(r_het1(hetind) - r_het2(hetind))
-       halfwidth_th = abs(th_het1(hetind) - th_het2(hetind)) * r_center_gauss
-       if (lpr) then
-          write(6,*) hetind, 'center r,th gauss [km]:', r_center_gauss / 1000., &
-                     th_center_gauss / 1000.
-          write(6,*) hetind, 'halfwidth r,th gauss [km]:', halfwidth_r / 1000., &
-                     halfwidth_th / 1000.
-       endif
-
-       allocate(rhet(nelem*(npol+1)**2), thhet(nelem*(npol+1)**2))
-       icount = 0
-       rhet = 0.
-       thhet = 0.
-       do iel=1, nelem
-          do jpol=0, npol
-             do ipol=0, npol
-                call compute_coordinates(s,z,r,th,iel,ipol,jpol)
-                gauss_val = dexp(-( decay* ( ((r-r_center_gauss)/halfwidth_r)**2 + &
-                                 ((th*r_center_gauss-th_center_gauss)/halfwidth_th)**2 )))
-
-                if (gauss_val>0.9) then
-                   vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
-                   vptmp = sqrt( (lambda(ipol,jpol,iel) + 2.*mu(ipol,jpol,iel)) / &
-                                 rho(ipol,jpol,iel) )
-                   vstmp = vstmp  * (1. + delta_vs(hetind))
-                   vptmp = vptmp  * (1. + delta_vp(hetind))
-                   rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + delta_rho(hetind))
-                   lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * &
-                                               (vptmp**2 - 2.*vstmp**2)
-                   mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vstmp**2)
-
-                   if (gauss_val > 0.9) then 
-                      icount = icount + 1
-                      rhet(icount) = r
-                      thhet(icount) = th
-                   endif
-                endif
-             enddo
-          enddo
-       enddo
-       
-       !min/max of heterogeneous region
-       rhetmin = min(minval(rhet(1:icount)), rhetmin)
-       rhetmax = max(maxval(rhet(1:icount)), rhetmax)
-       thhetmin = min(minval(thhet(1:icount)), thhetmin)
-       thhetmax = max(maxval(thhet(1:icount)), thhetmax)
-
-       write(6,*) mynum, 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
-       write(6,*) mynum, 'th het min/max:', thhetmin * 180. / pi, thhetmax * 180. / pi
-
-       deallocate(rhet,thhet)
-
     elseif (het_funct_type(hetind)=='sinus' .or. het_funct_type(hetind)=='trian' &
             .or. het_funct_type(hetind)=='gss1d' .or. het_funct_type(hetind)=='inclp' & 
-            .or. het_funct_type(hetind)=='inclr' .or. het_funct_type(hetind)=='const' ) then 
-       decay = 1.d0
+            .or. het_funct_type(hetind)=='inclr' .or. het_funct_type(hetind)=='const' &
+            .or. het_funct_type(hetind)=='spher' ) then 
        ! included by fanie, for a sharp triangle/ sine function/ gauss function/ sphere
-
-       ! if rdep==.false. v_het(z)=const and rho_het(z)=const
-       ! determine velocity ontop of heterogeneity and calculate future elastic
-       ! properties of the heterogeneity
-
-       if (.not. rdep(hetind) ) then
-          if ( inverseshape(hetind)>0 ) then
-             idom = minloc(abs(discont - r_het2(hetind)),1)
-             !do ij = 1, ndisc
-             !   write(6,*)'discmin?',ij,abs(discont(ij)-r_het2(hetind))
-             !enddo
-             !write(6,*)hetind,'DEBUGGING:',idom,r_het1(hetind),r_het2(hetind)
-             !write(6,*)hetind,'discs:',idom,discont(idom),bkgrdmodel,lfbkgrdmodel
-
-!#########################################################################################
-! MvD: - calling velocity() here causes problems with anisotropy, anway it is
-!        called already in get_model, so why not use the lame parameters here?
-!      - vsst / vpst only used if not gradient, so should be easy to copy from
-!        the gradient version
-!#########################################################################################
-
-             vpst = velocity(r_het2(hetind),'v_p',idom,bkgrdmodel,lfbkgrdmodel)
-             !vpst = vpst* (1.+ delta_vp(hetind))
-             vsst = velocity(r_het2(hetind),'v_s',idom,bkgrdmodel,lfbkgrdmodel)
-             !vsst = vsst* (1.+delta_vs(hetind))
-             rhost = velocity(r_het2(hetind),'rho',idom,bkgrdmodel,lfbkgrdmodel)
-             !rhost = rhost* (1.+delta_rho(hetind))
-             if (lpr) then 
-                write(6,*) 'depth-independent variation!'
-                write(6,*) hetind, 'elastic properties set to (vp,vs,rho):', &
-                           r_het2, vpst, vsst, rhost
-             endif
-          else
-             idom = minloc(abs(discont - r_het1(hetind)),1)
-             !do ij = 1, ndisc
-             !   write(6,*)'discmin?',ij,abs(discont(ij)-r_het1(hetind))
-             !enddo
-             !write(6,*)hetind,'DEBUGGING:',idom,r_het1(hetind),r_het2(hetind)
-             !write(6,*)hetind,'discs:',idom,discont(idom),bkgrdmodel,lfbkgrdmodel
-             vpst = velocity(r_het1(hetind),'v_p',idom,bkgrdmodel,lfbkgrdmodel)
-             !vpst = vpst* (1.+ delta_vp(hetind))
-             vsst = velocity(r_het1(hetind),'v_s',idom,bkgrdmodel,lfbkgrdmodel)
-             !vsst = vsst* (1.+delta_vs(hetind))
-             rhost = velocity(r_het1(hetind),'rho',idom,bkgrdmodel,lfbkgrdmodel)
-             !rhost = rhost* (1.+delta_rho(hetind))
-             if (lpr) then
-                write(6,*) 'depth-independent variation!'
-                write(6,*) hetind, 'elastic properties set to (vp,vs,rho):', &
-                           r_het1, vpst, vsst, rhost
-             endif
-          endif
-       endif
 
        ! define width and height of structure
        ! if gradient
        if ( grad(hetind) ) then
-          ! r_het1: lower boundary of complete thingy, r_het2: upper boundary
-          ! r_het2 > grad_r_het: upper boundary of gradient
-          ! r_het2 = r_het2 - grad_width: upper boundary of constant part of
-          !                               heterogeneity, lower boundary of gradient
-          grad_r_het = r_het2(hetind)
-          r_het2(hetind) = r_het2(hetind) - gradrdep1(hetind) * 1000.
-          ! th_het1 > grad_th_het1: left bound of whole heterogeneity
-          ! th_het2 > grad_th_het2: right bound of whole heterogeneity
-          ! th_het1 = th_het1 + gradrdep2/pi/r_het1 : 
-          !                     left boundary of constant part of het,
-          !                     right boundary of left gradient
-          ! th_het2 = th_het2 - gradrdep2/pi/r_het1 : 
-          !                     right boundary of constant part, 
-          !                     left boundary of right gradient
-          grad_th_het1 = th_het1(hetind)
-          grad_th_het2 = th_het2(hetind)
-          th_het1(hetind) = th_het1(hetind) + gradrdep2(hetind) * 1000. / r_het1(hetind)
-          th_het2(hetind) = th_het2(hetind) - gradrdep2(hetind) * 1000. / r_het1(hetind)
+          write(6,*) 'gradients dont work yet, switching off...'
+          grad(hetind) = .false.
        endif
     
        ! use this as center of heterogeneity
@@ -1547,11 +1427,6 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
        ! height and width of anomaly
        halfwidth_r = abs(r_het1(hetind)-r_het2(hetind))
        halfwidth_th = abs(th_het1(hetind)-th_het2(hetind)) !*r_center_gauss
-       
-       if ( grad(hetind) ) then
-          grad_halfwidth_r = abs(grad_r_het - r_het1(hetind))
-          grad_halfwidth_th = abs(grad_th_het1-grad_th_het2) !*r_center_gauss
-       endif
 
        if (lpr) then
           write(6,*) hetind, 'center r [km],th [deg]:', het_funct_type(hetind), &
@@ -1561,18 +1436,29 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
                      th_het2(hetind) * 180. / pi, halfwidth_th * 180. / pi
        endif
 
-       if ( grad(hetind) .and. lpr ) then
-          write(6,*) hetind, 'gradhalfwidth r [km],th [deg]:', het_funct_type(hetind), &
-                     grad_halfwidth_r / 1000., grad_halfwidth_th * 180. / pi
-       endif
-
-       ! find elements within heterogeneity
        allocate(rhet(nelem*(npol+1)**2), thhet(nelem*(npol+1)**2))
+
+       ! initialize variables needed to determine elastic properties in case of no depth dependence
+       ! pure synthetical case, for parameter studies (second het-parameter false: depth dependence)
+       if ( .not. rdep(hetind) ) then
+          allocate(saveipol(nelem*(npol+1)**2),savejpol(nelem*(npol+1)**2), &
+	  saveiel(nelem*(npol+1)**2),saveval(nelem*(npol+1)**2))
+          saveipol = 0
+          savejpol = 0
+          saveiel = 0
+          saveval = 0
+          foundcount = 0
+          rhost = 0.
+          lambdast = 0.
+ 	  must = 0.
+       endif
        
        icount = 0
        rhet = 0.
        thhet = 0.
-       jj = 0.
+       radst=6371000
+
+       ! find elements within heterogeneity
        do iel=1, nelem
           foundit = .false.
           call compute_coordinates(s,z,r1,th1,iel,0,0)
@@ -1585,89 +1471,75 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
           rmax = 0.999 * max(r1,r2,r3,r4)
           thetamax = 0.999 * max(th1,th2,th3,th4)
 
-          if ( rmin >= r_het1(hetind) ) then
-             if (((.not. grad(hetind)) .and. rmax<=r_het2(hetind) &
-                .and. thetamax<=th_het2(hetind) .and. thetamin>=th_het1(hetind)) .or. &
-                ( grad(hetind)  .and. rmax<=grad_r_het .and. thetamax<=grad_th_het2 &
-                .and. thetamin>=grad_th_het1)) then 
+          if ( rmin >= r_het1(hetind) .and. &
+               rmax<=r_het2(hetind) .and. &
+               thetamax<=th_het2(hetind) .and. &
+               thetamin>=th_het1(hetind) ) then
+             foundit = .true.
+          endif
 
-                jj = hetind
-                foundit = .true.
-
-                !massive spam of OUTPUT file:
-                !write(6,*) mynum, 'found element inside hetero box:', iel, jj
-                !write(6,*) mynum, 'r,th min', rmin / 1000., thetamin * 180. / pi
-                !write(6,*) mynum, 'r,th max', rmax / 1000., thetamax * 180. / pi
-             endif
+          if ( .not. rdep(hetind) ) then
+             do jpol=0, npol
+                do ipol=0, npol
+                   call compute_coordinates(s,z,r,th,iel,ipol,jpol)
+	 	   ! rhopost, mupost and lambdapost are set outside of the loop after all points are found
+		   ! get elastic properties right below the local heterogeneity
+	           if ( het_funct_type(hetind)=='ghill' .or. het_funct_type(hetind)=='shill' ) then
+	              gradwidth = r_het1(hetind)-200000. !tmp use of gradwidth
+	              if ( r<r_het1(hetind) .and. r>gradwidth .and. r>=radst ) then
+                         !write(6,*) r, rho(ipol,jpol,iel), lambda(ipol,jpol,iel), mu(ipol,jpol,iel)
+                	 rhost = rho(ipol,jpol,iel)
+                	 lambdast = lambda(ipol,jpol,iel)
+                	 must = mu(ipol,jpol,iel)
+                	 radst = r
+             	      endif
+            	      ! get elastic properties right above the local heterogeneity
+          	   else ! for vally and all other shapes get velocity at top of het
+             	      gradwidth = r_het2(hetind)+200000. !tmp use of gradwidth
+             	      if ( r>=r_het2(hetind) .and. r<gradwidth .and. r<=radst ) then
+                         !write(6,*) r, rho(ipol,jpol,iel), lambda(ipol,jpol,iel), mu(ipol,jpol,iel)
+                         rhost = rho(ipol,jpol,iel)
+                         lambdast = lambda(ipol,jpol,iel)
+                         must = mu(ipol,jpol,iel)
+                         radst = r
+                      endif
+                   endif
+                enddo
+             enddo
           endif
             
-          !XXX###################################################################
-          ! MvD: - is it smart to open the file inside the loop over all elements?
-          !      - the file is never closed!
-          !      - het_funct_type(hetind) can never be 'spher' in this part of
-          !        the code...
-          !######################################################################
-
-          open(267, file='hetero_function_adaptions.dat')
-
-          if (het_funct_type(hetind)=='gss1d' .or. het_funct_type(hetind)=='spher') &
-             open(268,file='hetero_function_sphere.dat')
           if (foundit) then
              do jpol=0, npol
                 do ipol=0, npol
                    call compute_coordinates(s,z,r,th,iel,ipol,jpol)
                    ! check if within function
                    val = 0.
-                   dr_outer = 0. ! distance to outer boundary (positive if inside heterogeneity)
-                   dr_inner = 0. ! distance to inner boundary (positive if inside constant part)
-                   dth_outer = 0.
-                   dth_inner = 0.
+                   dr_outer = -1. ! distance to outer boundary (positive if inside heterogeneity)
+                   dr_inner = -1. ! distance to inner boundary (positive if inside constant part)
+                   dth_outer = -1.
+                   dth_inner = -1.
                    ! horizontal width of gradient at depth r
                    gradwidth = 0.
-
-                   if ( grad(hetind) ) then
-                       gradwidth = (gradrdep1(hetind) - gradrdep2(hetind)) * 1000. / &
-                                    r_het1(hetind) / &
-                                    grad_halfwidth_r * ( r - r_het1(hetind) ) + &
-                                    gradrdep2(hetind) * 1000. / r_het1(hetind)
-                   endif
 
                    if (het_funct_type(hetind) == 'const') then
                       dr_inner = r_het2(hetind) - r
                       if ( th < th_center_gauss ) &
-                         dth_inner = th - (th_het1(hetind) + gradwidth)
-
+                         dth_inner = th - (th_het1(hetind))
                       if ( th >= th_center_gauss ) &
-                         dth_inner = (th_het2(hetind) - gradwidth) - th
-
-                      if ( grad(hetind) ) then
-                         dr_outer = grad_r_het - r
-                         if (th < th_center_gauss) dth_outer = th - grad_th_het1
-                         if (th >= th_center_gauss) dth_outer = grad_th_het2 - th
-                      endif
+                         dth_inner = (th_het2(hetind)) - th
                    endif
 
-                   if (het_funct_type(hetind)=='sinus') then 
+                   if (het_funct_type(hetind)=='sinus' ) then 
                       dr_inner = r_het1(hetind) + halfwidth_r * &
                                  sin( (th - th_het1(hetind)) * pi / halfwidth_th ) - r
                       if ( th < th_center_gauss ) &
-                         dth_inner = th - th_het1(hetind) - gradwidth + &
+                         dth_inner = th - th_het1(hetind) + &
                                      halfwidth_th * cos((th - th_het1(hetind)) * pi / &
                                                          halfwidth_r)
                       if ( th >= th_center_gauss ) &
-                         dth_inner = th_het2(hetind) - gradwidth - th + &
+                         dth_inner = th_het2(hetind) - th + &
                                      halfwidth_th * cos((th_het2(hetind) - th) * pi /  &
                                                         halfwidth_r)
-                      if ( grad(hetind) ) then
-                          dr_outer = r_het1(hetind) + grad_halfwidth_r * &
-                                     sin((th - grad_th_het1) * pi / grad_halfwidth_th ) - r
-                          if ( th < th_center_gauss ) &
-                             dth_outer = th - grad_th_het1 + grad_halfwidth_th * &
-                                         cos((th - grad_th_het1) * pi / grad_halfwidth_r)
-                          if ( th >= th_center_gauss ) &
-                             dth_outer = grad_th_het2 - th + grad_halfwidth_th * &
-                                         cos((grad_th_het2 - th) * pi / grad_halfwidth_r)
-                      endif
                    endif
 
                    if (het_funct_type(hetind) == 'trian') then
@@ -1676,26 +1548,12 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
                                  th_het1(hetind)) - r
                       dth_inner = th - gradwidth + ((th_center_gauss - abs(th - &
                                   th_center_gauss)) - th_het1(hetind))
-                      if ( grad(hetind) ) then
-                         dr_outer = r_het1(hetind) + & 
-                                    2 * grad_halfwidth_r / grad_halfwidth_th * &
-                                    ((th_center_gauss - abs(th - th_center_gauss)) - &
-                                    grad_th_het1) - r
-                         dth_outer = th - gradwidth + &
-                                     ((th_center_gauss - abs(th - th_center_gauss)) - &
-                                     grad_th_het1)
-                      endif
                    endif
                    
                    if (het_funct_type(hetind) == 'inclr') then 
                       dr_inner = r_het1(hetind) + ((halfwidth_r / halfwidth_th) * &
                                  abs(th - th_het1(hetind))) - r
                       dth_inner = th - gradwidth + abs(th - th_het1(hetind))
-                      if ( grad(hetind) ) then
-                         dr_outer = r_het1(hetind) + grad_halfwidth_r / &
-                                    grad_halfwidth_th * abs(th-grad_th_het1) - r
-                         dth_outer = th - gradwidth + abs( th - grad_th_het1)
-                      endif
                    endif
                    
                    if (het_funct_type(hetind) == 'inclp') then
@@ -1703,96 +1561,46 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
                                  abs(th - th_het2(hetind))) - r
                       dth_inner = th - gradwidth + &
                                   abs(th - th_het2(hetind))
-                      if ( grad(hetind) ) then
-                         dr_outer = r_het1(hetind) + grad_halfwidth_r / &
-                                    grad_halfwidth_th * abs(th-grad_th_het2) - r
-                         dth_outer = th - gradwidth + abs(th - grad_th_het2)
-                      endif
                    endif
                    
-                   if (het_funct_type(hetind) == 'gss1d') then
-                      dr_inner = r_het1(hetind) + halfwidth_r * &
-                                 dexp(-(20. * (th - th_center_gauss)**2 / &
-                                 halfwidth_th**2 / 2)) - r
+                   if (het_funct_type(hetind) == 'gss1d' ) then
+                      decay = halfwidth_th / pi 
+                      dr_inner = r_het1(hetind) + 0.95 * halfwidth_r * &
+                                 dexp(-( (th - th_center_gauss)**2 / &
+                                 decay**2 ) ) -r ! halfwidth_th**2 / 2)) - r
                       dth_inner = th - th_het1(hetind) - gradwidth + halfwidth_th * &
                                   cos((th - th_het1(hetind)) * pi / halfwidth_r )
-                      if ( grad(hetind) ) then
-                          dr_outer = r_het1(hetind) + grad_halfwidth_r * &
-                                     dexp(-( 20. * (th - th_center_gauss)**2 / &
-                                     grad_halfwidth_th**2 / 2)) - r
-                          dth_outer = th - th_het1(hetind) + grad_halfwidth_th * &
-                                      cos((th - th_het1(hetind)) * pi / grad_halfwidth_r)
-                      endif
-                      write(268,*) r, th, dr_inner, dr_outer
                    endif
-                   
-          !######################################################################
-          ! MvD: - het_funct_type(hetind) can never be 'spher' in this part of
-          !        the code...
-          !      - isnt that implemented above already?
-          !######################################################################
 
-                   ! sphere edges with 0.9 of gauss function
+                   ! ellipse without tilt, if you want tilt, enable read(tilt option)
+	           ! create file with tilt angle (mathematic convention)
                    if (het_funct_type(hetind) == 'spher') then
-                      dr_inner = dexp(-((0.5*((r - r_center_gauss)**2 / halfwidth_r**2 / 2) &
-                                 + ((th - th_center_gauss)**2 / halfwidth_th**2 / 2))))
-                      if ( grad(hetind) ) then
-                         dr_outer = dexp(-((0.5*((r - r_center_gauss)**2 / &
-                                    grad_halfwidth_r**2 / 2) + &
-                                    ((th - th_center_gauss)**2 / grad_halfwidth_th**2 / 2))))
-
-                         if ( dr_outer>=0.9 .and. dr_inner<0.9 ) then
-                             dr_outer = dr_outer - dr_inner - 0.9
-                             !( (dr_inner/ sqrt(halfwidth_r**2 + halfwidth_th**2 )) + &
-                             !(dr_outer/ sqrt(grad_halfwidth_r**2 + grad_halfwidth_th**2 )) ) * &
-                             !( sqrt(halfwidth_r**2 + halfwidth_th**2 )/2 + &
-                             !	sqrt(grad_halfwidth_r**2 + grad_halfwidth_th**2 )/2 )
-                             dth_outer = dr_outer
-                         elseif ( dr_outer>=0.9 .and. dr_inner>=0.9 ) then
-                             dr_outer = 0.
-                             dth_outer = 0.
-                         else
-                             dr_outer = -1.
-                             dth_outer = -1.
-                         endif
+		      ! Y=+-b*sqrt(1-(X/a)**2
+                      ! X=+-a*sqrt(1-(Y/b)**2
+                      ! using vstmp->y-coord of ellipse, vptmp->x-coord of ellipse
+                      ! vstmp2->upper y-distance, vptmp2->lower y-distance
+                      ! gauss_val->right x-distance, rand->left x-distance
+                      vstmp = halfwidth_r/2*sqrt(1-((th-th_center_gauss)/halfwidth_th*2)**2)
+                      vptmp = halfwidth_th/2*sqrt(1-((r-r_center_gauss)/halfwidth_r*2)**2)
+                      vstmp2 = r_center_gauss + vstmp - r
+                      vptmp2 = r - r_center_gauss + vstmp
+                      gauss_val = th_center_gauss + vptmp - th
+                      rand = th - th_center_gauss + vptmp
+                      if ( vstmp2 > 0 .and. vptmp2 > 0 .and. gauss_val > 0 .and. rand > 0 ) then
+                         dr_inner = min ( vstmp2, vptmp2 )
+                         dth_inner = min ( gauss_val, rand )
                       endif
-                      if ( dr_inner>=0.9 ) dr_inner = +1.
-                      if ( dr_inner<0.9 ) dr_inner = -1.
-                      dth_inner = dr_inner
-                      write(268,*) r, th, dr_inner, dr_outer
                    endif
 
                    ! quantify gradual change, if r,th within gradient area
-                   if ( grad(hetind) ) then !.and. r>=gauss_val .and. r<=grad_val ) then
-                      if ( ( dr_outer>0 .and. dr_inner<0. ) .or. &
-                         ( dth_outer>=0. .and. dth_inner<0. ) ) then
-                          ! 2d-distance to gradient/constant boundary
-                          val = sqrt( dr_outer**2 + dth_outer**2 ) / &
-                                ( sqrt( dr_outer**2 + dth_outer**2 ) + &
-                                sqrt( dr_inner**2 + dth_inner**2 ) )
-                          if (het_funct_type(hetind)=='spher') val = dr_outer
-                      else
-                          val = 1
-                      endif
-                   else
+                   ! remnant after temporarily excluding imperfect gradients
                       val = 1
                       dth_outer = dth_inner
                       dr_outer = dr_inner
-                   endif
 
-                   write(267,*) hetind, icount,&
-                   !r,th,gauss_val,dr_outer,dr_inner,dth_outer,dth_inner,val
-                   dth_outer, th, dth_inner, val
-                   !write(267,*)hetind,icount,&
-                   !(r-r_het1(hetind))/(r_het2(hetind)-r_het1(hetind)),&
-                   !(th-th_het1(hetind))/(th_het2(hetind)-th_het1(hetind)),&
-                   !(gauss_val-r_het1(hetind))/(r_het2(hetind)-r_het1(hetind)),&
-                   !rho(ipol,jpol,iel),lambda(ipol,jpol,iel),mu(ipol,jpol,iel)
-        
-                   if ( dr_outer>=0. .and. dth_outer>=0.) then
+                   if ( dr_outer>=0. .and. dth_outer>=0. ) then
                       if ( rdep(hetind) ) then
                          ! gradual elastic property changes with depth
-                         !write(267,*)'depth-dependent variation!'
                          vstmp = sqrt( mu(ipol,jpol,iel) / rho(ipol,jpol,iel) )
                          vptmp = sqrt( (lambda(ipol,jpol,iel) + 2. * mu(ipol,jpol,iel)) / &
                                        rho(ipol,jpol,iel) )
@@ -1803,36 +1611,55 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
                          mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp**2
                       else
                          ! constant elastic property changes
-                         !write(267,*)'depth-independent variation!'
-                         rhopost(ipol,jpol,iel) = rhost * (1. + val * delta_rho(hetind))
-                         lambdapost(ipol,jpol,iel) = rhost * (1. + val * delta_rho(hetind)) * &
-                                                     ((vpst * (1. + val * delta_vp(hetind)))**2 &
-                                                      - 2. * (vsst * (1. + val * delta_vs(hetind)))**2)
-                         mupost(ipol,jpol,iel) = rhost * (1. + val * delta_rho(hetind)) * &
-                                                 ((vsst * (1. + val * delta_vs(hetind)))**2)
+                         !#############################################################################
+                         !instead of using rhost, vpst and vsst calculated with velocity above
+                         !problems with anisotropy
+			 !save ipol jpol and iel val(ipol,jpol,iel) of heterogeneity
+                         foundcount = foundcount + 1
+                         saveipol(foundcount) = ipol
+			 savejpol(foundcount) = jpol
+                         saveiel(foundcount) = iel
+                         saveval(foundcount) = val
                       endif !rdep
                    ! for both...
                    endif !inside heterogeneity
-                   !write(267,*)hetind,icount,&
-                               !(r-r_het1(hetind))/(r_het2(hetind)-r_het1(hetind)),&
-                   !(dr_inner-r_het1(hetind))/(r_het2(hetind)-r_het1(hetind)),&
-                   !rho(ipol,jpol,iel),lambda(ipol,jpol,iel),mu(ipol,jpol,iel)
                    icount = icount + 1
                    rhet(icount) = r
                    thhet(icount) = th
                 enddo !ipol
              enddo !jpol
           endif !foundit
-       enddo
+       enddo !iel
        
        !min/max of heterogeneous region
        rhetmin = min(minval(rhet(1:icount)), rhetmin)
        rhetmax = max(maxval(rhet(1:icount)), rhetmax)
        thhetmin = min(minval(thhet(1:icount)), thhetmin)
        thhetmax = max(maxval(thhet(1:icount)), thhetmax)
+
+       if ( .not. rdep(hetind) ) then
+       ! write(6,*) 'nordep hetind/cnt/r/rho/lambda/mu: ', hetind, foundcount, radst, rhost, lambdast, must
+       ! get minimum/ maximum of 
+             vstmp = sqrt( must / rhost )
+             vptmp = sqrt( (lambdast + 2. * must) / rhost )
+	  do icount=0, foundcount
+             ipol=saveipol(icount)
+             jpol=savejpol(icount)
+	     iel=saveiel(icount)
+             val=saveval(icount)
+             rhopost(ipol,jpol,iel) = rhost * (1. + val * delta_rho(hetind))
+             vstmp2 = vstmp * (1. + val * delta_vs(hetind))
+             vptmp2 = vptmp * (1. + val * delta_vp(hetind))
+             rhopost(ipol,jpol,iel) = rho(ipol,jpol,iel) * (1. + val * delta_rho(hetind))
+             lambdapost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * (vptmp2**2 - 2. * vstmp2**2)
+             mupost(ipol,jpol,iel) = rhopost(ipol,jpol,iel) * vstmp2**2
+          enddo
+          deallocate(saveipol,savejpol,saveiel,saveval)
+       endif !not rdep
        
        write(6,*) mynum, 'r het min/max:', rhetmin/1000., rhetmax/1000.
        write(6,*) mynum, 'th het min/max:', thhetmin*180./pi, thhetmax*180./pi
+       write(6,*) icount
        deallocate(rhet,thhet)
 
     else
