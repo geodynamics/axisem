@@ -294,30 +294,24 @@ subroutine prepare_seismograms
 
 11 format(6(1pe11.4))
 
-  if (dump_wavefields) then
-    if(use_netcdf)   then
-       !print *, ' General wavefield dump with NetCDF is not yet implemented!'
-       !stop
-    else 
-
-       do iel=1,maxind
-          call define_io_appendix(appielem,iel+mynum*maxind)
-          open(unit=40000000+iel,file=datapath(1:lfdata)// &
-                    '/surfelem_disp.dat'//appielem)
+  if (dump_wavefields.and.(.not.use_netcdf)) then
+    do iel=1,maxind
+       call define_io_appendix(appielem,iel+mynum*maxind)
+       open(unit=40000000+iel,file=datapath(1:lfdata)// &
+                 '/surfelem_disp.dat'//appielem)
 
 
-          open(unit=50000000+iel,file=datapath(1:lfdata)// &
-                                      '/surfelem_velo.dat'//appielem)
-       enddo
+       open(unit=50000000+iel,file=datapath(1:lfdata)// &
+                                   '/surfelem_velo.dat'//appielem)
+    enddo
 
-       do iel=1,maxind
-          call define_io_appendix(appielem,iel+mynum*maxind)
-          open(unit=60000000+iel,file=datapath(1:lfdata)// &
-               '/surfelem_strain.dat'//appielem)
-          open(unit=70000000+iel,file=datapath(1:lfdata)// &
-               '/surfelem_disp_src.dat'//appielem)
-       enddo
-    endif
+    do iel=1,maxind
+       call define_io_appendix(appielem,iel+mynum*maxind)
+       open(unit=60000000+iel,file=datapath(1:lfdata)// &
+            '/surfelem_strain.dat'//appielem)
+       open(unit=70000000+iel,file=datapath(1:lfdata)// &
+            '/surfelem_disp_src.dat'//appielem)
+    enddo
   endif
 
 end subroutine prepare_seismograms
