@@ -108,24 +108,25 @@ subroutine readin_parameters
    08x,'//                                                           //',/  &
    08x,'//                  A   x   i   S   E   M                    //',/  &
    08x,'//                                                           //',/  &
-   08x,'//                                                  	     //',/  &
-   08x,'//         Parallel spectral-element solution to  	     //',/  &
-   08x,'//                                                	     //',/  &
-   08x,'//           3-D seismic wave propagation for         	     //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//         Parallel spectral-element solution to             //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//           3-D seismic wave propagation for                //',/  &
    08x,'//                                                           //',/  &
    08x,'//          axially symmetric background models              //',/  &
    08x,'//                                                           //',/  &
    08x,'//               in a spherical 2-D domain                   //',/  &
-   08x,'//                                            	             //',/  &
    08x,'//                                                           //',/  &
-   08x,'// Authors : Tarje Nissen-Meyer (Oxford University)          //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//  Authors : Tarje Nissen-Meyer (Oxford University)         //',/  &
    08x,'//            Alexandre Fournier (IPG Paris)                 //',/  &
    08x,'//              Martin van Driel (ETH Zurich)                //',/  &
    08x,'//                 Simon Stähler (LMU Munich)                //',/  &
    08x,'//                Kasra Hosseini (LMU Munich)                //',/  &
+   08x,'//               Stefanie Hempel (University of Muenster)    //',/  &
    08x,'//                   Tony Dahlen (Princeton University)      //',/  &
    08x,'//                                                           //',/  &
-   08x,'//   Contact:     tarje@alumni.princeton.edu                 //',/  &  
+   08x,'//   Contact:     info@axisem.info                           //',/  &  
    08x,'//   Information: www.axisem.info                            //',/  &
    08x,'//                                                           //',/  &
    08x,'//       Comprehensive description of the underlying         //',/  &
@@ -152,8 +153,16 @@ subroutine readin_parameters
    08x,'//     Geophysical Journal International 174(3), 873-888.    //',/  & 
    08x,'//     doi:10.1111/j.1365-246X.2008.03813.x                  //',/  &
    08x,'//                                                           //',/  &
+   08x,'//     If you are publishing results obtained with this      //',/  &
+   08x,'//          code, please cite the upcoming paper:            //',/  &
    08x,'//                                                           //',/  &
-   08x,'//  Juli 2013 : Version 1.2                                  //',/  &
+   08x,'// (4) T. Nissen-Meyer, M. van Driel, S. Staehler,           //',/  & 
+   08x,'//     K. Hosseini, S. Hempel, A. Fournier:                  //',/  & 
+   08x,'//     "AxiSEM: Simulating high-frequency viscoelastic       //',/  &
+   08x,'//              3D global wavefields",                       //',/  & 
+   08x,'//     to be submitted to Solid Earth                        //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//  November 2013: version 1.0                               //',/  &
    08x,'//                                                           //',/  &
    08x,'///////////////////////////////////////////////////////////////',// &
    08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
