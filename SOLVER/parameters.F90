@@ -1552,10 +1552,6 @@ subroutine write_parameters
                     '# displacement or velocity seismograms', &
                     'SEISTYPE        disp'
            
-           write(9,'(a,/,a,/)') &
-                    '# Write out intermediate seismograms (processed, but not summed)', &
-                    'DETAILED_OUTPUT false'
-           
            write(9,'(a,/,a,l1/)') &
                     '# make 3D plots of the wavefield', &
                     'LOAD_SNAPS      ', dump_vtk
@@ -1563,6 +1559,10 @@ subroutine write_parameters
            write(9,'(a,/,a,/)') &
                     '# OUTPUT PATH', &
                     'DATA_DIR        "./Data_Postprocessing"'
+           
+           write(9,'(a,/,a,/)') &
+                    '# Write out intermediate seismograms (processed, but not summed)', &
+                    'DETAILED_OUTPUT false'
            
            write(9,'(a,/,a,/,a,/,/)') &
                     '# output seismograms at negative time', &
