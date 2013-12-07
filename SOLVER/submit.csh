@@ -23,8 +23,8 @@ else if ( -d $1) then
 endif
 
 #@TODO What happens if not defined? Checkint these in parameters.F90 is quite late then...
-set datapath = `grep "DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"//g'`
-set infopath = `grep "INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
+set datapath = `grep "^DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"//g'`
+set infopath = `grep "^INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
 set meshdir = "MESHES/"`grep "^MESHNAME" inparam_basic | awk '{print $2}'`
 set mpiruncmd = `grep "^MPIRUN" ../make_axisem.macros | awk '{print $3}'`
 
@@ -61,7 +61,7 @@ else
   exit
 endif
 
-set bgmodel = `grep BACKGROUND_MODEL $meshdir/inparam_mesh | awk '{print $2}'`
+set bgmodel = `grep ^BACKGROUND_MODEL $meshdir/inparam_mesh | awk '{print $2}'`
 
 if ( ! -f inparam_hetero) then 
   cp inparam_hetero.TEMPLATE inparam_hetero
@@ -90,7 +90,7 @@ set multisrc = 'false'
 
 # @TODO grep is not stable if SIMULATION_TYPE is there twice, e.g. in a comment line!!
 
-set srctype = `grep "SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
+set srctype = `grep "^SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
 set src_file_type = 'sourceparams'
 set srcfile = 'inparam_source'
 
@@ -123,7 +123,7 @@ if ( ! -f $homedir/$srcfile ) then
 endif
 
 # identify receiver input file
-set rec_file_type = `grep "RECFILE_TYPE" inparam_basic |awk '{print $2}'`
+set rec_file_type = `grep "^RECFILE_TYPE" inparam_basic |awk '{print $2}'`
 echo "Receiver file type:" $rec_file_type
 
 if ( $rec_file_type == 'colatlon' ) then
