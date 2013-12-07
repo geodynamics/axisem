@@ -6,7 +6,7 @@
 #                                                                              #
 #------------------------------------------------------------------------------#
 
-# Set name of mpirun command
+# Set name of mpirun command on your system
 MPIRUN  = mpirun
 
 # Enable NetCDF
@@ -16,12 +16,18 @@ NETCDF_PATH = $(HOME)/local
 # compile without MPI (if mpi is not installed, remove the $mpiruncmd from submit.csh)
 SERIAL = false
 
+####################################
+# Choose compiler names and flags: #
+####################################
+
 # GFORTRAN (fast)
+# OpenMP is supported by the MESHER and is useful for high-frequency
+# Meshes, i.e. <5s period. Uses up to 8 threads. Does not affect the SOLVER.
 CC      = gcc                                # C compiler
 FC      = mpif90                             # Fortran compiler
-FFLAGS  = -O3 #-march=native -fopenmp
-CFLAGS  = -O3 #-march=native
-LDFLAGS = -O3 #-march=native -fopenmp
+FFLAGS  = -O3 #-march=native -fopenmp        
+CFLAGS  = -O3 #-march=native                
+LDFLAGS = -O3 #-march=native -fopenmp      
 
 # GFORTRAN (debug)
 #CC      = gcc                                # C compiler
