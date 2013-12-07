@@ -32,7 +32,7 @@ module data_bkgrdmodel
   real(kind=dp), allocatable :: vp(:,:), vs(:,:), rho(:,:)
   logical, allocatable       :: solid_domain(:)
   integer                    :: lfbkgrdmodel
-  character(len=100)         :: bkgrdmodel, fnam_ext_model
+  character(len=100)         :: bkgrdmodel
   logical                    :: resolve_inner_shear, have_fluid, have_solid
   real(kind=dp)              :: pts_wavelngth
   real(kind=dp)              :: period, courant
@@ -47,6 +47,8 @@ module data_bkgrdmodel
   real(kind=dp)              :: rmin, minh_ic, maxh_ic, maxh_icb
   real(kind=dp)              :: minhvp, maxhvs, maxhnsicb
 
+  ! The following variables are only needed by external models
+  character(len=100)         :: fnam_ext_model
 !===================
 end module data_bkgrdmodel
 !===================

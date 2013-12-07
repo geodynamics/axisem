@@ -337,119 +337,119 @@ end subroutine read_model
 !! format:
 !! ndisc
 !! r vp vs rho
-subroutine arbitr_sub_solar_arr(s,z,v_p,v_s,rho,bkgrdmodel2)
-
-  use data_mesh
-  real(kind=dp)   , intent(in) :: s(0:npol,0:npol,1:nelem),z(0:npol,0:npol,1:nelem)
-  character(len=100), intent(in) :: bkgrdmodel2
-  real(kind=dp)   , dimension(:,:,:), intent(out) :: rho(0:npol,0:npol,1:nelem)
-  real(kind=dp)   , dimension(:,:,:), intent(out) :: v_s(0:npol,0:npol,1:nelem)
-  real(kind=dp)   , dimension(:,:,:), intent(out) :: v_p(0:npol,0:npol,1:nelem)
-  real(kind=dp)   , allocatable, dimension(:) :: disconttmp,rhotmp,vstmp,vptmp
-  integer :: ndisctmp,i,ind(2),ipol,jpol,iel
-  logical :: bkgrdmodelfile_exists
-  real(kind=dp)    :: w(2),wsum,r0
-
-  ! Does the file bkgrdmodel".bm" exist?
-  !@TODO: Change to new name convention scheme. Should start in the MESHER.
-  inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
-          exist=bkgrdmodelfile_exists)
-  if (bkgrdmodelfile_exists) then
-      open(unit=77,file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm')
-      read(77,*)ndisctmp
-      allocate(disconttmp(1:ndisctmp))
-      allocate(vptmp(1:ndisctmp),vstmp(1:ndisctmp),rhotmp(1:ndisctmp))
-      do i=1, ndisctmp
-          read(77,*)disconttmp(i),rhotmp(i),vptmp(i),vstmp(i)
-      enddo
-      close(77)
-      do iel=1,nelem
-          do jpol=0,npol
-              do ipol=0,npol
-                  r0 = dsqrt(s(ipol,jpol,iel)**2 +z(ipol,jpol,iel)**2 )
-                  call interp_vel(r0,disconttmp(1:ndisctmp),ndisctmp,ind,w,wsum)
-                  rho(ipol,jpol,iel)=sum(w*rhotmp(ind))*wsum
-                  v_p(ipol,jpol,iel)=(w(1)*vptmp(ind(1))+w(2)*vptmp(ind(2)))*wsum
-                  v_s(ipol,jpol,iel)=sum(w*vstmp(ind))*wsum
-              enddo
-          enddo
-      enddo
-      deallocate(disconttmp,vstmp,vptmp,rhotmp)
-  else 
-      write(6,*)'Background model file', &
-                trim(bkgrdmodel2)//'.bm','does not exist!!!'
-      stop
-  endif
-
-end subroutine arbitr_sub_solar_arr
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!> Calculate interpolation parameters w to interpolate velocity at radius r0
-!! from a model defined at positions r(1:n)
-subroutine interp_vel(r0,r,n,ind,w,wsum)
-
-  integer, intent(in)           :: n      !< number of supporting points
-  real(kind=dp)   , intent(in)  :: r(1:n) !< supporting points in depth
-  real(kind=dp)   , intent(in)  :: r0     !< Target depth
-  integer, intent(out)          :: ind(2) !< Indizes of supporting points 
-                                          !! between which r0 is found
-  real(kind=dp)   , intent(out) :: w(2),wsum !< Weighting factors
-  integer                       :: i,p
-  real(kind=dp)                 :: dr1,dr2
-
-  p = 1
-
-  i = minloc(dabs(r-r0),1)
-
-  if (r0>0.d0) then
-     if ((r(i)-r0)/r0> 1.d-8) then ! closest discont. at larger radius
-        ind(1)=i
-        ind(2)=i+1
-        dr1=r(ind(1))-r0
-        dr2=r0-r(ind(2))
-     elseif ((r0-r(i))/r0> 1.d-8) then  ! closest discont. at smaller radius
-        if (r0>maxval(r)) then ! for round-off errors where mesh is above surface
-           ind(1)=i
-           ind(2)=i
-           dr1=1.d0
-           dr2=1.d0
-        else
-           ind(1)=i-1
-           ind(2)=i
-           dr1=r(ind(1))-r0
-           dr2=r0-r(ind(2))
-        endif
-     elseif (dabs((r(i)-r0)/r0)< 1.d-8) then ! closest discont identical
-        ind(1)=i
-        ind(2)=i
-        dr1=1.d0
-        dr2=1.d0
-     else
-        write(6,*)'problem with round-off errors in interpolating......'
-        write(6,*)'r0,r(i),i',r0,r(i),abs((r(i)-r0)/r0),i
-        stop
-     endif
-  else !r0=0
-     if (r(i)==0.d0) then ! center of the sun
-        ind(1)=i
-        ind(2)=i
-        dr1=1.d0
-        dr2=1.d0
-     else
-        ind(1)=i
-        ind(2)=i+1
-        dr1=r(ind(1))-r0
-        dr2=r0-r(ind(2))        
-     endif
-  endif
-
-  ! inverse distance weighting
-  w(1) = (dr1)**(-p)
-  w(2) = (dr2)**(-p)
-  wsum = 1.d0 / sum(w)
-
-end subroutine interp_vel
+!subroutine arbitr_sub_solar_arr(s,z,v_p,v_s,rho,bkgrdmodel2)
+!
+!  use data_mesh
+!  real(kind=dp)   , intent(in) :: s(0:npol,0:npol,1:nelem),z(0:npol,0:npol,1:nelem)
+!  character(len=100), intent(in) :: bkgrdmodel2
+!  real(kind=dp)   , dimension(:,:,:), intent(out) :: rho(0:npol,0:npol,1:nelem)
+!  real(kind=dp)   , dimension(:,:,:), intent(out) :: v_s(0:npol,0:npol,1:nelem)
+!  real(kind=dp)   , dimension(:,:,:), intent(out) :: v_p(0:npol,0:npol,1:nelem)
+!  real(kind=dp)   , allocatable, dimension(:) :: disconttmp,rhotmp,vstmp,vptmp
+!  integer :: ndisctmp,i,ind(2),ipol,jpol,iel
+!  logical :: bkgrdmodelfile_exists
+!  real(kind=dp)    :: w(2),wsum,r0
+!
+!  ! Does the file bkgrdmodel".bm" exist?
+!  !@TODO: Change to new name convention scheme. Should start in the MESHER.
+!  inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
+!          exist=bkgrdmodelfile_exists)
+!  if (bkgrdmodelfile_exists) then
+!      open(unit=77,file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm')
+!      read(77,*)ndisctmp
+!      allocate(disconttmp(1:ndisctmp))
+!      allocate(vptmp(1:ndisctmp),vstmp(1:ndisctmp),rhotmp(1:ndisctmp))
+!      do i=1, ndisctmp
+!          read(77,*)disconttmp(i),rhotmp(i),vptmp(i),vstmp(i)
+!      enddo
+!      close(77)
+!      do iel=1,nelem
+!          do jpol=0,npol
+!              do ipol=0,npol
+!                  r0 = dsqrt(s(ipol,jpol,iel)**2 +z(ipol,jpol,iel)**2 )
+!                  call interp_vel(r0,disconttmp(1:ndisctmp),ndisctmp,ind,w,wsum)
+!                  rho(ipol,jpol,iel)=sum(w*rhotmp(ind))*wsum
+!                  v_p(ipol,jpol,iel)=(w(1)*vptmp(ind(1))+w(2)*vptmp(ind(2)))*wsum
+!                  v_s(ipol,jpol,iel)=sum(w*vstmp(ind))*wsum
+!              enddo
+!          enddo
+!      enddo
+!      deallocate(disconttmp,vstmp,vptmp,rhotmp)
+!  else 
+!      write(6,*)'Background model file', &
+!                trim(bkgrdmodel2)//'.bm','does not exist!!!'
+!      stop
+!  endif
+!
+!end subroutine arbitr_sub_solar_arr
+!!=============================================================================
+!
+!!-----------------------------------------------------------------------------
+!!> Calculate interpolation parameters w to interpolate velocity at radius r0
+!!! from a model defined at positions r(1:n)
+!subroutine interp_vel(r0,r,n,ind,w,wsum)
+!
+!  integer, intent(in)           :: n      !< number of supporting points
+!  real(kind=dp)   , intent(in)  :: r(1:n) !< supporting points in depth
+!  real(kind=dp)   , intent(in)  :: r0     !< Target depth
+!  integer, intent(out)          :: ind(2) !< Indizes of supporting points 
+!                                          !! between which r0 is found
+!  real(kind=dp)   , intent(out) :: w(2),wsum !< Weighting factors
+!  integer                       :: i,p
+!  real(kind=dp)                 :: dr1,dr2
+!
+!  p = 1
+!
+!  i = minloc(dabs(r-r0),1)
+!
+!  if (r0>0.d0) then
+!     if ((r(i)-r0)/r0> 1.d-8) then ! closest discont. at larger radius
+!        ind(1)=i
+!        ind(2)=i+1
+!        dr1=r(ind(1))-r0
+!        dr2=r0-r(ind(2))
+!     elseif ((r0-r(i))/r0> 1.d-8) then  ! closest discont. at smaller radius
+!        if (r0>maxval(r)) then ! for round-off errors where mesh is above surface
+!           ind(1)=i
+!           ind(2)=i
+!           dr1=1.d0
+!           dr2=1.d0
+!        else
+!           ind(1)=i-1
+!           ind(2)=i
+!           dr1=r(ind(1))-r0
+!           dr2=r0-r(ind(2))
+!        endif
+!     elseif (dabs((r(i)-r0)/r0)< 1.d-8) then ! closest discont identical
+!        ind(1)=i
+!        ind(2)=i
+!        dr1=1.d0
+!        dr2=1.d0
+!     else
+!        write(6,*)'problem with round-off errors in interpolating......'
+!        write(6,*)'r0,r(i),i',r0,r(i),abs((r(i)-r0)/r0),i
+!        stop
+!     endif
+!  else !r0=0
+!     if (r(i)==0.d0) then ! center of the sun
+!        ind(1)=i
+!        ind(2)=i
+!        dr1=1.d0
+!        dr2=1.d0
+!     else
+!        ind(1)=i
+!        ind(2)=i+1
+!        dr1=r(ind(1))-r0
+!        dr2=r0-r(ind(2))        
+!     endif
+!  endif
+!
+!  ! inverse distance weighting
+!  w(1) = (dr1)**(-p)
+!  w(2) = (dr2)**(-p)
+!  wsum = 1.d0 / sum(w)
+!
+!end subroutine interp_vel
 !=============================================================================
 
 !-----------------------------------------------------------------------------

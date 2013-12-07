@@ -44,12 +44,15 @@ mv OUTPUT $meshpath
 cp -p inparam_mesh $meshpath
 cp -p background_models.f90 $meshpath
 
-set bgmodel = `grep "BACKGROUND_MODEL" inparam_mesh | awk '{print $2}'`
+set bgmodel = `grep "^BACKGROUND_MODEL" inparam_mesh | awk '{print $2}'`
+echo $bgmodel
 if ( $bgmodel == 'external') then
-  if ( -f external_model.bm) then
-    cp -p external_model.bm $meshpath
+  set extmodel = `grep "^EXT_MODEL" inparam_mesh | awk '{print $2}'`
+  echo "Copying external model file $extmodel"
+  if ( -f $extmodel) then
+    cp -p $extmodel $meshpath/external_model.bm
   else
-    echo "external_model.bm does not exist. Did you delete it? Why?"
+    echo "external model file $extmodel does not exist. Did you delete it? Why?"
     exit
   endif
 endif

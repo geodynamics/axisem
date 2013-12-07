@@ -34,8 +34,15 @@ module background_models
   use global_parameters, only: dp, sp
   implicit none
   
-  public :: velocity, model_is_ani, model_is_anelastic
+  public :: velocity, model_is_ani, model_is_anelastic, arbitr_sub_solar_arr
+  public :: read_ext_model
+  !public :: vp_layer, vs_layer, rho_layer, radius_layer, nlayer
   private
+  integer                   , save  :: nlayer = -1
+  real(kind=dp), allocatable, save  :: vp_layer(:)
+  real(kind=dp), allocatable, save  :: vs_layer(:)
+  real(kind=dp), allocatable, save  :: rho_layer(:)
+  real(kind=dp), allocatable, save  :: radius_layer(:)
 contains
 
 !-----------------------------------------------------------------------------
@@ -72,10 +79,10 @@ real(kind=dp)  function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
         velocity = prem_solid_light_sub(r0, param, idom)
      case('iasp91')
         velocity = iasp91_sub(r0, param, idom)
-     case('solar')
-        velocity = arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
+!     case('solar')
+!        velocity = arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
      case('external')
-        velocity = arbitr_sub(param, idom)
+        velocity = arbitr_sub_solar(r0, param, idom)
      case default
         write(6,*) 'Unknown background model: ', bkgrdmodel2 
         stop
@@ -1348,71 +1355,71 @@ end function iasp91_sub
 !! ndisc
 !! r vp vs rho qkappa qmu
 !! ...
-real(kind=dp) function arbitr_sub(param, idom)
-
-  integer, intent(in)             :: idom
-  integer                         :: idom2
-  character(len=3), intent(in)    :: param !rho, vs,vp
-  real(kind=dp)   , allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
-  real(kind=dp)   , allocatable, dimension(:) :: qmutmp, qkappatmp
-  integer                         :: ndisctmp, i
-  logical                         :: bkgrdmodelfile_exists
-
-  ! Does the file fnam_ext_model exist?
-  
-  inquire(file='external_model.bm', exist=bkgrdmodelfile_exists)
-  
-  if (bkgrdmodelfile_exists) then
-      open(unit=77, file='external_model.bm')
-      read(77,*) ndisctmp
-
-      ! necessary in case of stealth layer (see discont meshing)
-      if (idom > ndisctmp) then
-          idom2 = ndisctmp
-      else 
-          idom2 = idom
-      endif
-  
-      allocate(disconttmp(1:ndisctmp))
-      allocate(vptmp(1:ndisctmp))
-      allocate(vstmp(1:ndisctmp))
-      allocate(rhotmp(1:ndisctmp))
-      allocate(qmutmp(1:ndisctmp))
-      allocate(qkappatmp(1:ndisctmp))
-
-      do i=1, ndisctmp
-          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i), qkappatmp(i), qmutmp(i)
-      enddo
-      close(77)
-
-      if (param=='rho') then 
-        arbitr_sub = rhotmp(idom2)
-      elseif (param=='v_p') then
-        arbitr_sub = vptmp(idom2)
-      elseif (param=='v_s') then
-        arbitr_sub = vstmp(idom2)
-      elseif (param=='vpv') then 
-        arbitr_sub = vptmp(idom2)
-      elseif (param=='vsv') then 
-        arbitr_sub = vstmp(idom2)
-      elseif (param=='vph') then 
-        arbitr_sub = vptmp(idom2)
-      elseif (param=='vsh') then 
-        arbitr_sub = vstmp(idom2)
-      elseif (param=='eta') then 
-        arbitr_sub = 1.
-      elseif (param=='Qmu') then
-        arbitr_sub = qmutmp(idom2)
-      elseif (param=='Qka') then
-        arbitr_sub = qkappatmp(idom2)
-      endif
-      deallocate(disconttmp, vstmp, vptmp, rhotmp)
-  else 
-      write(6,*)'Background model file ''external_model.bm'' does not exist!!!'
-      stop
-  endif
-
-end function arbitr_sub
+!real(kind=dp) function arbitr_sub(param, idom)
+!
+!  integer, intent(in)             :: idom
+!  integer                         :: idom2
+!  character(len=3), intent(in)    :: param !rho, vs,vp
+!  real(kind=dp)   , allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
+!  real(kind=dp)   , allocatable, dimension(:) :: qmutmp, qkappatmp
+!  integer                         :: ndisctmp, i
+!  logical                         :: bkgrdmodelfile_exists
+!
+!  ! Does the file fnam_ext_model exist?
+!  
+!  inquire(file='external_model.bm', exist=bkgrdmodelfile_exists)
+!  
+!  if (bkgrdmodelfile_exists) then
+!      open(unit=77, file='external_model.bm')
+!      read(77,*) ndisctmp
+!
+!      ! necessary in case of stealth layer (see discont meshing)
+!      if (idom > ndisctmp) then
+!          idom2 = ndisctmp
+!      else 
+!          idom2 = idom
+!      endif
+!  
+!      allocate(disconttmp(1:ndisctmp))
+!      allocate(vptmp(1:ndisctmp))
+!      allocate(vstmp(1:ndisctmp))
+!      allocate(rhotmp(1:ndisctmp))
+!      allocate(qmutmp(1:ndisctmp))
+!      allocate(qkappatmp(1:ndisctmp))
+!
+!      do i=1, ndisctmp
+!          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i), qkappatmp(i), qmutmp(i)
+!      enddo
+!      close(77)
+!
+!      if (param=='rho') then 
+!        arbitr_sub = rhotmp(idom2)
+!      elseif (param=='v_p') then
+!        arbitr_sub = vptmp(idom2)
+!      elseif (param=='v_s') then
+!        arbitr_sub = vstmp(idom2)
+!      elseif (param=='vpv') then 
+!        arbitr_sub = vptmp(idom2)
+!      elseif (param=='vsv') then 
+!        arbitr_sub = vstmp(idom2)
+!      elseif (param=='vph') then 
+!        arbitr_sub = vptmp(idom2)
+!      elseif (param=='vsh') then 
+!        arbitr_sub = vstmp(idom2)
+!      elseif (param=='eta') then 
+!        arbitr_sub = 1.
+!      elseif (param=='Qmu') then
+!        arbitr_sub = qmutmp(idom2)
+!      elseif (param=='Qka') then
+!        arbitr_sub = qkappatmp(idom2)
+!      endif
+!      deallocate(disconttmp, vstmp, vptmp, rhotmp)
+!  else 
+!      write(6,*)'Background model file ''external_model.bm'' does not exist!!!'
+!      stop
+!  endif
+!
+!end function arbitr_sub
 !=============================================================================
 
 !-----------------------------------------------------------------------------
@@ -1421,11 +1428,10 @@ end function arbitr_sub
 !! ndisc
 !! r vp vs rho
 !! ...
-real(kind=dp) function arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
+real(kind=dp) function arbitr_sub_solar(r0, param, idom)
 
   real(kind=dp)   , intent(in)      :: r0
   integer, intent(in)               :: idom
-  character(len=100), intent(in)    :: bkgrdmodel2 
   character(len=3), intent(in)      :: param !rho, vs,vp
 
   real(kind=dp)   , allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
@@ -1434,40 +1440,112 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
   real(kind=dp)     :: w(2), wsum
 
   ! Does the file bkgrdmodel".bm" exist?
-  inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
-          exist=bkgrdmodelfile_exists)
-  if (bkgrdmodelfile_exists) then
-     open(unit=77, file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm')
-     read(77,*) ndisctmp
-     !write(6,*)'num discont:',ndisctmp
-     !write(6,*)'radius:',r0
+  !inquire(file=trim(fnam_ext_model), &
+  !        exist=bkgrdmodelfile_exists)
+  !if (bkgrdmodelfile_exists) then
+     !open(unit=77, file=trim(fnam_ext_model))
+     !read(77,*) ndisctmp
+     !!write(6,*)'num discont:',ndisctmp
+     !!write(6,*)'radius:',r0
 
-     allocate(disconttmp(1:ndisctmp))
-     allocate(vptmp(1:ndisctmp))
-     allocate(vstmp(1:ndisctmp))
-     allocate(rhotmp(1:ndisctmp))
+     !allocate(disconttmp(1:ndisctmp))
+     !allocate(vptmp(1:ndisctmp))
+     !allocate(vstmp(1:ndisctmp))
+     !allocate(rhotmp(1:ndisctmp))
 
-     do i=1, ndisctmp
-        read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i)
-     enddo
-     close(77)
-     
-     call interp_vel(r0,disconttmp(1:ndisctmp),ndisctmp,ind,w,wsum)
+     !do i=1, ndisctmp
+     !   read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i)
+     !enddo
+     !close(77)
 
-     if (param=='rho') arbitr_sub_solar = sum(w * rhotmp(ind)) * wsum
-     if (param=='v_p') &!arbitr_sub_solar=sum(w*vptmp(ind))*wsum
-          arbitr_sub_solar = (w(1) * vptmp(ind(1)) + w(2) * vptmp(ind(2))) * wsum
-     if (param=='v_s') arbitr_sub_solar = sum(w * vstmp(ind)) * wsum
-     deallocate(disconttmp, vstmp, vptmp, rhotmp)
-  else 
-     write(6,*)'Background model file ', &
-          bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', ' does not exist!!!'
-     stop
-  endif
+     call interp_vel(r0, radius_layer, nlayer, ind, w, wsum)
+
+     if (param=='rho') arbitr_sub_solar = sum(w * rho_layer(ind)) * wsum
+     if (param=='v_p') arbitr_sub_solar = sum(w * vp_layer(ind)) * wsum
+          !arbitr_sub_solar = (w(1) * vp_layer(ind(1)) + w(2) * vp_layer(ind(2))) * wsum
+     if (param=='v_s') arbitr_sub_solar = sum(w * vs_layer(ind)) * wsum
+     !deallocate(disconttmp, vstmp, vptmp, rhotmp)
+  !else 
+  !   write(6,*)'Background model file ', &
+  !        trim(fnam_ext_model), ' does not exist!!!'
+  !   stop
+  !endif
+
+  if  (param=='v_p') write(1003,*) r0, ind, w, wsum     ! Seems to be okay as well
+  if  (param=='v_p') write(1002,*) r0, arbitr_sub_solar ! Seems to be okay
 
 end function arbitr_sub_solar
 !=============================================================================
 
+!-----------------------------------------------------------------------------------------
+subroutine arbitr_sub_solar_arr(s, z, v_p, v_s, rho, bkgrdmodel2)
+!
+! file-based, step-wise model in terms of domains separated by disconts.
+! format:
+! ndisc
+! r vp vs rho
+! ...
+
+  real(kind=dp), intent(in)    :: s(0:,0:,:), z(0:,0:,:)
+  character(len=100), intent(in)  :: bkgrdmodel2
+  real(kind=dp), dimension(0:,0:,:), intent(out) :: rho ! (0:npol,0:npol,1:neltot)
+  real(kind=dp), dimension(0:,0:,:), intent(out) :: v_s ! (0:npol,0:npol,1:neltot)
+  real(kind=dp), dimension(0:,0:,:), intent(out) :: v_p ! (0:npol,0:npol,1:neltot)
+  real(kind=dp), allocatable, dimension(:)     :: disconttmp, rhotmp, vstmp, vptmp
+  integer             :: ndisctmp, i, ndisctmp2, ind(2), ipol, jpol, iel
+  logical             :: bkgrdmodelfile_exists
+  real(kind=dp)       :: w(2), wsum, r0
+  integer             :: npol, neltot
+  
+  npol = size(s,1)-1
+  neltot = size(s,3)
+  
+  ! Does the file bkgrdmodel".bm" exist?
+  !inquire(file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm', &
+  !        exist=bkgrdmodelfile_exists)
+  !if (bkgrdmodelfile_exists) then
+  !   open(unit=77,file=bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm')
+  !   read(77,*)ndisctmp
+  !   allocate(disconttmp(1:ndisctmp))
+  !   allocate(vptmp(1:ndisctmp),vstmp(1:ndisctmp),rhotmp(1:ndisctmp))
+  !   do i=1, ndisctmp
+  !      read(77,*)disconttmp(i),rhotmp(i),vptmp(i),vstmp(i)
+  !   enddo
+  !   close(77)
+
+  call read_ext_model(bkgrdmodel2, ndisctmp, rhotmp, vptmp, vstmp, disconttmp)
+
+  !print *, nlayer
+  !allocate(disconttmp(nlayer))
+  !allocate(vptmp(nlayer))
+  !allocate(vstmp(nlayer))
+  !allocate(rhotmp(nlayer))
+  !ndisctmp   = nlayer
+  !disconttmp = radius_layer
+  !vptmp      = vp_layer
+  !vstmp      = vs_layer
+  !rhotmp     = rho_layer
+
+  do iel=1,neltot
+     do jpol=0,npol
+        do ipol=0,npol
+           r0 = dsqrt(s(ipol,jpol,iel)**2 + z(ipol,jpol,iel)**2 )
+           call interp_vel(r0,disconttmp(1:ndisctmp),ndisctmp,ind,w,wsum)
+           rho(ipol,jpol,iel)=sum(w*rhotmp(ind))*wsum
+           v_p(ipol,jpol,iel)=(w(1)*vptmp(ind(1))+w(2)*vptmp(ind(2)))*wsum
+           v_s(ipol,jpol,iel)=sum(w*vstmp(ind))*wsum
+        enddo
+     enddo
+  enddo
+  !   deallocate(disconttmp,vstmp,vptmp,rhotmp)
+  !else 
+  !   write(6,*)'Background model file', &
+  !        bkgrdmodel2(1:index(bkgrdmodel2,' ')-1)//'.bm','does not exist!!!'
+  !   stop
+  !endif
+
+end subroutine arbitr_sub_solar_arr
+!-----------------------------------------------------------------------------------------
 
 !=============================================================================
 subroutine interp_vel(r0, r, n, ind, w, wsum)
@@ -1535,5 +1613,108 @@ subroutine interp_vel(r0, r, n, ind, w, wsum)
 end subroutine interp_vel
 !=============================================================================
 
+!=============================================================================
+subroutine read_ext_model(fnam_ext_model, nlayer_out, vp_layer_out, &
+                          vs_layer_out, rho_layer_out, radius_layer_out)
+
+  character(len=100), intent(in)                     :: fnam_ext_model
+  real(kind=dp), allocatable, intent(out), optional  :: vp_layer_out(:) 
+  real(kind=dp), allocatable, intent(out), optional  :: vs_layer_out(:) 
+  real(kind=dp), allocatable, intent(out), optional  :: rho_layer_out(:) 
+  real(kind=dp), allocatable, intent(out), optional  :: radius_layer_out(:)
+  integer, intent(out), optional                     :: nlayer_out
+  integer                          :: ilayer
+  logical                          :: bkgrdmodelfile_exists, startatsurface
+
+  ! Has the file already been read in?
+  if (nlayer<1) then
+
+     ! Does the file bkgrdmodel".bm" exist?
+     inquire(file=trim(fnam_ext_model), exist=bkgrdmodelfile_exists)
+
+     if (.not. bkgrdmodelfile_exists) then
+        write(6,*)'ERROR IN BACKGROUND MODEL: ', &
+                   trim(fnam_ext_model),' NON-EXISTENT!'
+        write(6,*)'...failed to open file', &
+                   trim(fnam_ext_model) 
+        stop 
+     endif
+
+     open(unit=77,file=trim(fnam_ext_model))
+     
+     read(77,*) nlayer
+     print *, 'Model has ', nlayer, ' layers...'
+     
+     allocate(radius_layer(nlayer))
+     allocate(vp_layer(nlayer))
+     allocate(vs_layer(nlayer))
+     allocate(rho_layer(nlayer))
+
+     ! Read in first layer
+     read(77,*) radius_layer(1), rho_layer(1), vp_layer(1), vs_layer(1)
+
+     ! Recognize order of layers
+     if (radius_layer(1).eq.0) then
+        print *, 'Layers in file ', trim(fnam_ext_model), ' start in the core'
+        startatsurface = .false.
+     else
+        print *, 'Layers in file ', trim(fnam_ext_model), ' start at surface'
+        startatsurface = .true.
+     end if
+
+     ! Read in all other layers
+     do ilayer = 2, nlayer
+        read(77,*) radius_layer(ilayer), rho_layer(ilayer), vp_layer(ilayer), vs_layer(ilayer)
+       
+        if (startatsurface) then
+           if ((radius_layer(ilayer) - radius_layer(ilayer-1))>0.0d0) then
+              print *, 'ERROR: Radius of layers in external model has to be monotonously increasing!'
+              print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
+              print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+              stop
+           end if
+        else
+           if ((radius_layer(ilayer) - radius_layer(ilayer-1))<0.0d0) then
+              print *, 'ERROR: Radius of layers in external model has to be monotonously decreasing!'
+              print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
+              print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+              stop
+           end if
+        end if
+     enddo
+     close(77)
+
+     ! Reorder elements if the file is in the wrong order (Mesher always assumes from surface to core)
+     if (.not.startatsurface) then
+        print *, 'Reordering layers to start at the surface'
+        radius_layer = radius_layer(nlayer:1:-1)
+        vp_layer     = vp_layer(nlayer:1:-1)
+        vs_layer     = vs_layer(nlayer:1:-1)
+        rho_layer    = rho_layer(nlayer:1:-1)
+     end if
+
+  end if
+
+  if (present(nlayer_out)) then
+     nlayer_out = nlayer
+  end if
+  if (present(radius_layer_out)) then
+     allocate(radius_layer_out(nlayer))
+     radius_layer_out = radius_layer
+  end if
+  if (present(rho_layer_out)) then
+     allocate(rho_layer_out(nlayer))
+     rho_layer_out = rho_layer
+  end if
+  if (present(vp_layer_out)) then
+     allocate(vp_layer_out(nlayer))
+     vp_layer_out = vp_layer
+  end if
+  if (present(vs_layer_out)) then
+     allocate(vs_layer_out(nlayer))
+     vs_layer_out = vs_layer
+  end if
+
+end subroutine read_ext_model
 
 end module background_models

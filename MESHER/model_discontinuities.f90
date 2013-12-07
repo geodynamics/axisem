@@ -73,12 +73,12 @@ subroutine define_discont
      case('iasp91')
         write(6,*)'Reading IASP91 discontinuities...'
         call iasp91_discont
-     case('solar')
-        write(6,*)'Reading solar stealth discontinuities...'
-        call solar_discont
+     !case('solar')
+     !   write(6,*)'Reading solar stealth discontinuities...'
+     !   call solar_discont
      case('external')
         write(6,*)'Reading step-wise model from file:', bkgrdmodel
-        call arbitr_discont
+        call arbitrmodel_discont
      case default
         write(6,*) 'Unknown model' ,bkgrdmodel
         stop
@@ -1101,157 +1101,329 @@ end subroutine iasp91_discont
 !--------------------------------------------------------------------------
 
 !--------------------------------------------------------------------------
-subroutine arbitr_discont
+subroutine arbitrmodel_discont
 
+  use global_parameters, only: smallval_dble
+  use background_models, only: read_ext_model
 ! discontinuities (read in from a file) to be honored by the mesh
 
-  integer :: idom, junk
-  logical :: bkgrdmodelfile_exists
-  
-  ! Does the file bkgrdmodel".bm" exist?
-  inquire(file='external_model.bm', exist=bkgrdmodelfile_exists)
+  integer :: idom, junk, ilayer
+  real(kind=dp), allocatable :: grad_vp(:), grad_vs(:)
 
-!  Is checked earlier already
+  integer, parameter         :: ndom_max = 100
+  real(kind=dp), parameter   :: grad_threshold = 1.d-2
+  real(kind=dp)              :: disc_tmp(ndom_max), vp_tmp(ndom_max,2), vs_tmp(ndom_max,2), rho_tmp(ndom_max,2)
+  real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
+  real(kind=dp), allocatable :: vp_layer(:), vs_layer(:), rho_layer(:), radius_layer(:)
+  integer                    :: nlayer
+
+  
+  call read_ext_model(fnam_ext_model, nlayer, vp_layer, vs_layer, rho_layer, radius_layer)
+
+  allocate(grad_vp(nlayer-1))
+  allocate(grad_vs(nlayer-1))
+  ! Calculate gradient
+  do ilayer = 1, nlayer-1
+     if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
+        if (any([abs(vp_layer(ilayer+1) - vp_layer(ilayer))  > smallval_dble, &
+                 abs(vs_layer(ilayer+1) - vs_layer(ilayer))  > smallval_dble])) then
+           grad_vp(ilayer) = 99999
+           grad_vs(ilayer) = 99999
+        else
+           grad_vp(ilayer) = 0
+           grad_vs(ilayer) = 0
+        end if
+     else
+        grad_vp(ilayer) = (vp_layer(ilayer+1) - vp_layer(ilayer)) / &
+                          (radius_layer(ilayer+1) - radius_layer(ilayer))
+        grad_vs(ilayer) = (vs_layer(ilayer+1) - vs_layer(ilayer)) / &
+                          (radius_layer(ilayer+1) - radius_layer(ilayer))
+     end if
+  end do
+
+  ! Find discontinuities
+  idom = 0
+  disc_tmp(1) = radius_layer(1)
+  vp_laststep = vp_layer(1)
+  vs_laststep = vs_layer(1)
+  rho_laststep = rho_layer(1)
+
+  do ilayer = 1, nlayer-1
+     if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
+         abs(grad_vs(ilayer)).gt.grad_threshold) then
+
+        ! Some more rules to avoid discontinuity congestion
+        if (idom.ge.1) then
+           dx = abs(radius_layer(ilayer) - disc_tmp(idom+1)) 
+           dx_min = period / 05.d0 * vs_layer(ilayer) !@TODO: 05 is a hack
+           print *, radius_layer(ilayer) , disc_tmp(idom), dx_min
+           if (abs(dx)<dx_min) then
+              write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), ' S'
+              cycle
+           end if
+        end if
+
+        idom = idom + 1
+        disc_tmp(idom+1)  = radius_layer(ilayer)
+        
+        if (idom.eq.1) then
+           vp_tmp(idom,1) = vp_layer(1)
+           vp_tmp(idom,2) = vp_layer(ilayer)
+           vs_tmp(idom,1) = vs_layer(1)
+           vs_tmp(idom,2) = vs_layer(ilayer)
+           rho_tmp(idom,1) = rho_layer(1)
+           rho_tmp(idom,2) = rho_layer(ilayer)
+        else
+           vp_tmp(idom,1) = vp_laststep
+           vp_tmp(idom,2) = vp_layer(ilayer)
+           vs_tmp(idom,1) = vs_laststep
+           vs_tmp(idom,2) = vs_layer(ilayer)
+           rho_tmp(idom,1) = rho_laststep
+           rho_tmp(idom,2) = rho_layer(ilayer)
+        end if
+
+        vp_laststep = vp_layer(ilayer+1)
+        vs_laststep = vs_layer(ilayer+1)
+        rho_laststep = rho_layer(ilayer+1)
+
+        !vp_tmp(idom,1)  = vp_layer(ilayer)
+        !vp_tmp(idom,2)  = vp_layer(ilayer+1)
+        !vs_tmp(idom,1)  = vs_layer(ilayer)
+        !vs_tmp(idom,2)  = vs_layer(ilayer+1)
+        !rho_tmp(idom,1) = rho_layer(ilayer)
+        !rho_tmp(idom,2) = rho_layer(ilayer+1)
+        write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), '  *'
+     else
+        write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer)
+     end if
+  end do
+
+  idom = idom + 1
+  vp_tmp(idom,1) = vp_laststep
+  vp_tmp(idom,2) = vp_layer(nlayer)
+  vs_tmp(idom,1) = vs_laststep
+  vs_tmp(idom,2) = vs_layer(nlayer)
+  rho_tmp(idom,1) = rho_laststep
+  rho_tmp(idom,2) = rho_layer(nlayer)
+
+  ndisc = idom
+
+  ! Is a stealth layer necessary?
+  !if (disc_tmp(1) / disc_tmp(ndisc) < 2.) then 
+  !   ndisc = ndisc + 1
+  !   disc_tmp(ndisc)  = disc_tmp(ndisc-1)*0.25d0
+  !   vp_tmp(ndisc,1)  = vp_tmp(ndisc-1,:)
+  !   vs_tmp(ndisc,1)  = vs_tmp(ndisc-1,:)
+  !   rho_tmp(ndisc,1) = rho_tmp(ndisc-1,:)
+  !   vp_tmp(ndisc,2)  = vp_tmp(ndisc-1,:)
+  !   vs_tmp(ndisc,2)  = vs_tmp(ndisc-1,:)
+  !   rho_tmp(ndisc,2) = rho_tmp(ndisc-1,:)
+  !   print *, 'Added a stealth layer to keep central square small'
+  !end if
+
+  allocate(discont(ndisc))
+  allocate(vp(ndisc,2))
+  allocate(vs(ndisc,2))
+  allocate(rho(ndisc,2))
+
+  discont = disc_tmp(1:ndisc)
+  vp      = vp_tmp(1:ndisc,:)
+  vs      = vs_tmp(1:ndisc,:)
+  rho     = rho_tmp(1:ndisc,:)
+ 
+  print *, 'ndisc: ', ndisc
+
+  !stop
+  
+  do idom = 1, ndisc
+     write(1001,*) discont(idom), vp(idom,:), vs(idom,:) !, rho(idom)
+  end do
+     
+  !! add stealth layer to keep central square "down there"
+  !if (discont(1) / discont(ndisc) < 2.) then 
+  !   ndisc = ndisc + 1
+  !   
+  !   deallocate(discont,vp,vs,rho)
+  !   
+  !   allocate(discont(ndisc))
+  !   allocate(vp(ndisc,2))
+  !   allocate(vs(ndisc,2))
+  !   allocate(rho(ndisc,2))
+
+  !   open(unit=77,file=trim(fnam_ext_model))
+  !   read(77,*) junk
+  !   do idom=1, ndisc - 1
+  !      read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
+  !   enddo
+  !   close(77)
+  !   
+  !   discont(ndisc) = discont(1) / 4.
+  !   rho(ndisc,1) = rho(ndisc - 1,1)
+  !   vp(ndisc,1) = vp(ndisc - 1,1) 
+  !   vs(ndisc,1) = vs(ndisc - 1,1) 
+  !   
+  !   write(6,*) 'Added a second stealth layer to keep central square small'
+  !endif
+  !
+  !rho(:,2) = rho(:,1)
+  !vp(:,2) = vp(:,1)
+  !vs(:,2) = vs(:,1)
+
+end subroutine arbitrmodel_discont
+!--------------------------------------------------------------------------
+
+!!--------------------------------------------------------------------------
+!subroutine arbitr_discont
+!
+!! discontinuities (read in from a file) to be honored by the mesh
+!  use background_models, only: nlayer, vp_layer, vs_layer, rho_layer, radius_layer
+!
+!  integer :: idom, junk
+!  logical :: bkgrdmodelfile_exists
+!  
+!  ! Does the file bkgrdmodel".bm" exist?
+!  inquire(file=trim(fnam_ext_model), exist=bkgrdmodelfile_exists)
+!
 !  if (.not. bkgrdmodelfile_exists) then
+!     write(6,*)'ERROR IN BACKGROUND MODEL: ', &
+!                trim(fnam_ext_model),' NON-EXISTENT!'
+!     write(6,*)'...failed to open file', &
+!                trim(fnam_ext_model) 
+!     stop 
+!  endif
+!
+!  open(unit=77,file=trim(fnam_ext_model))
+!  
+!  read(77,*) ndisc
+!  print *, 'Model has ', ndisc, ' layers...'
+!  allocate(discont(ndisc))
+!  allocate(vp(ndisc,2))
+!  allocate(vs(ndisc,2))
+!  allocate(rho(ndisc,2))
+!
+!  do idom=1, ndisc
+!      print *,idom
+!      read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
+!  enddo
+!  close(77)
+!     
+!  print *, discont
+!  print *, rho
+!  
+!  ! add stealth layer to keep central square "down there"
+!  if (discont(1) / discont(ndisc) < 2.) then 
+!     ndisc = ndisc + 1
+!     
+!     deallocate(discont,vp,vs,rho)
+!     
+!     allocate(discont(ndisc))
+!     allocate(vp(ndisc,2))
+!     allocate(vs(ndisc,2))
+!     allocate(rho(ndisc,2))
+!
+!     open(unit=77,file=trim(fnam_ext_model))
+!     read(77,*) junk
+!     do idom=1, ndisc - 1
+!        read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
+!     enddo
+!     close(77)
+!     
+!     discont(ndisc) = discont(1) / 4.
+!     rho(ndisc,1) = rho(ndisc - 1,1)
+!     vp(ndisc,1) = vp(ndisc - 1,1) 
+!     vs(ndisc,1) = vs(ndisc - 1,1) 
+!     
+!     write(6,*) 'Added a second stealth layer to keep central square small'
+!  endif
+!  
+!  rho(:,2) = rho(:,1)
+!  vp(:,2) = vp(:,1)
+!  vs(:,2) = vs(:,1)
+!  
+!  print *, discont
+!  print *, rho
+!
+!end subroutine arbitr_discont
+!!--------------------------------------------------------------------------
+
+!--------------------------------------------------------------------------
+!subroutine solar_discont
+!  use data_grid, only: ri
+!  ! discontinuities (read in from a file) to be honored by the mesh
+!  
+!  integer :: idom,ndisctmp,ind
+!  logical :: bkgrdmodelfile_exists
+!  real(kind=dp)    :: disc1,disc2,rho2,vp2,vs2
+!  real(kind=dp)   , allocatable :: vptmp(:,:),vstmp(:,:),rhotmp(:,:),disconttmp(:)
+!  real(kind=dp)    ::  ddisc
+!  
+!  ! Does the file bkgrdmodel".bm" exist?
+!  inquire(file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm', &
+!          exist=bkgrdmodelfile_exists)
+!  
+!  ndisc = 10
+!  
+!  if (bkgrdmodelfile_exists) then
+!     open(unit=77,file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm')
+!     read(77,*)ndisctmp
+!     allocate(disconttmp(ndisctmp),vptmp(ndisctmp,2),vstmp(ndisctmp,2),rhotmp(ndisctmp,2))
+!     do idom=1, ndisctmp
+!        read(77,*)disconttmp(idom),rhotmp(idom,1),vptmp(idom,1),vstmp(idom,1)
+!     enddo
+!     close(77)
+!  
+!     ! create stealth discontinuities
+!     allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2),rho(ndisc,2))
+!     discont(1) = maxval(disconttmp)
+!     ddisc = discont(1) * 0.6d0 / (ndisc + 1)
+!     do idom=2,ndisc
+!        discont(idom) = discont(1) - dble(idom) * ddisc
+!        write(6,*) discont(idom), discont(idom) / discont(1)
+!     enddo
+!  
+!     do idom=1,ndisc
+!        ind = minloc(abs(disconttmp-discont(idom)),1)
+!        write(6,*)'previous/new discont:',idom,discont(idom),disconttmp(ind)
+!        discont(idom) = disconttmp(ind)
+!        vp(idom,1) = vptmp(ind,1)
+!        vs(idom,1) = vstmp(ind,1)
+!        rho(idom,1) = rhotmp(ind,1)
+!       write(6,*)'vp/vs/rho:',vp(idom,1),vs(idom,1),rho(idom,1)
+!     enddo
+!  
+!     deallocate(vstmp,vptmp,rhotmp,disconttmp)
+!     
+!     ! add stealth layer to keep central square "down there"
+!     if (ndisc == 1) then 
+!        ndisc = 2
+!        disc1 = discont(1)
+!        disc2 = discont(1)/4.
+!        rho2 = rho(1,1)
+!        vp2 = vp(1,1)
+!        vs2 = vs(1,1)
+!        deallocate(discont,vp,vs,rho)
+!        allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2),rho(ndisc,2))
+!        discont(1) = disc1
+!        discont(2) = disc2
+!        rho(:,1) = rho2
+!        vp(:,1) = vp2
+!        vs(:,1) = vs2
+!        write(6,*)'Added a second stealth layer to keep central square small'
+!     endif
+!  
+!     rho(:,2) = rho(:,1)
+!     vp(:,2) = vp(:,1)
+!     vs(:,2) = vs(:,1)
+!  
+!  else
 !     write(6,*)'ERROR IN BACKGROUND MODEL: ', &
 !                bkgrdmodel(1:index(bkgrdmodel,' ')-1),' NON-EXISTENT!'
 !     write(6,*)'...failed to open file', &
 !               bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm'
 !     stop 
 !  endif
-
-  open(unit=77,file='external_model.bm')
-  
-  read(77,*) ndisc
-  print *, 'Model has ', ndisc, ' layers...'
-  allocate(discont(ndisc))
-  allocate(vp(ndisc,2))
-  allocate(vs(ndisc,2))
-  allocate(rho(ndisc,2))
-
-  do idom=1, ndisc
-      print *,idom
-      read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
-  enddo
-  close(77)
-     
-  print *, discont
-  print *, rho
-  
-  ! add stealth layer to keep central square "down there"
-  if (discont(1) / discont(ndisc) < 2.) then 
-     ndisc = ndisc + 1
-     
-     deallocate(discont,vp,vs,rho)
-     
-     allocate(discont(ndisc))
-     allocate(vp(ndisc,2))
-     allocate(vs(ndisc,2))
-     allocate(rho(ndisc,2))
-
-     open(unit=77,file='external_model.bm')
-     read(77,*) junk
-     do idom=1, ndisc - 1
-        read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
-     enddo
-     close(77)
-     
-     discont(ndisc) = discont(1) / 4.
-     rho(ndisc,1) = rho(ndisc - 1,1)
-     vp(ndisc,1) = vp(ndisc - 1,1) 
-     vs(ndisc,1) = vs(ndisc - 1,1) 
-     
-     write(6,*) 'Added a second stealth layer to keep central square small'
-  endif
-  
-  rho(:,2) = rho(:,1)
-  vp(:,2) = vp(:,1)
-  vs(:,2) = vs(:,1)
-  
-  print *, discont
-  print *, rho
-
-end subroutine arbitr_discont
-!--------------------------------------------------------------------------
-
-!--------------------------------------------------------------------------
-subroutine solar_discont
-  use data_grid, only: ri
-  ! discontinuities (read in from a file) to be honored by the mesh
-  
-  integer :: idom,ndisctmp,ind
-  logical :: bkgrdmodelfile_exists
-  real(kind=dp)    :: disc1,disc2,rho2,vp2,vs2
-  real(kind=dp)   , allocatable :: vptmp(:,:),vstmp(:,:),rhotmp(:,:),disconttmp(:)
-  real(kind=dp)    ::  ddisc
-  
-  ! Does the file bkgrdmodel".bm" exist?
-  inquire(file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm', &
-          exist=bkgrdmodelfile_exists)
-  
-  ndisc = 10
-  
-  if (bkgrdmodelfile_exists) then
-     open(unit=77,file=bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm')
-     read(77,*)ndisctmp
-     allocate(disconttmp(ndisctmp),vptmp(ndisctmp,2),vstmp(ndisctmp,2),rhotmp(ndisctmp,2))
-     do idom=1, ndisctmp
-        read(77,*)disconttmp(idom),rhotmp(idom,1),vptmp(idom,1),vstmp(idom,1)
-     enddo
-     close(77)
-  
-     ! create stealth discontinuities
-     allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2),rho(ndisc,2))
-     discont(1) = maxval(disconttmp)
-     ddisc = discont(1) * 0.6d0 / (ndisc + 1)
-     do idom=2,ndisc
-        discont(idom) = discont(1) - dble(idom) * ddisc
-        write(6,*) discont(idom), discont(idom) / discont(1)
-     enddo
-  
-     do idom=1,ndisc
-        ind = minloc(abs(disconttmp-discont(idom)),1)
-        write(6,*)'previous/new discont:',idom,discont(idom),disconttmp(ind)
-        discont(idom) = disconttmp(ind)
-        vp(idom,1) = vptmp(ind,1)
-        vs(idom,1) = vstmp(ind,1)
-        rho(idom,1) = rhotmp(ind,1)
-       write(6,*)'vp/vs/rho:',vp(idom,1),vs(idom,1),rho(idom,1)
-     enddo
-  
-     deallocate(vstmp,vptmp,rhotmp,disconttmp)
-     
-     ! add stealth layer to keep central square "down there"
-     if (ndisc == 1) then 
-        ndisc = 2
-        disc1 = discont(1)
-        disc2 = discont(1)/4.
-        rho2 = rho(1,1)
-        vp2 = vp(1,1)
-        vs2 = vs(1,1)
-        deallocate(discont,vp,vs,rho)
-        allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2),rho(ndisc,2))
-        discont(1) = disc1
-        discont(2) = disc2
-        rho(:,1) = rho2
-        vp(:,1) = vp2
-        vs(:,1) = vs2
-        write(6,*)'Added a second stealth layer to keep central square small'
-     endif
-  
-     rho(:,2) = rho(:,1)
-     vp(:,2) = vp(:,1)
-     vs(:,2) = vs(:,1)
-  
-  else
-     write(6,*)'ERROR IN BACKGROUND MODEL: ', &
-                bkgrdmodel(1:index(bkgrdmodel,' ')-1),' NON-EXISTENT!'
-     write(6,*)'...failed to open file', &
-               bkgrdmodel(1:index(bkgrdmodel,' ')-1)//'.bm'
-     stop 
-  endif
-
-end subroutine solar_discont
+!
+!end subroutine solar_discont
 !--------------------------------------------------------------------------
 
 

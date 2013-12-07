@@ -1,10 +1,11 @@
 ################# INPUT FILE FOR AXISEM (SOLVER) ###############################
 
 # Choose simulation type, allowed options:
-# single: Simulation of one elemental source. Set sourceparams.dat for the
+# single: Simulation of one elemental source. Set inparam_source for the
 #         exact type
-# moment: Full moment tensor, needs four parallel simulations. Set
-#         CMTSOLUTION for the source mechanism.
+# moment: Full moment tensor, needs four parallel simulations. Set the depth in
+#         inparam_source and modify the moment tensor in the file CMTSOLUTION 
+#         before postprocessing.
 
 SIMULATION_TYPE   single
 
@@ -27,12 +28,12 @@ RECFILE_TYPE      stations
 # Choose Mesh (local subdirname in SOLVER/MESHES directory)
 # N.B. The mesh controls the velocity model and the number of CPUs
 
-MESHNAME            PREMlight_2CPUs
+MESHNAME           PREM_50s
 
 # Use lateral heterogeneities (aka 2.5D model).
 # The model has to be described in inparam_hetero (default: false)
 
-LAT_HETEROGENEITY  .false. 
+LAT_HETEROGENEITY  false 
 
 
 # Include viscoelastic attenuation (details in inparam_advanced)
