@@ -56,7 +56,7 @@ subroutine read_db
   use data_time
   use data_io,            only : do_anel
   use commun,             only : barrier, psum, pmax, pmin
-  use background_models,  only : model_is_ani, model_is_anelastic, read_ext_model
+  use background_models,  only : model_is_ani, model_is_anelastic, get_ext_disc 
   
   integer             :: iptp, ipsrc, ipdes, imsg, inode, iptcp, iel, idom, i, ioerr
   character(len=120)  :: dbname
@@ -116,13 +116,17 @@ subroutine read_db
   endif
 
   ! Background model
+  bkgrdmodel = ''
   if (verbose > 1) write(69,*)'reading background model info...'
   read(1000+mynum) bkgrdmodel(1:lfbkgrdmodel)
-  bkgrdmodel=bkgrdmodel(1:lfbkgrdmodel)
+  !bkgrdmodel=bkgrdmodel(1:lfbkgrdmodel)
+
+  if (verbose > 1) print *, '  Background model: ', trim(bkgrdmodel)
 
   if (trim(bkgrdmodel).eq.'external') then
      if (verbose > 1) write(69,*)'reading external velocity model file...'
-     call read_ext_model('./external_model.bm ')
+     call get_ext_disc('./external_model.bm')
+     !call read_ext_model('./external_model.bm ')
   end if
 
   read(1000+mynum) router, resolve_inner_shear, have_fluid

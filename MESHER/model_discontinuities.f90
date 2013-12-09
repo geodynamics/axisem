@@ -73,9 +73,6 @@ subroutine define_discont
      case('iasp91')
         write(6,*)'Reading IASP91 discontinuities...'
         call iasp91_discont
-     !case('solar')
-     !   write(6,*)'Reading solar stealth discontinuities...'
-     !   call solar_discont
      case('external')
         write(6,*)'Reading step-wise model from file:', bkgrdmodel
         call arbitrmodel_discont
@@ -1104,109 +1101,12 @@ end subroutine iasp91_discont
 subroutine arbitrmodel_discont
 
   use global_parameters, only: smallval_dble
-  use background_models, only: read_ext_model
+  use background_models, only: get_ext_disc
+!  use interpolation,     only: interpolation_data, interpolation_object, extrapolation_constant
 ! discontinuities (read in from a file) to be honored by the mesh
 
-  integer :: idom, junk, ilayer
-  real(kind=dp), allocatable :: grad_vp(:), grad_vs(:)
+  integer :: idom
 
-  integer, parameter         :: ndom_max = 100
-  real(kind=dp), parameter   :: grad_threshold = 1.d-2
-  real(kind=dp)              :: disc_tmp(ndom_max), vp_tmp(ndom_max,2), vs_tmp(ndom_max,2), rho_tmp(ndom_max,2)
-  real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
-  real(kind=dp), allocatable :: vp_layer(:), vs_layer(:), rho_layer(:), radius_layer(:)
-  integer                    :: nlayer
-
-  
-  call read_ext_model(fnam_ext_model, nlayer, vp_layer, vs_layer, rho_layer, radius_layer)
-
-  allocate(grad_vp(nlayer-1))
-  allocate(grad_vs(nlayer-1))
-  ! Calculate gradient
-  do ilayer = 1, nlayer-1
-     if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
-        if (any([abs(vp_layer(ilayer+1) - vp_layer(ilayer))  > smallval_dble, &
-                 abs(vs_layer(ilayer+1) - vs_layer(ilayer))  > smallval_dble])) then
-           grad_vp(ilayer) = 99999
-           grad_vs(ilayer) = 99999
-        else
-           grad_vp(ilayer) = 0
-           grad_vs(ilayer) = 0
-        end if
-     else
-        grad_vp(ilayer) = (vp_layer(ilayer+1) - vp_layer(ilayer)) / &
-                          (radius_layer(ilayer+1) - radius_layer(ilayer))
-        grad_vs(ilayer) = (vs_layer(ilayer+1) - vs_layer(ilayer)) / &
-                          (radius_layer(ilayer+1) - radius_layer(ilayer))
-     end if
-  end do
-
-  ! Find discontinuities
-  idom = 0
-  disc_tmp(1) = radius_layer(1)
-  vp_laststep = vp_layer(1)
-  vs_laststep = vs_layer(1)
-  rho_laststep = rho_layer(1)
-
-  do ilayer = 1, nlayer-1
-     if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
-         abs(grad_vs(ilayer)).gt.grad_threshold) then
-
-        ! Some more rules to avoid discontinuity congestion
-        if (idom.ge.1) then
-           dx = abs(radius_layer(ilayer) - disc_tmp(idom+1)) 
-           dx_min = period / 05.d0 * vs_layer(ilayer) !@TODO: 05 is a hack
-           print *, radius_layer(ilayer) , disc_tmp(idom), dx_min
-           if (abs(dx)<dx_min) then
-              write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), ' S'
-              cycle
-           end if
-        end if
-
-        idom = idom + 1
-        disc_tmp(idom+1)  = radius_layer(ilayer)
-        
-        if (idom.eq.1) then
-           vp_tmp(idom,1) = vp_layer(1)
-           vp_tmp(idom,2) = vp_layer(ilayer)
-           vs_tmp(idom,1) = vs_layer(1)
-           vs_tmp(idom,2) = vs_layer(ilayer)
-           rho_tmp(idom,1) = rho_layer(1)
-           rho_tmp(idom,2) = rho_layer(ilayer)
-        else
-           vp_tmp(idom,1) = vp_laststep
-           vp_tmp(idom,2) = vp_layer(ilayer)
-           vs_tmp(idom,1) = vs_laststep
-           vs_tmp(idom,2) = vs_layer(ilayer)
-           rho_tmp(idom,1) = rho_laststep
-           rho_tmp(idom,2) = rho_layer(ilayer)
-        end if
-
-        vp_laststep = vp_layer(ilayer+1)
-        vs_laststep = vs_layer(ilayer+1)
-        rho_laststep = rho_layer(ilayer+1)
-
-        !vp_tmp(idom,1)  = vp_layer(ilayer)
-        !vp_tmp(idom,2)  = vp_layer(ilayer+1)
-        !vs_tmp(idom,1)  = vs_layer(ilayer)
-        !vs_tmp(idom,2)  = vs_layer(ilayer+1)
-        !rho_tmp(idom,1) = rho_layer(ilayer)
-        !rho_tmp(idom,2) = rho_layer(ilayer+1)
-        write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), '  *'
-     else
-        write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer)
-     end if
-  end do
-
-  idom = idom + 1
-  vp_tmp(idom,1) = vp_laststep
-  vp_tmp(idom,2) = vp_layer(nlayer)
-  vs_tmp(idom,1) = vs_laststep
-  vs_tmp(idom,2) = vs_layer(nlayer)
-  rho_tmp(idom,1) = rho_laststep
-  rho_tmp(idom,2) = rho_layer(nlayer)
-
-  ndisc = idom
 
   ! Is a stealth layer necessary?
   !if (disc_tmp(1) / disc_tmp(ndisc) < 2.) then 
@@ -1221,54 +1121,17 @@ subroutine arbitrmodel_discont
   !   print *, 'Added a stealth layer to keep central square small'
   !end if
 
-  allocate(discont(ndisc))
-  allocate(vp(ndisc,2))
-  allocate(vs(ndisc,2))
-  allocate(rho(ndisc,2))
+  call get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
 
-  discont = disc_tmp(1:ndisc)
-  vp      = vp_tmp(1:ndisc,:)
-  vs      = vs_tmp(1:ndisc,:)
-  rho     = rho_tmp(1:ndisc,:)
  
   print *, 'ndisc: ', ndisc
 
   !stop
   
   do idom = 1, ndisc
-     write(1001,*) discont(idom), vp(idom,:), vs(idom,:) !, rho(idom)
+     write(1001,*) discont(idom), discont(1) - discont(idom), vp(idom,:), vs(idom,:) !, rho(idom)
   end do
      
-  !! add stealth layer to keep central square "down there"
-  !if (discont(1) / discont(ndisc) < 2.) then 
-  !   ndisc = ndisc + 1
-  !   
-  !   deallocate(discont,vp,vs,rho)
-  !   
-  !   allocate(discont(ndisc))
-  !   allocate(vp(ndisc,2))
-  !   allocate(vs(ndisc,2))
-  !   allocate(rho(ndisc,2))
-
-  !   open(unit=77,file=trim(fnam_ext_model))
-  !   read(77,*) junk
-  !   do idom=1, ndisc - 1
-  !      read(77,*) discont(idom), rho(idom,1), vp(idom,1), vs(idom,1)
-  !   enddo
-  !   close(77)
-  !   
-  !   discont(ndisc) = discont(1) / 4.
-  !   rho(ndisc,1) = rho(ndisc - 1,1)
-  !   vp(ndisc,1) = vp(ndisc - 1,1) 
-  !   vs(ndisc,1) = vs(ndisc - 1,1) 
-  !   
-  !   write(6,*) 'Added a second stealth layer to keep central square small'
-  !endif
-  !
-  !rho(:,2) = rho(:,1)
-  !vp(:,2) = vp(:,1)
-  !vs(:,2) = vs(:,1)
-
 end subroutine arbitrmodel_discont
 !--------------------------------------------------------------------------
 

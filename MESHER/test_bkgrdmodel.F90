@@ -41,10 +41,10 @@ subroutine bkgrdmodel_testing
 
   use background_models
   
-  real(kind=dp)   , dimension(:,:,:), allocatable   :: h, hmin2
-  real(kind=dp)   , dimension(:,:), allocatable     :: crit, crit_max
-  real(kind=dp)   , dimension(:), allocatable       :: hmin, hmax
-  real(kind=dp)   ,allocatable, dimension(:,:,:)    :: v_p, v_s, rho
+  real(kind=dp), dimension(:,:,:), allocatable   :: h, hmin2
+  real(kind=dp), dimension(:,:),   allocatable   :: crit, crit_max
+  real(kind=dp), dimension(:),     allocatable   :: hmin, hmax
+  real(kind=dp), dimension(:,:,:), allocatable   :: v_p, v_s, rho
   integer               :: iel, ipol, jpol, ntoobig, ntoosmall, j
   real(kind=dp)         :: s1, z1, s2, z2, h1, h2, r, velo, velo_max, theta
   
@@ -95,19 +95,19 @@ subroutine bkgrdmodel_testing
   if (dump_mesh_info_screen) write(6,*) ''
   
   ! construct full arrays for velocities... faster! 
-  if (bkgrdmodel == 'external') then  ! Was 'solar' SCS
-     write(6,*) 'pre-assembling media arrays for solar case.... '
-     write(6,*) '...much faster due to inperpolation routine!'
-     allocate(v_p(0:npol,0:npol,neltot))
-     allocate(v_s(0:npol,0:npol,neltot))
-     allocate(rho(0:npol,0:npol,neltot))
-     write(6,*) 'allocated global media arrays'
+  !if (bkgrdmodel == 'external') then  ! Was 'solar' SCS
+  !   write(6,*) 'pre-assembling media arrays for solar case.... '
+  !   write(6,*) '...much faster due to inperpolation routine!'
+  !   allocate(v_p(0:npol,0:npol,neltot))
+  !   allocate(v_s(0:npol,0:npol,neltot))
+  !   allocate(rho(0:npol,0:npol,neltot))
+  !   write(6,*) 'allocated global media arrays'
 
-     call arbitr_sub_solar_arr(sgll*router, zgll*router, v_p, v_s, rho, fnam_ext_model)
-     
-     write(6,*) 'done with media array definition'
-     write(6,*) 'minmax vp: ', minval(v_p), maxval(v_p), minval(rho), maxval(rho)
-  endif
+  !   call arbitr_sub_solar_arr(sgll*router, zgll*router, v_p, v_s, rho, fnam_ext_model)
+  !   
+  !   write(6,*) 'done with media array definition'
+  !   write(6,*) 'minmax vp: ', minval(v_p), maxval(v_p), minval(rho), maxval(rho)
+  !endif
   
   ! find smallest/largest grid spacing
   !$omp parallel shared(hmin2, h, npol, router, hmax, hmin, x, y, z, vp1, vs1, rho1, &
@@ -197,7 +197,7 @@ subroutine bkgrdmodel_testing
   
            r = dsqrt(s1**2 + z1**2)
 
-           if (bkgrdmodel=='external') then ! was 'solar' SCS
+           if (.false.) then !(bkgrdmodel=='external') then ! was 'solar' SCS
               velo = v_p(ipol,jpol,iel)
               velo_max = v_p(ipol,jpol,iel)
   
@@ -284,7 +284,7 @@ subroutine bkgrdmodel_testing
         y(ct+3) = zgll(npol,npol,iel)
         y(ct+4) = zgll(0,npol,iel)
   
-        if (bkgrdmodel == 'external') then 
+        if (.false.) then !(bkgrdmodel == 'external') then 
            vp1(ct+1) = v_p(0,0,iel)
            vs1(ct+1) = v_s(0,0,iel)
            rho1(ct+1) = rho(0,0,iel)
@@ -352,7 +352,7 @@ subroutine bkgrdmodel_testing
   end do ! iel
   !$omp end do 
   !$omp end parallel
-  if (bkgrdmodel=='external') deallocate(v_p, v_s, rho)
+  !if (bkgrdmodel=='external') deallocate(v_p, v_s, rho)
  
 
   if (dump_mesh_vtk) then

@@ -10,7 +10,7 @@ SRCS =	commpi.F90 commun.F90 get_model.F90 lateral_heterogeneities.F90 \
 	data_io.f90 data_matr.f90 data_mesh.f90 data_pointwise.f90 \
 	data_proc.f90 data_source.f90 data_spec.f90 data_time.f90 \
 	def_grid.f90 def_precomp_terms.f90 geom_transf.f90 get_mesh.f90 \
-	global_parameters.f90 kdtree2.f90 list.f90 main.f90 \
+	global_parameters.f90 interpolation.f90 kdtree2.f90 list.f90 main.f90 \
 	pointwise_derivatives.f90 rotations.f90 seismograms.f90 source.f90 \
 	splib.f90 stiffness.f90 subpar_mapping.f90 unrolled_loops.f90 \
 	utlity.f90 wavefields_io.f90 ftz.c pthread.c
@@ -22,10 +22,10 @@ OBJS =	commpi.o commun.o get_model.o lateral_heterogeneities.o meshes_io.o \
 	data_heterogeneous.o data_io.o data_matr.o data_mesh.o \
 	data_pointwise.o data_proc.o data_source.o data_spec.o data_time.o \
 	def_grid.o def_precomp_terms.o geom_transf.o get_mesh.o \
-	global_parameters.o kdtree2.o list.o main.o pointwise_derivatives.o \
-	rotations.o seismograms.o source.o splib.o stiffness.o \
-	subpar_mapping.o unrolled_loops.o utlity.o wavefields_io.o ftz.o \
-	pthread.o
+	global_parameters.o interpolation.o kdtree2.o list.o main.o \
+	pointwise_derivatives.o rotations.o seismograms.o source.o splib.o \
+	stiffness.o subpar_mapping.o unrolled_loops.o utlity.o \
+	wavefields_io.o ftz.o pthread.o
 
 ifeq ($(strip $(USE_NETCDF)),true)
    FFLAGS += -Dunc
@@ -74,7 +74,7 @@ attenuation.o: analytic_mapping.o commun.o data_io.o data_matr.o data_mesh.o \
 	data_pointwise.o data_proc.o data_source.o data_spec.o data_time.o \
 	geom_transf.o get_mesh.o global_parameters.o pointwise_derivatives.o \
 	utlity.o Makefile ../make_axisem.macros 
-background_models.o: global_parameters.o Makefile ../make_axisem.macros 
+background_models.o: global_parameters.o interpolation.o Makefile ../make_axisem.macros 
 clocks.o:  Makefile ../make_axisem.macros 
 data_comm.o: global_parameters.o list.o Makefile ../make_axisem.macros 
 data_heterogeneous.o: global_parameters.o Makefile ../make_axisem.macros 
@@ -98,6 +98,7 @@ geom_transf.o: analytic_mapping.o data_mesh.o subpar_mapping.o Makefile ../make_
 get_mesh.o: background_models.o commun.o data_comm.o data_io.o data_mesh.o \
 	data_proc.o data_time.o global_parameters.o Makefile ../make_axisem.macros 
 global_parameters.o:  Makefile ../make_axisem.macros 
+interpolation.o: global_parameters.o Makefile ../make_axisem.macros 
 list.o: global_parameters.o Makefile ../make_axisem.macros 
 main.o: clocks.o commun.o data_io.o data_mesh.o data_proc.o data_source.o \
 	data_time.o def_grid.o get_mesh.o meshes_io.o nc_routines.o \

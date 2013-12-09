@@ -47,6 +47,7 @@ subroutine create_subregions
   logical           :: memorydz, current
   integer, dimension(1)             :: iloc1, iloc2
   real(kind=realkind), dimension(1) :: rad1, rad2
+  character(len=32) :: fmtstring
 
   !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   ! constraining factors/relations for mesh architecture:
@@ -99,10 +100,18 @@ subroutine create_subregions
          write(6,*)'lower radius/vs:',rdisc_bot(idom),vs(idom,2)
       endif
 
-      write(6,*)'discontinuities:',idom,real(discont(idom))
-      write(6,*)'solid/fluid domain:',idom,solid_domain(idom),idom_fluid(idom)
-      write(6,*)real(rdisc_top(idom)),real(rdisc_bot(idom))
-      write(6,*)'vs jump:',real(vs(idom,1)),real(vs(idom,2))
+      
+      write(6,*) '########################################################################'
+      fmtstring = '(A, I12, F12.2)'
+      write(6,fmtstring)'discontinuities:    ', idom,real(discont(idom))
+      fmtstring = '(A, L12, L12)'
+      write(6,fmtstring)'solid/fluid domain: ', solid_domain(idom),idom_fluid(idom)
+      fmtstring = '(A, F12.2, F12.2)'
+      write(6,fmtstring)'upper/lower radius: ', real(rdisc_top(idom)),real(rdisc_bot(idom))
+      fmtstring = '(A, F12.2, F12.2)'
+      write(6,fmtstring)'vs jump:            ', real(vs(idom,1)),real(vs(idom,2))
+      write(6,*) '########################################################################'
+      write(6,*) 
 
    end do
 
