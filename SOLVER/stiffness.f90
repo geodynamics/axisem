@@ -1353,9 +1353,9 @@ pure subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
         r1(:) = r1(:) + R(:,1,j,ielem)
         r2(:) = r2(:) + R(:,2,j,ielem)
         r3(:) = r3(:) + R(:,3,j,ielem)
-        r4(:) = r5(:) + R(:,4,j,ielem)
+        r4(:) = r4(:) + R(:,4,j,ielem)
         r5(:) = r5(:) + R(:,5,j,ielem)
-        r6(:) = r5(:) + R(:,6,j,ielem)
+        r6(:) = r6(:) + R(:,6,j,ielem)
      enddo
 
      S1p = v_z_etal * (r1 - r6) + v_s_etal * (r5 - r4)
@@ -2003,7 +2003,7 @@ pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
 
      loc_stiffness_s = X1 + X2 + yl * (r2 - 2 * r6)
      loc_stiffness_p = -X3 - X4 + yl * (r6 - 2 * r2)
-     loc_stiffness_z = X5 + X6 - yl * r4
+     loc_stiffness_z = X5 + X6 - 2 * yl * r4
 
      if (axis_solid(ielem)) then
         y0l(:) = Y0(:,ielem)
@@ -2085,9 +2085,9 @@ pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
         r1(:) = r1(:) + R(:,1,j,ielem)
         r2(:) = r2(:) + R(:,2,j,ielem)
         r3(:) = r3(:) + R(:,3,j,ielem)
-        r4(:) = r5(:) + R(:,4,j,ielem)
+        r4(:) = r4(:) + R(:,4,j,ielem)
         r5(:) = r5(:) + R(:,5,j,ielem)
-        r6(:) = r5(:) + R(:,6,j,ielem)
+        r6(:) = r6(:) + R(:,6,j,ielem)
      enddo
      
      S1s = v_z_etal * r1 + v_s_etal * r5
@@ -2126,10 +2126,10 @@ pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
      loc_stiffness_p(3,3) = loc_stiffness_p(3,3) + yl(4) * (r6(4) - 2 * r2(4))
      
      loc_stiffness_z = X5 + X6
-     loc_stiffness_z(1,1) = loc_stiffness_z(1,1) - yl(1) * r4(1)
-     loc_stiffness_z(1,3) = loc_stiffness_z(1,3) - yl(2) * r4(2)
-     loc_stiffness_z(3,1) = loc_stiffness_z(3,1) - yl(3) * r4(3)
-     loc_stiffness_z(3,3) = loc_stiffness_z(3,3) - yl(4) * r4(4)
+     loc_stiffness_z(1,1) = loc_stiffness_z(1,1) - 2 * yl(1) * r4(1)
+     loc_stiffness_z(1,3) = loc_stiffness_z(1,3) - 2 * yl(2) * r4(2)
+     loc_stiffness_z(3,1) = loc_stiffness_z(3,1) - 2 * yl(3) * r4(3)
+     loc_stiffness_z(3,3) = loc_stiffness_z(3,3) - 2 * yl(4) * r4(4)
 
      ! subtracting (!) from the global stiffness
      glob_stiffness(0:4,0:4,ielem,1) = &
