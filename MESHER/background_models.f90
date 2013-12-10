@@ -1445,10 +1445,13 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
      select case(param)
      case('rho')
         call interpolate(interp_rho(idom), r0, arbitr_sub_solar, success)
-     case('v_p', 'vph')
+     case('v_p', 'vph', 'vpv')
         call interpolate(interp_v_p(idom), r0, arbitr_sub_solar, success)
-     case('v_s')
+     case('v_s', 'vsh', 'vsv')
         call interpolate(interp_v_s(idom), r0, arbitr_sub_solar, success)
+     case('eta')
+        arbitr_sub_solar = 1
+        success = .true.
      case default
         print *, 'ERROR: Parameter ', trim(param), ' not implemented in external model'
      end select
@@ -1648,12 +1651,12 @@ end subroutine read_ext_model
 !-----------------------------------------------------------------------------------------
 
 !=============================================================================
-subroutine get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
+subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   use global_parameters, only : smallval_dble
 
-  character(len=*)           :: fnam_ext_model
-  integer, intent(out), optional       :: ndisc
+  character(len=*)                :: fnam_ext_model
+  integer, intent(out), optional  :: ndisc_out
   real(kind=dp), allocatable, intent(out), optional :: discont(:), vp(:,:), vs(:,:), rho(:,:)
   integer :: idom, junk, ilayer
   real(kind=dp), allocatable :: grad_vp(:), grad_vs(:)
@@ -1662,12 +1665,11 @@ subroutine get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
   real(kind=dp), parameter   :: grad_threshold = 1.d-2
   real(kind=dp)              :: disc_tmp(ndom_max), vp_tmp(ndom_max,2), vs_tmp(ndom_max,2), rho_tmp(ndom_max,2)
   real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
-  integer                    :: upper_layer(ndom_max), lower_layer(ndom_max)
+  integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc
 !  real(kind=dp), allocatable :: vp_layer(:), vs_layer(:), rho_layer(:), radius_layer(:)
   
 !  integer                    :: nlayer
 
-  
   call read_ext_model(fnam_ext_model) !, nlayer, rho_layer, vp_layer, vs_layer, radius_layer)
 
   allocate(grad_vp(nlayer-1))
@@ -1699,6 +1701,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
   vs_laststep = vs_layer(1)
   rho_laststep = rho_layer(1)
 
+  print *, ' Looking for discontinuities in external model'
+
   do ilayer = 1, nlayer-1
      if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
          abs(grad_vs(ilayer)).gt.grad_threshold) then
@@ -1707,9 +1711,9 @@ subroutine get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
         if (idom.ge.1) then
            dx = abs(radius_layer(ilayer) - disc_tmp(idom+1)) 
            dx_min = vs_layer(ilayer) * 1 !@TODO: 5.0 is a hack
-           print *, radius_layer(ilayer) , disc_tmp(idom), dx_min
+           !print *, radius_layer(ilayer) , disc_tmp(idom), dx_min
            if (abs(dx)<dx_min) then
-              write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), ' S'
+              !write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), ' S'
               cycle
            end if
         end if
@@ -1722,8 +1726,6 @@ subroutine get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
            upper_layer(idom) = lower_layer(idom-1)
         end if
         lower_layer(idom) = ilayer
-
-
 
         disc_tmp(idom+1)  = radius_layer(ilayer)
         
@@ -1765,9 +1767,13 @@ subroutine get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
   upper_layer(idom) = lower_layer(idom-1) + 1
   lower_layer(idom) = nlayer
 
+  print *, '  External model has', idom, ' layers'
   ndisc = idom
 
+  print *, '  Creating interpolation objects'
+
   ! Create interpolation objects for each domain
+  print *, allocated(interp_v_p)
   allocate(interp_v_p(ndisc))
   allocate(interp_v_s(ndisc))
   allocate(interp_rho(ndisc))
@@ -1785,16 +1791,17 @@ subroutine get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
                                              extrapolation_constant)
   end do
 
-  if (present(discont)) then
+  if (present(ndisc_out)) then
      allocate(discont(ndisc))
      allocate(vp(ndisc,2))
      allocate(vs(ndisc,2))
      allocate(rho(ndisc,2))
 
-     discont = disc_tmp(1:ndisc)
-     vp      = vp_tmp(1:ndisc,:)
-     vs      = vs_tmp(1:ndisc,:)
-     rho     = rho_tmp(1:ndisc,:)
+     ndisc_out = ndisc
+     discont   = disc_tmp(1:ndisc)
+     vp        = vp_tmp(1:ndisc,:)
+     vs        = vs_tmp(1:ndisc,:)
+     rho       = rho_tmp(1:ndisc,:)
   end if
 
 end subroutine
