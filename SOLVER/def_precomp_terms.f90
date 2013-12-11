@@ -96,7 +96,7 @@ subroutine read_model_compute_terms
   call lagrange_derivs
 
   if (lpr .and. verbose > 1) write(6,*) '   define mass matrix....'
-  call def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
+  call def_mass_matrix_k(rho, lambda, mu, massmat_kwts2)
    
   if (do_mesh_tests) then
      if (lpr .and. verbose > 1) write(6,*) '   compute mass of the earth model....'
@@ -886,11 +886,15 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
      if (maxval(mu(:,:,ielfluid(iel)))> zero) then
         call compute_coordinates(s,z,r,theta,ielfluid(iel), &
                                  int(npol/2),int(npol/2))
+        fmt1 = '(A,A,4(1PE11.7))'
         write(6,*)
         write(6,*)procstrg,'!!!!!!!!!!!!!!!!  PROBLEM  !!!!!!!!!!!!!!!!!!!!!!!'
         write(6,*)procstrg,'Have a non-zero mu in the fluid region!'
-        write(6,*)procstrg,'Value & location r[km],theta[deg]:', &
-                  maxval(mu(:,:,ielfluid(iel))),r/1000.,theta*180./pi      
+        write(6,*)procstrg,'Element: ', ielfluid(iel)
+        write(6,fmt1)procstrg,' Mu, Vs, location r[km], theta[deg]:', &
+                  maxval(mu(:,:,ielfluid(iel))), &
+                  maxval(sqrt(mu(:,:,ielfluid(iel))/rho(:,:,ielfluid(iel)))), &
+                  r/1000., theta*180./pi      
         call flush(6)
         stop
      endif

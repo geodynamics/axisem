@@ -1437,11 +1437,11 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
   real(kind=dp)   , intent(in)      :: r0
   integer, intent(in)               :: idom
   character(len=3), intent(in)      :: param !rho, vs,vp
-  real(kind=dp)                     :: model_param(nlayer)
+  !real(kind=dp)                     :: model_param(nlayer)
   logical                           :: success
   type(interpolation_data)          :: interp
 
-
+     !print *, 'R0: ', r0, ', idom:', idom
      select case(param)
      case('rho')
         call interpolate(interp_rho(idom), r0, arbitr_sub_solar, success)
@@ -1666,6 +1666,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   real(kind=dp)              :: disc_tmp(ndom_max), vp_tmp(ndom_max,2), vs_tmp(ndom_max,2), rho_tmp(ndom_max,2)
   real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
   integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc
+  integer, allocatable       :: isdisc(:)
 !  real(kind=dp), allocatable :: vp_layer(:), vs_layer(:), rho_layer(:), radius_layer(:)
   
 !  integer                    :: nlayer
@@ -1676,96 +1677,163 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   allocate(grad_vs(nlayer-1))
 
   ! Calculate gradient
+  
+  allocate(isdisc(nlayer))
+
+  grad_vs = 0.0
+  grad_vp = 0.0
+  isdisc  = 0
+
+  idom = 1
+
+  upper_layer(1) = 1
+
   do ilayer = 1, nlayer-1
      if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
-        if (any([abs(vp_layer(ilayer+1) - vp_layer(ilayer))  > smallval_dble, &
-                 abs(vs_layer(ilayer+1) - vs_layer(ilayer))  > smallval_dble])) then
-           grad_vp(ilayer) = 99999
-           grad_vs(ilayer) = 99999
-        else
-           grad_vp(ilayer) = 0
-           grad_vs(ilayer) = 0
-        end if
+        ! First order discontinuity
+        idom = idom + 1
+        isdisc(ilayer) = 1
+        lower_layer(idom-1) = ilayer
+        upper_layer(idom)   = ilayer + 1
      else
         grad_vp(ilayer) = (vp_layer(ilayer+1) - vp_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
         grad_vs(ilayer) = (vs_layer(ilayer+1) - vs_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
+        if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
+            abs(grad_vs(ilayer)).gt.grad_threshold) then
+           ! Second order discontinuity
+           idom = idom + 1
+           isdisc(ilayer) = 2
+           lower_layer(idom-1) = ilayer
+           upper_layer(idom)   = ilayer 
+        end if
+         
      end if
   end do
 
-  ! Find discontinuities
-  idom = 0
-  disc_tmp(1) = radius_layer(1)
-  vp_laststep = vp_layer(1)
-  vs_laststep = vs_layer(1)
-  rho_laststep = rho_layer(1)
-
-  print *, ' Looking for discontinuities in external model'
-
-  do ilayer = 1, nlayer-1
-     if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
-         abs(grad_vs(ilayer)).gt.grad_threshold) then
-
-        ! Some more rules to avoid discontinuity congestion
-        if (idom.ge.1) then
-           dx = abs(radius_layer(ilayer) - disc_tmp(idom+1)) 
-           dx_min = vs_layer(ilayer) * 1 !@TODO: 5.0 is a hack
-           !print *, radius_layer(ilayer) , disc_tmp(idom), dx_min
-           if (abs(dx)<dx_min) then
-              !write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), ' S'
-              cycle
-           end if
-        end if
-
-        ! Let's put a discontinuity here!
-        idom = idom + 1
-        if (idom==1) then
-           upper_layer(idom) = 1
-        else
-           upper_layer(idom) = lower_layer(idom-1)
-        end if
-        lower_layer(idom) = ilayer
-
-        disc_tmp(idom+1)  = radius_layer(ilayer)
-        
-        if (idom.eq.1) then
-           vp_tmp(idom,1) = vp_layer(1)
-           vp_tmp(idom,2) = vp_layer(ilayer)
-           vs_tmp(idom,1) = vs_layer(1)
-           vs_tmp(idom,2) = vs_layer(ilayer)
-           rho_tmp(idom,1) = rho_layer(1)
-           rho_tmp(idom,2) = rho_layer(ilayer)
-        else
-           vp_tmp(idom,1) = vp_laststep
-           vp_tmp(idom,2) = vp_layer(ilayer)
-           vs_tmp(idom,1) = vs_laststep
-           vs_tmp(idom,2) = vs_layer(ilayer)
-           rho_tmp(idom,1) = rho_laststep
-           rho_tmp(idom,2) = rho_layer(ilayer)
-        end if
-
-        vp_laststep = vp_layer(ilayer+1)
-        vs_laststep = vs_layer(ilayer+1)
-        rho_laststep = rho_layer(ilayer+1)
-
-        !write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), '  *'
-
-     else
-        !write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer)
-
-     end if
-  end do
-
-  idom = idom + 1
-  vp_tmp(idom,1)    = vp_laststep
-  vp_tmp(idom,2)    = vp_layer(nlayer)
-  vs_tmp(idom,1)    = vs_laststep
-  vs_tmp(idom,2)    = vs_layer(nlayer)
-  rho_tmp(idom,1)   = rho_laststep
-  rho_tmp(idom,2)   = rho_layer(nlayer)
-  upper_layer(idom) = lower_layer(idom-1) + 1
   lower_layer(idom) = nlayer
+
+  ndisc = idom ! The first discontinuity is at the surface, 
+               ! the last at the ICB, above the last domain
+
+  if (present(ndisc_out)) then
+     ndisc_out = ndisc
+     allocate(discont(ndisc))
+     allocate(vp(ndisc,2))
+     allocate(vs(ndisc,2))
+     allocate(rho(ndisc,2))
+     discont        = radius_layer(upper_layer(1:ndisc))
+     vp(1:ndisc,1)  = vp_layer(upper_layer(1:ndisc))
+     vp(1:ndisc,2)  = vp_layer(lower_layer(1:ndisc))
+     vs(1:ndisc,1)  = vs_layer(upper_layer(1:ndisc))
+     vs(1:ndisc,2)  = vs_layer(lower_layer(1:ndisc))
+     rho(1:ndisc,1) = rho_layer(upper_layer(1:ndisc))
+     rho(1:ndisc,2) = rho_layer(lower_layer(1:ndisc))
+  end if
+
+
+
+  !do ilayer = 1, nlayer-1
+  !   if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
+  !      if (any([abs(vp_layer(ilayer+1) - vp_layer(ilayer))  > smallval_dble, &
+  !               abs(vs_layer(ilayer+1) - vs_layer(ilayer))  > smallval_dble])) then
+  !         grad_vp(ilayer) = 99999
+  !         grad_vs(ilayer) = 99999
+  !      else
+  !         grad_vp(ilayer) = 0
+  !         grad_vs(ilayer) = 0
+  !      end if
+  !   else
+  !      grad_vp(ilayer) = (vp_layer(ilayer+1) - vp_layer(ilayer)) / &
+  !                        (radius_layer(ilayer+1) - radius_layer(ilayer))
+  !      grad_vs(ilayer) = (vs_layer(ilayer+1) - vs_layer(ilayer)) / &
+  !                        (radius_layer(ilayer+1) - radius_layer(ilayer))
+  !   end if
+  !end do
+
+  !! Find discontinuities
+  !idom = 0
+  !disc_tmp(1) = radius_layer(1)
+  !vp_laststep = vp_layer(1)
+  !vs_laststep = vs_layer(1)
+  !rho_laststep = rho_layer(1)
+
+  !print *, ' Looking for discontinuities in external model'
+
+  !do ilayer = 1, nlayer-1
+  !   if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
+  !       abs(grad_vs(ilayer)).gt.grad_threshold) then
+
+  !      ! Some more rules to avoid discontinuity congestion
+  !      !if (idom.ge.1) then
+  !      !   dx = abs(radius_layer(ilayer) - disc_tmp(idom+1)) 
+  !      !   dx_min = vs_layer(ilayer) * 1 !@TODO: 5.0 is a hack
+  !      !   !print *, radius_layer(ilayer) , disc_tmp(idom), dx_min
+  !      !   if (abs(dx)<dx_min) then
+  !      !      !write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), ' S'
+  !      !      cycle
+  !      !   end if
+  !      !end if
+
+  !      ! Let's put a discontinuity here!
+  !      idom = idom + 1
+  !      if (idom==1) then
+  !         upper_layer(idom) = 1
+  !      else
+  !         if ((radius_layer(lower_layer(idom-1)) - radius_layer(lower_layer(idom-1)+1)<0.01).or. & ! Double layer
+  !             (vs_layer(lower_layer(idom-1))==0).neqv.(vs_layer(lower_layer(idom-1)+1)==0))               & ! Solid-fluid boundary
+  !              then 
+  !            ! First order discontinuity
+  !            print *, 'First order disc. at ', radius_layer(lower_layer(idom-1)+1), radius_layer(lower_layer(idom-1))
+  !            upper_layer(idom) = lower_layer(idom-1) + 1
+  !         else
+  !            ! Second order discontinuity
+  !            print *, 'Second order disc. at ', radius_layer(lower_layer(idom-1)+1), radius_layer(lower_layer(idom-1))
+  !            upper_layer(idom) = lower_layer(idom-1)
+  !         end if
+  !      end if
+  !      lower_layer(idom) = ilayer
+
+  !      disc_tmp(idom+1)  = radius_layer(ilayer)
+  !      
+  !      if (idom.eq.1) then
+  !         vp_tmp(idom,1) = vp_layer(1)
+  !         vp_tmp(idom,2) = vp_layer(ilayer)
+  !         vs_tmp(idom,1) = vs_layer(1)
+  !         vs_tmp(idom,2) = vs_layer(ilayer)
+  !         rho_tmp(idom,1) = rho_layer(1)
+  !         rho_tmp(idom,2) = rho_layer(ilayer)
+  !      else
+  !         vp_tmp(idom,1) = vp_laststep
+  !         vp_tmp(idom,2) = vp_layer(ilayer)
+  !         vs_tmp(idom,1) = vs_laststep
+  !         vs_tmp(idom,2) = vs_layer(ilayer)
+  !         rho_tmp(idom,1) = rho_laststep
+  !         rho_tmp(idom,2) = rho_layer(ilayer)
+  !      end if
+
+  !      vp_laststep = vp_layer(ilayer+1)
+  !      vs_laststep = vs_layer(ilayer+1)
+  !      rho_laststep = rho_layer(ilayer+1)
+
+  !      write(6000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), '  *'
+
+  !   else
+  !      write(6000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer)
+
+  !   end if
+  !end do
+
+  !idom = idom + 1
+  !vp_tmp(idom,1)    = vp_laststep
+  !vp_tmp(idom,2)    = vp_layer(nlayer)
+  !vs_tmp(idom,1)    = vs_laststep
+  !vs_tmp(idom,2)    = vs_layer(nlayer)
+  !rho_tmp(idom,1)   = rho_laststep
+  !rho_tmp(idom,2)   = rho_layer(nlayer)
+  !upper_layer(idom) = lower_layer(idom-1) + 1
+  !lower_layer(idom) = nlayer
 
   print *, '  External model has', idom, ' layers'
   ndisc = idom
@@ -1773,36 +1841,24 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   print *, '  Creating interpolation objects'
 
   ! Create interpolation objects for each domain
-  print *, allocated(interp_v_p)
   allocate(interp_v_p(ndisc))
   allocate(interp_v_s(ndisc))
   allocate(interp_rho(ndisc))
 
+  print *, 'idom, upper_layer, lower_layer, r(ul), r(ll)'
   do idom = 1, ndisc
-     print *, idom, upper_layer(idom), lower_layer(idom)
+     print *, idom, upper_layer(idom), lower_layer(idom), radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
      interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              rho_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_constant)
+                                             extrapolation_none)
      interp_v_p(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              vp_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_constant)
+                                             extrapolation_none)
      interp_v_s(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              vs_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_constant)
+                                             extrapolation_none)
   end do
 
-  if (present(ndisc_out)) then
-     allocate(discont(ndisc))
-     allocate(vp(ndisc,2))
-     allocate(vs(ndisc,2))
-     allocate(rho(ndisc,2))
-
-     ndisc_out = ndisc
-     discont   = disc_tmp(1:ndisc)
-     vp        = vp_tmp(1:ndisc,:)
-     vs        = vs_tmp(1:ndisc,:)
-     rho       = rho_tmp(1:ndisc,:)
-  end if
 
 end subroutine
 

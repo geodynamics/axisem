@@ -149,7 +149,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   enddo
   if (diagfiles) close(65)
 
-10 format(i9,1pe11.3,i3,2(1pe11.3))
+10 format(i9,1pe15.7,i3,2(1pe11.3))
 11 format(e11.3)
   if (do_mesh_tests) then
       if (lpr .and. verbose > 1) write(6,*)'    checking discontinuity discretization...' 

@@ -129,6 +129,7 @@ subroutine interpolate( object, xp, estimate, success )
     integer                         :: idx
     integer                         :: nd
     real                            :: dx
+    real(kind=dp)                   :: eps=1d-6
 
     estimate = 0.0
     success  = .false.
@@ -144,12 +145,14 @@ subroutine interpolate( object, xp, estimate, success )
     nd = size(object%x)
 
     if ( object%extrapolation == extrapolation_none ) then
-        if ( xp < object%x(1)  ) then
+        if ( xp > object%x(1)*(1+eps)  ) then
            print *, 'interpolation: x out of range (too small) and no extrapolation chosen'
+           print *, 'xp:', xp, ', x(1): ', object%x(1)
            return
         end if
-        if ( xp > object%x(nd) ) then
+        if ( xp < object%x(nd)*(1-eps) ) then
            print *, 'interpolation: x out of range (too large) and no extrapolation chosen'
+           print *, 'xp:', xp, ', x(nd): ', object%x(nd)
            return
         end if
     endif
