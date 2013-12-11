@@ -46,7 +46,7 @@ endif
 %.o : %.mod 
  
 
-all: $(PROG) utils
+all: $(PROG) 
 
 $(PROG): $(OBJS)
 	$(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)

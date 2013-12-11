@@ -367,8 +367,16 @@ end
 
 cd $homedir
 cd $1
-cp -p $homedir/UTILS/xpost_processing .
+
+#cp -p $homedir/UTILS/xpost_processing .
 cp -p $homedir/UTILS/post_processing.F90 .
+cp -p $homedir/UTILS/field_transform.F90 .
+cp -p $homedir/UTILS/nc_postroutines.F90 .
+
+echo "Compiling postprocessing routines"
+make -f $homedir/UTILS/Makefile -sj
+rm *.o *.mod 
+
 cp -p $homedir/UTILS/post_processing.csh .
 cp -p $homedir/UTILS/plot_recfile_seis.csh .
 cp -p $homedir/UTILS/plot_recs.plot .
