@@ -26,11 +26,11 @@ DOMINANT_PERIOD     20.0
 
 # Number of slices in the mesh decomposition in latitude and radius.
 # The resulting number of processors is NTHETA_SLICES * NRADIAL_SLICES
+# To ensure good scaling, use at least approximately 500 elements per core, see 'nelem' in
+# mesh_params.h
 # (will be overwritten if ONLY_SUGGEST_NPROC is set true)
 NTHETA_SLICES       2
-NRADIAL_SLICES      1 # (default: 1, stable for values < 8, might work for larger values
-                      #  and throws an error if not successful. Decomposition likely to be
-                      #  uggly in the inner core for values > 12)
+NRADIAL_SLICES      1 
 
 # will not generate a mesh, but only suggested numbers for NTHETA_SLICES for optimal mesh
 # decomposition
