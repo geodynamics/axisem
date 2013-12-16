@@ -39,6 +39,7 @@ subroutine read_params
   use global_parameters
   use data_mesh
   use data_spec
+  use background_models, only: override_ext_q
   
   character(len=100)    :: keyword, keyvalue, line
   integer               :: iinparam_mesh = 500, ioerr
@@ -179,8 +180,6 @@ subroutine read_params
   write(6,*) 
   call flush(6)
   
-  smallval = 1.E-10
-
 end subroutine read_params
 !----------------------------------------------------------------------------
 

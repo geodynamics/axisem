@@ -146,12 +146,12 @@ subroutine interpolate( object, xp, estimate, success )
 
     if ( object%extrapolation == extrapolation_none ) then
         if ( xp > object%x(1)*(1+eps)  ) then
-           print *, 'interpolation: x out of range (too small) and no extrapolation chosen'
+           print *, 'interpolation: x out of range (too large) and no extrapolation chosen'
            print *, 'xp:', xp, ', x(1): ', object%x(1)
            return
         end if
         if ( xp < object%x(nd)*(1-eps) ) then
-           print *, 'interpolation: x out of range (too large) and no extrapolation chosen'
+           print *, 'interpolation: x out of range (too small) and no extrapolation chosen'
            print *, 'xp:', xp, ', x(nd): ', object%x(nd)
            return
         end if

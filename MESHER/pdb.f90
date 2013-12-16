@@ -2223,6 +2223,7 @@ subroutine write_db
 ! Writes out a database file to be read by the solver for each processor.
 
   use data_gllmesh
+  use background_models, only : override_ext_q
   
   integer           :: iproc, iptp, npointotp, ipsrc, ipdes, imsg, iel, inode, ielg, idom
   character(len=4)  :: appiproc
@@ -2324,6 +2325,7 @@ subroutine write_db
      if (dump_mesh_info_screen) &
         write(6,*)'PARALLEL DATABASE: writing background model info...',iproc
      write(10) bkgrdmodel(1:lfbkgrdmodel)
+     write(10) override_ext_q
      write(10) router,resolve_inner_shear,have_fluid
      do idom=1,ndisc
         write(10) discont(idom),solid_domain(idom),idom_fluid(idom)

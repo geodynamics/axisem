@@ -54,7 +54,7 @@ clean:
 analytic_mapping.o: analytic_semi_mapping.o analytic_spheroid_mapping.o \
 	data_mesh.o subpar_mapping.o Makefile ../make_axisem.macros 
 analytic_semi_mapping.o: global_parameters.o Makefile ../make_axisem.macros 
-analytic_spheroid_mapping.o: data_mesh.o global_parameters.o Makefile ../make_axisem.macros 
+analytic_spheroid_mapping.o: global_parameters.o Makefile ../make_axisem.macros 
 background_models.o: global_parameters.o interpolation.o Makefile ../make_axisem.macros 
 clocks.o:  Makefile ../make_axisem.macros 
 data_bkgrdmodel.o: global_parameters.o Makefile ../make_axisem.macros 
@@ -73,8 +73,8 @@ discont_meshing.o: background_models.o data_bkgrdmodel.o data_diag.o \
 gllmeshgen.o: analytic_mapping.o data_diag.o data_gllmesh.o data_mesh.o \
 	data_spec.o splib.o Makefile ../make_axisem.macros 
 global_parameters.o:  Makefile ../make_axisem.macros 
-input.o: data_bkgrdmodel.o data_coarse.o data_diag.o data_grid.o data_mesh.o \
-	data_spec.o global_parameters.o Makefile ../make_axisem.macros 
+input.o: background_models.o data_bkgrdmodel.o data_coarse.o data_diag.o \
+	data_grid.o data_mesh.o data_spec.o global_parameters.o Makefile ../make_axisem.macros 
 interpolation.o: global_parameters.o Makefile ../make_axisem.macros 
 main.o: clocks.o data_bkgrdmodel.o data_grid.o data_mesh.o data_time.o \
 	discont_meshing.o gllmeshgen.o input.o mesh_info.o meshgen.o \

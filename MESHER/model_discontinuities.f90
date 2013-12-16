@@ -1127,7 +1127,7 @@ end subroutine arbitrmodel_discont
 subroutine write_1Dmodel(discontinuities)
    ! Write out the current model in a .bm file, which can be reused by the mesher.
    use global_parameters, only: smallval_dble
-   use background_models, only: velocity, model_is_ani
+   use background_models, only: velocity, model_is_ani, model_is_anelastic
    use data_diag,         only: diagpath
 
    real(kind=dp), intent(in) :: discontinuities(:)
@@ -1153,9 +1153,10 @@ subroutine write_1Dmodel(discontinuities)
       else
          step = -10000
       end if
-      print *, 'Domain: ', idom, ', width:', discontinuities(idom+1) - discontinuities(idom), ', step:', step
+      print *, 'Domain: ', idom, ', width:', discontinuities(idom) - discontinuities(idom+1), ', step:', step
       ! Layers within the domain
       do idepth = nint(discontinuities(idom)), nint(discontinuities(idom+1)), step
+         print *, 'domain: ', idom, '; depth: ', real(idepth, kind=dp)
          vp_tmp = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
          vs_tmp = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
          if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
@@ -1176,17 +1177,18 @@ subroutine write_1Dmodel(discontinuities)
       end do
      
       ! Layer at the bottom of the domain
-      if ((depth(ilayer)-discontinuities(idom+1))>smallval_dble) then
+      if ((depth(ilayer)-discontinuities(idom+1))>smallval_dble*depth(ilayer)) then
          ilayer = ilayer + 1
          depth(ilayer) = discontinuities(idom+1)
-         vpv(ilayer)    = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-         vsv(ilayer)    = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+         print *, 'domain: ', idom, '; depth: ', depth(ilayer)
+         vpv(ilayer)   = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+         vsv(ilayer)   = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
          rho(ilayer)   = velocity(discontinuities(idom+1), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
-         qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
-         qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
-         vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
-         vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
-         eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+         qka(ilayer)   = velocity(discontinuities(idom+1), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+         qmu(ilayer)   = velocity(discontinuities(idom+1), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+         vph(ilayer)   = velocity(discontinuities(idom+1), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+         vsh(ilayer)   = velocity(discontinuities(idom+1), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+         eta(ilayer)   = velocity(discontinuities(idom+1), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
       end if
    end do
 
@@ -1234,6 +1236,7 @@ subroutine write_1Dmodel(discontinuities)
    ! Write input file for AxiSEM
    fnam = trim(diagpath)//'/1dmodel_axisem.bm'
    open(2000, file=fnam, action='write')
+   write(2000,*) model_is_ani(bkgrdmodel), model_is_anelastic(bkgrdmodel)
    write(2000,*) nlayer
    do ilayer = 1, nlayer
       write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &

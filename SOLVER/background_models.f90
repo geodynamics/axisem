@@ -36,7 +36,7 @@ module background_models
   implicit none
   
   public :: velocity, model_is_ani, model_is_anelastic !, arbitr_sub_solar_arr
-  public :: read_ext_model, get_ext_disc
+  public :: read_ext_model, get_ext_disc, override_ext_q
   !public :: vp_layer, vs_layer, rho_layer, radius_layer, nlayer
   private
   character(len=6),           save  :: override_ext_q
@@ -1456,9 +1456,15 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      allocate(vsv_layer(nlayer))
      allocate(rho_layer(nlayer))
 
+     if (ext_model_is_anelastic) then
+         allocate(qka_layer(nlayer))
+         allocate(qmu_layer(nlayer))
+     end if
+
 
      ! Read in first layer
-     read(77,*) radius_layer(1), rho_layer(1), vpv_layer(1), vsv_layer(1)
+     read(77,*) radius_layer(1), rho_layer(1), vpv_layer(1), &
+                vsv_layer(1), qka_layer(1), qmu_layer(1)
 
      ! Recognize order of layers
      if (radius_layer(1).eq.0) then
@@ -1471,7 +1477,8 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
      ! Read in all other layers
      do ilayer = 2, nlayer
-        read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer), vsv_layer(ilayer)
+        read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer), &
+                               vsv_layer(ilayer), qka_layer(ilayer), qmu_layer(ilayer)
        
         if (ierr.eq.IOSTAT_END) then
            print *, 'ERROR: File ', trim(fnam_ext_model), ' has only ', ilayer-1, ' layers'
@@ -1594,6 +1601,41 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   ndisc = idom ! The first discontinuity is at the surface, 
                ! the last at the ICB, above the last domain
 
+  print *, '  External model has', idom, ' layers'
+  ndisc = idom
+
+  print *, '  Creating interpolation objects'
+
+  ! Create interpolation objects for each domain
+  allocate(interp_vpv(ndisc))
+  allocate(interp_vsv(ndisc))
+  allocate(interp_rho(ndisc))
+
+  if (ext_model_is_anelastic) then
+      allocate(interp_qka(ndisc))
+      allocate(interp_qmu(ndisc))
+  end if
+
+  print *, 'idom, upper_layer, lower_layer, r(ul), r(ll)'
+  do idom = 1, ndisc
+     print *, idom, upper_layer(idom), lower_layer(idom), radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
+     interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                             rho_layer(upper_layer(idom):lower_layer(idom)), &
+                                             extrapolation_none)
+     interp_vpv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                             vpv_layer(upper_layer(idom):lower_layer(idom)), &
+                                             extrapolation_none)
+     interp_vsv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                             vsv_layer(upper_layer(idom):lower_layer(idom)), &
+                                             extrapolation_none)
+     interp_qka(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                             qka_layer(upper_layer(idom):lower_layer(idom)), &
+                                             extrapolation_none)
+     interp_qmu(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                             qmu_layer(upper_layer(idom):lower_layer(idom)), &
+                                             extrapolation_none)
+  end do
+
   if (present(ndisc_out)) then
      ndisc_out = ndisc
      allocate(discont(ndisc))
@@ -1608,30 +1650,6 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
      rho(1:ndisc,1) = rho_layer(upper_layer(1:ndisc))
      rho(1:ndisc,2) = rho_layer(lower_layer(1:ndisc))
   end if
-
-  print *, '  External model has', idom, ' layers'
-  ndisc = idom
-
-  print *, '  Creating interpolation objects'
-
-  ! Create interpolation objects for each domain
-  allocate(interp_vpv(ndisc))
-  allocate(interp_vsv(ndisc))
-  allocate(interp_rho(ndisc))
-
-  print *, 'idom, upper_layer, lower_layer, r(ul), r(ll)'
-  do idom = 1, ndisc
-     print *, idom, upper_layer(idom), lower_layer(idom), radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
-     interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
-                                             rho_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_none)
-     interp_vpv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
-                                             vpv_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_none)
-     interp_vsv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
-                                             vsv_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_none)
-  end do
 
 
 end subroutine
