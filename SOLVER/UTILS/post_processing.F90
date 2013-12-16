@@ -22,6 +22,7 @@
 !-----------------------------------------------------------------------------
 module data_all
 
+  use global_par, only : sp, dp
   implicit none
   public
 
@@ -40,11 +41,11 @@ module data_all
   integer                             :: i, it, nsim, isim, iseis, ii, iii, ishift
   real                                :: junk, rec_loc_tol, Mij(6), tshift
   real, dimension(3)                  :: rloc_xyz, rloc_xyz_tmp, rloc_rtp
-  real, dimension(:), allocatable     :: time
+  real(kind=dp), dimension(:), allocatable     :: time
   real, dimension(:,:), allocatable   :: seis, seis_fil, seis_sglcomp
   real, dimension(:,:,:), allocatable :: mij_phi
   real, allocatable, dimension(:)     :: magnitude
-  real                                :: dt, period, dt_seis
+  real(kind=dp)                       :: dt, period, dt_seis
   real, allocatable, dimension(:)     :: thr_orig, phr_orig, th_orig
   real, dimension(3,3)                :: rot_mat
   character(len=3)                    :: rec_comp_sys
@@ -73,6 +74,10 @@ end module data_all
 !-----------------------------------------------------------------------------
 module global_par
 
+  integer, parameter         :: sp = selected_real_kind(6, 37)
+  integer, parameter         :: dp = selected_real_kind(15, 307)
+  integer, parameter         :: qp = selected_real_kind(33, 4931)
+  integer, parameter         :: realkind = sp  !< Choose solver precision here
   double precision, parameter :: pi = 3.1415926535898
 
   double precision, parameter :: zero = 0d0, half = 5d-1, third = 1d0/3d0
@@ -1919,6 +1924,7 @@ subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf,
     ! We therefore want nang=.5*(npts_surf-1) if npts_surf is odd
     ! We therefore want nang=.5*(npts_surf) if npts_surf is even
 
+    use global_par
     implicit none
     
     integer, intent(in) :: npts_surf,npts,nptstot,n
@@ -1937,8 +1943,8 @@ subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf,
     double precision, allocatable,dimension(:,:,:,:) :: x_el,y_el,z_el
     double precision :: dang,C,D,re,ri,teta,tksi,tr,Xe,Ye,delta
     integer :: npol_cs,ii,iii,izone,nang,nelt,nr,nrpol,iel,nel_surf,jj,ipol,jpol,kpol,j,i
-    double precision ::  dist,r_ref,th_ref,th,dr,r,xc,yc,zc,ph
-    double precision, parameter :: pi = 3.1415926535898
+    double precision ::  dist,th,dr,r,xc,yc,zc,ph
+    double precision ,allocatable :: r_ref(:), th_ref(:)
 
     write(6,*)'computing cubed sphere for surface at r=',rsurf
     write(6,*)'pts surf,total:',npts_surf,npts
@@ -2064,22 +2070,29 @@ subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf,
       write(6,*)'number of surface pts,elems,tot pts:',npts_surf,nel_surf,kpts
       write(6,*)'max ind_proc, ind_pts:',maxval(ind_proc_surf),maxval(ind_pts_surf)
       write(6,*)size(xsurf)
-      xsurf=0.d0; ysurf=0.;zsurf=0.d0
-      iii=0
+      xsurf = 0 
+      ysurf = 0
+      zsurf = 0
+      iii = 0
+      allocate(r_ref(npts_surf))
+      allocate(th_ref(npts_surf))
+      call get_r_theta( coord1(ind_proc_surf(:)*npts + ind_pts_surf(:), 1), & 
+                        coord1(ind_proc_surf(:)*npts + ind_pts_surf(:), 2), &
+                        r_ref, th_ref)
       write(6,*)'constructing 1d array for surface coordinates...'
-      do iel=1,nel_surf
+      do iel = 1, nel_surf
          if ( mod(iel,floor(nel_surf/10.))==0  ) then
             write(6,*)'percentage done:',ceiling(real(iel)/real(nel_surf)*100.)
             call flush(6)
          endif
-         xc=sum(xcol(:,:,0,iel))/4.d0
-         yc=sum(ycol(:,:,0,iel))/4.d0
-         zc=sum(zcol(:,:,0,iel))/4.d0
+         xc = sum(xcol(:,:,0,iel)) / 4.d0
+         yc = sum(ycol(:,:,0,iel)) / 4.d0
+         zc = sum(zcol(:,:,0,iel)) / 4.d0
          
-         call xyz2rthetaphi(r,th,ph,xc,yc,zc)
+         call xyz2rthetaphi(r, th, ph, xc, yc, zc)
 
-         if ( (in_or_out=='innside' .and. ph>=phi0 .and. ph<=phi0+dphi) .or. &
-               (in_or_out=='outside' .and. (ph<=phi0 .or. ph>=phi0+dphi) ) ) then
+         if ( (in_or_out=='innside' .and.  ph>=phi0 .and. ph<=phi0+dphi) .or. &
+              (in_or_out=='outside' .and. (ph<=phi0 .or.  ph>=phi0+dphi) ) ) then
 
             xsurf(iii+1) = xcol(0,0,0,iel)
             ysurf(iii+1) = ycol(0,0,0,iel)
@@ -2098,20 +2111,22 @@ subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf,
             zsurf(iii+4) = zcol(0,npol_cs,0,iel)
             
             ! determine the corresponding point in the D-shape domain
-            do jj=1,4
-               call xyz2rthetaphi(r,th, azi_phi_surf(iii+jj),xsurf(iii+jj),ysurf(iii+jj),zsurf(iii+jj))
-               dist=2.d0*pi
-               do i=1,npts_surf
-                  call get_r_theta(coord1(ind_proc_surf(i)*npts+ind_pts_surf(i),1), & 
-                       coord1(ind_proc_surf(i)*npts+ind_pts_surf(i),2),r_ref,th_ref)
-                  if (abs(th-th_ref)< dist) then 
-                     dist=abs(th-th_ref)
-                     azi_ind_surf(iii+jj)=ind_proc_surf(i)*npts+ind_pts_surf(i)
-                  endif
-               enddo
+            do jj = 1, 4
+               call xyz2rthetaphi( r, th, azi_phi_surf(iii+jj), &
+                                   xsurf(iii+jj), ysurf(iii+jj), zsurf(iii+jj) )
+               dist = 2.d0 * pi
+               dist = minval(abs(th-th_ref))
+               i = minloc(abs(th-th_ref),1)
+               azi_ind_surf(iii+jj) = ind_proc_surf(i)*npts + ind_pts_surf(i)
+               !do i = 1, npts_surf
+               !   if (abs(th-th_ref) < dist) then 
+               !      dist = abs(th-th_ref)
+               !      azi_ind_surf(iii+jj) = ind_proc_surf(i)*npts + ind_pts_surf(i)
+               !   endif
+               !enddo
             enddo
 
-            iii=iii+4
+            iii = iii + 4
             
             endif ! in_or_out
 
@@ -2407,15 +2422,15 @@ end subroutine xyz2rthetaphi
 !--------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------
-subroutine get_r_theta(s,z,r,th)
+subroutine get_r_theta(s, z, r, th)
   use global_par
-  double precision, intent(in)  :: s, z
-  double precision, intent(out) :: r, th
+  real(kind=dp), intent(in)  :: s(:), z(:)
+  real(kind=dp), intent(out) :: r(:), th(:)
  
   th = datan(s / (z + epsi))
  
-  if ( 0.d0 > th ) th = pi + th
-  if (th == zero .and. z < 0.d0) th = pi
+  where( 0.d0 > th ) th = pi + th
+  where (th == zero .and. z < 0.d0) th = pi
  
   r = dsqrt(s**2 + z**2)
 
