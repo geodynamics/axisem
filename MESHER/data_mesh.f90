@@ -76,9 +76,6 @@ module data_mesh
   
   integer, dimension(:,:), allocatable   :: bdry_jpol_solid, bdry_jpol_fluid
   
-  !real(kind=realkind) :: smallval
-  real(kind=dp)    :: smallval
-  
   ! central region
   real(kind=dp)   , allocatable :: s_arr(:,:), z_arr(:,:)
   integer, allocatable          :: central_is_iz_to_globiel(:,:)

@@ -82,7 +82,7 @@ subroutine create_gllmesh
      crd_nodes(8,:) = .5d0 * ( crd_nodes(7,:) + crd_nodes(1,:) )  !  
 
      stest = minval(sg(lnodesg(1:4,iel)))
-     if ( stest < smallval ) then 
+     if ( stest < smallval_dble ) then 
         do jpol = 0, npol
            do ipol = 0, npol
               sgll(ipol,jpol,iel) = mapping_anal(xi_k(ipol),eta(jpol),crd_nodes,1,iel)
@@ -169,7 +169,7 @@ subroutine test_mapping
      crd_nodes(8,:) = .5d0 * ( crd_nodes(7,:) + crd_nodes(1,:) )  !  
 
      stest = minval(sg(lnodesg(1:4,iel)))
-     if ( stest < smallval ) then 
+     if ( stest < smallval_dble ) then 
         do jpol = 0, npol
            do ipol = 0, npol
               sglltmp(ipol,jpol,iel) = mapping_anal(xi_k(ipol),eta(jpol),crd_nodes,1,iel)

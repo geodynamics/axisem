@@ -29,8 +29,7 @@
 ! into its deformed image in the spheroidal 
 ! enveloppe. 
 ! 
-    use global_parameters 
-   use data_mesh, only : smallval
+  use global_parameters 
   implicit none
   public :: map_spheroid,comp_partial_deriv_spheroid
   private
@@ -38,7 +37,7 @@
 !//////////////////////////////////////////
 
 !dk map_spheroid------------------------------------------------------
-  real(kind=dp)    function map_spheroid(xi,eta,crd_nodes,idir)
+real(kind=dp)    function map_spheroid(xi,eta,crd_nodes,idir)
 !
 !	We are working in polar coordinates here: theta
 ! is the latitude. 
@@ -73,13 +72,13 @@
 
   elseif (idir == 2) then
 !     write(61,*)'Direction 2!'
-     if (dabs(ds)>smallval) then
+     if (dabs(ds)>smallval_dble) then
 !        write(61,*)'abs > smallval... intersect and slope'
-     intersect = (zbot*stop-ztop*sbot)/ds   
-     slope = (ztop-zbot)/ds
-     map_spheroid = slope*(sbar+half*ds*eta)+intersect 
+         intersect = (zbot*stop-ztop*sbot)/ds   
+         slope = (ztop-zbot)/ds
+         map_spheroid = slope*(sbar+half*ds*eta)+intersect 
      else
-     map_spheroid = half*(zbot+ztop)+eta*(ztop-zbot)*half
+         map_spheroid = half*(zbot+ztop)+eta*(ztop-zbot)*half
      end if
 !     write(61,*)'stop,sbot:',stop,sbot
 !     write(61,*)'ztop,zbot:',ztop,zbot
@@ -87,7 +86,7 @@
 !  write(61,*)'map_spheroid',map_spheroid
 !write(61,*)''
 
-  end function map_spheroid
+end function map_spheroid
 !----------------------------------------------------------------------
 !
 !dk comp_partial_deriv_spheroid-----------------------
@@ -132,7 +131,7 @@
   dsdeta = half*ds
 !--------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 !
-  if (dabs(ds)>smallval) then
+  if (dabs(ds)>smallval_dble) then
 !--------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>
      intersect = (zbot*stop-ztop*sbot)/ds
      slope = dz/ds
