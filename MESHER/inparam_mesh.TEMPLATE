@@ -21,6 +21,10 @@ BACKGROUND_MODEL    prem_iso
 
 # EXT_MODEL           layer_solid.bm
 
+# Override the Q parameters (attenuation) of the external model with the given 
+# reference model values (allowed: prem, ak135f, default: none)
+# OVERRIDE_EXT_Q    prem
+
 # Dominant period [s]
 DOMINANT_PERIOD     20.0
 
@@ -36,8 +40,13 @@ NRADIAL_SLICES      1
 # decomposition
 ONLY_SUGGEST_NTHETA false
 
-# write vtk output
+# write vtk files of the generated mesh and its model parameters 
 WRITE_VTK           true
+
+# write out the 1D velocity model into files that can be used with AxiSEM and 
+# other software (TauP, YSpec, Mineos)
+WRITE_1DMODEL       true
+
 
 # Nr of coarsening layers
 # 3 is a reasonable choice for models with crust, otherwise 2

@@ -85,7 +85,7 @@ mesh_info.o: data_bkgrdmodel.o data_diag.o data_gllmesh.o data_grid.o \
 meshgen.o: analytic_spheroid_mapping.o data_bkgrdmodel.o data_coarse.o \
 	data_diag.o data_grid.o data_mesh.o data_numbering.o data_pdb.o \
 	data_spec.o global_parameters.o numbering.o Makefile ../make_axisem.macros 
-model_discontinuities.o: background_models.o data_bkgrdmodel.o \
+model_discontinuities.o: background_models.o data_bkgrdmodel.o data_diag.o \
 	global_parameters.o Makefile ../make_axisem.macros 
 numbering.o: clocks.o data_diag.o data_gllmesh.o data_grid.o data_mesh.o \
 	data_numbering.o data_spec.o data_time.o sorting.o Makefile ../make_axisem.macros 

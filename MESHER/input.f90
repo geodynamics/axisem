@@ -49,10 +49,12 @@ subroutine read_params
  
   ! Default values
   bkgrdmodel      = 'UNDEFINED'
+  override_ext_q  = 'none'
   nthetaslices    = -1
   nradialslices   = 1
   period          = -1
   dump_mesh_vtk   = .true.
+  dump_1dmodel    = .true.
   nc_init         = 3
   resolve_inner_shear = .true.
   npol            = 4
@@ -87,6 +89,9 @@ subroutine read_params
       case('EXT_MODEL')
           fnam_ext_model = keyvalue
 
+      case('OVERRIDE_EXT_Q')
+          override_ext_q = keyvalue
+
       case('DOMINANT_PERIOD')
           read(keyvalue, *) period
 
@@ -101,6 +106,9 @@ subroutine read_params
       
       case('WRITE_VTK')
           read(keyvalue, *) dump_mesh_vtk
+
+      case('WRITE_1DMODEL')
+          read(keyvalue, *) dump_1dmodel
 
       case('COARSENING_LAYERS')
           read(keyvalue, *) nc_init

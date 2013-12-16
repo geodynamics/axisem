@@ -32,7 +32,7 @@ module model_discontinuities
 
 !--------------------------------------------------------------------------
 subroutine define_discont
-   use data_diag, only: dump_mesh_info_files
+   use data_diag, only: dump_1dmodel
 
 ! wrapper routine to call different model types for number of layers ndisc, 
 ! discontinuity radii discont(1:ndisc), and corresponding velocities 
@@ -82,7 +82,7 @@ subroutine define_discont
         stop
   end select
 
-  if (dump_mesh_info_files) then
+  if (dump_1dmodel) then
      print *, ' Writing out the current model to Diags/1dmodel.bm'
      call write_1Dmodel(discont)
   end if
@@ -1127,64 +1127,137 @@ end subroutine arbitrmodel_discont
 subroutine write_1Dmodel(discontinuities)
    ! Write out the current model in a .bm file, which can be reused by the mesher.
    use global_parameters, only: smallval_dble
-   use background_models, only: velocity
+   use background_models, only: velocity, model_is_ani
    use data_diag,         only: diagpath
 
    real(kind=dp), intent(in) :: discontinuities(:)
    integer, parameter        :: maxlayers = 10000
-   real(kind=dp), dimension(maxlayers)  :: vp, vs, rho, depth
-   integer  :: ndom, idepth, idom, ilayer, nlayer
+   real(kind=dp), dimension(0:maxlayers)  :: vpv, vsv, rho, depth
+   real(kind=dp), dimension(0:maxlayers)  :: qka, qmu, vph, vsh, eta
+   real(kind=dp)             :: vp_tmp, vs_tmp, rho_tmp
+   integer  :: ndom, idepth, idom, ilayer, nlayer, step, nic, noc
    character(len=256)        :: fnam
 
    ndom = size(discontinuities)
 
    ilayer = 0
+
+   ! Domains from first to second-last
    do idom = 1, ndom-1
-      do idepth = nint(discontinuities(idom)), nint(discontinuities(idom+1)), -1000
-         ilayer = ilayer + 1
-         depth(ilayer) = real(idepth, kind=dp)
-         vp(ilayer)    = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-         vs(ilayer)    = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
-         rho(ilayer)   = velocity(real(idepth, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+      ! Adapt layer spacing according to overall size of domain. Should be at least 5
+      ! layers in each domain
+      if (discontinuities(idom) - discontinuities(idom+1) < 25000.) then
+         step = -1000
+      elseif (discontinuities(idom) - discontinuities(idom+1) < 250000.) then
+         step = -5000
+      else
+         step = -10000
+      end if
+      print *, 'Domain: ', idom, ', width:', discontinuities(idom+1) - discontinuities(idom), ', step:', step
+      ! Layers within the domain
+      do idepth = nint(discontinuities(idom)), nint(discontinuities(idom+1)), step
+         vp_tmp = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+         vs_tmp = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+         if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
+            ilayer = ilayer + 1
+            depth(ilayer) = real(idepth, kind=dp)
+            vpv(ilayer)   = vp_tmp
+            vsv(ilayer)   = vs_tmp
+            rho(ilayer)   = velocity(real(idepth, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+            qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+            qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+            vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+            vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+            eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+
+         end if
          !write(2000,*) real(idepth, kind=dp), rho, vp, vs
 
       end do
      
+      ! Layer at the bottom of the domain
       if ((depth(ilayer)-discontinuities(idom+1))>smallval_dble) then
          ilayer = ilayer + 1
          depth(ilayer) = discontinuities(idom+1)
-         vp(ilayer)    = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-         vs(ilayer)    = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+         vpv(ilayer)    = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+         vsv(ilayer)    = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
          rho(ilayer)   = velocity(discontinuities(idom+1), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+         qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+         qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+         vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+         vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+         eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
       end if
-      !write(2000,*) discontinuities(idom+1), rho, vp, vs
    end do
 
-   do idepth = nint(discontinuities(ndom)), 0, -1000
-      ilayer = ilayer + 1
-      depth(ilayer) = real(idepth, kind=dp)
-      vp(ilayer)    = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-      vs(ilayer)    = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
-      rho(ilayer)   = velocity(real(idepth, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
-      !write(2000,*) real(idepth, kind=dp), rho, vp, vs
+   ! Layers within the last domain
+   if (discontinuities(ndom) < 25000.) then
+      step = -1000
+   elseif (discontinuities(ndom) < 250000.) then
+      step = -5000
+   else
+      step = -10000
+   end if
+   do idepth = nint(discontinuities(ndom)), 0, step
+      vp_tmp = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+      vs_tmp = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+      if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
+         ilayer = ilayer + 1
+         depth(ilayer) = real(idepth, kind=dp)
+         vpv(ilayer)    = vp_tmp
+         vsv(ilayer)    = vs_tmp
+         rho(ilayer)   = velocity(real(idepth, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+         qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+         qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+         vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+         vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+         eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+      end if
    end do
 
+   ! Layer at the bottom of the model
    if (depth(ilayer)>smallval_dble) then
       ilayer = ilayer + 1
       depth(ilayer) = 0.0d0
-      vp(ilayer)    = velocity(0.0d0, 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-      vs(ilayer)    = velocity(0.0d0, 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+      vpv(ilayer)    = velocity(0.0d0, 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+      vsv(ilayer)    = velocity(0.0d0, 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
       rho(ilayer)   = velocity(0.0d0, 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+      qka(ilayer)   = velocity(0.0d0, 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+      qmu(ilayer)   = velocity(0.0d0, 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+      vph(ilayer)   = velocity(0.0d0, 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+      vsh(ilayer)   = velocity(0.0d0, 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+      eta(ilayer)   = velocity(0.0d0, 'eta', idom, bkgrdmodel, lfbkgrdmodel)
    end if
-   !write(2000,*)  0.0d0, rho, vp, vs
 
    nlayer = ilayer
 
-   fnam = trim(diagpath)//'/1dmodel.bm'
+   ! Write input file for AxiSEM
+   fnam = trim(diagpath)//'/1dmodel_axisem.bm'
    open(2000, file=fnam, action='write')
    write(2000,*) nlayer
    do ilayer = 1, nlayer
-      write(2000,*) depth(ilayer), rho(ilayer), vp(ilayer), vs(ilayer)
+      write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+                  depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                  qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
+   end do
+   close(2000)
+
+   ! Write input file for YSPEC
+   fnam = trim(diagpath)//'/1dmodel_yspec.bm'
+   noc = count(depth(1:nlayer)<=discontinuities(ndom-1).and.depth(1:nlayer)>discontinuities(ndom))
+   nic = count(depth(1:nlayer)<=discontinuities(ndom)) - 1
+   open(2000, file=fnam, action='write')
+   write (2000,*) 'AXISEM model for YSPEC: ', bkgrdmodel(1:lfbkgrdmodel) 
+   if (model_is_ani(bkgrdmodel)) then
+       write (2000,'(i2,f4.1)') 1, 1.
+   else
+       write (2000,'(i2,f4.1)') 0, 1.
+   endif
+   write(2000,*) nlayer, nic, noc
+   do ilayer = nlayer, 1, -1
+      write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+                  depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                  qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
    end do
    close(2000)
 

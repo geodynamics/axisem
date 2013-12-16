@@ -30,6 +30,7 @@
  module global_parameters
 !=========================
 !
+use, intrinsic :: iso_fortran_env
 
 implicit  none
 public
@@ -44,16 +45,16 @@ public
 ! Do not change these unless problems with any of the accuracy tests arise.
 ! As floating point rounding is system-dependent, there might be different 
 ! numbers for different systems, but the below values seem generally reasonable. 
-  real(kind=sp), parameter    :: smallval_sngl = 1e-6
-  real(kind=dp), parameter    :: smallval_dble = 1e-11
+  real(kind=sp), parameter :: smallval_sngl = 1e-6
+  real(kind=dp), parameter :: smallval_dble = 1e-11
 
 ! Do not change these.
-  double precision, parameter :: zero = 0d0, half = 5d-1, third = 1d0 / 3d0
-  double precision, parameter :: quart = 25d-2, one = 1d0, sixth = 1d0 / 6d0
-  double precision, parameter :: two = 2d0, three = 3d0, four = 4d0, five = 5d0
-  double precision, parameter :: fifth = 2d-1
-  double precision, parameter :: pi = 3.1415926535898D0
-  double precision, parameter :: epsi = 1d-30
+  real(kind=dp), parameter :: zero = 0d0, half = 5d-1, third = 1d0 / 3d0
+  real(kind=dp), parameter :: quart = 25d-2, one = 1d0, sixth = 1d0 / 6d0
+  real(kind=dp), parameter :: two = 2d0, three = 3d0, four = 4d0, five = 5d0
+  real(kind=dp), parameter :: fifth = 2d-1
+  real(kind=dp), parameter :: pi = 3.1415926535898D0
+  real(kind=dp), parameter :: epsi = 1d-30
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

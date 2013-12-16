@@ -94,21 +94,6 @@ subroutine bkgrdmodel_testing
   
   if (dump_mesh_info_screen) write(6,*) ''
   
-  ! construct full arrays for velocities... faster! 
-  !if (bkgrdmodel == 'external') then  ! Was 'solar' SCS
-  !   write(6,*) 'pre-assembling media arrays for solar case.... '
-  !   write(6,*) '...much faster due to inperpolation routine!'
-  !   allocate(v_p(0:npol,0:npol,neltot))
-  !   allocate(v_s(0:npol,0:npol,neltot))
-  !   allocate(rho(0:npol,0:npol,neltot))
-  !   write(6,*) 'allocated global media arrays'
-
-  !   call arbitr_sub_solar_arr(sgll*router, zgll*router, v_p, v_s, rho, fnam_ext_model)
-  !   
-  !   write(6,*) 'done with media array definition'
-  !   write(6,*) 'minmax vp: ', minval(v_p), maxval(v_p), minval(rho), maxval(rho)
-  !endif
-  
   ! find smallest/largest grid spacing
   !$omp parallel shared(hmin2, h, npol, router, hmax, hmin, x, y, z, vp1, vs1, rho1, &
   !$omp                 Qmu, Qka, mesh2, bkgrdmodel, v_p, v_s, rho, period) & 
@@ -197,21 +182,15 @@ subroutine bkgrdmodel_testing
   
            r = dsqrt(s1**2 + z1**2)
 
-           if (.false.) then !(bkgrdmodel=='external') then ! was 'solar' SCS
-              velo = v_p(ipol,jpol,iel)
-              velo_max = v_p(ipol,jpol,iel)
-  
-           else
-              r = dint(r*1.d10) * 1.d-10
+           r = dint(r*1.d10) * 1.d-10
            
-              if ( solid_domain(region(iel))) then 
-                 velo = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
-                 velo_max = velocity(r*router,'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
-              else
-                 velo = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
-                 ! to avoid calling velocity twice in fluid domain:
-                 velo_max = velo
-              endif
+           if ( solid_domain(region(iel))) then 
+              velo = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
+              velo_max = velocity(r*router,'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
+           else
+              velo = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
+              ! to avoid calling velocity twice in fluid domain:
+              velo_max = velo
            endif
            
            if (s1<1.d-5 .and. z1>=0.d0) then 
@@ -284,65 +263,46 @@ subroutine bkgrdmodel_testing
         y(ct+3) = zgll(npol,npol,iel)
         y(ct+4) = zgll(0,npol,iel)
   
-        if (.false.) then !(bkgrdmodel == 'external') then 
-           vp1(ct+1) = v_p(0,0,iel)
-           vs1(ct+1) = v_s(0,0,iel)
-           rho1(ct+1) = rho(0,0,iel)
-  
-           vp1(ct+2) = v_p(npol,0,iel)
-           vs1(ct+2) = v_s(npol,0,iel)
-           rho1(ct+2) = rho(npol,0,iel)
-  
-           vp1(ct+3) = v_p(npol,npol,iel)
-           vs1(ct+3) = v_s(npol,npol,iel)
-           rho1(ct+3) = rho(npol,npol,iel)
-  
-           vp1(ct+4) = v_p(0,npol,iel)
-           vs1(ct+4) = v_s(0,npol,iel)
-           rho1(ct+4) = rho(0,npol,iel)
-  
-        else 
-           r = sqrt( (x(ct+1))**2 + (y(ct+1))**2 )
-           vp1(ct+1) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
-           vs1(ct+1) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel) 
-           rho1(ct+1) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)    
-           
-           if (model_is_anelastic(bkgrdmodel)) then
-                Qmu(ct+1) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
-                Qka(ct+1) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
-           endif
-  
-           r = sqrt( (x(ct+2))**2 + (y(ct+2))**2 )
-           vp1(ct+2) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
-           vs1(ct+2) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel) 
-           rho1(ct+2) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)
-           
-           if (model_is_anelastic(bkgrdmodel)) then
-                Qmu(ct+2) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
-                Qka(ct+2) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
-           endif
-
-           r = sqrt( (x(ct+3))**2 + (y(ct+3))**2 )
-           vp1(ct+3) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
-           vs1(ct+3) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
-           rho1(ct+3) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)    
-           
-           if (model_is_anelastic(bkgrdmodel)) then
-                Qmu(ct+3) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
-                Qka(ct+3) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
-           endif
-  
-           r = sqrt( (x(ct+4))**2 + (y(ct+4))**2 )
-           vp1(ct+4) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
-           vs1(ct+4) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
-           rho1(ct+4) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)
-           
-           if (model_is_anelastic(bkgrdmodel)) then
-                Qmu(ct+4) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
-                Qka(ct+4) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
-           endif
-
+        r = sqrt( (x(ct+1))**2 + (y(ct+1))**2 )
+        vp1(ct+1) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
+        vs1(ct+1) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel) 
+        rho1(ct+1) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)    
+        
+        if (model_is_anelastic(bkgrdmodel)) then
+             Qmu(ct+1) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
+             Qka(ct+1) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
         endif
+
+        r = sqrt( (x(ct+2))**2 + (y(ct+2))**2 )
+        vp1(ct+2) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
+        vs1(ct+2) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel) 
+        rho1(ct+2) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)
+        
+        if (model_is_anelastic(bkgrdmodel)) then
+             Qmu(ct+2) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
+             Qka(ct+2) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
+        endif
+
+        r = sqrt( (x(ct+3))**2 + (y(ct+3))**2 )
+        vp1(ct+3) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
+        vs1(ct+3) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
+        rho1(ct+3) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)    
+        
+        if (model_is_anelastic(bkgrdmodel)) then
+             Qmu(ct+3) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
+             Qka(ct+3) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
+        endif
+
+        r = sqrt( (x(ct+4))**2 + (y(ct+4))**2 )
+        vp1(ct+4) = velocity(r*router, 'v_p', region(iel), bkgrdmodel, lfbkgrdmodel)
+        vs1(ct+4) = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)
+        rho1(ct+4) = velocity(r*router, 'rho', region(iel), bkgrdmodel, lfbkgrdmodel)
+        
+        if (model_is_anelastic(bkgrdmodel)) then
+             Qmu(ct+4) = velocity(r*router, 'Qmu', region(iel), bkgrdmodel, lfbkgrdmodel)
+             Qka(ct+4) = velocity(r*router, 'Qka', region(iel), bkgrdmodel, lfbkgrdmodel) 
+        endif
+
   
         mesh2(iel,1) = real(s1)
         mesh2(iel,2) = real(z1)
@@ -352,8 +312,6 @@ subroutine bkgrdmodel_testing
   end do ! iel
   !$omp end do 
   !$omp end parallel
-  !if (bkgrdmodel=='external') deallocate(v_p, v_s, rho)
- 
 
   if (dump_mesh_vtk) then
     write(6,*) 'minmax vp:', minval(vp1), maxval(vp1)
