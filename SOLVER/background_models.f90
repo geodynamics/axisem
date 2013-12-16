@@ -31,7 +31,7 @@
 !! discontinuities and their above/below elastic values for the mesher only 
 !! (see module model_discontinuities).
 module background_models
-  use global_parameters, only: dp, sp
+  use global_parameters
   use interpolation
   implicit none
   
@@ -39,12 +39,20 @@ module background_models
   public :: read_ext_model, get_ext_disc
   !public :: vp_layer, vs_layer, rho_layer, radius_layer, nlayer
   private
+  character(len=6),           save  :: override_ext_q
   integer                   , save  :: nlayer = -1
-  real(kind=dp), allocatable, save  :: vp_layer(:)
-  real(kind=dp), allocatable, save  :: vs_layer(:)
+  real(kind=dp), allocatable, save  :: vpv_layer(:)
+  real(kind=dp), allocatable, save  :: vsv_layer(:)
+  real(kind=dp), allocatable, save  :: vph_layer(:)
+  real(kind=dp), allocatable, save  :: vsh_layer(:)
+  real(kind=dp), allocatable, save  :: qka_layer(:)
+  real(kind=dp), allocatable, save  :: qmu_layer(:)
   real(kind=dp), allocatable, save  :: rho_layer(:)
   real(kind=dp), allocatable, save  :: radius_layer(:)
-  type(interpolation_data), allocatable, save :: interp_v_p(:), interp_v_s(:), &
+  logical, save                     :: ext_model_is_ani, ext_model_is_anelastic
+  type(interpolation_data), allocatable, save :: interp_vpv(:), interp_vsv(:), &
+                                                 interp_vph(:), interp_vsh(:), &
+                                                 interp_qka(:), interp_qmu(:), &
                                                  interp_rho(:)
 
 contains
@@ -108,6 +116,8 @@ logical function model_is_ani(bkgrdmodel2)
     model_is_ani = .true.
   case('prem_ani_light')
     model_is_ani = .true.
+  case('external')
+    model_is_ani = ext_model_is_ani
   case default
     model_is_ani = .false.
   end select
@@ -138,6 +148,8 @@ logical function model_is_anelastic(bkgrdmodel2)
     model_is_anelastic = .true.
   case('iasp91')
     model_is_anelastic = .true.
+  case('external')
+    model_is_anelastic = ext_model_is_anelastic 
   case default
     model_is_anelastic = .false.
   end select
@@ -1352,80 +1364,6 @@ real(kind=dp) function iasp91_sub(r0, param, idom)
 end function iasp91_sub
 !=============================================================================
 
-
-!-----------------------------------------------------------------------------
-!> file-based, step-wise model in terms of domains separated by disconts.
-!! format:
-!! ndisc
-!! r vp vs rho qkappa qmu
-!! ...
-!real(kind=dp) function arbitr_sub(param, idom)
-!
-!  integer, intent(in)             :: idom
-!  integer                         :: idom2
-!  character(len=3), intent(in)    :: param !rho, vs,vp
-!  real(kind=dp)   , allocatable, dimension(:) :: disconttmp, rhotmp, vstmp, vptmp
-!  real(kind=dp)   , allocatable, dimension(:) :: qmutmp, qkappatmp
-!  integer                         :: ndisctmp, i
-!  logical                         :: bkgrdmodelfile_exists
-!
-!  ! Does the file fnam_ext_model exist?
-!  
-!  inquire(file='external_model.bm', exist=bkgrdmodelfile_exists)
-!  
-!  if (bkgrdmodelfile_exists) then
-!      open(unit=77, file='external_model.bm')
-!      read(77,*) ndisctmp
-!
-!      ! necessary in case of stealth layer (see discont meshing)
-!      if (idom > ndisctmp) then
-!          idom2 = ndisctmp
-!      else 
-!          idom2 = idom
-!      endif
-!  
-!      allocate(disconttmp(1:ndisctmp))
-!      allocate(vptmp(1:ndisctmp))
-!      allocate(vstmp(1:ndisctmp))
-!      allocate(rhotmp(1:ndisctmp))
-!      allocate(qmutmp(1:ndisctmp))
-!      allocate(qkappatmp(1:ndisctmp))
-!
-!      do i=1, ndisctmp
-!          read(77,*) disconttmp(i), rhotmp(i), vptmp(i), vstmp(i), qkappatmp(i), qmutmp(i)
-!      enddo
-!      close(77)
-!
-!      if (param=='rho') then 
-!        arbitr_sub = rhotmp(idom2)
-!      elseif (param=='v_p') then
-!        arbitr_sub = vptmp(idom2)
-!      elseif (param=='v_s') then
-!        arbitr_sub = vstmp(idom2)
-!      elseif (param=='vpv') then 
-!        arbitr_sub = vptmp(idom2)
-!      elseif (param=='vsv') then 
-!        arbitr_sub = vstmp(idom2)
-!      elseif (param=='vph') then 
-!        arbitr_sub = vptmp(idom2)
-!      elseif (param=='vsh') then 
-!        arbitr_sub = vstmp(idom2)
-!      elseif (param=='eta') then 
-!        arbitr_sub = 1.
-!      elseif (param=='Qmu') then
-!        arbitr_sub = qmutmp(idom2)
-!      elseif (param=='Qka') then
-!        arbitr_sub = qkappatmp(idom2)
-!      endif
-!      deallocate(disconttmp, vstmp, vptmp, rhotmp)
-!  else 
-!      write(6,*)'Background model file ''external_model.bm'' does not exist!!!'
-!      stop
-!  endif
-!
-!end function arbitr_sub
-!=============================================================================
-
 !-----------------------------------------------------------------------------
 !> file-based, step-wise model in terms of domains separated by disconts.
 !! format:
@@ -1434,24 +1372,42 @@ end function iasp91_sub
 !! ...
 real(kind=dp) function arbitr_sub_solar(r0, param, idom)
 
-  real(kind=dp)   , intent(in)      :: r0
-  integer, intent(in)               :: idom
-  character(len=3), intent(in)      :: param !rho, vs,vp
-  !real(kind=dp)                     :: model_param(nlayer)
-  logical                           :: success
-  type(interpolation_data)          :: interp
+  real(kind=dp), intent(in)      :: r0
+  integer, intent(in)            :: idom
+  character(len=3), intent(in)   :: param 
+  logical                        :: success
+  type(interpolation_data)       :: interp
 
      !print *, 'R0: ', r0, ', idom:', idom
      select case(param)
      case('rho')
         call interpolate(interp_rho(idom), r0, arbitr_sub_solar, success)
      case('v_p', 'vph', 'vpv')
-        call interpolate(interp_v_p(idom), r0, arbitr_sub_solar, success)
+        call interpolate(interp_vpv(idom), r0, arbitr_sub_solar, success)
      case('v_s', 'vsh', 'vsv')
-        call interpolate(interp_v_s(idom), r0, arbitr_sub_solar, success)
+        call interpolate(interp_vsv(idom), r0, arbitr_sub_solar, success)
      case('eta')
         arbitr_sub_solar = 1
         success = .true.
+     case('Qmu', 'Qka')
+        select case(trim(override_ext_q))
+        case('prem')
+           arbitr_sub_solar = prem_sub(r0, param, idom)
+        case('ak135f')
+           arbitr_sub_solar = ak135f(r0, param, idom)
+        case default
+           if (ext_model_is_anelastic) then
+              if (param.eq.'Qmu') then
+                 call interpolate(interp_qmu(idom), r0, arbitr_sub_solar, success)
+              else
+                 call interpolate(interp_qka(idom), r0, arbitr_sub_solar, success)
+              end if
+           else 
+              print *, 'ERROR: External model is purely elastic. Set OVERRIDE_EXT_Q in '
+              print *, '       inparam_mesh, if you want to use PREM or AK135F Q.'
+              stop
+           end if
+        end select
      case default
         print *, 'ERROR: Parameter ', trim(param), ' not implemented in external model'
      end select
@@ -1465,97 +1421,17 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
 end function arbitr_sub_solar
 !=============================================================================
 
-!-----------------------------------------------------------------------------------------
-!subroutine arbitr_sub_solar_arr(s, z, v_p, v_s, rho, bkgrdmodel2)
-!!
-!! file-based, step-wise model in terms of domains separated by disconts.
-!! format:
-!! ndisc
-!! r vp vs rho
-!! ...
-!
-!  real(kind=dp), intent(in)    :: s(0:,0:,:), z(0:,0:,:)
-!  character(len=100), intent(in)  :: bkgrdmodel2
-!  real(kind=dp), dimension(0:,0:,:), intent(out) :: rho ! (0:npol,0:npol,1:neltot)
-!  real(kind=dp), dimension(0:,0:,:), intent(out) :: v_s ! (0:npol,0:npol,1:neltot)
-!  real(kind=dp), dimension(0:,0:,:), intent(out) :: v_p ! (0:npol,0:npol,1:neltot)
-!  real(kind=dp), allocatable, dimension(:)     :: disconttmp, rhotmp, vstmp, vptmp
-!  integer              :: ndisctmp, i, ndisctmp2, ind(2), ipol, jpol, iel
-!  logical              :: bkgrdmodelfile_exists
-!  logical, allocatable :: success_rho(:,:,:), success_v_p(:,:,:), success_v_s(:,:,:)
-!
-!  real(kind=dp)        :: w(2), wsum, r0, vp_robust
-!  integer              :: npol, neltot, idepth
-!  type(interpolation_data) :: interp_v_p, interp_v_s, interp_rho
-!  
-!  npol = size(s,1)-1
-!  neltot = size(s,3)
-!
-!  allocate(success_rho(0:npol, 0:npol, 1:neltot))
-!  allocate(success_v_p(0:npol, 0:npol, 1:neltot))
-!  allocate(success_v_s(0:npol, 0:npol, 1:neltot))
-!  success_rho = .false.    
-!  success_v_p = .false.
-!  success_v_s = .false.
-!  
-!  call read_ext_model(bkgrdmodel2, ndisctmp, rhotmp, vptmp, vstmp, disconttmp)
-!
-!  interp_rho = interpolation_object(disconttmp, rhotmp, extrapolation_constant)
-!  if (.not.interp_rho%useable) stop 'interp_rho not usable'
-!  interp_v_p = interpolation_object(disconttmp, vptmp,  extrapolation_constant)
-!  if (.not.interp_v_p%useable) stop 'interp_v_p not usable'
-!  interp_v_s = interpolation_object(disconttmp, vstmp,  extrapolation_constant)
-!  if (.not.interp_v_s%useable) stop 'interp_v_s not usable'
-!
-!  !do idepth = 1190179, 1253310
-!  !   call interp_vel(dble(idepth),disconttmp(1:ndisctmp),ndisctmp,ind,w,wsum)
-!  !   call interpolate( interp_v_p, dble(idepth), vp_robust, success )
-!  !   if (.not.success) stop "bad interpolation"
-!  !   write(1004,*) idepth, sum(w*vptmp(ind))*wsum, vp_robust 
-!  !end do
-!
-!
-!  do iel=1,neltot
-!     do jpol=0,npol
-!        do ipol=0,npol
-!           r0 = dsqrt(s(ipol,jpol,iel)**2 + z(ipol,jpol,iel)**2 )
-!           call interpolate( interp_rho, r0, rho(ipol,jpol,iel), success_rho(ipol,jpol,iel))
-!           call interpolate( interp_v_p, r0, v_p(ipol,jpol,iel), success_v_p(ipol,jpol,iel))
-!           call interpolate( interp_v_s, r0, v_s(ipol,jpol,iel), success_v_s(ipol,jpol,iel))
-!           write(1004,*) r0, rho(ipol,jpol,iel), v_p(ipol,jpol,iel), v_s(ipol,jpol,iel)
-!        enddo
-!     enddo
-!  enddo
-!
-!  if (.not.all(success_rho)) then
-!     print *, 'ERROR: Interpolation of RHO values failed for', count(.not.success_rho), ' elements'
-!     stop
-!  end if
-!
-!  if (.not.all(success_v_p)) then
-!     print *, 'ERROR: Interpolation of VP values failed for', count(.not.success_v_p), ' elements'
-!     stop
-!  end if
-!
-!  if (.not.all(success_v_s)) then
-!     print *, 'ERROR: Interpolation of VS values failed for', count(.not.success_v_s), ' elements'
-!     stop
-!  end if
-!
-!end subroutine arbitr_sub_solar_arr
-!-----------------------------------------------------------------------------------------
-
 !=============================================================================
 subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
-                          vp_layer_out, vs_layer_out, radius_layer_out)
+                          vpv_layer_out, vsv_layer_out, radius_layer_out)
 
   character(len=*), intent(in)                       :: fnam_ext_model
-  real(kind=dp), allocatable, intent(out), optional  :: vp_layer_out(:) 
-  real(kind=dp), allocatable, intent(out), optional  :: vs_layer_out(:) 
+  real(kind=dp), allocatable, intent(out), optional  :: vpv_layer_out(:) 
+  real(kind=dp), allocatable, intent(out), optional  :: vsv_layer_out(:) 
   real(kind=dp), allocatable, intent(out), optional  :: rho_layer_out(:) 
   real(kind=dp), allocatable, intent(out), optional  :: radius_layer_out(:)
   integer, intent(out), optional                     :: nlayer_out
-  integer                          :: ilayer
+  integer                          :: ilayer, ierr
   logical                          :: bkgrdmodelfile_exists, startatsurface
 
   ! Has the file already been read in?
@@ -1565,25 +1441,24 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      inquire(file=trim(fnam_ext_model), exist=bkgrdmodelfile_exists)
 
      if (.not. bkgrdmodelfile_exists) then
-        write(6,*)'ERROR IN BACKGROUND MODEL: ', &
-                   trim(fnam_ext_model),' NON-EXISTENT!'
-        write(6,*)'...failed to open file', &
-                   trim(fnam_ext_model) 
+        write(6,*)'ERROR: File: ', trim(fnam_ext_model),' does not exist!'
         stop 
      endif
 
-     open(unit=77,file=trim(fnam_ext_model))
-     
+     open(unit=77, file=trim(fnam_ext_model), action='read')
+    
+     read(77,*) ext_model_is_ani, ext_model_is_anelastic
      read(77,*) nlayer
-     print *, 'Model has ', nlayer, ' layers...'
+     print *, 'Model in file ', trim(fnam_ext_model), ' has ', nlayer, ' layers...'
      
      allocate(radius_layer(nlayer))
-     allocate(vp_layer(nlayer))
-     allocate(vs_layer(nlayer))
+     allocate(vpv_layer(nlayer))
+     allocate(vsv_layer(nlayer))
      allocate(rho_layer(nlayer))
 
+
      ! Read in first layer
-     read(77,*) radius_layer(1), rho_layer(1), vp_layer(1), vs_layer(1)
+     read(77,*) radius_layer(1), rho_layer(1), vpv_layer(1), vsv_layer(1)
 
      ! Recognize order of layers
      if (radius_layer(1).eq.0) then
@@ -1596,18 +1471,23 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
      ! Read in all other layers
      do ilayer = 2, nlayer
-        read(77,*) radius_layer(ilayer), rho_layer(ilayer), vp_layer(ilayer), vs_layer(ilayer)
+        read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer), vsv_layer(ilayer)
        
+        if (ierr.eq.IOSTAT_END) then
+           print *, 'ERROR: File ', trim(fnam_ext_model), ' has only ', ilayer-1, ' layers'
+           print *, '       Not ', nlayer, ' as specified in the header.'
+           stop
+        end if
         if (startatsurface) then
            if ((radius_layer(ilayer) - radius_layer(ilayer-1))>0.0d0) then
-              print *, 'ERROR: Radius of layers in external model has to be monotonously increasing!'
+              print *, 'ERROR: Radius of layers in external model has to be monotonously (increasing)!'
               print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
               print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
               stop
            end if
         else
            if ((radius_layer(ilayer) - radius_layer(ilayer-1))<0.0d0) then
-              print *, 'ERROR: Radius of layers in external model has to be monotonously decreasing!'
+              print *, 'ERROR: Radius of layers in external model has to be monotonously (decreasing)!'
               print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
               print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
               stop
@@ -1620,8 +1500,8 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      if (.not.startatsurface) then
         print *, 'Reordering layers to start at the surface'
         radius_layer = radius_layer(nlayer:1:-1)
-        vp_layer     = vp_layer(nlayer:1:-1)
-        vs_layer     = vs_layer(nlayer:1:-1)
+        vpv_layer    = vpv_layer(nlayer:1:-1)
+        vsv_layer    = vsv_layer(nlayer:1:-1)
         rho_layer    = rho_layer(nlayer:1:-1)
      end if
 
@@ -1638,13 +1518,13 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      allocate(rho_layer_out(nlayer))
      rho_layer_out = rho_layer
   end if
-  if (present(vp_layer_out)) then
-     allocate(vp_layer_out(nlayer))
-     vp_layer_out = vp_layer
+  if (present(vpv_layer_out)) then
+     allocate(vpv_layer_out(nlayer))
+     vpv_layer_out = vpv_layer
   end if
-  if (present(vs_layer_out)) then
-     allocate(vs_layer_out(nlayer))
-     vs_layer_out = vs_layer
+  if (present(vsv_layer_out)) then
+     allocate(vsv_layer_out(nlayer))
+     vsv_layer_out = vsv_layer
   end if
 
 end subroutine read_ext_model
@@ -1667,11 +1547,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
   integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc
   integer, allocatable       :: isdisc(:)
-!  real(kind=dp), allocatable :: vp_layer(:), vs_layer(:), rho_layer(:), radius_layer(:)
-  
-!  integer                    :: nlayer
 
-  call read_ext_model(fnam_ext_model) !, nlayer, rho_layer, vp_layer, vs_layer, radius_layer)
+  call read_ext_model(fnam_ext_model) 
 
   allocate(grad_vp(nlayer-1))
   allocate(grad_vs(nlayer-1))
@@ -1696,9 +1573,9 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
         lower_layer(idom-1) = ilayer
         upper_layer(idom)   = ilayer + 1
      else
-        grad_vp(ilayer) = (vp_layer(ilayer+1) - vp_layer(ilayer)) / &
+        grad_vp(ilayer) = (vpv_layer(ilayer+1) - vpv_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
-        grad_vs(ilayer) = (vs_layer(ilayer+1) - vs_layer(ilayer)) / &
+        grad_vs(ilayer) = (vsv_layer(ilayer+1) - vsv_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
         if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
             abs(grad_vs(ilayer)).gt.grad_threshold) then
@@ -1724,116 +1601,13 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
      allocate(vs(ndisc,2))
      allocate(rho(ndisc,2))
      discont        = radius_layer(upper_layer(1:ndisc))
-     vp(1:ndisc,1)  = vp_layer(upper_layer(1:ndisc))
-     vp(1:ndisc,2)  = vp_layer(lower_layer(1:ndisc))
-     vs(1:ndisc,1)  = vs_layer(upper_layer(1:ndisc))
-     vs(1:ndisc,2)  = vs_layer(lower_layer(1:ndisc))
+     vp(1:ndisc,1)  = vpv_layer(upper_layer(1:ndisc))
+     vp(1:ndisc,2)  = vpv_layer(lower_layer(1:ndisc))
+     vs(1:ndisc,1)  = vsv_layer(upper_layer(1:ndisc))
+     vs(1:ndisc,2)  = vsv_layer(lower_layer(1:ndisc))
      rho(1:ndisc,1) = rho_layer(upper_layer(1:ndisc))
      rho(1:ndisc,2) = rho_layer(lower_layer(1:ndisc))
   end if
-
-
-
-  !do ilayer = 1, nlayer-1
-  !   if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
-  !      if (any([abs(vp_layer(ilayer+1) - vp_layer(ilayer))  > smallval_dble, &
-  !               abs(vs_layer(ilayer+1) - vs_layer(ilayer))  > smallval_dble])) then
-  !         grad_vp(ilayer) = 99999
-  !         grad_vs(ilayer) = 99999
-  !      else
-  !         grad_vp(ilayer) = 0
-  !         grad_vs(ilayer) = 0
-  !      end if
-  !   else
-  !      grad_vp(ilayer) = (vp_layer(ilayer+1) - vp_layer(ilayer)) / &
-  !                        (radius_layer(ilayer+1) - radius_layer(ilayer))
-  !      grad_vs(ilayer) = (vs_layer(ilayer+1) - vs_layer(ilayer)) / &
-  !                        (radius_layer(ilayer+1) - radius_layer(ilayer))
-  !   end if
-  !end do
-
-  !! Find discontinuities
-  !idom = 0
-  !disc_tmp(1) = radius_layer(1)
-  !vp_laststep = vp_layer(1)
-  !vs_laststep = vs_layer(1)
-  !rho_laststep = rho_layer(1)
-
-  !print *, ' Looking for discontinuities in external model'
-
-  !do ilayer = 1, nlayer-1
-  !   if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
-  !       abs(grad_vs(ilayer)).gt.grad_threshold) then
-
-  !      ! Some more rules to avoid discontinuity congestion
-  !      !if (idom.ge.1) then
-  !      !   dx = abs(radius_layer(ilayer) - disc_tmp(idom+1)) 
-  !      !   dx_min = vs_layer(ilayer) * 1 !@TODO: 5.0 is a hack
-  !      !   !print *, radius_layer(ilayer) , disc_tmp(idom), dx_min
-  !      !   if (abs(dx)<dx_min) then
-  !      !      !write(1000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), ' S'
-  !      !      cycle
-  !      !   end if
-  !      !end if
-
-  !      ! Let's put a discontinuity here!
-  !      idom = idom + 1
-  !      if (idom==1) then
-  !         upper_layer(idom) = 1
-  !      else
-  !         if ((radius_layer(lower_layer(idom-1)) - radius_layer(lower_layer(idom-1)+1)<0.01).or. & ! Double layer
-  !             (vs_layer(lower_layer(idom-1))==0).neqv.(vs_layer(lower_layer(idom-1)+1)==0))               & ! Solid-fluid boundary
-  !              then 
-  !            ! First order discontinuity
-  !            print *, 'First order disc. at ', radius_layer(lower_layer(idom-1)+1), radius_layer(lower_layer(idom-1))
-  !            upper_layer(idom) = lower_layer(idom-1) + 1
-  !         else
-  !            ! Second order discontinuity
-  !            print *, 'Second order disc. at ', radius_layer(lower_layer(idom-1)+1), radius_layer(lower_layer(idom-1))
-  !            upper_layer(idom) = lower_layer(idom-1)
-  !         end if
-  !      end if
-  !      lower_layer(idom) = ilayer
-
-  !      disc_tmp(idom+1)  = radius_layer(ilayer)
-  !      
-  !      if (idom.eq.1) then
-  !         vp_tmp(idom,1) = vp_layer(1)
-  !         vp_tmp(idom,2) = vp_layer(ilayer)
-  !         vs_tmp(idom,1) = vs_layer(1)
-  !         vs_tmp(idom,2) = vs_layer(ilayer)
-  !         rho_tmp(idom,1) = rho_layer(1)
-  !         rho_tmp(idom,2) = rho_layer(ilayer)
-  !      else
-  !         vp_tmp(idom,1) = vp_laststep
-  !         vp_tmp(idom,2) = vp_layer(ilayer)
-  !         vs_tmp(idom,1) = vs_laststep
-  !         vs_tmp(idom,2) = vs_layer(ilayer)
-  !         rho_tmp(idom,1) = rho_laststep
-  !         rho_tmp(idom,2) = rho_layer(ilayer)
-  !      end if
-
-  !      vp_laststep = vp_layer(ilayer+1)
-  !      vs_laststep = vs_layer(ilayer+1)
-  !      rho_laststep = rho_layer(ilayer+1)
-
-  !      write(6000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer), '  *'
-
-  !   else
-  !      write(6000,*) radius_layer(ilayer), vp_layer(ilayer), grad_vp(ilayer), vs_layer(ilayer), grad_vs(ilayer)
-
-  !   end if
-  !end do
-
-  !idom = idom + 1
-  !vp_tmp(idom,1)    = vp_laststep
-  !vp_tmp(idom,2)    = vp_layer(nlayer)
-  !vs_tmp(idom,1)    = vs_laststep
-  !vs_tmp(idom,2)    = vs_layer(nlayer)
-  !rho_tmp(idom,1)   = rho_laststep
-  !rho_tmp(idom,2)   = rho_layer(nlayer)
-  !upper_layer(idom) = lower_layer(idom-1) + 1
-  !lower_layer(idom) = nlayer
 
   print *, '  External model has', idom, ' layers'
   ndisc = idom
@@ -1841,8 +1615,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   print *, '  Creating interpolation objects'
 
   ! Create interpolation objects for each domain
-  allocate(interp_v_p(ndisc))
-  allocate(interp_v_s(ndisc))
+  allocate(interp_vpv(ndisc))
+  allocate(interp_vsv(ndisc))
   allocate(interp_rho(ndisc))
 
   print *, 'idom, upper_layer, lower_layer, r(ul), r(ll)'
@@ -1851,11 +1625,11 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
      interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              rho_layer(upper_layer(idom):lower_layer(idom)), &
                                              extrapolation_none)
-     interp_v_p(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
-                                             vp_layer(upper_layer(idom):lower_layer(idom)), &
+     interp_vpv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                             vpv_layer(upper_layer(idom):lower_layer(idom)), &
                                              extrapolation_none)
-     interp_v_s(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
-                                             vs_layer(upper_layer(idom):lower_layer(idom)), &
+     interp_vsv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                             vsv_layer(upper_layer(idom):lower_layer(idom)), &
                                              extrapolation_none)
   end do
 

@@ -471,7 +471,7 @@ subroutine check_mesh_discontinuities(ieldom,domcount)
           do ipol=0,npol
               call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
               if (r>zero) then 
-                  if ( (r-discont(iidom))/r > dble(smallval) ) then 
+                  if ( (r-discont(iidom))/r > smallval_dble ) then 
                       write(6,*)procstrg,'PROBLEM with domains and discontinuities!'
                       write(6,*)procstrg,'radius > associated discont.:',&
                            iidom,r,discont(iidom)

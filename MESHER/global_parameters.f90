@@ -47,6 +47,7 @@ public
 ! numbers for different systems, but the below values seem generally reasonable. 
   real(kind=sp), parameter :: smallval_sngl = 1e-6
   real(kind=dp), parameter :: smallval_dble = 1e-11
+  real(kind=realkind), parameter :: smallval = smallval_sngl !< Change for dp
 
 ! Do not change these.
   real(kind=dp), parameter :: zero = 0d0, half = 5d-1, third = 1d0 / 3d0

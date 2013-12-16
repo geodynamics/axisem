@@ -24,14 +24,12 @@ module utlity
 !================
 
   use global_parameters
-  use data_mesh, only : smallval
   implicit none
   
   public :: compute_coordinates, scoord, zcoord, rcoord, thetacoord
   public :: dblreldiff_small, reldiff_small
   public :: dblereldiff, reldiff
   public :: dbleabsreldiff, absreldiff
-  public :: dbleps2zero, eps2zero
   private
 
 contains
@@ -44,9 +42,9 @@ logical function dblreldiff_small(x1,x2)
   dblreldiff_small = .false.
 
   if (x1 /= zero) then 
-     if (abs((x1-x2)/x1) <= smallval) dblreldiff_small = .true.
+     if (abs((x1-x2)/x1) <= smallval_dble) dblreldiff_small = .true.
   elseif (x2 /=zero) then
-     if (abs((x1-x2)/x2) <= smallval) dblreldiff_small = .true.
+     if (abs((x1-x2)/x2) <= smallval_dble) dblreldiff_small = .true.
   else
      dblreldiff_small = .true.
   endif
@@ -60,8 +58,8 @@ logical function reldiff_small(x1,x2)
   real(kind=realkind), intent(in) :: x1,x2
   real(kind=realkind)             ::  smallval1
 
-  if (realkind==4) smallval1 = smallval
-  if (realkind==8) smallval1 = smallval_dble
+  if (realkind==sp) smallval1 = smallval_sngl
+  if (realkind==dp) smallval1 = smallval_dble
 
   reldiff_small = .false.
 
@@ -95,7 +93,7 @@ end function reldiff
 !-----------------------------------------------------------------------------
 real(kind=dp)    function dblereldiff(x1,x2)
 
-  real(kind=dp)   , intent(in) :: x1,x2
+  real(kind=dp), intent(in) :: x1,x2
 
   if (x1/=zero) then
      dblereldiff=(x1-x2)/x1
@@ -127,7 +125,7 @@ end function absreldiff
 !-----------------------------------------------------------------------------
 real(kind=dp)    function dbleabsreldiff(x1,x2)
 
-  real(kind=dp)   , intent(in) :: x1,x2
+  real(kind=dp), intent(in) :: x1,x2
 
   if (x1/=zero) then
      dbleabsreldiff=abs((x1-x2)/x1)
@@ -299,7 +297,7 @@ end function rcoord
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function thetacoord(ipol,jpol,ielem)
+real(kind=dp) function thetacoord(ipol,jpol,ielem)
   !
   ! Given the elemental grid point index, outputs the theta coordinate [rad].
   ! These coordinates are by default ALWAYS global (no solid or fluid domains).
@@ -323,11 +321,11 @@ real(kind=dp)    function thetacoord(ipol,jpol,ielem)
 
   ! Fill global coordinate array
   if ( axis(ielem) ) then 
-     s = mapping( xi_k(ipol),eta(jpol),nodes_crd,1,ielem)
-     z = mapping( xi_k(ipol),eta(jpol),nodes_crd,2,ielem)
+     s = mapping(xi_k(ipol), eta(jpol), nodes_crd, 1, ielem)
+     z = mapping(xi_k(ipol), eta(jpol), nodes_crd, 2, ielem)
   else 
-     s = mapping(eta(ipol),eta(jpol),nodes_crd,1,ielem)
-     z = mapping(eta(ipol),eta(jpol),nodes_crd,2,ielem)
+     s = mapping(eta(ipol), eta(jpol), nodes_crd, 1, ielem)
+     z = mapping(eta(ipol), eta(jpol), nodes_crd, 2, ielem)
   end if
 
   thetacoord = datan(s/(z+epsi))
@@ -335,28 +333,6 @@ real(kind=dp)    function thetacoord(ipol,jpol,ielem)
   if (thetacoord == zero .and. z < 0) thetacoord = pi
 
 end function thetacoord
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-real(kind=realkind) function eps2zero(val)
-
-  real(kind=realkind) :: val
-
-  eps2zero = val
-  if (abs(val) < epsi) eps2zero = zero
-
-end function eps2zero
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-real(kind=dp)    function dbleps2zero(val)
-
-  real(kind=dp)    :: val
-
-  dbleps2zero=val
-  if (abs(val) < epsi) dbleps2zero = zero
-
-end function dbleps2zero
 !=============================================================================
 
 !====================
