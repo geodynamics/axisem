@@ -197,17 +197,17 @@ end subroutine glob_snapshot_midpoint
 
 !-----------------------------------------------------------------------------------------
 !> Dumps the global displacement snapshots in binary plus XDMF descriptor
-subroutine glob_snapshot_xdmf(f_sol, chi)
+subroutine glob_snapshot_xdmf(f_sol, chi, t)
 
    use data_source,             only: src_type
    use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
    use pointwise_derivatives,   only: axisym_gradient_fluid, dsdf_fluid_axis
-   use data_time,               only: t
    use nc_routines,             only: nc_dump_snapshot
    use data_mesh,               only: npol, nel_solid, nel_fluid
    
    real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
    real(kind=realkind), intent(in) :: chi(0:,0:,:)
+   real(dp), intent(in)            :: t
 
    character(len=4)                :: appisnap
    integer                         :: iel, ct, ipol, jpol, ipol1, jpol1, i, j

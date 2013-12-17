@@ -258,7 +258,7 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: acc0, acc1
   
-  ! solid memory variables + gradient
+  ! solid memory variables
   real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
   real(kind=realkind), allocatable :: memory_var_cg4(:,:,:,:)
 
@@ -442,7 +442,7 @@ subroutine sf_time_loop_newmark
      acc0(:,:,:,3) = acc1(:,:,:,3)
      
      iclockdump = tick()
-     call dump_stuff(iter, disp, velo, chi, dchi, ddchi0)
+     call dump_stuff(iter, disp, velo, chi, dchi, ddchi0, t)
      iclockdump = tick(id=iddump, since=iclockdump)
   end do ! time loop
   
@@ -469,25 +469,40 @@ subroutine symplectic_time_loop
   use clocks_mod
   use source,       only: compute_stf_t
   use data_matr,    only: inv_mass_rho,inv_mass_fluid
-  
-  
+  use attenuation,  only: time_step_memvars
+  use attenuation,  only: n_sls_attenuation
+  use attenuation,  only: att_coarse_grained
   use data_mesh
   
   ! solid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo, acc
   
+  ! solid memory variables
+  real(kind=realkind), allocatable :: memory_var(:,:,:,:,:)
+  real(kind=realkind), allocatable :: memory_var_cg4(:,:,:,:)
+  
   ! fluid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi, ddchi
   
-  integer          :: iter, i
+  integer :: iter, i
   
   ! symplectic stuff
-  real(kind=dp)   , allocatable, dimension(:) :: coefd, coeff, coefv, subdt
-  real(kind=dp)   , allocatable, dimension(:) :: stf_symp
+  real(kind=dp), allocatable, dimension(:) :: coefd, coeff, coefv, subdt
+  real(kind=dp), allocatable, dimension(:) :: stf_symp
   
   ! choose symplectic scheme (4,6,8,10th order) and compute coefficients
-  call symplectic_coefficients(coefd,coeff,coefv)
-  allocate(subdt(nstages),stf_symp(nstages))
+  call symplectic_coefficients(coefd, coeff, coefv)
+  allocate(subdt(nstages), stf_symp(nstages))
+  
+  if (anel_true) then
+     if (att_coarse_grained) then
+        allocate(memory_var_cg4(1:4,6,n_sls_attenuation,nel_solid))
+        memory_var_cg4 = 0
+     else
+        allocate(memory_var(0:npol,0:npol,6,n_sls_attenuation,nel_solid))
+        memory_var = 0
+     endif
+  endif
 
   ! INITIAL CONDITIONS
   disp = zero
@@ -544,12 +559,35 @@ subroutine symplectic_time_loop
            case ('monopole')
               call apply_axis_mask_onecomp(disp,nel_solid, ax_el_solid,naxel_solid)
               call glob_stiffness_mono(acc,disp)
+
+              if (anel_true) then
+                 iclockanelst = tick()
+                 call glob_anel_stiffness_mono(acc, memory_var, memory_var_cg4, &
+                                               att_coarse_grained)
+                 iclockanelst = tick(id=idanelst, since=iclockanelst)
+              endif
+
            case ('dipole') 
               call apply_axis_mask_twocomp(disp,nel_solid, ax_el_solid,naxel_solid)
               call glob_stiffness_di(acc,disp) 
+
+              if (anel_true) then
+                 iclockanelst = tick()
+                 call glob_anel_stiffness_di(acc, memory_var, memory_var_cg4, &
+                                               att_coarse_grained)
+                 iclockanelst = tick(id=idanelst, since=iclockanelst)
+              endif
+
            case ('quadpole') 
               call apply_axis_mask_threecomp(disp,nel_solid, ax_el_solid,naxel_solid)
               call glob_stiffness_quad(acc,disp) 
+
+              if (anel_true) then
+                 iclockanelst = tick()
+                 call glob_anel_stiffness_quad(acc, memory_var, memory_var_cg4, &
+                                               att_coarse_grained)
+                 iclockanelst = tick(id=idanelst, since=iclockanelst)
+              endif
         end select
         iclockstiff = tick(id=idstiff, since=iclockstiff)
 
@@ -594,7 +632,10 @@ subroutine symplectic_time_loop
            velo(:,:,:,3) = velo(:,:,:,3) - acc(:,:,:,3) * coefv(i) * inv_mass_rho
         endif
 
+        !call dump_stuff(iter * nstages + i,disp,velo,chi,dchi,ddchi,subdt(i))
+
      enddo ! ... nstages substages
+
 
      chi = chi + dchi * coefd(nstages+1)
 
@@ -603,10 +644,16 @@ subroutine symplectic_time_loop
         disp(:,:,:,2) = disp(:,:,:,2) + velo(:,:,:,2) * coefd(nstages+1)
      disp(:,:,:,3) = disp(:,:,:,3) + velo(:,:,:,3) * coefd(nstages+1)
 
+     if (anel_true) then
+        iclockanelts = tick()
+        call time_step_memvars(memory_var, memory_var_cg4, disp, att_coarse_grained)
+        iclockanelts = tick(id=idanelts, since=iclockanelts)
+     endif
+
      ! ::::::::::::::::::::::::: END SYMPLECTIC SOLVER ::::::::::::::::::::::::::
 
      iclockdump = tick()
-     call dump_stuff(iter,disp,velo,chi,dchi,ddchi)
+     call dump_stuff(iter,disp,velo,chi,dchi,ddchi,t)
      iclockdump = tick(id=iddump, since=iclockdump)
 
   end do ! time loop
@@ -621,14 +668,14 @@ end subroutine symplectic_time_loop
 !-----------------------------------------------------------------------------
 subroutine symplectic_coefficients(coefd,coeff,coefv)
 
-  use commun,         only : barrier,pend
+  use commun, only : barrier,pend
   
-  real(kind=dp)   , allocatable, dimension(:), intent(out) :: coefd,coeff,coefv
-  real(kind=dp)   , allocatable, dimension(:) :: g
-  real(kind=dp)    :: zeta_symp,iota_symp,kappa_symp
-  real(kind=dp)    :: rho,theta,nu,lambda
-  integer :: Q,n,i
-  real :: B,C
+  real(kind=dp), allocatable, dimension(:), intent(out) :: coefd, coeff, coefv
+  real(kind=dp), allocatable, dimension(:) :: g
+  real(kind=dp) :: zeta_symp, iota_symp, kappa_symp
+  real(kind=dp) :: rho, theta, nu, lambda
+  integer       :: Q, n, i
+  real          :: B, C
 
   select case (time_scheme)
      
@@ -636,187 +683,198 @@ subroutine symplectic_coefficients(coefd,coeff,coefv)
   case('symplec4') ! position extended Forest-Ruth like 
                    ! (Omelyan, Mryglod and Folk, 2002)
      nstages = 4
-     allocate(coefd(nstages+1),coeff(nstages),coefv(nstages))
+     allocate(coefd(nstages+1), coeff(nstages), coefv(nstages))
 
      if (lpr) then
         write(6,*)
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
-        write(6,*)'TTTT  4th-order symplectic PEFRL scheme  TTTTTTTTTTTTTTT'
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTT  4th-order symplectic PEFRL scheme  TTTTTTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
         write(6,*)
      endif
      
      ! symplectic parameters
-     zeta_symp=+0.1786178958448091
-     iota_symp=-0.2123418310626054
-     kappa_symp=-0.06626458266981849
+     zeta_symp  = +0.1786178958448091
+     iota_symp  = -0.2123418310626054
+     kappa_symp = -0.06626458266981849
      
      ! extrapolation coefficients
-     coefd(1:nstages+1) = (/zeta_symp, kappa_symp, &
-          dble(1.d0-2.d0*(zeta_symp+kappa_symp)),  &
-                 kappa_symp, zeta_symp/)*deltat
+     coefd(1:nstages+1) = (/zeta_symp,  &
+                            kappa_symp, &
+                            dble(1.d0-2.d0*(zeta_symp+kappa_symp)), &
+                            kappa_symp, &
+                            zeta_symp/)
      
-     coefv(1:nstages) = (/dble(half-iota_symp), iota_symp, iota_symp, &
-          dble(half-iota_symp)/)*deltat
+     coefv(1:nstages) = (/dble(half - iota_symp), &
+                          iota_symp, & 
+                          iota_symp, &
+                          dble(half - iota_symp)/)
 
-     Q = 4; B=1/12500.d0; C=2.97633; ! empirical
+     Q = 4
+     B = 1 / 12500.d0
+     C = 2.97633; ! empirical
 
 
   case('ML_SO4m5')  ! Order 4, S, m=5 in Table 2 of McLachlan (1995), preferred
 
      nstages=5
-     allocate(coefd(nstages+1),coeff(nstages),coefv(nstages))
+     allocate(coefd(nstages+1), coeff(nstages), coefv(nstages))
      
      if (lpr) then
         write(6,*)
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
-        write(6,*)'TTTT  4th-order symplectic McLachlan scheme  TTTTTTTTTTT'
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTT  4th-order symplectic McLachlan scheme  TTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
         write(6,*)
      endif
      
-     rho = (14.d0-dsqrt(19.d0))/108.d0;
-     theta = (20.d0-7.d0*dsqrt(19.d0))/108.d0;
-     nu = 2.d0/5.d0;
-     lambda  = -1.d0/10.d0;
+     rho = (14.d0 - dsqrt(19.d0)) / 108.d0;
+     theta = (20.d0 - 7.d0 * dsqrt(19.d0)) / 108.d0;
+     nu = 2.d0 / 5.d0;
+     lambda  = -1.d0 / 10.d0;
 
-     coefd(1) = rho ; 
-     coefd(2) = theta ; 
-     coefd(3) = 1.d0/2.d0-rho-theta;  
-     coefd(4) = 1.d0/2.d0-rho-theta
+     coefd(1) = rho
+     coefd(2) = theta
+     coefd(3) = 1.d0 / 2.d0 - rho - theta
+     coefd(4) = 1.d0 / 2.d0 - rho - theta
      coefd(5) = theta 
      coefd(6) = rho
      
      coefv(1) = nu 
      coefv(2) = lambda 
-     coefv(3) = 1.d0-2.d0*(nu+lambda)
+     coefv(3) = 1.d0 - 2.d0 * (nu + lambda)
      coefv(4) = lambda
      coefv(5) = nu
-
-     coefd = coefd*deltat; coefv = coefv*deltat 
      
-     Q = 4; B=1.49e-05; C=3.035
+     Q = 4
+     B = 1.49e-05
+     C = 3.035
 
   !6666666666666666666666666666666666666666666666666666666666666666666666666
   case('ML_SO6m7') ! best order 6 so far!
                    ! other order 6 are not better than the best order 4
 
-     nstages=7
-     allocate(coefd(nstages+1),coeff(nstages),coefv(nstages))
-     
+     nstages = 7
+     allocate(coefd(nstages+1), coeff(nstages), coefv(nstages))
+    
      if (lpr) then
         write(6,*)
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
-        write(6,*)'TTTT  6th-order symplectic McLachlan scheme  TTTTTTTTTTT'
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTT  6th-order symplectic McLachlan scheme  TTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
         write(6,*)
      endif
 
      coefd(1) = -1.01308797891717472981
-     coefd(2) = 1.18742957373254270702 
+     coefd(2) =  1.18742957373254270702 
      coefd(3) = -0.01833585209646059034
-     coefd(4) = 0.34399425728109261313 
-     do i=5,8
+     coefd(4) =  0.34399425728109261313 
+     do i=5, 8
         coefd(i) = coefd(nstages+2-i)
      enddo
 
-     coefv(1) = 0.00016600692650009894 
+     coefv(1) =  0.00016600692650009894 
      coefv(2) = -0.37962421426377360608 
-     coefv(3) = 0.68913741185181063674 
-     coefv(4) = 0.38064159097092574080
-     do i=5,7
+     coefv(3) =  0.68913741185181063674 
+     coefv(4) =  0.38064159097092574080
+     do i=5, 7
         coefv(i) = coefv(nstages+1-i)
      enddo
 
-     coefd = coefd*deltat; coefv = coefv*deltat; 
-
-     Q = 6; B=1.3e-06; C=3.067;
+     Q = 6
+     B = 1.3e-06
+     C = 3.067
 
   !888888888888888888888888888888888888888888888888888888888888888888888888
   case('KL_O8m17') ! Kahan and Li (1997), improved on McLachlan (1995)
 
-     n = 8;  nstages = 2*n+1
-     allocate(g(n),coefd(nstages+1),coeff(nstages),coefv(nstages))
+     n = 8
+     nstages = 2 * n + 1
+     allocate(g(n), coefd(nstages+1), coeff(nstages), coefv(nstages))
 
      if (lpr) then
         write(6,*)
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
-        write(6,*)'TTTT  8th-order symplectic Kahan/Li scheme  TTTTTTTTTTTT'
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTT  8th-order symplectic Kahan/Li scheme  TTTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
         write(6,*)
      endif
 
-     g(1) = 0.13020248308889008088;
-     g(2) = 0.56116298177510838456;
-     g(3) = -0.38947496264484728641;
-     g(4) = 0.15884190655515560090;
-     g(5) = -0.39590389413323757734;
-     g(6) = 0.18453964097831570709;
-     g(7) = 0.25837438768632204729;
-     g(8) = 0.29501172360931029887;
+     g(1) =  0.13020248308889008088
+     g(2) =  0.56116298177510838456
+     g(3) = -0.38947496264484728641
+     g(4) =  0.15884190655515560090
+     g(5) = -0.39590389413323757734
+     g(6) =  0.18453964097831570709
+     g(7) =  0.25837438768632204729
+     g(8) =  0.29501172360931029887
      
      call SS_scheme(n,coefd,coefv,g)
 
-     coefd = coefd*deltat; coefv = coefv*deltat; 
-     
-     Q = 8; B=-100000.; C=3.; 
+     Q = 8
+     B = -100000.
+     C = 3.
      
   !101010101010101010101010101010101010101010101010101010101010101010101010
   case('SS_35o10') ! Sofroniou and Spaletta (2004), best order 10
 
-     n = 17; nstages = 2*n+1
-     allocate(g(n),coefd(nstages+1),coeff(nstages),coefv(nstages))
+     n = 17
+     nstages = 2 * n + 1
+     allocate(g(n), coefd(nstages+1), coeff(nstages), coefv(nstages))
 
      if (lpr) then
         write(6,*)
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
-        write(6,*)'TTTT  10th-order symplectic Sofroniou/Spaletta scheme TT'
-        write(6,*)'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
+        write(6,*) 'TTTT  10th-order symplectic Sofroniou/Spaletta scheme TT'
+        write(6,*) 'TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT'
         write(6,*)
      endif
 
-    g(1) = 0.078795722521686419263907679337684;
-    g(2) = 0.31309610341510852776481247192647;
-    g(3) = 0.027918383235078066109520273275299;
-    g(4) =-0.22959284159390709415121339679655;
-    g(5) = 0.13096206107716486317465685927961;
-    g(6) =-0.26973340565451071434460973222411;
-    g(7) = 0.074973343155891435666137105641410;
-    g(8) = 0.11199342399981020488957508073640;
-    g(9) = 0.36613344954622675119314812353150;
-    g(10) =-0.39910563013603589787862981058340;
-    g(11) = 0.10308739852747107731580277001372;
-    g(12) = 0.41143087395589023782070411897608;
-    g(13) =-0.0048663605831352617621956593099771;
-    g(14) =-0.39203335370863990644808193642610;
-    g(15) = 0.051942502962449647037182904015976;
-    g(16) = 0.050665090759924496335874344156866;
-    g(17) = 0.049674370639729879054568800279461;
+    g(1)  =  0.078795722521686419263907679337684
+    g(2)  =  0.31309610341510852776481247192647
+    g(3)  =  0.027918383235078066109520273275299
+    g(4)  = -0.22959284159390709415121339679655
+    g(5)  =  0.13096206107716486317465685927961
+    g(6)  = -0.26973340565451071434460973222411
+    g(7)  =  0.074973343155891435666137105641410
+    g(8)  =  0.11199342399981020488957508073640
+    g(9)  =  0.36613344954622675119314812353150
+    g(10) = -0.39910563013603589787862981058340
+    g(11) =  0.10308739852747107731580277001372
+    g(12) =  0.41143087395589023782070411897608
+    g(13) = -0.0048663605831352617621956593099771
+    g(14) = -0.39203335370863990644808193642610
+    g(15) =  0.051942502962449647037182904015976
+    g(16) =  0.050665090759924496335874344156866
+    g(17) =  0.049674370639729879054568800279461
 
     call SS_scheme(n,coefd,coefv,g)
 
-    coefd = coefd*deltat; coefv = coefv*deltat; 
-
-    Q = 10; B=4.58e-10; C=5.973
+    Q = 10
+    B = 4.58e-10
+    C = 5.973
 
   case default
-     write(6,*)procstrg,'reporting ERROR ::::::::::'
-     write(6,*)procstrg,time_scheme,'Time scheme unknown'; call pend; stop
+     write(6,*) procstrg, 'reporting ERROR ::::::::::'
+     write(6,*) procstrg, time_scheme,'Time scheme unknown'; call pend; stop
 
   end select
+    
+  coefd = coefd * deltat
+  coefv = coefv * deltat
  
-  do i=1,nstages
+  do i=1, nstages
      coeff(i) = sum(coefd(1:i))
   enddo
 
   call barrier
   if (mynum==0) then
      write(6,*)'  :::::::::::::::: Symplectic coefficients :::::::::::::::::'
-     write(6,*)'   order,stages:',Q,nstages
-     write(6,*)'   dispersion error coeff:',B
-     write(6,*)'   CFL factor (wrt Newmark deltat):',C/2.
-     do i=1,nstages
-        write(6,12)i,coefd(i),coefv(i),coeff(i)
+     write(6,*)'   order,stages:', Q, nstages
+     write(6,*)'   dispersion error coeff:', B
+     write(6,*)'   CFL factor (wrt Newmark deltat):', C/2.
+     do i=1, nstages
+        write(6,12) i, coefd(i), coefv(i), coeff(i)
      enddo
      write(6,12)nstages+1,coefd(nstages+1)
      write(6,*)'  :::::::::::::: End Symplectic coefficients :::::::::::::::'
@@ -834,8 +892,8 @@ end subroutine symplectic_coefficients
 subroutine SS_scheme(n,a,b,g)
   
   integer, intent(in) :: n
-  real(kind=dp)   , intent(in)  :: g(n)
-  real(kind=dp)   , intent(out) :: a(nstages+1), b(nstages)
+  real(kind=dp), intent(in)  :: g(n)
+  real(kind=dp), intent(out) :: a(nstages+1), b(nstages)
   integer :: i
 
   a(1) = g(1) / 2.d0
@@ -912,7 +970,6 @@ subroutine runtime_info(iter, disp, chi)
      write(6,*) procstrg,'ipol,jpol  :',iblow(1)-1,iblow(2)-1
      write(6,*) procstrg,'axis       :',axis_solid(iblow(3))
      write(6,*) procstrg,''
-     !call pend
      stop
   endif
 
@@ -944,7 +1001,7 @@ end subroutine add_source
 !> Includes all output action done during the time loop such as
 !! various receiver definitions, wavefield snapshots, velocity field & strain 
 !! tensor for 3-D kernels 
-subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
+subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
 
   use data_io
   use data_mesh
@@ -953,12 +1010,13 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
   use nc_routines,          only: nc_rec_checkpoint, nc_dump_strain
   
   integer, intent(in)            :: iter
+  real(kind=dp),intent(in)       :: time
+
   real(kind=realkind),intent(in) :: disp(0:, 0:, :, :)
   real(kind=realkind),intent(in) :: velo(0:, 0:, :, :)
   real(kind=realkind),intent(in) :: chi(0:,  0:, :)
   real(kind=realkind),intent(in) :: dchi(0:, 0:, :)
   real(kind=realkind),intent(in) :: ddchi(0:,0:, :)
-  real(kind=realkind)            :: time
   
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   !^-^-^-^-^-^- Time series^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^
@@ -974,8 +1032,6 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
         call compute_recfile_seis_bare(disp)
      endif
   
-     time = real(iter)*deltat
-     
      ! Generic synthetics at hypo-/epicenter, equator, antipode (including time)
      call compute_hyp_epi_equ_anti(real(time, kind=dp), disp)
 
@@ -1013,7 +1069,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi)
            write(6,*)'Writing global xdmf snap to file:',isnap
            write(6,*)
         endif
-        call glob_snapshot_xdmf(disp, chi)
+        call glob_snapshot_xdmf(disp, chi, time)
      endif
   endif
 
