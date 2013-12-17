@@ -315,7 +315,7 @@ subroutine write_serendipity_meshes(nel,sg2,zg2)
 
      ! plot only upper mantle in north
       if ( sqrt(sg2(5,iel)**2+zg2(5,iel)**2) >= 0.95d0 .and. &
-          sg2(5,iel)<= 1000./6371. .and. zg2(5,iel)> 0.d0  ) then
+          sg2(5,iel)<= 1000./router .and. zg2(5,iel)> 0.d0  ) then
        write(1557,*) sg2(1,iel), zg2(1,iel) 
        write(1557,*) sg2(2,iel), zg2(2,iel) 
        write(1557,*) sg2(3,iel), zg2(3,iel) 

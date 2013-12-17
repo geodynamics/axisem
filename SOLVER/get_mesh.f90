@@ -130,6 +130,7 @@ subroutine read_db
   end if
 
   read(1000+mynum) router, resolve_inner_shear, have_fluid
+  if (verbose > 1) write(*,*) 'Model has radius ', router, ' m'
   allocate(discont(ndisc), solid_domain(ndisc), idom_fluid(ndisc))
   do idom=1, ndisc
      read(1000+mynum) discont(idom), solid_domain(idom), idom_fluid(idom) 

@@ -1107,6 +1107,7 @@ end subroutine iasp91_discont
 subroutine arbitrmodel_discont
 
   use background_models, only: get_ext_disc
+  use data_grid, only: router
 ! discontinuities (read in from a file) to be honored by the mesh
 
   integer :: idom
@@ -1116,6 +1117,8 @@ subroutine arbitrmodel_discont
   print *, 'ndisc: ', ndisc
 
   !stop
+
+  router = discont(1)
   
   do idom = 1, ndisc
      write(1001,*) discont(idom), discont(1) - discont(idom), vp(idom,:), vs(idom,:)
@@ -1165,11 +1168,13 @@ subroutine write_1Dmodel(discontinuities)
             vpv(ilayer)   = vp_tmp
             vsv(ilayer)   = vs_tmp
             rho(ilayer)   = velocity(real(idepth, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
-            qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
-            qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
-            vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
-            vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
-            eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+            if (model_is_anelastic(bkgrdmodel)) then
+               qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+               qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+               vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+               vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+               eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+            end if
 
          end if
          !write(2000,*) real(idepth, kind=dp), rho, vp, vs
@@ -1184,11 +1189,13 @@ subroutine write_1Dmodel(discontinuities)
          vpv(ilayer)   = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
          vsv(ilayer)   = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
          rho(ilayer)   = velocity(discontinuities(idom+1), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
-         qka(ilayer)   = velocity(discontinuities(idom+1), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
-         qmu(ilayer)   = velocity(discontinuities(idom+1), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
-         vph(ilayer)   = velocity(discontinuities(idom+1), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
-         vsh(ilayer)   = velocity(discontinuities(idom+1), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
-         eta(ilayer)   = velocity(discontinuities(idom+1), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+         if (model_is_anelastic(bkgrdmodel)) then
+             qka(ilayer)   = velocity(discontinuities(idom+1), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+             qmu(ilayer)   = velocity(discontinuities(idom+1), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+             vph(ilayer)   = velocity(discontinuities(idom+1), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+             vsh(ilayer)   = velocity(discontinuities(idom+1), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+             eta(ilayer)   = velocity(discontinuities(idom+1), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+         end if
       end if
    end do
 
@@ -1209,11 +1216,13 @@ subroutine write_1Dmodel(discontinuities)
          vpv(ilayer)    = vp_tmp
          vsv(ilayer)    = vs_tmp
          rho(ilayer)   = velocity(real(idepth, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
-         qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
-         qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
-         vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
-         vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
-         eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+         if (model_is_anelastic(bkgrdmodel)) then
+            qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+            qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+            vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+            vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+            eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+         end if
       end if
    end do
 
@@ -1224,11 +1233,13 @@ subroutine write_1Dmodel(discontinuities)
       vpv(ilayer)    = velocity(0.0d0, 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
       vsv(ilayer)    = velocity(0.0d0, 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
       rho(ilayer)   = velocity(0.0d0, 'rho', idom, bkgrdmodel, lfbkgrdmodel)
-      qka(ilayer)   = velocity(0.0d0, 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
-      qmu(ilayer)   = velocity(0.0d0, 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
-      vph(ilayer)   = velocity(0.0d0, 'vph', idom, bkgrdmodel, lfbkgrdmodel)
-      vsh(ilayer)   = velocity(0.0d0, 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
-      eta(ilayer)   = velocity(0.0d0, 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+      if (model_is_anelastic(bkgrdmodel)) then
+          qka(ilayer)   = velocity(0.0d0, 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+          qmu(ilayer)   = velocity(0.0d0, 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+          vph(ilayer)   = velocity(0.0d0, 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+          vsh(ilayer)   = velocity(0.0d0, 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+          eta(ilayer)   = velocity(0.0d0, 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+      end if
    end if
 
    nlayer = ilayer
@@ -1239,9 +1250,14 @@ subroutine write_1Dmodel(discontinuities)
    write(2000,*) model_is_ani(bkgrdmodel), model_is_anelastic(bkgrdmodel)
    write(2000,*) nlayer
    do ilayer = 1, nlayer
-      write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
-                  depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
-                  qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
+      if (model_is_anelastic(bkgrdmodel)) then
+          write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+                      depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                      qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
+      else
+          write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+                      depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer)
+      end if
    end do
    close(2000)
 
@@ -1258,9 +1274,14 @@ subroutine write_1Dmodel(discontinuities)
    endif
    write(2000,*) nlayer, nic, noc
    do ilayer = nlayer, 1, -1
-      write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
-                  depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
-                  qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
+      if (model_is_anelastic(bkgrdmodel)) then
+          write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+                      depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                      qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
+      else
+          write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+                      depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer)
+      end if
    end do
    close(2000)
 

@@ -555,13 +555,13 @@ subroutine prepare_from_recfile_seis
      !take as default the larger processor ID to take on the receiver
      count_procs=pmax_int(count_procs)
      if (mynum==count_procs) then 
-        irec=irec+1
+        irec = irec+1
         if (verbose > 1) write(69,*)'found local grid point and processor...',irec,i
-        recfile_th_loc(irec)=tmprecfile_th
-        recfile_el_loc(irec,1:3)=tmprecfile_el(1:3)
-        loc2globrec_loc(irec)=i
-        rec2proc(i)=mynum
-        recfile_th_glob(i)=tmprecfile_th
+        recfile_th_loc(irec)     = tmprecfile_th
+        recfile_el_loc(irec,1:3) = tmprecfile_el(1:3)
+        loc2globrec_loc(irec)    = i
+        rec2proc(i)              = mynum
+        recfile_th_glob(i)       = tmprecfile_th
      endif
 
      ! longitude

@@ -37,7 +37,6 @@ module background_models
   
   public :: velocity, model_is_ani, model_is_anelastic !, arbitr_sub_solar_arr
   public :: read_ext_model, get_ext_disc, override_ext_q
-  !public :: vp_layer, vs_layer, rho_layer, radius_layer, nlayer
   private
   character(len=6),           save  :: override_ext_q
   integer                   , save  :: nlayer = -1
@@ -1382,19 +1381,27 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
      select case(param)
      case('rho')
         call interpolate(interp_rho(idom), r0, arbitr_sub_solar, success)
+
      case('v_p', 'vph', 'vpv')
         call interpolate(interp_vpv(idom), r0, arbitr_sub_solar, success)
+
      case('v_s', 'vsh', 'vsv')
         call interpolate(interp_vsv(idom), r0, arbitr_sub_solar, success)
+
      case('eta')
         arbitr_sub_solar = 1
         success = .true.
+
      case('Qmu', 'Qka')
         select case(trim(override_ext_q))
         case('prem')
            arbitr_sub_solar = prem_sub(r0, param, idom)
+           success = .true.
+
         case('ak135f')
            arbitr_sub_solar = ak135f(r0, param, idom)
+           success = .true.
+
         case default
            if (ext_model_is_anelastic) then
               if (param.eq.'Qmu') then
@@ -1403,18 +1410,19 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
                  call interpolate(interp_qka(idom), r0, arbitr_sub_solar, success)
               end if
            else 
-              print *, 'ERROR: External model is purely elastic. Set OVERRIDE_EXT_Q in '
+              print *, 'ERROR: Parameter: ', trim(param), ' requested, but '
+              print *, '       external model is purely elastic. Set OVERRIDE_EXT_Q in '
               print *, '       inparam_mesh, if you want to use PREM or AK135F Q.'
               stop
            end if
+
         end select
+
      case default
         print *, 'ERROR: Parameter ', trim(param), ' not implemented in external model'
+
      end select
 
-     !interp = interpolation_object(radius_layer, model_param, extrapolation_constant)
-     !if (.not.interp%useable) stop 'interp_rho not usable'
-     !call interpolate( interp, r0, arbitr_sub_solar, success)
      if (.not.success) stop 'Interpolation of parameter not successful'
 
 
@@ -1433,6 +1441,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   integer, intent(out), optional                     :: nlayer_out
   integer                          :: ilayer, ierr
   logical                          :: bkgrdmodelfile_exists, startatsurface
+  character(len=128)               :: fmtstring
 
   ! Has the file already been read in?
   if (nlayer<1) then
@@ -1447,10 +1456,23 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
      open(unit=77, file=trim(fnam_ext_model), action='read')
     
+
      read(77,*) ext_model_is_ani, ext_model_is_anelastic
      read(77,*) nlayer
-     print *, 'Model in file ', trim(fnam_ext_model), ' has ', nlayer, ' layers...'
-     
+     fmtstring = '(A,A,A,I5,A)'
+     write(6,fmtstring,advance='no') 'Model in file ', trim(fnam_ext_model), ' has ', nlayer, ' layers'
+     fmtstring = '(A)'
+     if (ext_model_is_ani) then
+         write(6, fmtstring, advance='no') ' and is anisotropic'
+     else
+         write(6, fmtstring, advance='no') ' and is isotropic'
+     end if
+     if (ext_model_is_anelastic) then
+         print *, 'and anelastic...'
+     else
+         print *, 'and elastic...'
+     end if
+
      allocate(radius_layer(nlayer))
      allocate(vpv_layer(nlayer))
      allocate(vsv_layer(nlayer))
@@ -1463,8 +1485,12 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
 
      ! Read in first layer
-     read(77,*) radius_layer(1), rho_layer(1), vpv_layer(1), &
-                vsv_layer(1), qka_layer(1), qmu_layer(1)
+     if (ext_model_is_anelastic) then
+         read(77,*) radius_layer(1), rho_layer(1), vpv_layer(1), &
+                    vsv_layer(1), qka_layer(1), qmu_layer(1)
+     else
+         read(77,*) radius_layer(1), rho_layer(1), vpv_layer(1), vsv_layer(1)
+     end if
 
      ! Recognize order of layers
      if (radius_layer(1).eq.0) then
@@ -1477,8 +1503,13 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
      ! Read in all other layers
      do ilayer = 2, nlayer
-        read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer), &
-                               vsv_layer(ilayer), qka_layer(ilayer), qmu_layer(ilayer)
+        if (ext_model_is_anelastic) then
+           read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer),&
+                                   vsv_layer(ilayer), qka_layer(ilayer), qmu_layer(ilayer)
+        else
+           read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer),&
+                                   vsv_layer(ilayer)
+        end if
        
         if (ierr.eq.IOSTAT_END) then
            print *, 'ERROR: File ', trim(fnam_ext_model), ' has only ', ilayer-1, ' layers'
@@ -1503,6 +1534,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      enddo
      close(77)
 
+
      ! Reorder elements if the file is in the wrong order (Mesher always assumes from surface to core)
      if (.not.startatsurface) then
         print *, 'Reordering layers to start at the surface'
@@ -1510,7 +1542,14 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
         vpv_layer    = vpv_layer(nlayer:1:-1)
         vsv_layer    = vsv_layer(nlayer:1:-1)
         rho_layer    = rho_layer(nlayer:1:-1)
+        if (ext_model_is_anelastic) then
+           qka_layer = qka_layer(nlayer:1:-1)
+           qmu_layer = qmu_layer(nlayer:1:-1)
+        end if
      end if
+
+     ! Lowermost layer should be at the center of the earth.
+     if (radius_layer(nlayer)>smallval_dble) radius_layer(nlayer) = 0
 
   end if
 
@@ -1554,6 +1593,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
   integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc
   integer, allocatable       :: isdisc(:)
+  character(len=128)         :: fmtstring
 
   call read_ext_model(fnam_ext_model) 
 
@@ -1572,7 +1612,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   upper_layer(1) = 1
 
-  do ilayer = 1, nlayer-1
+  do ilayer = 2, nlayer-1
      if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
         ! First order discontinuity
         idom = idom + 1
@@ -1616,9 +1656,10 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
       allocate(interp_qmu(ndisc))
   end if
 
-  print *, 'idom, upper_layer, lower_layer, r(ul), r(ll)'
+  print *, '   idom, upper_layer, lower_layer,   r(ul),   r(ll)'
+  fmtstring = '(I8, I13, I13, F9.1, F9.1)'
   do idom = 1, ndisc
-     print *, idom, upper_layer(idom), lower_layer(idom), radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
+     print fmtstring, idom, upper_layer(idom), lower_layer(idom), radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
      interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              rho_layer(upper_layer(idom):lower_layer(idom)), &
                                              extrapolation_none)
@@ -1628,12 +1669,14 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
      interp_vsv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              vsv_layer(upper_layer(idom):lower_layer(idom)), &
                                              extrapolation_none)
-     interp_qka(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
-                                             qka_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_none)
-     interp_qmu(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
-                                             qmu_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_none)
+     if (ext_model_is_anelastic) then
+         interp_qka(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 qka_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 extrapolation_none)
+         interp_qmu(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 qmu_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 extrapolation_none)
+     end if
   end do
 
   if (present(ndisc_out)) then

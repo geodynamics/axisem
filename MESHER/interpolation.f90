@@ -75,7 +75,9 @@ function interpolation_object( x, y, extrapolation )
     ! Enough data? If not, simply return
     !
     if ( size(x) < 2 .or. size(y) < size(x) ) then
-        print *, 'interpolation_object: Not enough data'
+        print *, 'ERROR: interpolation_object: Not enough data'
+        print *, 'X: ', x
+        print *, 'Y: ', y
         return
     endif
 
@@ -86,7 +88,7 @@ function interpolation_object( x, y, extrapolation )
 
     do i = 2,size(x)
         if ( x(i) > x(i-1) ) then
-            print *, 'interpolation_object: data not sorted'
+            print *, 'ERROR: interpolation_object: data not sorted'
             success = .false.
             exit
         endif
