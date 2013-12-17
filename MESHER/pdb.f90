@@ -1699,21 +1699,21 @@ subroutine partition_sflobal_index
      deallocate(myneighbours_fluid)
      deallocate(global_index_msg_fluid)
    
+     if (any(glocal_index_msg_sendp_fluid /= glocal_index_msg_recvp_fluid)) then
+         write(6,*) 'ERROR: Index Array for send and recv should be identical in'
+         write(6,*) '       the new communication scheme, but are not!'
+         stop
+     endif
+
+     if (any(sizesendp_fluid /= sizerecvp_fluid)) then
+         write(6,*) 'ERROR: Messages for send and recv should have same size in'
+         write(6,*) '       the new communication scheme, but are not!'
+         stop
+     endif
+
   end if ! have_fluid
   
   if (allocated(flob2floc)) deallocate(flob2floc)
-
-  if (any(glocal_index_msg_sendp_fluid /= glocal_index_msg_recvp_fluid)) then
-      write(6,*) 'ERROR: Index Array for send and recv should be identical in'
-      write(6,*) '       the new communication scheme, but are not!'
-      stop
-  endif
-
-  if (any(sizesendp_fluid /= sizerecvp_fluid)) then
-      write(6,*) 'ERROR: Messages for send and recv should have same size in'
-      write(6,*) '       the new communication scheme, but are not!'
-      stop
-  endif
 
   if (dump_mesh_info_screen .and. nproc>1) then 
      write(6,*)
