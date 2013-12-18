@@ -22,10 +22,12 @@
 !-----------------------------------------------------------------------------
 module data_all
 
-  use global_par, only : sp, dp
   implicit none
   public
 
+  integer, parameter, private         :: sp = selected_real_kind(6, 37)
+  integer, parameter, private         :: dp = selected_real_kind(15, 307)
+  integer, parameter         :: qp = selected_real_kind(33, 4931)
   logical                           :: rot_src_rec_true
   character(len=100)                :: stf_file, rot_rec_file, filename, fname
 
@@ -59,7 +61,8 @@ module data_all
   real                                :: shift_fact
 
   ! parameters from param_post_processing
-  real                                :: conv_period, srccolat, srclon, src_depth
+  real(kind=dp)                       :: conv_period
+  real                                :: srccolat, srclon, src_depth
   character(len=7)                    :: conv_stf
   character(len=100)                  :: outdir
   character(len=4)                    :: seistype
@@ -1008,11 +1011,11 @@ end subroutine rotate_receiver_comp
 subroutine convolve_with_stf(t_0, dt, nt, src_type, stf, outdir, seis, seis_fil)          
   
   use data_all,     only: stf_type
-  use global_par,   only: pi, decay, shift_fact1
+  use global_par,   only: pi, decay, shift_fact1, dp
   implicit none
   
   integer, intent(in)            :: nt
-  real, intent(in)               :: t_0, dt
+  real(kind=dp), intent(in)      :: t_0, dt
   character(len=100), intent(in) :: outdir
   real                           :: time(nt)
   real                           :: tau_j, source, sqrt_pi_inv
@@ -2078,7 +2081,7 @@ subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf,
       allocate(th_ref(npts_surf))
       call get_r_theta( coord1(ind_proc_surf(:)*npts + ind_pts_surf(:), 1), & 
                         coord1(ind_proc_surf(:)*npts + ind_pts_surf(:), 2), &
-                        r_ref, th_ref)
+                        r_ref, th_ref, nptstot)
       write(6,*)'constructing 1d array for surface coordinates...'
       do iel = 1, nel_surf
          if ( mod(iel,floor(nel_surf/10.))==0  ) then
@@ -2422,10 +2425,11 @@ end subroutine xyz2rthetaphi
 !--------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------
-subroutine get_r_theta(s, z, r, th)
+subroutine get_r_theta(s, z, r, th, npts)
   use global_par
-  real(kind=dp), intent(in)  :: s(:), z(:)
-  real(kind=dp), intent(out) :: r(:), th(:)
+  integer, intent(in)        :: npts
+  real(kind=dp), intent(in)  :: s(npts), z(npts)
+  real(kind=dp), intent(out) :: r(npts), th(npts)
  
   th = datan(s / (z + epsi))
  
