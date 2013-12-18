@@ -580,6 +580,27 @@ Default value is 1800~s, although the exact length is rounded to the next multip
 \verb|SOLVER/inparam_advanced|, change parameter \verb|SAMPLING_RATE|:\\
 By default, the sampling rate is set to the time step length of the simulation. We strongly recommend to leave it as such to avoid aliasing. The resampling can better be done with \textit{ObsPy} or another tool that supports filtering.
 
+\subsection{Use external 1D velocity model}
+\verb|MESHER/inparam_mesh|, change parameter \verb|BACKGROUND_MODEL| to \verb|external| and \verb|EXT_MODEL| to the filename of your model. The model should be stored in a file of the following form:
+\begin{verbatim}
+  F T
+         740
+6371000.  2600.00  5800.00  3200.00  57827.0    600.0  5800.00  3200.00  1.00000
+6356000.  2600.00  5800.00  3200.00  57827.0    600.0  5800.00  3200.00  1.00000
+6356000.  2900.00  6800.00  3900.00  57827.0    600.0  6800.00  3900.00  1.00000
+6346600.  2900.00  6800.00  3900.00  57827.0    600.0  6800.00  3900.00  1.00000
+6346600.  3380.75  8110.62  4491.01  57827.0    600.0  8110.62  4491.01  1.00000
+6341600.  3380.20  8107.53  4489.16  57827.0    600.0  8107.53  4489.16  1.00000
+6336600.  3379.66  8104.44  4487.32  57827.0    600.0  8104.44  4487.32  1.00000
+6331600.  3379.12  8101.35  4485.48  57827.0    600.0  8101.35  4485.48  1.00000
+6326600.  3378.57  8098.25  4483.64  57827.0    600.0  8098.25  4483.64  1.00000
+...
+\end{verbatim}
+The first line contains two boolean entries: First, whether the model is anisotropic, second whether the model is anelastic. The second line contains the number of layers in the file. Afterwards the model parameters for each layer are set in the order:\\
+radius (in meter), $\rho$, $V_{PV}$, $V_{SV}$, $Q_{\kappa}$, $Q_{\mu}$,  $V_{PH}$, $V_{SH}$, $\eta$. \\
+The order of the layers is arbitrary, but the radius has to be monotonous. First order discontinuities are enforced by double layers with the same radius (see layers 2/3 and 4/5 in the example) and are honoured by the MESHER. For an example, enable the option \verb|WRITE_1DMODEL| in \verb|MESHER/inparam_mesh| and run the MESHER. It will put a valid input file of the selected model into the DIAG directory. Modify this file according to your needs.\\
+The overall radius of the body is given by the radius of the outermost layer and can take any reasonable value.
+
 \subsection{Include lateral heterogeneities (2.5D simulation)}
 \verb|SOLVER/inparam_basic|, change parameter \verb|LAT_HETEROGENEITY| to true:\\
 The actual heterogeneity model is set in \verb|SOLVER/inparam_hetero|. 
