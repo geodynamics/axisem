@@ -440,13 +440,13 @@ subroutine extract_from_buffer_solid(vec,nc)
   
   real(kind=realkind), intent(inout) :: vec(0:,0:,:,:)
   integer, intent(in)   :: nc
+#ifndef serial
   integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer               :: sizemsg_solid
   integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_solid)
   integer               :: send_status(MPI_STATUS_SIZE, sizesend_solid)
   integer               :: ierror
   
-#ifndef serial
   ! wait until all receiving communication is done
   iclockmpiws = tick()
   call MPI_WAITALL(sizerecv_solid, recv_request_solid, recv_status, ierror)
@@ -491,8 +491,8 @@ subroutine feed_buffer_fluid(f)
   use data_mesh, only: npol, gvec_fluid, igloc_fluid
   use data_comm
   
-#ifndef serial
   real(kind=realkind), intent(in) :: f(0:,0:,:)
+#ifndef serial
   integer                         :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer                         :: sizemsg_fluid
   
@@ -578,8 +578,8 @@ subroutine extract_from_buffer_fluid(f)
   use clocks_mod
   use data_comm
   
-#ifndef serial
   real(kind=realkind), intent(inout) :: f(0:,0:,:)
+#ifndef serial
   integer               :: imsg, ipg, ip, ipol, jpol, iel, ipt
   integer               :: sizemsg_fluid
   integer               :: ierror
