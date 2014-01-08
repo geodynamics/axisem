@@ -13,7 +13,8 @@ MPIRUN  = mpirun
 USE_NETCDF = false
 NETCDF_PATH = $(HOME)/local
 
-# compile without MPI (if mpi is not installed, remove the $mpiruncmd from submit.csh)
+# compile without MPI (possible values: 'false', 'true')
+# make sure to build mesh with one processor
 SERIAL = false
 
 ####################################

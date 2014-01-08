@@ -27,6 +27,7 @@ set datapath = `grep "^DATA_DIR" inparam_advanced  |awk '{print $2}'| sed 's/\"/
 set infopath = `grep "^INFO_DIR" inparam_advanced |awk '{print $2}'| sed 's/\"//g'`
 set meshdir = "MESHES/"`grep "^MESHNAME" inparam_basic | awk '{print $2}'`
 set mpiruncmd = `grep "^MPIRUN" ../make_axisem.macros | awk '{print $3}'`
+set serial = `grep "^SERIAL" ../make_axisem.macros | awk '{print $3}'`
 
 #Check whether NetCDF is requested and whether the code is compiled with it
 set netcdf_compiled = `grep "^USE_NETCDF" ../make_axisem.macros | awk '{print $3}'`
@@ -355,7 +356,16 @@ foreach isrc (${num_src_arr})
         else 
             #ulimit -s unlimited
             #setenv OMP_NUM_THREADS 4
-            $mpiruncmd -n $nodnum ./axisem >& $outputname &
+
+            if ( $serial == 'true' ) then
+                ./axisem >& $outputname &
+            else if ( $serial == 'false' ) then
+                $mpiruncmd -n $nodnum ./axisem >& $outputname &
+            else
+                echo 'ERROR: value for SERIAL in make_axisem.macros should be either "true" or "false"'
+                echo "SERIAL = $serial"
+                exit
+            endif
         endif
 
         echo "Job running in directory $isim"
