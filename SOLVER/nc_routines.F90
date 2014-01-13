@@ -116,7 +116,7 @@ module nc_routines
 
     !! @todo These parameters should move to a input file soon
     !> How many snaps should be buffered in RAM?
-    integer             :: dumpbuffersize = 256
+    integer             :: dumpbuffersize = 512
     
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
@@ -234,8 +234,13 @@ subroutine nc_dump_strain(isnap_loc)
         ! MvD: I am not sure if cpu_time is a correct measure here, as we idle
         !      until IO is finished.
         !      Therefor testing system_clock, from the clocks module.
-
-        if (mynum == 0) call cpu_time(tickl)
+        if (mod(isnap_loc, dumpstepsnap) == outputplan) then
+            if (verbose>1) then
+                write(*,"('Proc ', I4, ' would like to dump data and waits for his turn')") mynum
+                call flush(6)
+            end if
+            call cpu_time(tickl)
+        end if
 
         iclocknbio = tick()
         do iproc=0, nproc-1
@@ -247,18 +252,15 @@ subroutine nc_dump_strain(isnap_loc)
         end do
         iclocknbio = tick(id=idnbio, since=iclocknbio)
 
-        if (mynum == 0) then
+        ! non blocking write
+        if (mod(isnap_loc, dumpstepsnap) == outputplan) then 
             call cpu_time(tackl)
             if ((tackl-tickl) > 0.5 .and. verbose > 0) then
                 write(6,"('WARNING: Computation was halted for ', F7.2, ' s to wait for ',&
                          & 'dumping processor. Consider adapting netCDF output variables',&
                          & '(disable compression, increase dumpstepsnap)')") tackl-tickl
             end if
-        end if
 
-        ! non blocking write
-        if (mod(isnap_loc, dumpstepsnap) == outputplan) then 
-            call c_wait_for_io()
             isnap_global = isnap_loc 
             ndumps = stepstodump
             call c_spawn_dumpthread(stepstodump)
@@ -302,9 +304,9 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     use global_parameters, ONLY: realkind
     use data_mesh,         ONLY: loc2globrec, maxind, ind_first
 
-    integer                           :: ivar, flen, isnap_loc
-    real                              :: tick, tack
-    integer                           :: dumpsize
+    integer                    :: ivar, flen, isnap_loc
+    real                       :: tick, tack
+    integer                    :: dumpsize
 
     dumpsize = 0
     call cpu_time(tick)
@@ -312,6 +314,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
     
+    call getgrpid(ncid_out, "Snapshots", ncid_snapout) 
     isnap_loc = isnap_global
     if (verbose > 1) then
         if (ndumps == 0) then 
@@ -326,38 +329,38 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 
 
     do ivar=1, nvar/2
-        call check( nf90_put_var(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
-                                 start=[npoints_myfirst, isnap_loc-ndumps+1], &
-                                 count=[npoints, ndumps], &
-                                 values=oneddumpvar(1:npoints,1:ndumps,ivar)) )
+        call putvar_real2d(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
+                           start=[npoints_myfirst, isnap_loc-ndumps+1], &
+                           count=[npoints, ndumps], &
+                           values=oneddumpvar(1:npoints,1:ndumps,ivar)) 
         dumpsize = dumpsize + npoints * ndumps
     end do
         
-    dumpsize = dumpsize + flen * ndumps
+    !dumpsize = dumpsize + flen * ndumps
             
     !> Surface dumps 
-    call check( nf90_put_var(ncid_surfout, nc_surfelem_disp_varid, &
+    call putvar_real3d(ncid_surfout, nc_surfelem_disp_varid, &
                 start = [isnap_loc-ndumps+1, 1, ind_first], &
                 count = [ndumps, 3, maxind], &
-                values = surfdumpvar_disp(:,:,:)) )
+                values = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)) 
     dumpsize = dumpsize + 3 * maxind * ndumps
 
-    call check( nf90_put_var(ncid_surfout, nc_surfelem_velo_varid, &
+    call putvar_real3d(ncid_surfout, nc_surfelem_velo_varid, &
                 start = [isnap_loc-ndumps+1, 1, ind_first], &
                 count = [ndumps, 3, maxind], &
-                values = surfdumpvar_velo(:,:,:)) )
+                values = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)) 
     dumpsize = dumpsize + 3 * maxind * ndumps
 
-    call check( nf90_put_var(ncid_surfout, nc_surfelem_strain_varid, &
+    call putvar_real3d(ncid_surfout, nc_surfelem_strain_varid, &
                 start = [isnap_loc-ndumps+1, 1, ind_first], &
                 count = [ndumps, 6, maxind], &
-                values = surfdumpvar_strain(:,:,:)) )
+                values = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)) 
     dumpsize = dumpsize + 6 * maxind * ndumps
 
-    call check( nf90_put_var(ncid_surfout, nc_surfelem_disp_src_varid, &
+    call putvar_real3d(ncid_surfout, nc_surfelem_disp_src_varid, &
                 start = [isnap_loc-ndumps+1, 1, ind_first], &
                 count = [ndumps, 3, maxind], &
-                values = surfdumpvar_srcdisp(:,:,:)) )
+                values = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
     dumpsize = dumpsize + 3 * maxind * ndumps
 
     call check( nf90_close(ncid_out) ) 
@@ -365,7 +368,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 
     if (verbose > 1) then
         write(6,"('  Proc', I5,': Wrote ', F8.2, ' MB in ', F6.2, 's')") &
-            mynum, real(dumpsize) * realkind / 1048576., tack-tick 
+            mynum, real(dumpsize) * 4. / 1048576., tack-tick 
         call flush(6)
     end if
 
@@ -435,15 +438,16 @@ subroutine nc_dump_rec_to_disk
 
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
+    call getgrpid( ncid_out, "Seismograms", ncid_recout)
     call getvarid( ncid_recout, "displacement", nc_disp_varid ) 
 
     dumpsize = 0
     do irec = 1, num_rec
         do icomp = 1, 3
-            call check( nf90_put_var(ncid   = ncid_recout, varid=nc_disp_varid, &
-                                     start  = [1, icomp, loc2globrec(irec)], &
-                                     count  = [nseismo, 1, 1], &
-                                     values = recdumpvar(:,icomp,irec)) )
+            call putvar_real3d(ncid   = ncid_recout, varid=nc_disp_varid, &
+                               start  = [1, icomp, loc2globrec(irec)], &
+                               count  = [nseismo, 1, 1], &
+                               values = reshape(recdumpvar(:,icomp,irec), [nseismo, 1, 1]) )
         end do
     end do
 
@@ -453,7 +457,7 @@ subroutine nc_dump_rec_to_disk
 
     if (verbose > 1) then
         write(6,"(I3,': Receiver data, Wrote ', F8.3, ' MB in ', F6.2, 's')") &
-            mynum, real(dumpsize) * realkind / 1048576., tack-tick 
+            mynum, real(dumpsize) * 4. / 1048576., tack-tick 
     end if
 #endif
 end subroutine nc_dump_rec_to_disk
@@ -464,13 +468,21 @@ end subroutine nc_dump_rec_to_disk
 subroutine nc_rec_checkpoint
     use data_mesh, ONLY: loc2globrec, num_rec
 #ifdef unc
+    interface
+        subroutine c_wait_for_io() bind(c, name='c_wait_for_io')
+        end subroutine 
+    end interface
+
     integer         :: iproc
+    
+    call c_wait_for_io()
     do iproc=0, nproc-1
         call barrier
         if (iproc == mynum) then
             if (num_rec>0) then 
                 if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
                 call nc_dump_rec_to_disk()
+                call flush(6)
             else
                 if (verbose > 1) write(6,"('Proc ', I3, ' has no receivers and just waits for the others')") mynum
             end if
@@ -1155,7 +1167,7 @@ subroutine nc_finish_prepare
             call getvarid( ncid_recout, "displacement", nc_disp_varid ) 
             
             if (dump_wavefields) then
-                call check( nf90_inq_grp_ncid(ncid_out, "Snapshots", ncid_snapout) )
+                call getgrpid(ncid_out, "Snapshots", ncid_snapout) 
                 do ivar=1, nvar/2
                     call getvarid( ncid_snapout, nc_varnamelist(ivar), &
                                 nc_field_varid(ivar)) 
@@ -1367,48 +1379,48 @@ subroutine nc_dump_snapshot(u, straintrace, curlinplane)
 
 #ifdef unc
     if (src_type(1) == 'monopole') then
-       call check(nf90_put_var(ncid   = ncid_out_snap, &
-                               varid  = nc_snap_disp_varid, &
-                               start  = [1, 1, isnap], &
-                               count  = [1, npoint_plot, 1], &
-                               values = u(1,:)) )
+       call putvar_real3d(ncid   = ncid_out_snap, &
+                          varid  = nc_snap_disp_varid, &
+                          start  = [1, 1, isnap], &
+                          count  = [1, npoint_plot, 1], &
+                          values = reshape(u(1,:), [1, npoint_plot,1]) )
        
-       call check(nf90_put_var(ncid   = ncid_out_snap, &
-                               varid  = nc_snap_disp_varid, &
-                               start  = [2, 1, isnap], &
-                               count  = [1, npoint_plot, 1], &
-                               values = u(3,:)) )
+       call putvar_real3d(ncid   = ncid_out_snap, &
+                          varid  = nc_snap_disp_varid, &
+                          start  = [2, 1, isnap], &
+                          count  = [1, npoint_plot, 1], &
+                          values = reshape(u(3,:), [1, npoint_plot,1]) ) 
     else
-       call check(nf90_put_var(ncid   = ncid_out_snap, &
-                               varid  = nc_snap_disp_varid, &
-                               start  = [1, 1, isnap], &
-                               count  = [1, npoint_plot, 1], &
-                               values = u(1,:)) )
+       call putvar_real3d(ncid   = ncid_out_snap, &
+                          varid  = nc_snap_disp_varid, &
+                          start  = [1, 1, isnap], &
+                          count  = [1, npoint_plot, 1], &
+                          values = reshape(u(1,:), [1, npoint_plot,1]) )
        
-       call check(nf90_put_var(ncid   = ncid_out_snap, &
-                               varid  = nc_snap_disp_varid, &
-                               start  = [2, 1, isnap], &
-                               count  = [1, npoint_plot, 1], &
-                               values = u(2,:)) )
+       call putvar_real3d(ncid   = ncid_out_snap, &
+                          varid  = nc_snap_disp_varid, &
+                          start  = [2, 1, isnap], &
+                          count  = [1, npoint_plot, 1], &
+                          values = reshape(u(2,:), [1, npoint_plot,1]) )
 
-       call check(nf90_put_var(ncid   = ncid_out_snap, &
-                               varid  = nc_snap_disp_varid, &
-                               start  = [3, 1, isnap], &
-                               count  = [1, npoint_plot, 1], &
-                               values = u(3,:)) )
+       call putvar_real3d(ncid   = ncid_out_snap, &
+                          varid  = nc_snap_disp_varid, &
+                          start  = [3, 1, isnap], &
+                          count  = [1, npoint_plot, 1], &
+                          values = reshape(u(3,:), [1, npoint_plot,1]) )
     end if
 
     call check(nf90_put_var(ncid   = ncid_out_snap, &
-                            varid  = nc_snap_pwave_varid, &
-                            start  = [1, isnap], &
-                            count  = [npoint_plot, 1], &
-                            values = straintrace) )
+                       varid  = nc_snap_pwave_varid, &
+                       start  = [1, isnap], &
+                       count  = [npoint_plot, 1], &
+                       values = straintrace(1,:)) )
 
     call check(nf90_put_var(ncid   = ncid_out_snap, &
-                            varid  = nc_snap_swave_varid, &
-                            start  = [1, isnap], &
-                            count  = [npoint_plot, 1], &
-                            values = curlinplane) )
+                       varid  = nc_snap_swave_varid, &
+                       start  = [1, isnap], &
+                       count  = [npoint_plot, 1], &
+                       values = curlinplane(1,:)) )
 #endif
 
 end subroutine nc_dump_snapshot
@@ -1471,6 +1483,32 @@ subroutine getvarid(ncid, name, varid)
 end subroutine getvarid
 !-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
+subroutine getgrpid(ncid, name, grpid)
+    integer, intent(in)          :: ncid
+    character(len=*), intent(in) :: name
+    integer, intent(out)         :: grpid
+#ifdef unc
+    integer                      :: status
+
+    status = nf90_inq_ncid( ncid     = ncid, &
+                            name     = name, &
+                            grp_ncid = grpid )
+    if (status.ne.NF90_NOERR) then
+        write(6,100) mynum, trim(name), ncid
+        stop
+    elseif (verbose>1) then
+        write(6,101) trim(name), ncid, grpid
+        call flush(6)
+    end if
+100 format('ERROR: CPU ', I4, ' could not find group: ''', A, ''' in NCID', I7)
+101 format('Group ''', A, ''' found in NCID', I7, ', has ID:', I7)
+#else
+    grpid = 0
+#endif
+end subroutine getgrpid
+!-----------------------------------------------------------------------------------------
+
 subroutine putvar_real1d(ncid, varid, values, start, count)
 !< Help interpret the inane NetCDF error messages
    integer, intent(in)          :: ncid, varid, start, count
@@ -1482,10 +1520,17 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
    character(len=nf90_max_name) :: varname, dimname
 
 
+   status = nf90_inquire_variable(ncid  = ncid,     &
+                                  varid = varid,    &
+                                  name  = varname )
+
+   if (status.ne.NF90_NOERR) then
+       write(*,99) mynum, varid, ncid
+       print *, trim(nf90_strerror(status))
+       stop
+   end if
+
    if (size(values).ne.count) then
-       status = nf90_inquire_variable(ncid  =  ncid,    &
-                                      varid = varid,    &
-                                      name  = varname )
        write(*,100) mynum, trim(varname), varid, ncid, size(values), count
        stop
    end if
@@ -1529,10 +1574,11 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
        stop
    
    elseif (verbose>1) then
-        write(6,200) mynum, ncid, varid
-        call flush(6)
+       write(*,200) mynum, real(count) * 4. / 1048576., ncid, varid
+       call flush(6)
    end if
     
+99  format('ERROR: CPU ', I4, ' could not find variable: ',I7,' in NCID', I7)
 100 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       was given ', I10, ' values, but ''count'' is ', I10)
 101 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
@@ -1545,9 +1591,213 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
            '       count:   ', I10, / &
            '       dimsize: ', I10, / &
            '       dimname: ', A)
-200 format('CPU ', I5, ' wrote variable found in NCID', I7, ', with ID:', I7)
+200 format('   Proc ', I4, ' wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real1d
+!-----------------------------------------------------------------------------------------
+
+subroutine putvar_real2d(ncid, varid, values, start, count)
+!< Help interpret the inane NetCDF error messages
+   integer, intent(in)          :: ncid, varid
+   integer, intent(in)          :: start(2), count(2)
+   real, intent(in)             :: values(:,:)
+
+#ifdef unc
+   integer                      :: xtype, ndims, status, dimsize, idim
+   integer                      :: dimid(10)
+   character(len=nf90_max_name) :: varname, dimname
+
+
+   status = nf90_inquire_variable(ncid  = ncid,     &
+                                  varid = varid,    &
+                                  name  = varname )
+
+   if (status.ne.NF90_NOERR) then
+       write(*,99) mynum, varid, ncid
+       print *, trim(nf90_strerror(status))
+       stop
+   end if
+   ! Check if variable size is consistent with values of 'count'
+   do idim = 1, 2
+       if (size(values,idim).ne.count(idim)) then
+           write(*,100) mynum, trim(varname), varid, ncid, idim, size(values, idim), count(idim)
+           stop
+       end if
+   end do
+
+   ! Write data to file
+   status = nf90_put_var(ncid   = ncid,           &
+                         varid  = varid,          &
+                         values = values,         &
+                         start  = start,          &
+                         count  = count )
+
+                      
+   ! If an error has occurred, try to find a reason                  
+   if (status.ne.NF90_NOERR) then
+       status = nf90_inquire_variable(ncid  =  ncid,    &
+                                      varid = varid,    &
+                                      name  = varname,  &
+                                      ndims = ndims)
+
+       ! Check whether variable in NetCDF file has more or less than three dimensions
+       if (ndims.ne.2) then
+           write(*,101) mynum, trim(varname), varid, ncid, ndims
+           print *, trim(nf90_strerror(status))
+           stop
+       end if
+
+       ! Check whether dimension sizes are compatible with amount of data written
+       status = nf90_inquire_variable(ncid   = ncid,     &
+                                      varid  = varid,    &
+                                      name   = varname,  &
+                                      xtype  = xtype,    &
+                                      ndims  = ndims,    &
+                                      dimids = dimid  )
+
+       do idim = 1, 2
+           status = nf90_inquire_dimension(ncid  = ncid,        &
+                                           dimid = dimid(idim), &
+                                           name  = dimname,     &
+                                           len   = dimsize )
+           if (start(idim) + count(idim) > dimsize) then
+               write(*,102) mynum, trim(varname), varid, ncid, start(idim), count(idim), &
+                            dimsize, trim(dimname), idim 
+               print *, trim(nf90_strerror(status))
+               stop
+           end if
+
+       end do
+
+       ! Otherwise just dump as much information as possible and stop
+       write(*,103) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
+       print *, trim(nf90_strerror(status))
+       stop
+   
+   elseif (verbose>1) then
+       ! Everything okay
+       write(*,200) mynum, real(product(count)) * 4. / 1048576., ncid, varid
+       call flush(6)
+   end if
+    
+99  format('ERROR: CPU ', I4, ' could not find variable: ',I7,' in NCID', I7)
+100 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       dimension ', I1,' was given ', I10, ' values, but ''count'' is ', I10)
+101 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       Variable has ', I2,' dimensions instead of two')
+102 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       start (', I10, ') + count(', I10, ') is larger than size (', I10,')',    / &
+           '       of dimension ', A, ' (', I1, ')')
+103 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       start:   ', I10, / &
+           '       count:   ', I10, / &
+           '       dimsize: ', I10, / &
+           '       dimname: ', A)
+200 format('   Proc ', I4, ' wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
+#endif
+end subroutine putvar_real2d
+!-----------------------------------------------------------------------------------------
+
+subroutine putvar_real3d(ncid, varid, values, start, count)
+!< Help interpret the inane NetCDF error messages
+   integer, intent(in)          :: ncid, varid
+   integer, intent(in)          :: start(3), count(3)
+   real, intent(in)             :: values(:,:,:)
+
+#ifdef unc
+   integer                      :: xtype, ndims, status, dimsize, idim
+   integer                      :: dimid(10)
+   character(len=nf90_max_name) :: varname, dimname
+
+
+   status = nf90_inquire_variable(ncid  = ncid,     &
+                                  varid = varid,    &
+                                  name  = varname )
+
+   if (status.ne.NF90_NOERR) then
+       write(*,99) mynum, varid, ncid
+       print *, trim(nf90_strerror(status))
+       stop
+   end if
+   ! Check if variable size is consistent with values of 'count'
+   do idim = 1, 3
+       if (size(values,idim).ne.count(idim)) then
+           write(*,100) mynum, trim(varname), varid, ncid, idim, size(values, idim), count(idim)
+           stop
+       end if
+   end do
+
+   ! Write data to file
+   status = nf90_put_var(ncid   = ncid,           &
+                         varid  = varid,          &
+                         values = values,         &
+                         start  = start,          &
+                         count  = count )
+
+                      
+   ! If an error has occurred, try to find a reason                  
+   if (status.ne.NF90_NOERR) then
+       status = nf90_inquire_variable(ncid  =  ncid,    &
+                                      varid = varid,    &
+                                      name  = varname,  &
+                                      ndims = ndims)
+
+       ! Check whether variable in NetCDF file has more or less than three dimensions
+       if (ndims.ne.3) then
+           write(*,101) mynum, trim(varname), varid, ncid, ndims
+           print *, trim(nf90_strerror(status))
+           stop
+       end if
+
+       ! Check whether dimension sizes are compatible with amount of data written
+       status = nf90_inquire_variable(ncid   = ncid,     &
+                                      varid  = varid,    &
+                                      name   = varname,  &
+                                      xtype  = xtype,    &
+                                      ndims  = ndims,    &
+                                      dimids = dimid  )
+
+       do idim = 1, 3
+           status = nf90_inquire_dimension(ncid  = ncid,        &
+                                           dimid = dimid(idim), &
+                                           name  = dimname,     &
+                                           len   = dimsize )
+           if (start(idim) + count(idim) > dimsize) then
+               write(*,102) mynum, trim(varname), varid, ncid, start(idim), count(idim), &
+                            dimsize, trim(dimname), idim 
+               print *, trim(nf90_strerror(status))
+               stop
+           end if
+
+       end do
+
+       ! Otherwise just dump as much information as possible and stop
+       write(*,103) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
+       print *, trim(nf90_strerror(status))
+       stop
+   
+   elseif (verbose>1) then
+       ! Everything okay
+       write(6,200) mynum, real(product(count)) * 4. / 1048576., ncid, varid
+       call flush(6)
+   end if
+    
+99  format('ERROR: CPU ', I4, ' could not find variable: ',I7,' in NCID', I7)
+100 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       dimension ', I1,' was given ', I10, ' values, but ''count'' is ', I10)
+101 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       Variable has ', I2,' dimensions instead of three')
+102 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       start (', I10, ') + count(', I10, ') is larger than size (', I10,')',    / &
+           '       of dimension ', A, ' (', I1, ')')
+103 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       start:   ', I10, / &
+           '       count:   ', I10, / &
+           '       dimsize: ', I10, / &
+           '       dimname: ', A)
+200 format('   Proc ', I4, ' wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
+#endif
+end subroutine putvar_real3d
 
 !-----------------------------------------------------------------------------------------
 !> Translates NetCDF error code into readable message
