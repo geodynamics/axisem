@@ -2777,7 +2777,7 @@ subroutine def_solid_fluid_boundary_terms
         endif ! ax/nonax
 
         ! Define the term such that B >(<) 0 of solid above(below) fluid
-        do idom=1,ndisc
+        do idom=1,ndisc-1
            if ( .not. solid_domain(idom) ) then
               ! run a check to make sure radius is either discontinuity
               if ( abs(r1-discont(idom))>min_distance_dim .and. &
@@ -2793,9 +2793,9 @@ subroutine def_solid_fluid_boundary_terms
                  stop
               endif
               ! if current radius=bottom radius of fluid layer, set negative
-              if (abs(r1-discont(idom+1))<min_distance_dim) then 
-                 bdry_matr(:,iel,:)=-bdry_matr(:,iel,:)
-                 count_lower_disc=count_lower_disc+1
+              if (abs(r1-discont(idom+1)) < min_distance_dim) then 
+                 bdry_matr(:,iel,:) = -bdry_matr(:,iel,:)
+                 count_lower_disc = count_lower_disc+1
               else ! element is in upper radius of fluid layer, keep positive
                  count_upper_disc=count_upper_disc+1
               endif
@@ -2848,7 +2848,9 @@ subroutine def_solid_fluid_boundary_terms
         write(6,*)' Term should equal four for 2 boundaries (i.e. int (sin) )'
         write(6,*)' Actual numerical value:',bdry_sum
      endif
-     stop
+     ! deactivating the stop, because this prevents simulation with other then 2
+     ! solid/fluid boundaries
+     !stop
   endif
   
   if (diagfiles) then
