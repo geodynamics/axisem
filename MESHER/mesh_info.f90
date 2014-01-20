@@ -95,11 +95,12 @@ subroutine define_regions
   nel_region(:) = 0
   
   do iel = 1, neltot
-     call assign_region(region(iel),scom(iel),zcom(iel))
-     if (region(iel) > 0 .AND. region(iel) < ndisc +2) then 
-        nel_region(region(iel))=nel_region(region(iel))+1
+     call assign_region(region(iel), scom(iel), zcom(iel))
+     if (region(iel) > 0 .AND. region(iel) < ndisc + 2) then 
+        nel_region(region(iel)) = nel_region(region(iel)) + 1
      else
         write(6,*) ' problem with assigning region to element number ', iel
+        write(6,*) scom(iel), zcom(iel)
         stop
      end if
   end do
