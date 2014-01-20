@@ -433,7 +433,7 @@ subroutine read_inparam_advanced
              read(keyvalue,*) time_scheme
 
          case('DATA_DIR')
-             datapath = keyvalue
+             !datapath = keyvalue
 
          case('INFO_DIR')
              infopath = keyvalue

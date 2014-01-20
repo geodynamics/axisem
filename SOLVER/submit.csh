@@ -17,7 +17,7 @@ if ( ${#argv} < 1 || "$1" == "-h" ) then
     echo""
     exit
 else if ( -d $1) then
-    echo " Run or directory" $1 "exists....... its content:"
+    echo " ERROR: Run directory" $1 "exists....... its content:"
     ls $1
     exit
 endif
@@ -56,11 +56,22 @@ echo $LDFLAGS >> runinfo
 if ( -d $meshdir) then
   echo "Using mesh " $meshdir
 else
-  echo "Mesh " $meshdir " not found."
+  echo "ERROR: Mesh " $meshdir " not found."
   echo "Available meshes:"
   ls MESHES
   exit
 endif
+
+if ( -d $datapath) then
+    if (`ls $datapath -1 | wc -l` == 0) then
+        echo " Saving data into $datapath"
+    else
+        echo "ERROR: $datapath is not empty. Its content:"
+        ls $datapath
+        exit
+    endif
+endif
+
 
 set bgmodel = `grep ^BACKGROUND_MODEL $meshdir/inparam_mesh | awk '{print $2}'`
 
@@ -113,13 +124,13 @@ endif
 # MvD: I do not get this: it checks == 0 where 0 is the status when exited without
 # problems???
 if ( { make -j } == 0 ) then
-  echo "Compilation failed, please check the errors."
+  echo "ERROR: Compilation failed, please check the errors."
   exit
 endif
 
 
 if ( ! -f $homedir/$srcfile ) then 
-    echo "file $srcfile does not exist"
+    echo "ERROR: Source file $srcfile does not exist"
     exit
 endif
 
@@ -137,7 +148,7 @@ else if ( $rec_file_type == 'database' ) then
 endif
 
 if ( ! -f $homedir/$recfile ) then 
-    echo "file $recfile does not exist"
+    echo "ERROR: Receiver file $recfile does not exist"
     exit
 endif
 echo "Source file:" $srcfile, "Receiver file:" $recfile
@@ -163,8 +174,8 @@ if ( $multisrc == 'true' ) then
         set srctype  = ( "vertforce" "xforce" )
 
     else
-        echo " Unrecognized source type" $srctype
-        echo " Choose either 'moment', 'force', or leave blank for one simulation as in inparam_source"
+        echo " ERROR: Unrecognized source type" $srctype
+        echo " Choose either 'moment', or leave blank for one simulation as in inparam_source"
         exit
     endif
 
@@ -222,12 +233,33 @@ foreach isrc (${num_src_arr})
             endif
         endif 
         
-        if ( -d $datapath) then
-            echo " Saving data into $datapath"
-        else
-            echo "creating $datapath" 
+   
+        if ( $datapath == './Data' ) then
             mkdir $datapath
+        else
+            else 
+                echo "creating $datapath" 
+                mkdir $datapath
+            endif
+            if ( $multisrc == 'true' ) then
+                set datapath_isim = $datapath/$isim
+                echo "creating $datapath_isim" 
+                mkdir $datapath_isim
+            else
+                set datapath_isim = $datapath
+            endif
+            ln -s $datapath_isim ./Data
         endif
+
+#            #if ( "(ls -A $datapath)" ) then
+#            ln -s $datapath
+#        else
+#            echo "creating $datapath" 
+#            mkdir $datapath
+#            if ( $multisrc == 'true' ) then
+#                mkdir $datapath/MZZ $datapath/MXX_P_MYY $datapath/MXZ_MYZ $datapath/MXY_MXX_M_MYY
+#            endif
+#        endif
         
         if ( -d $infopath) then 
             echo " saving info into $infopath"
