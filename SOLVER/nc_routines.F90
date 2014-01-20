@@ -236,7 +236,7 @@ subroutine nc_dump_strain(isnap_loc)
         !      Therefor testing system_clock, from the clocks module.
         if (mod(isnap_loc, dumpstepsnap) == outputplan) then
             if (verbose>1) then
-                write(*,"('Proc ', I4, ' would like to dump data and waits for his turn')") mynum
+                write(*,"('   Proc ', I4, ': Would like to dump data and waits for his turn')") mynum
                 call flush(6)
             end if
             call cpu_time(tickl)
@@ -305,7 +305,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     use data_mesh,         ONLY: loc2globrec, maxind, ind_first
 
     integer                    :: ivar, flen, isnap_loc
-    real                       :: tick, tack
+    real                       :: tick, tack, dumpsize_MB
     integer                    :: dumpsize
 
     dumpsize = 0
@@ -316,13 +316,13 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     
     call getgrpid(ncid_out, "Snapshots", ncid_snapout) 
     isnap_loc = isnap_global
-    if (verbose > 1) then
+    if (verbose > 0) then
         if (ndumps == 0) then 
-            write(6,"('  Proc ', I4, ' in dump routine, isnap =', I5, &
+            write(6,"('   Proc ', I4, ': in dump routine, isnap =', I5, &
                     & ', nothing to dump, returning...')") mynum, isnap_loc
             return
         else
-            write(6,"('  Proc ', I4, ' in dump routine, isnap =', I5, &
+            write(6,"('   Proc ', I4, ': in dump routine, isnap =', I5, &
                     & ', stepstodump = ', I4)") mynum, isnap_loc, ndumps
         end if
     end if
@@ -366,9 +366,10 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     call check( nf90_close(ncid_out) ) 
     call cpu_time(tack)
 
-    if (verbose > 1) then
-        write(6,"('  Proc', I5,': Wrote ', F8.2, ' MB in ', F6.2, 's')") &
-            mynum, real(dumpsize) * 4. / 1048576., tack-tick 
+    if (verbose > 0) then
+        dumpsize_MB = real(dumpsize) * 4 / 1048576
+        write(6,"('   Proc', I5,': Wrote ', F8.2, ' MB in ', F6.2, 's (', F8.2, ' MB/s)')") &
+            mynum, dumpsize_MB, tack-tick, dumpsize_MB / (tack - tick)
         call flush(6)
     end if
 
@@ -480,11 +481,11 @@ subroutine nc_rec_checkpoint
         call barrier
         if (iproc == mynum) then
             if (num_rec>0) then 
-                if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
+                if (verbose > 1) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
                 call nc_dump_rec_to_disk()
                 call flush(6)
             else
-                if (verbose > 1) write(6,"('Proc ', I3, ' has no receivers and just waits for the others')") mynum
+                if (verbose > 1) write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
             end if
         end if
         
@@ -685,7 +686,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     do iproc=0, nproc-1
         dumpposition(iproc*(dumpstepsnap/nproc)) = .true.
         if ((iproc .eq. mynum) .and. (verbose > 1)) then
-            write(6,"('Proc ', I4, ' will dump at position ', I4)") mynum, outputplan
+            write(6,"(' Proc ', I4, ' will dump at position ', I4)") mynum, outputplan
             call flush(6)
         end if
         call barrier ! for nicer output only
@@ -693,7 +694,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
 
     if (mynum == 0) then
-        if (verbose > 1) write (6,*) 'Preparing netcdf file for ', nproc, ' processors'
+        if (verbose > 1) write (6,*) ' Preparing netcdf file for ', nproc, ' processors'
         nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
         call check( nf90_create(path=datapath(1:lfdata)//"/axisem_output.nc4", &
                                 cmode=nmode, ncid=ncid_out) )
@@ -1249,7 +1250,7 @@ subroutine nc_finish_prepare
 
             end if !dump_wavefields
             call check( nf90_close( ncid_out))
-            if (verbose > 1) write(6,"('Proc ', I3, ' dumped its mesh and is ready to rupture')") mynum
+            if (verbose > 1) write(6,"('  Proc ', I3, ' dumped its mesh and is ready to rupture')") mynum
         end if !mynum.eq.iproc
     end do
 #endif
@@ -1269,10 +1270,10 @@ subroutine nc_end_output
     do iproc=0, nproc-1
         if (iproc == mynum) then
             if (num_rec>0) then 
-                if (verbose > 1) write(6,"('Proc ', I3, ' will dump receiver seismograms')") mynum
+                if (verbose > 1) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
                 call nc_dump_rec_to_disk()
             else
-                if (verbose > 1) write(6,"('Proc ', I3, ' has no receivers and just waits for the others')") mynum
+                if (verbose > 1) write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
             end if
             if (dump_xdmf) then
                 call check(nf90_close(ncid_out_snap))
@@ -1502,7 +1503,7 @@ subroutine getgrpid(ncid, name, grpid)
         call flush(6)
     end if
 100 format('ERROR: CPU ', I4, ' could not find group: ''', A, ''' in NCID', I7)
-101 format('Group ''', A, ''' found in NCID', I7, ', has ID:', I7)
+101 format('   Group ''', A, ''' found in NCID', I7, ', has ID:', I7)
 #else
     grpid = 0
 #endif
@@ -1591,7 +1592,7 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
            '       count:   ', I10, / &
            '       dimsize: ', I10, / &
            '       dimname: ', A)
-200 format('   Proc ', I4, ' wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
+200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real1d
 !-----------------------------------------------------------------------------------------
@@ -1693,7 +1694,7 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
            '       count:   ', I10, / &
            '       dimsize: ', I10, / &
            '       dimname: ', A)
-200 format('   Proc ', I4, ' wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
+200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real2d
 !-----------------------------------------------------------------------------------------
@@ -1795,7 +1796,7 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
            '       count:   ', I10, / &
            '       dimsize: ', I10, / &
            '       dimname: ', A)
-200 format('   Proc ', I4, ' wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
+200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real3d
 
