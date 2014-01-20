@@ -138,10 +138,14 @@ subroutine generate_serendipity(npoin, nel, sg, zg)
   ! these serendipity nodes are actually needed)!
   
   do iel = 1, nel
-     sg2(1,iel) = sg(1,iel) ; zg2(1,iel) = zg(1,iel)
-     sg2(3,iel) = sg(2,iel) ; zg2(3,iel) = zg(2,iel)
-     sg2(5,iel) = sg(3,iel) ; zg2(5,iel) = zg(3,iel)
-     sg2(7,iel) = sg(4,iel) ; zg2(7,iel) = zg(4,iel)
+     sg2(1,iel) = sg(1,iel)
+     zg2(1,iel) = zg(1,iel)
+     sg2(3,iel) = sg(2,iel)
+     zg2(3,iel) = zg(2,iel)
+     sg2(5,iel) = sg(3,iel)
+     zg2(5,iel) = zg(3,iel)
+     sg2(7,iel) = sg(4,iel)
+     zg2(7,iel) = zg(4,iel)
 
      sg2(2,iel) = .5d0 * ( sg2(1,iel) + sg2(3,iel) ) 
      zg2(2,iel) = .5d0 * ( zg2(1,iel) + zg2(3,iel) ) 
@@ -413,14 +417,14 @@ end subroutine def_reference_spherical_grid_discont
 
 !-----------------------------------------------------------------------------------------
 subroutine def_global_coordinates(npts, s, z, ns1, nz1, crd)
-  integer, intent(in)                                        :: npts, ns1, nz1
-  real(kind=dp)   , dimension(1:npts), intent(out)           :: s, z
-  real(kind=dp)   , dimension(1:ns1+1,1:nz1+1,2), intent(in) :: crd
+  integer, intent(in)                                     :: npts, ns1, nz1
+  real(kind=dp), dimension(1:npts), intent(out)           :: s, z
+  real(kind=dp), dimension(1:ns1+1,1:nz1+1,2), intent(in) :: crd
 
   integer :: ipt, is, iz
 
   do iz = 1,nz1+1
-     do is = 1,ns1+1
+     do is = 1, ns1+1
         ipt = uniform_nodenumber(is,iz,ns1)
         s(ipt) = crd(is,iz,1) 
         z(ipt) = crd(is,iz,2)
@@ -447,8 +451,8 @@ subroutine def_mapped_coordinates(ns1, nz1, crds, crdc, crd_cont)
      do is = 1,ns1+1
         xi = crdc(is,iz,1)
         eta = crdc(is,iz,2)
-        crds(is,iz,1) = map_spheroid(xi,eta,crd_cont,1)
-        crds(is,iz,2) = map_spheroid(xi,eta,crd_cont,2)
+        crds(is,iz,1) = map_spheroid(xi, eta, crd_cont, 1)
+        crds(is,iz,2) = map_spheroid(xi, eta, crd_cont, 2)
      end do
   end do
 
@@ -460,6 +464,7 @@ subroutine def_control_nodes(crd, ri1, ro1)
   real(kind=dp)   , intent(in) :: ri1, ro1
   real(kind=dp)   , dimension(8,2), intent(out) :: crd
   !hemispherical case
+
   crd(1,1) = 0.d0
   crd(1,2) = ri1    
   crd(2,1) = ri1*.5*dsqrt(2.d0)
@@ -476,6 +481,7 @@ subroutine def_control_nodes(crd, ri1, ro1)
   crd(7,2) = ro1   
   crd(8,1) = 0.d0
   crd(8,2) = .5d0*(ro1+ri1) 
+
 end subroutine def_control_nodes
 !-----------------------------------------------------------------------------------------
 
@@ -555,7 +561,7 @@ subroutine define_spherical_shell
   allocate(so(4*nelo),zo(4*nelo))
   so(:) = 0.
   zo(:) = 0.
- 
+
   do iel = 1, nel
      do inode = 1, 4
         ipt = lnodeso(inode,iel)
@@ -564,6 +570,7 @@ subroutine define_spherical_shell
         zo(ipto) = z_unif(ipt)
      end do
   end do
+
   ! gnuplot dump
   if (dump_mesh_info_files) then
      open(unit=3,file=diagpath(1:lfdiag)//'/testcrd.dat',STATUS="UNKNOWN",POSITION="REWIND")
@@ -1453,6 +1460,7 @@ subroutine gather_skeleton
   istart = 4*(nelo+neli) + 1
   if (allocated(sbuf)) sg(istart:istart+4*nelbuf-1) = sbuf(1:4*nelbuf)
   if (allocated(zbuf)) zg(istart:istart+4*nelbuf-1) = zbuf(1:4*nelbuf)
+
 
   ! central square region
   !istart = 4*(nelo+neli) + 1

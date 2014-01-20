@@ -49,9 +49,9 @@ subroutine create_gllmesh
   allocate(sgll(0:npol,0:npol,neltot),zgll(0:npol,0:npol,neltot))
 
   ! QUADRATURE POINTS and weights
-  allocate (eta(0:npol))
-  allocate (dxi(0:npol))
-  allocate (wt(0:npol))
+  allocate(eta(0:npol))
+  allocate(dxi(0:npol))
+  allocate(wt(0:npol))
   allocate(xi_k(0:npol), wt_axial_k(0:npol))
 
   call zemngl2(npol,xi_k)                       ! Gauss-Jacobi(0,1) quadrature

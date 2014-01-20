@@ -199,10 +199,10 @@ subroutine create_subregions
      ! at least the ICB....
      rmin = rdisc_top(ndisc) - maxh_icb * .9
   endif
-  
-  if (dump_mesh_info_screen) write(6,*)'CALCULATED RMIN=',rmin
-  if (dump_mesh_info_screen) write(6,*)'MAXH_ICB=',maxh_icb
-  if (dump_mesh_info_screen) write(6,*)'# central region elements (incl. buffer, e.g. along axis):', &
+
+  if (dump_mesh_info_screen) write(6,*) 'CALCULATED RMIN=', rmin
+  if (dump_mesh_info_screen) write(6,*) 'MAXH_ICB=', maxh_icb
+  if (dump_mesh_info_screen) write(6,*) '# central region elements (incl. buffer, e.g. along axis):', &
             int(real(ns_ref/real((2.*real(2**nc_init))))+1.)
 
   ndisc_stop = ndisc

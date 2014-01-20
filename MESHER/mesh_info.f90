@@ -268,6 +268,9 @@ subroutine define_boundaries
 
   if (neltot_fluid>0 .and. neltot_solid>0 ) then 
      nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
+
+     if (.not. resolve_inner_shear) nbcnd = nbcnd - 1
+
      write(6,*) '..... the number of fluid boundaries is not general enough....'
      write(6,*) '.....should insert a test on whether the fluid is indeed completely embedded!'
   else if (neltot_solid==0) then
@@ -355,6 +358,7 @@ subroutine define_boundaries
   endif
 
   !=======OUTPUT BOUNDARY INFO AND ARRAYS===========================
+  ! MvD: crashes for nbcnd == 1, but do we need this anyway?
   if (dump_mesh_info_files  .and. have_solid) then 
      open(unit=67660,file=diagpath(1:lfdiag)//"/bdry_info.dat")
      !write(67660,*)nbcnd
