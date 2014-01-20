@@ -466,9 +466,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   allocate(thetaslel_solid(nelmax_solid*nrl,0:nthetal-1))
   allocate(el2thetaslel(neltot))
 
-  write(6,*) "nelmax_fluid*nrl,",nelmax_fluid*nrl
-  write(6,*) "nelmax_solid*nrl,",nelmax_solid*nrl
-
   thetaslel       = -1
   thetaslel_fluid = -1
   thetaslel_solid = -1
@@ -508,14 +505,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
       stop
   endif
   ! **************** END OF INNER CUBE****************
-
-  write(6,*) 'fluid'
-
-  write(6,*) thetaslel_fluid
-
-  write(6,*) 'solid'
-
-  write(6,*) thetaslel_solid
 
 
   ! sort inner core elements according to radius
@@ -557,13 +546,9 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
      enddo
   endif
   
-  write(6,*) 'done sorting'
-
   ! add the extra requirement that element iel to be in appropriate theta slice
   do itheta = 0, nthetal-1
     
-     write(6,*) itheta
-
      if (neltot_solid > 0 ) then 
         mycount = 0
      else
