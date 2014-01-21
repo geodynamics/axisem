@@ -124,7 +124,7 @@ wavefields_io.o: data_io.o data_mesh.o data_pointwise.o data_proc.o \
 	pointwise_derivatives.o Makefile ../make_axisem.macros 
 commpi.o: clocks.o data_comm.o data_io.o data_mesh.o data_proc.o data_time.o \
 	global_parameters.o list.o Makefile ../make_axisem.macros 
-commun.o: clocks.o commpi.o data_mesh.o data_proc.o data_time.o \
+commun.o: clocks.o commpi.o data_io.o data_mesh.o data_proc.o data_time.o \
 	global_parameters.o Makefile ../make_axisem.macros 
 get_model.o: background_models.o commun.o data_io.o data_mesh.o data_proc.o \
 	data_source.o data_time.o def_grid.o global_parameters.o \

@@ -696,6 +696,7 @@ subroutine comm_elem_number(my_elems, glob_elems, my_first, my_last)
 !< Communicates the number of elements this processor has to the others and
 !! retrieves global number of local first and last element
 
+use data_io, only                 : verbose
 integer, intent(in)              :: my_elems
 integer, intent(out)             :: glob_elems, my_first, my_last
 integer                          :: all_elems(0:nproc-1), iproc
@@ -711,7 +712,10 @@ integer                          :: all_elems(0:nproc-1), iproc
      my_first = sum(all_elems(0:mynum-1))+1
      my_last  = sum(all_elems(0:mynum))
      glob_elems = sum(all_elems(:))
-     print *, 'Proc: ', mynum, ', first elem: ', my_first, ', last elem: ', my_last 
+     if (verbose>1) then
+         write(*,"('  Proc:', I5, ', first elem:', I10, ', last elem:', I10)" ) &
+               mynum, my_first, my_last 
+     end if
 #endif
   else
      my_first = 1
