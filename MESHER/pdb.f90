@@ -2326,7 +2326,7 @@ subroutine write_db
         write(6,*)'PARALLEL DATABASE: writing background model info...',iproc
      write(10) bkgrdmodel(1:lfbkgrdmodel)
      write(10) override_ext_q
-     write(10) router,resolve_inner_shear,have_fluid
+     write(10) router,have_fluid
      do idom=1,ndisc
         write(10) discont(idom),solid_domain(idom),idom_fluid(idom)
      enddo
@@ -2426,7 +2426,6 @@ subroutine create_static_header
     write(97,*)''
     write(97,29)
     write(97,12)'Background model     :',bkgrdmodel(1:lfbkgrdmodel)
-    write(97,13)'Inner-core shear wave:',resolve_inner_shear
     write(97,14)'Dominant period [s]  :',period
     write(97,14)'Elements/wavelength  :',pts_wavelngth
     write(97,14)'Courant number       :',courant

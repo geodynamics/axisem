@@ -129,7 +129,7 @@ subroutine read_db
      call get_ext_disc('./external_model.bm')
   end if
 
-  read(1000+mynum) router, resolve_inner_shear, have_fluid
+  read(1000+mynum) router, have_fluid
   if (verbose > 1) write(*,*) 'Model has radius ', router, ' m'
   allocate(discont(ndisc), solid_domain(ndisc), idom_fluid(ndisc))
   do idom=1, ndisc
@@ -154,7 +154,6 @@ subroutine read_db
      write(69,*) 'Background model============================================'
      write(69,*) '  bkgrdmodel          = ', bkgrdmodel(1:lfbkgrdmodel)
      write(69,*) '  router [m]          = ', router
-     write(69,*) '  resolve_inner_shear = ', resolve_inner_shear
      write(69,*) '  have_fluid          = ', have_fluid
      write(69,*) '  anel_true           = ', anel_true
   endif

@@ -57,7 +57,6 @@ subroutine read_params
   dump_mesh_vtk   = .true.
   dump_1dmodel    = .true.
   nc_init         = 3
-  resolve_inner_shear = .true.
   npol            = 4
   pts_wavelngth   = 1.5
   courant         = 0.6
@@ -72,7 +71,8 @@ subroutine read_params
 
 
   write(6, '(A)', advance='no') 'Reading inparam_mesh...'
-  open(unit=iinparam_mesh, file='./inparam_mesh', status='old', action='read',  iostat=ioerr)
+  open(unit=iinparam_mesh, file='./inparam_mesh', status='old', action='read', &
+       iostat=ioerr)
   if (ioerr.ne.0) stop 'Check input file ''inparam_mesh''! Is it still there?' 
  
   do
@@ -113,9 +113,6 @@ subroutine read_params
 
       case('COARSENING_LAYERS')
           read(keyvalue, *) nc_init
-
-      case('IC_SHEAR_WAVE')
-          read(keyvalue, *) resolve_inner_shear
 
       case('NPOL')
           read(keyvalue, *) npol
@@ -167,7 +164,6 @@ subroutine read_params
   write(6,*) ''
   write(6,*) 'PREDEFINED MODEL/SIMULATION PARAMETERS'
   write(6,*) 'Background model                 : ',bkgrdmodel(1:lfbkgrdmodel)
-  write(6,*) 'Resolve inner core shear wave    : ',resolve_inner_shear
   write(6,*) 'Dominant period [s]              : ',period
   write(6,*) 'Elements per dominant wavelength : ',pts_wavelngth
   write(6,*) 'Courant number                   : ',courant

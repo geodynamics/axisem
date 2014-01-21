@@ -34,7 +34,6 @@ module data_bkgrdmodel
   integer                    :: lfbkgrdmodel
   character(len=100)         :: bkgrdmodel
   logical                    :: have_fluid, have_solid
-  logical                    :: resolve_inner_shear
   real(kind=dp)              :: pts_wavelngth
   real(kind=dp)              :: period, courant
   real(kind=dp)              :: dt

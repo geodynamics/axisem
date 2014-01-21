@@ -269,7 +269,7 @@ subroutine define_boundaries
   if (neltot_fluid>0 .and. neltot_solid>0 ) then 
      nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
 
-     if (.not. resolve_inner_shear) nbcnd = nbcnd - 1
+     if (.not. solid_domain(ndisc)) nbcnd = nbcnd - 1
 
      write(6,*) '..... the number of fluid boundaries is not general enough....'
      write(6,*) '.....should insert a test on whether the fluid is indeed completely embedded!'

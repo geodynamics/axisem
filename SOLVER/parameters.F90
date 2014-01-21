@@ -1217,7 +1217,6 @@ subroutine write_parameters
         write(6,12)'     Background model  :',bkgrdmodel
         write(6,10)'     # discontinuities :',ndisc
         write(6,13)'     Have fluid region ?',have_fluid
-        write(6,13)'     IC shear wave     ?',resolve_inner_shear
         write(6,11)'     Outer rad.     [m]:',router
         write(6,11)'     Inner rad.     [m]:',rmin
         write(6,10)'     Polynomial order  :',npol
@@ -1634,7 +1633,6 @@ end subroutine write_parameters
 !    write(97,*)''
 !    write(97,29)
 !    write(97,12)'Background model     :',bkgrdmodel
-!    write(97,13)'Inner-core shear wave:',resolve_inner_shear
 !    write(97,14)'Dominant period [s]  :',period
 !    write(97,14)'Elements/wavelength  :',pts_wavelngth
 !    write(97,14)'Courant number       :',courant

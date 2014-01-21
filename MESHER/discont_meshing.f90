@@ -117,9 +117,8 @@ subroutine create_subregions
    if (nfluidregions == ndisc) then 
       write(6,*) 'COMPLETELY acoustic domain!'
       have_solid = .false.
-      resolve_inner_shear = .false.
    endif
-
+      
    write(6,"(10x,'Number of discontinuities/regions:     ',i3)") ndisc
    write(6,"(10x,'Number of fluid regions:               ',i3)") nfluidregions
  

@@ -328,8 +328,7 @@ subroutine domain_decomposition_theta(attributed, nprocl)
 
   do iproc = 0, nprocl -1
 
-     !if (neltot_solid > 0 ) then 
-     if (resolve_inner_shear) then 
+     if (solid_domain(ndisc)) then 
         mycount = 0
      else
         mycount = central_count(iproc)
@@ -349,12 +348,11 @@ subroutine domain_decomposition_theta(attributed, nprocl)
         if ( mycount == nel_fluid(iproc) ) exit
      end do ! iel
   
-     if (resolve_inner_shear) then 
-         mycount = central_count(iproc)
+     if (solid_domain(ndisc)) then 
+        mycount = central_count(iproc)
      else
         mycount = 0
      endif
-     !mycount = central_count(iproc)
   
      !  At this stage we have assigned nel_fluid fluid elements
      !  to each processor, stored in a procel_fluid(1:nel_fluid,iproc)
@@ -514,11 +512,9 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
 
 
   ! sort inner core elements according to radius
-  ! Using same stupid choice as in inner core decomposition (fully fluid sphere
-  ! will just not do the sorting 
-  
-  !if (neltot_solid > 0 ) then 
-  if (resolve_inner_shear) then 
+  ! Using same stupid choice as in inner core decomposition 
+
+  if (solid_domain(ndisc)) then 
      do itheta = 0, nthetal-1
         allocate(inner_core_buf(central_count(itheta)))
         allocate(inner_core_r(central_count(itheta)))
@@ -557,8 +553,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   ! add the extra requirement that element iel to be in appropriate theta slice
   do itheta = 0, nthetal-1
     
-     !if (neltot_solid > 0 ) then 
-     if (resolve_inner_shear) then 
+     if (solid_domain(ndisc)) then 
         mycount = 0
      else
         mycount = central_count(itheta)
@@ -582,7 +577,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
      write(6,*) thetaslel_fluid(:,itheta)
   
      if (neltot_solid > 0 ) then 
-        if (resolve_inner_shear) then 
+        if (solid_domain(ndisc)) then 
             mycount = central_count(itheta)
         else
             mycount = 0
@@ -593,10 +588,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
            if ( .not. fluid(iel) .and. .not. attributed(iel) .and. &
                  (thetacom(iel) >= theta_min_proc(itheta)) .and. &
                  (thetacom(iel) <= theta_max_proc(itheta)) ) then
-              !thetaslel_solid(sum(nel_solid(itheta:itheta+nrl-1)) &
-              !                - mycount + central_count(itheta),itheta) = iel
-
-              if (resolve_inner_shear) then 
+              if (solid_domain(ndisc)) then 
                  thetaslel_solid(sum(nel_solid(itheta:itheta+nrl-1)) &
                                  - mycount + central_count(itheta),itheta) = iel
               else
@@ -605,7 +597,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
               endif
 
               mycount = mycount + 1
-              !thetaslel_solid(mycount,itheta) = iel
               attributed(iel) = .true.
            end if
 
@@ -974,10 +965,7 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed, ntheta
          stop
       endif
  
-     ! MvD: what is this if statement for? Solid or Fluid inner core? Maybe not
-     !      robust then.
-     !if (neltot_solid > 0) then 
-     if (resolve_inner_shear) then 
+     if (solid_domain(ndisc)) then 
         procel_solidl(central_count(proc_central(is,iz)),proc_central(is,iz)) = &
                                                 central_is_iz_to_globiel(is,iz)
      else
@@ -987,8 +975,7 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed, ntheta
   
      ! South: inverted copy
      if (nthetal > 1) then 
-        !if (neltot_solid > 0) then 
-        if (resolve_inner_shear) then 
+        if (solid_domain(ndisc)) then 
            procel_solidl(central_count(proc_central(is,iz)), &
                 nthetal-1-proc_central(is,iz)) = &
                 central_is_iz_to_globiel(is,iz) + neltot / 2
@@ -1013,8 +1000,7 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed, ntheta
     do iz = 1, ndivs
      do is = 1, ndivs
           central_count(proc_central(is,iz)) = central_count(proc_central(is,iz)) + 1
-          !if (neltot_solid > 0 ) then         
-          if (resolve_inner_shear) then 
+          if (solid_domain(ndisc)) then 
              procel_solidl(central_count(proc_central(is,iz)),0) = &
                   central_is_iz_to_globiel(is,iz) + neltot / 2
           else
@@ -1402,10 +1388,7 @@ subroutine decompose_inner_cube_opt(central_count, attributed, nthetal, &
           attributed(central_is_iz_to_globiel(is,iz)) = .true.
           attributed(central_is_iz_to_globiel(is,iz) + neltot / 2) = .true.
 
-          ! @TODO is this supposed to test for fluid inner core? Actually tests
-          ! for whole fluid planets
-          !if (neltot_solid > 0) then 
-          if (resolve_inner_shear) then 
+          if (solid_domain(ndisc)) then 
               procel_solidl(central_count(proc(is-1,iz-1)), &
                       proc(is-1,iz-1)) = central_is_iz_to_globiel(is,iz)
           else
@@ -1415,8 +1398,7 @@ subroutine decompose_inner_cube_opt(central_count, attributed, nthetal, &
 
           ! South: inverted copy
           if (nthetal > 1) then 
-              !if (neltot_solid > 0) then 
-              if (resolve_inner_shear) then 
+              if (solid_domain(ndisc)) then 
                   procel_solidl(central_count(proc(is-1,iz-1)), &
                       nthetal - 1 - proc(is-1,iz-1)) = &
                       central_is_iz_to_globiel(is,iz) + neltot / 2
