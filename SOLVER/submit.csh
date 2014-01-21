@@ -237,17 +237,13 @@ foreach isrc (${num_src_arr})
         if ( $datapath == './Data' ) then
             mkdir $datapath
         else
-            else 
-                echo "creating $datapath" 
-                mkdir $datapath
-            endif
             if ( $multisrc == 'true' ) then
                 set datapath_isim = $datapath/$isim
                 echo "creating $datapath_isim" 
-                mkdir $datapath_isim
             else
                 set datapath_isim = $datapath
             endif
+            mkdir -p $datapath_isim
             ln -s $datapath_isim ./Data
         endif
 
