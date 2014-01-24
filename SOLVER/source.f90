@@ -404,30 +404,36 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   use data_mesh
   use utlity
   use commun, only: pmin, psum_int
+  use commpi, only: ppcheck
   
   integer, intent(out) :: iel_src2, ipol_src2, jpol_src2
   real(kind=dp)        :: s, z, r, theta, mydzsrc, zsrcout, dzsrc
   integer              :: ielem, ipol, jpol, count_src_procs
+  character(len=256)   :: errmsg
   
   ! find depth that is closest to desired value zsrc
 
   dzsrc = 10.d0 * router
+
+  write(errmsg, "('Source depth: ', F10.2, ' is bigger than model radius: ', F10.2)") zsrc, router
+  call ppcheck(zsrc > router, errmsg)
 
   ! Only allow sources in the solid region, fixated to northern axis.
   do ielem = 1, nel_solid
      do ipol = 0, npol
         do jpol = 0, npol
            call compute_coordinates(s, z, r, theta, ielsolid(ielem), ipol, jpol)
-           if (s == zero .and. abs(z-zsrc) < dzsrc .and. z >= zero) then 
+           if (abs(s)>smallval_dble .or. z<smallval_dble) cycle
+           if (dabs(z-zsrc) < dzsrc) then 
               zsrcout = z
-              dzsrc = abs(z - zsrc)
+              dzsrc = dabs(zsrcout - zsrc)
               iel_src = ielem
               ipol_src = ipol
               jpol_src = jpol
               iel_src2 = ielem
               ipol_src2 = ipol
               jpol_src2 = jpol
-           elseif (s == zero .and. abs(z-zsrc) == dzsrc .and. z >= zero) then 
+           elseif (dabs(z-zsrc) == dzsrc) then 
               if (verbose > 1) write(69,15) ielem,ipol,jpol,z/1000.
               iel_src2 = ielem
               ipol_src2 = ipol
@@ -437,6 +443,7 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
      enddo
   enddo
 15 format('  found a second point with same distance:', i6, i3, i3, 1pe13.3)
+
 
   ! Make sure only closest processor has source
   mydzsrc = dzsrc
