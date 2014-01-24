@@ -1591,7 +1591,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   real(kind=dp), parameter   :: grad_threshold = 1.d-2
   real(kind=dp)              :: disc_tmp(ndom_max), vp_tmp(ndom_max,2), vs_tmp(ndom_max,2), rho_tmp(ndom_max,2)
   real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
-  integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc
+  integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc, extrapolation
   integer, allocatable       :: isdisc(:)
   character(len=128)         :: fmtstring
 
@@ -1658,25 +1658,30 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   print *, '   idom, upper_layer, lower_layer,   r(ul),   r(ll)'
   fmtstring = '(I8, I13, I13, F9.1, F9.1)'
+
+  extrapolation = extrapolation_constant ! Only valid for the first domain, to allow points with 
+                                         ! r slightly larger than router. Happens in lateral_heterogeneities.f90
+
   do idom = 1, ndisc
      print fmtstring, idom, upper_layer(idom), lower_layer(idom), radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
      interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              rho_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_none)
+                                             extrapolation)
      interp_vpv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              vpv_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_none)
+                                             extrapolation)
      interp_vsv(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              vsv_layer(upper_layer(idom):lower_layer(idom)), &
-                                             extrapolation_none)
+                                             extrapolation)
      if (ext_model_is_anelastic) then
          interp_qka(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                                  qka_layer(upper_layer(idom):lower_layer(idom)), &
-                                                 extrapolation_none)
+                                                 extrapolation)
          interp_qmu(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                                  qmu_layer(upper_layer(idom):lower_layer(idom)), &
-                                                 extrapolation_none)
+                                                 extrapolation)
      end if
+     extrapolation = extrapolation_none
   end do
 
   if (present(ndisc_out)) then

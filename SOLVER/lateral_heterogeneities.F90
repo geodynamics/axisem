@@ -187,6 +187,7 @@ end subroutine compute_heterogeneities
 
 !-----------------------------------------------------------------------------------------
 subroutine read_param_hetero
+    use commun, only: barrier
 
     integer :: ij, i
     character(len=100) :: junk
@@ -200,11 +201,14 @@ subroutine read_param_hetero
        stop
     endif
 
-    write(6,*) 'starting read_param_hetero'
+    if(lpr) write(6,*) ' starting to read parameters for lateral heterogeneities from inparam_hetero'
     open(unit=91, file='inparam_hetero')
 
     read(91,*) num_het
-    if (lpr) write(6,*) 'adding ', num_het, ' regions...'
+    if (verbose > 0 .and. lpr) then
+       write(*,"('  Adding ', I3, ' regions of lateral heterogeneity...')") num_het
+    end if
+    call barrier
 
     allocate(het_format(num_het), het_file_discr(num_het), &
              het_funct_type(num_het), rdep(num_het), grad(num_het), &
@@ -219,15 +223,21 @@ subroutine read_param_hetero
     do ij = 1, num_het
        read(91,*) junk
        read(91,*) het_format(ij)
+       if (verbose > 0 .and. lpr) then
+          write(*,"('  Region:', I3, ' of type: ', A)") ij, trim(het_format(ij))
+       end if
 
-       if (het_format(ij) == 'discr') then
+       select case(trim(het_format(ij)))
+       case('discr')
+       !if (het_format(ij) == 'discr') then
           read(91,*) het_file_discr(ij)
           read(91,*) het_ani_discr(ij)
           read(91,*) het_rel_discr(ij)
           read(91,*) p_inv_dist(ij)
           read(91,*) R_inv_dist(ij)
 
-       elseif (het_format(ij) == 'rndm') then
+       case('rndm')
+       !elseif (het_format(ij) == 'rndm') then
           read(91,*) het_funct_type(ij)
           read(91,*) r_het1(ij), r_het2(ij)
           read(91,*) th_het1(ij), th_het2(ij)
@@ -241,7 +251,8 @@ subroutine read_param_hetero
               het_funct_type(ij) = het_funct_type(ij)(1:inverseshape(ij))
           endif
 
-       elseif (het_format(ij) == 'funct') then
+       case('funct')
+       !elseif (het_format(ij) == 'funct') then
           read(91,*) het_funct_type(ij)
           read(91,*) rdep(ij)
           read(91,*) grad(ij)
@@ -252,7 +263,8 @@ subroutine read_param_hetero
           read(91,*) delta_vp(ij)
           read(91,*) delta_vs(ij)
 
-       elseif (het_format(ij) == 'ica') then
+       case('ica')
+       !elseif (het_format(ij) == 'ica') then
           read(91,*) num_slices
           
           allocate(fa_theta_ica(num_slices), fa_phi_ica(num_slices))
@@ -269,10 +281,11 @@ subroutine read_param_hetero
              read(91,*) a_ica(i), b_ica(i), c_ica(i)
           enddo
 
-       else
+       case default
+          !else
           write(6,*)'Unknown heterogeneity input type: ', het_format(ij)
           stop
-       endif
+       end select
      
     enddo
 
@@ -290,7 +303,7 @@ subroutine read_param_hetero
     if (lpr) then 
        do ij=1, num_het
           write(6,*) ''
-          write(6,*) 'Lateral Heterogeneity No. ', ij, 'of type ', het_format(ij)
+          write(6,"('  Lateral Heterogeneity No. ', I3, ' of type ', A)") ij, het_format(ij)
           write(6,*) ''
           if (het_format(ij)=='funct' .or. het_format(ij)=='rndm') then
              write(6,*) ''
@@ -307,22 +320,24 @@ subroutine read_param_hetero
     endif
 
     ! need to rotate coordinates if source is not along axis (beneath the north pole)
-    if (rot_src .and. (het_format(ij) == 'rndm' .or. het_format(ij) == 'funct')) then 
+    if (rot_src) then 
        write(6,*) 'need to rotate the heterogeneous domain with the source....'
 
        do i=1, num_het
-          write(6,*)'Before rotation r th ph 1:', &
-             r_het1(i), th_het1(i) * 180. / pi
-          write(6,*)'Before rotation r th ph 2:', &
-             r_het2(i), th_het2(i) * 180. / pi
+          if (het_format(i) == 'rndm' .or. het_format(i) == 'funct') then 
+             write(6,*)'Before rotation r th ph 1:', &
+                r_het1(i), th_het1(i) * 180. / pi
+             write(6,*)'Before rotation r th ph 2:', &
+                r_het2(i), th_het2(i) * 180. / pi
 
-          call rotate_hetero(r_het1(i), th_het1(i))
-          call rotate_hetero(r_het2(i), th_het2(i))
+             call rotate_hetero(r_het1(i), th_het1(i))
+             call rotate_hetero(r_het2(i), th_het2(i))
 
-          write(6,*)'After rotation r th ph 1:', &
-             r_het1(i), th_het1(i) * 180. / pi
-          write(6,*)'After rotation r th ph 2:', &
-             r_het2(i), th_het2(i) * 180. / pi
+             write(6,*)'After rotation r th ph 1:', &
+                r_het1(i), th_het1(i) * 180. / pi
+             write(6,*)'After rotation r th ph 2:', &
+                r_het2(i), th_het2(i) * 180. / pi
+          end if
        enddo
     endif
 
@@ -516,9 +531,9 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
 
     endif
 
-    open(unit=91, file=trim(het_file_discr(hetind)))
+    open(unit=92, file=trim(het_file_discr(hetind)))
 
-    read(91,*) num_het_pts
+    read(92,*) num_het_pts
 
     if (lpr) write(6,*) 'number of points', num_het_pts
     
@@ -531,7 +546,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                  delta_rho2(1:num_het_pts), w(1:num_het_pts))
 
         do j=1, num_het_pts
-            read(91,*) rhet2(j), thhet2(j), delta_vp2(j), delta_vs2(j), delta_rho2(j)
+            read(92,*) rhet2(j), thhet2(j), delta_vp2(j), delta_vs2(j), delta_rho2(j)
         enddo
         
         if (lpr) write(6,*) 'percent -> fraction'
@@ -547,7 +562,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                  delta_rho2(1:num_het_pts), delta_eta2(1:num_het_pts), w(1:num_het_pts))
 
         do j=1, num_het_pts
-            read(91,*) rhet2(j), thhet2(j), delta_vpv2(j), delta_vsv2(j), &
+            read(92,*) rhet2(j), thhet2(j), delta_vpv2(j), delta_vsv2(j), &
                        delta_vph2(j), delta_vsh2(j), delta_rho2(j), delta_eta2(j)
         enddo
         
@@ -568,7 +583,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                  fa_theta2(1:num_het_pts), fa_phi2(1:num_het_pts), w(1:num_het_pts))
 
         do j=1, num_het_pts
-            read(91,*) rhet2(j), thhet2(j), delta_vpv2(j), delta_vsv2(j), &
+            read(92,*) rhet2(j), thhet2(j), delta_vpv2(j), delta_vsv2(j), &
                        delta_vph2(j), delta_vsh2(j), delta_rho2(j), delta_eta2(j), &
                        fa_theta2(j), fa_phi2(j)
         enddo
@@ -587,7 +602,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
              rho2(1:num_het_pts), w(1:num_het_pts))
         
         do j=1, num_het_pts
-            read(91,*) rhet2(j), thhet2(j), vp2(j), vs2(j), rho2(j)
+            read(92,*) rhet2(j), thhet2(j), vp2(j), vs2(j), rho2(j)
         enddo
     
     elseif (het_rel_discr(hetind) == 'abs' .and. het_ani_discr(hetind) == 'radial') then
@@ -597,7 +612,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                  rho2(1:num_het_pts), eta2(1:num_het_pts), w(1:num_het_pts))
 
         do j=1, num_het_pts
-            read(91,*) rhet2(j), thhet2(j), vpv2(j), vsv2(j), vph2(j), vsh2(j), &
+            read(92,*) rhet2(j), thhet2(j), vpv2(j), vsv2(j), vph2(j), vsh2(j), &
                        rho2(j), eta2(j)
         enddo
     
@@ -609,7 +624,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                  fa_theta2(1:num_het_pts), fa_phi2(1:num_het_pts), w(1:num_het_pts))
 
         do j=1, num_het_pts
-            read(91,*) rhet2(j), thhet2(j), vpv2(j), vsv2(j), vph2(j), vsh2(j), & 
+            read(92,*) rhet2(j), thhet2(j), vpv2(j), vsv2(j), vph2(j), vsh2(j), & 
                        rho2(j), eta2(j), fa_theta2(j), fa_phi2(j)
         enddo
 
@@ -619,7 +634,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
         stop
     endif
 
-    close(91)
+    close(92)
 
     thhet2 = thhet2 * pi / 180.
     rhet2 = rhet2 * 1000.
@@ -963,6 +978,7 @@ subroutine plot_discrete_input(hetind, num_het_pts, rhet2, thhet2, delta_vp2, de
 
         do j=1, num_het_pts
            idom = minloc((discont - rhet2(j)),1, mask=(discont - rhet2(j))>=0.)
+           if (idom<1) idom = 1
 
            vptmp(j) = velocity(rhet2(j), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
            vptmp(j) = vptmp(j) * (1. + delta_vp2(j))
