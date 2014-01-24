@@ -787,7 +787,7 @@ end subroutine mgrad_pointwise_subpar
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine mgrad_pointwisek_subpar(mg, xil, etal, nodes_crd)
+pure subroutine mgrad_pointwisek_subpar(mg, xil, etal, nodes_crd)
 !
 !< This routines returns the following matrix:
 !!            +                     +
