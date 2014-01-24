@@ -77,6 +77,10 @@ print MAKEFILE "# cancel m2c implicit rule \n";
 print MAKEFILE "%.o : %.mod \n ";
 print MAKEFILE "\n\n";
 
+# Activate Solver specific lines
+print MAKEFILE "# SOLVER specific code\n";
+print MAKEFILE "FFLAGS += -Dsolver\n \n";
+
 #
 # make
 #
