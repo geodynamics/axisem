@@ -709,13 +709,22 @@ integer                          :: all_elems(0:nproc-1), iproc
      do iproc = 0, nproc-1
         call pbroadcast_int(all_elems(iproc), iproc)
      end do
-     my_first = sum(all_elems(0:mynum-1))+1
-     my_last  = sum(all_elems(0:mynum))
-     glob_elems = sum(all_elems(:))
-     if (verbose>1) then
-         write(*,"('  Proc:', I5, ', first elem:', I10, ', last elem:', I10)" ) &
-               mynum, my_first, my_last 
+     if (my_elems == 0) then
+         my_first = 0
+         my_last  = 0
+     else
+         my_first = sum(all_elems(0:mynum-1))+1
+         my_last  = sum(all_elems(0:mynum))
      end if
+     if (verbose>1) then
+         if (my_elems == 0) then
+             write(*,"('  Proc:', I5, ', first elem:', I10, ', last elem:', I10)" ) &
+                   mynum, my_first, my_last 
+         else
+             write(*,"('  Proc:', I5, ' has no elements of this type')"), mynum
+         end if
+     end if
+     glob_elems = sum(all_elems(:))
 #endif
   else
      my_first = 1
