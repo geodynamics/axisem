@@ -35,9 +35,9 @@ module utlity
 contains
 
 !-----------------------------------------------------------------------------
-logical function dblreldiff_small(x1,x2)
+pure logical function dblreldiff_small(x1,x2)
 
-  real(kind=dp)   , intent(in) :: x1,x2
+  real(kind=dp), intent(in) :: x1,x2
 
   dblreldiff_small = .false.
 
@@ -53,7 +53,7 @@ end function dblreldiff_small
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-logical function reldiff_small(x1,x2)
+pure logical function reldiff_small(x1,x2)
 
   real(kind=realkind), intent(in) :: x1,x2
   real(kind=realkind)             ::  smallval1
@@ -75,7 +75,7 @@ end function reldiff_small
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=realkind) function reldiff(x1,x2)
+pure real(kind=realkind) function reldiff(x1,x2)
 
   real(kind=realkind), intent(in) :: x1,x2
 
@@ -91,7 +91,7 @@ end function reldiff
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function dblereldiff(x1,x2)
+pure real(kind=dp) function dblereldiff(x1,x2)
 
   real(kind=dp), intent(in) :: x1,x2
 
@@ -107,7 +107,7 @@ end function dblereldiff
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=realkind) function absreldiff(x1,x2)
+pure real(kind=realkind) function absreldiff(x1,x2)
 
   real(kind=realkind), intent(in) :: x1,x2
 
@@ -123,7 +123,7 @@ end function absreldiff
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function dbleabsreldiff(x1,x2)
+pure real(kind=dp) function dbleabsreldiff(x1,x2)
 
   real(kind=dp), intent(in) :: x1,x2
 
@@ -139,12 +139,9 @@ end function dbleabsreldiff
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
-  !
-  ! Given the elemental grid point index, outputs s,z,r,theta coordinate [m,rad].
-  ! These coordinates are by default ALWAYS global (no solid or fluid domains).
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+pure subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
+!< Given the elemental grid point index, outputs s,z,r,theta coordinate [m,rad].
+!! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh,            ONLY: lnods, crd_nodes, axis
@@ -186,12 +183,9 @@ end subroutine compute_coordinates
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function scoord(ipol,jpol,ielem)
-  !
-  ! Given the elemental grid point index, outputs the s coordinate [m].
-  ! These coordinates are by default ALWAYS global (no solid or fluid domains).
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+pure real(kind=dp) function scoord(ipol,jpol,ielem)
+!< Given the elemental grid point index, outputs the s coordinate [m].
+!! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh,            ONLY: lnods, crd_nodes, axis
@@ -222,12 +216,9 @@ end function scoord
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function zcoord(ipol,jpol,ielem)
-  !
-  ! Given the elemental grid point index, outputs the z coordinate [m].
-  ! These coordinates are by default ALWAYS global (no solid or fluid domains).
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+pure real(kind=dp)    function zcoord(ipol,jpol,ielem)
+!< Given the elemental grid point index, outputs the z coordinate [m].
+!! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh,            ONLY: lnods, crd_nodes, axis
@@ -258,12 +249,9 @@ end function zcoord
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp)    function rcoord(ipol,jpol,ielem)
-  !
-  ! Given the elemental grid point index, outputs the radius coordinate [m].
-  ! These coordinates are by default ALWAYS global (no solid or fluid domains).
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+pure real(kind=dp)    function rcoord(ipol,jpol,ielem)
+!< Given the elemental grid point index, outputs the radius coordinate [m].
+!! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh,            ONLY: lnods, crd_nodes, axis
@@ -297,12 +285,9 @@ end function rcoord
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-real(kind=dp) function thetacoord(ipol,jpol,ielem)
-  !
-  ! Given the elemental grid point index, outputs the theta coordinate [rad].
-  ! These coordinates are by default ALWAYS global (no solid or fluid domains).
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+pure real(kind=dp) function thetacoord(ipol,jpol,ielem)
+!< Given the elemental grid point index, outputs the theta coordinate [rad].
+!! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
   use data_mesh,            ONLY: min_distance_dim
   use data_mesh,            ONLY: lnods, crd_nodes,axis
