@@ -50,13 +50,13 @@ module analytic_mapping
 contains
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp) function mapping_anal(xil, etal, nodes_crd, iaxis, ielem0)
+pure real(kind=dp) function mapping_anal(xil, etal, nodes_crd, iaxis, ielem0)
 ! This routine computes the coordinates along the iaxis axis 
 ! of the image of any point in the reference domain in the physical domain
 ! using the implicit assumption that the domain is spheroidal.
 
-  integer,intent(in)          :: iaxis,ielem0
-  real(kind=dp)   ,intent(in) :: xil, etal, nodes_crd(8,2)
+  integer, intent(in)          :: iaxis,ielem0
+  real(kind=dp), intent(in)    :: xil, etal, nodes_crd(8,2)
   
   if (eltype(ielem0) == 'curved') &
      mapping_anal = map_spheroid(xil,etal,nodes_crd,iaxis)
@@ -71,30 +71,32 @@ end function mapping_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp) function quadfunc_map_anal(p, s, z, nodes_crd, ielem0)
+pure real(kind=dp) function quadfunc_map_anal(p, s, z, nodes_crd, ielem0)
 ! This routines computes the quadratic functional 
 ! (s-s(xi,eta))**2 + (z-z(xi,eta))**2
 
-  integer :: ielem0
-  real(kind=dp)    :: p(2), xil,etal,s,z, nodes_crd(8,2)
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: p(2), s, z, nodes_crd(8,2)
+  real(kind=dp)             :: xil, etal
 
   xil  = p(1)
   etal = p(2)
 
-  quadfunc_map_anal = (s-mapping_anal(xil,etal,nodes_crd,1,ielem0))**2 &
-                    + (z-mapping_anal(xil,etal,nodes_crd,2,ielem0))**2
+  quadfunc_map_anal = (s - mapping_anal(xil, etal, nodes_crd, 1, ielem0))**2 &
+                    + (z - mapping_anal(xil, etal, nodes_crd, 2, ielem0))**2
 
 end function quadfunc_map_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine grad_quadfunc_map_anal(grd, p, s, z, nodes_crd, ielem0)
+pure subroutine grad_quadfunc_map_anal(grd, p, s, z, nodes_crd, ielem0)
 ! This routine returns the gradient of the quadratic functional 
 ! associated with the mapping.
 
-  integer :: ielem0
-  real(kind=dp)    :: grd(2),p(2),xil, etal, s,z, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdxi,dsdeta,dzdeta
+  integer, intent(in)        :: ielem0
+  real(kind=dp), intent(in)  :: p(2), s, z, nodes_crd(8,2)
+  real(kind=dp), intent(out) :: grd(2)
+  real(kind=dp)              :: dsdxi, dzdxi, dsdeta, dzdeta, xil, etal
 
   xil  = p(1)
   etal = p(2)
@@ -102,16 +104,16 @@ subroutine grad_quadfunc_map_anal(grd, p, s, z, nodes_crd, ielem0)
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal,&
                                    nodes_crd,ielem0)
 
-  grd(1) = -((s-mapping_anal(xil,etal,nodes_crd,1,ielem0))*dsdxi&
-            +(z-mapping_anal(xil,etal,nodes_crd,2,ielem0))*dzdxi)
-  grd(2) = -((s-mapping_anal(xil,etal,nodes_crd,1,ielem0))*dsdeta&
-            +(z-mapping_anal(xil,etal,nodes_crd,2,ielem0))*dzdeta)
+  grd(1) = -( (s -mapping_anal(xil,etal,nodes_crd,1,ielem0)) *dsdxi   &
+             +(z -mapping_anal(xil,etal,nodes_crd,2,ielem0)) *dzdxi  )
+  grd(2) = -( (s -mapping_anal(xil,etal,nodes_crd,1,ielem0)) *dsdeta  &
+             +(z -mapping_anal(xil,etal,nodes_crd,2,ielem0)) *dzdeta )
 
 end subroutine grad_quadfunc_map_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp) function s_over_oneplusxi_axis_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function s_over_oneplusxi_axis_anal(xil, etal, nodes_crd, ielem0)
 ! This routine returns the value of the quantity
 !  
 !              s/(1+xi) 
@@ -119,9 +121,9 @@ real(kind=dp) function s_over_oneplusxi_axis_anal(xil, etal, nodes_crd, ielem0)
 ! when the associated element lies along the axis of 
 ! symmetry, in the case of an analytical transformation. 
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdxi,dsdeta,dzdeta
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdxi, dsdeta, dzdeta
 
   if ( xil == -one ) then 
      ! Apply L'Hopital's rule
@@ -137,14 +139,14 @@ end function s_over_oneplusxi_axis_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp) function jacobian_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function jacobian_anal(xil, etal, nodes_crd, ielem0)
 ! This function returns the value of the jacobian of the
 ! analytical mapping between the reference square [-1,1]^2 and
 ! the deformed element in the spheroid. 
 
-  integer,intent(in)          :: ielem0
-  real(kind=dp)   ,intent(in) :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)               :: dsdxi,dzdxi,dsdeta,dzdeta
+  integer,intent(in)       :: ielem0
+  real(kind=dp),intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)            :: dsdxi,dzdxi,dsdeta,dzdeta
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -154,7 +156,7 @@ end function jacobian_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function jacobian_srf_anal(xil, crdedge)
+pure real(kind=dp) function jacobian_srf_anal(xil, crdedge)
 ! This routine computes the Jacobian of the transformation
 ! that maps [-1,+1] into a portion of the boundary of domain.  
 !
@@ -162,10 +164,10 @@ real(kind=dp)    function jacobian_srf_anal(xil, crdedge)
 !        ---->
 ! 1 - - - 2 - - - 3 .
 
-  real(kind=dp)    :: xil, crdedge(3,2)
-  real(kind=dp)    :: dsdxi,dzdxi,s1,s2,s3,z1,z2,z3
-  real(kind=dp)    :: thetabar,deltatheta,a,b
-  real(kind=dp)    :: arg,dist
+  real(kind=dp), intent(in) :: xil, crdedge(3,2)
+  real(kind=dp)             :: dsdxi,dzdxi,s1,s2,s3,z1,z2,z3
+  real(kind=dp)             :: thetabar,deltatheta,a,b
+  real(kind=dp)             :: arg,dist
 
   s1 = crdedge(1,1) ; s2 = crdedge(2,1) ; s3 = crdedge(3,1)
   z1 = crdedge(1,2) ; z2 = crdedge(2,2) ; z3 = crdedge(3,2)
@@ -186,7 +188,7 @@ end function jacobian_srf_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function alphak_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function alphak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    alphak =  ( -ds/dxi ) * ( ds/deta) / J(xi,eta),
@@ -196,9 +198,9 @@ real(kind=dp)    function alphak_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -209,7 +211,7 @@ end function alphak_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function betak_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp)    function betak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    betak =  ( ds/dxi ) * ( ds/dxi) / J(xi,eta),
@@ -219,9 +221,9 @@ real(kind=dp)    function betak_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &     
                                    nodes_crd,ielem0)
@@ -232,7 +234,7 @@ real(kind=dp)    function betak_anal(xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function gammak_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function gammak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    gammak =  ( ds/deta ) * ( ds/deta) / J(xi,eta),
@@ -242,9 +244,9 @@ real(kind=dp)    function gammak_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 !
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -255,7 +257,7 @@ end function gammak_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function deltak_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function deltak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    deltak = -( dz/dxi ) * ( dz/deta) / J(xi,eta),
@@ -265,9 +267,9 @@ real(kind=dp)    function deltak_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 !
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -278,7 +280,7 @@ end function deltak_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function epsilonk_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function epsilonk_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    epsilonk = ( dz/dxi ) * ( dz/dxi) / J(xi,eta),
@@ -288,9 +290,9 @@ real(kind=dp)    function epsilonk_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 !
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -301,7 +303,7 @@ end function epsilonk_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function zetak_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function zetak_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    zetak_anal = ( dz/deta ) * ( dz/deta) / J(xi,eta),
@@ -311,9 +313,9 @@ real(kind=dp)    function zetak_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 !
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -324,7 +326,7 @@ end function zetak_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function alpha_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function alpha_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    alpha = s(xi,eta) * ( -ds/dxi ) * ( ds/deta) / J(xi,eta),
@@ -334,9 +336,9 @@ real(kind=dp)    function alpha_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 !
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -347,7 +349,7 @@ real(kind=dp)    function alpha_anal(xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function beta_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function beta_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    beta =  s(xi,eta) * ( ds/dxi ) * ( ds/dxi) / J(xi,eta),
@@ -357,9 +359,9 @@ real(kind=dp)    function beta_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -370,7 +372,7 @@ real(kind=dp)    function beta_anal(xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function gamma_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function gamma_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    gamma = s(xi,eta) * ( ds/deta ) * ( ds/deta) / J(xi,eta),
@@ -380,9 +382,9 @@ real(kind=dp)    function gamma_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -393,7 +395,7 @@ end function gamma_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function delta_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function delta_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    delta = -s(xi,eta) * ( dz/dxi ) * ( dz/deta) / J(xi,eta),
@@ -403,9 +405,9 @@ real(kind=dp)    function delta_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 !
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -416,7 +418,7 @@ end function delta_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function epsilon_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function epsilon_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    epsilon = s(xi,eta) * ( dz/dxi ) * ( dz/dxi) / J(xi,eta),
@@ -426,9 +428,9 @@ real(kind=dp)    function epsilon_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 !
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -439,7 +441,7 @@ end function epsilon_anal
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function zeta_anal(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function zeta_anal(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    zeta_anal = s(xi,eta) * ( dz/deta ) * ( dz/deta) / J(xi,eta),
@@ -449,9 +451,9 @@ real(kind=dp)    function zeta_anal(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 !
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal,&
                                    nodes_crd,ielem0)
@@ -462,7 +464,7 @@ real(kind=dp)    function zeta_anal(xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function Ms_z_eta_s_xi(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function Ms_z_eta_s_xi(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_eta_s_xi = s(xi,eta) / J(xi,eta) * ( ds/dxi ) * ( dz/deta)
@@ -474,9 +476,9 @@ real(kind=dp)    function Ms_z_eta_s_xi(xil, etal, nodes_crd, ielem0)
 ! defined by the analytic transformation .J is the determinant of 
 ! the Jacobian matrix of the transformation.
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -487,7 +489,7 @@ end function Ms_z_eta_s_xi
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function Ms_z_eta_s_eta(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function Ms_z_eta_s_eta(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_eta_s_eta = - s(xi,eta) / J(xi,eta) * ( ds/deta ) * ( dz/deta)
@@ -496,9 +498,9 @@ real(kind=dp)    function Ms_z_eta_s_eta(xil, etal, nodes_crd, ielem0)
 ! operator in the SECOND TERM OF dsdz_0
 !          in the SECOND TERM OF dzds_0
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -509,7 +511,7 @@ end function Ms_z_eta_s_eta
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function Ms_z_xi_s_eta(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function Ms_z_xi_s_eta(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_xi_s_eta = s(xi,eta) / J(xi,eta) * ( ds/deta ) * ( dz/xi)
@@ -518,9 +520,9 @@ real(kind=dp)    function Ms_z_xi_s_eta(xil, etal, nodes_crd, ielem0)
 ! operator in the THIRD TERM OF dsdz_0
 !          in the FIRST TERM OF dzds_0
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -531,7 +533,7 @@ end function Ms_z_xi_s_eta
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-real(kind=dp)    function Ms_z_xi_s_xi(xil, etal, nodes_crd, ielem0)
+pure real(kind=dp) function Ms_z_xi_s_xi(xil, etal, nodes_crd, ielem0)
 ! This routines returns the value of 
 !
 !    Ms_z_xi_s_xi = - s(xi,eta) / J(xi,eta) * ( ds/dxi ) * ( dz/xi)
@@ -540,9 +542,9 @@ real(kind=dp)    function Ms_z_xi_s_xi(xil, etal, nodes_crd, ielem0)
 ! operator in the FOURTH TERM OF dsdz_0
 !          in the FOURTH TERM OF dzds_0
 
-  integer :: ielem0
-  real(kind=dp)    :: xil, etal, nodes_crd(8,2)
-  real(kind=dp)    :: dsdxi,dzdeta,dzdxi,dsdeta,inv_jacob
+  integer, intent(in)       :: ielem0
+  real(kind=dp), intent(in) :: xil, etal, nodes_crd(8,2)
+  real(kind=dp)             :: dsdxi, dzdeta, dzdxi, dsdeta, inv_jacob
 
   call compute_partial_derivatives(dsdxi,dzdxi,dsdeta,dzdeta,xil,etal, &
                                    nodes_crd,ielem0)
@@ -713,7 +715,7 @@ subroutine mgrad_pointwisek_anal(mg, xil, etal, nodes_crd, ielem0)
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_partial_derivatives(dsdxi, dzdxi, dsdeta, dzdeta, xil, etal, &
+pure subroutine compute_partial_derivatives(dsdxi, dzdxi, dsdeta, dzdeta, xil, etal, &
                                          nodes_crd,ielem0)
 ! This routine returns the analytical values of the partial derivatives
 ! of the analytic spheroidal mapping. 
@@ -735,10 +737,11 @@ end subroutine compute_partial_derivatives
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_parameters(nodes_crd, a1, a2, b1, b2, deltatheta, thetabar)
-  real(kind=dp)    :: nodes_crd(8,2)
-  real(kind=dp)    :: a1,a2,b1,b2,deltatheta,thetabar,theta3,theta1
-  real(kind=dp)    ::  s1,z1,s3,z3,s5,z5,s7,z7
+pure subroutine compute_parameters(nodes_crd, a1, a2, b1, b2, deltatheta, thetabar)
+  real(kind=dp), intent(in)    :: nodes_crd(8,2)
+  real(kind=dp), intent(out)   :: a1, a2, b1, b2, deltatheta, thetabar
+  real(kind=dp)                :: theta3, theta1
+  real(kind=dp)                :: s1, z1, s3, z3, s5, z5, s7, z7
 
   s1 = nodes_crd(1,1)
   z1 = nodes_crd(1,2)
@@ -773,13 +776,13 @@ end subroutine compute_parameters
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_parameters_new(nodes_crd, a1, a2, b1, b2, deltatheta1, &
-                                  thetabar1, deltatheta2, thetabar2)
+pure subroutine compute_parameters_new(nodes_crd, a1, a2, b1, b2, deltatheta1, &
+                                      thetabar1, deltatheta2, thetabar2)
   
-  real(kind=dp)    :: nodes_crd(8,2)
-  real(kind=dp)    :: a1,a2,b1,b2,deltatheta1,thetabar1,deltatheta2,thetabar2
-  real(kind=dp)    :: theta3,theta1,theta5,theta7
-  real(kind=dp)    ::  s1,z1,s3,z3,s5,z5,s7,z7
+  real(kind=dp), intent(in)  :: nodes_crd(8,2)
+  real(kind=dp), intent(out) :: a1, a2, b1, b2, deltatheta1, thetabar1, deltatheta2, thetabar2
+  real(kind=dp)              :: theta3, theta1, theta5, theta7
+  real(kind=dp)              :: s1, z1, s3, z3, s5, z5, s7, z7
 
   s1 = nodes_crd(1,1) 
   z1 = nodes_crd(1,2)
@@ -822,11 +825,11 @@ end subroutine compute_parameters_new
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine compute_parameters_srf(s1, s3, z1, z3, a, b, deltatheta, thetabar)
+pure subroutine compute_parameters_srf(s1, s3, z1, z3, a, b, deltatheta, thetabar)
 
-  real(kind=dp)   ,intent(out) :: a,b,deltatheta,thetabar
-  real(kind=dp)    :: theta3,theta1
-  real(kind=dp)   ,intent(in) ::  s1,z1,s3,z3
+  real(kind=dp), intent(out) :: a, b, deltatheta, thetabar
+  real(kind=dp)              :: theta3, theta1
+  real(kind=dp), intent(in)  ::  s1, z1, s3, z3
  
   a= zero
   b = zero
