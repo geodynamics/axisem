@@ -85,10 +85,10 @@ if ( ! -f mesh_params.h || `diff mesh_params.h $meshdir/mesh_params.h | wc -l` !
   cp $meshdir/mesh_params.h .
 endif
 
-# if the mesh has different background_models.f90, copy over
-if ( `diff background_models.f90 $meshdir/background_models.f90 | wc -l` != "0" ) then
-  echo 'copying background_models.f90 from ' $meshdir
-  cp $meshdir/background_models.f90 .
+# if the mesh has different background_models.F90, copy over
+if ( `diff background_models.F90 $meshdir/background_models.F90 | wc -l` != "0" ) then
+  echo 'copying background_models.F90 from ' $meshdir
+  cp $meshdir/background_models.F90 .
 endif
 
 # Check arguments: source types and submission queues
