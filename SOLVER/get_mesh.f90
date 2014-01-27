@@ -122,15 +122,15 @@ subroutine read_db
   read(1000+mynum) bkgrdmodel(1:lfbkgrdmodel)
   read(1000+mynum) override_ext_q
 
-  if (verbose > 1) print *, '  Background model: ', trim(bkgrdmodel)
+  if (verbose > 1.and.lpr) print *, '  Background model: ', trim(bkgrdmodel)
 
   if (trim(bkgrdmodel).eq.'external') then
-     if (verbose > 1) write(69,*)'reading external velocity model file...'
+     if (verbose > 1.and.lpr) write(69,*)'reading external velocity model file...'
      call get_ext_disc('./external_model.bm')
   end if
 
   read(1000+mynum) router, have_fluid
-  if (verbose > 1) write(*,*) 'Model has radius ', router, ' m'
+  if (verbose > 1.and.lpr) write(*,"(A,F12.2)") 'Model has radius ', router, ' m'
   allocate(discont(ndisc), solid_domain(ndisc), idom_fluid(ndisc))
   do idom=1, ndisc
      read(1000+mynum) discont(idom), solid_domain(idom), idom_fluid(idom) 

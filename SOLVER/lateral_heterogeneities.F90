@@ -156,8 +156,9 @@ subroutine compute_heterogeneities(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           fa_ani_phi = fa_ani_phi_post
        endif
     endif
- 
-    write(6,*)'final model done, now vtk files...'
+
+    call barrier ! for nicer output
+    if (lpr) write(6,*) 'final model done, now vtk files...'
 
     if (ani_hetero) then
        call plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
@@ -346,7 +347,8 @@ subroutine read_param_hetero
     thhetmin = pi
     thhetmax = 0.d0
 
-    write(6,*)'done with read_param_hetero'
+    call barrier ! For easier debugging
+    if (lpr) write(6,*) 'done with read_param_hetero'
 
 end subroutine read_param_hetero
 !-----------------------------------------------------------------------------------------
@@ -478,6 +480,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                            eta_ani_post, fa_ani_theta_post, fa_ani_phi_post)
     use kdtree2_module
     use data_mesh, only:                                nelem, npol
+    use commun,                                   only: barrier
     real(kind=dp), dimension(0:,0:,:), intent(in)    :: rho
     real(kind=dp), dimension(0:,0:,:), intent(in)    :: lambda,mu
     real(kind=dp), dimension(0:,0:,:), intent(inout) :: rhopost, &
@@ -490,7 +493,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     real(kind=dp), dimension(0:,0:,:), intent(inout), optional :: &
                                                         fa_ani_theta_post, fa_ani_phi_post
 
-    integer                      :: hetind
+    integer                      :: hetind, goal
     real(kind=dp), allocatable   :: w(:)
     integer                      :: iel, ipol, jpol, j
     integer                      :: num_het_pts
@@ -549,7 +552,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
             read(92,*) rhet2(j), thhet2(j), delta_vp2(j), delta_vs2(j), delta_rho2(j)
         enddo
         
-        if (lpr) write(6,*) 'percent -> fraction'
+        !if (lpr) write(6,*) 'percent -> fraction'
        
         delta_vp2 = delta_vp2 / 100.
         delta_vs2 = delta_vs2 / 100.
@@ -566,7 +569,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                        delta_vph2(j), delta_vsh2(j), delta_rho2(j), delta_eta2(j)
         enddo
         
-        if (lpr) write(6,*) 'percent -> fraction'
+        !if (lpr) write(6,*) 'percent -> fraction'
        
         delta_vpv2 = delta_vpv2 / 100.
         delta_vsv2 = delta_vsv2 / 100.
@@ -588,7 +591,7 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
                        fa_theta2(j), fa_phi2(j)
         enddo
         
-        if (lpr) write(6,*) 'percent -> fraction'
+        ! 'percent -> fraction'
        
         delta_vpv2 = delta_vpv2 / 100.
         delta_vsv2 = delta_vsv2 / 100.
@@ -645,11 +648,13 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     thetamin = minval(thhet2(1:num_het_pts))
     thetamax = maxval(thhet2(1:num_het_pts))
 
-    write(6,*) mynum, 'r min/max:', rmin / 1000., rmax / 1000.
-    write(6,*) mynum, 'th min/max:', thetamin / pi * 180., thetamax / pi * 180.
+    if (lpr) then
+        write(6,*) mynum, 'r min/max:', rmin / 1000., rmax / 1000.
+        write(6,*) mynum, 'th min/max:', thetamin / pi * 180., thetamax / pi * 180.
+    end if
 
     if (rot_src) then 
-       write(6,*) mynum, 'rotate since source is not beneath north pole'
+       if (lpr) write(6,*) mynum, 'rotate since source is not beneath north pole'
 
        do j=1, num_het_pts
           call rotate_hetero(rhet2(j), thhet2(j))
@@ -712,8 +717,10 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     endif
 
 
-    write(6,*) 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
-    write(6,*) 'th het min/max:', thhetmin / pi * 180., thhetmax / pi * 180.
+    !if (lpr) then
+    !    write(6,*) 'r het min/max:', rhetmin / 1000., rhetmax / 1000.
+    !    write(6,*) 'th het min/max:', thhetmin / pi * 180., thhetmax / pi * 180.
+    !end if
 
     ! revert to cylindrical 
     allocate (szhet(2,1:num_het_pts))
@@ -722,9 +729,17 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
 
     tree => kdtree2_create(real(szhet), sort=.false., rearrange=.true.) 
 
-    write(6,*) mynum, 'locate GLL points within heterogeneous regions & '
+    if (lpr) write(6,*) 'locate GLL points within heterogeneous regions '
+
+    goal = int(nelem / 20.)
 
     do iel=1, nelem
+        if (iel.ge.goal) then
+            if(lpr) write(*,"('      ', I3, '% done (',I9,' of ',I9,' points)')") & 
+                          int(iel*20./nelem), iel, nelem
+            goal = goal + int(nelem / 20.)
+        end if
+
        call compute_coordinates(s, z, r1, th1, iel, npol, npol)
        call compute_coordinates(s, z, r2, th2, iel, 0, 0)
        call compute_coordinates(s, z, r3, th3, iel, 0, npol)
@@ -848,7 +863,8 @@ subroutine load_het_discr(rho, lambda, mu, rhopost, lambdapost, mupost, hetind, 
     
     call kdtree2_destroy(tree)  
 
-    write(6,*) mynum, 'DONE loading discrete grid'
+    call barrier
+    if (lpr) write(6,*) 'DONE loading discrete grid'
     
     deallocate(rhet2, thhet2)
     !deallocate(shet, zhet)
@@ -1689,7 +1705,8 @@ end subroutine load_het_funct
 !----------------------------------------------------------------------------------------
 subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                   fa_ani_theta, fa_ani_phi)
-   
+  
+    use commun, only   : barrier
     use data_mesh, only: npol, nelem
     real(kind=dp)   , dimension(0:,0:,:), intent(in) :: rho, lambda, mu
     real(kind=dp)   , dimension(0:,0:,:), intent(in), optional :: &
@@ -1703,7 +1720,7 @@ subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
     real(kind=dp)                       :: s, z, r, th
     integer                             :: iel, ipol, jpol, icount
 
-    write(6,*) 'plotting heterogeneous region in pointwise vtk'
+    if (lpr) write(6,*) 'plotting heterogeneous region in pointwise vtk'
 
     allocate(mesh2(nelem * (npol + 1)**2,2), rho_all(nelem * (npol + 1)**2))
 
@@ -1718,9 +1735,9 @@ subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
     endif
 
     if (lpr) then
-       write(6,*) 'Heterogeneous region rmin,rmax [km]:', &
+       write(*,"(A, ES10.3, ES10.3)") 'Heterogeneous region rmin,rmax [km]:', &
                   rhetmin/1000., rhetmax/1000.
-       write(6,*) 'Heterogeneous region thmin,thmax [deg]:', &
+       write(*,"(A, F7.2, F7.2)") 'Heterogeneous region thmin,thmax [deg]:', &
                   thhetmin*180./pi, thhetmax*180./pi
     endif
 
@@ -1765,7 +1782,10 @@ subroutine plot_hetero_region_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
        enddo
     enddo
 
-    write(6,*) mynum, 'number of points inside heterogeneous region:', icount
+    if (lpr) write(*,"('    Proc, number of points in heterogeneous region')")
+    call barrier
+    write(*,"(I8,',  ',I10)") mynum, icount
+
     if(diagfiles) then
        if (icount > 0) then
 
