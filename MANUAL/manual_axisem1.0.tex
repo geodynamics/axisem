@@ -173,38 +173,68 @@ element approach.\\
 \end{center}
 
 \newpage
+
+
 \subsection{Software and hardware requirements}
 
+
 \subsubsection{Essential requirements}
+
 \begin{description}
- \item[Operating system] The software should run on any UNIX-like operating system and has been tested on Linux (Debian, Ubuntu, Cray et al), MacOS X. Running on windows is probably not possible, but has never been tested so far.
- \item[Compilers:] Fortran 90 compiler (tested on ifort, gfortran-4.6,
-   portland, Cray)
- \item[Libraries:] MPI, NetCDF (optional), fftw (optional)
- \item[Systems:] Unix-based OS (tested on Linux, MacOS, Cray XT4, XE6 and XK7)
- \item[Tools:] tcshell, perl
+    \item[Operating system] The software should run on any UNIX-like operating system and has
+          been tested on Linux (Debian, Ubuntu, Cray et al), MacOS X. Running on windows
+          is probably not possible, but has never been tested so far.
+    \item[Compilers:] Fortran 90 compiler (tested on ifort, gfortran-4.6, portland, Cray)
+    \item[Libraries:] MPI, NetCDF (optional), fftw (optional)
+    \item[Systems:] Unix-based OS (tested on Linux, MacOS, Cray XT4, XE6 and XK7)
+    \item[Tools:] tcshell, perl
 \end{description}\vspace*{0.3cm}
+
 \textbf{Useful tools}
+
 \begin{description}
- \item[ObsPy:] Needed for the automated tests. Follow the instructions for your system on \url{http://www.obspy.org}.
- \item[Paraview:] Can be used to check meshes and watch wavefield movies.
- \item[Google Earth:] Can be used for a quick overview on seismograms at the locations of the receivers.
- \item[gnuplot:] Used to make quick overview
+    \item[ObsPy:] Needed for the automated tests. Follow the instructions for your system
+          on \url{http://www.obspy.org}.
+    \item[Paraview:] Can be used to check meshes and watch wavefield movies.
+    \item[Google Earth:] Can be used for a quick overview on seismograms at the locations
+          of the receivers.
+    \item[gnuplot:] Used to make quick overview
 \end{description}
+
+
 \subsubsection{NetCDF}
-AxiSEM allows to output larger datasets, especially wavefields in the NetCDF format. The current version also has full support for binary dumps, but the development will move towards NetCDF containers.\\
+
+AxiSEM allows to output larger datasets, especially wavefields in the NetCDF format. The
+current version also has full support for binary dumps, but the development will move
+towards NetCDF containers.\\
 Unfortunately, the installation of the NetCDF libraries is not foolproof yet.
+
 \begin{description}
- \item[HPC systems:] The libraries should be provided by the system. Use the recommended settings.
- \item[Ubuntu 12.10 and newer]: The code is working with the NetCDF libraries delivered with Ubuntu from version 12.10 (for gfortran). They can be installed by \\
- \verb|sudo apt-get install libnetcdff5|
- \item[Ubuntu 12.04 and older; MacOS]: The libraries delivered with Ubuntu 12.04 and earlier do not seem to work reliably. We therefore generally recommend to compile the NetCDF libraries from source. This can be done with the script \textit{make\_netcdf.sh} in the \verb|SOLVER/UTILS| directory. It downloads current versions of the zlib, hdf5 and netcdf4 libraries from \url{http://www.unidata.ucar.edu}, compiles them and runs the included tests. By default, the new libraries are installed in \verb|$(HOME)/local|. In the first lines of the script, specify your compiler (has to be the same as the one you are using for Axisem). The script should be run from a scratch directory like \verb|/tmp|:\\
- \verb|cd /tmp|\\
- \verb|$AXISEM_DIRECTORY/SOLVER/UTILS/make_netcdf.sh|\\
- Especially the HDF5 compilation will produce tons of warnings. They can be ignored, as long as the tests pass. If one of the tests should fail, the reason is most likely a wrong compiler configuration. We can offer only very limited support for the compilation of the libraries. 
- \item[Windows]: While we never tested it, installation of NetCDF on Windows should be possible:
- \url{http://www.unidata.ucar.edu/software/netcdf/docs/faq.html#windows_netcdf4_2}
+    \item[HPC systems:] The libraries should be provided by the system. Use the
+          recommended settings.
+    \item[Ubuntu 12.10 and newer]: The code is working with the NetCDF libraries delivered
+          with Ubuntu from version 12.10 (for gfortran). They can be installed by \\
+          \verb|sudo apt-get install libnetcdff5|
+    \item[Ubuntu 12.04 and older; MacOS]: The libraries delivered with Ubuntu 12.04 and
+          earlier do not seem to work reliably. We therefore generally recommend to
+          compile the NetCDF libraries from source. This can be done with the script
+          \textit{make\_netcdf.sh} in the \verb|SOLVER/UTILS| directory. It downloads
+          current versions of the zlib, hdf5 and netcdf4 libraries from
+          \url{http://www.unidata.ucar.edu}, compiles them and runs the included tests. By
+          default, the new libraries are installed in \verb|$(HOME)/local|. In the first
+          lines of the script, specify your compiler (has to be the same as the one you
+          are using for Axisem). The script should be run from a scratch directory like
+          \verb|/tmp|:\\
+          \verb|cd /tmp|\\
+          \verb|$AXISEM_DIRECTORY/SOLVER/UTILS/make_netcdf.sh|\\
+          Especially the HDF5 compilation will produce tons of warnings. They can be
+          ignored, as long as the tests pass. If one of the tests should fail, the reason
+          is most likely a wrong compiler configuration. We can offer only very limited
+          support for the compilation of the libraries.
+    \item[Windows]: While we never tested it, installation of NetCDF on Windows should be
+          possible: \url{http://www.unidata.ucar.edu/software/netcdf/docs/faq.html#windows_netcdf4_2}
 \end{description}
+
 
 \subsection{Preparation of a Debian/Ubuntu Linux system}
 To prepare a fresh Debian-based Linux system, the absolutely necessary packages can be installed with:\\ \\
@@ -213,52 +243,67 @@ The processing and visualization tools can be installed with:\\ \\
  \verb|sudo apt-get install paraview gnuplot|
 
 \newpage
+
 \section{Running the code}
+
 \subsection{Quick start}
-This is the step-by-step, blackbox procedure, i.e. running a workflow from raw source code to analyzing 
-seismograms and wavefield movies upon pre-set parameters. It assumes your system fulfils all requirements mentioned above.\\
+
+This is the step-by-step, blackbox procedure, i.e. running a workflow from raw source code
+to analyzing seismograms and wavefield movies upon pre-set parameters. It assumes your
+system fulfils all requirements mentioned above.\\
+
 \begin{center}
-\fbox{\parbox{0.65\textwidth}{
-The default simulation parameters are: 
-\begin{description}
- \item[PREM] velocity model (isotropic, anelastic, continental crust)
- \item[50 s] dominant period of the mesh
- \item[2 CPUs] used for the SOLVER
- \item[1800s] seismogram length
- \item[Explosion] source
- \item[100 km] source depth
-\end{description}
-} }
+    \fbox{\parbox{0.65\textwidth}{
+    The default simulation parameters are: 
+    \begin{description}
+        \item[PREM] velocity model (isotropic, anelastic, continental crust)
+        \item[50 s] dominant period of the mesh
+        \item[2 CPUs] used for the SOLVER
+        \item[1800s] seismogram length
+        \item[Vertical dipole] source
+        \item[100 km] source depth
+    \end{description}
+    } }
 \end{center}
 
 \noindent Start from within the {\tt AXISEM} directory:
 
 \begin{enumerate}
-\item \verb|./copy_templates| $\Rightarrow$ creates various input files from templates
-\item Check file \verb|make_axisem.macros|, whether the compiler settings fit your system.
-\item \verb|cd MESHER| 
-\item Check file {\tt inparam\_mesh}, for background model, period of simulation and number of CPUs \\
-      Default is \textit{PREM}, \textit{20 s} and \textit{2 CPUs} and runs within a few minutes on a modern PC.
-\item \verb|./submit.csh| $\Rightarrow$ Check file {\tt OUTPUT}.
-\item Wait for ``{\tt ....DONE WITH MESHER}'' to appear in {\tt OUTPUT}.
-\item \verb|./movemesh.csh PREM_50s| $\Rightarrow$ moves mesh files to \verb|../SOLVER/MESHES/PREM_50s|.
-\item \verb|cd ../SOLVER|
-\item In \verb|inparam_basic| set the value for \verb|MESHNAME| to the meshname from above (e.g. \verb|PREM_50s|)
-\item \verb|./submit.csh PREM_exp50s_gauss_1800s|  $\Rightarrow$ compiles and runs the code
-\item \verb|cd PREM_exp50s_gauss_1800s| $\Rightarrow$ Check \verb|OUTPUT_PREM_exp50s_gauss_1800s|.
-\item Wait for ``\verb|PROGRAM axisem FINISHED|'' to appear in \verb|OUTPUT_PREM_exp50s_gauss_1800s| \\(use \verb|tail -f OUTPUT_PREM_exp50s_gauss_1800s|).
-\item \verb|./post_processing.csh|
-\item \verb|cd Data_Postprocessing| 
-\item \verb|googleearth|, open {\tt googleearth\_src\_rec\_processed.kml}, click
-        earthquake (info), receivers (seismograms).
-\item {\tt matlab}, run {\tt plot\_record\_section.m}, plotting all components
-        of displacement seismograms.
-% \item {\tt cd SNAPS; paraview}, load snaps for 3D wavefield movie.
-% snaps are deacticated in defaulf...
+    \item \verb|./copy_templates| $\Rightarrow$ creates various input files from templates
+    \item Check file \verb|make_axisem.macros|, whether the compiler settings fit your
+          system.
+    \item \verb|cd MESHER| 
+    \item Check file {\tt inparam\_mesh}, for background model, period of simulation and
+          number of CPUs \\
+          Default is \textit{PREM}, \textit{20 s} and \textit{2 CPUs} and runs within a
+          few minutes on a modern PC.
+    \item \verb|./submit.csh| $\Rightarrow$ Check file {\tt OUTPUT}.
+    \item Wait for ``{\tt ....DONE WITH MESHER}'' to appear in {\tt OUTPUT}.
+    \item \verb|./movemesh.csh PREM_50s| $\Rightarrow$ moves mesh files to
+          \verb|../SOLVER/MESHES/PREM_50s|.
+    \item \verb|cd ../SOLVER|
+    \item In \verb|inparam_basic| set the value for \verb|MESHNAME| to the meshname from
+          above (e.g. \verb|PREM_50s|)
+    \item \verb|./submit.csh PREM_mrr_50s_gauss_1800s|  $\Rightarrow$ compiles and runs
+          the code
+    \item \verb|cd PREM_mrr_50s_gauss_1800s| $\Rightarrow$ Check
+          \verb|OUTPUT_PREM_mrr_50s_gauss_1800s|.
+    \item Wait for ``\verb|PROGRAM axisem FINISHED|'' to appear in
+          \verb|OUTPUT_PREM_mrr_50s_gauss_1800s| \\
+          (use \verb|tail -f OUTPUT_PREM_mrr_50s_gauss_1800s|).
+    \item \verb|./post_processing.csh|
+    \item \verb|cd Data_Postprocessing| 
+    \item \verb|googleearth|, open {\tt googleearth\_src\_rec\_processed.kml}, click
+            earthquake (info), receivers (seismograms).
+    \item {\tt matlab}, run {\tt plot\_record\_section.m}, plotting all components
+            of displacement seismograms.
+    % \item {\tt cd SNAPS; paraview}, load snaps for 3D wavefield movie.
+    % snaps are deactivated in defauld...
 
 \end{enumerate}
 If the Solver is re-run with different parameters but the same mesh, you may start at step 9. 
-To change model, frequency or number of CPUs, repeat steps 3. to 7. and select the new mesh in \verb|SOLVER/inparam_basic|. \\
+To change model, frequency or number of CPUs, repeat steps 3. to 7. and select the new
+mesh in \verb|SOLVER/inparam_basic|. \\
 The solver input can be changed in \verb|inparam_basic| between 8. and 9.,
 changing post-processing input between 11. and 12. Using a new mesh requires
 recompilation of the solver (done automatically in step 9.). If post
@@ -282,7 +327,8 @@ delete the old one.
     \begin{verbatim}
     BACKGROUND_MODEL    'prem_iso'
     DOMINANT_PERIOD     50.0
-    NCPU                2
+    NTHETA_SLICES       2
+    NRADIAL_SLICES      1 
     WRITE_VTK           true
     COARSENING_LAYERS   3
     \end{verbatim}
@@ -343,7 +389,7 @@ delete the old one.
     $ vi inparam_basic
     \end{verbatim}
     %
-    The parameters should be readily set, but you might want to double check and verify:
+    Set these parameters:
     %
     \begin{verbatim}
     SIMULATION_TYPE     single
@@ -364,19 +410,19 @@ delete the old one.
     in the \verb|inparam_source| file. Run the solver, giving the run a meaningful name:
     %
     \begin{verbatim}
-    $ ./submit.csh PREM_exp50s_gauss_1800s
+    $ ./submit.csh PREM_mrr_50s_gauss_1800s
     \end{verbatim}
     %
     This command compiles the code if needed and starts the simulation. You can observe
     the progress in the outputfile:
     %
     \begin{verbatim}
-    $ cd PREM_exp50s_gauss_1800s
-    $ tail -f OUTPUT_PREM_exp50s_gauss_1800s
+    $ cd PREM_mrr_50s_gauss_1800s
+    $ tail -f OUTPUT_PREM_mrr_50s_gauss_1800s
     \end{verbatim}
     %
     Once the run is finished, take a look at the wavefield with \verb|paraview|: open
-    the \verb|PREM_exp50s_gauss_1800s/| \verb|Data/xdmf_xml_0000.xdmf|
+    the \verb|PREM_mrr_50s_gauss_1800s/| \verb|Data/xdmf_xml_0000.xdmf|
     file and click apply. Go to the last snapshot and rescale the color range,
     then click on play to see the wave propagate.  You can also choose
     different components of the wavefield or the absolute value.  For paraview
@@ -434,7 +480,7 @@ can be modified without redoing the more expensive simulation.
     %
     \begin{verbatim}
     REC_COMP_SYS    enz
-    CONV_PERIOD     50.0000
+    CONV_PERIOD     0.
     CONV_STF        gauss_0
     \end{verbatim}
     %
@@ -446,11 +492,12 @@ can be modified without redoing the more expensive simulation.
     \end{verbatim}
     %
     The resulting seismograms and plots can be found in the directory 
-    \verb|Data_Postprocessing|. Seismograms can be viewed with
+    \verb|Data_Postprocessing|. Seismograms can be viewed with your favorite image viewer,
+    e.g.\ \verb|eog|:
     %
     \begin{verbatim}
     $ cd Data_Postprocessing/GRAPHICS
-    $ gpicview <filename.gif>
+    $ eog <filename.gif>
     \end{verbatim}
     %
     For a nice overview, you can use \verb|google-earth| (might not run on all computers
@@ -474,63 +521,87 @@ can be modified without redoing the more expensive simulation.
 Running in a 2D computational domain, the code is (obviously) significantly faster
 than comparable 3D methods. 
 
-    \begin{center}
+\begin{center}
     \includegraphics[height=50mm]{mesher_comp_cost.pdf}
     \hspace{5mm}
     \includegraphics[height=50mm]{solver_totalcpu.pdf}
-    \end{center}
-On the left, you may deduct the mesher's RAM occupation as a function
-of frequency. Going towards very high resolution (around and above
-1Hz), you will need a rather fat node (> 32GB RAM) for the (serial)
-meshing. 
-On the right, we depict the computational cost associated with the
-solver to compute seismograms of 30 min length. The relation between
-seismic period and CPU-hours is an approximate proxy to estimate how
-many cores and wall-clock time is optimal for your infrastructure. 
-    \begin{center}
+\end{center}
+
+On the left, you may deduct the mesher's RAM occupation as a function of frequency. Going
+towards very high resolution (around and above 1Hz), you will need a rather fat node (>
+32GB RAM) for the (serial) meshing.  On the right, we depict the computational cost
+associated with the solver to compute seismograms of 30 min length. The relation between
+seismic period and CPU-hours is an approximate proxy to estimate how many cores and
+wall-clock time is optimal for your infrastructure. 
+
+\begin{center}
     \includegraphics[height=50mm]{strong_scaling.pdf}
     \hspace{5mm}
     \includegraphics[height=50mm]{weak_scaling.pdf}
-    \end{center}
-Scalability plots from test runs on a Cray machine at CSCS,
-Switzerland. The left shows strong scaling (fixed global problem size), the
-right plot weak scaling (fixed problem size per CPU). A forthcoming
-publication (see below, (1)) will show scaling up to 8000 CPUs. 
+\end{center}
+
+Scalability plots from test runs on a Cray machine at CSCS, Switzerland. The left shows
+strong scaling (fixed global problem size), the right plot weak scaling (fixed problem
+size per CPU). A forthcoming publication (see below, (1)) will show scaling up to 8000
+CPUs.  
+
 
 \section{Typical use cases}
+
 \subsection{Change source type}
+
 \verb|SOLVER/inparam_source|, \verb|SOLVER/CMTSOLUTION| and \verb|SOLVER/inparam_basic|.
-Axisem has two principal modes, which are selected by the value \verb|SIMULATION_TYPE| in \verb|SOLVER/inparam_basic|.
+Axisem has two principal modes, which are selected by the value \verb|SIMULATION_TYPE| in
+\verb|SOLVER/inparam_basic|.
+
 \begin{enumerate}
- \item \verb|SIMULATION_TYPE single|:\\ The Solver simulates one basic source, which can be one of the following:\\
-\begin{center}
-\begin{tabular}{|l|cccc|} \hline
- monopoles:   & $M_{rr}$ & explosion  & $M_{\theta\theta}+M_{\phi\phi}$  & $P_r$ \\
- dipoles:     & $M_{\theta r}$ & $M_{\phi r}$        & $P_{\theta}$ & $P_{\phi}$\\
- quadrupoles: & $M_{\theta \phi}$ & $M_{\theta\theta}-M_{\phi\phi}$ & & \\\hline
-\end{tabular}
-\end{center}
-where $M_{ii}$ are moment tensor sources with the mentioned components of $M$ set to one and the others to zero, $P_i$ is the same for single forces.\\
-Choose the source type and set the source depth and amplitude in \verb|SOLVER/inparam_source|.
- \item \verb|SIMULATION_TYPE moment|:\\
- The submit.csh script starts four separate simulations for the basic types $M_{rr}$, $M_{\theta\theta}+M_{\phi\phi}$, $M_{\theta r}$, $M_{\theta \phi}$. You have to run the postprocessing script after the simulation to sum them up correctly. \\
- Before the simulation, set the source depth and the moment tensor in \verb|SOLVER/CMTSOLUTION|. \\Run \verb|postprocessing.csh| in the simulation directory afterwards. You can run postprocessing for different moment tensors on the same simulation, but not for different depths (since the forward simulation depends on the depth).
- The \verb|CMTSOLUTION| file is a standard format and can be downloaded from many sites in the web, including \url{http://www.globalcmt.org/CMTsearch.html}
+\item \verb|SIMULATION_TYPE single|:\\ The Solver simulates one basic source, which can be
+      one of the following:\\
+      \begin{center}
+        \begin{tabular}{|l|cccc|} \hline
+         monopoles:   & $M_{rr}$ & explosion  & $M_{\theta\theta}+M_{\phi\phi}$  & $P_r$ \\
+         dipoles:     & $M_{\theta r}$ & $M_{\phi r}$        & $P_{\theta}$ & $P_{\phi}$\\
+         quadrupoles: & $M_{\theta \phi}$ & $M_{\theta\theta}-M_{\phi\phi}$ & & \\\hline
+        \end{tabular}
+      \end{center}
+      where $M_{ii}$ are moment tensor sources with the mentioned components of $M$ set to
+      one and the others to zero, $P_i$ is the same for single forces.\\ Choose the source
+      type and set the source depth and amplitude in \verb|SOLVER/inparam_source|.
+
+\item \verb|SIMULATION_TYPE moment|:\\
+      The submit.csh script starts four separate simulations for the basic types $M_{rr}$,
+      $M_{\theta\theta}+M_{\phi\phi}$, $M_{\theta r}$, $M_{\theta \phi}$. You have to run
+      the postprocessing script after the simulation to sum them up correctly. \\ Before
+      the simulation, set the source depth and the moment tensor in
+      \verb|SOLVER/CMTSOLUTION|. \\Run \verb|postprocessing.csh| in the simulation
+      directory afterwards. You can run postprocessing for different moment tensors on the
+      same simulation, but not for different depths (since the forward simulation depends
+      on the depth).  The \verb|CMTSOLUTION| file is a standard format and can be
+      downloaded from many sites in the web, including
+      \url{http://www.globalcmt.org/CMTsearch.html}
 \end{enumerate}
 
 
-
 \subsection{Change station locations}
-\verb|SOLVER/STATIONS| or \verb|SOLVER/receivers.dat|, depending on \verb|SOLVER/inparam_basic|, parameter \verb|RECFILE_TYPE|\\
-\verb|SOLVER/STATIONS|: Similar to \textit{SPECFEM3D Globe}, an ASCII file with six columns, which are: station name, network name, latitude, longitude, elevation, depth (n.b: AxiSEM puts all receivers to the surface, the last two rows are ignored).
+
+\verb|SOLVER/STATIONS| or \verb|SOLVER/receivers.dat|, depending on
+\verb|SOLVER/inparam_basic|, parameter \verb|RECFILE_TYPE|\\
+
+\verb|SOLVER/STATIONS|: Similar to \textit{SPECFEM3D Globe}, an ASCII file with six
+columns, which are: station name, network name, latitude, longitude, elevation, depth
+(n.b: AxiSEM puts all receivers to the surface, the last two rows are ignored).
+
 \begin{verbatim}
  RAYN   GD  23.52   45.50  0.0  0.0
  PALK   GD   7.27   80.70  0.0  0.0
  MAJO   GD  36.54  138.21  0.0  0.0
  ERM    GD  42.02  143.16  0.0  0.0
 \end{verbatim}
+
 The station names are used by post\_processing to assign names to the seismogram files.\\
-\verb|SOLVER/receivers.dat|: Plain ASCII file with number of receivers in the first line and then nrec lines with colatitude and longitude.
+\verb|SOLVER/receivers.dat|: Plain ASCII file with number of receivers in the first line
+and then nrec lines with colatitude and longitude.
+
 \begin{verbatim}
  7
 0.0 0.0
@@ -541,9 +612,13 @@ The station names are used by post\_processing to assign names to the seismogram
 150.0 0.0
 180.0 0.0
 \end{verbatim}
+
+
 \subsection{Change background model}
+
 \verb|MESHER/inparam_mesh|, parameter \verb|BACKGROUND_MODEL|:\\
 afterwards the steps from 5 have to be rerun. Supported models are
+
 \begin{verbatim}
 # prem_iso:               Isotropic continental PREM model
 # prem_iso_solid:         like 'prem_iso', replace fluid outer core with vs=vp/sqrt(3)
@@ -561,26 +636,14 @@ afterwards the steps from 5 have to be rerun. Supported models are
 # external:               Layered external model, give file name in EXT_MODEL, the 
 #                         inner core needs to be big enough, check VTK output.
 \end{verbatim} 
-\subsection{Change number of CPUs}
-\verb|MESHER/inparam_mesh|, parameter \verb|NTHETA_SLICES| and \verb|NRADIAL_SLICES|: \\
-The number of CPUs used is the product of the two parameters. \\
-\verb|NTHETA_SLICES| needs to be 1, 2, 4 or a multiple of 4. To get a suggestion for optimal decomposition, run the Mesher with \verb|ONLY_SUGGEST_NTHETA true| and check the OUTPUT file.\\
-\verb|NRADIAL_SLICES| should be less than 8. It can be left at 1 for \verb|NTHETA_SLICES|<64 CPUs, but should be increased then to reduce MPI communication.\\
-N.B: This value is for ONE simulation. To calculate the wavefield of a full moment tensor, 4 parallel simulations have to be run and the number of necessary CPUs is \verb|NTHETA_SLICES|* \verb|NRADIAL_SLICES|*4. 
-\subsection{Change the maximum frequency of the simulation}
-\verb|MESHER/inparam_mesh|, parameter \verb|DOMINANT_PERIOD|: \\
-As a rule of thumb: Simulations with \verb|DOMINANT_PERIOD|>10s can be run with 2 or 4 CPUs on a modern workstation and cost around 1 CPUh.
-\subsection{Calculate the response to a full moment tensor solution}
-\verb|SOLVER/inparam_basic|, change parameter \verb|SIMULATION_TYPE| to \verb|moment|:\\
-The moment tensor, depth and location of the source must be set in the file \verb|CMTSOLUTION|. The submit.csh script starts four separate runs in parallel, the postprocessing script sums the results to get correct seismograms.
-\subsection{Change seismogram length or sampling rate}
-\verb|SOLVER/inparam_basic|, change parameter \verb|SEISMOGRAM_LENGTH|:\\
-Default value is 1800~s, although the exact length is rounded to the next multiple of the simulation time step. There is no maximum limit, AxiSEM has been run for 400000s (5 days) to compare amplitude spectra with a normal modes summation.\\
-\verb|SOLVER/inparam_advanced|, change parameter \verb|SAMPLING_RATE|:\\
-By default, the sampling rate is set to the time step length of the simulation. We strongly recommend to leave it as such to avoid aliasing. The resampling can better be done with \textit{ObsPy} or another tool that supports filtering.
+
 
 \subsection{Use external 1D velocity model}
-\verb|MESHER/inparam_mesh|, change parameter \verb|BACKGROUND_MODEL| to \verb|external| and \verb|EXT_MODEL| to the filename of your model. The model should be stored in a file of the following form:
+
+\verb|MESHER/inparam_mesh|, change parameter \verb|BACKGROUND_MODEL| to \verb|external|
+and \verb|EXT_MODEL| to the filename of your model. The model should be stored in a file
+of the following form:
+
 \begin{verbatim}
   F T
          740
@@ -595,10 +658,67 @@ By default, the sampling rate is set to the time step length of the simulation. 
 6326600.  3378.57  8098.25  4483.64  57827.0    600.0  8098.25  4483.64  1.00000
 ...
 \end{verbatim}
-The first line contains two boolean entries: First, whether the model is anisotropic, second whether the model is anelastic. The second line contains the number of layers in the file. Afterwards the model parameters for each layer are set in the order:\\
-radius (in meter), $\rho$, $V_{PV}$, $V_{SV}$, $Q_{\kappa}$, $Q_{\mu}$,  $V_{PH}$, $V_{SH}$, $\eta$. \\
-The order of the layers is arbitrary, but the radius has to be monotonous. First order discontinuities are enforced by double layers with the same radius (see layers 2/3 and 4/5 in the example) and are honoured by the MESHER. For an example, enable the option \verb|WRITE_1DMODEL| in \verb|MESHER/inparam_mesh| and run the MESHER. It will put a valid input file of the selected model into the DIAG directory. Modify this file according to your needs.\\
-The overall radius of the body is given by the radius of the outermost layer and can take any reasonable value.
+
+The first line contains two boolean entries: First, whether the model is anisotropic,
+second whether the model is anelastic. The second line contains the number of layers in
+the file. Afterwards the model parameters for each layer are set in the order:
+
+radius (in meter), $\rho$, $V_{PV}$, $V_{SV}$, $Q_{\kappa}$, $Q_{\mu}$,  $V_{PH}$,
+$V_{SH}$, $\eta$.
+
+%TODO: not clear to me, what the file should look like in the purely elastic or the
+%      isotropic anelastic case
+
+The order of the layers is arbitrary, but the radius has to be monotonous.  First order
+discontinuities are enforced by double layers with the same radius (see layers 2/3 and 4/5
+in the example) and are honoured by the MESHER. For an example, enable the option
+\verb|WRITE_1DMODEL| in \verb|MESHER/inparam_mesh| and run the MESHER. It will put a valid
+input file of the selected model into the DIAG directory. Modify this file according to
+your needs.\\ 
+
+The overall radius of the body is given by the radius of the outermost layer and can take
+any reasonable value.
+
+
+\subsection{Change number of CPUs}
+
+\verb|MESHER/inparam_mesh|, parameter \verb|NTHETA_SLICES| and \verb|NRADIAL_SLICES|: \\
+The number of CPUs used is the product of the two parameters. \\
+\verb|NTHETA_SLICES| needs to be 1, 2, 4 or a multiple of 4. To get a suggestion for
+optimal decomposition, run the Mesher with \verb|ONLY_SUGGEST_NTHETA true| and check the
+OUTPUT file.\\
+\verb|NRADIAL_SLICES| should be on the order of 8, larger numbers work for very high
+frequencies. It can be left at 1 for \verb|NTHETA_SLICES|<64 CPUs, but should be increased
+then to reduce MPI communication. To ensure scaling, each processor should have at least
+about 500 elements.\\
+N.B: This value is for ONE simulation. To calculate the wavefield of a full moment tensor,
+4 parallel simulations have to be run and the number of necessary CPUs is
+\verb|NTHETA_SLICES|* \verb|NRADIAL_SLICES|*4. 
+
+
+\subsection{Change the maximum frequency of the simulation}
+\verb|MESHER/inparam_mesh|, parameter \verb|DOMINANT_PERIOD|: \\
+As a rule of thumb: Simulations with \verb|DOMINANT_PERIOD|>10s can be run with 2 or 4
+CPUs on a modern workstation and cost around 1 CPUh.
+
+
+\subsection{Calculate the response to a full moment tensor solution}
+\verb|SOLVER/inparam_basic|, change parameter \verb|SIMULATION_TYPE| to \verb|moment|:\\
+The moment tensor, depth and location of the source must be set in the file
+\verb|CMTSOLUTION|. The submit.csh script starts four separate runs in parallel, the
+postprocessing script sums the results to get correct seismograms.
+
+
+\subsection{Change seismogram length or sampling rate}
+\verb|SOLVER/inparam_basic|, change parameter \verb|SEISMOGRAM_LENGTH|:\\
+Default value is 1800~s, although the exact length is rounded to the next multiple of the
+simulation time step. There is no maximum limit, AxiSEM has been run for 400000s (5 days)
+to compare amplitude spectra with a normal modes summation.\\
+\verb|SOLVER/inparam_advanced|, change parameter \verb|SAMPLING_RATE|:\\
+By default, the sampling rate is set to the time step length of the simulation. We
+strongly recommend to leave it as such to avoid aliasing. The resampling can better be
+done with \textit{ObsPy} or another tool that supports filtering.
+
 
 \subsection{Include lateral heterogeneities (2.5D simulation)}
 \verb|SOLVER/inparam_basic|, change parameter \verb|LAT_HETEROGENEITY| to true:\\
@@ -616,7 +736,8 @@ When using this code, please cite one or more of these publications. \vspace*{0.
 
 (1) Tarje Nissen-Meyer, Martin van Driel, Simon St\"ahler, Kasra Hosseini,
 Stefanie Hempel, Ludwig Auer, Alexandre Fournier, 2013. \textit{AxiSEM: Broadband 3D
-seismic wavefields in axisymmetric media}, submitted to Solid Earth.\\
+seismic wavefields in axisymmetric media}, submitted to Solid Earth,
+doi:10.5194/sed-6-265-2014.\\
 
 (2) Tarje Nissen-Meyer, F. A. Dahlen, A. Fournier (2007),
 \textit{Spherical-earth Fr\'{e}chet sensitivity kernels},        
@@ -652,11 +773,11 @@ Ph.D. thesis, Princeton University
 \textit{High-Order Methods for Incompressible Fluid Flow}, 
 Vol. 2, Cambridge monographs on Sppl. \& Comp. Math., Cambridge University Press.\\
 
-(7) Tufo, H. M., Fischer, P. F. (2001), \textit{Fast Parallel Direct Solvers For Coarse Grid Problems}, 
-61, 151-177, J. Par. and Dist. Comput.\\
+(7) Tufo, H. M., Fischer, P. F. (2001), \textit{Fast Parallel Direct Solvers For Coarse
+Grid Problems}, 61, 151-177, J. Par. and Dist. Comput.\\
 
-(8) Bernardi, C., Dauge, M., Maday, Y. (1999), \textit{Spectral Methods for Axisymmetric Domains}, 
-Vol. 3, Series in Appl. Math., Gauthier-Villars, Paris.\\
+(8) Bernardi, C., Dauge, M., Maday, Y. (1999), \textit{Spectral Methods for Axisymmetric
+Domains}, Vol. 3, Series in Appl. Math., Gauthier-Villars, Paris.\\
 
 (9) Chaljub, E. (2000), \textit{Mod{\'{e}}lisation num{\'{e}}rique de la 
 propagation d'ondes sismiques en g{\'{e}}om{\'{e}}trie sph{\'{e}}rique:
@@ -666,7 +787,6 @@ Ph.D. thesis, Universit{\'{e}} de Paris 7.\\
 (10) Komatitsch D., Tromp, J. (2002), \textit{Spectral-element simulations of
 global seismic wave propagation---I. Validation},
 149, 390-412, Geophys. J. Int.
-
 
 
 \end{document}
