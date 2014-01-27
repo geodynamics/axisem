@@ -55,19 +55,30 @@ contains
 
 !----------------------------------------------------------------------------
 subroutine ppcheck(test, errmsg)
-  ! Routine that checks if an  error has occured at all ranks, at some ranks, or
-  ! not at all. The message is only printed once if the error occured on all
-  ! ranks, otherwise each processor spits its message stdout
-  ! newlines in the error message can be achieved using '\n'
-  ! IMPORTANT: As this routine contains a barrier, it needs to be allways called
-  !            on ALL ranks 
+!< Routine that checks if an  error has occured at all ranks, at some ranks, or
+!! not at all. The message is only printed once if the error occured on all
+!! ranks, otherwise each processor spits its message stdout
+!! newlines in the error message can be achieved using '\n'
+!! IMPORTANT: As this routine contains a barrier, it needs to be allways called
+!!            on ALL ranks 
 
   logical, intent(in)            :: test
   character(len=*), intent(in)   :: errmsg
 
-  integer :: err, errsum, ierror
+  integer                        :: err, errsum, ierror
   
-#ifndef serial
+#ifdef serial
+  ! Normally, this routine should not be called directly, but only over pcheck
+  ! in commun.F90. pcheck should then defer serial runs from going here.
+  ! Nevertheless, to be sure, there is another handling of the serial mode here.
+  if (test) then
+     print '(/,a,/,/,a,/)', 'ERROR in serial mode, error message:', &
+                                trim(parse_nl(errmsg))
+     stop
+  end if
+
+#else
+
   if (test) then 
      err = 1
   else
@@ -94,8 +105,8 @@ end subroutine
 !=============================================================================
 
 !-----------------------------------------------------------------------------
-function parse_nl(str)
-  ! returns the input string with all '\n' in it converted to newlines
+pure function parse_nl(str)
+!< returns the input string with all '\n' in it converted to newlines
 
   character(len=*), intent(in)  :: str
   character(len=len(str))       :: parse_nl
@@ -114,8 +125,8 @@ end function
 
 !----------------------------------------------------------------------------
 subroutine ppinit
-  ! Start message-passing interface, assigning the total number of processors 
-  ! nproc and each processor with its local number mynum=0,...,nproc-1.
+!< Start message-passing interface, assigning the total number of processors 
+!! nproc and each processor with its local number mynum=0,...,nproc-1.
 
   use data_comm, only: mpi_realkind
   integer :: ierror
@@ -136,6 +147,7 @@ end subroutine ppinit
 
 !-----------------------------------------------------------------------------
 subroutine ppend
+!< Calls MPI_FINALIZE
   integer :: ierror
 
 #ifndef serial
@@ -386,10 +398,10 @@ end subroutine feed_buffer_solid
 
 !-----------------------------------------------------------------------------
 subroutine send_recv_buffers_solid(nc)
-  ! Solid asynchronous communication pattern with one message per proc-proc pair.
-  ! for a nc-component field gvec. The arrays to map global numbers along 
-  ! processor-processor boundaries are determined in the mesher, routine pdb.f90
-  ! (consulation thereof to be avoided if at all possible...)
+!< Solid asynchronous communication pattern with one message per proc-proc pair.
+!! for a nc-component field gvec. The arrays to map global numbers along 
+!! processor-processor boundaries are determined in the mesher, routine pdb.f90
+!! (consulation thereof to be avoided if at all possible...)
   
   use data_comm
   
@@ -483,10 +495,10 @@ end subroutine extract_from_buffer_solid
 
 !-----------------------------------------------------------------------------
 subroutine feed_buffer_fluid(f)
-  ! Fluid asynchronous communication pattern with one message per proc-proc pair
-  ! for a single-component field gvec. The arrays to map global numbers along 
-  ! processor-processor boundaries are determined in the mesher, routine pdb.f90
-  ! (consulation thereof to be avoided if at all possible...)
+!< Fluid asynchronous communication pattern with one message per proc-proc pair
+!! for a single-component field gvec. The arrays to map global numbers along 
+!! processor-processor boundaries are determined in the mesher, routine pdb.f90
+!! (consulation thereof to be avoided if at all possible...)
 
   use data_mesh, only: npol, gvec_fluid, igloc_fluid
   use data_comm
@@ -523,10 +535,10 @@ end subroutine feed_buffer_fluid
 
 !-----------------------------------------------------------------------------
 subroutine send_recv_buffers_fluid
-  ! Fluid asynchronous communication pattern with one message per proc-proc pair
-  ! for a single-component field gvec. The arrays to map global numbers along 
-  ! processor-processor boundaries are determined in the mesher, routine pdb.f90
-  ! (consulation thereof to be avoided if at all possible...)
+!< Fluid asynchronous communication pattern with one message per proc-proc pair
+!! for a single-component field gvec. The arrays to map global numbers along 
+!! processor-processor boundaries are determined in the mesher, routine pdb.f90
+!! (consulation thereof to be avoided if at all possible...)
 
   use data_comm
   
@@ -568,10 +580,10 @@ end subroutine send_recv_buffers_fluid
 
 !-----------------------------------------------------------------------------
 subroutine extract_from_buffer_fluid(f)
-  ! Fluid asynchronous communication pattern with one message per proc-proc pair
-  ! for a single-component field gvec. The arrays to map global numbers along 
-  ! processor-processor boundaries are determined in the mesher, routine pdb.f90
-  ! (consulation thereof to be avoided if at all possible...)
+!< Fluid asynchronous communication pattern with one message per proc-proc pair
+!! for a single-component field gvec. The arrays to map global numbers along 
+!! processor-processor boundaries are determined in the mesher, routine pdb.f90
+!! (consulation thereof to be avoided if at all possible...)
 
   use data_mesh, only: npol, gvec_fluid, igloc_fluid
   use data_time, only: idmpiwf, iclockmpiwf
