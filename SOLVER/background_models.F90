@@ -33,6 +33,9 @@
 module background_models
   use global_parameters
   use interpolation
+#ifdef solver
+  use data_proc, only: lpr
+#endif
   implicit none
   
   public :: velocity, model_is_ani, model_is_anelastic !, arbitr_sub_solar_arr
@@ -53,6 +56,9 @@ module background_models
                                                  interp_vph(:), interp_vsh(:), &
                                                  interp_qka(:), interp_qmu(:), &
                                                  interp_rho(:)
+#ifndef solver
+  logical, parameter                :: lpr = .true.
+#endif
 
 contains
 
@@ -95,7 +101,7 @@ real(kind=dp)  function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
      case('external')
         velocity = arbitr_sub_solar(r0, param, idom)
      case default
-        write(6,*) 'Unknown background model: ', bkgrdmodel2 
+        if (lpr) write(6,*) 'Unknown background model: ', bkgrdmodel2 
         stop
   end select
 
@@ -269,7 +275,7 @@ real(kind=dp) function ak135f(r0, param, idom)
     elseif (param=='Qka') then
        ak135f = Qka_ak
     else
-       write(6,*)'ERROR IN AK135 FUNCTION:', param, 'NOT AN OPTION'
+       if (lpr) write(6,*)'ERROR IN AK135 FUNCTION:', param, 'NOT AN OPTION'
        stop
     endif
 
@@ -377,7 +383,7 @@ real(kind=dp) function ak135(r0, param, idom)
   elseif (param=='Qka') then
      ak135 = Qkappa
   else
-     write(6,*)'ERROR IN AK135 FUNCTION:', param, 'NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN AK135 FUNCTION:', param, 'NOT AN OPTION'
      stop
   endif
 
@@ -488,7 +494,7 @@ real(kind=dp) function prem_sub(r0, param, idom)
   elseif (param=='Qka') then
      prem_sub = Qkappa
   else
-     write(6,*)'ERROR IN PREM_SUB FUNCTION:',param,'NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN PREM_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
   endif
 
@@ -624,7 +630,7 @@ real(kind=dp) function prem_ani_sub(r0, param, idom)
   elseif (param=='v_s') then
      prem_ani_sub = min(vsv_prem, vsh_prem) * 1000.
   else
-     write(6,*)'ERROR IN PREM_ANI_SUB FUNCTION:',param,' NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN PREM_ANI_SUB FUNCTION:',param,' NOT AN OPTION'
      stop
   endif
 
@@ -709,7 +715,7 @@ real(kind=dp) function prem_solid_sub(r0,param,idom)
   elseif (param=='eta') then
      prem_solid_sub = 1.
   else
-     write(6,*)'ERROR IN PREM_SUB FUNCTION:', param, 'NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN PREM_SUB FUNCTION:', param, 'NOT AN OPTION'
      stop
   endif
 
@@ -790,7 +796,7 @@ real(kind=dp) function prem_onecrust_sub(r0, param, idom)
   elseif (param=='eta') then
      prem_onecrust_sub = 1.
   else
-     write(6,*)'ERROR IN PREM_SUB FUNCTION:', param, 'NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN PREM_SUB FUNCTION:', param, 'NOT AN OPTION'
      stop
   endif
 
@@ -918,7 +924,7 @@ real(kind=dp) function prem_onecrust_ani_sub(r0, param, idom)
   elseif (param=='v_s') then
      prem_onecrust_ani_sub = min(vsv_prem, vsh_prem) * 1000.
   else
-     write(6,*)'ERROR IN PREM_ANI_SUB FUNCTION:', param, ' NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN PREM_ANI_SUB FUNCTION:', param, ' NOT AN OPTION'
      stop
   endif
 
@@ -1017,7 +1023,7 @@ real(kind=dp) function prem_light_sub(r0, param, idom)
   elseif (param=='Qka') then
      prem_light_sub = Qkappa
   else
-     write(6,*)'ERROR IN PREM_LIGHT_SUB FUNCTION:', param, 'NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN PREM_LIGHT_SUB FUNCTION:', param, 'NOT AN OPTION'
      stop
   endif
 
@@ -1137,7 +1143,7 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
   elseif (param=='v_s') then
      prem_light_ani_sub = min(vsv_prem, vsh_prem) * 1000.
   else
-     write(6,*)'ERROR IN PREM_ANI_SUB FUNCTION:', param, ' NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN PREM_ANI_SUB FUNCTION:', param, ' NOT AN OPTION'
      stop
   endif
 
@@ -1214,7 +1220,7 @@ real(kind=dp) function prem_solid_light_sub(r0, param, idom)
   elseif (param=='eta') then
      prem_solid_light_sub = 1.
   else
-     write(6,*)'ERROR IN PREM_LIGHT_SUB FUNCTION:', param, 'NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN PREM_LIGHT_SUB FUNCTION:', param, 'NOT AN OPTION'
      stop
   endif
 
@@ -1270,17 +1276,19 @@ real(kind=dp) function iasp91_sub(r0, param, idom)
      
      ! MvD: keeping this test for old bug [18]
      if(rho < 3.319 .or. rho > 3.372) then 
-        write(6,*) R120 / 1000., RMOHO / 1000.
-        write(6,*) r0 / 1000.
-        write(6,*) idom 
-        write(6,*) x, x1, x2
-        write(6,*) x - x1
-        write(6,*) x2 - x1
-        write(6,*) (x - x1) / (x2 - x1)
-        write(6,*) 'incorrect density computed for IASP91', rho
-        write(6,*) 'known bug, use other velocity model for now'
-        call abort()
-        stop 2
+        if (lpr) then 
+            write(6,*) R120 / 1000., RMOHO / 1000.
+            write(6,*) r0 / 1000.
+            write(6,*) idom 
+            write(6,*) x, x1, x2
+            write(6,*) x - x1
+            write(6,*) x2 - x1
+            write(6,*) (x - x1) / (x2 - x1)
+            write(6,*) 'incorrect density computed for IASP91', rho
+            write(6,*) 'known bug, use other velocity model for now'
+            call abort()
+            stop 2
+        end if
      endif
   elseif(idom==4)then ! R220 < r <= R120
      rho =  2.6910  +  0.6924  * x
@@ -1331,7 +1339,7 @@ real(kind=dp) function iasp91_sub(r0, param, idom)
      Qmu = 84.6
      Qkappa = 1327.7
   else
-     write(6,*) 'iasp91_sub: error with domain idom=', idom
+     if (lpr) write(6,*) 'iasp91_sub: error with domain idom=', idom
      stop
   endif
 
@@ -1356,7 +1364,7 @@ real(kind=dp) function iasp91_sub(r0, param, idom)
   elseif (param=='Qka') then
      iasp91_sub = Qkappa
   else
-     write(6,*)'ERROR IN IASP91_SUB FUNCTION:',param,'NOT AN OPTION'
+     if (lpr) write(6,*)'ERROR IN IASP91_SUB FUNCTION:',param,'NOT AN OPTION'
      stop
   endif
 
@@ -1410,16 +1418,18 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
                  call interpolate(interp_qka(idom), r0, arbitr_sub_solar, success)
               end if
            else 
-              print *, 'ERROR: Parameter: ', trim(param), ' requested, but '
-              print *, '       external model is purely elastic. Set OVERRIDE_EXT_Q in '
-              print *, '       inparam_mesh, if you want to use PREM or AK135F Q.'
+              if (lpr) then
+                  print *, 'ERROR: Parameter: ', trim(param), ' requested, but '
+                  print *, '       external model is purely elastic. Set OVERRIDE_EXT_Q in '
+                  print *, '       inparam_mesh, if you want to use PREM or AK135F Q.'
+              end if
               stop
            end if
 
         end select
 
      case default
-        print *, 'ERROR: Parameter ', trim(param), ' not implemented in external model'
+        if (lpr) print *, 'ERROR: Parameter ', trim(param), ' not implemented in external model'
 
      end select
 
@@ -1450,7 +1460,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      inquire(file=trim(fnam_ext_model), exist=bkgrdmodelfile_exists)
 
      if (.not. bkgrdmodelfile_exists) then
-        write(6,*)'ERROR: File: ', trim(fnam_ext_model),' does not exist!'
+        if (lpr) write(6,*)'ERROR: File: ', trim(fnam_ext_model),' does not exist!'
         stop 
      endif
 
@@ -1460,17 +1470,18 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      read(77,*) ext_model_is_ani, ext_model_is_anelastic
      read(77,*) nlayer
      fmtstring = '(A,A,A,I5,A)'
-     write(6,fmtstring,advance='no') 'Model in file ', trim(fnam_ext_model), ' has ', nlayer, ' layers'
+     if (lpr) write(6,fmtstring,advance='no') 'Model in file ', trim(fnam_ext_model), &
+                                              ' has ', nlayer, ' layers'
      fmtstring = '(A)'
      if (ext_model_is_ani) then
-         write(6, fmtstring, advance='no') ' and is anisotropic'
+         if (lpr) write(6, fmtstring, advance='no') ' and is anisotropic'
      else
-         write(6, fmtstring, advance='no') ' and is isotropic'
+         if (lpr) write(6, fmtstring, advance='no') ' and is isotropic'
      end if
      if (ext_model_is_anelastic) then
-         print *, 'and anelastic...'
+         if (lpr) print *, 'and anelastic...'
      else
-         print *, 'and elastic...'
+         if (lpr) print *, 'and elastic...'
      end if
 
      allocate(radius_layer(nlayer))
@@ -1494,10 +1505,10 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
      ! Recognize order of layers
      if (radius_layer(1).eq.0) then
-        print *, 'Layers in file ', trim(fnam_ext_model), ' start in the core'
+        if (lpr) print *, 'Layers in file ', trim(fnam_ext_model), ' start in the core'
         startatsurface = .false.
      else
-        print *, 'Layers in file ', trim(fnam_ext_model), ' start at surface'
+        if (lpr) print *, 'Layers in file ', trim(fnam_ext_model), ' start at surface'
         startatsurface = .true.
      end if
 
@@ -1512,22 +1523,28 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
         end if
        
         if (ierr.eq.IOSTAT_END) then
-           print *, 'ERROR: File ', trim(fnam_ext_model), ' has only ', ilayer-1, ' layers'
-           print *, '       Not ', nlayer, ' as specified in the header.'
+           if (lpr) then
+               print *, 'ERROR: File ', trim(fnam_ext_model), ' has only ', ilayer-1, ' layers'
+               print *, '       Not ', nlayer, ' as specified in the header.'
+           end if
            stop
         end if
         if (startatsurface) then
            if ((radius_layer(ilayer) - radius_layer(ilayer-1))>0.0d0) then
-              print *, 'ERROR: Radius of layers in external model has to be monotonously (increasing)!'
-              print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
-              print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+              if (lpr) then
+                 print *, 'ERROR: Radius of layers in external model has to be monotonously (increasing)!'
+                 print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
+                 print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+              end if
               stop
            end if
         else
            if ((radius_layer(ilayer) - radius_layer(ilayer-1))<0.0d0) then
-              print *, 'ERROR: Radius of layers in external model has to be monotonously (decreasing)!'
-              print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
-              print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+              if (lpr) then
+                 print *, 'ERROR: Radius of layers in external model has to be monotonously (decreasing)!'
+                 print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
+                 print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+              end if
               stop
            end if
         end if
@@ -1537,7 +1554,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
      ! Reorder elements if the file is in the wrong order (Mesher always assumes from surface to core)
      if (.not.startatsurface) then
-        print *, 'Reordering layers to start at the surface'
+        if (lpr) print *, 'Reordering layers to start at the surface'
         radius_layer = radius_layer(nlayer:1:-1)
         vpv_layer    = vpv_layer(nlayer:1:-1)
         vsv_layer    = vsv_layer(nlayer:1:-1)
@@ -1641,10 +1658,10 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   ndisc = idom ! The first discontinuity is at the surface, 
                ! the last at the ICB, above the last domain
 
-  print *, '  External model has', idom, ' layers'
+  if (lpr) print *, '  External model has', idom, ' layers'
   ndisc = idom
 
-  print *, '  Creating interpolation objects'
+  if (lpr) print *, '  Creating interpolation objects'
 
   ! Create interpolation objects for each domain
   allocate(interp_vpv(ndisc))
@@ -1656,14 +1673,15 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
       allocate(interp_qmu(ndisc))
   end if
 
-  print *, '   idom, upper_layer, lower_layer,   r(ul),   r(ll)'
+  if (lpr) print *, '   idom, upper_layer, lower_layer,   r(ul),   r(ll)'
   fmtstring = '(I8, I13, I13, F9.1, F9.1)'
 
   extrapolation = extrapolation_constant ! Only valid for the first domain, to allow points with 
                                          ! r slightly larger than router. Happens in lateral_heterogeneities.f90
 
   do idom = 1, ndisc
-     print fmtstring, idom, upper_layer(idom), lower_layer(idom), radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
+     if (lpr) print fmtstring, idom, upper_layer(idom), lower_layer(idom), & 
+                               radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
      interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
                                              rho_layer(upper_layer(idom):lower_layer(idom)), &
                                              extrapolation)
