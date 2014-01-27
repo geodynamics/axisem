@@ -124,7 +124,7 @@ utlity.o: data_mesh.o data_spec.o geom_transf.o global_parameters.o Makefile ../
 wavefields_io.o: data_io.o data_mesh.o data_pointwise.o data_proc.o \
 	data_source.o global_parameters.o nc_routines.o \
 	pointwise_derivatives.o Makefile ../make_axisem.macros 
-background_models.o: global_parameters.o interpolation.o Makefile ../make_axisem.macros 
+background_models.o: data_proc.o global_parameters.o interpolation.o Makefile ../make_axisem.macros 
 commpi.o: clocks.o data_comm.o data_io.o data_mesh.o data_proc.o data_time.o \
 	global_parameters.o list.o Makefile ../make_axisem.macros 
 commun.o: clocks.o commpi.o data_io.o data_mesh.o data_proc.o data_time.o \
