@@ -42,7 +42,7 @@ mv mesh_params.h $meshpath
 mv OUTPUT $meshpath
 #mv Diags $meshpath
 cp -p inparam_mesh $meshpath
-cp -p background_models.f90 $meshpath
+cp -p background_models.F90 $meshpath
 
 set bgmodel = `grep "^BACKGROUND_MODEL" inparam_mesh | awk '{print $2}'`
 echo $bgmodel
@@ -58,7 +58,7 @@ if ( $bgmodel == 'external') then
 endif
 
 mkdir $meshpath/Code
-cp -p *.f90 $meshpath/Code
+cp -p *.[fF]90 $meshpath/Code
 cp -p Makefile $meshpath/Code
 cp -p makemake.pl $meshpath/Code
 cp -p inparam_mesh $meshpath/Code
