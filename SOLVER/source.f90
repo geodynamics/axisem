@@ -27,6 +27,7 @@ module source
   use data_time
   use data_proc
   use data_io
+  use commun, only       : pcheck
   
   implicit none
   
@@ -37,16 +38,15 @@ contains
 !-----------------------------------------------------------------------------
 subroutine read_sourceparams
  
-  use commun, only       : pcheck
   real(kind=realkind)   :: srclat
   character(len=256)    :: keyword, keyvalue, line
   character(len=512)    :: errmsg
   integer               :: iinparam_source=500, ioerr
  
   
-  if (verbose > 1) write(6,'(A)', advance='no') '    Reading inparam_source...'
+  if (verbose > 1.and.lpr) write(6,'(A)', advance='no') '    Reading inparam_source...'
   open(unit=iinparam_source, file='inparam_source', status='old', action='read',  iostat=ioerr)
-  if (ioerr /= 0) stop 'Check input file ''inparam_source''! Is it still there?' 
+  call pcheck(ioerr /= 0, 'Check input file ''inparam_source''! Is it still there?')
 
   do
     read(iinparam_source, fmt='(a256)', iostat=ioerr) line
@@ -104,10 +104,10 @@ subroutine read_sourceparams
      rot_src = .true.
 
      if (rec_file_type.eq.'database') then
-       write(6,'(a,/,a)') &
+       write(errmsg,'(a,/,a)') &
           'For the database function, the source should be at the northpole.', &
           'All rotation is done in postprocessing.'
-       stop
+       call pcheck(.true., errmsg)
      end if
   else
      rot_src = .false.
@@ -138,9 +138,9 @@ end subroutine read_sourceparams
 
 !-----------------------------------------------------------------------------
 subroutine compute_stf
-  use nc_routines, only: nc_dump_stf
-
-  integer :: i
+  use nc_routines, only   : nc_dump_stf
+  character(len=512)     :: errmsg
+  integer                :: i
 
   allocate(stf(1:niter))
   dt_src_shift = 10000000.
@@ -160,25 +160,20 @@ subroutine compute_stf
      !call quasiheavi
      call delta_src ! done inside the delta routine now
   case default
-     write(6,*)' source time function non existant:', stf_type
-     stop
+     write(errmsg,*)' source time function non existant:', stf_type
+     call pcheck(.true., errmsg)
   end select
 
-   if (dt_src_shift < 1000000.) then 
-      if ( abs(nint(dt_src_shift / deltat) - dt_src_shift / deltat) < 0.01 * deltat ) then
-         it_src_shift = dt_src_shift / deltat
-         ! time shift in the Fourier domain (used in post processing/kerner... eventually)
-         ! timeshift_fourier(0:nomega) = exp(cmplx(0.,1.) *omega(0:nomega)*dt_src_shift)
-      else
-         if (lpr) write(6,'(a,/,a,3f7.4)') &
+  write(errmsg, '("ERROR: source time shift not defined! ", F15.4)') dt_src_shift
+  call pcheck(dt_src_shift > 1000000., errmsg)
+
+  write(errmsg, *) & !'(a,/,a,2(f7.4))') &
                 'Problem with discrete source shift: not a multiplicative of deltat...', &
-                'source shift, deltat', dt_src_shift, deltat, dt_src_shift/deltat
-         stop
-      endif
-   else
-      if (lpr) write(6,*) ' ERROR: source time shift not defined!', dt_src_shift
-      stop
-   endif
+                'source shift, deltat: ', dt_src_shift, deltat !, dt_src_shift/deltat
+  call pcheck(abs(nint(dt_src_shift / deltat) - dt_src_shift / deltat) > 0.01 * deltat, errmsg)
+
+  ! time shift in the Fourier domain (used in post processing/kerner... eventually)
+  ! timeshift_fourier(0:nomega) = exp(cmplx(0.,1.) *omega(0:nomega)*dt_src_shift)
 
    if (use_netcdf.and.(mynum.eq.0)) call nc_dump_stf(stf(1:niter))
 
@@ -206,9 +201,9 @@ end subroutine compute_stf
 !! Eventually there should be only one type, point- or array-wise.
 subroutine compute_stf_t(nstf_t,t,stf_t)
   
-  integer, intent(in)           :: nstf_t
-  real(kind=dp)   , intent(in)  :: t(1:nstf_t)
-  real(kind=dp)   , intent(out) :: stf_t(1:nstf_t)
+  integer, intent(in)        :: nstf_t
+  real(kind=dp), intent(in)  :: t(1:nstf_t)
+  real(kind=dp), intent(out) :: stf_t(1:nstf_t)
 
 
   select case(stf_type)
@@ -242,6 +237,7 @@ subroutine compute_src
   real(kind=realkind), allocatable :: point_source(:,:,:)
   integer                          :: ipol,jpol,ielem,k
   real(kind=dp)                    :: s,z,r,theta
+  character(len=256)               :: errmsg
 
   allocate(source_term(0:npol,0:npol,1:nel_solid,1:3))
   source_term = 0. 
@@ -268,7 +264,6 @@ subroutine compute_src
 
      select case (src_type(2))
      case('vertforce') 
-        
         if (lpr) write(6,*) '  ...vertical single force'
         allocate(point_source(0:npol,0:npol,1:nel_solid))
         call define_bodyforce(point_source,iel_src2,ipol_src2,jpol_src2)
@@ -276,7 +271,6 @@ subroutine compute_src
         deallocate(point_source)
 
      case default
-        
         if (lpr) write(6,*) '  ...moment tensor elements for ', src_type(2)
         call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
         source_term = source_term / (two * pi)
@@ -289,7 +283,6 @@ subroutine compute_src
 
      select case(src_type(2))
      case ('xforce','yforce')
-
         if (lpr) write(6,*) '  ...horizontal single ', src_type(2)
         allocate(point_source(0:npol,0:npol,1:nel_solid))
         call define_bodyforce(point_source, iel_src2, ipol_src2, jpol_src2)
@@ -297,7 +290,6 @@ subroutine compute_src
         deallocate(point_source)
 
      case default
-
         if (lpr) write(6,*) '  ...moment tensor elements for ', src_type(2)
         call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
         source_term = source_term / pi
@@ -312,9 +304,9 @@ subroutine compute_src
      source_term = source_term / pi
 
   case default
-     write(6,*) 'we only support monopoles, dipoles, quadrupoles, and not ',src_type(1)
-     call flush(6)
-     stop
+     write(errmsg,*) 'we only support monopoles, dipoles, quadrupoles, and not ',src_type(1)
+     ! Will stop the program
+     call pcheck(.true., errmsg) 
 
   end select poletype
 
@@ -404,7 +396,6 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   use data_mesh
   use utlity
   use commun, only: pmin, psum_int
-  use commpi, only: ppcheck
   
   integer, intent(out) :: iel_src2, ipol_src2, jpol_src2
   real(kind=dp)        :: s, z, r, theta, mydzsrc, zsrcout, dzsrc
@@ -416,7 +407,7 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   dzsrc = 10.d0 * router
 
   write(errmsg, "('Source depth: ', F10.2, ' is bigger than model radius: ', F10.2)") zsrc, router
-  call ppcheck(zsrc > router, errmsg)
+  call pcheck(zsrc > router, errmsg)
 
   ! Only allow sources in the solid region, fixated to northern axis.
   do ielem = 1, nel_solid
@@ -479,16 +470,16 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   if (have_src) then
      if (ipol_src /= 0) then
         write(6,'(a,/,a,i7,i2,i2)') & 
-              'PROBLEM: Source should be on axis, i.e. ipol_src=0, but:', &
-              'Source location: ielem,ipol,jpol: ', &
+              'ERROR: Source should be on axis, i.e. ipol_src=0, but:', &
+              'Source location: ielem, ipol, jpol: ', &
               ielsolid(iel_src), ipol_src, jpol_src
         stop
      endif
 
      if (thetacoord(ipol_src, jpol_src, ielsolid(iel_src)) /= zero) then
         write(6,'(a,/,i7,2i2,/,a,3e10.2)') &
-                'PROBLEM: Source should be on the axis, hence theta = 0, but:', &
-                'Source indices ielem,ipol,jpol:', &
+                'ERROR: Source should be on the axis, hence theta = 0, but:', &
+                'Source indices ielem, ipol, jpol:', &
                 ielsolid(iel_src), ipol_src, jpol_src, &
                 's,r,theta', scoord(ipol_src,jpol_src,ielsolid(iel_src)), &
                 rcoord(ipol_src,jpol_src,ielsolid(iel_src)), &
@@ -500,6 +491,9 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
      write(6,*) '    depth asked for [km]:', (router - zsrc) / 1000.d0
      write(6,*) '    depth offered   [km]:', (router - zsrcout) / 1000.d0
      write(6,*) '    difference      [km]:', dzsrc / 1000.d0
+     if (verbose>1) then
+         write(6,*) '    source element      : ', iel_src, ielsolid(iel_src)
+     end if
 
      if (verbose > 1) then
         write(69,*) '  ',procstrg,' found it:'
@@ -590,10 +584,10 @@ end subroutine gauss_dd
 !-----------------------------------------------------------------------------
 !! approximate discrete dirac
 subroutine delta_src
-  integer :: i,j
-  real(kind=dp)    :: a,integral
-  character(len=6) :: dirac_approx(6)
-  real(kind=dp)   ,allocatable :: signal(:),timetmp(:),int_stf(:)
+  integer                   :: i,j
+  real(kind=dp)             :: a,integral
+  character(len=6)          :: dirac_approx(6)
+  real(kind=dp),allocatable :: signal(:), timetmp(:), int_stf(:)
 
   if (lpr) write(6,*)'Discrete Dirac choice: ',discrete_choice
   allocate(signal(1:niter),timetmp(1:niter),int_stf(1:niter))
@@ -768,7 +762,7 @@ end subroutine wtcoef
 !=============================================================================
                                                                                     
 !-----------------------------------------------------------------------------
-subroutine delta_src_t(nstf_t, t,stf_t)
+pure subroutine delta_src_t(nstf_t, t,stf_t)
 
   integer, intent(in)             :: nstf_t
   real(kind=dp), intent(in)       :: t(nstf_t)
