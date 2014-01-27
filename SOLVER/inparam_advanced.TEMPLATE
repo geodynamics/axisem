@@ -20,7 +20,7 @@ SOURCE_PERIOD       0.0
 # 'gauss_2': 2nd derivative of gauss_0
 # 'dirac_0': Dirac delta distribution
 #            This should be used to convolve arbitrary STFs in Postprocessing
-SOURCE_FUNCTION     dirac_0
+SOURCE_FUNCTION     gauss_0
 
 # Time integration scheme, allowed:
 # newmark2:  default, tested
