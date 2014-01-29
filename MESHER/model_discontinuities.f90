@@ -75,7 +75,7 @@ subroutine define_discont
         write(6,*)'Reading IASP91 discontinuities...'
         call iasp91_discont
      case('external')
-        write(6,*)'Reading step-wise model from file:', bkgrdmodel
+        write(6,*)'Reading step-wise model from file: ', trim(fnam_ext_model)
         call arbitrmodel_discont
      case default
         write(6,*) 'Unknown model' ,bkgrdmodel
@@ -83,7 +83,7 @@ subroutine define_discont
   end select
 
   if (dump_1dmodel) then
-     print *, ' Writing out the current model to Diags/1dmodel.bm'
+     print *, 'Writing out the current model to Diags/1dmodel.bm'
      call write_1Dmodel(discont)
   end if
 
@@ -1114,10 +1114,6 @@ subroutine arbitrmodel_discont
 
   call get_ext_disc(fnam_ext_model, ndisc, discont, vp, vs, rho)
  
-  print *, 'ndisc: ', ndisc
-
-  !stop
-
   router = discont(1)
   
   do idom = 1, ndisc
@@ -1139,7 +1135,7 @@ subroutine write_1Dmodel(discontinuities)
    real(kind=dp), dimension(0:maxlayers)  :: qka, qmu, vph, vsh, eta
    real(kind=dp)             :: vp_tmp, vs_tmp, rho_tmp
    integer  :: ndom, idepth, idom, ilayer, nlayer, step, nic, noc
-   character(len=256)        :: fnam
+   character(len=256)        :: fnam, fmtstring
 
    ndom = size(discontinuities)
 
@@ -1156,10 +1152,11 @@ subroutine write_1Dmodel(discontinuities)
       else
          step = -10000
       end if
-      print *, 'Domain: ', idom, ', width:', discontinuities(idom) - discontinuities(idom+1), ', step:', step
+      fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
+      print fmtstring, idom, discontinuities(idom) - discontinuities(idom+1), step
       ! Layers within the domain
       do idepth = nint(discontinuities(idom)), nint(discontinuities(idom+1)), step
-         print *, 'domain: ', idom, '; depth: ', real(idepth, kind=dp)
+         !print *, 'domain: ', idom, '; depth: ', real(idepth, kind=dp)
          vp_tmp = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
          vs_tmp = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
          if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
@@ -1185,7 +1182,7 @@ subroutine write_1Dmodel(discontinuities)
       if ((depth(ilayer)-discontinuities(idom+1))>smallval_dble*depth(ilayer)) then
          ilayer = ilayer + 1
          depth(ilayer) = discontinuities(idom+1)
-         print *, 'domain: ', idom, '; depth: ', depth(ilayer)
+         !print *, 'domain: ', idom, '; depth: ', depth(ilayer)
          vpv(ilayer)   = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
          vsv(ilayer)   = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
          rho(ilayer)   = velocity(discontinuities(idom+1), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
@@ -1197,7 +1194,7 @@ subroutine write_1Dmodel(discontinuities)
              eta(ilayer)   = velocity(discontinuities(idom+1), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
          end if
       end if
-   end do
+   end do !idom = 1, ndom-1
 
    ! Layers within the last domain
    if (discontinuities(ndom) < 25000.) then
@@ -1207,6 +1204,10 @@ subroutine write_1Dmodel(discontinuities)
    else
       step = -10000
    end if
+   
+   fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
+   print fmtstring, idom, discontinuities(idom) - discontinuities(idom+1), step
+
    do idepth = nint(discontinuities(ndom)), 0, step
       vp_tmp = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
       vs_tmp = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
@@ -1242,6 +1243,7 @@ subroutine write_1Dmodel(discontinuities)
       end if
    end if
 
+   print *, ''
    nlayer = ilayer
 
    ! Write input file for AxiSEM

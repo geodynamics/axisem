@@ -1470,7 +1470,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      read(77,*) ext_model_is_ani, ext_model_is_anelastic
      read(77,*) nlayer
      fmtstring = '(A,A,A,I5,A)'
-     if (lpr) write(6,fmtstring,advance='no') 'Model in file ', trim(fnam_ext_model), &
+     if (lpr) write(6,fmtstring,advance='no') ' Model in file ', trim(fnam_ext_model), &
                                               ' has ', nlayer, ' layers'
      fmtstring = '(A)'
      if (ext_model_is_ani) then
@@ -1629,6 +1629,9 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   upper_layer(1) = 1
 
+  print *, 'Checking for discontinuities in the external velocity model'
+
+  fmtstring = "('  ',A,F12.1,A,I5)"
   do ilayer = 2, nlayer-1
      if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
         ! First order discontinuity
@@ -1636,18 +1639,22 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
         isdisc(ilayer) = 1
         lower_layer(idom-1) = ilayer
         upper_layer(idom)   = ilayer + 1
+        print fmtstring, '1st order disc. at radius', radius_layer(ilayer), ', layer:', ilayer
      else
         grad_vp(ilayer) = (vpv_layer(ilayer+1) - vpv_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
         grad_vs(ilayer) = (vsv_layer(ilayer+1) - vsv_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
-        if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
-            abs(grad_vs(ilayer)).gt.grad_threshold) then
+        if ((abs(grad_vp(ilayer)).gt.grad_threshold.or.        &
+             abs(grad_vs(ilayer)).gt.grad_threshold    ).and.  &
+            radius_layer(ilayer+1).gt.smallval_dble) then
            ! Second order discontinuity
            idom = idom + 1
-           isdisc(ilayer) = 2
-           lower_layer(idom-1) = ilayer
-           upper_layer(idom)   = ilayer 
+           isdisc(ilayer+1) = 2
+           lower_layer(idom-1) = ilayer + 1
+           upper_layer(idom)   = ilayer + 1 
+
+           print fmtstring, '2nd order disc. at radius', radius_layer(ilayer+1), ', layer:', ilayer+1
         end if
          
      end if
@@ -1658,10 +1665,11 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   ndisc = idom ! The first discontinuity is at the surface, 
                ! the last at the ICB, above the last domain
 
-  if (lpr) print *, '  External model has', idom, ' layers'
+  if (lpr) print "(A,I3,A)", ' External model has ', idom, ' discontinuities'
+  print *, ''
   ndisc = idom
 
-  if (lpr) print *, '  Creating interpolation objects'
+  if (lpr) print *, 'Creating interpolation objects'
 
   ! Create interpolation objects for each domain
   allocate(interp_vpv(ndisc))
@@ -1673,8 +1681,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
       allocate(interp_qmu(ndisc))
   end if
 
-  if (lpr) print *, '   idom, upper_layer, lower_layer,   r(ul),   r(ll)'
-  fmtstring = '(I8, I13, I13, F9.1, F9.1)'
+  if (lpr) print *, '   idom, upper_layer, lower_layer,      r(ul),      r(ll)'
+  fmtstring = '(I8, I13, I13, F12.1, F12.1)'
 
   extrapolation = extrapolation_constant ! Only valid for the first domain, to allow points with 
                                          ! r slightly larger than router. Happens in lateral_heterogeneities.f90
@@ -1701,6 +1709,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
      end if
      extrapolation = extrapolation_none
   end do
+
+  print *, ''
 
   if (present(ndisc_out)) then
      ndisc_out = ndisc
