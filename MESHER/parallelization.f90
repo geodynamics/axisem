@@ -573,9 +573,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
         endif
      end do ! iel
             
-     write(6,*) "thetaslel_fluid(:,itheta)"
-     write(6,*) thetaslel_fluid(:,itheta)
-  
      if (neltot_solid > 0 ) then 
         if (solid_domain(ndisc)) then 
             mycount = central_count(itheta)
@@ -632,9 +629,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
         enddo
         stop
      endif
-
-     write(6,*) thetaslel_solid(:,itheta)
-
 
      ! thetaslel contains
      ! thetaslel(1:nel_fluid) : the nel_fluid element numbers pertaining to itheta
@@ -707,9 +701,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
      ! kind of hacky, but should work for most cases of earth like models
      iprocb = -1
      mycountb = 1
-
-     write(6,*) "nbcnd"
-     write(6,*) nbcnd
 
      if (nbcnd == 1) then
         nicb = 0
