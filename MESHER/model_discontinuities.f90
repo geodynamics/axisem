@@ -1206,7 +1206,7 @@ subroutine write_1Dmodel(discontinuities)
    end if
    
    fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
-   print fmtstring, idom, discontinuities(idom) - discontinuities(idom+1), step
+   print fmtstring, idom, discontinuities(ndom), step
 
    do idepth = nint(discontinuities(ndom)), 0, step
       vp_tmp = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)

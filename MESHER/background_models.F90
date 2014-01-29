@@ -1631,7 +1631,6 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   print *, 'Checking for discontinuities in the external velocity model'
 
-  fmtstring = "('  ',A,F12.1,A,I5)"
   do ilayer = 2, nlayer-1
      if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
         ! First order discontinuity
@@ -1639,7 +1638,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
         isdisc(ilayer) = 1
         lower_layer(idom-1) = ilayer
         upper_layer(idom)   = ilayer + 1
-        print fmtstring, '1st order disc. at radius', radius_layer(ilayer), ', layer:', ilayer
+        fmtstring = "('  1st order disc. at radius', F12.1, ', layer: ', I5)"
+        print fmtstring, radius_layer(ilayer), ilayer
      else
         grad_vp(ilayer) = (vpv_layer(ilayer+1) - vpv_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
@@ -1654,11 +1654,19 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
            lower_layer(idom-1) = ilayer + 1
            upper_layer(idom)   = ilayer + 1 
 
-           print fmtstring, '2nd order disc. at radius', radius_layer(ilayer+1), ', layer:', ilayer+1
+           fmtstring = "('  2nd order disc. at radius', F12.1, ', layer: ',I5, ', grad:', F12.5)"
+           print fmtstring, radius_layer(ilayer+1), ilayer+1, grad_vp(ilayer)
         end if
          
      end if
   end do
+
+  if (idom==1) then ! Introduce at least one discontinuity. 
+    print *, 'Adding blind discontinuity in the middle of the model, since it has none naturally'
+    upper_layer(2) = nlayer / 2
+    lower_layer(1) = nlayer / 2
+    idom = idom + 1
+  end if
 
   lower_layer(idom) = nlayer
 
@@ -1688,6 +1696,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
                                          ! r slightly larger than router. Happens in lateral_heterogeneities.f90
 
   do idom = 1, ndisc
+     if (upper_layer(idom).eq.lower_layer(idom)) upper_layer(idom) = upper_layer(idom) - 1
      if (lpr) print fmtstring, idom, upper_layer(idom), lower_layer(idom), & 
                                radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
      interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
