@@ -282,7 +282,7 @@ subroutine compute_src
      if (lpr) write(6,*) '  computing DIPOLE Source with...'
 
      select case(src_type(2))
-     case ('xforce','yforce')
+     case ('thetaforce', 'phiforce')
         if (lpr) write(6,*) '  ...horizontal single ', src_type(2)
         allocate(point_source(0:npol,0:npol,1:nel_solid))
         call define_bodyforce(point_source, iel_src2, ipol_src2, jpol_src2)
