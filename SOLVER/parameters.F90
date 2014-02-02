@@ -258,7 +258,7 @@ subroutine read_inparam_basic
        
        case('SIMULATION_TYPE') 
          read(keyvalue, *) simtype
-         select case(trim(simtype))
+         select case(to_lower(trim(simtype)))
          case('single')
             src_file_type = 'sourceparams'
          case('force')
@@ -270,7 +270,7 @@ subroutine read_inparam_basic
          end select
 
        case('RECFILE_TYPE')
-          rec_file_type = keyvalue
+          rec_file_type = to_lower(keyvalue)
 
        case('SEISMOGRAM_LENGTH')
           read(keyvalue, *) seislength_t
@@ -425,12 +425,14 @@ subroutine read_inparam_advanced
 
          case('SOURCE_FUNCTION')
              read(keyvalue, *) stf_type
+             stf_type = to_lower(stf_type)
 
          case('TIME_STEP')
              read(keyvalue, *) enforced_dt
 
          case('TIME_SCHEME')
              read(keyvalue,*) time_scheme
+             time_scheme = to_lower(time_scheme)
 
          case('DATA_DIR')
              !datapath = keyvalue
@@ -452,6 +454,7 @@ subroutine read_inparam_advanced
 
          case('KERNEL_SOURCE')
              read(keyvalue,*) src_dump_type
+             src_dump_type = to_lower(src_dump_type)
 
          case('KERNEL_IBEG')
              read(keyvalue,*) ibeg
@@ -492,7 +495,7 @@ subroutine read_inparam_advanced
 
          case('SNAPSHOTS_FORMAT')
              if (dump_snaps_glob) then 
-               select case (trim(keyvalue))
+               select case (to_lower(trim(keyvalue)))
                  case('xdmf') 
                      dump_xdmf = .true.
                      dump_vtk = .false.
@@ -1815,6 +1818,26 @@ subroutine check_parameters(hmaxglob, hminglob, curvel, linel, seminoel, semisoe
 end subroutine check_parameters
 !-----------------------------------------------------------------------------
 
+!=============================================================================
+function to_lower(strIn) result(strOut)
+!< Converts string to lowercase, adapted from http://www.star.le.ac.uk/~cgp/fortran.html
+    implicit none
+
+    character(len=*), intent(in) :: strIn
+    character(len=len(strIn))    :: strOut
+    integer                      :: i,j
+
+    do i = 1, len(strIn)
+        j = iachar(strIn(i:i))
+        if (j>= iachar("A") .and. j<=iachar("Z") ) then
+            strOut(i:i) = achar(iachar(strIn(i:i))+32)
+        else
+            strOut(i:i) = strIn(i:i)
+        end if
+    end do
+
+end function to_lower
+!-----------------------------------------------------------------------------
 !========================
 end module parameters
 !========================

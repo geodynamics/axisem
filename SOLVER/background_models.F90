@@ -50,12 +50,13 @@ module background_models
   real(kind=dp), allocatable, save  :: qka_layer(:)
   real(kind=dp), allocatable, save  :: qmu_layer(:)
   real(kind=dp), allocatable, save  :: rho_layer(:)
+  real(kind=dp), allocatable, save  :: eta_layer(:)
   real(kind=dp), allocatable, save  :: radius_layer(:)
   logical, save                     :: ext_model_is_ani, ext_model_is_anelastic
   type(interpolation_data), allocatable, save :: interp_vpv(:), interp_vsv(:), &
                                                  interp_vph(:), interp_vsh(:), &
                                                  interp_qka(:), interp_qmu(:), &
-                                                 interp_rho(:)
+                                                 interp_rho(:), interp_eta(:)
 #ifndef solver
   logical, parameter                :: lpr = .true.
 #endif
@@ -1449,9 +1450,17 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   real(kind=dp), allocatable, intent(out), optional  :: rho_layer_out(:) 
   real(kind=dp), allocatable, intent(out), optional  :: radius_layer_out(:)
   integer, intent(out), optional                     :: nlayer_out
-  integer                          :: ilayer, ierr
-  logical                          :: bkgrdmodelfile_exists, startatsurface
-  character(len=128)               :: fmtstring
+  integer                          :: ilayer, ierr, icolumn, ncolumn
+  integer                          :: column_rad = 0, column_vpv = 0, column_vsv = 0, column_rho = 0
+  integer                          :: column_qka = 0, column_qmu = 0, column_vph = 0, column_vsh = 0
+  integer                          :: column_eta = 0, nmissing = 0
+  integer, allocatable             :: layertemp(:)
+  character(len=6), allocatable    :: columnvalue(:)
+  logical                          :: bkgrdmodelfile_exists = .false., startatsurface = .false.
+  logical                          :: modelindepth = .false., exist_param_col = .false.
+  logical                          :: exist_param_anel = .false., exist_param_ani = .false.
+  character(len=128)               :: fmtstring, keyword, keyvalue
+  character(len=512)               :: line
 
   ! Has the file already been read in?
   if (nlayer<1) then
@@ -1464,13 +1473,158 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
         stop 
      endif
 
-     open(unit=77, file=trim(fnam_ext_model), action='read')
-    
+     ! Count number of layers and determine whether anisotropic and anelastic
 
-     read(77,*) ext_model_is_ani, ext_model_is_anelastic
-     read(77,*) nlayer
+     open(unit=77, file=trim(fnam_ext_model), action='read')
+     nlayer = 0
+     ncolumn = 4 ! default, if elastic and isotropic
+     ierr = 0
+
+     do while (ierr==0)
+         read(77, fmt='(a512)', iostat=ierr) line
+         if (ierr < 0) exit
+         if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+
+         read(line,*) keyword, keyvalue 
+         select case(keyword) 
+         case('ANELASTIC') 
+             read(keyvalue, *) ext_model_is_anelastic
+             if (ext_model_is_ani) ncolumn = ncolumn + 3       ! vpv, vph, eta
+             exist_param_anel = .true.
+         case('ANISOTROPIC') 
+             read(keyvalue, *) ext_model_is_ani 
+             if (ext_model_is_anelastic) ncolumn = ncolumn + 2 !qka, qmu
+             exist_param_ani = .true.
+         case('COLUMNS')
+             exist_param_col = .true.
+
+         case default
+             nlayer = nlayer + 1
+         end select
+     end do
+     rewind(77)
+
+     if (.not.exist_param_anel) print *, 'Keyword ANELASTIC is not present'
+     if (.not.exist_param_ani)  print *, 'Keyword ANISOTROPIC is not present'
+     if (.not.exist_param_col)  print *, 'Keyword COLUMNS is not present'
+
+     if (.not.(exist_param_col.and.exist_param_anel.and.exist_param_ani)) then
+         print *, 'ERROR: One or more mandatory lines in ', trim(fnam_ext_model), &
+                  ' is missing'
+         stop
+     end if
+
+     allocate(radius_layer(nlayer))
+     allocate(vpv_layer(nlayer))
+     allocate(vsv_layer(nlayer))
+     allocate(rho_layer(nlayer))
+
+     if (ext_model_is_anelastic) then
+         allocate(qka_layer(nlayer))
+         allocate(qmu_layer(nlayer))
+     end if
+
+     if (ext_model_is_ani) then
+         allocate(vph_layer(nlayer))
+         allocate(vsh_layer(nlayer))
+         allocate(eta_layer(nlayer))
+     end if
+
+     ! Read again, this time read the actual velocity model
+     !open(unit=77, file=trim(fnam_ext_model), action='read')
+     ilayer = 0
+     ierr = 0
+     do while (ierr==0)
+         read(77, fmt='(a512)', iostat=ierr) line
+         if (ierr < 0) exit
+         if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
+
+         read(line,*) keyword, keyvalue 
+         select case(keyword) 
+         case('ANISOTROPIC') 
+         case('ANELASTIC') 
+         case('COLUMNS')
+             allocate(layertemp(ncolumn))
+             allocate(columnvalue(ncolumn))
+             read(line,*) keyword, columnvalue
+             do icolumn = 1, ncolumn
+                 select case(to_lower(columnvalue(icolumn)))
+                 case('depth', 'radius')
+                     column_rad = icolumn
+                     if (columnvalue(icolumn).eq.'depth') then
+                         modelindepth = .true.
+                     end if
+                 case('vp', 'vpv')
+                     column_vpv = icolumn
+                 case('vs', 'vsv')
+                     column_vsv = icolumn
+                 case('rho')
+                     column_rho = icolumn
+                 case('qka')
+                     column_qka = icolumn
+                 case('qmu')
+                     column_qmu = icolumn
+                 case('vph')
+                     column_vph = icolumn
+                 case('vsh')
+                     column_vsh = icolumn
+                 case('eta')
+                     column_eta = icolumn
+                 end select
+             end do
+
+             print *, 'Checking value order in external model'
+             nmissing = 0
+             nmissing = nmissing + check_exist(column_rad, 'rad')
+             nmissing = nmissing + check_exist(column_vpv, 'vpv')
+             nmissing = nmissing + check_exist(column_vsv, 'vsv')
+             nmissing = nmissing + check_exist(column_rho, 'rho')
+             if (ext_model_is_anelastic) then
+                 nmissing = nmissing + check_exist(column_qka, 'qka')
+                 nmissing = nmissing + check_exist(column_qmu, 'qmu')
+             end if
+             if (ext_model_is_ani) then
+                 nmissing = nmissing + check_exist(column_eta, 'eta')
+                 nmissing = nmissing + check_exist(column_vph, 'vph')
+                 nmissing = nmissing + check_exist(column_vph, 'vsv')
+             end if
+             if (nmissing.gt.0) then
+                 write(*,*) 'ERROR: One or more columns are missing in ', trim(fnam_ext_model)
+                 stop
+             end if
+
+         case default
+             ilayer = ilayer + 1
+             read(line,*) layertemp
+             radius_layer(ilayer)  = layertemp(column_rad)
+             vpv_layer(ilayer)     = layertemp(column_vpv)
+             vsv_layer(ilayer)     = layertemp(column_vsv)
+             rho_layer(ilayer)     = layertemp(column_rho)
+        
+             if (ext_model_is_anelastic) then
+                 qka_layer(ilayer) = layertemp(column_qka)
+                 qmu_layer(ilayer) = layertemp(column_qmu)
+             end if
+        
+             if (ext_model_is_ani) then
+                 vph_layer(ilayer) = layertemp(column_vph)
+                 vsh_layer(ilayer) = layertemp(column_vsh)
+                 eta_layer(ilayer) = layertemp(column_eta)
+             end if
+
+
+         end select
+     end do
+     close(77)
+
+     if (ilayer.ne.nlayer) then
+         write(*,"(A,I4,A,I4,A)") 'something is wrong here, nlayer(', nlayer, ').ne.ilayer(', ilayer, ')'
+         stop
+     end if
+
+    
      fmtstring = '(A,A,A,I5,A)'
-     if (lpr) write(6,fmtstring,advance='no') 'Model in file ', trim(fnam_ext_model), &
+     if (lpr) write(6,fmtstring,advance='no') ' Model in file ', trim(fnam_ext_model), &
                                               ' has ', nlayer, ' layers'
      fmtstring = '(A)'
      if (ext_model_is_ani) then
@@ -1484,23 +1638,10 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
          if (lpr) print *, 'and elastic...'
      end if
 
-     allocate(radius_layer(nlayer))
-     allocate(vpv_layer(nlayer))
-     allocate(vsv_layer(nlayer))
-     allocate(rho_layer(nlayer))
-
-     if (ext_model_is_anelastic) then
-         allocate(qka_layer(nlayer))
-         allocate(qmu_layer(nlayer))
-     end if
-
-
-     ! Read in first layer
-     if (ext_model_is_anelastic) then
-         read(77,*) radius_layer(1), rho_layer(1), vpv_layer(1), &
-                    vsv_layer(1), qka_layer(1), qmu_layer(1)
-     else
-         read(77,*) radius_layer(1), rho_layer(1), vpv_layer(1), vsv_layer(1)
+     ! Mesher uses radius, not depths
+     if (modelindepth) then
+         if (lpr) print *, 'Model is given in depths, convert to radius'
+         radius_layer = maxval(radius_layer) - radius_layer
      end if
 
      ! Recognize order of layers
@@ -1512,45 +1653,44 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
         startatsurface = .true.
      end if
 
-     ! Read in all other layers
-     do ilayer = 2, nlayer
-        if (ext_model_is_anelastic) then
-           read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer),&
-                                   vsv_layer(ilayer), qka_layer(ilayer), qmu_layer(ilayer)
-        else
-           read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer),&
-                                   vsv_layer(ilayer)
-        end if
-       
-        if (ierr.eq.IOSTAT_END) then
-           if (lpr) then
-               print *, 'ERROR: File ', trim(fnam_ext_model), ' has only ', ilayer-1, ' layers'
-               print *, '       Not ', nlayer, ' as specified in the header.'
-           end if
-           stop
-        end if
-        if (startatsurface) then
-           if ((radius_layer(ilayer) - radius_layer(ilayer-1))>0.0d0) then
-              if (lpr) then
-                 print *, 'ERROR: Radius of layers in external model has to be monotonously (increasing)!'
-                 print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
-                 print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
-              end if
-              stop
-           end if
-        else
-           if ((radius_layer(ilayer) - radius_layer(ilayer-1))<0.0d0) then
-              if (lpr) then
-                 print *, 'ERROR: Radius of layers in external model has to be monotonously (decreasing)!'
-                 print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
-                 print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
-              end if
-              stop
-           end if
-        end if
-     enddo
-     close(77)
-
+     !! Read in all other layers
+     !do ilayer = 2, nlayer
+     !   if (ext_model_is_anelastic) then
+     !      read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer),&
+     !                              vsv_layer(ilayer), qka_layer(ilayer), qmu_layer(ilayer)
+     !   else
+     !      read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer),&
+     !                              vsv_layer(ilayer)
+     !   end if
+     !  
+     !   if (ierr.eq.IOSTAT_END) then
+     !      if (lpr) then
+     !          print *, 'ERROR: File ', trim(fnam_ext_model), ' has only ', ilayer-1, ' layers'
+     !          print *, '       Not ', nlayer, ' as specified in the header.'
+     !      end if
+     !      stop
+     !   end if
+     !   if (startatsurface) then
+     !      if ((radius_layer(ilayer) - radius_layer(ilayer-1))>0.0d0) then
+     !         if (lpr) then
+     !            print *, 'ERROR: Radius of layers in external model has to be monotonously (increasing)!'
+     !            print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
+     !            print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+     !         end if
+     !         stop
+     !      end if
+     !   else
+     !      if ((radius_layer(ilayer) - radius_layer(ilayer-1))<0.0d0) then
+     !         if (lpr) then
+     !            print *, 'ERROR: Radius of layers in external model has to be monotonously (decreasing)!'
+     !            print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
+     !            print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+     !         end if
+     !         stop
+     !      end if
+     !   end if
+     !enddo
+     !close(77)
 
      ! Reorder elements if the file is in the wrong order (Mesher always assumes from surface to core)
      if (.not.startatsurface) then
@@ -1563,12 +1703,28 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
            qka_layer = qka_layer(nlayer:1:-1)
            qmu_layer = qmu_layer(nlayer:1:-1)
         end if
+        if (ext_model_is_ani) then
+            vph_layer = vph_layer(nlayer:1:-1)
+            vsh_layer = vsh_layer(nlayer:1:-1)
+            eta_layer = eta_layer(nlayer:1:-1)
+        end if
      end if
 
      ! Lowermost layer should be at the center of the earth.
      if (radius_layer(nlayer)>smallval_dble) radius_layer(nlayer) = 0
 
-  end if
+     do ilayer = 2, nlayer
+         if ((radius_layer(ilayer) - radius_layer(ilayer-1))>0.0d0) then
+            if (lpr) then
+               print *, 'ERROR: Radius of layers in external model has to be monotonously (increasing)!'
+               print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
+               print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
+            end if
+            stop
+         end if
+     end do
+
+  end if ! Need to read in model again
 
   if (present(nlayer_out)) then
      nlayer_out = nlayer
@@ -1591,7 +1747,51 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   end if
 
 end subroutine read_ext_model
-!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
+
+!=============================================================================
+function check_exist(column, param_name)
+!< Checks whether column is larger than 0 (means that it has been found in the
+!! list of column values above. If not found, writes an error message, but does
+!! not stop here.
+    integer, intent(in)           :: column
+    character(len=*), intent(in)  :: param_name
+    integer                       :: check_exist
+    character(len=128)            :: fmtstring
+
+    fmtstring = "('  Value ''', A4, ''' ', A, I3)"
+
+    if (column.lt.1) then
+        if (lpr) write(*,fmtstring) param_name, 'could not be found in COLUMNS list'
+        check_exist = 1
+    else
+        if (lpr) write(*,fmtstring) param_name, ' is in column', column
+        check_exist = 0
+    end if
+
+end function
+!-----------------------------------------------------------------------------
+
+!=============================================================================
+function to_lower(strIn) result(strOut)
+!< Converts string to lowercase, adapted from http://www.star.le.ac.uk/~cgp/fortran.html
+    implicit none
+
+    character(len=*), intent(in) :: strIn
+    character(len=len(strIn))    :: strOut
+    integer                      :: i,j
+
+    do i = 1, len(strIn)
+        j = iachar(strIn(i:i))
+        if (j>= iachar("A") .and. j<=iachar("Z") ) then
+            strOut(i:i) = achar(iachar(strIn(i:i))+32)
+        else
+            strOut(i:i) = strIn(i:i)
+        end if
+    end do
+
+end function to_lower
+!-----------------------------------------------------------------------------
 
 !=============================================================================
 subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
@@ -1629,6 +1829,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   upper_layer(1) = 1
 
+  print *, 'Checking for discontinuities in the external velocity model'
+
   do ilayer = 2, nlayer-1
      if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
         ! First order discontinuity
@@ -1636,32 +1838,46 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
         isdisc(ilayer) = 1
         lower_layer(idom-1) = ilayer
         upper_layer(idom)   = ilayer + 1
+        fmtstring = "('  1st order disc. at radius', F12.1, ', layer: ', I5)"
+        print fmtstring, radius_layer(ilayer), ilayer
      else
         grad_vp(ilayer) = (vpv_layer(ilayer+1) - vpv_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
         grad_vs(ilayer) = (vsv_layer(ilayer+1) - vsv_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
-        if (abs(grad_vp(ilayer)).gt.grad_threshold.or. &
-            abs(grad_vs(ilayer)).gt.grad_threshold) then
+        if ((abs(grad_vp(ilayer)).gt.grad_threshold.or.        &
+             abs(grad_vs(ilayer)).gt.grad_threshold    ).and.  &
+            radius_layer(ilayer+1).gt.smallval_dble) then
            ! Second order discontinuity
            idom = idom + 1
-           isdisc(ilayer) = 2
-           lower_layer(idom-1) = ilayer
-           upper_layer(idom)   = ilayer 
+           isdisc(ilayer+1) = 2
+           lower_layer(idom-1) = ilayer + 1
+           upper_layer(idom)   = ilayer + 1 
+
+           fmtstring = "('  2nd order disc. at radius', F12.1, ', layer: ',I5, ', grad:', F12.5)"
+           print fmtstring, radius_layer(ilayer+1), ilayer+1, grad_vp(ilayer)
         end if
          
      end if
   end do
+
+  if (idom==1) then ! Introduce at least one discontinuity. 
+    print *, 'Adding blind discontinuity in the middle of the model, since it has none naturally'
+    upper_layer(2) = nlayer / 2
+    lower_layer(1) = nlayer / 2
+    idom = idom + 1
+  end if
 
   lower_layer(idom) = nlayer
 
   ndisc = idom ! The first discontinuity is at the surface, 
                ! the last at the ICB, above the last domain
 
-  if (lpr) print *, '  External model has', idom, ' layers'
+  if (lpr) print "(A,I3,A)", ' External model has ', idom, ' discontinuities'
+  print *, ''
   ndisc = idom
 
-  if (lpr) print *, '  Creating interpolation objects'
+  if (lpr) print *, 'Creating interpolation objects'
 
   ! Create interpolation objects for each domain
   allocate(interp_vpv(ndisc))
@@ -1673,13 +1889,20 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
       allocate(interp_qmu(ndisc))
   end if
 
-  if (lpr) print *, '   idom, upper_layer, lower_layer,   r(ul),   r(ll)'
-  fmtstring = '(I8, I13, I13, F9.1, F9.1)'
+  if (ext_model_is_ani) then
+      allocate(interp_vph(ndisc))
+      allocate(interp_vsh(ndisc))
+      allocate(interp_eta(ndisc))
+  end if
+
+  if (lpr) print *, '   idom, upper_layer, lower_layer,      r(ul),      r(ll)'
+  fmtstring = '(I8, I13, I13, F12.1, F12.1)'
 
   extrapolation = extrapolation_constant ! Only valid for the first domain, to allow points with 
                                          ! r slightly larger than router. Happens in lateral_heterogeneities.f90
 
   do idom = 1, ndisc
+     if (upper_layer(idom).eq.lower_layer(idom)) upper_layer(idom) = upper_layer(idom) - 1
      if (lpr) print fmtstring, idom, upper_layer(idom), lower_layer(idom), & 
                                radius_layer(upper_layer(idom)), radius_layer(lower_layer(idom))
      interp_rho(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
@@ -1699,8 +1922,23 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
                                                  qmu_layer(upper_layer(idom):lower_layer(idom)), &
                                                  extrapolation)
      end if
+
+     if (ext_model_is_ani) then
+         interp_eta(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 eta_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 extrapolation)
+         interp_vph(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 vph_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 extrapolation)
+         interp_vsh(idom) = interpolation_object(radius_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 vsh_layer(upper_layer(idom):lower_layer(idom)), &
+                                                 extrapolation)
+     end if
+
      extrapolation = extrapolation_none
   end do
+
+  print *, ''
 
   if (present(ndisc_out)) then
      ndisc_out = ndisc
