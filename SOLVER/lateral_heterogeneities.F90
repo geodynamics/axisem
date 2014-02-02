@@ -224,21 +224,22 @@ subroutine read_param_hetero
     do ij = 1, num_het
        read(91,*) junk
        read(91,*) het_format(ij)
+       het_format(ij) = to_lower(het_format(ij))
        if (verbose > 0 .and. lpr) then
           write(*,"('  Region:', I3, ' of type: ', A)") ij, trim(het_format(ij))
        end if
 
        select case(trim(het_format(ij)))
        case('discr')
-       !if (het_format(ij) == 'discr') then
           read(91,*) het_file_discr(ij)
           read(91,*) het_ani_discr(ij)
+          het_ani_discr(ij) = to_lower(het_ani_discr(ij))
           read(91,*) het_rel_discr(ij)
+          het_rel_discr(ij) = to_lower(het_rel_discr(ij))
           read(91,*) p_inv_dist(ij)
           read(91,*) R_inv_dist(ij)
 
        case('rndm')
-       !elseif (het_format(ij) == 'rndm') then
           read(91,*) het_funct_type(ij)
           read(91,*) r_het1(ij), r_het2(ij)
           read(91,*) th_het1(ij), th_het2(ij)
@@ -253,7 +254,6 @@ subroutine read_param_hetero
           endif
 
        case('funct')
-       !elseif (het_format(ij) == 'funct') then
           read(91,*) het_funct_type(ij)
           read(91,*) rdep(ij)
           read(91,*) grad(ij)
@@ -265,7 +265,6 @@ subroutine read_param_hetero
           read(91,*) delta_vs(ij)
 
        case('ica')
-       !elseif (het_format(ij) == 'ica') then
           read(91,*) num_slices
           
           allocate(fa_theta_ica(num_slices), fa_phi_ica(num_slices))

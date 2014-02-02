@@ -59,6 +59,7 @@ subroutine read_sourceparams
     
     case('SOURCE_TYPE') 
         read(keyvalue, *) src_type(2)
+        src_type(2) = to_lower(src_type(2))
         select case(src_type(2))
         case('mrr', 'explosion', 'mtt_p_mpp', 'mpp_p_mtt', 'vertforce')
             src_type(1) = 'monopole'

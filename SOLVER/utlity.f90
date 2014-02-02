@@ -30,6 +30,7 @@ module utlity
   public :: dblreldiff_small, reldiff_small
   public :: dblereldiff, reldiff
   public :: dbleabsreldiff, absreldiff
+  public :: to_lower
   private
 
 contains
@@ -319,6 +320,27 @@ pure real(kind=dp) function thetacoord(ipol,jpol,ielem)
 
 end function thetacoord
 !=============================================================================
+
+!=============================================================================
+function to_lower(strIn) result(strOut)
+!< Converts string to lowercase, adapted from http://www.star.le.ac.uk/~cgp/fortran.html
+    implicit none
+
+    character(len=*), intent(in) :: strIn
+    character(len=len(strIn))    :: strOut
+    integer                      :: i,j
+
+    do i = 1, len(strIn)
+        j = iachar(strIn(i:i))
+        if (j>= iachar("A") .and. j<=iachar("Z") ) then
+            strOut(i:i) = achar(iachar(strIn(i:i))+32)
+        else
+            strOut(i:i) = strIn(i:i)
+        end if
+    end do
+
+end function to_lower
+!-----------------------------------------------------------------------------
 
 !====================
 end module utlity
