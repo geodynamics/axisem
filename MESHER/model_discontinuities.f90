@@ -1131,13 +1131,17 @@ subroutine write_1Dmodel(discontinuities)
 
    real(kind=dp), intent(in) :: discontinuities(:)
    integer, parameter        :: maxlayers = 10000
-   real(kind=dp), dimension(0:maxlayers)  :: vpv, vsv, rho, depth
+   real(kind=dp), dimension(0:maxlayers)  :: vpv, vsv, rho, radius
    real(kind=dp), dimension(0:maxlayers)  :: qka, qmu, vph, vsh, eta
    real(kind=dp)             :: vp_tmp, vs_tmp, rho_tmp
-   integer  :: ndom, idepth, idom, ilayer, nlayer, step, nic, noc
+   integer                   :: ndom, irad, idom, ilayer, nlayer, step, nic, noc
+   integer, allocatable      :: disc_layer(:)
    character(len=256)        :: fnam, fmtstring
+   character(len=8)          :: mydate
+   character(len=10)         :: mytime
 
    ndom = size(discontinuities)
+   allocate(disc_layer(ndom))
 
    ilayer = 0
 
@@ -1155,34 +1159,32 @@ subroutine write_1Dmodel(discontinuities)
       fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
       print fmtstring, idom, discontinuities(idom) - discontinuities(idom+1), step
       ! Layers within the domain
-      do idepth = nint(discontinuities(idom)), nint(discontinuities(idom+1)), step
-         !print *, 'domain: ', idom, '; depth: ', real(idepth, kind=dp)
-         vp_tmp = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-         vs_tmp = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+      do irad = nint(discontinuities(idom)), nint(discontinuities(idom+1)), step
+         vp_tmp = velocity(real(irad, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+         vs_tmp = velocity(real(irad, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
          if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
             ilayer = ilayer + 1
-            depth(ilayer) = real(idepth, kind=dp)
+            radius(ilayer) = real(irad, kind=dp)
             vpv(ilayer)   = vp_tmp
             vsv(ilayer)   = vs_tmp
-            rho(ilayer)   = velocity(real(idepth, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+            rho(ilayer)   = velocity(real(irad, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
             if (model_is_anelastic(bkgrdmodel)) then
-               qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
-               qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
-               vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
-               vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
-               eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+               qka(ilayer)   = velocity(real(irad, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+               qmu(ilayer)   = velocity(real(irad, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+               vph(ilayer)   = velocity(real(irad, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+               vsh(ilayer)   = velocity(real(irad, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+               eta(ilayer)   = velocity(real(irad, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
             end if
 
          end if
-         !write(2000,*) real(idepth, kind=dp), rho, vp, vs
+         !write(2000,*) real(irad, kind=dp), rho, vp, vs
 
       end do
      
       ! Layer at the bottom of the domain
-      if ((depth(ilayer)-discontinuities(idom+1))>smallval_dble*depth(ilayer)) then
+      if ((radius(ilayer)-discontinuities(idom+1))>smallval_dble*radius(ilayer)) then
          ilayer = ilayer + 1
-         depth(ilayer) = discontinuities(idom+1)
-         !print *, 'domain: ', idom, '; depth: ', depth(ilayer)
+         radius(ilayer) = discontinuities(idom+1)
          vpv(ilayer)   = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
          vsv(ilayer)   = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
          rho(ilayer)   = velocity(discontinuities(idom+1), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
@@ -1194,6 +1196,8 @@ subroutine write_1Dmodel(discontinuities)
              eta(ilayer)   = velocity(discontinuities(idom+1), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
          end if
       end if
+
+      disc_layer(idom) = ilayer+1
    end do !idom = 1, ndom-1
 
    ! Layers within the last domain
@@ -1208,29 +1212,29 @@ subroutine write_1Dmodel(discontinuities)
    fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
    print fmtstring, idom, discontinuities(ndom), step
 
-   do idepth = nint(discontinuities(ndom)), 0, step
-      vp_tmp = velocity(real(idepth, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-      vs_tmp = velocity(real(idepth, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+   do irad = nint(discontinuities(ndom)), 0, step
+      vp_tmp = velocity(real(irad, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+      vs_tmp = velocity(real(irad, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
       if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
          ilayer = ilayer + 1
-         depth(ilayer) = real(idepth, kind=dp)
+         radius(ilayer) = real(irad, kind=dp)
          vpv(ilayer)    = vp_tmp
          vsv(ilayer)    = vs_tmp
-         rho(ilayer)   = velocity(real(idepth, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+         rho(ilayer)   = velocity(real(irad, kind=dp), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
          if (model_is_anelastic(bkgrdmodel)) then
-            qka(ilayer)   = velocity(real(idepth, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
-            qmu(ilayer)   = velocity(real(idepth, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
-            vph(ilayer)   = velocity(real(idepth, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
-            vsh(ilayer)   = velocity(real(idepth, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
-            eta(ilayer)   = velocity(real(idepth, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+            qka(ilayer)   = velocity(real(irad, kind=dp), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+            qmu(ilayer)   = velocity(real(irad, kind=dp), 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+            vph(ilayer)   = velocity(real(irad, kind=dp), 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+            vsh(ilayer)   = velocity(real(irad, kind=dp), 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+            eta(ilayer)   = velocity(real(irad, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
          end if
       end if
    end do
 
    ! Layer at the bottom of the model
-   if (depth(ilayer)>smallval_dble) then
+   if (radius(ilayer)>smallval_dble) then
       ilayer = ilayer + 1
-      depth(ilayer) = 0.0d0
+      radius(ilayer) = 0.0d0
       vpv(ilayer)    = velocity(0.0d0, 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
       vsv(ilayer)    = velocity(0.0d0, 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
       rho(ilayer)   = velocity(0.0d0, 'rho', idom, bkgrdmodel, lfbkgrdmodel)
@@ -1248,25 +1252,83 @@ subroutine write_1Dmodel(discontinuities)
 
    ! Write input file for AxiSEM
    fnam = trim(diagpath)//'/1dmodel_axisem.bm'
+
+   call date_and_time(mydate,mytime)
+
    open(2000, file=fnam, action='write')
-   write(2000,*) model_is_ani(bkgrdmodel), model_is_anelastic(bkgrdmodel)
-   write(2000,*) nlayer
-   do ilayer = 1, nlayer
-      if (model_is_anelastic(bkgrdmodel)) then
-          write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
-                      depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
-                      qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
-      else
-          write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
-                      depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer)
+11 format('# Input file for AXISEM created from external model on ', &
+            A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
+   write(2000,11) mydate(7:8), mydate(5:6), mydate(1:4), mytime(1:2), mytime(3:4)
+   write(2000,'("ANELASTIC    ", L4)') model_is_anelastic(bkgrdmodel)
+   write(2000,'("ANISOTROPIC  ", L4)') model_is_ani(bkgrdmodel)
+   if (model_is_anelastic(bkgrdmodel)) then
+      if (model_is_ani(bkgrdmodel)) then !ANI=true, ANE=true
+         write(2000,'(A11, 9(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', 'qka', &
+                                               'qmu', 'vph', 'vsh', 'eta'
+         idom = 1
+         do ilayer = 1, nlayer
+            if (ilayer==disc_layer(idom)) then
+                write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, &
+                             (radius(1)-radius(ilayer))*0.001
+                idom = idom + 1
+            end if
+            write(2000, '("           ", f9.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                        qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
+         end do
+
+      else !ANI=false, ANE=true
+         write(2000,'(A11, 6(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', 'qka', &
+                                               'qmu'
+         idom = 1
+         do ilayer = 1, nlayer
+            if (ilayer==disc_layer(idom)) then
+                write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, &
+                             (radius(1)-radius(ilayer))*0.001
+                idom = idom + 1
+            end if
+            write(2000, '("           ", f9.0, 3f9.2, 2f9.1)') &
+                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                        qka(ilayer), qmu(ilayer)
+         end do
       end if
-   end do
+
+   else
+      if (model_is_ani(bkgrdmodel)) then !ANI=true, ANE=false
+         write(2000,'(A11, 7(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', 'vph', &
+                                    'vsh', 'eta'
+         idom = 1
+         do ilayer = 1, nlayer
+            if (ilayer==disc_layer(idom)) then
+                write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, &
+                             (radius(1)-radius(ilayer))*0.001
+                idom = idom + 1
+            end if
+            write(2000, '("           ", f9.0, 3f9.2, 2f9.2, f9.5)') &
+                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                        vph(ilayer), vsh(ilayer), eta(ilayer)
+         end do
+      else !ANI=false, ANE=false
+         write(2000,'(A11, 6(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv'
+         idom = 1
+         do ilayer = 1, nlayer
+            if (ilayer==disc_layer(idom)) then
+                write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, & 
+                             (radius(1)-radius(ilayer))*0.001
+                idom = idom + 1
+            end if
+            write(2000, '("           ", f9.0, 3f9.2, 2f9.1)') &
+                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer)
+         end do
+      end if
+   end if
+
    close(2000)
 
    ! Write input file for YSPEC
    fnam = trim(diagpath)//'/1dmodel_yspec.bm'
-   noc = count(depth(1:nlayer)<=discontinuities(ndom-1).and.depth(1:nlayer)>discontinuities(ndom))
-   nic = count(depth(1:nlayer)<=discontinuities(ndom)) - 1
+   noc = count(radius(1:nlayer)<=discontinuities(ndom-1).and.radius(1:nlayer)>discontinuities(ndom))
+   nic = count(radius(1:nlayer)<=discontinuities(ndom)) - 1
    open(2000, file=fnam, action='write')
    write (2000,*) 'AXISEM model for YSPEC: ', bkgrdmodel(1:lfbkgrdmodel) 
    if (model_is_ani(bkgrdmodel)) then
@@ -1278,11 +1340,11 @@ subroutine write_1Dmodel(discontinuities)
    do ilayer = nlayer, 1, -1
       if (model_is_anelastic(bkgrdmodel)) then
           write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
-                      depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                      radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
                       qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
       else
           write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
-                      depth(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer)
+                      radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer)
       end if
    end do
    close(2000)
