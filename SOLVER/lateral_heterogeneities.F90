@@ -27,7 +27,7 @@ module lateral_heterogeneities
   use data_heterogeneous
   use data_io
   use data_proc
-  use utlity, only :  compute_coordinates
+  use utlity, only :  compute_coordinates, to_lower
   use data_source, only : rot_src
   
   implicit none

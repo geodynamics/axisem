@@ -37,6 +37,8 @@ contains
 
 !-----------------------------------------------------------------------------
 subroutine read_sourceparams
+
+  use utlity, only       : to_lower
  
   real(kind=realkind)   :: srclat
   character(len=256)    :: keyword, keyvalue, line
