@@ -1776,7 +1776,7 @@ subroutine check_defined(exists, keyword, fnam, nerr)
     character(len=*), intent(in)  :: fnam
     character(len=256)            :: fmtstring
 
-    if (exists==.false.) then
+    if (.not.exists) then
         fmtstring = "(A, '(): Keyword ', A, ' has not been defined, but is mandatory')"
         if(lpr) write(*,*)
         if(lpr) write(*,fmtstring) trim(fnam), trim(keyword)
@@ -1800,7 +1800,7 @@ subroutine check_already_defined(exists, keyword, iline, fnam, nerr)
     character(len=*), intent(in)  :: fnam
     character(len=256)            :: fmtstring
 
-    if (exists==.true.) then
+    if (exists) then
         fmtstring = "(A, '(', I0, '): Keyword ', A, ' has already been defined before')"
         if(lpr) write(*,*)
         if(lpr) write(*,fmtstring) trim(fnam), iline, trim(keyword)
@@ -1820,7 +1820,7 @@ subroutine check_line_err(ierr, iline, line, fnam, nerr)
     character(len=*), intent(in)  :: line, fnam
     character(len=64)             :: fmtstring
 
-    if (ierr) then
+    if (ierr.eq.0) then
         fmtstring = "(A, '(', I0, '): Could not process line')"
         if(lpr) write(*,*)
         if(lpr) write(*,fmtstring) trim(fnam), iline

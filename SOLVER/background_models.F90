@@ -1450,17 +1450,20 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   real(kind=dp), allocatable, intent(out), optional  :: rho_layer_out(:) 
   real(kind=dp), allocatable, intent(out), optional  :: radius_layer_out(:)
   integer, intent(out), optional                     :: nlayer_out
-  integer                          :: ilayer, ierr, icolumn, ncolumn
+  integer                          :: ilayer, ierr, icolumn, ncolumn, iline, line_err, nerr = 0
   integer                          :: column_rad = 0, column_vpv = 0, column_vsv = 0, column_rho = 0
   integer                          :: column_qka = 0, column_qmu = 0, column_vph = 0, column_vsh = 0
   integer                          :: column_eta = 0, nmissing = 0
   integer, allocatable             :: layertemp(:)
   character(len=6), allocatable    :: columnvalue(:)
   logical                          :: bkgrdmodelfile_exists = .false., startatsurface = .false.
-  logical                          :: modelindepth = .false., exist_param_col = .false.
-  logical                          :: exist_param_anel = .false., exist_param_ani = .false.
+  logical                          :: model_in_depth    = .false., model_in_km     = .false.
+  logical                          :: exist_param_units = .false., exist_param_col = .false.
+  logical                          :: exist_param_anel  = .false., exist_param_ani = .false.
+  logical                          :: override_radius   = .false.
   character(len=128)               :: fmtstring, keyword, keyvalue
   character(len=512)               :: line
+  character(len=2)                 :: units
 
   ! Has the file already been read in?
   if (nlayer<1) then
@@ -1479,23 +1482,42 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      nlayer = 0
      ncolumn = 4 ! default, if elastic and isotropic
      ierr = 0
+     nerr = 0
+     iline = 0
 
      do while (ierr==0)
          read(77, fmt='(a512)', iostat=ierr) line
          if (ierr < 0) exit
+         iline = iline + 1
          if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
 
-         read(line,*) keyword, keyvalue 
+         read(line,*,iostat=line_err) keyword, keyvalue 
+        
+         call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
          select case(keyword) 
          case('ANELASTIC') 
+             call check_already_defined(exist_param_anel, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_anelastic
              if (ext_model_is_ani) ncolumn = ncolumn + 3       ! vpv, vph, eta
              exist_param_anel = .true.
          case('ANISOTROPIC') 
+             call check_already_defined(exist_param_ani, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_ani 
              if (ext_model_is_anelastic) ncolumn = ncolumn + 2 !qka, qmu
              exist_param_ani = .true.
+         case('UNITS')
+             call check_already_defined(exist_param_units, keyword, iline, trim(fnam_ext_model), nerr)
+             read(keyvalue, *) units
+             if (to_lower(units).eq.'m') then
+                 model_in_km = .false.
+             else
+                 model_in_km = .true.
+             end if
+             exist_param_units = .true.
+         case('OVERRIDE_RADIUS_CHECK')
+             read(keyvalue, *) override_radius
          case('COLUMNS')
+             call check_already_defined(exist_param_col, keyword, iline, trim(fnam_ext_model), nerr)
              exist_param_col = .true.
 
          case default
@@ -1504,13 +1526,19 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      end do
      rewind(77)
 
-     if (.not.exist_param_anel) print *, 'Keyword ANELASTIC is not present'
-     if (.not.exist_param_ani)  print *, 'Keyword ANISOTROPIC is not present'
-     if (.not.exist_param_col)  print *, 'Keyword COLUMNS is not present'
+     call check_defined(exist_param_anel,  'ANELASTIC', trim(fnam_ext_model), nerr)
+     call check_defined(exist_param_ani,   'ANISOTROPIC', trim(fnam_ext_model), nerr)
+     call check_defined(exist_param_col,   'COLUMNS', trim(fnam_ext_model), nerr)
+     call check_defined(exist_param_units, 'UNITS', trim(fnam_ext_model), nerr)
 
-     if (.not.(exist_param_col.and.exist_param_anel.and.exist_param_ani)) then
-         print *, 'ERROR: One or more mandatory lines in ', trim(fnam_ext_model), &
-                  ' is missing'
+     !if (.not.(exist_param_col.and.exist_param_anel.and.exist_param_ani.and.exist_model_in_km)) then
+     !    print *, 'ERROR: One or more mandatory lines in ', trim(fnam_ext_model), &
+     !             ' is missing'
+     !    stop
+     !end if
+
+     if (nerr>0) then
+         print "('ERROR: ', I0, ' errors reading external model')", nerr
          stop
      end if
 
@@ -1534,25 +1562,32 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      !open(unit=77, file=trim(fnam_ext_model), action='read')
      ilayer = 0
      ierr = 0
+     line_err = 0
+     iline = 0
+     nerr = 0
      do while (ierr==0)
          read(77, fmt='(a512)', iostat=ierr) line
          if (ierr < 0) exit
+         iline = iline + 1
          if (len(trim(line)) < 1 .or. line(1:1) == '#') cycle
 
          read(line,*) keyword, keyvalue 
          select case(keyword) 
          case('ANISOTROPIC') 
          case('ANELASTIC') 
+         case('UNITS')
+         case('OVERRIDE_RADIUS_CHECK')
          case('COLUMNS')
              allocate(layertemp(ncolumn))
              allocate(columnvalue(ncolumn))
-             read(line,*) keyword, columnvalue
+             read(line,*,iostat=line_err) keyword, columnvalue
+             call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
              do icolumn = 1, ncolumn
                  select case(to_lower(columnvalue(icolumn)))
                  case('depth', 'radius')
                      column_rad = icolumn
                      if (columnvalue(icolumn).eq.'depth') then
-                         modelindepth = .true.
+                         model_in_depth = .true.
                      end if
                  case('vp', 'vpv')
                      column_vpv = icolumn
@@ -1595,7 +1630,9 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
          case default
              ilayer = ilayer + 1
-             read(line,*) layertemp
+             read(line, *, iostat=line_err) layertemp
+             call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
+
              radius_layer(ilayer)  = layertemp(column_rad)
              vpv_layer(ilayer)     = layertemp(column_vpv)
              vsv_layer(ilayer)     = layertemp(column_vsv)
@@ -1617,12 +1654,12 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      end do
      close(77)
 
-     if (ilayer.ne.nlayer) then
-         write(*,"(A,I4,A,I4,A)") 'something is wrong here, nlayer(', nlayer, ').ne.ilayer(', ilayer, ')'
+    
+     if (nerr>0) then
+         print "('ERROR: ', I0, ' errors reading external model')", nerr
          stop
      end if
 
-    
      fmtstring = '(A,A,A,I5,A)'
      if (lpr) write(6,fmtstring,advance='no') ' Model in file ', trim(fnam_ext_model), &
                                               ' has ', nlayer, ' layers'
@@ -1638,8 +1675,27 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
          if (lpr) print *, 'and elastic...'
      end if
 
+     ! Mesher uses SI units (meters, meters per second)
+     if (model_in_km) then
+         radius_layer = radius_layer * 1000.0
+         if (lpr) write(*,*) 'Depths/radii are set to be defined in km'
+     else
+         if (lpr) write(*,*) 'Depths/radii are assumed to be defined in meters'
+         if ((maxval(radius_layer)<10000.).and.(.not.override_radius)) then
+             if (lpr) write(*,*) 'ERROR: Radius of the model is just ', maxval(radius_layer), ' meter!'
+             if (lpr) write(*,*) '       If your external model is given in km, please change the value'
+             if (lpr) write(*,*) '       of MODEL_IN_KM in the model file to ''true''. If you really want'
+             if (lpr) write(*,*) '       to use such a small model, insert a line'
+             if (lpr) write(*,*) '       OVERRIDE_RADIUS_CHECK true'
+             if (lpr) write(*,*) '       to ', trim(fnam_ext_model), ' and continue at your own risk.'
+             stop
+         end if
+     end if
+
+
+
      ! Mesher uses radius, not depths
-     if (modelindepth) then
+     if (model_in_depth) then
          if (lpr) print *, 'Model is given in depths, convert to radius'
          radius_layer = maxval(radius_layer) - radius_layer
      end if
@@ -1652,45 +1708,6 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
         if (lpr) print *, 'Layers in file ', trim(fnam_ext_model), ' start at surface'
         startatsurface = .true.
      end if
-
-     !! Read in all other layers
-     !do ilayer = 2, nlayer
-     !   if (ext_model_is_anelastic) then
-     !      read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer),&
-     !                              vsv_layer(ilayer), qka_layer(ilayer), qmu_layer(ilayer)
-     !   else
-     !      read(77,*,iostat=ierr) radius_layer(ilayer), rho_layer(ilayer), vpv_layer(ilayer),&
-     !                              vsv_layer(ilayer)
-     !   end if
-     !  
-     !   if (ierr.eq.IOSTAT_END) then
-     !      if (lpr) then
-     !          print *, 'ERROR: File ', trim(fnam_ext_model), ' has only ', ilayer-1, ' layers'
-     !          print *, '       Not ', nlayer, ' as specified in the header.'
-     !      end if
-     !      stop
-     !   end if
-     !   if (startatsurface) then
-     !      if ((radius_layer(ilayer) - radius_layer(ilayer-1))>0.0d0) then
-     !         if (lpr) then
-     !            print *, 'ERROR: Radius of layers in external model has to be monotonously (increasing)!'
-     !            print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
-     !            print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
-     !         end if
-     !         stop
-     !      end if
-     !   else
-     !      if ((radius_layer(ilayer) - radius_layer(ilayer-1))<0.0d0) then
-     !         if (lpr) then
-     !            print *, 'ERROR: Radius of layers in external model has to be monotonously (decreasing)!'
-     !            print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
-     !            print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
-     !         end if
-     !         stop
-     !      end if
-     !   end if
-     !enddo
-     !close(77)
 
      ! Reorder elements if the file is in the wrong order (Mesher always assumes from surface to core)
      if (.not.startatsurface) then
@@ -1747,6 +1764,76 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   end if
 
 end subroutine read_ext_model
+!-----------------------------------------------------------------------------
+
+!=============================================================================
+subroutine check_defined(exists, keyword, fnam, nerr)
+!< Checks whether exists==.true., which means that this keyword has been defined
+!! in the input file. Increases nerr, if not.
+    logical, intent(in)           :: exists
+    character(len=*), intent(in)  :: keyword
+    integer, intent(inout)        :: nerr
+    character(len=*), intent(in)  :: fnam
+    character(len=256)            :: fmtstring
+
+    if (.not.exists) then
+        fmtstring = "(A, '(): Keyword ', A, ' has not been defined, but is mandatory')"
+        if(lpr) write(*,*)
+        if(lpr) write(*,fmtstring) trim(fnam), trim(keyword)
+        if(lpr) write(*,*)
+            !if(lpr) write(*,*) trim(line)
+            !write(*,*) 'ERROR: in external model, line:', iline
+        nerr = nerr + 1
+    end if
+
+end subroutine
+!-----------------------------------------------------------------------------
+
+!=============================================================================
+subroutine check_already_defined(exists, keyword, iline, fnam, nerr)
+!< Checks whether exists==.true., which means that this keyword appears twice
+!! in the input file. Increases error count nerr, if so.
+    logical, intent(in)           :: exists
+    character(len=*), intent(in)  :: keyword
+    integer, intent(in)           :: iline
+    integer, intent(inout)        :: nerr
+    character(len=*), intent(in)  :: fnam
+    character(len=256)            :: fmtstring
+
+    if (exists) then
+        fmtstring = "(A, '(', I0, '): Keyword ', A, ' has already been defined before')"
+        if(lpr) write(*,*)
+        if(lpr) write(*,fmtstring) trim(fnam), iline, trim(keyword)
+        if(lpr) write(*,*)
+            !if(lpr) write(*,*) trim(line)
+            !write(*,*) 'ERROR: in external model, line:', iline
+        nerr = nerr + 1
+    end if
+
+end subroutine
+!-----------------------------------------------------------------------------
+
+!=============================================================================
+subroutine check_line_err(ierr, iline, line, fnam, nerr)
+    integer, intent(in)           :: ierr, iline
+    integer, intent(inout)        :: nerr
+    character(len=*), intent(in)  :: line, fnam
+    character(len=64)             :: fmtstring
+
+    if (ierr.eq.0) then
+        fmtstring = "(A, '(', I0, '): Could not process line')"
+        if(lpr) write(*,*)
+        if(lpr) write(*,fmtstring) trim(fnam), iline
+        !write(*,*) 'ERROR: ', trim(fnam),'(',in line ', iline, ' in ', trim(fnam)
+        !write(*,*) '       Could not process the line:'
+        !write(*,*) '----------------------------------------------------------'
+        if(lpr) write(*,*) trim(line)
+        if(lpr) write(*,*)
+        !write(*,*) '----------------------------------------------------------'
+        nerr = nerr + 1
+    end if
+
+end subroutine
 !-----------------------------------------------------------------------------
 
 !=============================================================================
