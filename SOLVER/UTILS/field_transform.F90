@@ -29,7 +29,7 @@ program field_transformation
     implicit none
 
 #ifdef unc
-    include 'fftw3.f03'
+    !include 'fftw3.f03'
     include 'netcdf.inc'
 #endif
 
@@ -87,18 +87,18 @@ program field_transformation
     space_i = 0
     space_o = 0
 
-    ! initialize multithreading fft
-    if (dofft .and. nthreads > 1) then
-        call dfftw_init_threads(iret)
-        if (iret /= 1) then
-            print *, 'iret = ', iret
-            print *, 'WARNING: Problem with initialization of multithreading for fft'
-            print *, '         Continuing serially'
-        else
-            print *, 'setting up with ', nthreads, ' threads'
-            call dfftw_plan_with_nthreads(nthreads)
-        endif
-    endif
+    !! initialize multithreading fft
+    !if (dofft .and. nthreads > 1) then
+    !    call dfftw_init_threads(iret)
+    !    if (iret /= 1) then
+    !        print *, 'iret = ', iret
+    !        print *, 'WARNING: Problem with initialization of multithreading for fft'
+    !        print *, '         Continuing serially'
+    !    else
+    !        print *, 'setting up with ', nthreads, ' threads'
+    !        call dfftw_plan_with_nthreads(nthreads)
+    !    endif
+    !endif
 
     ! open input netcdf file 
     call check( nf90_open(path="./Data/axisem_output.nc4", & 
@@ -147,20 +147,20 @@ program field_transformation
     if (verbose) &
         print *, 'ngll  = ', ngll
 
-    if (dofft) then
-        ! compute optimal length for fft
-        nextpow2 = 2
-        do while (nextpow2 < nsnap) 
-            nextpow2 = nextpow2 * 2
-        end do
+    !if (dofft) then
+    !    ! compute optimal length for fft
+    !    nextpow2 = 2
+    !    do while (nextpow2 < nsnap) 
+    !        nextpow2 = nextpow2 * 2
+    !    end do
 
-        nomega = nextpow2 + 1
-        ntimes = nextpow2 * 2
-        if (verbose) then
-            print *, 'nomega = ', nomega
-            print *, 'ntimes = ', ntimes
-        end if
-    end if
+    !    nomega = nextpow2 + 1
+    !    ntimes = nextpow2 * 2
+    !    if (verbose) then
+    !        print *, 'nomega = ', nomega
+    !        print *, 'ntimes = ', ntimes
+    !    end if
+    !end if
 
 
     !! Check for output file
@@ -180,44 +180,44 @@ program field_transformation
         call check( nf90_create(path="./ordered_output.nc4", cmode=nmode, ncid=ncout_id))
     end if
 
-    if (dofft) then 
-        ! create group for freqdomain fields
-        call check( nf90_def_grp(ncout_id, "freqdomain_fields", ncout_fields_grpid) )
+    !if (dofft) then 
+    !    ! create group for freqdomain fields
+    !    call check( nf90_def_grp(ncout_id, "freqdomain_fields", ncout_fields_grpid) )
 
-        ! create dimensions
-        call check( nf90_def_dim(ncid=ncout_fields_grpid, name="omega", len=nomega, &
-                                 dimid=ncout_freq_dimid) )
-    
-        call check( nf90_def_dim(ncid=ncout_fields_grpid, name="gllpoints_all", &
-                                 len=ngll, dimid=ncout_gll_dimid) )
+    !    ! create dimensions
+    !    call check( nf90_def_dim(ncid=ncout_fields_grpid, name="omega", len=nomega, &
+    !                             dimid=ncout_freq_dimid) )
+    !
+    !    call check( nf90_def_dim(ncid=ncout_fields_grpid, name="gllpoints_all", &
+    !                             len=ngll, dimid=ncout_gll_dimid) )
 
-        ! create variables for real and imaginary part of freq domain fields
-        do ivar=1, nvar
-            call check( nf90_def_var(ncid=ncout_fields_grpid, &
-                                     name=trim(varnamelist(ivar))//'_real', &
-                                     xtype=NF90_FLOAT, &
-                                     dimids=(/ncout_freq_dimid, ncout_gll_dimid/),&
-                                     varid=ncout_field_varid(ivar, 1), &
-                                     chunksizes = (/nomega, 1/)) )
+    !    ! create variables for real and imaginary part of freq domain fields
+    !    do ivar=1, nvar
+    !        call check( nf90_def_var(ncid=ncout_fields_grpid, &
+    !                                 name=trim(varnamelist(ivar))//'_real', &
+    !                                 xtype=NF90_FLOAT, &
+    !                                 dimids=(/ncout_freq_dimid, ncout_gll_dimid/),&
+    !                                 varid=ncout_field_varid(ivar, 1), &
+    !                                 chunksizes = (/nomega, 1/)) )
 
-            call check( nf90_def_var(ncid=ncout_fields_grpid, &
-                                     name=trim(varnamelist(ivar))//'_imag', &
-                                     xtype=NF90_FLOAT, &
-                                     dimids=(/ncout_freq_dimid, ncout_gll_dimid/),&
-                                     varid=ncout_field_varid(ivar, 2), &
-                                     chunksizes = (/nomega, 1/)) )
-            if (deflate) then
-                call check( nf90_def_var_deflate(ncid=ncout_fields_grpid, &
-                                                 varid=ncout_field_varid(ivar, 1), &
-                                                 shuffle=1, deflate=1, &
-                                                 deflate_level=deflate_level) )
-                call check( nf90_def_var_deflate(ncid=ncout_fields_grpid, &
-                                                 varid=ncout_field_varid(ivar, 2), &
-                                                 shuffle=1, deflate=1, &
-                                                 deflate_level=deflate_level) )
-            end if
-        end do
-    else
+    !        call check( nf90_def_var(ncid=ncout_fields_grpid, &
+    !                                 name=trim(varnamelist(ivar))//'_imag', &
+    !                                 xtype=NF90_FLOAT, &
+    !                                 dimids=(/ncout_freq_dimid, ncout_gll_dimid/),&
+    !                                 varid=ncout_field_varid(ivar, 2), &
+    !                                 chunksizes = (/nomega, 1/)) )
+    !        if (deflate) then
+    !            call check( nf90_def_var_deflate(ncid=ncout_fields_grpid, &
+    !                                             varid=ncout_field_varid(ivar, 1), &
+    !                                             shuffle=1, deflate=1, &
+    !                                             deflate_level=deflate_level) )
+    !            call check( nf90_def_var_deflate(ncid=ncout_fields_grpid, &
+    !                                             varid=ncout_field_varid(ivar, 2), &
+    !                                             shuffle=1, deflate=1, &
+    !                                             deflate_level=deflate_level) )
+    !        end if
+    !    end do
+    !else
         ! create group for timedomain fields
         call check( nf90_def_grp(ncout_id, "Snapshots", ncout_fields_grpid) )
         print *, 'Defined group "Snapshots"'
@@ -274,32 +274,32 @@ program field_transformation
                                                  deflate_level=deflate_level) )
             end if
         end do
-    end if
+    !end if !dofft
 
     call check( nf90_enddef(ncout_id))
 
-    if (dofft) then 
-        rank = 1
-        istride = 1
-        ostride = 1
-        if (verbose) then
-            print *, 'ntimes = ',  ntimes
-            print *, 'nomega = ',  nomega
-        end if
+    !if (dofft) then 
+    !    rank = 1
+    !    istride = 1
+    !    ostride = 1
+    !    if (verbose) then
+    !        print *, 'ntimes = ',  ntimes
+    !        print *, 'nomega = ',  nomega
+    !    end if
 
-        ! allocate working arrays for fourier transform
-        allocate(dataf(1:nomega, 1:npointsperstep))
-        allocate(datat(1:ntimes, 1:npointsperstep))
-        allocate(datat_t(1:npointsperstep, 1:ntimes))
+    !    ! allocate working arrays for fourier transform
+    !    allocate(dataf(1:nomega, 1:npointsperstep))
+    !    allocate(datat(1:ntimes, 1:npointsperstep))
+    !    allocate(datat_t(1:npointsperstep, 1:ntimes))
 
-        ! generate plan for fft
-        call dfftw_plan_many_dft_r2c(plan_fftf, rank, ntimes, npointsperstep, datat, &
-                                     npointsperstep, istride, ntimes, dataf, &
-                                     npointsperstep, ostride, nomega, FFTW_ESTIMATE)
-    else
+    !    ! generate plan for fft
+    !    call dfftw_plan_many_dft_r2c(plan_fftf, rank, ntimes, npointsperstep, datat, &
+    !                                 npointsperstep, istride, ntimes, dataf, &
+    !                                 npointsperstep, ostride, nomega, FFTW_ESTIMATE)
+    !else
         allocate(datat(1:nsnap, 1:npointsperstep))
         allocate(datat_t(1:npointsperstep, 1:nsnap))
-    end if
+    !end if
    
     ! loop over fields
     do ivar=1, nvar
@@ -312,10 +312,10 @@ program field_transformation
             ngllread = min(npointsperstep, ngll - nstep)
 
             !initialize to zero for padding
-            if (dofft) then 
-                datat = 0.
-                dataf = 0.
-            end if
+            !if (dofft) then 
+            !    datat = 0.
+            !    dataf = 0.
+            !end if
 
             ! read a chunk of data
             call cpu_time(tick)
@@ -334,35 +334,35 @@ program field_transformation
                     ngllread * nsnap * 4 / 1048576., tack-tick, &
                     ngllread * nsnap * 4 / 1048576. / (tack-tick)
 
-            if (dofft) then
+            !if (dofft) then
 
-                ! ADD TAPERING HERE
+            !    ! ADD TAPERING HERE
 
-                ! do fft
-                call cpu_time(tick)
-                call dfftw_execute(plan_fftf)
-                call cpu_time(tack)
-                time_fft = time_fft + tack - tick
+            !    ! do fft
+            !    call cpu_time(tick)
+            !    call dfftw_execute(plan_fftf)
+            !    call cpu_time(tack)
+            !    time_fft = time_fft + tack - tick
 
-                ! write real and imaginary parts to output file
-                call cpu_time(tick)
-                call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 1), &
-                                         values=realpart(dataf), &
-                                         start=(/1, nstep+1/), &
-                                         count=(/nomega, ngllread/)) ) 
+            !    ! write real and imaginary parts to output file
+            !    call cpu_time(tick)
+            !    call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 1), &
+            !                             values=realpart(dataf), &
+            !                             start=(/1, nstep+1/), &
+            !                             count=(/nomega, ngllread/)) ) 
 
-                call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 2), &
-                                         values=imagpart(dataf), &
-                                         start=(/1, nstep+1/), &
-                                         count=(/nomega, ngllread/)) ) 
-                call cpu_time(tack)
-                time_o = time_o + tack - tick
-                space_o = space_o + ngllread * nsnap * 8 / 1048576.
-                if (verbose) &
-                    print "('wrote ', F8.2, ' MB in ', F5.2, ' s => ', F6.2, 'MB/s' )", &
-                        ngllread * nomega * 2 * 4 / 1048576., tack-tick, &
-                        ngllread * nomega * 2 * 4 / 1048576. / (tack-tick)
-            else
+            !    call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 2), &
+            !                             values=imagpart(dataf), &
+            !                             start=(/1, nstep+1/), &
+            !                             count=(/nomega, ngllread/)) ) 
+            !    call cpu_time(tack)
+            !    time_o = time_o + tack - tick
+            !    space_o = space_o + ngllread * nsnap * 8 / 1048576.
+            !    if (verbose) &
+            !        print "('wrote ', F8.2, ' MB in ', F5.2, ' s => ', F6.2, 'MB/s' )", &
+            !            ngllread * nomega * 2 * 4 / 1048576., tack-tick, &
+            !            ngllread * nomega * 2 * 4 / 1048576. / (tack-tick)
+            !else
                 ! trunkate for better compression
                 if (deflate .and. deflate_lossy) then
                     call cpu_time(tick)
@@ -384,15 +384,15 @@ program field_transformation
                     print "('wrote ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
                         ngllread * nsnap * 4 / 1048576., tack-tick, &
                         ngllread * nsnap * 4 / 1048576. / (tack-tick)
-            end if
+                    !end if !dofft
 
 
             nstep = nstep + npointsperstep
         end do
     enddo
 
-    if (dofft) &
-        call dfftw_destroy_plan(plan_fftf)
+    !if (dofft) &
+    !    call dfftw_destroy_plan(plan_fftf)
     call check( nf90_close(ncin_id))
     call check( nf90_close(ncout_id))
 
