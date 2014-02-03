@@ -43,10 +43,11 @@ if not args.a:
             '14. test14: explosion\n' + \
             '15. test15: dipole (mxz)\n' + \
             '16. test16: quadpole (mxy)\n' + \
+            '17. test17: external mesh (PREM)\n' + \
             '\n(format = 01,02 OR 1,2,3)' + \
             '\n')
 else:
-    test_no = '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16'
+    test_no = '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17'
 
 print '=========================================='
 print 'Requested Test numbers:'
