@@ -381,7 +381,7 @@ end subroutine nc_dump_strain_to_disk
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_stf(stf)
-    use data_io,  only                       : nseismo, nstrain
+    use data_io,  only                       : nseismo, nstrain, dump_wavefields
     use data_time, only                      : seis_it, strain_it, niter
     real(kind=sp), intent(in), dimension(:) :: stf   
 #ifdef unc
@@ -393,14 +393,20 @@ subroutine nc_dump_stf(stf)
     stf_seis_dumpvar = 0.0
     it_s = 1
     it_d = 1
+
     do i = 1, niter
+        ! Dumping the STF in the fine time stepping of the seismogram output
         if ( mod(i,seis_it) == 0) then
            stf_seis_dumpvar(it_s) = stf(i) 
            it_s = it_s + 1
         end if
-        if ( mod(i,strain_it) == 0) then
-           stf_dump_dumpvar(it_d) = stf(i) 
-           it_d = it_d + 1
+
+        if (dump_wavefields) then
+            ! Dumping the STF in the coarse time stepping of the strain (KERNER) output
+            if ( mod(i,strain_it) == 0) then
+               stf_dump_dumpvar(it_d) = stf(i) 
+               it_d = it_d + 1
+            end if
         end if
     end do
     stf_dumpvar = stf
