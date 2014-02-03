@@ -1364,6 +1364,11 @@ subroutine write_parameters
         write(55,23)trim(rec_file_type),'receiver file type'
         write(55,21)dtheta_rec,'receiver spacing (0 if not even)'
         write(55,24)use_netcdf,'use netcdf for wavefield output?'
+
+        write(55,22) nelem, 'nelem'
+        write(55,22) nel_fluid, 'nel_fluid'
+        write(55,22) nproc, 'nproc'
+
         close(55) ! simulation.info
 
         write(6,*)

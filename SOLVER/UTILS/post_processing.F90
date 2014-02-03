@@ -71,6 +71,10 @@ module data_all
   real, allocatable                   :: trans_rot_mat(:,:)
   real, allocatable                   :: colat(:,:), lon(:,:)
 
+  integer                             :: nelem
+  integer                             :: nel_fluid
+  integer                             :: nproc_mesh
+
 end module data_all
 !=========================================================================================
 
@@ -637,6 +641,9 @@ subroutine read_input
      read(99,*) 
      read(99,*)
      read(99,*) use_netcdf
+     read(99,*) nelem
+     read(99,*) nel_fluid
+     read(99,*) nproc_mesh
      close(99)
      
      if (src_type(isim,2)=='thetaforce' .or.  src_type(isim,2)=='phiforce') then
@@ -780,6 +787,7 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
 
+  !else if (src_file_type=='sourceparams') then
   case('sourceparams')
      iinparam_source = 1132
      open(unit=iinparam_source, file='inparam_source', status='old', action='read', iostat=ioerr)
@@ -820,10 +828,15 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
          write(6,*) 'unknown source type: ', src_type(1,2)
      end select
 
+     !Mij = amplitude ! The whole tensor is set to amplitude. That's okay, since later only the terms
+                     ! are used, which are nonzero for this simulation.
+
   case default
+  !  else
      write(6,*)'unknown source file type!',src_file_type
      stop
   end select
+  !endif
 
   fmtstring = '(6(E12.5))'
   write(6,*) 'Original moment tensor: (Mrr, Mtt, Mpp, Mrt, Mrp, Mtp)'
@@ -919,7 +932,6 @@ subroutine rotate_receiver_comp(isim, rec_comp_sys, srccolat, srclon, th_rot, ph
   use data_all,     only : nsim, trans_rot_mat
   use global_par
   implicit none
-  !include '../mesh_params.h'
   
   character(len=3)      :: rec_comp_sys
   real, intent(in)      :: th_rot, ph_rot   ! coordinates in the rotated (src at pole) system
@@ -1233,8 +1245,6 @@ subroutine compute_3d_wavefields
   use data_all
   use global_par
   implicit none
-
-  include '../mesh_params.h'
 
   integer                               :: iproc, npts, npts_top, npts_bot, npts_meri, &
                                            nphi, snapskip, snap1, snap2
@@ -1944,8 +1954,7 @@ subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf,
     double precision, allocatable,dimension(:,:,:,:) :: x_el,y_el,z_el
     double precision :: dang,C,D,re,ri,teta,tksi,tr,Xe,Ye,delta
     integer :: npol_cs,ii,iii,izone,nang,nelt,nr,nrpol,iel,nel_surf,jj,ipol,jpol,kpol,j,i
-    double precision ::  dist,th,dr,r,xc,yc,zc,ph
-    double precision ,allocatable :: r_ref(:), th_ref(:)
+    double precision ::  dist,r_ref,th_ref,th,dr,r,xc,yc,zc,ph
 
     write(6,*)'computing cubed sphere for surface at r=',rsurf
     write(6,*)'pts surf,total:',npts_surf,npts
@@ -2075,11 +2084,6 @@ subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf,
       ysurf = 0
       zsurf = 0
       iii = 0
-      allocate(r_ref(npts_surf))
-      allocate(th_ref(npts_surf))
-      call get_r_theta( coord1(ind_proc_surf(:)*npts + ind_pts_surf(:), 1), & 
-                        coord1(ind_proc_surf(:)*npts + ind_pts_surf(:), 2), &
-                        r_ref, th_ref, nptstot)
       write(6,*)'constructing 1d array for surface coordinates...'
       do iel = 1, nel_surf
          if ( mod(iel,floor(nel_surf/10.))==0  ) then
@@ -2112,19 +2116,17 @@ subroutine construct_surface_cubed_sphere(npts_surf, npts, rsurf, ind_proc_surf,
             zsurf(iii+4) = zcol(0,npol_cs,0,iel)
             
             ! determine the corresponding point in the D-shape domain
-            do jj = 1, 4
-               call xyz2rthetaphi( r, th, azi_phi_surf(iii+jj), &
-                                   xsurf(iii+jj), ysurf(iii+jj), zsurf(iii+jj) )
-               dist = 2.d0 * pi
-               dist = minval(abs(th-th_ref))
-               i = minloc(abs(th-th_ref),1)
-               azi_ind_surf(iii+jj) = ind_proc_surf(i)*npts + ind_pts_surf(i)
-               !do i = 1, npts_surf
-               !   if (abs(th-th_ref) < dist) then 
-               !      dist = abs(th-th_ref)
-               !      azi_ind_surf(iii+jj) = ind_proc_surf(i)*npts + ind_pts_surf(i)
-               !   endif
-               !enddo
+            do jj=1,4
+               call xyz2rthetaphi(r,th, azi_phi_surf(iii+jj),xsurf(iii+jj),ysurf(iii+jj),zsurf(iii+jj))
+               dist=2.d0*pi
+               do i=1,npts_surf
+                  call get_r_theta(coord1(ind_proc_surf(i)*npts+ind_pts_surf(i),1), & 
+                       coord1(ind_proc_surf(i)*npts+ind_pts_surf(i),2),r_ref,th_ref)
+                  if (abs(th-th_ref)< dist) then 
+                     dist=abs(th-th_ref)
+                     azi_ind_surf(iii+jj)=ind_proc_surf(i)*npts+ind_pts_surf(i)
+                  endif
+               enddo
             enddo
 
             iii = iii + 4
@@ -2228,9 +2230,9 @@ subroutine write_VTK_bin_scal(x,y,z,u1,rows,nelem_disk,filename1)
    close(100)
   write(6,*)'...saved ',trim(outdir)//'/'//trim(filename1)//'.vtk'
 end subroutine write_vtk_bin_scal
-!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------
 subroutine write_VTK_bin_scal_topology(x,y,z,u1,elems,filename)
   implicit none
   integer*4 :: i,t,elems
@@ -2306,9 +2308,9 @@ subroutine rthetaphi2xyz(x,y,z,r,theta,phi)
   z = r * cos(theta) 
 
 end subroutine rthetaphi2xyz
-!-----------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------
 real function prem(r0,param)
   ! prem model in terms of domains separated by discontinuities
   ! MvD: - at discontinuities, upper or lower domain is chosen based on numerical
@@ -2422,17 +2424,16 @@ subroutine xyz2rthetaphi(r,theta,phi,x,y,z)
 end subroutine xyz2rthetaphi
 !-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------------------
-subroutine get_r_theta(s, z, r, th, npts)
+!-------------------------------------------------------------------------
+subroutine get_r_theta(s,z,r,th)
   use global_par
-  integer, intent(in)        :: npts
-  real(kind=dp), intent(in)  :: s(npts), z(npts)
-  real(kind=dp), intent(out) :: r(npts), th(npts)
+  double precision, intent(in)  :: s, z
+  double precision, intent(out) :: r, th
  
   th = datan(s / (z + epsi))
  
-  where( 0.d0 > th ) th = pi + th
-  where (th == zero .and. z < 0.d0) th = pi
+  if ( 0.d0 > th ) th = pi + th
+  if (th == zero .and. z < 0.d0) th = pi
  
   r = dsqrt(s**2 + z**2)
 
