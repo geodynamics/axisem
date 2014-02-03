@@ -1,5 +1,8 @@
-F F
-8
+# Velocity model for Mars, according to Anderson (1977)
+ANELASTIC   false
+ANISOTROPIC false
+UNITS       m
+COLUMNS     radius rho vp vs
       0.  6700.0  4900.0     0.0
 1694000.  6500.0  4600.0     0.0
 1694000.  4000.0 10200.0  5600.0

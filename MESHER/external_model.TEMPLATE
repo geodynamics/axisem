@@ -1,7 +1,20 @@
-# Input file for AXISEM created from external model on 02/02/2014, at 10h 39min
+# Input file for AXISEM created from PREM_ani on 02/02/2014, at 10h 39min
+
+# Is model anelastic?
 ANELASTIC       T
+
+# Is model anisotropic?
 ANISOTROPIC     T
+
+# Are the units given in meters and meters per second?
+# Allowed values:
+# m  - velocities in m/s,  density in kg/m^3
+# km - velocities in km/s, density in g/cm^3 
+UNITS           m
+
+# Order of the colums of the model
 COLUMNS       radius      rho      vpv      vsv      qka      qmu      vph      vsh      eta
+
             6371000.  2600.00  5800.00  3200.00  57827.0    600.0  5800.00  3200.00  1.00000
             6356000.  2600.00  5800.00  3200.00  57827.0    600.0  5800.00  3200.00  1.00000
 #          Discontinuity   1, depth:      15.00 km
