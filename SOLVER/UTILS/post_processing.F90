@@ -787,7 +787,6 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
 
-  !else if (src_file_type=='sourceparams') then
   case('sourceparams')
      iinparam_source = 1132
      open(unit=iinparam_source, file='inparam_source', status='old', action='read', iostat=ioerr)
@@ -828,15 +827,10 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
          write(6,*) 'unknown source type: ', src_type(1,2)
      end select
 
-     !Mij = amplitude ! The whole tensor is set to amplitude. That's okay, since later only the terms
-                     ! are used, which are nonzero for this simulation.
-
   case default
-  !  else
      write(6,*)'unknown source file type!',src_file_type
      stop
   end select
-  !endif
 
   fmtstring = '(6(E12.5))'
   write(6,*) 'Original moment tensor: (Mrr, Mtt, Mpp, Mrt, Mrp, Mtp)'
@@ -2424,7 +2418,7 @@ subroutine xyz2rthetaphi(r,theta,phi,x,y,z)
 end subroutine xyz2rthetaphi
 !-----------------------------------------------------------------------------------------
 
-!-------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine get_r_theta(s,z,r,th)
   use global_par
   double precision, intent(in)  :: s, z
