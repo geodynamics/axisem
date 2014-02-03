@@ -105,6 +105,7 @@ program post_processing_seis
   double precision     :: arg1
   type(ncparamtype)    :: ncparams
   real(4), allocatable :: nc_seis(:,:,:,:)
+  real(kind=dp), allocatable :: tmp_write(:,:)
 
   call read_input
   if (use_netcdf) call nc_open(ncparams, nsim, simdir)
@@ -407,13 +408,16 @@ program post_processing_seis
      open(unit=50, file=trim(outname(i,1))//'_'//reccomp(1)//'.dat', status='new')
      open(unit=51, file=trim(outname(i,1))//'_'//reccomp(2)//'.dat', status='new')
      open(unit=52, file=trim(outname(i,1))//'_'//reccomp(3)//'.dat', status='new')
+     if (.not.allocated(tmp_write)) allocate(tmp_write(2, nt_seis))
      if (negative_time) then
         write(6,*)' writing seismograms into joint directory: negative time'
-        do it=1, nt_seis
-           write(50,*) time(it) - shift_fact - tshift, seis_fil(it,1)
-           write(51,*) time(it) - shift_fact - tshift, seis_fil(it,2)
-           write(52,*) time(it) - shift_fact - tshift, seis_fil(it,3)
-        enddo
+        tmp_write(1,:) = time - shift_fact - tshift
+        tmp_write(2,:) = seis_fil(:,1)
+        write(50,'(2ES16.7)') tmp_write
+        tmp_write(2,:) = seis_fil(:,2)
+        write(51,'(2ES16.7)') tmp_write
+        tmp_write(2,:) = seis_fil(:,3)
+        write(52,'(2ES16.7)') tmp_write
      else
         write(6,*)' writing seismograms into joint directory: zero time'
         do it=ishift+1, nt_seis
