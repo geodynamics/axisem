@@ -34,6 +34,9 @@ while (true)
     r = res{2};
     theta = res{1};
     timevals = res{3} + src_shift;
+    nlayer = length(r);
+    
+    theta(1:nlayer-1) = (theta(1:nlayer-1) + theta(2:nlayer)) / 2;
 
     
     nphase = nphase + 1;
