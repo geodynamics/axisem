@@ -159,6 +159,8 @@ subroutine compute_stf
     call gauss_d
   case('gauss_2')
     call gauss_dd
+  case('errorf')
+    call errorf
   case('quheavi')
      !call quasiheavi
      call delta_src ! done inside the delta routine now
@@ -211,15 +213,17 @@ subroutine compute_stf_t(nstf_t,t,stf_t)
 
   select case(stf_type)
   case('dirac_0')
-    call delta_src_t(nstf_t,t,stf_t)
+    call delta_src_t(nstf_t, t, stf_t)
   case('gauss_0')
-    call gauss_t(nstf_t,t,stf_t)
+    call gauss_t(nstf_t, t, stf_t)
   case('gauss_1')
-    call gauss_d_t(nstf_t,t,stf_t)
+    call gauss_d_t(nstf_t, t, stf_t)
   case('gauss_2')
-    call gauss_dd_t(nstf_t,t,stf_t)
+    call gauss_dd_t(nstf_t, t, stf_t)
+  case('errorf')
+    call errorf_t(nstf_t, t, stf_t)
   case('quheavi')
-    call quasiheavi_t(nstf_t,stf_t)
+    call quasiheavi_t(nstf_t, stf_t)
   case default
      write(6,*)' source time function non existant:', stf_type
      stop
@@ -584,8 +588,58 @@ subroutine gauss_dd
 end subroutine gauss_dd
 !=============================================================================
 
+
 !-----------------------------------------------------------------------------
-!! approximate discrete dirac
+subroutine errorf
+
+  integer               :: i
+  real(kind=realkind)   :: t
+
+  do i=1, niter
+     t = dble(i) * deltat
+     stf(i) = erf(decay / t_0 * (t - shift_fact))*0.5 + 0.5 
+  enddo
+
+  dt_src_shift = shift_fact ! Taken from Gauss
+
+  stf = stf * magnitude
+
+end subroutine errorf
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> Calculates the error function, coefficients taken from Numerical Recipes
+!! @TODO: ERF is an intrinsic in Fortran2008. Compiler support is unclear still,
+!!        so we will keep that in here for a while.
+function erf(x)
+	real(kind=dp), intent(in)        :: x
+	real(kind=dp)                    :: erfcc, erf
+    real(kind=dp)                    :: polyval
+	real(kind=dp)                    :: t,z
+    integer                          :: icoeff
+    integer, parameter               :: ncoeff = 10
+	real(kind=dp), dimension(ncoeff) :: coeffs =                         &
+        [-1.26551223,  1.00002368, 0.37409196,  0.09678418, -0.18628806, &
+          0.27886807, -1.13520398, 1.48851587, -0.82215223,  0.17087277]
+
+    z = abs(x)
+    t = 1.0/(1.0+0.5*z)
+    
+    polyval = coeffs(ncoeff)
+    do icoeff = ncoeff-1, 1, -1
+        polyval = t*polyval + coeffs(icoeff)
+    end do
+    
+    erfcc=t*exp(-z*z+polyval)
+    
+    if (x < 0.0) erfcc=2.0-erfcc
+    erf = 1 - erfcc 
+
+end function erf
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+!> approximate discrete dirac
 subroutine delta_src
   integer                   :: i,j
   real(kind=dp)             :: a,integral
@@ -693,8 +747,8 @@ end subroutine delta_src
 subroutine gauss_t(nstf_t,t,stf_t)
 
   integer, intent(in)           :: nstf_t
-  real(kind=dp)   , intent(in)  :: t(nstf_t)
-  real(kind=dp)   , intent(out) :: stf_t(nstf_t)
+  real(kind=dp), intent(in)     :: t(nstf_t)
+  real(kind=dp), intent(out)    :: stf_t(nstf_t)
   integer                       :: i
 
   do i=1,nstf_t
@@ -710,8 +764,8 @@ end subroutine gauss_t
 subroutine gauss_d_t(nstf_t,t,stf_t)
 
   integer, intent(in)              :: nstf_t
-  real(kind=dp)   , intent(in)     :: t(nstf_t)
-  real(kind=dp)   , intent(out)    :: stf_t(nstf_t)
+  real(kind=dp), intent(in)        :: t(nstf_t)
+  real(kind=dp), intent(out)       :: stf_t(nstf_t)
   integer                          :: i
 
   do i=1,nstf_t
@@ -728,8 +782,8 @@ end subroutine gauss_d_t
 subroutine gauss_dd_t(nstf_t,t,stf_t)
 
   integer, intent(in)              :: nstf_t
-  real(kind=dp)   , intent(in)  :: t(nstf_t)
-  real(kind=dp)   , intent(out) :: stf_t(nstf_t)
+  real(kind=dp), intent(in)        :: t(nstf_t)
+  real(kind=dp), intent(out)       :: stf_t(nstf_t)
   integer                          :: i
 
   do i=1,nstf_t
@@ -741,6 +795,23 @@ subroutine gauss_dd_t(nstf_t,t,stf_t)
   stf_t=stf_t/( two*((decay/t_0)**2)*exp(-three/two) )*magnitude
 
 end subroutine gauss_dd_t
+!=============================================================================
+
+!-----------------------------------------------------------------------------
+subroutine errorf_t(nstf_t,t,stf_t)
+
+  integer, intent(in)              :: nstf_t
+  real(kind=dp), intent(in)        :: t(nstf_t)
+  real(kind=dp), intent(out)       :: stf_t(nstf_t)
+  integer                          :: i
+
+  do i=1,nstf_t
+     stf_t(i) = erf(decay / t_0 * (t(i) - shift_fact))*0.5 + 0.5 
+  enddo
+  dt_src_shift = shift_fact
+  stf_t = stf_t * magnitude
+
+end subroutine errorf_t
 !=============================================================================
 
 !-----------------------------------------------------------------------------

@@ -14,10 +14,11 @@ TIME_STEP           0.0
 SOURCE_PERIOD       0.0
 
 # Source time function (default: gauss_0)
-# 'quheavi': Smooth Heaviside/erf function
+# 'quheavi': Smooth Heaviside
 # 'gauss_0': Gaussian with dominant period SOURCE_PERIOD
 # 'gauss_1': 1st derivative of gauss_0
 # 'gauss_2': 2nd derivative of gauss_0
+# 'errorf' : Error function (integral of Gaussian)
 # 'dirac_0': Dirac delta distribution
 #            This should be used to convolve arbitrary STFs in Postprocessing
 SOURCE_FUNCTION     gauss_0
