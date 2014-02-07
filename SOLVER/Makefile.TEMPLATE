@@ -49,7 +49,7 @@ endif
 # SOLVER specific code
 FFLAGS += -Dsolver
  
-all: $(PROG) utils
+all: $(PROG) utils 
 
 $(PROG): $(OBJS)
 	$(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
@@ -112,7 +112,7 @@ rotations.o: data_io.o data_mesh.o data_proc.o data_source.o \
 seismograms.o: commun.o data_io.o data_mesh.o data_pointwise.o data_proc.o \
 	data_source.o data_time.o global_parameters.o nc_routines.o \
 	pointwise_derivatives.o rotations.o utlity.o Makefile ../make_axisem.macros 
-source.o: apply_masks.o commpi.o commun.o data_io.o data_mesh.o data_proc.o \
+source.o: apply_masks.o commun.o data_io.o data_mesh.o data_proc.o \
 	data_source.o data_spec.o data_time.o global_parameters.o \
 	nc_routines.o pointwise_derivatives.o utlity.o Makefile ../make_axisem.macros 
 splib.o: global_parameters.o Makefile ../make_axisem.macros 

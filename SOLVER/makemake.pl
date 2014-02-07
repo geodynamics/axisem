@@ -84,7 +84,7 @@ print MAKEFILE "FFLAGS += -Dsolver\n \n";
 #
 # make
 #
-print MAKEFILE "all: \$(PROG) utils\n\n";
+print MAKEFILE "all: \$(PROG) utils \n\n";
 print MAKEFILE "\$(PROG): \$(OBJS)\n";
 print MAKEFILE "\t\$(", &LanguageCompiler($ARGV[1], @srcs);
 print MAKEFILE ") \$(LDFLAGS) -o \$@ \$(OBJS) \$(LIBS)\n\n";
