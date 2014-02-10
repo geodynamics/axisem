@@ -720,19 +720,24 @@ subroutine delta_src
   enddo
 
   stf = stf * magnitude
-  
+ 
+  ! Integrate STF over time for Heaviside function
+  int_stf(1:niter)=0.
+  signal(:)=0.
+  do i=1,niter
+     if (i>1) signal(i) = int_stf(i-1)
+     int_stf(i) = signal(i) + stf(i)*deltat
+  enddo
+
   if (lpr.and.diagfiles)  then 
      open(unit=61,file=infopath(1:lfinfo)//'/discrete_chosen_dirac_'//trim(discrete_choice)//'.dat')
      open(unit=62,file=infopath(1:lfinfo)//'/discrete_chosen_heavi_'//trim(discrete_choice)//'.dat')
-     int_stf(1:niter)=0.
-     signal(:)=0.
      do i=1,niter
-       write(61,*)timetmp(i),stf(i)
-       if (i>1) signal(i)=int_stf(i-1)
-       int_stf(i) = signal(i) + stf(i)*deltat
-       write(62,*)timetmp(i),int_stf(i)
-    enddo
-    close(61); close(62)
+        write(61,*)timetmp(i),stf(i)
+        write(62,*)timetmp(i),int_stf(i)
+     enddo
+     close(61)
+     close(62)
   endif
   
   ! Quasi-Heaviside
