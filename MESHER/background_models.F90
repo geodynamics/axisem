@@ -1454,7 +1454,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   integer                          :: column_rad = 0, column_vpv = 0, column_vsv = 0, column_rho = 0
   integer                          :: column_qka = 0, column_qmu = 0, column_vph = 0, column_vsh = 0
   integer                          :: column_eta = 0, nmissing = 0
-  integer, allocatable             :: layertemp(:)
+  real(kind=sp), allocatable       :: layertemp(:)
   character(len=6), allocatable    :: columnvalue(:)
   logical                          :: bkgrdmodelfile_exists = .false., startatsurface = .false.
   logical                          :: model_in_depth    = .false., model_in_km     = .false.
@@ -1818,9 +1818,9 @@ subroutine check_line_err(ierr, iline, line, fnam, nerr)
     character(len=64)             :: fmtstring
 
     if (ierr.ne.0) then
-        fmtstring = "(A, '(', I0, '): Could not process line')"
+        fmtstring = "(A, '(', I0, '): Could not process line, iostat=', I0)"
         if(lpr) write(*,*)
-        if(lpr) write(*,fmtstring) trim(fnam), iline
+        if(lpr) write(*,fmtstring) trim(fnam), iline, ierr
         if(lpr) write(*,*) trim(line)
         if(lpr) write(*,*)
         nerr = nerr + 1

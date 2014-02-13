@@ -1454,7 +1454,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   integer                          :: column_rad = 0, column_vpv = 0, column_vsv = 0, column_rho = 0
   integer                          :: column_qka = 0, column_qmu = 0, column_vph = 0, column_vsh = 0
   integer                          :: column_eta = 0, nmissing = 0
-  integer, allocatable             :: layertemp(:)
+  real(kind=sp), allocatable       :: layertemp(:)
   character(len=6), allocatable    :: columnvalue(:)
   logical                          :: bkgrdmodelfile_exists = .false., startatsurface = .false.
   logical                          :: model_in_depth    = .false., model_in_km     = .false.
@@ -1498,12 +1498,12 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
          case('ANELASTIC') 
              call check_already_defined(exist_param_anel, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_anelastic
-             if (ext_model_is_ani) ncolumn = ncolumn + 3       ! vpv, vph, eta
+             if (ext_model_is_anelastic) ncolumn = ncolumn + 3       ! vpv, vph, eta
              exist_param_anel = .true.
          case('ANISOTROPIC') 
              call check_already_defined(exist_param_ani, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_ani 
-             if (ext_model_is_anelastic) ncolumn = ncolumn + 2 !qka, qmu
+             if (ext_model_is_ani) ncolumn = ncolumn + 2 !qka, qmu
              exist_param_ani = .true.
          case('UNITS')
              call check_already_defined(exist_param_units, keyword, iline, trim(fnam_ext_model), nerr)
@@ -1582,6 +1582,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
              allocate(columnvalue(ncolumn))
              read(line,*,iostat=line_err) keyword, columnvalue
              call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
+             print *, 'ncolumn: ', ncolumn, columnvalue
              do icolumn = 1, ncolumn
                  select case(to_lower(columnvalue(icolumn)))
                  case('depth', 'radius')
@@ -1621,7 +1622,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
              if (ext_model_is_ani) then
                  nmissing = nmissing + check_exist(column_eta, 'eta')
                  nmissing = nmissing + check_exist(column_vph, 'vph')
-                 nmissing = nmissing + check_exist(column_vph, 'vsv')
+                 nmissing = nmissing + check_exist(column_vsh, 'vsh')
              end if
              if (nmissing.gt.0) then
                  write(*,*) 'ERROR: One or more columns are missing in ', trim(fnam_ext_model)
@@ -1630,7 +1631,8 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
          case default
              ilayer = ilayer + 1
-             read(line, *, iostat=line_err) layertemp
+             !read(line, *, iostat=line_err) layertemp
+             read(line, *) layertemp
              call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
 
              radius_layer(ilayer)  = layertemp(column_rad)
@@ -1781,8 +1783,6 @@ subroutine check_defined(exists, keyword, fnam, nerr)
         if(lpr) write(*,*)
         if(lpr) write(*,fmtstring) trim(fnam), trim(keyword)
         if(lpr) write(*,*)
-            !if(lpr) write(*,*) trim(line)
-            !write(*,*) 'ERROR: in external model, line:', iline
         nerr = nerr + 1
     end if
 
@@ -1805,8 +1805,6 @@ subroutine check_already_defined(exists, keyword, iline, fnam, nerr)
         if(lpr) write(*,*)
         if(lpr) write(*,fmtstring) trim(fnam), iline, trim(keyword)
         if(lpr) write(*,*)
-            !if(lpr) write(*,*) trim(line)
-            !write(*,*) 'ERROR: in external model, line:', iline
         nerr = nerr + 1
     end if
 
@@ -1820,16 +1818,12 @@ subroutine check_line_err(ierr, iline, line, fnam, nerr)
     character(len=*), intent(in)  :: line, fnam
     character(len=64)             :: fmtstring
 
-    if (ierr.eq.0) then
-        fmtstring = "(A, '(', I0, '): Could not process line')"
+    if (ierr.ne.0) then
+        fmtstring = "(A, '(', I0, '): Could not process line, iostat=', I0)"
         if(lpr) write(*,*)
-        if(lpr) write(*,fmtstring) trim(fnam), iline
-        !write(*,*) 'ERROR: ', trim(fnam),'(',in line ', iline, ' in ', trim(fnam)
-        !write(*,*) '       Could not process the line:'
-        !write(*,*) '----------------------------------------------------------'
+        if(lpr) write(*,fmtstring) trim(fnam), iline, ierr
         if(lpr) write(*,*) trim(line)
         if(lpr) write(*,*)
-        !write(*,*) '----------------------------------------------------------'
         nerr = nerr + 1
     end if
 
