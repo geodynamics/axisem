@@ -45,7 +45,7 @@ module parameters
 
 contains
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Open processor-specific output files
 subroutine open_local_output_file
     
@@ -66,9 +66,9 @@ subroutine open_local_output_file
     endif
 
 end subroutine
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Routine that reads in simulation parameters that are relevant at the 
 !! stage of the solver, i.e. number of time steps, integration scheme, 
 !! data paths, specification of wavefield dumping etc.
@@ -213,9 +213,9 @@ subroutine readin_parameters
   if (lpr .and. verbose > 1) write(6,*)'     small value is:',smallval
 
 end subroutine readin_parameters
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Read file inparam_basic
 subroutine read_inparam_basic
   use data_mesh,   only: meshname
@@ -306,9 +306,9 @@ subroutine read_inparam_basic
   call broadcast_log(dump_snaps_glob, 0)
     
 end subroutine
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> get verbosity in the very beginning
 subroutine read_inparam_basic_verbosity
 
@@ -344,9 +344,9 @@ subroutine read_inparam_basic_verbosity
   call broadcast_int(verbose, 0) 
     
 end subroutine
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
   
@@ -591,9 +591,9 @@ subroutine read_inparam_advanced
   if (lpr .and. verbose > 1) print *, 'done'
 
 end subroutine
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Getting information like code revision, username and hostname
 subroutine get_runinfo
   integer  :: iget_runinfo = 500, ioerr
@@ -657,9 +657,9 @@ subroutine get_runinfo
 #endif
 
 end subroutine
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Checking the consistency of some of the input parameters
 subroutine check_basic_parameters
   use data_mesh
@@ -744,9 +744,9 @@ subroutine check_basic_parameters
   endif
 
 end subroutine check_basic_parameters
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Compute numerical parameters, like time step, snapshot frequency
 subroutine compute_numerical_parameters
   use attenuation, only: dump_memory_vars
@@ -793,6 +793,8 @@ subroutine compute_numerical_parameters
   ! source period
   if (enforced_period > zero &
        .and. (trim(stf_type)/='dirac_0' .or. trim(stf_type)/='quheavi') ) then 
+     !@TODO: does this catch a period shorter then mesh period but with e.g.
+     !       gaussian stf? (MvD)
      if (enforced_period < period) then 
         if (lpr) then 
            write(6,*)
@@ -808,20 +810,22 @@ subroutine compute_numerical_parameters
      else
         if (lpr) then 
            write(6,*)
-           write(6,*)'    WARNING: Using larger period than necessary by mesh!'
-           write(6,23)enforced_period,period
+           write(6,*) '    WARNING: Using larger period than necessary by mesh!'
+           write(6,23) enforced_period, period
         endif
         t_0 = enforced_period
      endif
   else 
-     if (trim(stf_type)/='dirac_0' .or. trim(stf_type)/='quheavi') then
+     if (trim(stf_type) /= 'dirac_0' .or. trim(stf_type) /= 'quheavi') then
+        !@TODO: so t_0 = period anyway, but some useless info to the output file in case
+        !       of a dirac? (MvD)
         if (lpr) then
            write(6,*)
-           write(6,*)'    Using period of the mesh:',period
+           write(6,*)'    Using period of the mesh:', period
         endif
-        t_0=period
+        t_0 = period
      else
-        t_0=period ! Just for consistency
+        t_0 = period ! Just for consistency
      endif
   endif
 
@@ -830,22 +834,23 @@ subroutine compute_numerical_parameters
 
 
   ! Compute number of iterations in time loop
-  niter=ceiling((seislength_t+smallval_dble)/deltat)
+  niter = ceiling((seislength_t + smallval_dble) / deltat)
   if (lpr) then 
      write(6,*)
-     write(6,22)'    desired simulation length  :',seislength_t,' seconds'
-     write(6,22)'    offered simulation length  :',niter*deltat,' seconds'
-     write(6,11)'    number time loop iterations:',niter
+     write(6,22) '    desired simulation length  :', seislength_t, ' seconds'
+     write(6,22) '    offered simulation length  :', niter * deltat, ' seconds'
+     write(6,11) '    number time loop iterations:', niter
   endif
 
   ! Compute seismogram sampling rate in time steps
   if (lpr) then
      write(6,*)
-     write(6,22)'    desired seismogram sampling:',seis_dt,' seconds'
+     write(6,22) '    desired seismogram sampling:', seis_dt, ' seconds'
   endif
-  if (seis_dt > 0.0  .and. seis_dt >= deltat ) then
-     seis_it=floor((seis_dt+smallval_dble)/deltat)
-     seis_dt=deltat*seis_it
+
+  if (seis_dt > 0.0 .and. seis_dt >= deltat ) then
+     seis_it = floor((seis_dt + smallval_dble) / deltat)
+     seis_dt = deltat * seis_it
   elseif (seis_dt > 0.0 .and. seis_dt < deltat) then
      write(errmsg,*) 'seismogram sampling cannot be smaller than time step... \n', &
                      ' seismogram sampling:  ', seis_dt, &
@@ -855,17 +860,17 @@ subroutine compute_numerical_parameters
      seis_it = 1
      seis_dt = deltat
   endif
-  deltat_coarse=seis_dt
+  deltat_coarse = seis_dt
 
-  nseismo = floor(real(niter)/real(seis_it))
+  nseismo = floor(real(niter) / real(seis_it))
 
   ! Frequency of checkpointing. Hardcoded to every 5% of runtime
-  check_it = niter/20
+  check_it = niter / 20
 
   if (lpr) then
-     write(6,22)'    offered seismogram sampling:',deltat*seis_it,' seconds'
-     write(6,13)'    ...that is, every          :',seis_it,' timesteps'
-     write(6,11)'    number of samples          :',nseismo
+     write(6,22)'    offered seismogram sampling:', deltat * seis_it, ' seconds'
+     write(6,13)'    ...that is, every          :', seis_it, ' timesteps'
+     write(6,11)'    number of samples          :', nseismo
   endif
 22 format(a33,f9.2,a10)
 
@@ -899,32 +904,36 @@ subroutine compute_numerical_parameters
      write(6,*)''
      write(6,*)'  *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-'
      write(6,*)'  SOURCE TIME FUNCTION: ',trim(stf_type)
-     if (discrete_dirac) write(6,*)'    discrete Dirac type: ',discrete_choice
+     ! TODO: discrete_dirac and discrete choice are not set when arriving here (MvD)
+     if (discrete_dirac) write(6,*)'    discrete Dirac type: ', discrete_choice
   endif
 
   period_vs_discrete_halfwidth = 8.
   sampling_per_a = 1
-  decay=3.5d0
+  decay = 3.5d0
 
   if (.not. dump_wavefields & 
       .and. ( trim(stf_type)=='dirac_0' .or. trim(stf_type)=='queavi') &
-      .and. deltat_coarse>1.9*deltat ) then 
-     period_vs_discrete_halfwidth = period/(2.*deltat_coarse)
+      .and. deltat_coarse > 1.9 * deltat ) then 
+     period_vs_discrete_halfwidth = period / (2. * deltat_coarse)
      if (period_vs_discrete_halfwidth<15.) period_vs_discrete_halfwidth=15.
      if (lpr) then 
         write(6,*)'    No wavefield dump, but discrete Dirac due to seismogram downsampling'
-        write(6,*)'    Set discrete Dirac half width to [s]:',period/period_vs_discrete_halfwidth
-        write(6,*)'    ... i.e. this part in the mesh period:',period_vs_discrete_halfwidth
+        write(6,*)'    Set discrete Dirac half width to [s]:', period / period_vs_discrete_halfwidth
+        write(6,*)'    ... i.e. this part in the mesh period:', period_vs_discrete_halfwidth
      endif
+     !@TODO: this is not very transparent to the user...
   endif
 
   if (trim(stf_type)=='dirac_0' .or. trim(stf_type)=='quheavi')  then 
-     discrete_dirac=.true.
-     if (dump_wavefields .or. deltat_coarse> 1.9*deltat) then
-        discrete_choice='gaussi'
+     discrete_dirac = .true.
+
+     if (dump_wavefields .or. deltat_coarse > 1.9 * deltat) then
+        discrete_choice = 'gaussi'
      else
         discrete_choice = '1dirac'
      endif
+
      if (20.*seis_dt > period ) then 
         if (lpr) then 
            write(6,*)'   +++++++++++++++++++ W A R N I N G +++++++++++++++++++++ '
@@ -935,32 +944,36 @@ subroutine compute_numerical_parameters
         endif
      endif
   else
-     discrete_dirac=.false.
+     discrete_dirac = .false.
   endif
 
   if (dump_wavefields) then 
      ! define coarse time step for strain wavefield dumps
-     if (discrete_dirac) strain_samp = ceiling(period_vs_discrete_halfwidth*sampling_per_a)
+     !@TODO: why read strain_samp from inparam advanced and then overwrite
+     !       here?? (MvD)
+     if (discrete_dirac) strain_samp = ceiling(period_vs_discrete_halfwidth * sampling_per_a)
      strain_it     = floor(period / strain_samp / deltat)
      deltat_coarse = max(deltat_coarse, deltat * strain_it)
      strain_samp   = period / deltat_coarse
      strain_it     = floor(t_0 / strain_samp / deltat)
      deltat_coarse = deltat * strain_it
      !@TODO: This is a mess, but this way it is at least consistent between output and the actual value
+     !       WTF? was there some endif lost or so? What's happening here??? (MvD)
      if (lpr) then
        write(6,*)'   dumping wavefields at sampling rate and deltat:', strain_samp, deltat_coarse
      end if
   else
-     strain_it=seis_it
+     strain_it = seis_it
   endif
+
   if (lpr) write(6,*)'   coarsest dump every', strain_it, 'th time step, dt:', deltat_coarse
 
   if (discrete_dirac) then
-     discrete_dirac_halfwidth=period/period_vs_discrete_halfwidth
-     t_0=discrete_dirac_halfwidth
+     discrete_dirac_halfwidth = period / period_vs_discrete_halfwidth
+     t_0 = discrete_dirac_halfwidth
      if (lpr) then 
         write(6,*)
-        write(6,*)'   DISCRETE DIRAC DEFINITIONS:'
+        write(6,*)'    DISCRETE DIRAC DEFINITIONS:'
         write(6,*)'    Period discrete Dirac, mesh, simul. [s]:',&
                        real(discrete_dirac_halfwidth),real(period),real(t_0)
         write(6,*)'    period mesh/period discrete Dirac:',real(period_vs_discrete_halfwidth)
@@ -977,30 +990,31 @@ subroutine compute_numerical_parameters
      endif
 
      ! parameters for source-time function time shift
-     found_shift=.false.
-     do i=1,ceiling(4.*discrete_dirac_halfwidth/deltat)
-        dshift = deltat*ceiling(4.*discrete_dirac_halfwidth/deltat) + real(i)*deltat
+     found_shift = .false.
+     do i=1, ceiling(4. * discrete_dirac_halfwidth / deltat)
+        dshift = deltat * ceiling(4. * discrete_dirac_halfwidth / deltat) + real(i) * deltat
         if ( .not. found_shift &
-             .and. abs(nint(dshift/deltat_coarse)-dshift/deltat_coarse)<0.01*deltat &
-             .and. abs(nint(dshift/deltat)-dshift/deltat)<0.01*deltat &
-             .and. abs(nint(dshift/seis_dt)-dshift/seis_dt)<0.01*deltat) then 
-           shift_fact_discrete_dirac = deltat_coarse*ceiling(dshift/deltat_coarse)
-           found_shift=.true.
+             .and. abs(nint(dshift / deltat_coarse) - dshift / deltat_coarse) < 0.01 * deltat &
+             .and. abs(nint(dshift / deltat) - dshift / deltat) < 0.01 * deltat &
+             .and. abs(nint(dshift / seis_dt) - dshift / seis_dt) < 0.01 * deltat) then 
+           shift_fact_discrete_dirac = deltat_coarse * ceiling(dshift / deltat_coarse)
+           found_shift = .true.
         endif
      enddo
-     shift_fact=shift_fact_discrete_dirac
+     shift_fact = shift_fact_discrete_dirac
 
   else ! smooth source time function, e.g. Gauss
-     shift_fact=deltat_coarse*ceiling(1.5*t_0/deltat_coarse)
+     shift_fact = deltat_coarse * ceiling(1.5 * t_0 / deltat_coarse)
   endif
 
   if (lpr) then 
      write(6,*)''
-     write(6,*)'  SHIFT FACTOR of source time function [s]:',shift_fact
-     write(6,*)'   # SEM, seis, coarse points per shift factor:',&
-          real(shift_fact/deltat),real(shift_fact/seis_dt),real(shift_fact/deltat_coarse)
-     write(6,*)'   # simul. half widths per shift factor:',real(shift_fact/t_0)
-     if (discrete_dirac) write(6,*)'   # mesh halfwidths per shift fact',real(shift_fact/period)
+     write(6,*)'  SHIFT FACTOR of source time function [s]:', shift_fact
+     write(6,*)'   # SEM, seis, coarse points per shift factor:', &
+        real(shift_fact / deltat), real(shift_fact / seis_dt), real(shift_fact / deltat_coarse)
+     write(6,*)'   # simul. half widths per shift factor:', real(shift_fact / t_0)
+     if (discrete_dirac) &
+        write(6,*)'   # mesh halfwidths per shift fact', real(shift_fact / period)
      write(6,*)'  *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-'
      write(6,*)''
   endif
@@ -1012,10 +1026,11 @@ subroutine compute_numerical_parameters
 
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
      write(2900,*) nstrain 
-     do ielem= 1, nstrain 
+     do ielem = 1, nstrain 
         write(2900+mynum,*)real(ielem)*t_0/real(strain_samp),ielem*strain_it
      enddo
      close(2900+mynum)
+
      if (lpr) then
         write(6,*)
         write(6,11)'    Number of wavefield dumps  :', nstrain
@@ -1026,24 +1041,24 @@ subroutine compute_numerical_parameters
         write(6,13)'    ...that is, every          :',strain_it,'timestep'
      endif
 
-     ndumppts_el=(iend-ibeg+1)**2
+     ndumppts_el = (iend - ibeg + 1)**2
      if (lpr) then 
         write(6,*)'    Define limitation of GLL points in the dumped fields:'
-        write(6,*)'      ibeg=',ibeg,'iend=',iend
-        write(6,*)'      # points saved within an element:',ndumppts_el
+        write(6,*)'      ibeg=', ibeg, 'iend=', iend
+        write(6,*)'      # points saved within an element:', ndumppts_el
      endif
   endif
 
   ! Initialize counters for I/O
   istrain = 0
   isnap = 0
-  iseismo=0
+  iseismo = 0
 
-  s_max=zero
+  s_max = zero
 
   ! Set some parameters for faster access in time loop
-  half_dt=half*deltat
-  half_dt_sq=half*deltat**2
+  half_dt = half * deltat
+  half_dt_sq = half * deltat**2
 
   ! mesh info: coordinates of elements and collocation points               
   if (diagfiles) then
@@ -1054,17 +1069,17 @@ subroutine compute_numerical_parameters
 
          ! write out axial points
          if (axis(ielem)) then
-            call compute_coordinates(s,z,r,theta,ielem,0,npol)
-            do jpol=0,npol
-               call compute_coordinates(s,z,r,theta,ielem,0,jpol)
-               write(2222+mynum,122)ielem,jpol,s,z,r,theta/pi*180.
+            call compute_coordinates(s, z, r, theta, ielem, 0, npol)
+            do jpol=0, npol
+               call compute_coordinates(s, z, r, theta, ielem, 0, jpol)
+               write(2222+mynum,122) ielem, jpol, s, z, r, theta / pi * 180.
             enddo
 
             ! write out profile of grid spacing along Northern axis
             if (north(ielem)) then
 
-               do jpol=0,npol
-                  do ipol=0,npol-1
+               do jpol=0, npol
+                  do ipol=0, npol-1
                      dsaxis(ipol,jpol) = dsqrt((scoord(ipol,jpol,ielem)-&
                           scoord(ipol+1,jpol,ielem))**2+&
                           (zcoord(ipol,jpol,ielem)-&
@@ -1097,9 +1112,9 @@ subroutine compute_numerical_parameters
   if (lpr) write(6,*)
 
 end subroutine compute_numerical_parameters
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Writes out relevant simulation parameters, to simulation.info and the NetCDF
 !! Output file.
 subroutine write_parameters
@@ -1617,83 +1632,9 @@ subroutine write_parameters
     endif
 
 end subroutine write_parameters
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!----------------------------------------------------------------------------- 
-!> Static header with some info for subsequent kernel computations.
-!! Produces file mesh_params_kernel.h
-!subroutine create_kernel_header
-!
-!    use data_mesh !, ONLY: hmax_glob
-!    use data_io, ONLY: nstrain
-!    character(len=8)  :: mydate
-!    character(len=10) :: mytime
-!    character(len=80) :: dbname2
-!    integer           :: lfdbname
-!
-!    call date_and_time(mydate,mytime)
-!    dbname2='mesh_params_kernel.h'
-!    lfdbname=index(dbname2,' ')-1
-!    
-!    open(97,file=dbname2(1:lfdbname))
-!    write(97,10) nproc
-!    write(97,11) mydate(5:6),mydate(7:8),mydate(1:4),mytime(1:2),mytime(3:4)
-!    write(97,*)''
-!    write(97,29)
-!    write(97,12)'Background model     :',bkgrdmodel
-!    write(97,14)'Dominant period [s]  :',period
-!    write(97,14)'Elements/wavelength  :',pts_wavelngth
-!    write(97,14)'Courant number       :',courant
-!    write(97,30)
-!    write(97,*)''
-!    write(97,9)'nt',niter,'number of time steps'
-!    write(97,19)'deltat',deltat,'time step'
-!    write(97,17)'hmax', hmax_glob,'maximum element size'
-!    write(97,17)'vpmax', vpmax,'maximum p-velocity'
-!    write(97,17)'rmax', router, 'maximum radius'
-!    write(97,9)'ndumps',nstrain, 'total wavefield dumps'
-!    write(97,9)'strain_samp',int(strain_samp),'dumps per period'
-!    write(97,18)"src_type",src_type(1),'source type'
-!    write(97,18)"src_type2",src_type(2),'source type'
-!    write(97,28)"bkgrdmodel",bkgrdmodel,&
-!                                                      'background model'
-!    write(97,9)'ibeg',ibeg,'dumped starting GLL within element'
-!    write(97,9)'iend',iend,'dumped ending GLL within element'
-!    
-!    if (have_fluid) then 
-!        write(97,31)
-!    else
-!        write(97,32)
-!    end if
-!    write(97,*)''
-!    write(97,30)
-!    write(97,*)''
-!    close(97)
-!
-!    write(6,*)
-!    write(6,*)'wrote parameters for kerner into ',dbname2(1:lfdbname)
-!    write(6,*)
-!
-!9   format(' integer, parameter :: ',A12,' =',i11,'  ! ',A27)
-!17  format(' real, parameter    :: ',A12,' =',f11.2,'  ! ',A27)
-!19  format(' real, parameter    :: ',A12,' =',f11.5,'  ! ',A27)
-!18  format(' character(len=10), parameter    :: ',A12," ='",A10,"'  ! ",A27)
-!28  format(' character(len=100), parameter    :: ',A12," ='",A10,"'  ! ",A27)
-!31  format(' logical, parameter    :: have_fluid=.true.')
-!32  format(' logical, parameter    :: have_fluid=.false.')
-!10  format('! Proc ',i3,': Header for kernel information to run static kerner')
-!11  format('! created by the solver on ', &
-!             A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
-!29  format('!:::::::::::::::::::: Input parameters :::::::::::::::::::::::::::')
-!12  format('!  ',A23,A20)
-!13  format('!  ',A23,L10)
-!14  format('!  ',A23,1f10.4)
-!30  format('!:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::')
-!
-!end subroutine create_kernel_header
-!!-----------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !< Checking some mesh parameters and message parsing
 subroutine check_parameters(hmaxglob, hminglob, curvel, linel, seminoel, semisoel,  &
                        curvel_solid, linel_solid, seminoel_solid, semisoel_solid, &
@@ -1821,9 +1762,7 @@ subroutine check_parameters(hmaxglob, hminglob, curvel, linel, seminoel, semisoe
   endif
 
 end subroutine check_parameters
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!========================
 end module parameters
-!========================
 
