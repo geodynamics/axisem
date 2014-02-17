@@ -1575,7 +1575,7 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
                                        dimid = dimid(1), &
                                        name  = dimname,  &
                                        len   = dimsize )
-       if (start + count > dimsize) then
+       if (start + count - 1 > dimsize) then
            write(*,102) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
            print *, trim(nf90_strerror(status))
            stop
@@ -1672,7 +1672,7 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
                                            dimid = dimid(idim), &
                                            name  = dimname,     &
                                            len   = dimsize )
-           if (start(idim) + count(idim) > dimsize) then
+           if (start(idim) + count(idim) - 1 > dimsize) then
                write(*,102) mynum, trim(varname), varid, ncid, start(idim), count(idim), &
                             dimsize, trim(dimname), idim 
                print *, trim(nf90_strerror(status))
@@ -1774,7 +1774,7 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
                                            dimid = dimid(idim), &
                                            name  = dimname,     &
                                            len   = dimsize )
-           if (start(idim) + count(idim) > dimsize) then
+           if (start(idim) + count(idim) - 1 > dimsize) then
                write(*,102) mynum, trim(varname), varid, ncid, start(idim), count(idim), &
                             dimsize, trim(dimname), idim 
                print *, trim(nf90_strerror(status))

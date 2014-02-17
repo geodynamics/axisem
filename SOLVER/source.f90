@@ -648,7 +648,7 @@ subroutine delta_src
 
   if (lpr) write(6,*)'Discrete Dirac choice: ',discrete_choice
   allocate(signal(1:niter))
-  allocate(timetmp(1:niter),int_stf(1:niter))
+  allocate(timetmp(1:niter))
   allocate(int_stf(1:niter))
 
   stf = 0
