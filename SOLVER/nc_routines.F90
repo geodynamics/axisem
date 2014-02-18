@@ -339,29 +339,31 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     !dumpsize = dumpsize + flen * ndumps
             
     !> Surface dumps 
-    call putvar_real3d(ncid_surfout, nc_surfelem_disp_varid, &
-                start = [isnap_loc-ndumps+1, 1, ind_first], &
-                count = [ndumps, 3, maxind], &
-                values = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)) 
-    dumpsize = dumpsize + 3 * maxind * ndumps
+    if (maxind>0) then
+        call putvar_real3d(ncid_surfout, nc_surfelem_disp_varid, &
+                    start = [isnap_loc-ndumps+1, 1, ind_first], &
+                    count = [ndumps, 3, maxind], &
+                    values = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)) 
+        dumpsize = dumpsize + 3 * maxind * ndumps
 
-    call putvar_real3d(ncid_surfout, nc_surfelem_velo_varid, &
-                start = [isnap_loc-ndumps+1, 1, ind_first], &
-                count = [ndumps, 3, maxind], &
-                values = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)) 
-    dumpsize = dumpsize + 3 * maxind * ndumps
+        call putvar_real3d(ncid_surfout, nc_surfelem_velo_varid, &
+                    start = [isnap_loc-ndumps+1, 1, ind_first], &
+                    count = [ndumps, 3, maxind], &
+                    values = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)) 
+        dumpsize = dumpsize + 3 * maxind * ndumps
 
-    call putvar_real3d(ncid_surfout, nc_surfelem_strain_varid, &
-                start = [isnap_loc-ndumps+1, 1, ind_first], &
-                count = [ndumps, 6, maxind], &
-                values = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)) 
-    dumpsize = dumpsize + 6 * maxind * ndumps
+        call putvar_real3d(ncid_surfout, nc_surfelem_strain_varid, &
+                    start = [isnap_loc-ndumps+1, 1, ind_first], &
+                    count = [ndumps, 6, maxind], &
+                    values = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)) 
+        dumpsize = dumpsize + 6 * maxind * ndumps
 
-    call putvar_real3d(ncid_surfout, nc_surfelem_disp_src_varid, &
-                start = [isnap_loc-ndumps+1, 1, ind_first], &
-                count = [ndumps, 3, maxind], &
-                values = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
-    dumpsize = dumpsize + 3 * maxind * ndumps
+        call putvar_real3d(ncid_surfout, nc_surfelem_disp_src_varid, &
+                    start = [isnap_loc-ndumps+1, 1, ind_first], &
+                    count = [ndumps, 3, maxind], &
+                    values = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
+        dumpsize = dumpsize + 3 * maxind * ndumps
+    end if
 
     call check( nf90_close(ncid_out) ) 
     call cpu_time(tack)
@@ -498,7 +500,7 @@ subroutine nc_rec_checkpoint
     end do
     call barrier
 #endif
-end subroutine
+end subroutine nc_rec_checkpoint
 
 !----------------------------------------------------------------------------------------
 !> Dump stuff along surface
@@ -522,7 +524,7 @@ subroutine nc_dump_surface(surffield, disporvelo)!, nrec, dim2)
     end select
 
 #endif
-end subroutine
+end subroutine nc_dump_surface
 !-----------------------------------------------------------------------------------------
 
 
@@ -1590,20 +1592,20 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
        call flush(6)
    end if
     
-99  format('ERROR: CPU ', I4, ' could not find variable: ',I7,' in NCID', I7)
-100 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+99  format('ERROR: CPU ', I4, ' could not find 1D variable: ',I7,' in NCID', I7)
+100 format('ERROR: CPU ', I4, ' could not write 1D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       was given ', I10, ' values, but ''count'' is ', I10)
-101 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+101 format('ERROR: CPU ', I4, ' could not write 1D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       Variable has ', I2,' dimensions instead of one')
-102 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+102 format('ERROR: CPU ', I4, ' could not write 1D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       start (', I10, ') + count(', I10, ') is larger than size (', I10,')',    / &
            '       of dimension ', A)
-103 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+103 format('ERROR: CPU ', I4, ' could not write 1D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       start:   ', I10, / &
            '       count:   ', I10, / &
            '       dimsize: ', I10, / &
            '       dimname: ', A)
-200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
+200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into 1D variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real1d
 !-----------------------------------------------------------------------------------------
@@ -1679,11 +1681,13 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
                stop
            end if
 
+           ! Otherwise just dump as much information as possible and stop
+           write(*,103) mynum, trim(varname), varid, ncid, start(idim), count(idim), &
+                        dimsize, trim(dimname)
+           print *, trim(nf90_strerror(status))
+
        end do
 
-       ! Otherwise just dump as much information as possible and stop
-       write(*,103) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
-       print *, trim(nf90_strerror(status))
        stop
    
    elseif (verbose>1) then
@@ -1692,20 +1696,20 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
        call flush(6)
    end if
     
-99  format('ERROR: CPU ', I4, ' could not find variable: ',I7,' in NCID', I7)
-100 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+99  format('ERROR: CPU ', I4, ' could not find 2D variable: ',I7,' in NCID', I7)
+100 format('ERROR: CPU ', I4, ' could not write 2D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       dimension ', I1,' was given ', I10, ' values, but ''count'' is ', I10)
-101 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+101 format('ERROR: CPU ', I4, ' could not write 2D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       Variable has ', I2,' dimensions instead of two')
-102 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+102 format('ERROR: CPU ', I4, ' could not write 2D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       start (', I10, ') + count(', I10, ') is larger than size (', I10,')',    / &
            '       of dimension ', A, ' (', I1, ')')
-103 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+103 format('ERROR: CPU ', I4, ' could not write 2D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       start:   ', I10, / &
            '       count:   ', I10, / &
            '       dimsize: ', I10, / &
            '       dimname: ', A)
-200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
+200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into 2D variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real2d
 !-----------------------------------------------------------------------------------------
@@ -1781,11 +1785,13 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
                stop
            end if
 
+           ! Otherwise just dump as much information as possible and stop
+           write(*,103) mynum, trim(varname), varid, ncid, start(idim), count(idim), &
+                        dimsize, trim(dimname)
+           print *, trim(nf90_strerror(status))
+
        end do
 
-       ! Otherwise just dump as much information as possible and stop
-       write(*,103) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
-       print *, trim(nf90_strerror(status))
        stop
    
    elseif (verbose>1) then
@@ -1794,20 +1800,20 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
        call flush(6)
    end if
     
-99  format('ERROR: CPU ', I4, ' could not find variable: ',I7,' in NCID', I7)
-100 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+99  format('ERROR: CPU ', I4, ' could not find 3D variable: ',I7,' in NCID', I7)
+100 format('ERROR: CPU ', I4, ' could not write 3D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       dimension ', I1,' was given ', I10, ' values, but ''count'' is ', I10)
-101 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+101 format('ERROR: CPU ', I4, ' could not write 3D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       Variable has ', I2,' dimensions instead of three')
-102 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+102 format('ERROR: CPU ', I4, ' could not write 3D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       start (', I10, ') + count(', I10, ') is larger than size (', I10,')',    / &
            '       of dimension ', A, ' (', I1, ')')
-103 format('ERROR: CPU ', I4, ' could not write variable: ''', A, '''(',I7,') in NCID', I7, / &
+103 format('ERROR: CPU ', I4, ' could not write 3D variable: ''', A, '''(',I7,') in NCID', I7, / &
            '       start:   ', I10, / &
            '       count:   ', I10, / &
            '       dimsize: ', I10, / &
            '       dimname: ', A)
-200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into variable in NCID', I7, ', with ID:', I7)
+200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into 3D variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real3d
 
