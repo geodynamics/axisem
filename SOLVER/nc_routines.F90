@@ -84,29 +84,29 @@ module nc_routines
     !> Mapping of local fluid points to global
     integer             :: npts_flu_myfirst, npts_flu_mylast
 
-    integer             :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout, ncid_meshout
-    integer             :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
-    integer             :: nc_times_dimid, nc_comp_dimid, nc_disp_varid, nc_stf_seis_varid
-    integer             :: nc_time_varid, nc_iter_dimid, nc_stf_iter_varid
+    integer, save      :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout, ncid_meshout
+    integer, save      :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
+    integer, save      :: nc_times_dimid, nc_comp_dimid, nc_disp_varid, nc_stf_seis_varid
+    integer, save      :: nc_time_varid, nc_iter_dimid, nc_stf_iter_varid
 
-    integer             :: nc_strcomp_dimid
-    integer             :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
-    integer             :: nc_surfelem_strain_varid, nc_surfelem_disp_src_varid
-    integer             :: nc_mesh_sol_varid, nc_mesh_flu_varid, nc_stf_dump_varid
-    integer             :: nc_point_dimid, nc_pt_sol_dimid, nc_pt_flu_dimid
-    integer             :: nc_szcoord_dimid
-    integer             :: nc_snaptime_varid, nc_elem_dom_varid, nc_surfelem_theta_varid
+    integer, save      :: nc_strcomp_dimid
+    integer, save      :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
+    integer, save      :: nc_surfelem_strain_varid, nc_surfelem_disp_src_varid
+    integer, save      :: nc_mesh_sol_varid, nc_mesh_flu_varid, nc_stf_dump_varid
+    integer, save      :: nc_point_dimid, nc_pt_sol_dimid, nc_pt_flu_dimid
+    integer, save      :: nc_szcoord_dimid
+    integer, save      :: nc_snaptime_varid, nc_elem_dom_varid, nc_surfelem_theta_varid
     integer,allocatable :: nc_field_varid(:)
     character(len=16), allocatable  :: varnamelist(:)
     character(len=12), allocatable  :: nc_varnamelist(:)
     integer             :: nvar = -1
 
     !! Variables for dumping of wavefields for plotting purposes
-    integer             :: nc_snap_disp_varid, nc_coord_dimid
-    integer             :: nc_snap_point_varid, nc_snap_grid_varid
-    integer             :: nc_snap_pwave_varid, nc_snap_swave_varid
-    integer             :: ncid_out_snap
-    integer             :: ndim_disp !< 2 for monopole, 3 for rest
+    integer, save       :: nc_snap_disp_varid, nc_coord_dimid
+    integer, save       :: nc_snap_point_varid, nc_snap_grid_varid
+    integer, save       :: nc_snap_pwave_varid, nc_snap_swave_varid
+    integer, save       :: ncid_out_snap
+    integer, save       :: ndim_disp !< 2 for monopole, 3 for rest
 
 
     !! Buffer variables for the STF.
@@ -769,7 +769,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         if (verbose > 1) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
 
         if (verbose > 1) write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
-110     format(' Dimension ', A20, ' with length ', I8, ' and ID', I6) 
+110     format(' Dimension ', A20, ' with length ', I8, ' and ID', I6, ' created.') 
         call check( nf90_def_dim(ncid_out, "seis_timesteps", nseismo, nc_times_dimid) )
         if (verbose > 1) write(6,110) "seis_timesteps", nseismo, nc_times_dimid 
 
@@ -925,7 +925,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                 call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
                                               no_fill=1, fill=0) )
                 if (verbose > 1) write(6,"(' Netcdf variable ', A16,' with ID ', I3, ' and length', &
-                        & I8, ' produced.')") &
+                        & I8, ' created.')") &
                           trim(nc_varnamelist(ivar)), nc_field_varid(ivar), npoints_global
             end do
 
@@ -1488,7 +1488,7 @@ subroutine getvarid(ncid, name, varid)
         call flush(6)
     end if
 100 format('ERROR: CPU ', I4, ' could not find variable: ''', A, ''' in NCID', I7)
-101 format('Variable ''', A, ''' found in NCID', I7, ', has ID:', I7)
+101 format('    Variable ''', A, ''' found in NCID', I7, ', has ID:', I7)
 #else
     varid = 0
 #endif
@@ -1514,7 +1514,7 @@ subroutine getgrpid(ncid, name, grpid)
         call flush(6)
     end if
 100 format('ERROR: CPU ', I4, ' could not find group: ''', A, ''' in NCID', I7)
-101 format('   Group ''', A, ''' found in NCID', I7, ', has ID:', I7)
+101 format('    Group ''', A, ''' found in NCID', I7, ', has ID:', I7)
 #else
     grpid = 0
 #endif

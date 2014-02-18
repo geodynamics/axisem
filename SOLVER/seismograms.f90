@@ -233,7 +233,7 @@ subroutine prepare_seismograms
   do iel=0,nproc-1
      call barrier
      if (mynum==iel) then
-        if (verbose > 1) write(69,*)'  number of surface elements:', maxind
+        if (verbose > 0) write(69,*)'  number of surface elements:', maxind
         if (have_epi) write(6,12)procstrg,'epicenter at', &
                                 thetacoord(0,npol,ielsolid(ielepi))/pi*180.
         if (have_equ) write(6,12)procstrg,'equator at', &
@@ -246,8 +246,9 @@ subroutine prepare_seismograms
 12 format('   ',a8,'has the ',a13,f9.3,' degrees.')
 
 
+  if (lpr.and.verbose>1) write(6,*)'  communicating local numbers of surface elements...'
   call comm_elem_number(maxind, maxind_glob, ind_first, ind_last)
-  if (lpr) write(6,*)'  global number of surface elements:',maxind_glob
+  if (lpr.and.verbose>0) write(6,*)'  global number of surface elements:',maxind_glob
 
   ! open files for displacement and velocity traces in each surface element
 
