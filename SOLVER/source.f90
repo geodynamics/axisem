@@ -886,12 +886,6 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
      f(ipol_src2, jpol_src2, iel_src2) = one
   endif
 
-  ! check whether Lamb or not
-  call compute_coordinates(s, z, r, theta, ielsolid(iel_src), ipol_src, jpol_src)
-  if ( abs(z-router) < smallval * router .and. lpr) &
-       write(6,*)"  ...actually Lamb's Problem"
-  call flush(6)
-
   ! assembly
   call pdistsum_solid_1D(f)
 
