@@ -720,6 +720,7 @@ subroutine prepare_attenuation(lambda, mu)
   real(kind=dp)                  :: kappa_fac, mu_fac
 
   real(kind=dp)                  :: f_min, f_max, w_1, w_0
+  real(kind=dp)                  :: qpl_w_ref, qpl_alpha
   integer                        :: nfsamp, max_it, i, iel, j
   real(kind=dp)                  :: Tw, Ty, d
   logical                        :: fixfreq
@@ -742,6 +743,8 @@ subroutine prepare_attenuation(lambda, mu)
   f_min = 0.001
   f_max = 1.0
   w_0 = 1.0
+  qpl_w_ref = 1
+  qpl_alpha = 0
   do_corr_lowq = .true.
   nfsamp = 100
   max_it = 100000
@@ -782,6 +785,12 @@ subroutine prepare_attenuation(lambda, mu)
         case('F_REFERENCE')
             read(keyvalue,*) w_0
 
+        case('QPL_F_REFERENCE')
+            read(keyvalue,*) qpl_w_ref
+
+        case('QPL_ALPHA')
+            read(keyvalue,*) qpl_alpha
+
         case('SMALL_Q_CORRECTION')
             read(keyvalue,*) do_corr_lowq
 
@@ -819,6 +828,8 @@ subroutine prepare_attenuation(lambda, mu)
   call broadcast_dble(f_min, 0)
   call broadcast_dble(f_max, 0)
   call broadcast_dble(w_0, 0)
+  call broadcast_dble(qpl_w_ref, 0)
+  call broadcast_dble(qpl_alpha, 0)
   call broadcast_log(do_corr_lowq, 0)
   call broadcast_int(nfsamp, 0)
   call broadcast_int(max_it, 0)
@@ -842,6 +853,8 @@ subroutine prepare_attenuation(lambda, mu)
      print *, "       in inparam_attenuation:2-3"
      stop 2
   endif
+
+  qpl_w_ref = qpl_w_ref * (2 * pi)
 
   allocate(w_samp(nfsamp))
   allocate(q_fit(nfsamp))

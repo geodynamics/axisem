@@ -137,7 +137,7 @@ F_REFERENCE         1.0
 QPL_F_REFERENCE     1.0
 
 # exponent alpha for power law Q = Q_0 * (f / f_0)^alpha (default: 0.0)
-QPL_alpha           0.0
+QPL_ALPHA           0.0
 
 # use correction of the coefficients for small values of Q (default: true)
 SMALL_Q_CORRECTION  true
