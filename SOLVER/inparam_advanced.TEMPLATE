@@ -1,5 +1,5 @@
 
-############### TIME PARAMETERS #################################################
+############### TIME PARAMETERS ################################################
 
 # seismogram sampling period in seconds
 # Select 0.0, for SAMPLING_PERIOD==TIME_STEP (default: 0.0)
@@ -34,13 +34,13 @@ SOURCE_FUNCTION     gauss_0
 TIME_SCHEME     newmark2
 
 
-##################### OUTPUT OPTIONS ##########################################
+##################### OUTPUT OPTIONS ###########################################
 # OUTPUT PATHS
 DATA_DIR        "./Data"
 INFO_DIR        "./Info"
 
 
-######################## NetCDF output ########################################
+######################## NetCDF output #########################################
 # Use NetCDF for output  (default false)
 # Enabling this option will put all seismograms and wavefields into one file
 # axisem_output.nc4 in the $DATA directory. Postprocessing will automatically
@@ -56,7 +56,7 @@ CHECKPOINTING       true
 # Level of compression of wavefield data (0: off, 9:highest, default: 5)
 DEFLATE_LEVEL       5
 
-####################### Wavefield output ######################################
+####################### Wavefield output #######################################
 # Only relevant, if SAVE_SNAPSHOTS == true in inparam_basic 
 # Time interval between snapshots (default: 20)
 SNAPSHOT_DT          20.
@@ -81,7 +81,7 @@ XDMF_GLL_I       '3 0 2 4'
 XDMF_GLL_J       '3 0 2 4'
 
 
-######################## DEBUGGING ############################################
+######################## DEBUGGING #############################################
 # Set verbosity of the code, allowed values:
 # 0: only errors
 # 1: errors plus some information (default)
@@ -100,7 +100,7 @@ MESH_TEST           false
 
 
 
-######################## SENSITIVITY KERNELS ##################################
+######################## SENSITIVITY KERNELS ###################################
 # Save necessary wavefields for Kernel calculation
 # N.b. Kernel calculation needs Axisem Kerner (sold separately)
 KERNEL_WAVEFIELDS   false 
@@ -118,7 +118,7 @@ KERNEL_SOURCE       mask
 KERNEL_IBEG         1
 KERNEL_IEND         1
 
-######################## ATTENUATION ##########################################
+######################## ATTENUATION ###########################################
 # number of standard linear solids (default: 5)
 NR_LIN_SOLIDS       5
 
@@ -128,8 +128,16 @@ F_MIN               0.001
 # must be considered carefully for high-frequency simulations
 F_MAX               1.0
 
-# reference frequency of the background model [Hz] (default: 1.0)
+# reference frequency of the background model for the seismic velocities [Hz]
+# (default: 1.0)
 F_REFERENCE         1.0
+
+# reference frequency for power law Q = Q_0 * (f / f_0)^alpha, where Q_0 is
+# taken from background model # [Hz] (default: 1.0)
+QPL_F_REFERENCE     1.0
+
+# exponent alpha for power law Q = Q_0 * (f / f_0)^alpha (default: 0.0)
+QPL_alpha           0.0
 
 # use correction of the coefficients for small values of Q (default: true)
 SMALL_Q_CORRECTION  true
@@ -140,8 +148,10 @@ NR_F_SAMPLE         100
 
 # maximum number of iteration in the simulated annealing (default: 100000)
 MAXINT_SA           100000
+
 # starting 'temperature' for the stress relaxation frequencies (default: 0.1)
 TSTART_SR           0.1
+
 # starting 'temperature' for the amplitude coefficients (default: 0.1)
 TSTART_AMP          0.1
 
@@ -151,14 +161,14 @@ T_DECAY             0.99995
 # fix the frequencies log spaced in the attenuation band (default: false)
 FIX_FREQ            false
 
-# dump memory vars to vtk (not optimized, only meant for testing, 
-# not with cg) (default: false)
+# dump memory vars to vtk (not optimized, only meant for testing, not with cg)
+# (default: false)
 DUMP_VTK            false
 
 # use coarse grained memory variables (ONLY for npol = 4) (default: true)
 COARSE_GRAINED      true
 
-######################## FOR THE INCLINED #####################################
+######################## FOR THE INCLINED ######################################
 # Save global kinetic/potential energy? generally not needed
 SAVE_ENERGY         .false.
 
