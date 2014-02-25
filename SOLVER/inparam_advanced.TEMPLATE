@@ -146,6 +146,10 @@ SMALL_Q_CORRECTION  true
 # minimization (default: 100)
 NR_F_SAMPLE         100
 
+# use frequency weighting to force better fit of Q at higher frequencies
+# (default: true)
+FREQ_WEIGHT         true
+
 # maximum number of iteration in the simulated annealing (default: 100000)
 MAXINT_SA           100000
 

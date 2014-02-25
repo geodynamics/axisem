@@ -86,9 +86,7 @@ subroutine time_step_memvars_cg4(memvar, disp)
   use data_source,          only: src_type
 
   real(kind=realkind), intent(inout)    :: memvar(1:4,6,n_sls_attenuation,nel_solid)
-  !real(kind=realkind), intent(inout)    :: memvar(:,:,:,:)
   real(kind=realkind), intent(in)       :: disp(0:4,0:4,nel_solid,3)
-  !real(kind=realkind), intent(in)       :: disp(0:,0:,:,:)
   
   integer               :: iel, j
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
@@ -219,9 +217,7 @@ subroutine time_step_memvars_4(memvar, disp)
   use data_mesh,            only: axis_solid, nel_solid!, npol
   use data_source,          only: src_type
 
-  !real(kind=realkind), intent(inout)    :: memvar(0:,0:,:,:,:)
   real(kind=realkind), intent(inout)    :: memvar(0:4,0:4,6,n_sls_attenuation,nel_solid)
-  !real(kind=realkind), intent(in)       :: disp(0:,0:,:,:)
   real(kind=realkind), intent(in)       :: disp(0:4,0:4,nel_solid,3)
   
   integer               :: iel, j, ipol, jpol
@@ -352,8 +348,8 @@ subroutine time_step_memvars_generic(memvar, disp)
   use data_mesh,            only: axis_solid, nel_solid, npol
   use data_source,          only: src_type
 
-  real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid) !memvar(0:,0:,6,:,:)
-  real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3) !disp(0:,0:,:,3) 
+  real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
+  real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
   integer               :: iel, j, ipol, jpol
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
@@ -553,7 +549,6 @@ subroutine compute_strain_att_el_4(u, grad_u, iel)
   
   
   real(kind=realkind), intent(in)   :: u(0:,0:,:)
-  !real(kind=realkind), intent(in)   :: u(0:4,0:4,3)
   real(kind=realkind), intent(out)  :: grad_u(0:4,0:4,6)
   integer, intent(in)               :: iel
   
@@ -702,11 +697,9 @@ subroutine prepare_attenuation(lambda, mu)
   use utlity,               only: scoord
   use analytic_mapping,     only: compute_partial_derivatives
   use data_source,          only: nelsrc, ielsrc
-  use data_pointwise!,       only: DsDeta_over_J_sol_cg4, DzDeta_over_J_sol_cg4, DsDxi_over_J_sol_cg4, DzDxi_over_J_sol_cg4
+  use data_pointwise
   use commun,               only: broadcast_int, broadcast_log, &
                                   broadcast_char, broadcast_dble, barrier
-
-
 
   real(kind=dp), intent(inout)   :: lambda(0:,0:,1:)
   real(kind=dp), intent(inout)   :: mu(0:,0:,1:)
@@ -723,7 +716,7 @@ subroutine prepare_attenuation(lambda, mu)
   real(kind=dp)                  :: qpl_w_ref, qpl_alpha
   integer                        :: nfsamp, max_it, i, iel, j
   real(kind=dp)                  :: Tw, Ty, d
-  logical                        :: fixfreq
+  logical                        :: fixfreq, freq_weight
   real(kind=dp), allocatable     :: w_samp(:), q_fit(:), chil(:)
   real(kind=dp), allocatable     :: yp_j_mu(:)
   real(kind=dp), allocatable     :: yp_j_kappa(:)
@@ -752,6 +745,7 @@ subroutine prepare_attenuation(lambda, mu)
   Ty = 0.1
   d = 0.99995
   fixfreq = .false.
+  freq_weight = .true.
   dump_memory_vars = .false.
   att_coarse_grained = .true.
 
@@ -797,6 +791,9 @@ subroutine prepare_attenuation(lambda, mu)
         case('NR_F_SAMPLE')
             read(keyvalue,*) nfsamp
 
+        case('FREQ_WEIGHT')
+            read(keyvalue,*) freq_weight
+
         case('MAXINT_SA')
             read(keyvalue,*) max_it
 
@@ -832,6 +829,7 @@ subroutine prepare_attenuation(lambda, mu)
   call broadcast_dble(qpl_alpha, 0)
   call broadcast_log(do_corr_lowq, 0)
   call broadcast_int(nfsamp, 0)
+  call broadcast_log(freq_weight, 0)
   call broadcast_int(max_it, 0)
   call broadcast_dble(Tw, 0)
   call broadcast_dble(Ty, 0)
@@ -908,7 +906,6 @@ subroutine prepare_attenuation(lambda, mu)
      endif
   endif
 
-
   if (lpr .and. verbose > 1) print *, '  ...calculating relaxed moduli...'
 
   if (att_coarse_grained) then
@@ -934,8 +931,6 @@ subroutine prepare_attenuation(lambda, mu)
   endif
      
   
-  !if (lpr) open(unit=1717, file=infopath(1:lfinfo)//'/weights', status='new')
-
   do iel=1, nel_solid
 
      if (att_coarse_grained) then
@@ -1002,67 +997,6 @@ subroutine prepare_attenuation(lambda, mu)
                                      + gamma_w_l(3,2) + gamma_w_l(4,2)) &
                             + 0.25 * gamma_w_l(2,2) ) &
                           / gamma_w_l(3,3)
-        !if (lpr) write(1717,*) weights_cg(1,1), weights_cg(1,3), & 
-        !                       weights_cg(3,1), weights_cg(3,3)
-
-        ! 5 points
-        !weights_cg(1,1) = (   gamma_w_l(0,0) + gamma_w_l(0,1) &
-        !                    + gamma_w_l(1,0) + gamma_w_l(1,1) &
-        !                    + 0.5 * (  gamma_w_l(0,2) + gamma_w_l(1,2) &
-        !                             + gamma_w_l(2,0) + gamma_w_l(2,1)) )&
-        !                  / gamma_w_l(1,1)
-        !
-        !weights_cg(1,3) = (   gamma_w_l(0,3) + gamma_w_l(0,4) &
-        !                    + gamma_w_l(1,3) + gamma_w_l(1,4) &
-        !                    + 0.5 * (  gamma_w_l(0,2) + gamma_w_l(1,2) &
-        !                             + gamma_w_l(2,3) + gamma_w_l(2,4)) )&
-        !                  / gamma_w_l(1,3)
-        !
-        !weights_cg(3,1) = (   gamma_w_l(3,0) + gamma_w_l(3,1) &
-        !                    + gamma_w_l(4,0) + gamma_w_l(4,1) &
-        !                    + 0.5 * (  gamma_w_l(2,0) + gamma_w_l(2,1) &
-        !                             + gamma_w_l(3,2) + gamma_w_l(4,2)) )&
-        !                  / gamma_w_l(3,1)
-        !
-        !weights_cg(3,3) = (   gamma_w_l(3,3) + gamma_w_l(3,4) &
-        !                    + gamma_w_l(4,3) + gamma_w_l(4,4) &
-        !                    + 0.5 * (  gamma_w_l(2,3) + gamma_w_l(2,4) &
-        !                             + gamma_w_l(3,2) + gamma_w_l(4,2)) )&
-        !                  / gamma_w_l(3,3)
-        !weights_cg(2,2) = 1
-        !if (lpr) write(1717,*) weights_cg(1,1), weights_cg(1,3), & 
-        !                       weights_cg(3,1), weights_cg(3,3), weights_cg(2,2)
-        
-        ! 9 points
-        !weights_cg(1,1) = (   gamma_w_l(0,0) + gamma_w_l(0,1) &
-        !                    + gamma_w_l(1,0) + gamma_w_l(1,1) )&
-        !                  / gamma_w_l(1,1)
-
-        !weights_cg(1,2) = (   gamma_w_l(0,2) + gamma_w_l(1,2) )&
-        !                  / gamma_w_l(1,2)
-
-        !weights_cg(1,3) = (   gamma_w_l(0,3) + gamma_w_l(0,4) &
-        !                    + gamma_w_l(1,3) + gamma_w_l(1,4) )&
-        !                  / gamma_w_l(1,3)
-
-        !weights_cg(2,1) = (   gamma_w_l(2,0) + gamma_w_l(2,1) )&
-        !                  / gamma_w_l(2,1)
-
-        !weights_cg(2,2) = 1
-
-        !weights_cg(2,3) = (   gamma_w_l(2,3) + gamma_w_l(2,4) )&
-        !                  / gamma_w_l(2,3)
-
-        !weights_cg(3,1) = (   gamma_w_l(3,0) + gamma_w_l(3,1) &
-        !                    + gamma_w_l(4,0) + gamma_w_l(4,1) )&
-        !                  / gamma_w_l(3,1)
-
-        !weights_cg(3,2) = (   gamma_w_l(3,2) + gamma_w_l(4,2) )&
-        !                  / gamma_w_l(3,2)
-
-        !weights_cg(3,3) = (   gamma_w_l(3,3) + gamma_w_l(3,4) &
-        !                    + gamma_w_l(4,3) + gamma_w_l(4,4) )&
-        !                  / gamma_w_l(3,3)
 
      endif ! att_coarse_grained
      
@@ -1125,23 +1059,8 @@ subroutine prepare_attenuation(lambda, mu)
         delta_kappa(:,:,iel) = delta_kappa_0(:,:)
      endif
 
-     !---------------------------------------------------
-     ! testing simple version: assuming background model is instantaneous velocities
-     !mu_r(:,:) =  mu(:,:,ielsolid(iel)) / (1.d0 + sum(yp_j_mu))
-     !kappa_r(:,:) =  (lambda(:,:,ielsolid(iel)) + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) &
-     !                       / (1.d0 + sum(yp_j_kappa))
-
-     !delta_mu(:,:,iel) = mu(:,:,ielsolid(iel)) - mu_r(:,:)
-     !delta_kappa(:,:,iel) = (lambda(:,:,ielsolid(iel)) &
-     !                         + 2.d0 / 3.d0 * mu(:,:,ielsolid(iel))) - kappa_r(:,:)
-
-     !delta_mu(:,:,iel) = delta_mu(:,:,iel) * weights_cg
-     !delta_kappa(:,:,iel) = delta_kappa(:,:,iel) * weights_cg
-     !---------------------------------------------------
-
   enddo
 
-  !if (lpr) close(unit=1717)
   
   if (att_coarse_grained) then
      allocate(DsDeta_over_J_sol_cg4(1:4,1:nel_solid))
@@ -1275,6 +1194,7 @@ pure subroutine l2_error(Q, Qls, lognorm, lse)
 end subroutine
 !-----------------------------------------------------------------------------------------
 
+
 !-----------------------------------------------------------------------------------------
 !> Inverts for constant Q, minimizing the L2 error for 1/Q using a simulated annealing
 !! approach (varying peak frequencies and amplitudes).
@@ -1311,7 +1231,6 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   !                   Note that this version uses log-l2 norm!
   !
   use data_proc,            only: lpr, mynum
-  ! use ifport
 
   real(kind=dp)   , intent(in)            :: Q, f_min, f_max
   integer, intent(in)                     :: N, nfsamp, max_it
@@ -1368,11 +1287,10 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   if (N > 1) then
      expo = (log10(f_max) - log10(f_min)) / (N - 1.d0)
      do j=1, N
-        ! pi = 4 * atan(1)
-        w_j_test(j) = datan(1.d0) * 8.d0 * 10**(log10(f_min) + (j - 1) * expo)
+        w_j_test(j) = 2 * pi * 10**(log10(f_min) + (j - 1) * expo)
      end do 
   else
-     w_j_test(1) = (f_max * f_min)**.5 * 8 * datan(1.d0)
+     w_j_test(1) = (f_max * f_min)**.5 * 2 * pi
   endif
 
 
@@ -1381,7 +1299,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   ! Set the sampling frequencies equally spaced in log frequency
   expo = (log10(f_max) - log10(f_min)) / (nfsamp - 1.d0)
   do j=1, nfsamp
-     w(j) = datan(1.d0) * 8.d0 * 10**(log10(f_min) + (j - 1) * expo)
+     w(j) = 2 * pi * 10**(log10(f_min) + (j - 1) * expo)
   end do
 
   if (verbose_loc) print *, w
@@ -1429,7 +1347,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
         if (verbose_loc) then
            print *, '---------------'
            print *, it, chi
-           print *, w_j / (8 * tan(1.))
+           print *, w_j / (2 * pi)
            print *, y_j
         endif
   
