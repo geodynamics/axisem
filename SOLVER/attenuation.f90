@@ -872,9 +872,13 @@ subroutine prepare_attenuation(lambda, mu)
   if (lpr .and. verbose > 1) print *, &
         '  inverting for standard linear solid parameters...'
 
-  call invert_linear_solids(1.d0, f_min, f_max, n_sls_attenuation, nfsamp, max_it, Tw, &
-                            Ty, d, fixfreq, .false., .false., 'maxwell', w_j_attenuation, &
-                            y_j_attenuation, w_samp, q_fit, chil)
+  call invert_linear_solids(Q=1.d0, f_min=f_min, f_max=f_max, N=n_sls_attenuation, &
+                            nfsamp=nfsamp, max_it=max_it, Tw=Tw, Ty=Ty, d=d, &
+                            fixfreq=fixfreq, verbose=.false., exact=.false., &
+                            freq_weight=freq_weight, w_ref=qpl_w_ref, alpha=qpl_alpha, &
+                            w_j=w_j_attenuation, y_j=y_j_attenuation, w=w_samp, &
+                            q_fit=q_fit, chil=chil)
+
   if (lpr .and. verbose > 1) print *, '  ...done'
   
   ! prefactors for the exact time stepping (att notes p 13.3)
@@ -1180,7 +1184,8 @@ end subroutine
 !> Inverts for constant Q, minimizing the L2 error for 1/Q using a simulated annealing
 !! approach (varying peak frequencies and amplitudes).
 subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
-                                 fixfreq, verbose, exact, mode, w_j, y_j, w, q_fit, chil)
+                                fixfreq, verbose, exact, freq_weight, w_ref, alpha, w_j,&
+                                y_j, w, q_fit, chil)
 
   ! Parameters:
   ! Q:              clear
@@ -1198,14 +1203,10 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   ! exact:          use exact relation for Q and the coefficients (Emmerich & Korn, eq
   !                   21). If false, linearized version is used (large Q approximation, eq
   !                   22).
-  ! mode:           'maxwell' (default) oder 'zener' depending on the reology
-  !
   ! Returns:
   ! w_j:            relaxation frequencies, equals 1/tau_sigma in zener
   !                   formulation
   ! y_j:            coefficients of the linear solids, (Emmerich & Korn, eq 23 and 24)
-  !                   if mode is set to 'zener', this array contains the
-  !                   tau_epsilon as defined by Blanch et al, eq 12.
   ! w:              sampling frequencies at which Q(w) is minimized
   ! q_fit:          resulting q(w) at these frequencies
   ! chil:           error as a function of iteration to check convergence,
@@ -1213,62 +1214,52 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   !
   use data_proc,            only: lpr, mynum
 
-  real(kind=dp)   , intent(in)            :: Q, f_min, f_max
-  integer, intent(in)                     :: N, nfsamp, max_it
+  real(kind=dp), intent(in)                 :: Q, f_min, f_max
+  integer, intent(in)                       :: N, nfsamp, max_it
 
-  real(kind=dp)   , optional, intent(in)          :: Tw, Ty, d
-  !f2py real(kind=dp)   , optional, intent(in)    :: Tw=.1, Ty=.1, d=.99995
-  real(kind=dp)                                   :: Tw_loc = .1, Ty_loc = .1
-  real(kind=dp)                                   :: d_loc = .99995
+  real(kind=dp), optional, intent(in)       :: Tw, Ty, d, w_ref, alpha
+  !f2py real(kind=dp), optional, intent(in) :: Tw = .1, Ty = .1, d = .99995
+  !f2py real(kind=dp), optional, intent(in) :: w_ref = 1., alpha = 0
+  real(kind=dp)                             :: Tw_loc = .1, Ty_loc = .1
+  real(kind=dp)                             :: d_loc = .99995, w_ref_loc = 1.
+  real(kind=dp)                             :: alpha_loc = 0
 
-  logical, optional, intent(in)           :: fixfreq, verbose, exact
-  !f2py logical, optional, intent(in)     :: fixfreq = 0, verbose = 0
-  !f2py logical, optional, intent(in)     :: exact = 0
-  logical                                 :: fixfreq_loc = .false., verbose_loc = .false.
-  logical                                 :: exact_loc = .false.
-  
-  character(len=7), optional, intent(in)  :: mode
-  !f2py character(len=7), optional, intent(in) :: mode = 'maxwell'
-  character(len=7)                        :: mode_loc = 'maxwell'
+  logical, optional, intent(in)             :: fixfreq, verbose, exact, freq_weight
+  !f2py logical, optional, intent(in)       :: fixfreq = 0, verbose = 0
+  !f2py logical, optional, intent(in)       :: exact = 0, freq_weight = 0
+  logical                                   :: fixfreq_loc = .false., verbose_loc = .false.
+  logical                                   :: exact_loc = .false., freq_weight_loc = .true.
 
-  real(kind=dp), intent(out)      :: w_j(N)
-  real(kind=dp), intent(out)      :: y_j(N)
-  real(kind=dp), intent(out)      :: w(nfsamp) 
-  real(kind=dp), intent(out)      :: q_fit(nfsamp) 
-  real(kind=dp), intent(out)      :: chil(max_it) 
+  real(kind=dp), intent(out)    :: w_j(N)
+  real(kind=dp), intent(out)    :: y_j(N)
+  real(kind=dp), intent(out)    :: w(nfsamp) 
+  real(kind=dp), intent(out)    :: q_fit(nfsamp) 
+  real(kind=dp), intent(out)    :: chil(max_it) 
 
-  real(kind=dp)                   :: w_j_test(N)
-  real(kind=dp)                   :: y_j_test(N)
-  real(kind=dp)                   :: expo
-  real(kind=dp)                   :: chi, chi_test
-  real(kind=dp)                   :: randnr
-  real(kind=dp)                   :: Q_target(nfsamp)
-  real(kind=dp)                   :: weights(nfsamp)
+  real(kind=dp)     :: w_j_test(N)
+  real(kind=dp)     :: y_j_test(N)
+  real(kind=dp)     :: expo
+  real(kind=dp)     :: chi, chi_test
+  real(kind=dp)     :: randnr
+  real(kind=dp)     :: Q_target(nfsamp)
+  real(kind=dp)     :: weights(nfsamp)
 
-  integer             :: j, it, last_it_print
+  integer           :: j, it, last_it_print
 
   ! set default values
   if (present(Tw)) Tw_loc = Tw
   if (present(Ty)) Ty_loc = Ty
   if (present(d)) d_loc = d
+  if (present(w_ref)) w_ref_loc = w_ref
+  if (present(alpha)) alpha_loc = alpha
 
   if (present(fixfreq)) fixfreq_loc = fixfreq
   if (present(verbose)) verbose_loc = verbose
   if (present(exact)) exact_loc = exact
+  if (present(freq_weight)) freq_weight_loc = freq_weight
   
-  if (present(mode)) mode_loc = mode
-
   if (.not. lpr) verbose_loc = .false.
   
-  if ((mode_loc .ne. 'maxwell') .and. (mode_loc .ne. 'zener')) then
-     print *, "ERROR: mode should be either 'maxwell' or 'zener'"
-     return
-  endif
-
-  ! keep old behaviour for a second
-  Q_target(:) = Q
-  weights(:) = 1
-
   ! Set the starting test frequencies equally spaced in log frequency
   if (N > 1) then
      expo = (log10(f_max) - log10(f_min)) / (N - 1.d0)
@@ -1288,8 +1279,17 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   end do
 
   if (verbose_loc) print *, w
+
+  ! keep old behaviour for a second
+  Q_target(:) = Q * (w / w_ref_loc) ** alpha_loc
+
+  if (freq_weight_loc) then
+     weights = w / sum(w) * nfsamp
+  else
+     weights(:) = 1
+  endif
   
-  ! initial weights
+  ! initial weights y_j
   y_j_test = 1.d0 / Q * 1.5
   if (verbose_loc) print *, y_j_test
 
@@ -1306,11 +1306,13 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   w_j(:) = w_j_test(:)
   
   last_it_print = -1
+  ! actuall simulated annealing loop:
   do it=1, max_it
      do j=1, N
         call random_number(randnr)
         if (.not. fixfreq_loc) &
            w_j_test(j) = w_j(j) * (1.0 + (0.5 - randnr) * Tw_loc)
+
         call random_number(randnr)
         y_j_test(j) = y_j(j) * (1.0 + (0.5 - randnr) * Ty_loc)
      enddo
@@ -1323,28 +1325,15 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
      Tw_loc = Tw_loc * d_loc
      Ty_loc = Ty_loc * d_loc
                                      
-     ! check if the tested parameters are better
+     ! check if the tested parameters are better, if so, update
      if (chi_test < chi) then
         y_j(:) = y_j_test(:)
         w_j(:) = w_j_test(:)
         chi = chi_test
-
-        if (verbose_loc) then
-           print *, '---------------'
-           print *, it, chi
-           print *, w_j / (2 * pi)
-           print *, y_j
-        endif
-  
      endif
+
      chil(it) = chi
   enddo
-
-  if (mode_loc .eq. 'zener') then
-     ! compare Attenuation Notes, p 18.1
-     ! easy to find from Blanch et al, eq. (12) and Emmerick & Korn, eq. (21)
-     y_j = (y_j + 1) / w_j
-  endif
 
 end subroutine
 !-----------------------------------------------------------------------------------------
