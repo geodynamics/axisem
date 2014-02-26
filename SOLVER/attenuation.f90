@@ -1155,45 +1155,26 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-!> returns l2 misfit between constant Q and fitted Q using standard linear solids
-pure subroutine l2_error(Q, Qls, lognorm, lse)
+!> returns l2 misfit between Q_target and fitted Q using standard linear solids
+pure subroutine l2_error(Q_target, Qls, weights, lse)
  
-  real(kind=dp)   , intent(in)    :: Q, Qls(:)
+  real(kind=dp), intent(in)       :: Q_target(:), Qls(:), weights(:)
   
-  logical, optional, intent(in)   :: lognorm
-  ! optional argument with default value (a bit nasty in f2py)
-  !f2py logical, optional, intent(in) :: lognorm = 1
-  logical                         :: lognorm_loc
-  
-  real(kind=dp)   , intent(out)   :: lse
+  real(kind=dp), intent(out)      :: lse
   integer                         :: nfsamp, i
   
-  if (present(lognorm)) then
-      lognorm_loc = lognorm
-  else
-      lognorm_loc = .false.
-  end if
-
   lse = 0
   nfsamp = size(Qls)
 
-  if (lognorm_loc) then
-     !print *, 'log-l2 norm'
-     do i=1, nfsamp
-        lse = lse + (log(Q / Qls(i)))**2
-     end do
-  else
-     !print *, 'standard l2 norm'
-     do i=1, nfsamp
-        lse = lse + (1/Q - 1/Qls(i))**2
-     end do
-     lse = lse * Q**2
-  endif
+  ! log-l2 norm
+  do i=1, nfsamp
+     lse = lse + (log(Q_target(i) / Qls(i)))**2 * weights(i)
+  end do
+
   lse = lse / float(nfsamp)
   lse = dsqrt(lse)
 end subroutine
 !-----------------------------------------------------------------------------------------
-
 
 !-----------------------------------------------------------------------------------------
 !> Inverts for constant Q, minimizing the L2 error for 1/Q using a simulated annealing
@@ -1261,6 +1242,8 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   real(kind=dp)                   :: expo
   real(kind=dp)                   :: chi, chi_test
   real(kind=dp)                   :: randnr
+  real(kind=dp)                   :: Q_target(nfsamp)
+  real(kind=dp)                   :: weights(nfsamp)
 
   integer             :: j, it, last_it_print
 
@@ -1282,6 +1265,9 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
      return
   endif
 
+  ! keep old behaviour for a second
+  Q_target(:) = Q
+  weights(:) = 1
 
   ! Set the starting test frequencies equally spaced in log frequency
   if (N > 1) then
@@ -1292,7 +1278,6 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   else
      w_j_test(1) = (f_max * f_min)**.5 * 2 * pi
   endif
-
 
   if (verbose_loc) print *, w_j_test
   
@@ -1314,7 +1299,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   if (verbose_loc) print *, q_fit
  
   ! initial chi
-  call l2_error(Q=Q, Qls=q_fit, lognorm=.true., lse=chi)
+  call l2_error(Q_target=Q_target, Qls=q_fit, weights=weights, lse=chi)
   if (verbose_loc) print *, 'initital chi: ', chi
 
   y_j(:) = y_j_test(:)
@@ -1334,7 +1319,7 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
      call q_linear_solid(y_j=y_j_test, w_j=w_j_test, w=w, exact=exact_loc, Qls=q_fit)
      
      ! compute new misfit and new temperature
-     call l2_error(Q=Q, Qls=q_fit, lognorm=.true., lse=chi_test)
+     call l2_error(Q_target=Q_target, Qls=q_fit, weights=weights, lse=chi_test)
      Tw_loc = Tw_loc * d_loc
      Ty_loc = Ty_loc * d_loc
                                      
