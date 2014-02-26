@@ -1193,7 +1193,6 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   ! N:              number of standard linear solids
   ! nfsamp:         number of sampling frequencies for computation of the misfit (log
   !                   spaced in freqeuncy band)
-
   ! max_it:         number of iterations
   ! Tw:             starting temperature for the frequencies
   ! Ty:             starting temperature for the amplitudes
@@ -1203,6 +1202,10 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
   ! exact:          use exact relation for Q and the coefficients (Emmerich & Korn, eq
   !                   21). If false, linearized version is used (large Q approximation, eq
   !                   22).
+  ! freq_weight:    use frequency weighting to ensure better fit at high frequencies
+  ! w_ref:          reference angular frequency for power law Q
+  ! alpha:          exponent for power law Q
+  !
   ! Returns:
   ! w_j:            relaxation frequencies, equals 1/tau_sigma in zener
   !                   formulation
@@ -1280,16 +1283,17 @@ subroutine invert_linear_solids(Q, f_min, f_max, N, nfsamp, max_it, Tw, Ty, d, &
 
   if (verbose_loc) print *, w
 
-  ! keep old behaviour for a second
+  ! compute target Q from power law
   Q_target(:) = Q * (w / w_ref_loc) ** alpha_loc
 
+  ! compute weights for linear frequency weighting
   if (freq_weight_loc) then
      weights = w / sum(w) * nfsamp
   else
      weights(:) = 1
   endif
   
-  ! initial weights y_j
+  ! initial weights y_j based on an empirical guess
   y_j_test = 1.d0 / Q * 1.5
   if (verbose_loc) print *, y_j_test
 
