@@ -1,0 +1,3 @@
+[submodule "TESTING/automated"]
+	path = TESTING/automated
+	url = git://vcs.geodynamics.org/axisem_testing
