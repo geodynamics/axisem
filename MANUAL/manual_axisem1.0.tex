@@ -367,25 +367,24 @@ system fulfils all requirements mentioned above.\\
 \noindent Start from within the {\tt AXISEM} directory:
 
 \begin{enumerate}
-    \item \verb|./copy_templates| $\Rightarrow$ creates various input files from templates
+    \item \verb|./copytemplates.csh| $\Rightarrow$ creates various input files from templates
     \item Check file \verb|make_axisem.macros|, whether the compiler settings fit your
           system.
     \item \verb|cd MESHER| 
     \item Check file {\tt inparam\_mesh}, for background model, period of simulation and
           number of CPUs \\
-          Default is \textit{PREM}, \textit{20 s} and \textit{2 CPUs} and runs within a
+          Default is \textit{PREM}, \textit{50 s} and \textit{2 CPUs} and runs within a
           few minutes on a modern PC.
     \item \verb|./submit.csh| $\Rightarrow$ Check file {\tt OUTPUT}.
     \item Wait for ``{\tt ....DONE WITH MESHER}'' to appear in {\tt OUTPUT}.
-    \item \verb|./movemesh.csh PREM_50s| $\Rightarrow$ moves mesh files to
-          \verb|../SOLVER/MESHES/PREM_50s|.
+    \item move mesh files to \verb|../SOLVER/MESHES/| directory and give it a name
+          \verb|./movemesh.csh PREM_50s| 
     \item \verb|cd ../SOLVER|
     \item In \verb|inparam_basic| set the value for \verb|MESHNAME| to the meshname from
-          above (e.g. \verb|PREM_50s|)
+          above (here: \verb|PREM_50s|)
     \item \verb|./submit.csh PREM_mrr_50s_gauss_1800s|  $\Rightarrow$ compiles and runs
           the code
-    \item \verb|cd PREM_mrr_50s_gauss_1800s| $\Rightarrow$ Check
-          \verb|OUTPUT_PREM_mrr_50s_gauss_1800s|.
+    \item \verb|cd PREM_mrr_50s_gauss_1800s| $\Rightarrow$ go to the run directory.
     \item Wait for ``\verb|PROGRAM axisem FINISHED|'' to appear in
           \verb|OUTPUT_PREM_mrr_50s_gauss_1800s| \\
           (use \verb|tail -f OUTPUT_PREM_mrr_50s_gauss_1800s|).
