@@ -44,8 +44,6 @@ module nc_routines
     real(sp), allocatable   :: surfdumpvar_strain(:,:,:)
     !> Buffer variable for source displacement at surface
     real(sp), allocatable   :: surfdumpvar_srcdisp(:,:,:)
-!    real, allocatable   :: oneddumpvar_flu(:,:,:)    !< Buffer variable for everything fluid dumped in nc_dump_field_1d
-!    real, allocatable   :: oneddumpvar_sol(:,:,:)    !< Buffer variable for everything solid dumped in nc_dump_field_1d
 
     !> Buffer variable for everything dumped in nc_dump_field_1d
     real(sp), allocatable   :: oneddumpvar(:,:,:)
@@ -107,6 +105,13 @@ module nc_routines
     integer, save       :: nc_snap_pwave_varid, nc_snap_swave_varid
     integer, save       :: ncid_out_snap
     integer, save       :: ndim_disp !< 2 for monopole, 3 for rest
+
+    !! Buffer variables to hand over to the dumping thread
+    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_oneddumpvar         
+    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_surfdumpvar_disp    
+    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_surfdumpvar_strain  
+    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_surfdumpvar_velo    
+    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_surfdumpvar_srcdisp 
 
 
     !! Buffer variables for the STF.
@@ -243,7 +248,7 @@ subroutine nc_dump_field_solid(f, varname)
             ' which is a fluid variable. Contact a developer and shout at him!'
         stop 1
     end if
-    
+    !print *, mynum,  stepstodump 
     oneddumpvar(1:npts_sol,stepstodump+1,ivar) = f  !processor specific dump variable
 #endif
 end subroutine nc_dump_field_solid
@@ -285,6 +290,7 @@ subroutine nc_dump_strain(isnap_loc)
     use data_io, ONLY    : nstrain
     use clocks_mod, only : tick
     use data_time, only  : iclocknbio, idnbio
+    use data_mesh, only  : maxind
 
     ! explicit interfaces to the c functions to avoide the underscore issues
     ! (fortran 2003 standard)
@@ -344,6 +350,18 @@ subroutine nc_dump_strain(isnap_loc)
 
             isnap_global = isnap_loc 
             ndumps = stepstodump
+
+            allocate(copy_oneddumpvar(1:npoints,1:ndumps,1:nvar/2))
+            allocate(copy_surfdumpvar_disp(1:ndumps, 1:3, 1:maxind))
+            allocate(copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind))
+            allocate(copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind))
+            allocate(copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind))
+            copy_oneddumpvar          = oneddumpvar(1:npoints,1:ndumps,1:nvar/2)
+            copy_surfdumpvar_disp     = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)
+            copy_surfdumpvar_strain   = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)
+            copy_surfdumpvar_velo     = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)
+            copy_surfdumpvar_srcdisp  = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind) 
+
             call c_spawn_dumpthread(stepstodump)
             stepstodump = 0
         end if
@@ -364,6 +382,18 @@ subroutine nc_dump_strain(isnap_loc)
             if (iproc == mynum) then
                 isnap_global = nstrain 
                 ndumps = stepstodump
+
+                allocate(copy_oneddumpvar(1:npoints,1:ndumps,1:nvar/2))
+                allocate(copy_surfdumpvar_disp(1:ndumps, 1:3, 1:maxind))
+                allocate(copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind))
+                allocate(copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind))
+                allocate(copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind))
+                copy_oneddumpvar          = oneddumpvar(1:npoints,1:ndumps,1:nvar/2)
+                copy_surfdumpvar_disp     = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)
+                copy_surfdumpvar_strain   = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)
+                copy_surfdumpvar_velo     = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)
+                copy_surfdumpvar_srcdisp  = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind) 
+
                 call nc_dump_strain_to_disk()
                 if (verbose > 1) write(6,*) mynum, 'finished dumping strain'
             end if
@@ -413,41 +443,44 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
         call putvar_real2d(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
                            start=[npoints_myfirst, isnap_loc-ndumps+1], &
                            count=[npoints, ndumps], &
-                           values=oneddumpvar(1:npoints,1:ndumps,ivar)) 
+                           values=copy_oneddumpvar(1:npoints,1:ndumps,ivar)) 
         dumpsize = dumpsize + npoints * ndumps
     end do
         
-    !dumpsize = dumpsize + flen * ndumps
-            
     !> Surface dumps 
     if (maxind>0) then
         call putvar_real3d(ncid_surfout, nc_surfelem_disp_varid, &
                     start = [isnap_loc-ndumps+1, 1, ind_first], &
                     count = [ndumps, 3, maxind], &
-                    values = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)) 
+                    values = copy_surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)) 
         dumpsize = dumpsize + 3 * maxind * ndumps
 
         call putvar_real3d(ncid_surfout, nc_surfelem_velo_varid, &
                     start = [isnap_loc-ndumps+1, 1, ind_first], &
                     count = [ndumps, 3, maxind], &
-                    values = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)) 
+                    values = copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)) 
         dumpsize = dumpsize + 3 * maxind * ndumps
 
         call putvar_real3d(ncid_surfout, nc_surfelem_strain_varid, &
                     start = [isnap_loc-ndumps+1, 1, ind_first], &
                     count = [ndumps, 6, maxind], &
-                    values = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)) 
+                    values = copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)) 
         dumpsize = dumpsize + 6 * maxind * ndumps
 
         call putvar_real3d(ncid_surfout, nc_surfelem_disp_src_varid, &
                     start = [isnap_loc-ndumps+1, 1, ind_first], &
                     count = [ndumps, 3, maxind], &
-                    values = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
+                    values = copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
         dumpsize = dumpsize + 3 * maxind * ndumps
     end if
 
     call check( nf90_close(ncid_out) ) 
     call cpu_time(tack)
+    deallocate(copy_oneddumpvar)
+    deallocate(copy_surfdumpvar_disp)
+    deallocate(copy_surfdumpvar_strain)
+    deallocate(copy_surfdumpvar_velo)
+    deallocate(copy_surfdumpvar_srcdisp)
 
     if (verbose > 0) then
         dumpsize_MB = real(dumpsize) * 4 / 1048576
@@ -751,7 +784,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_mesh_vs_varid, nc_mesh_vp_varid   
     integer                              :: nc_mesh_mu_varid, nc_mesh_rho_varid   
     integer                              :: nc_mesh_lambda_varid
-    integer                              :: nc_disc_dimid, nc_disc_varid
+    !integer                              :: nc_disc_dimid, nc_disc_varid
 
     if ((mynum == 0) .and. (verbose > 1)) then
         write(6,*)
@@ -950,14 +983,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       dimids = nc_snap_dimid,&
                                       varid  = nc_snaptime_varid) )
 
-            call check( nf90_def_dim( ncid   = ncid_meshout, &
-                                      name   = 'discontinuities', &
-                                      len    = ndisc, &
-                                      dimid  = nc_disc_dimid) )
-            call check( nf90_put_att( ncid   = ncid_meshout, &
-                                      varid  = NF90_GLOBAL, &
-                                      name   = 'ndisc', &
-                                      values = ndisc) )
+!            call check( nf90_def_dim( ncid   = ncid_meshout, &
+!                                      name   = 'discontinuities', &
+!                                      len    = ndisc, &
+!                                      dimid  = nc_disc_dimid) )
+!            call check( nf90_put_att( ncid   = ncid_meshout, &
+!                                      varid  = NF90_GLOBAL, &
+!                                      name   = 'ndisc', &
+!                                      values = ndisc) )
 
             call check( nf90_def_var( ncid   = ncid_meshout,  &
                                       name   = 'mesh_S', &
@@ -995,17 +1028,17 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       dimids = nc_pt_dimid,&
                                       varid  = nc_mesh_mu_varid) )
 
-            call check( nf90_def_var( ncid   = ncid_meshout, &
-                                      name   = 'model_domain', &
-                                      xtype  = NF90_BYTE, &
-                                      dimids = nc_pt_dimid,&
-                                      varid  = nc_elem_dom_varid) )
+!            call check( nf90_def_var( ncid   = ncid_meshout, &
+!                                      name   = 'model_domain', &
+!                                      xtype  = NF90_BYTE, &
+!                                      dimids = nc_pt_dimid,&
+!                                      varid  = nc_elem_dom_varid) )
             
-            call check( nf90_def_var( ncid   = ncid_meshout, &
-                                      name   = 'disc_depths', &
-                                      xtype  = NF90_DOUBLE, &
-                                      dimids = nc_disc_dimid,&
-                                      varid  = nc_disc_varid) )
+            !call check( nf90_def_var( ncid   = ncid_meshout, &
+            !                          name   = 'disc_depths', &
+            !                          xtype  = NF90_DOUBLE, &
+            !                          dimids = nc_disc_dimid,&
+            !                          varid  = nc_disc_varid) )
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
        
@@ -1054,17 +1087,17 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_put_att( ncid_surfout, nc_surfelem_velo_varid, 'units', &
                                       'meters per second') )
             
-            call check( nf90_def_var( ncid_surfout, "strain", NF90_FLOAT, &
-                                      [nc_snap_dimid, nc_strcomp_dimid, nc_surf_dimid ], &
-                                      nc_surfelem_strain_varid) )
-            call check( nf90_put_att( ncid_surfout, nc_surfelem_strain_varid, 'units', &
-                                      ' ') )
-
             call check( nf90_def_var( ncid_surfout, "disp_src", NF90_FLOAT, &
                                       [nc_snap_dimid, nc_comp_dimid, nc_surf_dimid ], &
                                       nc_surfelem_disp_src_varid) )
             call check( nf90_put_att( ncid_surfout, nc_surfelem_disp_src_varid, 'units', &
                                       'meters') )
+
+            call check( nf90_def_var( ncid_surfout, "strain", NF90_FLOAT, &
+                                      [nc_snap_dimid, nc_strcomp_dimid, nc_surf_dimid ], &
+                                      nc_surfelem_strain_varid) )
+            call check( nf90_put_att( ncid_surfout, nc_surfelem_strain_varid, 'units', &
+                                      ' ') )
 
             call check( nf90_def_var( ncid_surfout, "stf_dump", NF90_FLOAT, &
                                       [nc_snap_dimid], &
@@ -1110,10 +1143,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                      varid  = nc_snaptime_varid, &
                                      values = time_strain ) ) 
             ! Write out discontinuity depths
-            if (verbose > 1) write(6,*) 'Writing discontinuity depths into NetCDF file...'
-            call check( nf90_put_var(ncid   = ncid_meshout, &
-                                     varid  = nc_disc_varid, &
-                                     values = discont) )
+            !if (verbose > 1) write(6,*) 'Writing discontinuity depths into NetCDF file...'
+            !call check( nf90_put_var(ncid   = ncid_meshout, &
+            !                         varid  = nc_disc_varid, &
+            !                         values = discont) )
             
             ! Write out STF values at kernel dump points
             if (verbose > 1) write(6,*) 'Writing STF in strain dumps'
@@ -1133,6 +1166,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     recdumpvar = 0.0
 
     if (dump_wavefields) then
+        stepstodump = 0
         allocate(surfdumpvar_disp(dumpstepsnap,3,maxind))
         allocate(surfdumpvar_velo(dumpstepsnap,3,maxind))
         allocate(surfdumpvar_strain(dumpstepsnap,6,maxind))
