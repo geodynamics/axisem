@@ -104,7 +104,7 @@ subroutine create_subregions
       write(6,*) '#######################################################################'
       fmtstring = '("  ", A, I12, F12.2)'
       write(6,fmtstring)'discontinuities:    ', idom,real(discont(idom))
-      fmtstring = '("  ", A, L12, L12)'
+      fmtstring = '("  ", A, L12, I12)'
       write(6,fmtstring)'solid/fluid domain: ', solid_domain(idom),idom_fluid(idom)
       fmtstring = '("  ", A, F12.2, F12.2)'
       write(6,fmtstring)'upper/lower radius: ', real(rdisc_top(idom)),real(rdisc_bot(idom))
