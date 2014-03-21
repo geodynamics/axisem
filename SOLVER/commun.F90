@@ -718,7 +718,7 @@ integer                          :: all_elems(0:nproc-1), iproc
      end if
      if (verbose>1) then
          if (my_elems == 0) then
-             write(*,"('   Proc:', I5, ' has no elements of this type')"), mynum
+             write(*,"('   Proc:', I5, ' has no elements of this type')") mynum
          else
              write(*,"('   Proc:', I5, ', first elem:', I10, ', last elem:', I10)" ) &
                    mynum, my_first, my_last 
