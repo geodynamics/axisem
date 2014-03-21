@@ -375,16 +375,16 @@ subroutine prepare_from_recfile_seis
      allocate( recfile_ph_loc2(1:num_rec_glob) )   
      allocate( receiver_name  (1:num_rec_glob) )
 
-     open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
+     if (mynum==0) open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
 
      do i=1,num_rec_glob
         read(34,*)recfile_readth(i),recfile_readph(i)
         call define_io_appendix(appielem,i)
         receiver_name(i) = 'recfile_'//appielem
-        write(30,*) trim(receiver_name(i)), recfile_readth(i), recfile_readph(i)
+        if (mynum==0) write(30,*) trim(receiver_name(i)), recfile_readth(i), recfile_readph(i)
      enddo
      close(34) 
-     close(30)
+     if (mynum==0) close(30)
 
 
   case('database') 
