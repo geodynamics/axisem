@@ -444,7 +444,7 @@ subroutine prepare_from_recfile_seis
      allocate(reclat(num_rec_glob),reclon(num_rec_glob),recelevation(num_rec_glob),recbury(num_rec_glob))
      allocate(receiver_name(num_rec_glob))
      open(unit=34,file='STATIONS',iostat=ierror,status='old',action='read',position='rewind')
-     open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
+     if (mynum==0) open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
 
      do i=1,num_rec_glob
         read(34,*)rec_name(i),rec_network(i),reclat(i),reclon(i),recelevation(i),recbury(i)
@@ -455,9 +455,10 @@ subroutine prepare_from_recfile_seis
         endif
         recfile_readth(i) = 90.d0 - reclat(i)
         receiver_name(i) = trim(rec_name(i))//'_'//trim(rec_network(i))
-        write(30,*)trim(receiver_name(i)),recfile_readth(i),recfile_readph(i)
+        if (mynum==0) write(30,*)trim(receiver_name(i)),recfile_readth(i),recfile_readph(i)
      enddo
-     close(34); close(30)
+     close(34)
+     if (mynum==0) close(30)
 
      
   case default   
