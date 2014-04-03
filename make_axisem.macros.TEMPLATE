@@ -11,7 +11,7 @@ MPIRUN  = mpirun
 
 # Enable NetCDF
 USE_NETCDF = false
-NETCDF_PATH = $(HOME)/local
+NETCDF_PATH =       # e.g. $(HOME)/local, uses /usr/include if not defined
 
 # compile without MPI (possible values: 'false', 'true')
 # make sure to build mesh with one processor
