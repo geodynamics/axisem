@@ -23,12 +23,18 @@ OBJS =	background_models.o test_bkgrdmodel.o analytic_mapping.o \
 
 ifeq ($(strip $(USE_NETCDF)),true)
    FFLAGS += -Dunc
-   LIBS = -L $(strip $(NETCDF_PATH))/lib -lnetcdff -Wl,-rpath,$(strip $(NETCDF_PATH))/lib
-   INCLUDE = -I $(strip $(NETCDF_PATH))/include
+   ifdef NETCDF_PATH
+       LIBS = -L $(strip $(NETCDF_PATH))/lib -lnetcdff -Wl,-rpath,$(strip $(NETCDF_PATH))/lib
+       INCLUDE = -I $(strip $(NETCDF_PATH))/include
+   else
+       LIBS = -lnetcdff
+       INCLUDE = -I /usr/include
+   endif
 else
    LIBS = 
-   INCLUDE =
+   INCLUDE = 
 endif
+
 
 
 # cancel m2c implicit rule 
