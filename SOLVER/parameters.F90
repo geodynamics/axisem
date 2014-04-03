@@ -1025,7 +1025,7 @@ subroutine compute_numerical_parameters
      nstrain = floor(real(niter)/real(strain_it))
 
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
-     write(2900,*) nstrain 
+     write(2900+mynum,*) nstrain 
      do ielem = 1, nstrain 
         write(2900+mynum,*)real(ielem)*t_0/real(strain_samp),ielem*strain_it
      enddo
