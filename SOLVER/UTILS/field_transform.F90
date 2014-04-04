@@ -48,7 +48,7 @@ program field_transformation
     integer                         :: dimids(2)
     character(len=16), allocatable  :: varnamelist(:), varname_surf(:)
     integer, dimension(9)           :: ncin_field_varid
-    integer, dimension(9,2)         :: ncout_field_varid
+    integer, dimension(9)           :: ncout_field_varid
     integer                         :: ncin_snaptime_varid
 
     integer                         :: rank, istride, ostride, nomega, nextpow2
@@ -68,8 +68,12 @@ program field_transformation
 
     logical                         :: verbose = .true.
     logical                         :: output_exist = .true.
-    integer                         :: npointsperstep = 100000
+    integer                         :: npointsperstep = 500000
                                     !< maybe replace this with cache size
+    integer                         :: chunk_gll 
+                                    !< Contains chunk size in GLL points. Should be system 
+                                    !! int(disk_block_size / nsnap)
+    integer, parameter              :: disk_block_size = 8192
 
     ! lossy compression: setting the fields to numerical zero before p-wave
     ! arrival helps bzip a lot for the compression. The fields are truncated to
@@ -80,7 +84,7 @@ program field_transformation
     ! numbers expected)
     logical, parameter              :: deflate = .true.
     integer, parameter              :: deflate_level = 2
-    logical, parameter              :: deflate_lossy = .true.
+    logical, parameter              :: deflate_lossy = .false.
     integer, parameter              :: sigdigits =  5       ! significant digits
                                                             ! below max of time trace
 
@@ -139,22 +143,11 @@ program field_transformation
     if (verbose) &
         print *, 'ngll  = ', ngll
 
-    !! Check for output file
-    inquire(file="./ordered_output.nc4", exist=output_exist)
 
-    !if (output_exist) then
-    !    if (verbose) &
-    !        print *, 'Opening output file'
-    !    nmode = NF90_WRITE 
-    !    call check( nf90_open(path="./ordered_output.nc4", mode=nmode, ncid=ncout_id))
-    !    call check( nf90_redef(ncid=ncout_id))
-    !else
-        !! Create output file
-        if (verbose) &
-            print *, 'Creating output file'
-        nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
-        call check( nf90_create(path="./ordered_output.nc4", cmode=nmode, ncid=ncout_id))
-    !end if
+    !! Create output file
+    if (verbose) print *, 'Creating output file'
+    nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
+    call check( nf90_create(path="./ordered_output.nc4", cmode=nmode, ncid=ncout_id))
 
     ! create group for timedomain fields
     call check( nf90_def_grp(ncout_id, "Snapshots", ncout_fields_grpid) )
@@ -174,24 +167,26 @@ program field_transformation
 
     print *, 'Defined snapshots dimension'
 
+    chunk_gll = disk_block_size / nsnap 
+    print *, 'Chunksize: [', chunk_gll, ',', nsnap, ']'
 
     ! create variables
     do ivar=1, nvar
-        call check( nf90_def_var(ncid=ncout_fields_grpid, &
-                                 name=trim(varnamelist(ivar)), &
-                                 xtype=NF90_FLOAT, &
-                                 dimids=(/ncout_snap_dimid, ncout_gll_dimid/),&
-                                 varid=ncout_field_varid(ivar, 1), &
-                                 chunksizes = (/nsnap, 1/)) )
+        call check( nf90_def_var(ncid       = ncout_fields_grpid, &
+                                 name       = trim(varnamelist(ivar)), &
+                                 xtype      = NF90_FLOAT, &
+                                 dimids     = [ncout_gll_dimid, ncout_snap_dimid] ,&
+                                 varid      = ncout_field_varid(ivar), &
+                                 chunksizes = [chunk_gll, nsnap]) )
 
         call check( nf90_def_var_fill(ncid=ncout_fields_grpid, &
-                                      varid=ncout_field_varid(ivar, 1), &
+                                      varid=ncout_field_varid(ivar), &
                                       no_fill=1, fill=0) )
 
 
         if (deflate) then
             call check( nf90_def_var_deflate(ncid=ncout_fields_grpid, &
-                                             varid=ncout_field_varid(ivar, 1), &
+                                             varid=ncout_field_varid(ivar), &
                                              shuffle=1, deflate=1, &
                                              deflate_level=deflate_level) )
         end if
@@ -220,12 +215,12 @@ program field_transformation
                                   name       = varname,           &
                                   xtype      = NF90_FLOAT,        &
                                   dimids     = [ncout_gll_dimid], &
-                                  chunksizes = [ngll],            &
+                                  !chunksizes = [ngll],            &
                                   varid      = ncout_mesh_varids(ivar)) )
-        call check( nf90_def_var_deflate( ncid    = ncout_mesh_grpid,        &
-                                          varid   = ncout_mesh_varids(ivar), &
-                                          shuffle = 1, deflate = 1,          &
-                                          deflate_level = deflate_level) )
+        !call check( nf90_def_var_deflate( ncid    = ncout_mesh_grpid,        &
+        !                                  varid   = ncout_mesh_varids(ivar), &
+        !                                  shuffle = 1, deflate = 1,          &
+        !                                  deflate_level = deflate_level) )
     end do
 
     ! Create Surface variables
@@ -317,7 +312,7 @@ program field_transformation
         
         if (nf_att_stat.ne.NF90_NOERR) exit
 
-        print *, 'Copying attribute: ', attname
+        !print *, 'Copying attribute: ', attname
         call check(nf90_copy_att( ncid_in   = ncin_id, &
                                   varid_in  = NF90_GLOBAL, &
                                   name      = attname,     &
@@ -332,12 +327,19 @@ program field_transformation
     print *, 'Copying mesh variables'
     allocate(data_mesh(ngll))
     do ivar = 1, nvars_mesh
+        call check( nf90_inquire_variable(ncid  = ncin_mesh_grpid,        &
+                                          varid = ncin_mesh_varids(ivar), & 
+                                          name  = varname ))
         if (varname(1:5).ne.'mesh_') cycle
         call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
                                   varid  = ncin_mesh_varids(ivar), &
+                                  start  = [1],                    & 
+                                  count  = [ngll],                 &
                                   values = data_mesh) )
         call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
                                   varid  = ncout_mesh_varids(ivar), &
+                                  start  = [1],                    & 
+                                  count  = [ngll],                 &
                                   values = data_mesh))
     end do
     deallocate(data_mesh)
@@ -348,47 +350,60 @@ program field_transformation
     print *, 'Copying surface variables'
     allocate(data_surf_1d(nsurfelem))
     call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                              varid  = ncin_surf_varids(1), &
+                              varid  = ncin_surf_varids(1),    &
+                              start  = [1],                    & 
+                              count  = [nsurfelem],            &
                               values = data_surf_1d) )
     call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
-                              varid  = ncout_surf_varids(1), &
+                              varid  = ncout_surf_varids(1),   &
+                              start  = [1],                    & 
+                              count  = [nsurfelem],            &
                               values = data_surf_1d))
     deallocate(data_surf_1d)
 
     allocate(data_surf_3d(nsnap, ncomp, nsurfelem))
     do ivar = 2, 4
-        call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                                  varid  = ncin_surf_varids(ivar), &
+        call check( nf90_get_var( ncid   = ncin_surf_grpid,           &
+                                  varid  = ncin_surf_varids(ivar),    &
+                                  start  = [1,1,1],                   & 
+                                  count  = [nsnap, ncomp, nsurfelem], &
                                   values = data_surf_3d) )
-        call check( nf90_put_var( ncid   = ncout_surf_grpid,        &
-                                  varid  = ncout_surf_varids(ivar), &
+        call check( nf90_put_var( ncid   = ncout_surf_grpid,          &
+                                  varid  = ncout_surf_varids(ivar),   &
+                                  start  = [1,1,1],                   & 
+                                  count  = [nsnap, ncomp, nsurfelem], &
                                   values = data_surf_3d))
     end do
     deallocate(data_surf_3d)
 
     allocate(data_surf_3d(nsnap, nstraincomp, nsurfelem))
-    call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                              varid  = ncin_surf_varids(5), &
+    call check( nf90_get_var( ncid   = ncin_surf_grpid,                 &
+                              varid  = ncin_surf_varids(5),             &
+                              start  = [1,1,1],                         & 
+                              count  = [nsnap, nstraincomp, nsurfelem], &
                               values = data_surf_3d) )
-    call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
-                              varid  = ncout_surf_varids(5), &
+    call check( nf90_put_var( ncid   = ncout_surf_grpid,                &
+                              varid  = ncout_surf_varids(5),            &
+                              start  = [1,1,1],                         & 
+                              count  = [nsnap, nstraincomp, nsurfelem], &
                               values = data_surf_3d))
     deallocate(data_surf_3d)
 
     allocate(data_surf_1d(nsnap))
     call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                              varid  = ncin_surf_varids(6), &
+                              varid  = ncin_surf_varids(6),    &
+                              start  = [1],                    & 
+                              count  = [nsnap],                &
                               values = data_surf_1d) )
     call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
-                              varid  = ncout_surf_varids(6), &
+                              varid  = ncout_surf_varids(6),   &
+                              start  = [1],                    & 
+                              count  = [nsnap],                &
                               values = data_surf_1d))
     deallocate(data_surf_1d)
 
 
 
-    allocate(datat(1:nsnap, 1:npointsperstep))
-    allocate(datat_t(1:npointsperstep, 1:nsnap))
-   
     ! loop over fields
     do ivar=1, nvar
         if (verbose) &
@@ -399,59 +414,67 @@ program field_transformation
 
             ngllread = min(npointsperstep, ngll - nstep)
 
+            allocate(datat_t(1:ngllread, 1:nsnap))
+
+            !print *, 'npointsperstep: ', npointsperstep, ', ngllread: ', ngllread
             ! read a chunk of data
             call cpu_time(tick)
             call check( nf90_get_var(ncin_snap_grpid, ncin_field_varid(ivar), &
-                                     values=datat_t(:,1:nsnap), &
+                                     values=datat_t(:, :), &
                                      start=(/nstep+1, 1/), &
                                      count=(/ngllread, nsnap/)) )
 
-            datat(1:nsnap,:) = transpose(datat_t(:,1:nsnap))
+            !datat(1:nsnap,:) = transpose(datat_t(:,1:nsnap))
 
             call cpu_time(tack)
             time_i = time_i + tack - tick
             space_i = space_i + ngllread * nsnap * 4 / 1048576.
             if (verbose) &
-                print "('read  ', F8.2, ' MB in ', F5.2, ' s => ', F6.2, 'MB/s' )", &
-                    ngllread * nsnap * 4 / 1048576., tack-tick, &
-                    ngllread * nsnap * 4 / 1048576. / (tack-tick)
+                print "('read  ', F9.2, ' MB in ', F5.2, ' s => ', F6.2, 'MB/s' )", &
+                    real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
+                    real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
 
             ! trunkate for better compression
-            if (deflate .and. deflate_lossy) then
-                call cpu_time(tick)
-                call truncate(datat, sigdigits)
-                call cpu_time(tack)
-                time_fft = time_fft + tack - tick
-            endif
+            !if (deflate .and. deflate_lossy) then
+            !    call cpu_time(tick)
+            !    call truncate(datat_t, sigdigits)
+            !    call cpu_time(tack)
+            !    time_fft = time_fft + tack - tick
+            !endif
 
             ! write transposed data to output file
             call cpu_time(tick)
-            call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar, 1), &
-                                     values=datat, &
-                                     start=(/1, nstep+1/), &
-                                     count=(/nsnap, ngllread/)) ) 
+            call check( nf90_put_var(ncout_fields_grpid, ncout_field_varid(ivar), &
+                                     values = datat_t(:, :), &
+                                     start  = [nstep+1, 1], &
+                                     count  = [ngllread, nsnap]) ) 
             call cpu_time(tack)
             time_o = time_o + tack - tick
             space_o = space_o + ngllread * nsnap * 4 / 1048576.
             if (verbose) &
-                print "('wrote ', F8.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
-                    ngllread * nsnap * 4 / 1048576., tack-tick, &
-                    ngllread * nsnap * 4 / 1048576. / (tack-tick)
+                print "('wrote ', F9.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
+                    real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
+                    real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
                 !end if !dofft
 
-            nstep = nstep + npointsperstep
+            deallocate(datat_t)
+
+            nstep = nstep + ngllread
         end do
     enddo
 
     call check( nf90_close(ncin_id))
     call check( nf90_close(ncout_id))
 
-    print *, 'Time spent for compression/fft: ', time_fft
-    print *, 'Time spent for I:               ', time_i
-    print *, 'Time spent for O:               ', time_o
+    call dump_mesh_data_xdmf(filename = 'ordered_output.nc4', varname='Snapshots/straintrace', &
+                             npoints=ngll, nsnap=nsnap)
+
+    print '(A, F8.2, A)', 'Time spent for compression/fft: ', time_fft, ' s'
+    print '(A, F8.2, A)', 'Time spent for I:               ', time_i,   ' s'
+    print '(A, F8.2, A)', 'Time spent for O:               ', time_o,   ' s'
     print *, ''
-    print *, 'MB I: ', space_i, ' MB, av. speed: ', space_i / time_i, 'MB/s'
-    print *, 'MB O: ', space_o, ' MB, av. speed: ', space_o / time_o, 'MB/s'
+    print '(3(A, F8.2))', 'MB I: ', space_i, ' MB, av. speed: ', space_i / time_i, ' MB/s'
+    print '(3(A, F8.2))', 'MB O: ', space_o, ' MB, av. speed: ', space_o / time_o, ' MB/s'
 
 #else
 
@@ -500,6 +523,87 @@ subroutine truncate(dataIO, sigdigits)
         maxt = maxval(dataIO(:,n))
         dataIO(:,n) = real(nint(scaleit * dataIO(:,n) / maxt) / scaleit) * maxt
     end do
+
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
+  character(len=*), intent(in)      :: filename, varname
+  integer, intent(in)               :: npoints, nsnap
+
+  integer                           :: iinput_xdmf, iinput_heavy_data
+  integer                           :: i
+  character(len=512)                :: filename_np
+  
+
+  ! relative filename for xdmf content
+  filename_np = trim(filename(index(filename, '/', back=.true.)+1:))
+
+  ! XML Data
+  open(newunit=iinput_xdmf, file=trim(filename)//'.xdmf')
+  write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
+
+  do i=1, nsnap
+     ! create new snapshot in the temporal collection
+     write(iinput_xdmf, 7341) dble(i), npoints, "'", "'"
+
+     ! write attribute
+     write(iinput_xdmf, 7342) varname, npoints, i-1, npoints, nsnap, npoints, &
+                              trim(filename_np), trim(varname)
+
+     write(iinput_xdmf, 7343)
+  enddo
+
+  ! finish xdmf file
+  write(iinput_xdmf, 736)
+  close(iinput_xdmf)
+
+733 format(&    
+    '<?xml version="1.0" ?>',/&
+    '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
+    '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
+    '<Domain>',/,/&
+    '<DataItem Name="points" ItemType="Function" Function="join($0, $1)" Dimensions="', i10, ' 2">',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_S',/&
+    '    </DataItem>',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_Z',/&
+    '    </DataItem>',/&
+    '</DataItem>',/,/&
+    '<Grid Name="CellsTime" GridType="Collection" CollectionType="Temporal">',/)
+
+7341 format(&    
+    '    <Grid Name="grid" GridType="Uniform">',/&
+    '        <Time Value="',F8.2,'" />',/&
+    '        <Topology TopologyType="Polyvertex" NumberOfElements="',i10,'">',/&
+    '        </Topology>',/&
+    '        <Geometry GeometryType="XY">',/&
+    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '        </Geometry>')
+
+7342 format(&    
+    '        <Attribute Name="', A,'" AttributeType="Scalar" Center="Node">',/&
+    '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
+    '                <DataItem Dimensions="3 2" Format="XML">',/&
+    '                    ', i10,'          0 ',/&
+    '                             1          1 ',/&
+    '                             1 ', i10,/&
+    '                </DataItem>',/&
+    '                <DataItem DataType="Float" Precision="8" Dimensions="', i10, i10, '" Format="HDF">',/&
+    '                    ', A, ':/', A, /&
+    '                </DataItem>',/,/&
+    '            </DataItem>',/&
+    '        </Attribute>')
+
+7343 format(&    
+    '    </Grid>',/)
+
+736 format(&    
+    '</Grid>',/,/&
+    '</Domain>',/&
+    '</Xdmf>')
 
 end subroutine
 !-----------------------------------------------------------------------------------------
