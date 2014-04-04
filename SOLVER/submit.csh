@@ -411,7 +411,7 @@ cp -p $homedir/UTILS/post_processing.csh .
 cp -p $homedir/UTILS/post_processing.F90 .
 cp -p $homedir/UTILS/xpost_processing .
 
-cp -p $homedir/UTILS/field_transform .
+cp -p $homedir/UTILS/xfield_transform .
 cp -p $homedir/UTILS/field_transform.F90 .
 
 cp -p $homedir/UTILS/plot_recfile_seis.csh .

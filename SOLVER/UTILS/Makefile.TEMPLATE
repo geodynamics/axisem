@@ -14,9 +14,9 @@ else
    INCLUDE = 
 endif
 
-all: xpost_processing field_transform
+all: xpost_processing xfield_transform
 
-xpost_processing: post_processing.o nc_postroutines.o Makefile ../../make_axisem.macros
+xpost_processing: post_processing.o nc_postroutines.o Makefile ../../make_axisem.macros 
 	$(FC) $(LDFLAGS) post_processing.o nc_postroutines.o -o xpost_processing $(LIBS) 
 
 post_processing.o: post_processing.F90 nc_postroutines.o Makefile ../../make_axisem.macros 
@@ -25,12 +25,13 @@ post_processing.o: post_processing.F90 nc_postroutines.o Makefile ../../make_axi
 nc_postroutines.o: nc_postroutines.F90 Makefile ../../make_axisem.macros
 	$(FC) $(FFLAGS) $(INCLUDE) -c nc_postroutines.F90
 
-field_transform: field_transform.o  Makefile ../../make_axisem.macros
-	$(FC) $(LDFLAGS) field_transform.o -o field_transform $(LIBS)
+xfield_transform: field_transform.o  Makefile ../../make_axisem.macros 
+	$(FC) $(LDFLAGS) field_transform.o -o xfield_transform $(LIBS)
 
-field_transform.o: field_transform.F90 Makefile ../../make_axisem.macros
+field_transform.o: field_transform.F90 Makefile ../../make_axisem.macros 
 	$(FC) $(FFLAGS) $(INCLUDE) -c field_transform.F90
 
 clean: 
-	rm -rf *.o *.mod xpost_processing xfind_receiver field_transform
+	rm -rf *.o *.mod xpost_processing xfield_transform
+
 
