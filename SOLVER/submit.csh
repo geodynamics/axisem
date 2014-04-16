@@ -154,6 +154,10 @@ if ( $multisrc == 'true' ) then
     else if ( $simtype == 'force' ) then 
         set srcapp   = ( PZ PX )
         set srctype  = ( "vertforce" "thetaforce" )
+        # TODO hardcoded for testing. need to define an input file for force sources!
+        set srcdepth = '0.0'
+        set srclat   = '90.0'
+        set srclon   = '0.0'
 
     else
         echo " ERROR: Unrecognized source type" $srctype
@@ -184,7 +188,6 @@ foreach isim  (${srcapp})
 
     @ i ++
 
-    set num = 6
     echo ""
     echo "Setting up simulation" $isim
     # construct different source file for each simulation
@@ -196,14 +199,9 @@ foreach isim  (${srcapp})
         echo 'SOURCE_LAT'   $srclat       >> $srcfile.$isim
         echo 'SOURCE_LON'   $srclon       >> $srcfile.$isim
         echo 'SOURCE_AMPLITUDE  1.E20'    >> $srcfile.$isim
-    endif 
     
-    if ( $multisrc == 'false' ) then
-        set simdir = './'
-    else 
-        set simdir = $isim
-        mkdir $simdir
-        cd $simdir
+        mkdir $isim
+        cd $isim
     endif 
     
 
@@ -252,7 +250,6 @@ foreach isim  (${srcapp})
     
     cp $homedir/axisem .
     cp $homedir/mesh_params.h .
-    #cp $homedir/mesh_params.dat .
     cp $homedir/runinfo .
     cp $homedir/$recfile . 
     cp $homedir/inparam_basic .
@@ -270,15 +267,17 @@ foreach isim  (${srcapp})
     endif
     cd $mainrundir
 
-    cp $homedir/mesh_params.h .
-    cp $homedir/inparam_basic .
-    cp $homedir/inparam_advanced .
-    cp $homedir/inparam_hetero .
-
-    if ( $multisrc == 'true' ) then
-        cp $homedir/CMTSOLUTION .
-    endif
 end
+
+cp $homedir/mesh_params.h .
+cp $homedir/inparam_basic .
+cp $homedir/inparam_advanced .
+cp $homedir/inparam_hetero .
+
+if ( $multisrc == 'true' ) then
+    # TODO could also be forces
+    cp $homedir/CMTSOLUTION .
+endif
 
 
 ########################################################
