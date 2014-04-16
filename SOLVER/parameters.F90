@@ -38,6 +38,7 @@ module parameters
     character(len=100)  :: compiler, compilerversion 
     character(len=255)  :: fflags, cflags, ldflags
     character(len=3)    :: openmp
+    character(len=16)   :: simtype
 
     public :: open_local_output_file, readin_parameters, read_inparam_basic_verbosity
     public :: compute_numerical_parameters, write_parameters
@@ -97,7 +98,7 @@ subroutine readin_parameters
   if (lpr) then
      write(6,20)
      write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
-                 enforced_period, trim(src_file_type), rec_file_type, &
+                 enforced_period, trim(simtype), rec_file_type, &
                  sum_seis, sum_fields, time_scheme, seis_dt,  &
                  dump_energy, dump_vtk, dump_snaps_solflu, dump_wavefields, &
                  dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, &
@@ -172,7 +173,7 @@ subroutine readin_parameters
    12x,'Simulation length [s]:              ',f9.3,/                        &
    12x,'Enforced time step [s]:             ',f7.3,/                        &
    12x,'Enforced source period [s]:         ',f7.3,/                        &
-   12x,'Source file type:                   ',a,/                           &
+   12x,'Simulation type:                    ',a,/                          &
    12x,'Receiver file type:                 ',a8,/                          &
    12x,'Sum seismograms?                    ',l2,/                          &
    12x,'Sum wavefields?                     ',l2,/                          &
@@ -224,7 +225,6 @@ subroutine read_inparam_basic
   integer             :: iinparam_basic=500, ioerr
   character(len=256)  :: line
   character(len=256)  :: keyword, keyvalue
-  character(len=16)   :: simtype
 
   ! Default values
   seislength_t = 1800.0
@@ -235,7 +235,6 @@ subroutine read_inparam_basic
 
   ! These values have to be set
   simtype = 'undefined'
-  src_file_type = 'undefined'
   meshname = 'undefined'
 
   ! only rank 0 reads the file
@@ -258,16 +257,11 @@ subroutine read_inparam_basic
        
        case('SIMULATION_TYPE') 
          read(keyvalue, *) simtype
-         select case(to_lower(trim(simtype)))
-         case('single')
-            src_file_type = 'sourceparams'
-         case('force')
-            stop 'FIXME: Forces need to be implemented!'
-         case('moment')
-            src_file_type = 'cmtsolut'
-         case default
+
+         if (to_lower(trim(simtype)) /= 'single' .and. to_lower(trim(simtype)) &
+                /= 'force' .and. to_lower(trim(simtype)) /= 'moment') then
             stop 'SIMULATION_TYPE in inparam_basic has invalid value'
-         end select
+         endif
 
        case('RECFILE_TYPE')
           rec_file_type = to_lower(keyvalue)
@@ -297,7 +291,6 @@ subroutine read_inparam_basic
   
   ! broadcast values to other processors
   call broadcast_char(simtype, 0) 
-  call broadcast_char(src_file_type, 0)
   call broadcast_char(rec_file_type, 0)
   call broadcast_dble(seislength_t, 0)
   call broadcast_char(meshname, 0)
@@ -666,7 +659,7 @@ subroutine check_basic_parameters
   character(len=1024) :: errmsg
 
   errmsg = 'SIMULATION_TYPE is not defined in input file inparam_basic'
-  call pcheck(trim(src_file_type) == 'undefined', errmsg)
+  call pcheck(trim(simtype) == 'undefined', errmsg)
 
   errmsg = 'MESHNAME is not defined in input file inparam_basic'
   call pcheck(trim(meshname) == 'undefined', errmsg)
@@ -1343,7 +1336,7 @@ subroutine write_parameters
         write(55,23)trim(src_type(1)),'source type'
         write(55,23)trim(src_type(2)),'source type'
         write(55,23)trim(stf_type),'source time function'
-        write(55,23)trim(src_file_type),'source file type'
+        write(55,23)trim(simtype),'simtype'
         write(55,21)period,'dominant source period'
         write(55,21)src_depth/1000.,'source depth [km]'
 
@@ -1415,7 +1408,7 @@ subroutine write_parameters
         call nc_write_att_char( trim(src_type(1)),     'excitation type')
         call nc_write_att_char( trim(src_type(2)),     'source type')
         call nc_write_att_char( trim(stf_type),        'source time function')
-        call nc_write_att_char( trim(src_file_type),   'source file type')
+        call nc_write_att_char( trim(simtype),         'simulation type')
         call nc_write_att_real( real(period),          'dominant source period')
         call nc_write_att_real( real(src_depth/1000.), 'source depth in km')
         
@@ -1538,14 +1531,15 @@ subroutine write_parameters
     
     if (lpr) then
 
-        if (src_file_type == 'cmtsolut' .and. src_type(2) == 'mrr') then
+        if (trim(simtype) == 'moment' .and. src_type(2) == 'mrr') then
            open(unit=9, file="../param_post_processing")
-        elseif (src_file_type == 'sourceparams') then
+        elseif (trim(simtype) == 'single') then
            open(unit=9, file="param_post_processing")
         endif
 
-        if ((src_file_type == 'cmtsolut' .and. src_type(2) == 'mrr') &
-              .or. src_file_type == 'sourceparams') then
+        if ((trim(simtype) == 'moment' .and. src_type(2) == 'mrr') &
+            .or. (trim(simtype) == 'single')) then
+
            write(6,*)'  Writing post processing input file: param_post_processing'
            write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
            write(9,'(a,/,a,/,a,/)') &

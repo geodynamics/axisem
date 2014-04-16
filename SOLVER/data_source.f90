@@ -29,7 +29,6 @@ module data_source
 
   character(len=10)                :: src_type(2)
   real(kind=dp)                    :: t_0, magnitude
-  character(len=12)                :: src_file_type
   character(len=7)                 :: stf_type
   real(kind=dp)                    :: src_depth, zsrc, srccolat, srclon
   integer                          :: iel_src, ipol_src, jpol_src
