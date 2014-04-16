@@ -870,13 +870,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
         
         if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
+        if (lpr) then
+            call dump_mesh_data_xdmf(nc_fnam, 'Snapshots/straintrace',  &
+                                     npts_sol_global + npts_flu_global, & 
+                                     nstrain)
+        end if
     end if ! dump_wavefields
-    
-    if (lpr) then
-        call dump_mesh_data_xdmf(nc_fnam, 'Snapshots/straintrace',  &
-                                 npts_sol_global + npts_flu_global, & 
-                                 nstrain)
-    end if
 
 
     if (mynum == 0) then    
