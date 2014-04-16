@@ -102,15 +102,15 @@ set multisrc = 'false'
 
 # @TODO grep is not stable if SIMULATION_TYPE is there twice, e.g. in a comment line!!
 
-set srctype = `grep "^SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
+set simtype = `grep "^SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
 set src_file_type = 'sourceparams'
 set srcfile = 'inparam_source'
 
-if ( $srctype == 'single') then
+if ( $simtype == 'single') then
     set multisrc = 'false'
-else if ( $srctype == 'force') then
+else if ( $simtype == 'force') then
     set multisrc = 'true'
-else if ( $srctype == 'moment') then
+else if ( $simtype == 'moment') then
     set multisrc = 'true'
 endif
 
@@ -157,8 +157,8 @@ set num_src = 1
 set num_src_arr = ( 1 )
 if ( $multisrc == 'true' ) then
     # multiple simulations
-    echo "setting up multiple simulations for full" $srctype "source type"
-    if ( $srctype == 'moment' ) then 
+    echo "setting up multiple simulations for full" $simtype "source type"
+    if ( $simtype == 'moment' ) then 
         set mij_sourceparams = ( 0. 0. 0. 0. 0. 0. )
         set map_mij = ( 1 2 4 6 )
         set numsim = 4
@@ -168,10 +168,10 @@ if ( $multisrc == 'true' ) then
         set srclat   = `grep "latitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
         set srclon   = `grep "longitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
 
-    else if ( $srctype == 'force' ) then 
+    else if ( $simtype == 'force' ) then 
         set numsim   = 2
         set srcapp   = ( PZ PX )
-        set srctype  = ( "vertforce" "xforce" )
+        set srctype  = ( "vertforce" "thetaforce" )
 
     else
         echo " ERROR: Unrecognized source type" $srctype
@@ -195,7 +195,6 @@ set mainrundir = $PWD
 
 # make sure moment tensor is copied correctly
 cp -p $homedir/$srcfile $mainrundir/
-
 
 
 # Prepare and copy relevant files for each simulation
