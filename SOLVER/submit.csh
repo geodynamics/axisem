@@ -72,14 +72,11 @@ if ( -d $datapath) then
     endif
 endif
 
-
 set bgmodel = `grep ^BACKGROUND_MODEL $meshdir/inparam_mesh | awk '{print $2}'`
 
-if ( ! -f inparam_hetero) then 
-  cp inparam_hetero.TEMPLATE inparam_hetero
-endif
-
 # if the mesh has different mesh_params.h, copy here
+# actually mesh_params.h is not needed anymore by the solver, just keeping it for
+# informational purposes
 if ( ! -f mesh_params.h || `diff mesh_params.h $meshdir/mesh_params.h | wc -l` != "0" ) then
   echo 'copying mesh_params.h from ' $meshdir
   cp $meshdir/mesh_params.h .
@@ -96,14 +93,11 @@ set newqueue = 'false'
 if ( "$2" == '-q') then
     set queue = $3
     set newqueue = 'true'
+	echo "Submitting to queue type" $queue
 endif
 
 set multisrc = 'false'
-
-# @TODO grep is not stable if SIMULATION_TYPE is there twice, e.g. in a comment line!!
-
 set simtype = `grep "^SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
-set src_file_type = 'sourceparams'
 set srcfile = 'inparam_source'
 
 if ( $simtype == 'single') then
@@ -114,16 +108,10 @@ else if ( $simtype == 'moment') then
     set multisrc = 'true'
 endif
 
-if ( $newqueue == 'true' ) then 
-	echo "Submitting to queue type" $queue
-endif
-
 # Run make to see whether the code has to be rebuilt and if so, do it.
 # If 'make' returns an Error (something >0), then exit.
 
-# MvD: I do not get this: it checks == 0 where 0 is the status when exited without
-# problems???
-if ( { make -j } == 0 ) then
+if ! { make -j }  then
   echo "ERROR: Compilation failed, please check the errors."
   exit
 endif
@@ -157,9 +145,6 @@ if ( $multisrc == 'true' ) then
     # multiple simulations
     echo "setting up multiple simulations for full" $simtype "source type"
     if ( $simtype == 'moment' ) then 
-        set mij_sourceparams = ( 0. 0. 0. 0. 0. 0. )
-        set map_mij = ( 1 2 4 6 )
-        set numsim = 4
         set srcapp = ( MZZ MXX_P_MYY MXZ_MYZ MXY_MXX_M_MYY )
         set srctype  = ( "mrr" "mtt_p_mpp" "mtr" "mtp" )
         set srcdepth = `grep "depth: " $homedir/CMTSOLUTION  |awk '{print $2}'`
@@ -167,7 +152,6 @@ if ( $multisrc == 'true' ) then
         set srclon   = `grep "longitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
 
     else if ( $simtype == 'force' ) then 
-        set numsim   = 2
         set srcapp   = ( PZ PX )
         set srctype  = ( "vertforce" "thetaforce" )
 
@@ -179,7 +163,6 @@ if ( $multisrc == 'true' ) then
 
 else if ( $multisrc == 'false' ) then
     # one simulation
-    set numsim = 1; 
     set srctype = `grep "^SOURCE_TYPE" $srcfile  |awk '{print $2}'`
     set srcapp = ( "./"  )
 endif 
