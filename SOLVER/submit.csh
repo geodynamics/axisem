@@ -274,11 +274,40 @@ cp $homedir/inparam_basic .
 cp $homedir/inparam_advanced .
 cp $homedir/inparam_hetero .
 
-if ( $multisrc == 'true' ) then
+
+if ( $simtype == 'moment' ) then
     # TODO could also be forces
     cp $homedir/CMTSOLUTION .
 endif
 
+# write a script that runs fieldtransform in all rundirs
+if ( $netcdf_requested == 'true') then
+    if ( $simtype == 'moment' ) then
+        echo '#\!/bin/csh -f'           >  fieldtranform.csh
+        echo 'cd MZZ'                   >> fieldtranform.csh
+        echo '.././xfield_transform'    >> fieldtranform.csh
+        echo 'cd ..'                    >> fieldtranform.csh
+        echo 'cd MXX_P_MYY'             >> fieldtranform.csh
+        echo '.././xfield_transform'    >> fieldtranform.csh
+        echo 'cd ..'                    >> fieldtranform.csh
+        echo 'cd MXZ_MYZ'               >> fieldtranform.csh
+        echo '.././xfield_transform'    >> fieldtranform.csh
+        echo 'cd ..'                    >> fieldtranform.csh
+        echo 'cd MXY_MXX_M_MYY'         >> fieldtranform.csh
+        echo '.././xfield_transform'    >> fieldtranform.csh
+        echo 'cd ..'                    >> fieldtranform.csh
+        chmod +x fieldtranform.csh
+    else if ( $simtype == 'force' ) then
+        echo '#\!/bin/csh -f'           >  fieldtranform.csh
+        echo 'cd PX'                    >> fieldtranform.csh
+        echo '.././xfield_transform'    >> fieldtranform.csh
+        echo 'cd ..'                    >> fieldtranform.csh
+        echo 'cd PZ'                    >> fieldtranform.csh
+        echo '.././xfield_transform'    >> fieldtranform.csh
+        echo 'cd ..'                    >> fieldtranform.csh
+        chmod +x fieldtranform.csh
+    endif
+endif
 
 ########################################################
 ######### submit the jobs ##############################
