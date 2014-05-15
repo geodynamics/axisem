@@ -1261,6 +1261,7 @@ subroutine write_1Dmodel(discontinuities)
    write(2000,11) mydate(7:8), mydate(5:6), mydate(1:4), mytime(1:2), mytime(3:4)
    write(2000,'("ANELASTIC    ", L4)') model_is_anelastic(bkgrdmodel)
    write(2000,'("ANISOTROPIC  ", L4)') model_is_ani(bkgrdmodel)
+   write(2000,'("UNITS        m")')
    if (model_is_anelastic(bkgrdmodel)) then
       if (model_is_ani(bkgrdmodel)) then !ANI=true, ANE=true
          write(2000,'(A11, 9(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', 'qka', &
