@@ -63,6 +63,9 @@ SNAPSHOT_DT          20.
 
 # XDMF wavefield snapshots  (default: xdmf)
 # options for values: xdmf, vtk, both
+# vtk:  3D wavefield plots generated in postprocessing (large files for high 
+#       frequencies)
+# xdmf: 2D wavefield without postprocessing (optimized for high frequencies)
 SNAPSHOTS_FORMAT     xdmf  
 
 # limit the region to plot in the xdmf files
