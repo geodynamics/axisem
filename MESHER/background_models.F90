@@ -1498,12 +1498,12 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
          case('ANELASTIC') 
              call check_already_defined(exist_param_anel, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_anelastic
-             if (ext_model_is_anelastic) ncolumn = ncolumn + 3       ! vpv, vph, eta
+             if (ext_model_is_anelastic) ncolumn = ncolumn + 2 !qka, qmu
              exist_param_anel = .true.
          case('ANISOTROPIC') 
              call check_already_defined(exist_param_ani, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_ani 
-             if (ext_model_is_ani) ncolumn = ncolumn + 2 !qka, qmu
+             if (ext_model_is_ani) ncolumn = ncolumn + 3       ! vpv, vph, eta
              exist_param_ani = .true.
          case('UNITS')
              call check_already_defined(exist_param_units, keyword, iline, trim(fnam_ext_model), nerr)
@@ -1582,7 +1582,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
              allocate(columnvalue(ncolumn))
              read(line,*,iostat=line_err) keyword, columnvalue
              call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
-             print *, 'ncolumn: ', ncolumn, columnvalue
+             !print *, 'ncolumn: ', ncolumn, columnvalue
              do icolumn = 1, ncolumn
                  select case(to_lower(columnvalue(icolumn)))
                  case('depth', 'radius')
