@@ -1,0 +1,10 @@
+build/
+
+make_axisem.macros
+
+MESHER/Makefile
+
+SOLVER/Makefile
+
+SOLVER/UTILS/Makefile
+

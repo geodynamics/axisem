@@ -54,7 +54,7 @@ module data_all
   logical                             :: load_snaps
   logical                             :: negative_time
   logical                             :: detailed_output
-  character(len=12)                   :: src_file_type
+  character(len=16)                   :: simtype
   logical                             :: use_netcdf
 
   ! discrete dirac sources
@@ -618,7 +618,7 @@ subroutine read_input
      read(99,*) src_type(isim,1)
      read(99,*) src_type(isim,2)
      read(99,*) stf_type(isim)
-     read(99,*) src_file_type
+     read(99,*) simtype
      read(99,*) period_tmp(isim)
      read(99,*) src_depth_tmp(isim)
      read(99,*) srccolat_tmp(isim)
@@ -655,7 +655,7 @@ subroutine read_input
      write(6,*) 'Simulations: ',isim,trim(simdir(isim))
      write(6,*) '  source type:',src_type(isim,1),' ',src_type(isim,2)
      write(6,*) '  source time function:',stf_type(isim)
-     write(6,*) '  source file type:',src_file_type
+     write(6,*) '  simulation  type:', simtype
      write(6,*) '  magnitude:',magnitude(isim)
      write(6,*) '  receivers:',nrec_tmp(isim)
      write(6,*) '  source period:',period_tmp(isim)
@@ -728,7 +728,7 @@ end subroutine read_input
 subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
   use data_all, only : src_type, magnitude, mij, rot_mat
-  use data_all, only : trans_rot_mat, src_file_type, srccolat, srclon, outdir
+  use data_all, only : trans_rot_mat, simtype, srccolat, srclon, outdir
   use global_par
   
   implicit none
@@ -766,8 +766,8 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
   trans_rot_mat(:,:) = transpose(rot_mat)
 
-  select case(src_file_type)
-  case('cmtsolut') 
+  select case(simtype)
+  case('moment') 
      write(6,*)'  reading CMTSOLUTION file....'
      open(unit=20000,file='CMTSOLUTION',POSITION='REWIND',status='old')
      read(20000,*) junk
@@ -787,7 +787,7 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
 
-  case('sourceparams')
+  case('single')
      iinparam_source = 1132
      open(unit=iinparam_source, file='inparam_source', status='old', action='read', iostat=ioerr)
      if (ioerr /= 0) stop 'Check input file ''inparam_source''! Is it still there?' 
@@ -828,7 +828,7 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
      end select
 
   case default
-     write(6,*)'unknown source file type!',src_file_type
+     write(6,*)'unknown simulation type!', simtype
      stop
   end select
 
