@@ -742,40 +742,64 @@ and \verb|EXT_MODEL| to the filename of your model. The model should be stored i
 of the following form:
 
 \begin{verbatim}
-  F T
-         740
-6371000.  2600.00  5800.00  3200.00  57827.0    600.0  5800.00  3200.00  1.00000
-6356000.  2600.00  5800.00  3200.00  57827.0    600.0  5800.00  3200.00  1.00000
-6356000.  2900.00  6800.00  3900.00  57827.0    600.0  6800.00  3900.00  1.00000
-6346600.  2900.00  6800.00  3900.00  57827.0    600.0  6800.00  3900.00  1.00000
-6346600.  3380.75  8110.62  4491.01  57827.0    600.0  8110.62  4491.01  1.00000
-6341600.  3380.20  8107.53  4489.16  57827.0    600.0  8107.53  4489.16  1.00000
-6336600.  3379.66  8104.44  4487.32  57827.0    600.0  8104.44  4487.32  1.00000
-6331600.  3379.12  8101.35  4485.48  57827.0    600.0  8101.35  4485.48  1.00000
-6326600.  3378.57  8098.25  4483.64  57827.0    600.0  8098.25  4483.64  1.00000
-...
+ANELASTIC       T
+ANISOTROPIC     T
+UNITS           m
+COLUMNS     radius    rho    vpv    vsv    qka    qmu  vph   vsh   eta
+            6371000.  2600.  5800.  3200.  57827. 600. 5800. 3200. 1.00000
+            6356000.  2600.  5800.  3200.  57827. 600. 5800. 3200. 1.00000
+#          Discontinuity   1, depth:      15.00 km
+            6356000.  2900.  6800.  3900.  57827. 600. 6800. 3900. 1.00000
+            6346600.  2900.  6800.  3900.  57827. 600. 6800. 3900. 1.00000
+#          Discontinuity   2, depth:      24.40 km
+            6346600.  3380.  8190.  4396.  57827. 600. 8190. 4611. 0.90039
+            6341600.  3380.  8186.  4397.  57827. 600. 8186. 4607. 0.90233
+            6336600.  3379.  8183.  4398.  57827. 600. 8183. 4602. 0.90428
+            6331600.  3379.  8179.  4399.  57827. 600. 8179. 4598. 0.90622
+
 \end{verbatim}
 
-The first line contains two boolean entries: First, whether the model is anisotropic,
-second whether the model is anelastic. The second line contains the number of layers in
-the file. Afterwards the model parameters for each layer are set in the order:
+In the header, four keywords are mandatory to describe the following model:
+\begin{itemize}
+ \item \verb|ANELASTIC|: Is the model anelastic (viscoelastic) or not?
+ \item \verb|ANISOTROPIC|: Is the model anisotropic or not?
+ \item \verb|UNITS|: Are the units in this file given in \textit{SI}-units? Allowed values:
+       \begin{itemize}
+        \item \verb|m| \textit{SI}-units: (m, m/s, kg/m$^3$)
+        \item \verb|km| km, km/s, g/cm$^3$. These units are often used because the values are between 1 and 10.
+       \end{itemize}
+ \item \verb|COLUMNS|: Describe the column order in the file. Necessary values: 
+	\begin{itemize}
+	\item For an elastic, isotropic model: 
+		\begin{itemize}
+		\item \verb|radius|/\verb|depth| (radius or depth of the layer. Allows to define the position of the layers in radius (beginning from the center) or depth (beginning from the surface)
+		\item \verb|rho| ($\rho$, density)
+		\item \verb|vpv| ($\alpha$, vertical P-velocity)
+		\item \verb|vsv| ($\beta$, vertical S-velocity)
+		\end{itemize}
+	\item For an anelastic model additionally: 
+		\begin{itemize}
+		\item \verb|qka| ($Q_{\kappa}$)
+		\item \verb|qmu| ($Q_{\mu}$)
+		\end{itemize}
+	\item For an anisotropic model additionally: 
+		\begin{itemize}
+		\item \verb|vph| (horizontal P-velocity)
+		\item \verb|vsh| (horizontal S-velocity)
+		\item \verb|eta| (anisotropic parameter $\eta$)
+		\end{itemize}
+	\end{itemize}
+\end{itemize}
 
-radius (in meter), $\rho$, $V_{PV}$, $V_{SV}$, $Q_{\kappa}$, $Q_{\mu}$,  $V_{PH}$,
-$V_{SH}$, $\eta$.
+This header is followed by an arbritrary number lines with velocity layers, where \verb|#| marks comment lines. The header variables \verb|UNITS| and \verb|COLUMNS| allow to customize the structure of these lines, which should facilitate the import of external models from other programs.
 
-%TODO: not clear to me, what the file should look like in the purely elastic or the
-%      isotropic anelastic case
+First order discontinuities are enforced by double layers with the same radius (see layers 2/3 and 4/5
+in the example) and are honoured by the MESHER. 
 
-The order of the layers is arbitrary, but the radius has to be monotonous.  First order
-discontinuities are enforced by double layers with the same radius (see layers 2/3 and 4/5
-in the example) and are honoured by the MESHER. For an example, enable the option
-\verb|WRITE_1DMODEL| in \verb|MESHER/inparam_mesh| and run the MESHER. It will put a valid
-input file of the selected model into the DIAG directory. Modify this file according to
-your needs.\\ 
+For an example file, select one of the internal models in \verb|MESHER/inparam_mesh|, enable the option \verb|WRITE_1DMODEL| and run the MESHER. It will write a valid input file of the selected model into \verb|MESHER/Diags/1dmodel_axisem.bm|. Modify this file according to your needs.
 
 The overall radius of the body is given by the radius of the outermost layer and can take
-any reasonable value.
-
+any reasonable value (Read: Planets, moons and tennis balls can be simulated).
 
 \subsection{Change number of CPUs}
 
