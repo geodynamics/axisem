@@ -141,7 +141,7 @@ subroutine read_db
         anel_true = .true.
      else
         print *, 'ERROR: viscoelastic attenuation set in inparam file, but'
-        print *, '       backgroundmodel ', bkgrdmodel, ' is elastic only.'
+        print *, '       backgroundmodel ', trim(bkgrdmodel), ' is elastic only.'
         stop 2
      endif
   else 
