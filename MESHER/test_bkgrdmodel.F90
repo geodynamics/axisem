@@ -52,6 +52,7 @@ subroutine bkgrdmodel_testing
   real(kind=sp), dimension(:,:), allocatable        :: mesh2
   real(kind=sp), dimension(:), allocatable          :: vp1, vs1, h_real, rho1
   real(kind=sp), dimension(:), allocatable          :: Qmu, Qka
+  real(kind=sp), dimension(:), allocatable          :: eltype_vtk
   real(kind=sp), allocatable                        :: x(:), y(:), z(:)
   character(len=200)                                :: fname
   integer                                           :: npts_vtk, ct
@@ -73,11 +74,12 @@ subroutine bkgrdmodel_testing
   hmax(:) = 0.d0
   
   allocate(h_real(neltot))
+  allocate(eltype_vtk(neltot))
 
   ntoobig = 0
   ntoosmall = 0
   j = 0
-  
+
   ! vtk preparations
   if (dump_mesh_vtk) then
       npts_vtk = neltot * 4
@@ -333,7 +335,32 @@ subroutine bkgrdmodel_testing
     deallocate(rho1)
   endif
            
-    
+  
+  if (dump_mesh_vtk) then
+    eltype_vtk(iel) = -2
+    do iel = 1, neltot
+       if (eltypeg(iel) == 'curved') then
+          eltype_vtk(iel) = 0
+       elseif (eltypeg(iel) == 'linear') then
+          eltype_vtk(iel) = 1
+       elseif (eltypeg(iel) == 'semino') then
+          eltype_vtk(iel) = 2
+       elseif (eltypeg(iel) == 'semiso') then
+          eltype_vtk(iel) = 3
+       else
+          eltype_vtk(iel) = -1
+       endif
+    enddo
+    fname = trim(diagpath)//'/mesh_eltype'
+    call write_VTK_bin_scal_old(eltype_vtk, mesh2, neltot, fname)
+  endif
+  
+  if (dump_mesh_vtk) then
+    fname = trim(diagpath)//'/mesh_hmax'
+    call write_VTK_bin_scal_old(h_real, mesh2, neltot, fname)
+  endif
+  
+
   h_real = real(hmax / (period / (pts_wavelngth * real(npol))))
   write(6,*) 'minmax hmax:', minval(h_real), maxval(h_real)
   
