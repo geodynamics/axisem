@@ -1273,7 +1273,7 @@ subroutine write_1Dmodel(discontinuities)
                              (radius(1)-radius(ilayer))*0.001
                 idom = idom + 1
             end if
-            write(2000, '("           ", f9.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+            write(2000, '("           ", f9.0, 3f9.2, 2f11.1, 2f9.2, f9.5)') &
                         radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
                         qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
          end do
@@ -1288,7 +1288,7 @@ subroutine write_1Dmodel(discontinuities)
                              (radius(1)-radius(ilayer))*0.001
                 idom = idom + 1
             end if
-            write(2000, '("           ", f9.0, 3f9.2, 2f9.1)') &
+            write(2000, '("           ", f9.0, 3f9.2, 2f11.1)') &
                         radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
                         qka(ilayer), qmu(ilayer)
          end do
