@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> This module contains routines that compute and dump the respective meshes
 !! underlying the actual wavefields to be dumped in the time loop
 !! which is done in wavefields_io. This module needs pre-loop variables such
@@ -35,7 +36,6 @@ module meshes_io
   implicit none
   
   private
-  public :: fldout_cyl2
   public :: finish_xdmf_xml
   public :: dump_wavefields_mesh_1d
   public :: dump_glob_grid_midpoint
@@ -46,7 +46,7 @@ module meshes_io
 
 contains
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize global 
 !! snapshots, and additionally the constant factors preceding the displacement
 !! in the fluid, namely rho^{-1} and (rho s)^{-1}.
@@ -101,9 +101,9 @@ subroutine dump_glob_grid_midpoint(ibeg,iend,jbeg,jend)
   close(25000+mynum)
 
 end subroutine dump_glob_grid_midpoint
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine dump_xdmf_grid()
 
   use nc_routines,      only: nc_dump_snap_points, nc_dump_snap_grid, nc_make_snapfile
@@ -432,9 +432,9 @@ subroutine dump_xdmf_grid()
     
 
 end subroutine dump_xdmf_grid
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine finish_xdmf_xml()
 
   use data_source, ONLY : src_type
@@ -459,9 +459,9 @@ subroutine finish_xdmf_xml()
   close(13104)
 
 end subroutine finish_xdmf_xml
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prepare_mesh_memoryvar_vtk()
 
   use data_matr, only: points_solid
@@ -480,9 +480,9 @@ subroutine prepare_mesh_memoryvar_vtk()
   enddo
 
 end subroutine prepare_mesh_memoryvar_vtk
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
 !! in the solid region only.
 !! Convention for order in the file: First the fluid, then the solid domain.
@@ -505,9 +505,9 @@ subroutine dump_solid_grid(ibeg,iend,jbeg,jend)
   close(2500+mynum)
 
 end subroutine dump_solid_grid
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
 !! in the fluid region only, and additionally the constant factors preceding 
 !! the displacement in the fluid, namely rho^{-1} and (rho s)^{-1}.
@@ -551,9 +551,9 @@ subroutine dump_fluid_grid(ibeg,iend,jbeg,jend)
   close(2600+mynum)
 
 end subroutine dump_fluid_grid
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Dumps the mesh (s,z) [m] and related constant fields in binary format as 
 !! needed to compute waveform kernels from the strain and velocity fields. 
 !! The distinction between different dumping methods is honored here, 
@@ -707,56 +707,7 @@ subroutine dump_wavefields_mesh_1d
   end select
 
 end subroutine dump_wavefields_mesh_1d
-!=============================================================================
-
-!-----------------------------------------------------------------------------
-!> Dumps the mesh (s,z) [m] along with corresponding field f in ASCII format.
-!! At this point only used in computing the valence. 
-!! Note that for higher-frequency meshes these files can be very large.
-!! flag_norm is to be set to one if the output is to be normalized.
-subroutine fldout_cyl2(fname,nel,f,ibeg,iend,jbeg,jend,flag_norm,domain)
-
-  use utlity, ONLY : compute_coordinates
-  
-  
-  character(len=80), intent(in)   :: fname
-  character(len=5), intent(in)    :: domain
-  integer, intent(in)             :: flag_norm,ibeg,iend,jbeg,jend,nel
-  real(kind=realkind), intent(in) :: f(ibeg:,jbeg:,:)
-  integer                         :: lf,ielem, ipol,jpol,iel
-  real(kind=dp)                   :: r, theta, s, z
-  real(kind=realkind)             :: fnr,afnr
-  
-  lf=index(fname,' ')-1
-  open(unit=10000+mynum,file=infopath(1:lfinfo)//'/'//fname(1:lf)//'_'&
-                             //appmynum//'.dat')
-
-  fnr = 1.
-  if (flag_norm == 1) then
-     fnr = zero
-     do ielem = 1, nel
-        do jpol = jbeg, jend
-           do ipol = ibeg, iend
-              fnr = max(fnr,abs(f(ielem,ipol,jpol)))
-           end do
-        end do
-     end do   
-  end if
-  afnr = one/fnr
-  do ielem = 1, nel
-     if (domain=='total') iel=ielem
-     if (domain=='solid') iel=ielsolid(ielem)
-     if (domain=='fluid') iel=ielfluid(ielem)
-     do jpol = jbeg, jend !,npol/2
-        do ipol = ibeg, iend !,npol/2
-           call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
-           write(10000+mynum,*) s/router,z/router,afnr*f(ipol,jpol,ielem)
-        end do
-     end do
-  end do
-  close(10000+mynum)
-
-end subroutine fldout_cyl2
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
 end module meshes_io
+!=========================================================================================
