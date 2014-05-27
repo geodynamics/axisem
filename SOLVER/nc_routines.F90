@@ -647,15 +647,13 @@ subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
     use data_io,   ONLY : ndumppts_el
     use data_mesh, ONLY : nelem 
-    real(sp), intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
+    !real(sp), intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
+    real(sp), intent(in) :: scoord_sol(:,:,:)
+    real(sp), intent(in) :: zcoord_sol(size(scoord_sol,1), size(scoord_sol,2), &
+                                       size(scoord_sol,3))
 #ifdef unc
 
     npts_sol = size(scoord_sol)
-    if (npts_sol.ne.size(scoord_sol)) then
-        write(6,*) 'Inconsistency in mesh size in nc_dump_mesh_solid'
-        write(6,*) 'npts_sol=', npts_sol, ', size(scoord_sol)=', size(scoord_sol)
-        stop 2
-    end if
 
     npoints = ndumppts_el * nelem
     allocate(scoord1d(npoints))
