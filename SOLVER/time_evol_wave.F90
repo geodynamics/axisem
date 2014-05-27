@@ -1114,24 +1114,30 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
 
     if (mod(iter,strain_it)==0 .or. iter==0) then
 
-     ! dump displacement and velocity in each surface element
-     !! for netcdf people set .true. in inparam to use it instead of the standard
-     
-     !!the update of the strain has to preceed the call to the function. 
-     !!It starts from 
-      istrain=istrain+1
+      ! dump displacement and velocity in each surface element
+      ! for netcdf people set .true. in inparam to use it instead of the standard
+      ! the update of the strain has to preceed the call to the function. 
+      ! It starts from 
+      istrain = istrain + 1
 
       call compute_surfelem(disp,velo)
        
-      select case (dump_type)
+      select case (trim(dump_type))
 
         case ('displ_only')
+          ! Only dump the 3-comp displacement in solid and fluid.
+          ! Minimal permanent storage, minimal run-time memory, minimal CPU time, 
+          ! but extensive post-processing (need to compute strain tensor and
+          ! time derivatives, if needed).
+             call dump_disp_global(disp, chi)       ! displacement globally
+
+        case ('displ_velo')
           ! Only dump the 3-comp displacement and velocity fields in solid 
           ! and potential & its derivative in fluid.
           ! Minimal permanent storage, minimal run-time memory, minimal CPU time, 
           ! but extensive post-processing (need to compute strain tensor).
-             call dump_disp(disp,chi)       ! displacement in solid, chi in fluid
-             call dump_velo_dchi(velo,dchi) ! velocity in solid, dchi in fluid
+             call dump_disp(disp, chi)       ! displacement in solid, chi in fluid
+             call dump_velo_dchi(velo, dchi) ! velocity in solid, dchi in fluid
 
         case ('fullfields') ! Hardcoded choice
           ! Compute strain tensor on-the-fly here and dump the 6 components.
@@ -1139,8 +1145,8 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
           ! Maximal permanent storage, maximal run-time memory, maximal CPU time, 
           ! but no post-processeing necessary as these are the fields that 
           ! constitute density and elastic kernels.
-            call compute_strain(disp,chi)    ! strain globally
-            call dump_velo_global(velo,dchi) ! velocity globally
+            call compute_strain(disp, chi)    ! strain globally
+            call dump_velo_global(velo, dchi) ! velocity globally
 
         end select
        
@@ -1253,39 +1259,40 @@ subroutine compute_strain(u, chi)
  
   ! Components involving phi....................................................
   if (src_type(1) == 'monopole') then
-     buff_solid = f_over_s_solid(u(:,:,:,1))
+     buff_solid = f_over_s_solid(u(:,:,:,1)) ! us/s
      call dump_field_1d(buff_solid, '/strain_dpup_sol', appisnap, nel_solid) !E22
      call dump_field_1d(buff_solid + grad_sol(:,:,:,2), '/straintrace_sol', appisnap, &
-                        nel_solid) !Ekk
+                        nel_solid) !Ekk = dzuz + dsus + us/s
+
  
   elseif (src_type(1) == 'dipole') then 
-     buff_solid = two_rk * f_over_s_solid(u(:,:,:,2))
+     buff_solid = two_rk * f_over_s_solid(u(:,:,:,2))   ! 2 u-/s
      call dump_field_1d(buff_solid, '/strain_dpup_sol', appisnap, nel_solid) !E22
      call dump_field_1d(buff_solid + grad_sol(:,:,:,2), '/straintrace_sol', appisnap, &
-                        nel_solid) ! Ekk
+                        nel_solid) !Ekk = dzuz + dsus + 2 u-/s
  
      call axisym_gradient_solid(u(:,:,:,1) - u(:,:,:,2), grad_sol) !1:dsup,2:dzup
 
      call dump_field_1d(- f_over_s_solid(u(:,:,:,2)) - grad_sol(:,:,:,1) / two_rk, &
-                        '/strain_dsup_sol', appisnap, nel_solid) !E12
+                        '/strain_dsup_sol', appisnap, nel_solid) !E12 = - 1/2 (dsup + u-/s)
  
      call dump_field_1d(- (f_over_s_solid(u(:,:,:,3)) +  grad_sol(:,:,:,2)) / two_rk, &
-                        '/strain_dzup_sol', appisnap, nel_solid) !E23
+                        '/strain_dzup_sol', appisnap, nel_solid) !E23 = - 1/2 ( uz/s + dzup )
  
   elseif (src_type(1) == 'quadpole') then
-     buff_solid = f_over_s_solid(u(:,:,:,1) - two_rk * u(:,:,:,2))
+     buff_solid = f_over_s_solid(u(:,:,:,1) - two_rk * u(:,:,:,2)) ! us/s - 2 up/s
      call dump_field_1d(buff_solid, '/strain_dpup_sol', appisnap, nel_solid) !E22
-     call dump_field_1d(buff_solid + grad_sol(:,:,:,2), & !Ekk
+     call dump_field_1d(buff_solid + grad_sol(:,:,:,2), & !Ekk = us/s - 2 up/s + dzuz + dsus
                         '/straintrace_sol', appisnap, nel_solid) 
   
      call axisym_gradient_solid(u(:,:,:,2), grad_sol) ! 1: dsup, 2: dzup
  
      call dump_field_1d(- f_over_s_solid(u(:,:,:,1) + u(:,:,:,2) / two_rk) &
                             - grad_sol(:,:,:,1) / two_rk, &
-                        '/strain_dsup_sol', appisnap, nel_solid) !E12
+                        '/strain_dsup_sol', appisnap, nel_solid) !E12 = -us/s + up/2 - dsup/2
   
      call dump_field_1d(- f_over_s_solid(u(:,:,:,3)) - grad_sol(:,:,:,2) / two_rk, &
-                        '/strain_dzup_sol',appisnap, nel_solid) !E23
+                        '/strain_dzup_sol',appisnap, nel_solid) !E23 = -uz/s - dzup / 2
   endif
  
   ! FFFFFF Fluid region FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF

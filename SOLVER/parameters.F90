@@ -88,6 +88,7 @@ subroutine readin_parameters
   sum_fields = .false.
   dump_snaps_solflu = .false.
   dump_type = 'fullfields'
+  !dump_type = 'displ_only'
   num_simul = 1
    
   ! netcdf format
@@ -204,7 +205,7 @@ subroutine readin_parameters
   ! Need to decide here since this boolean is needed in def_precomp_terms
   need_fluid_displ = .false.
   if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
-     dump_wavefields .and. dump_type=='fullfields') then
+     dump_wavefields .and. (dump_type=='fullfields' .or. dump_type=='displ_only')) then
      ! Need to add this for each new type of wavefield dumping method that 
      ! requires the fluid displacement/velocities
      need_fluid_displ = .true.
@@ -1422,6 +1423,7 @@ subroutine write_parameters
         if (dump_wavefields) then
            call nc_write_att_int(nstrain,              'number of strain dumps')
            call nc_write_att_dble(deltat_coarse,       'strain dump sampling rate in sec')
+           call nc_write_att_char(trim(dump_type),     'dump type (displ_only, displ_velo, fullfields)')
         else
            call nc_write_att_int(0,                    'number of strain dumps')       
            call nc_write_att_dble(0.d0,                'strain dump sampling rate in sec' )

@@ -580,8 +580,8 @@ subroutine dump_wavefields_mesh_1d
   
   integer :: iel, ipol, jpol
   
-  ! Dump entire (including duplicate) GLL point grid for displ_only
-  if (dump_type=='displ_only') then
+  ! Dump entire (including duplicate) GLL point grid for displ_velo
+  if (dump_type=='displ_velo') then
      
   else ! Free choice for other dumping method
 
@@ -654,6 +654,9 @@ subroutine dump_wavefields_mesh_1d
 
   select case (dump_type)
   case ('displ_only')
+     !write(6,*) 'ERROR: not yet implemented'
+     !stop 2
+  case ('displ_velo')
      if (lpr) then     
         write(6,*)'  strain dump: only displacement/velocity, potentials'
         write(6,*)'  ...now dumping global pointwise deriv. terms, etc....'
@@ -701,7 +704,7 @@ subroutine dump_wavefields_mesh_1d
   case default
      if (lpr) then 
         write(6,*)'  wavefield dumping type',dump_type,' unknown!'
-        write(6,*)'  select from 1) displ_only, 2) fullfields'
+        write(6,*)'  select from 1) displ_only, 2) displ_velo, 2) fullfields'
      endif
      stop
   end select

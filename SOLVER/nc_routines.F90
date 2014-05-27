@@ -751,12 +751,13 @@ end subroutine nc_dump_mesh_flu
 !! and allocate buffer variables.
 subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec_proc)
 
-    use data_io,     ONLY: nseismo, nstrain, nseismo, ibeg, iend, dump_wavefields
-    use data_io,     ONLY: datapath, lfdata, strain_samp
-    use data_mesh,   ONLY: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
+    use data_io,     only: nseismo, nstrain, nseismo, ibeg, iend, dump_wavefields, &
+                           dump_type
+    use data_io,     only: datapath, lfdata, strain_samp
+    use data_mesh,   only: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
                            ndisc, maxind_glob
-    use data_source, ONLY: src_type, t_0
-    use data_time,   ONLY: deltat, niter
+    use data_source, only: src_type, t_0
+    use data_time,   only: deltat, niter
 
 
     integer, intent(in)                  :: nrec              !< Number of receivers
@@ -825,54 +826,104 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
 
     if (dump_wavefields) then
-        if (src_type(1) == 'monopole') then
-            nvar = 12
-        else
-            nvar = 18
-        end if
-        allocate(varname(nvar))
-        allocate(varnamelist(nvar))
-        allocate(nc_varnamelist(nvar/2))
-        allocate(nc_field_varid(nvar/2))
+        select case (trim(dump_type))
+           case ('displ_only')
+              if (src_type(1) == 'monopole') then
+                  nvar = 4
+              else
+                  nvar = 6
+              end if
+              allocate(varname(nvar))
+              allocate(varnamelist(nvar))
+              allocate(nc_varnamelist(nvar/2))
+              allocate(nc_field_varid(nvar/2))
 
-        if (src_type(1)  ==  'monopole') then 
-            varnamelist =    ['strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
-                              'straintrace_sol', 'velo_sol_s     ', 'velo_sol_z     ', &
-                              'strain_dsus_flu', 'strain_dsuz_flu', 'strain_dpup_flu', &
-                              'straintrace_flu', 'velo_flu_s     ', 'velo_flu_z     ']
+              if (src_type(1)  ==  'monopole') then 
+                  varnamelist =    ['disp_sol_s     ', 'disp_sol_z     ', &
+                                    'disp_flu_s     ', 'disp_flu_z     ']
+                    
+                  nc_varnamelist = ['disp_s     ', 'disp_z     ']
+              else
+                  varnamelist =    ['disp_sol_s     ', 'disp_sol_p     ', 'disp_sol_z     ', &
+                                    'disp_flu_s     ', 'disp_flu_p     ', 'disp_flu_z     ']
+                    
+                  nc_varnamelist = ['disp_s     ', 'disp_p     ', 'disp_z     ']
+              end if
+
+              gllperelem = (iend - ibeg + 1)**2
+              npoints = nelem * gllperelem
               
-            nc_varnamelist = ['strain_dsus', 'strain_dsuz', 'strain_dpup', &
-                              'straintrace', 'velo_s     ', 'velo_z     ']
-        else
-            varnamelist =    ['strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
-                              'strain_dsup_sol', 'strain_dzup_sol', 'straintrace_sol', &
-                              'velo_sol_s     ', 'velo_sol_p     ', 'velo_sol_z     ', &
-                              'strain_dsus_flu', 'strain_dsuz_flu', 'strain_dpup_flu', &
-                              'strain_dsup_flu', 'strain_dzup_flu', 'straintrace_flu', &
-                              'velo_flu_s     ', 'velo_flu_p     ', 'velo_flu_z     ']
+              call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
+
+              npts_sol = nel_solid * gllperelem
+              npts_flu = nel_fluid * gllperelem 
+
+              call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
+              call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
               
-            nc_varnamelist = ['strain_dsus', 'strain_dsuz', 'strain_dpup', &
-                              'strain_dsup', 'strain_dzup', 'straintrace', &
-                              'velo_s     ', 'velo_p     ', 'velo_z     ']
-        end if
+              if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
+              if (lpr) then
+                  call dump_mesh_data_xdmf(nc_fnam, 'Snapshots/disp_s',  &
+                                           npts_sol_global + npts_flu_global, & 
+                                           nstrain)
+              end if
 
-        gllperelem = (iend - ibeg + 1)**2
-        npoints = nelem * gllperelem
+           case ('displ_velo')
+              write(6,*) 'ERROR: not yet implemented with netcdf'
+              stop 2
+
+           case ('fullfields') ! Hardcoded choice
+              if (src_type(1) == 'monopole') then
+                  nvar = 12
+              else
+                  nvar = 18
+              end if
+              allocate(varname(nvar))
+              allocate(varnamelist(nvar))
+              allocate(nc_varnamelist(nvar/2))
+              allocate(nc_field_varid(nvar/2))
+
+              if (src_type(1)  ==  'monopole') then 
+                  varnamelist =    ['strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
+                                    'straintrace_sol', 'velo_sol_s     ', 'velo_sol_z     ', &
+                                    'strain_dsus_flu', 'strain_dsuz_flu', 'strain_dpup_flu', &
+                                    'straintrace_flu', 'velo_flu_s     ', 'velo_flu_z     ']
+                    
+                  nc_varnamelist = ['strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                                    'straintrace', 'velo_s     ', 'velo_z     ']
+              else
+                  varnamelist =    ['strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
+                                    'strain_dsup_sol', 'strain_dzup_sol', 'straintrace_sol', &
+                                    'velo_sol_s     ', 'velo_sol_p     ', 'velo_sol_z     ', &
+                                    'strain_dsus_flu', 'strain_dsuz_flu', 'strain_dpup_flu', &
+                                    'strain_dsup_flu', 'strain_dzup_flu', 'straintrace_flu', &
+                                    'velo_flu_s     ', 'velo_flu_p     ', 'velo_flu_z     ']
+                    
+                  nc_varnamelist = ['strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                                    'strain_dsup', 'strain_dzup', 'straintrace', &
+                                    'velo_s     ', 'velo_p     ', 'velo_z     ']
+              end if
+
+              gllperelem = (iend - ibeg + 1)**2
+              npoints = nelem * gllperelem
+              
+              call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
+
+              npts_sol = nel_solid * gllperelem
+              npts_flu = nel_fluid * gllperelem 
+
+              call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
+              call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
+              
+              if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
+              if (lpr) then
+                  call dump_mesh_data_xdmf(nc_fnam, 'Snapshots/straintrace',  &
+                                           npts_sol_global + npts_flu_global, & 
+                                           nstrain)
+              end if
         
-        call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
+        end select
 
-        npts_sol = nel_solid * gllperelem
-        npts_flu = nel_fluid * gllperelem 
-
-        call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
-        call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
-        
-        if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
-        if (lpr) then
-            call dump_mesh_data_xdmf(nc_fnam, 'Snapshots/straintrace',  &
-                                     npts_sol_global + npts_flu_global, & 
-                                     nstrain)
-        end if
     end if ! dump_wavefields
 
 

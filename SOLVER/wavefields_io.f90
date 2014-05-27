@@ -39,6 +39,7 @@ module wavefields_io
   public :: glob_snapshot_xdmf
   public :: glob_snapshot_midpoint
   public :: dump_velo_global
+  public :: dump_disp_global
   public :: dump_disp
   public :: dump_velo_dchi
   public :: fluid_snapshot
@@ -1115,6 +1116,88 @@ subroutine dump_velo_global(v,dchi)
    endif ! have_fluid
 
 end subroutine dump_velo_global
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine dump_disp_global(u, chi)
+
+   use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
+   use data_source,             only: src_type, src_dump_type
+   use pointwise_derivatives,   only: axisym_gradient_fluid, dsdf_fluid_allaxis
+   use data_mesh,               only: npol, nel_solid, nel_fluid
+   
+   real(kind=realkind), intent(in) :: u(:,:,:,:)
+   real(kind=realkind), intent(in) :: chi(:,:,:)
+   
+   real(kind=realkind)             :: phicomp(0:npol,0:npol,nel_fluid)
+   integer                         :: i
+   character(len=4)                :: appisnap
+   real(kind=realkind)             :: f(0:npol,0:npol,1:nel_solid,3)
+   real(kind=realkind)             :: fflu(0:npol,0:npol,1:nel_fluid,3)
+   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
+ 
+   call define_io_appendix(appisnap, istrain)
+ 
+   ! sssssssssssss dump disp vector inside solid ssssssssssssssssssssssssssss
+ 
+   f = u
+   if (src_dump_type == 'mask') then
+      call eradicate_src_elem_vec_values(f)
+   end if
+ 
+   if (use_netcdf) then
+      if (src_type(1)/='monopole') then
+         call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,2),.true.), 'disp_sol_p')
+      end if
+      call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,1),.true.), 'disp_sol_s')
+      call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,3),.true.), 'disp_sol_z')
+   else
+      open(unit=95000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
+                                 //appmynum//'_'//appisnap//'.bindat',&
+                                 FORM="UNFORMATTED",STATUS="REPLACE")
+      if (src_type(1)/='monopole') then
+         write(95000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
+      else
+         write(95000+mynum) f(ibeg:iend,ibeg:iend,:,1), &
+                            f(ibeg:iend,ibeg:iend,:,3)
+      end if
+      close(95000+mynum)
+   end if
+ 
+   ! ffffffff fluid region ffffffffffffffffffffffffffffffffffffffffffffffffffffff
+ 
+   if (have_fluid) then 
+      ! compute velocity vector inside fluid
+     call axisym_gradient_fluid(chi, usz_fluid)
+ 
+     ! phi component needs special care: m/(s rho) chi
+     phicomp = prefac_inv_s_rho_fluid * chi
+ 
+     call define_io_appendix(appisnap,istrain)
+     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
+                                     usz_fluid(ibeg:iend,ibeg:iend,:,1)
+     fflu(ibeg:iend,ibeg:iend,:,2) = phicomp(ibeg:iend,ibeg:iend,:)
+     fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
+                                     usz_fluid(ibeg:iend,ibeg:iend,:,2)      
+ 
+     ! dump displacement vector inside fluid
+     if (use_netcdf) then
+        call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,1), .true.), 'disp_flu_s')
+        call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,3), .true.), 'disp_flu_z')
+        if (src_type(1)/='monopole') then
+          call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,2), .true.), 'disp_flu_p')
+        end if
+     else
+        open(unit=960000+mynum,file=datapath(1:lfdata)//'/disp_flu_'&
+                                  //appmynum//'_'//appisnap//'.bindat',&
+                                   FORM="UNFORMATTED",STATUS="REPLACE")
+ 
+        write(960000+mynum) (fflu(ibeg:iend,ibeg:iend,:,i), i=1,3)
+        close(960000+mynum)
+     end if ! netcdf
+   endif ! have_fluid
+
+end subroutine dump_disp_global
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
