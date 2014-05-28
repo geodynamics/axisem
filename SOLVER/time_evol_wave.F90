@@ -74,7 +74,8 @@ subroutine prepare_waves
 
   ! rotation if source is not on the axis
   if (rot_src ) call def_rot_matrix
-
+ 
+  ! build mapping to avoid duplicate points at element boundaries
   if (dump_wavefields .and. dump_type == 'displ_only') &
      call build_kwf_grid()
 

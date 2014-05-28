@@ -246,7 +246,7 @@ subroutine nc_dump_field_solid(f, varname)
             ' which is a fluid variable. Contact a developer and shout at him!'
         stop 1
     end if
-    !print *, mynum,  stepstodump 
+
     oneddumpvar(1:npts_sol,stepstodump+1,ivar) = f  !processor specific dump variable
 #endif
 end subroutine nc_dump_field_solid

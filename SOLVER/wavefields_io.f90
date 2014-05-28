@@ -774,11 +774,11 @@ end subroutine
 subroutine xdmf_mapping(u_in, mapping_ijel_iplot, plotting_mask, i_arr_xdmf, j_arr_xdmf, &
                         u_out)
 
-    real(kind=realkind), intent(in)    :: u_in(0:,0:,:,:)
-    integer,             intent(in)    :: mapping_ijel_iplot(:,:,:)
-    logical,             intent(in)    :: plotting_mask(:,:,:)
-    integer,             intent(in)    :: i_arr_xdmf(:), j_arr_xdmf(:)
-    real(kind=realkind), intent(inout) :: u_out(:,:)
+   real(kind=realkind), intent(in)    :: u_in(0:,0:,:,:)
+   integer,             intent(in)    :: mapping_ijel_iplot(:,:,:)
+   logical,             intent(in)    :: plotting_mask(:,:,:)
+   integer,             intent(in)    :: i_arr_xdmf(:), j_arr_xdmf(:)
+   real(kind=realkind), intent(inout) :: u_out(:,:)
 
    integer                            :: i_n_xdmf, j_n_xdmf, i, j 
    integer                            :: nelem 
@@ -821,6 +821,50 @@ subroutine xdmf_mapping(u_in, mapping_ijel_iplot, plotting_mask, i_arr_xdmf, j_a
    enddo
 
 end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+function kwf_mapping_sol(u_in)
+
+   real(kind=realkind), intent(in)    :: u_in(0:npol,0:npol,nel_solid)
+   real(kind=realkind)                :: kwf_mapping_sol(npoint_solid_kwf)
+
+   integer                            :: iel, ipol, jpol, ct
+
+   do iel=1, nel_solid
+      do ipol=0, npol
+         do jpol=0, npol
+            if (kwf_mask(ipol,jpol,iel)) then
+               ct = mapping_ijel_ikwf(ipol,jpol,iel)
+               kwf_mapping_sol(ct) = u_in(ipol,jpol,iel)
+            endif
+         enddo
+      enddo
+   enddo
+
+end function
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+function kwf_mapping_flu(u_in)
+
+   real(kind=realkind), intent(in)    :: u_in(0:npol,0:npol,nel_fluid)
+   real(kind=realkind)                :: kwf_mapping_flu(npoint_fluid_kwf)
+
+   integer                            :: iel, ipol, jpol, ct
+
+   do iel=1, nel_fluid
+      do ipol=0, npol
+         do jpol=0, npol
+            if (kwf_mask(ipol,jpol,iel + nel_solid)) then
+               ct = mapping_ijel_ikwf(ipol,jpol,iel + nel_solid) - npoint_solid_kwf
+               kwf_mapping_flu(ct) = u_in(ipol,jpol,iel)
+            endif
+         enddo
+      enddo
+   enddo
+
+end function
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
@@ -1145,12 +1189,20 @@ subroutine dump_disp_global(u, chi)
       call eradicate_src_elem_vec_values(f)
    end if
  
-   if (use_netcdf) then
+   if (use_netcdf .and. dump_type == 'displ_only') then
+      if (src_type(1)/='monopole') then
+         call nc_dump_field_solid(kwf_mapping_sol(f(:,:,:,2)), 'disp_sol_p')
+      end if
+      call nc_dump_field_solid(kwf_mapping_sol(f(:,:,:,1)), 'disp_sol_s')
+      call nc_dump_field_solid(kwf_mapping_sol(f(:,:,:,3)), 'disp_sol_z')
+
+   elseif (use_netcdf .and. dump_type /= 'displ_only') then
       if (src_type(1)/='monopole') then
          call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,2),.true.), 'disp_sol_p')
       end if
       call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,1),.true.), 'disp_sol_s')
       call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,3),.true.), 'disp_sol_z')
+   
    else
       open(unit=95000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
@@ -1174,14 +1226,19 @@ subroutine dump_disp_global(u, chi)
      phicomp = prefac_inv_s_rho_fluid * chi
  
      call define_io_appendix(appisnap,istrain)
-     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
-                                     usz_fluid(ibeg:iend,ibeg:iend,:,1)
-     fflu(ibeg:iend,ibeg:iend,:,2) = phicomp(ibeg:iend,ibeg:iend,:)
-     fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
-                                     usz_fluid(ibeg:iend,ibeg:iend,:,2)      
+     fflu(:,:,:,1) = inv_rho_fluid(:,:,:) * usz_fluid(:,:,:,1)
+     fflu(:,:,:,2) = phicomp(:,:,:)
+     fflu(:,:,:,3) = inv_rho_fluid(:,:,:) * usz_fluid(:,:,:,2)      
  
      ! dump displacement vector inside fluid
-     if (use_netcdf) then
+     if (use_netcdf .and. dump_type == 'displ_only') then
+        if (src_type(1)/='monopole') then
+           call nc_dump_field_fluid(kwf_mapping_flu(fflu(:,:,:,2)), 'disp_flu_p')
+        end if
+        call nc_dump_field_fluid(kwf_mapping_flu(fflu(:,:,:,1)), 'disp_flu_s')
+        call nc_dump_field_fluid(kwf_mapping_flu(fflu(:,:,:,3)), 'disp_flu_z')
+
+     elseif (use_netcdf .and. dump_type /= 'displ_only') then
         call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,1), .true.), 'disp_flu_s')
         call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,3), .true.), 'disp_flu_z')
         if (src_type(1)/='monopole') then
