@@ -87,8 +87,6 @@ subroutine readin_parameters
   sum_seis = .false.
   sum_fields = .false.
   dump_snaps_solflu = .false.
-  !dump_type = 'fullfields'
-  dump_type = 'displ_only'
   num_simul = 1
    
   ! netcdf format
@@ -364,11 +362,18 @@ subroutine read_inparam_advanced
  
   diagfiles = .false.
   do_mesh_tests = .false.
+
   dump_wavefields = .false.
+  dump_type = 'fullfields'
   strain_samp = 8
   src_dump_type = 'mask'
   ibeg = 1
-  iend = 1
+  iend = 3
+
+  kwf_rmin = 0
+  kwf_rmax = 7d6
+  kwf_thetamin = 0 
+  kwf_thetamax = pi
   
   dump_energy = .false.
   make_homo = .false.
@@ -390,17 +395,11 @@ subroutine read_inparam_advanced
   allocate(j_arr_xdmf(1:npol_max+1))
   i_arr_xdmf = -1
   j_arr_xdmf = -1
-  xdmf_rmin = 0d0
+  xdmf_rmin = 0
   xdmf_rmax = 7d6
   xdmf_thetamin = 0
-  xdmf_thetamax = 180
+  xdmf_thetamax = pi
 
-  ! kernel wavefield filter (displ_only only)
-  ! @TODO add to input file
-  kwf_rmin = 0d0
-  kwf_rmax = 7d6
-  kwf_thetamin = 0
-  kwf_thetamax = 180
   
   keyword = ' '
   keyvalue = ' '
@@ -450,6 +449,16 @@ subroutine read_inparam_advanced
          case('KERNEL_WAVEFIELDS')
              read(keyvalue,*) dump_wavefields
 
+         case('KERNEL_DUMPTYPE')
+             read(keyvalue,*) dump_type
+             dump_type = to_lower(dump_type)
+             if (trim(dump_type) /= 'fullfields' .and. &
+                 trim(dump_type) /= 'displ_only' .and. &
+                 trim(dump_type) /= 'displ_velo') then
+                   write(6,*) dump_type
+                   stop 'ERROR: invalid value for KERNEL_DUMPTYPE!'
+             endif
+
          case('KERNEL_SPP')
              read(keyvalue,*) strain_samp
 
@@ -463,6 +472,22 @@ subroutine read_inparam_advanced
          case('KERNEL_IEND')
              read(keyvalue,*) iend
              !iend = npol - iend
+
+         case('KERNEL_RMIN')
+             read(keyvalue, *) kwf_rmin
+             kwf_rmin = kwf_rmin * 1000
+         
+         case('KERNEL_RMAX')
+             read(keyvalue, *) kwf_rmax
+             kwf_rmax = kwf_rmax * 1000
+         
+         case('KERNEL_COLAT_MIN')
+             read(keyvalue, *) kwf_thetamin
+             kwf_thetamin = kwf_thetamin * pi / 180.
+         
+         case('KERNEL_COLAT_MAX')
+             read(keyvalue, *) kwf_thetamax
+             kwf_thetamax = kwf_thetamax * pi / 180.
 
          case('SAVE_ENERGY')
              read(keyvalue,*) dump_energy
@@ -552,9 +577,15 @@ subroutine read_inparam_advanced
   call broadcast_log(diagfiles, 0) 
   call broadcast_log(do_mesh_tests, 0) 
   call broadcast_log(dump_wavefields, 0) 
+  call broadcast_char(dump_type, 0) 
   
   call broadcast_dble(strain_samp, 0) 
   call broadcast_char(src_dump_type, 0) 
+
+  call broadcast_dble(kwf_rmin, 0) 
+  call broadcast_dble(kwf_rmax, 0) 
+  call broadcast_dble(kwf_thetamin, 0) 
+  call broadcast_dble(kwf_thetamax, 0) 
   
   call broadcast_int(ibeg, 0) 
   call broadcast_int(iend, 0) 

@@ -108,6 +108,11 @@ MESH_TEST           false
 # N.b. Kernel calculation needs Axisem Kerner (sold separately)
 KERNEL_WAVEFIELDS   false 
 
+# different modes of dumping wavefields for kernel:
+#  - fullfields: strain and velocity at a subset of local GLL points (see below)
+#  - displ_only: displacement at all global points
+KERNEL_DUMPTYPE     fullfields
+
 # Samples per period
 KERNEL_SPP          8
 
@@ -117,9 +122,20 @@ KERNEL_SPP          8
 # anal 
 KERNEL_SOURCE       mask
 
-# GLL points to save, starting and ending GLL point index
+# GLL points to save, starting and ending GLL point index 
+# (ignored for dumptype displ_only)
 KERNEL_IBEG         1
 KERNEL_IEND         3
+
+# minimal and maximal colatitude in degree for kernel wavefields
+# (only for dumptype displ_only)
+KERNEL_COLAT_MIN   0.
+KERNEL_COLAT_MAX   180.
+
+# minimal and maximal radius in km for kernel wavefields
+# (only for dumptype displ_only)
+KERNEL_RMIN        0.
+KERNEL_RMAX        7000.
 
 ######################## ATTENUATION ###########################################
 # number of standard linear solids (default: 5)

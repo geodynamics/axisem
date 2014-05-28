@@ -719,8 +719,6 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
 
     !print *, 'Processor', mynum,' has been here'
     if (dump_type == 'displ_only') then
-       write(6,*) 'npoints', npoints
-       write(6,*) 'shape(rho)', shape(rho)
        allocate(rho1d(npoints))
        allocate(lambda1d(npoints))
        allocate(mu1d(npoints))
