@@ -285,7 +285,7 @@ end subroutine nc_dump_field_fluid
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_strain(isnap_loc)
 
-    use data_io, ONLY    : nstrain
+    use data_io, only    : nstrain
     use clocks_mod, only : tick
     use data_time, only  : iclocknbio, idnbio
     use data_mesh, only  : maxind
@@ -408,9 +408,9 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 #ifdef unc
 
     use data_io
-    use data_source,       ONLY: src_type
-    use global_parameters, ONLY: realkind
-    use data_mesh,         ONLY: loc2globrec, maxind, ind_first
+    use data_source,       only: src_type
+    use global_parameters, only: realkind
+    use data_mesh,         only: loc2globrec, maxind, ind_first
 
     integer                    :: ivar, flen, isnap_loc
     real                       :: tick, tack, dumpsize_MB
@@ -530,8 +530,8 @@ end subroutine nc_dump_stf
 !> Dump receiver specific stuff, especially displacement and velocity
 !! N.B.: Works with global indices.
 subroutine nc_dump_rec(recfield)
-    use data_mesh, ONLY: num_rec
-    use data_io,   ONLY: iseismo
+    use data_mesh, only: num_rec
+    use data_io,   only: iseismo
     real(sp), intent(in), dimension(3,num_rec) :: recfield
 #ifdef unc
    
@@ -545,8 +545,8 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_rec_to_disk
 #ifdef unc
-    use data_mesh, ONLY: loc2globrec, num_rec
-    use data_io,   ONLY: datapath, lfdata, nseismo
+    use data_mesh, only: loc2globrec, num_rec
+    use data_io,   only: datapath, lfdata, nseismo
 
     real                              :: tick, tack
     integer                           :: irec, dumpsize, icomp
@@ -582,7 +582,7 @@ end subroutine nc_dump_rec_to_disk
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_rec_checkpoint
-    use data_mesh, ONLY: loc2globrec, num_rec
+    use data_mesh, only: loc2globrec, num_rec
 #ifdef unc
     interface
         subroutine c_wait_for_io() bind(c, name='c_wait_for_io')
@@ -613,7 +613,7 @@ end subroutine nc_rec_checkpoint
 !----------------------------------------------------------------------------------------
 !> Dump stuff along surface
 subroutine nc_dump_surface(surffield, disporvelo)!, nrec, dim2)
-    use data_mesh, ONLY: maxind
+    use data_mesh, only: maxind
 
     !integer, intent(in)                          :: nrec, dim2
     real(kind=realkind), intent(in), dimension(:,:) :: surffield
@@ -638,8 +638,8 @@ end subroutine nc_dump_surface
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
-    use data_io,   ONLY : ndumppts_el
-    use data_mesh, ONLY : nelem 
+    use data_io,   only : ndumppts_el
+    use data_mesh, only : nelem 
     !real(sp), intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
     real(sp), intent(in) :: scoord_sol(:,:,:)
     real(sp), intent(in) :: zcoord_sol(size(scoord_sol,1), size(scoord_sol,2), &
@@ -1302,8 +1302,8 @@ end subroutine nc_write_att_int
 !> Open the NetCDF output file, check for variable IDs and dump meshes.
 subroutine nc_finish_prepare
 #ifdef unc
-    use data_io,   ONLY  : datapath, lfdata, dump_wavefields
-    use data_mesh, ONLY  : maxind, surfcoord, ind_first, ind_last
+    use data_io,   only  : datapath, lfdata, dump_wavefields
+    use data_mesh, only  : maxind, surfcoord, ind_first, ind_last
     integer             :: status, ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
     integer             :: nc_mesh_vs_varid, nc_mesh_vp_varid   
