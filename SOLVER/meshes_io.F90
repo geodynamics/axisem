@@ -31,7 +31,7 @@ module meshes_io
   use data_proc
   use data_io
   
-  use utlity, ONLY : scoord, zcoord, rcoord, thetacoord
+  use utlity, only : scoord, zcoord, rcoord, thetacoord
   
   implicit none
   
@@ -55,7 +55,7 @@ contains
 !! Convention for order in the file: First the fluid, then the solid domain.
 subroutine dump_glob_grid_midpoint(ibeg,iend,jbeg,jend)
   
-  use data_pointwise, ONLY : inv_rho_fluid
+  use data_pointwise, only : inv_rho_fluid
   use data_mesh,      only : npol, nel_fluid, nel_solid
   
   integer, intent(in) :: ibeg,iend,jbeg,jend 
@@ -437,7 +437,7 @@ end subroutine dump_xdmf_grid
 !-----------------------------------------------------------------------------------------
 subroutine finish_xdmf_xml()
 
-  use data_source, ONLY : src_type
+  use data_source, only : src_type
 
   character(len=120) :: fname
 
@@ -516,7 +516,7 @@ end subroutine dump_solid_grid
 !! Convention for order in the file: First the fluid, then the solid domain.
 subroutine dump_fluid_grid(ibeg,iend,jbeg,jend)
 
-  use data_pointwise, ONLY : inv_rho_fluid
+  use data_pointwise, only : inv_rho_fluid
   
   
   integer, intent(in) :: ibeg,iend,jbeg,jend
@@ -570,21 +570,19 @@ end subroutine dump_fluid_grid
 subroutine dump_wavefields_mesh_1d
 
   use data_mesh
-  use data_io, ONLY : ibeg,iend,ndumppts_el
-  use data_spec, ONLY : G1T,G2T,G2
+  use data_io,      only: ibeg, iend, ndumppts_el
+  use data_spec,    only: G1T, G2T, G2
   use data_pointwise
-  use nc_routines, ONLY: nc_dump_mesh_sol, nc_dump_mesh_flu
+  use nc_routines,  only: nc_dump_mesh_sol, nc_dump_mesh_flu
   
-  real(kind=dp)   , dimension(:,:,:), allocatable :: ssol, zsol
-  real(kind=dp)   , dimension(:,:,:), allocatable :: sflu, zflu
+  real(kind=dp), dimension(:,:,:), allocatable :: ssol, zsol
+  real(kind=dp), dimension(:,:,:), allocatable :: sflu, zflu
   
   integer :: iel, ipol, jpol
   
-  ! Dump entire (including duplicate) GLL point grid for displ_velo
-  if (dump_type=='displ_velo') then
+  ! Dump subset of GLL point grid for 'fullfields'
+  if (dump_type=='fullfields') then
      
-  else ! Free choice for other dumping method
-
      if (lpr) then
         write(6,*)'  set strain dumping GLL boundaries to:'
         write(6,*)'    ipol=',ibeg,iend
@@ -597,56 +595,58 @@ subroutine dump_wavefields_mesh_1d
 
   endif
 
-
-  ! compute solid grid
-  do iel=1,nel_solid
-      do jpol=ibeg,iend
-          do ipol=ibeg,iend
-              ssol(ipol,jpol,iel) = scoord(ipol,jpol,ielsolid(iel))
-              zsol(ipol,jpol,iel) = zcoord(ipol,jpol,ielsolid(iel))
-          enddo
-     enddo
-  enddo
-
-
-  if (lpr) write(6,*)'  dumping solid submesh for kernel wavefields...'
-  if (use_netcdf) then
-      call nc_dump_mesh_sol(real(ssol(ibeg:iend,ibeg:iend,:)), &
-                            real(zsol(ibeg:iend,ibeg:iend,:)))
-
+  if (dump_type == 'displ_only') then
+     stop
   else
-      open(unit=2500+mynum,file=datapath(1:lfdata)//'/strain_mesh_sol_'&
-                                //appmynum//'.dat', &
-                                FORM="UNFORMATTED",STATUS="REPLACE")
+     ! compute solid grid
+     do iel=1,nel_solid
+         do jpol=ibeg,iend
+             do ipol=ibeg,iend
+                 ssol(ipol,jpol,iel) = scoord(ipol,jpol,ielsolid(iel))
+                 zsol(ipol,jpol,iel) = zcoord(ipol,jpol,ielsolid(iel))
+             enddo
+        enddo
+     enddo
 
-      write(2500+mynum)ssol(ibeg:iend,ibeg:iend,:),zsol(ibeg:iend,ibeg:iend,:)
-      close(2500+mynum)
-  end if
-  deallocate(ssol,zsol)
+     if (lpr) write(6,*)'  dumping solid submesh for kernel wavefields...'
+     if (use_netcdf) then
+         call nc_dump_mesh_sol(real(ssol(ibeg:iend,ibeg:iend,:)), &
+                               real(zsol(ibeg:iend,ibeg:iend,:)))
 
-  ! compute fluid grid
-  if (have_fluid) then
-      do iel=1,nel_fluid
-          do jpol=ibeg,iend
-              do ipol=ibeg,iend
-                  sflu(ipol,jpol,iel) = scoord(ipol,jpol,ielfluid(iel))
-                  zflu(ipol,jpol,iel) = zcoord(ipol,jpol,ielfluid(iel))
+     else
+         open(unit=2500+mynum,file=datapath(1:lfdata)//'/strain_mesh_sol_'&
+                                   //appmynum//'.dat', &
+                                   FORM="UNFORMATTED",STATUS="REPLACE")
+
+         write(2500+mynum)ssol(ibeg:iend,ibeg:iend,:),zsol(ibeg:iend,ibeg:iend,:)
+         close(2500+mynum)
+     end if
+     deallocate(ssol,zsol)
+
+     ! compute fluid grid
+     if (have_fluid) then
+         do iel=1,nel_fluid
+             do jpol=ibeg,iend
+                 do ipol=ibeg,iend
+                     sflu(ipol,jpol,iel) = scoord(ipol,jpol,ielfluid(iel))
+                     zflu(ipol,jpol,iel) = zcoord(ipol,jpol,ielfluid(iel))
+                 enddo
               enddo
-           enddo
-      enddo
-      if (lpr) write(6,*)'  dumping fluid submesh for kernel wavefields...'
-      if (use_netcdf) then
-          call nc_dump_mesh_flu(real(sflu(ibeg:iend,ibeg:iend,:)),&
-                                real(zflu(ibeg:iend,ibeg:iend,:)))
-      else
-          open(unit=2600+mynum,file=datapath(1:lfdata)//'/strain_mesh_flu_'&
-               //appmynum//'.dat', &
-               FORM="UNFORMATTED",STATUS="REPLACE")
-          write(2600+mynum)sflu(ibeg:iend,ibeg:iend,:),zflu(ibeg:iend,ibeg:iend,:)
-          close(2600+mynum)
-      end if
-      deallocate(sflu,zflu)
-  endif ! have_fluid
+         enddo
+         if (lpr) write(6,*)'  dumping fluid submesh for kernel wavefields...'
+         if (use_netcdf) then
+             call nc_dump_mesh_flu(real(sflu(ibeg:iend,ibeg:iend,:)),&
+                                   real(zflu(ibeg:iend,ibeg:iend,:)))
+         else
+             open(unit=2600+mynum,file=datapath(1:lfdata)//'/strain_mesh_flu_'&
+                  //appmynum//'.dat', &
+                  FORM="UNFORMATTED",STATUS="REPLACE")
+             write(2600+mynum)sflu(ibeg:iend,ibeg:iend,:),zflu(ibeg:iend,ibeg:iend,:)
+             close(2600+mynum)
+         end if
+         deallocate(sflu,zflu)
+     endif ! have_fluid
+  endif
 
 
   ! In the following: Only dumping additional arrays if displacements only 
@@ -654,8 +654,9 @@ subroutine dump_wavefields_mesh_1d
 
   select case (dump_type)
   case ('displ_only')
-     !write(6,*) 'ERROR: not yet implemented'
-     !stop 2
+     if (lpr) then
+        write(6,*)'  strain dump: only global displacement'
+     endif
   case ('displ_velo')
      if (lpr) then     
         write(6,*)'  strain dump: only displacement/velocity, potentials'
