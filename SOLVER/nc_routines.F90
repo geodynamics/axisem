@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> Contains all the routines for NetCDF handling.
 module nc_routines
 
@@ -142,7 +143,6 @@ subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
   integer                           :: iinput_xdmf, iinput_heavy_data
   integer                           :: i
   character(len=512)                :: filename_np
-  
 
   ! relative filename for xdmf content
   filename_np = trim(filename(index(filename, '/', back=.true.)+1:))
@@ -254,7 +254,6 @@ subroutine nc_dump_field_solid(f, varname)
 end subroutine nc_dump_field_solid
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 !> Routine to dump the wavefield variables for the Kerner. Collects input in
 !! oneddumpvar_sol and oneddumpvar_flu until dumping condition is fulfilled.
@@ -282,7 +281,6 @@ subroutine nc_dump_field_fluid(f, varname)
 #endif
 end subroutine nc_dump_field_fluid
 !-----------------------------------------------------------------------------------------
-
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_strain(isnap_loc)
@@ -405,7 +403,6 @@ subroutine nc_dump_strain(isnap_loc)
 end subroutine nc_dump_strain
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 #ifdef unc
@@ -493,8 +490,6 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 end subroutine nc_dump_strain_to_disk
 !-----------------------------------------------------------------------------------------
 
-
-
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_stf(stf)
     use data_io,  only                       : nseismo, nstrain, dump_wavefields
@@ -529,7 +524,7 @@ subroutine nc_dump_stf(stf)
 
 #endif
 end subroutine nc_dump_stf
-!----------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 !> Dump receiver specific stuff, especially displacement and velocity
@@ -546,7 +541,6 @@ subroutine nc_dump_rec(recfield)
 #endif
 end subroutine
 !-----------------------------------------------------------------------------------------
-
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_rec_to_disk
@@ -584,8 +578,7 @@ subroutine nc_dump_rec_to_disk
     end if
 #endif
 end subroutine nc_dump_rec_to_disk
-!----------------------------------------------------------------------------------------
-
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_rec_checkpoint
@@ -615,6 +608,7 @@ subroutine nc_rec_checkpoint
     call barrier
 #endif
 end subroutine nc_rec_checkpoint
+!----------------------------------------------------------------------------------------
 
 !----------------------------------------------------------------------------------------
 !> Dump stuff along surface
@@ -641,7 +635,6 @@ subroutine nc_dump_surface(surffield, disporvelo)!, nrec, dim2)
 end subroutine nc_dump_surface
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
@@ -665,6 +658,8 @@ subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
 #endif
 end subroutine nc_dump_mesh_sol
+!-----------------------------------------------------------------------------------------
+
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                       fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
@@ -700,6 +695,8 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
 
 end subroutine nc_dump_elastic_parameters
 !-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
 
     real(sp), intent(in), dimension(:,:,:) :: scoord_flu, zcoord_flu 
@@ -717,6 +714,8 @@ subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
 
 #endif
 end subroutine nc_dump_mesh_flu
+!-----------------------------------------------------------------------------------------
+
 !-----------------------------------------------------------------------------------------
 !subroutine nc_dump_mesh_to_disk()
 !    use data_io, only : datapath, lfdata
@@ -745,6 +744,7 @@ end subroutine nc_dump_mesh_flu
 !
 !
 !end subroutine nc_dump_mesh_to_disk
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 !> Define the output file variables and dimensions
@@ -1251,7 +1251,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 end subroutine nc_define_outputfile
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 !> Write NetCDF attribute of type Character
 subroutine nc_write_att_char(attribute_value, attribute_name)
@@ -1262,7 +1261,6 @@ subroutine nc_write_att_char(attribute_value, attribute_name)
 #endif
 end subroutine nc_write_att_char
 !-----------------------------------------------------------------------------------------
-
 
 !-----------------------------------------------------------------------------------------
 !> Write NetCDF attribute of type Real
@@ -1276,7 +1274,6 @@ subroutine nc_write_att_real(attribute_value, attribute_name)
 end subroutine nc_write_att_real
 !-----------------------------------------------------------------------------------------
 
-
 !-----------------------------------------------------------------------------------------
 !> Write NetCDF attribute of type Double
 subroutine nc_write_att_dble(attribute_value, attribute_name)
@@ -1288,7 +1285,6 @@ subroutine nc_write_att_dble(attribute_value, attribute_name)
 #endif
 end subroutine nc_write_att_dble
 !-----------------------------------------------------------------------------------------
-
 
 !-----------------------------------------------------------------------------------------
 !> Write NetCDF attribute of type Integer
@@ -1695,6 +1691,7 @@ subroutine getgrpid(ncid, name, grpid)
 end subroutine getgrpid
 !-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 subroutine putvar_real1d(ncid, varid, values, start, count)
 !< Help interpret the inane NetCDF error messages
    integer, intent(in)          :: ncid, varid, start, count
@@ -1782,6 +1779,7 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
 end subroutine putvar_real1d
 !-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 subroutine putvar_real2d(ncid, varid, values, start, count)
 !< Help interpret the inane NetCDF error messages
    integer, intent(in)          :: ncid, varid
@@ -1886,6 +1884,7 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
 end subroutine putvar_real2d
 !-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 subroutine putvar_real3d(ncid, varid, values, start, count)
 !< Help interpret the inane NetCDF error messages
    integer, intent(in)          :: ncid, varid
@@ -1988,6 +1987,7 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
 200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into 3D variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real3d
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 !> Translates NetCDF error code into readable message
@@ -2002,5 +2002,5 @@ subroutine check(status)
 end subroutine check  
 !-----------------------------------------------------------------------------------------
 
-
 end module nc_routines
+!=========================================================================================
