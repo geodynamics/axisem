@@ -58,9 +58,9 @@ subroutine read_model_compute_terms
   use data_matr,    only: Q_mu, Q_kappa, M_w_fl, M0_w_fl, M1chi_fl, M2chi_fl, M4chi_fl, bdry_matr
   
   
-  real(kind=dp)   , dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
-  real(kind=dp)   , dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
-  real(kind=dp)   , dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
+  real(kind=dp), dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
+  real(kind=dp), dimension(:,:,:),allocatable :: xi_ani, phi_ani, eta_ani
+  real(kind=dp), dimension(:,:,:),allocatable :: fa_ani_theta, fa_ani_phi
 
   if (lpr .and. verbose > 0) write(6,'(a)') &
             '  ::::::::: BACKGROUND MODEL & PRECOMPUTED MATRICES:::::::'

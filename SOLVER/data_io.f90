@@ -43,7 +43,7 @@ module data_io
                                  !! list of surface elements, blabla), default: false
 
   logical           :: need_fluid_displ
-  real(kind=dp)    :: strain_samp
+  real(kind=dp)     :: strain_samp
   integer           :: iseismo  !< current seismogram sample
   integer           :: istrain  !< current kernel wavefield sample
   integer           :: isnap    !< current wavefield sample for movies
@@ -72,6 +72,7 @@ module data_io
   integer               :: i_n_xdmf, j_n_xdmf
   integer, allocatable  :: i_arr_xdmf(:), j_arr_xdmf(:)
   real(kind=dp)         :: xdmf_rmin, xdmf_rmax, xdmf_thetamin, xdmf_thetamax
+  real(kind=dp)         :: kwf_rmin, kwf_rmax, kwf_thetamin, kwf_thetamax
 
   ! rotations
   real(kind=dp)    :: rot_mat(3,3),trans_rot_mat(3,3)

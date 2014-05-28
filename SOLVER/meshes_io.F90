@@ -43,6 +43,7 @@ module meshes_io
   public :: dump_solid_grid
   public :: dump_fluid_grid
   public :: prepare_mesh_memoryvar_vtk
+  public :: build_kwf_grid
 
 contains
 
@@ -483,6 +484,184 @@ end subroutine prepare_mesh_memoryvar_vtk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+subroutine build_kwf_grid()
+
+  use nc_routines, only : set_npoints
+  use data_mesh
+
+  integer               :: iel, ipol, jpol, ct, ipt, idest
+  real(sp), allocatable :: points(:,:)
+  integer, allocatable  :: mapping(:)
+  logical, allocatable  :: check(:), mask_tp_elem(:)
+  
+  allocate(mask_tp_elem(nelem))
+  mask_tp_elem = .false.
+
+  ct = 0
+
+  do iel=1, nel_solid
+      if (min(min(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
+              min(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) < kwf_rmax &
+          .and. &
+          max(max(rcoord(0,0,ielsolid(iel)), rcoord(0,npol,ielsolid(iel))), &
+              max(rcoord(npol,0,ielsolid(iel)), rcoord(npol,npol,ielsolid(iel)))) > kwf_rmin &
+          .and. &
+          min(min(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
+              min(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) < kwf_thetamax &
+          .and. &
+          max(max(thetacoord(0,0,ielsolid(iel)), thetacoord(0,npol,ielsolid(iel))), &
+              max(thetacoord(npol,0,ielsolid(iel)), thetacoord(npol,npol,ielsolid(iel)))) > kwf_thetamin) &
+          then        
+          ct = ct + 1
+          mask_tp_elem(iel) = .true.
+      endif
+  enddo
+
+  do iel=1, nel_fluid
+      if (min(min(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
+              min(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) < kwf_rmax &
+          .and. &
+          max(max(rcoord(0,0,ielfluid(iel)), rcoord(0,npol,ielfluid(iel))), &
+              max(rcoord(npol,0,ielfluid(iel)), rcoord(npol,npol,ielfluid(iel)))) > kwf_rmin &
+          .and. &
+          min(min(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
+              min(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) < kwf_thetamax &
+          .and. &
+          max(max(thetacoord(0,0,ielfluid(iel)), thetacoord(0,npol,ielfluid(iel))), &
+              max(thetacoord(npol,0,ielfluid(iel)), thetacoord(npol,npol,ielfluid(iel)))) > kwf_thetamin) &
+          then        
+          ct = ct + 1
+          mask_tp_elem(iel + nel_solid) = .true.
+      endif
+  enddo
+  
+  nelem_kwf = ct
+
+  allocate(check(nglob_fluid + nglob_solid))
+  allocate(mapping(nglob_fluid + nglob_solid))
+  allocate(mapping_ijel_ikwf(0:npol, 0:npol, nelem))
+  allocate(kwf_mask(0:npol, 0:npol, nelem))
+  
+  check = .false.
+  kwf_mask = .false.
+  
+  ct = 0
+
+  if (lpr) write(6,*) '   construction of mapping for kwf output...'
+  if (lpr) write(6,*) '   ...solid part...'
+
+  do iel=1, nel_solid
+      if (.not.  mask_tp_elem(iel)) cycle
+      do ipol=0, npol
+          do jpol=0, npol
+             
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+              idest = igloc_solid(ipt) + nglob_fluid
+              
+              if (.not. check(idest)) then
+                  ct = ct + 1
+                  check(idest) = .true.
+                  mapping(idest) = ct
+                  kwf_mask(ipol,jpol,iel) = .true.
+              endif
+              mapping_ijel_ikwf(ipol,jpol,iel) = mapping(idest)
+          enddo
+      enddo
+  enddo
+
+  npoint_solid_kwf = ct
+  
+  if (lpr) write(6,*) '   ...fluid part...'
+
+  do iel=1, nel_fluid
+      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+      do ipol=0, npol
+          do jpol=0, npol
+             
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+              idest = igloc_fluid(ipt)
+              
+              if (.not. check(idest)) then
+                  ct = ct + 1
+                  check(idest) = .true.
+                  mapping(idest) = ct
+                  kwf_mask(ipol,jpol,iel + nel_solid) = .true.
+              endif
+              mapping_ijel_ikwf(ipol,jpol,iel + nel_solid) = mapping(idest)
+          enddo
+      enddo
+  enddo
+  
+  deallocate(check, mapping)
+  npoint_kwf = ct
+  npoint_fluid_kwf = ct - npoint_solid_kwf
+
+  call set_npoints(npoint_kwf)
+
+  if (lpr) then
+     write(6,*) 'local point number:        ', nelem_kwf * (npol + 1)**2
+     write(6,*) 'after removing duplicates: ', npoint_kwf
+     write(6,*) 'compression:               ', &
+                 real(npoint_kwf) / real(nelem_kwf * (npol + 1)**2)
+  endif
+  
+  if (lpr) write(6,*) '   .... finished construction of mapping for kwf output'
+
+end subroutine build_kwf_grid
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine dump_kwf_grid()
+
+  use nc_routines, only : nc_dump_mesh_kwf
+  use data_mesh
+
+  integer               :: iel, ipol, jpol, ct
+  real(sp), allocatable :: points(:,:)
+  
+  if (lpr) write(6,*) '   ...collecting coordinates...'
+
+  allocate(points(1:npoint_kwf, 2))
+
+  points = 0.
+
+  do iel=1, nel_solid
+      do ipol=0, npol
+          do jpol=0, npol
+              if (kwf_mask(ipol,jpol,iel)) then
+                  ct = mapping_ijel_ikwf(ipol,jpol,iel)
+                  points(ct,1) = scoord(ipol,jpol,ielsolid(iel))
+                  points(ct,2) = zcoord(ipol,jpol,ielsolid(iel))
+              endif
+          enddo
+      enddo
+  enddo
+
+  do iel=1, nel_fluid
+      do ipol=0, npol
+          do jpol=0, npol
+              if (kwf_mask(ipol,jpol,iel + nel_solid)) then
+                  ct = mapping_ijel_ikwf(ipol,jpol,iel + nel_solid)
+                  points(ct,1) = scoord(ipol,jpol,ielfluid(iel))
+                  points(ct,2) = zcoord(ipol,jpol,ielfluid(iel))
+              endif
+          enddo
+      enddo
+  enddo
+
+  if (use_netcdf) then
+      call nc_dump_mesh_kwf(points, npoint_solid_kwf, npoint_fluid_kwf)
+  else
+     write(6,*) 'ERROR: binary output for non-duplicate mesh not implemented'
+     call abort()
+  endif
+  
+  if (lpr) write(6,*) '   .... finished construction of mapping for kwf output'
+
+end subroutine dump_kwf_grid
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 !> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
 !! in the solid region only.
 !! Convention for order in the file: First the fluid, then the solid domain.
@@ -596,7 +775,7 @@ subroutine dump_wavefields_mesh_1d
   endif
 
   if (dump_type == 'displ_only') then
-     stop
+     call dump_kwf_grid()
   else
      ! compute solid grid
      do iel=1,nel_solid

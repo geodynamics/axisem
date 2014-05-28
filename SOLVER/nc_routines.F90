@@ -130,10 +130,20 @@ module nc_routines
     public              :: nc_write_att_dble
     public              :: nc_define_outputfile, nc_finish_prepare, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
+    public              :: nc_dump_mesh_kwf
     public              :: nc_dump_elastic_parameters
     public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
     public              :: nc_make_snapfile, nc_dump_stf, nc_rec_checkpoint
+
+    public              :: set_npoints
 contains
+
+!-----------------------------------------------------------------------------------------
+subroutine set_npoints(n)
+  integer, intent(in) :: n
+  npoints = n
+end subroutine
+!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
@@ -628,7 +638,6 @@ subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
     use data_io,   only : ndumppts_el
     use data_mesh, only : nelem 
-    !real(sp), intent(in), dimension(:,:,:) :: scoord_sol, zcoord_sol
     real(sp), intent(in) :: scoord_sol(:,:,:)
     real(sp), intent(in) :: zcoord_sol(size(scoord_sol,1), size(scoord_sol,2), &
                                        size(scoord_sol,3))
@@ -649,59 +658,121 @@ end subroutine nc_dump_mesh_sol
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
-                                      fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
-
-    use data_io,                                   only: ibeg, iend
-    real(kind=dp), dimension(:,:,:), intent(in)       :: rho, lambda, mu, xi_ani
-    real(kind=dp), dimension(:,:,:), intent(in)       :: phi_ani, eta_ani
-    real(kind=dp), dimension(:,:,:), intent(in)       :: fa_ani_theta, fa_ani_phi
-    real(kind=sp), dimension(:), intent(in), optional :: Q_mu, Q_kappa
-    integer                                           :: size1d
-
-    !print *, 'Processor', mynum,' has been here'
-    !allocate(rho1d(npoints))
-    !allocate(lambda1d(npoints))
-    !allocate(mu1d(npoints))
-    !allocate(vp1d(npoints))
-    !allocate(vs1d(npoints))
-    size1d = size(rho(ibeg:iend, ibeg:iend, :))
-    print *, ' NetCDF: Mesh elastic parameter variables have size:', size1d
-    allocate(rho1d(size1d))
-    allocate(lambda1d(size1d))
-    allocate(mu1d(size1d))
-    allocate(vp1d(size1d))
-    allocate(vs1d(size1d))
-    
-    rho1d     = real(pack(rho(ibeg:iend, ibeg:iend, :)    ,.true.), kind=sp)
-    lambda1d  = real(pack(lambda(ibeg:iend, ibeg:iend, :) ,.true.), kind=sp)
-    mu1d      = real(pack(mu(ibeg:iend, ibeg:iend, :)     ,.true.), kind=sp)
-    vp1d      = sqrt( (lambda1d + 2.*mu1d ) / rho1d  )
-    vs1d      = sqrt( mu1d  / rho1d )
-
-    !if (present(Q_mu) .and. present(Q_kappa)) then
-
-end subroutine nc_dump_elastic_parameters
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
+! can only be called after calling nc_dump_mesh_sol
 
-    real(sp), intent(in), dimension(:,:,:) :: scoord_flu, zcoord_flu 
+    real(sp), intent(in) :: scoord_flu(:,:,:)
+    real(sp), intent(in) :: zcoord_flu(size(scoord_flu,1), size(scoord_flu,2), &
+                                       size(scoord_flu,3))
 #ifdef unc
 
     npts_flu = size(scoord_flu)
-    if (npts_flu.ne.size(scoord_flu))  then
-        write(6,*) 'Inconsistency in mesh size in nc_dump_mesh_flu'
-        stop 2
-    end if
 
     zcoord1d(npts_sol+1:) = pack(zcoord_flu, .true.)
     scoord1d(npts_sol+1:) = pack(scoord_flu, .true.)
 
-
 #endif
 end subroutine nc_dump_mesh_flu
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_mesh_kwf(coords, nsol, nflu)
+
+    real(sp), intent(in) :: coords(:,:)
+    integer, intent(in)  :: nsol, nflu
+#ifdef unc
+
+    npts_sol = nsol
+    npts_flu = nflu
+
+    npoints = nsol + nflu
+
+    if (size(coords, 1) /= npoints) then
+       write(6,*) 'ERROR: inconsistent point numbers'
+       call abort()
+    endif
+
+    allocate(scoord1d(npoints))
+    allocate(zcoord1d(npoints))
+
+    scoord1d(:) = coords(:,1)
+    zcoord1d(:) = coords(:,2)
+
+#endif
+end subroutine nc_dump_mesh_kwf
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
+                                      fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
+
+    use data_io,      only: ibeg, iend, dump_type
+    use data_mesh,    only: mapping_ijel_ikwf, ielsolid, ielfluid, nel_solid, nel_fluid, &
+                            npol, kwf_mask
+
+    real(kind=dp), dimension(0:,0:,:), intent(in)       :: rho, lambda, mu, xi_ani
+    real(kind=dp), dimension(0:,0:,:), intent(in)       :: phi_ani, eta_ani
+    real(kind=dp), dimension(0:,0:,:), intent(in)       :: fa_ani_theta, fa_ani_phi
+    real(kind=sp), dimension(:), intent(in), optional :: Q_mu, Q_kappa
+    integer :: size1d
+    integer :: iel, ipol, jpol, ct
+
+    !print *, 'Processor', mynum,' has been here'
+    if (dump_type == 'displ_only') then
+       write(6,*) 'npoints', npoints
+       write(6,*) 'shape(rho)', shape(rho)
+       allocate(rho1d(npoints))
+       allocate(lambda1d(npoints))
+       allocate(mu1d(npoints))
+       allocate(vp1d(npoints))
+       allocate(vs1d(npoints))
+
+       do iel=1, nel_solid
+           do ipol=0, npol
+               do jpol=0, npol
+                   if (kwf_mask(ipol,jpol,iel)) then
+                       ct = mapping_ijel_ikwf(ipol,jpol,iel)
+                       rho1d(ct) = rho(ipol,jpol,ielsolid(iel))
+                       lambda1d(ct) = lambda(ipol,jpol,ielsolid(iel))
+                       mu1d(ct) = mu(ipol,jpol,ielsolid(iel))
+                   endif
+               enddo
+           enddo
+       enddo
+
+       do iel=1, nel_fluid
+           do ipol=0, npol
+               do jpol=0, npol
+                   if (kwf_mask(ipol,jpol,iel + nel_solid)) then
+                       ct = mapping_ijel_ikwf(ipol,jpol,iel + nel_solid)
+                       rho1d(ct) = rho(ipol,jpol,ielsolid(iel))
+                       lambda1d(ct) = lambda(ipol,jpol,ielsolid(iel))
+                       mu1d(ct) = mu(ipol,jpol,ielsolid(iel))
+                   endif
+               enddo
+           enddo
+       enddo
+
+       vp1d      = sqrt( (lambda1d + 2.*mu1d ) / rho1d  )
+       vs1d      = sqrt( mu1d  / rho1d )
+
+    else
+       size1d = size(rho(ibeg:iend, ibeg:iend, :))
+       print *, ' NetCDF: Mesh elastic parameter variables have size:', size1d
+       allocate(rho1d(size1d))
+       allocate(lambda1d(size1d))
+       allocate(mu1d(size1d))
+       allocate(vp1d(size1d))
+       allocate(vs1d(size1d))
+       
+       rho1d     = real(pack(rho(ibeg:iend, ibeg:iend, :)    ,.true.), kind=sp)
+       lambda1d  = real(pack(lambda(ibeg:iend, ibeg:iend, :) ,.true.), kind=sp)
+       mu1d      = real(pack(mu(ibeg:iend, ibeg:iend, :)     ,.true.), kind=sp)
+       vp1d      = sqrt( (lambda1d + 2.*mu1d ) / rho1d  )
+       vs1d      = sqrt( mu1d  / rho1d )
+    endif
+
+end subroutine nc_dump_elastic_parameters
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
@@ -743,7 +814,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                            dump_type
     use data_io,     only: datapath, lfdata, strain_samp
     use data_mesh,   only: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
-                           ndisc, maxind_glob
+                           ndisc, maxind_glob, npoint_kwf, npoint_solid_kwf, &
+                           npoint_fluid_kwf
+
     use data_source, only: src_type, t_0
     use data_time,   only: deltat, niter
 
@@ -838,13 +911,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                   nc_varnamelist = ['disp_s     ', 'disp_p     ', 'disp_z     ']
               end if
 
-              gllperelem = (iend - ibeg + 1)**2
-              npoints = nelem * gllperelem
+              npoints = npoint_kwf
               
               call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
 
-              npts_sol = nel_solid * gllperelem
-              npts_flu = nel_fluid * gllperelem 
+              npts_sol = npoint_solid_kwf
+              npts_flu = npoint_fluid_kwf
 
               call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
               call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)

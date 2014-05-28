@@ -75,6 +75,9 @@ subroutine prepare_waves
   ! rotation if source is not on the axis
   if (rot_src ) call def_rot_matrix
 
+  if (dump_wavefields .and. dump_type == 'displ_only') &
+     call build_kwf_grid()
+
   ! Define velocity/density model (velocities in m/s, density in kg/m^3 ) AND 
   ! compute all global matrices (Jacobian, mapping, mass matrix, S/F boundary)
   ! for solid and fluid domains respectively

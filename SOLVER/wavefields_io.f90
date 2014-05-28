@@ -226,7 +226,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t)
    allocate(curlinplane_mask(1, npoint_plot))
    allocate(curlinplane(0:npol, 0:npol, nel_fluid + nel_solid,1))
 
-   ! convert +- to sp in case of monopole
+   ! convert +- to sp in case of dipole
    if (src_type(1) == 'dipole') then
       f_sol_spz(:,:,:,1) = f_sol(:,:,:,1) + f_sol(:,:,:,2)
       f_sol_spz(:,:,:,2) = f_sol(:,:,:,1) - f_sol(:,:,:,2)

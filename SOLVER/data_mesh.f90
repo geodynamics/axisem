@@ -146,9 +146,16 @@ module data_mesh
   integer, allocatable         :: cmbfile_el(:,:), loc2globcmb(:)
   !--------------------------------------------------------------------------
 
+  ! for xdmf plotting
   integer                      :: nelem_plot, npoint_plot
   logical, allocatable         :: plotting_mask(:,:,:)
   integer, allocatable         :: mapping_ijel_iplot(:,:,:)
+
+  ! for kernel wavefields in displ_only mode
+  integer                      :: nelem_kwf, npoint_kwf
+  integer                      :: npoint_solid_kwf, npoint_fluid_kwf
+  logical, allocatable         :: kwf_mask(:,:,:)
+  integer, allocatable         :: mapping_ijel_ikwf(:,:,:)
 
   ! Only needed before the simulation and later deallocated
   ! Global mesh informations

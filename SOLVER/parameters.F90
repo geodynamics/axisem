@@ -87,8 +87,8 @@ subroutine readin_parameters
   sum_seis = .false.
   sum_fields = .false.
   dump_snaps_solflu = .false.
-  dump_type = 'fullfields'
-  !dump_type = 'displ_only'
+  !dump_type = 'fullfields'
+  dump_type = 'displ_only'
   num_simul = 1
    
   ! netcdf format
@@ -390,10 +390,17 @@ subroutine read_inparam_advanced
   allocate(j_arr_xdmf(1:npol_max+1))
   i_arr_xdmf = -1
   j_arr_xdmf = -1
-  xdmf_rmin = 0
-  xdmf_rmax = 7000
+  xdmf_rmin = 0d0
+  xdmf_rmax = 7d6
   xdmf_thetamin = 0
   xdmf_thetamax = 180
+
+  ! kernel wavefield filter (displ_only only)
+  ! @TODO add to input file
+  kwf_rmin = 0d0
+  kwf_rmax = 7d6
+  kwf_thetamin = 0
+  kwf_thetamax = 180
   
   keyword = ' '
   keyvalue = ' '
