@@ -130,7 +130,7 @@ module nc_routines
     public              :: nc_write_att_dble
     public              :: nc_define_outputfile, nc_finish_prepare, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
-    public              :: nc_write_el_domains, nc_dump_elastic_parameters
+    public              :: nc_dump_elastic_parameters
     public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
     public              :: nc_make_snapfile, nc_dump_stf, nc_rec_checkpoint
 contains
@@ -214,18 +214,6 @@ subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
 
 end subroutine
 !-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-!> Write out the model domains for each element
-subroutine nc_write_el_domains(idom)
-    integer, dimension(:), intent(in) :: idom
-
-#ifdef unc
-    call check( nf90_put_var(ncid   = ncid_snapout, &
-                             varid  = nc_elem_dom_varid, &
-                             values = idom) )
-#endif
-end subroutine
 
 !-----------------------------------------------------------------------------------------
 !> Routine to dump the wavefield variables for the Kerner. Collects input in
