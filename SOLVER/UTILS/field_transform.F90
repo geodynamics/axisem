@@ -455,7 +455,6 @@ program field_transformation
                 print "('wrote ', F9.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
                     real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
                     real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
-                !end if !dofft
 
             deallocate(datat_t)
 
@@ -492,10 +491,7 @@ subroutine check(status)
 #ifdef unc
     if(status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
-        ! Works only with ifort
-        ! call tracebackqq()
-        stop 0
-
+        call abort()
     end if
 #endif
 end subroutine
