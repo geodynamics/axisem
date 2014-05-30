@@ -491,7 +491,7 @@ subroutine build_kwf_grid()
 
   integer               :: iel, ipol, jpol, ct, ipt, idest
   real(sp), allocatable :: points(:,:)
-  integer, allocatable  :: grid(:,:), mapping(:)
+  integer, allocatable  :: mapping(:)
   logical, allocatable  :: check(:), mask_tp_elem(:)
   
   allocate(mask_tp_elem(nelem))
