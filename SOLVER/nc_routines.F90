@@ -812,8 +812,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                            dump_type
     use data_io,     only: datapath, lfdata, strain_samp
     use data_mesh,   only: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
-                           ndisc, maxind_glob, npoint_kwf, npoint_solid_kwf, &
-                           npoint_fluid_kwf
+                           ndisc, maxind_glob, nelem_kwf, npoint_kwf, npoint_solid_kwf, &
+                           npoint_fluid_kwf, npol
 
     use data_source, only: src_type, t_0
     use data_time,   only: deltat, niter
@@ -842,6 +842,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_mesh_vs_varid, nc_mesh_vp_varid   
     integer                              :: nc_mesh_mu_varid, nc_mesh_rho_varid   
     integer                              :: nc_mesh_lambda_varid
+    integer                              :: nc_mesh_midpoint_varid
+    integer                              :: nc_mesh_fem_varid
+    integer                              :: nc_mesh_sem_varid
+    integer                              :: nc_mesh_elem_dimid, nc_mesh_npol_dimid
+    integer                              :: nc_mesh_cntrlpts_dimid
     !integer                              :: nc_disc_dimid, nc_disc_varid
 
     if ((mynum == 0) .and. (verbose > 1)) then
@@ -1098,6 +1103,27 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 !                                      name   = 'ndisc', &
 !                                      values = ndisc) )
 
+            if (trim(dump_type) == 'displ_only') then
+               call check( nf90_def_dim( ncid   = ncid_meshout, &
+                                         name   = 'elements', &
+                                         len    = nelem_kwf, &
+                                         dimid  = nc_mesh_elem_dimid) )
+               call check( nf90_put_att( ncid   = ncid_out, &
+                                         varid  = NF90_GLOBAL, &
+                                         name   = 'nelem_kwf', &
+                                         values = nelem_kwf) )
+
+               call check( nf90_def_dim( ncid   = ncid_meshout, &
+                                         name   = 'control_points', &
+                                         len    = 4, &
+                                         dimid  = nc_mesh_cntrlpts_dimid) )
+
+               call check( nf90_def_dim( ncid   = ncid_meshout, &
+                                         name   = 'npol', &
+                                         len    = npol, &
+                                         dimid  = nc_mesh_npol_dimid) )
+            endif
+
             call check( nf90_def_var( ncid   = ncid_meshout,  &
                                       name   = 'mesh_S', &
                                       xtype  = NF90_FLOAT, &
@@ -1145,6 +1171,29 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             !                          xtype  = NF90_DOUBLE, &
             !                          dimids = nc_disc_dimid,&
             !                          varid  = nc_disc_varid) )
+
+            if (trim(dump_type) == 'displ_only') then
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'midpoint_mesh', &
+                                         xtype  = NF90_INT, &
+                                         dimids = nc_mesh_elem_dimid,&
+                                         varid  = nc_mesh_midpoint_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'fem_mesh', &
+                                         xtype  = NF90_INT, &
+                                         dimids = [nc_mesh_cntrlpts_dimid, &
+                                                   nc_mesh_elem_dimid],&
+                                         varid  = nc_mesh_fem_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'sem_mesh', &
+                                         xtype  = NF90_INT, &
+                                         dimids = [nc_mesh_npol_dimid, &
+                                                   nc_mesh_npol_dimid, &
+                                                   nc_mesh_elem_dimid],&
+                                         varid  = nc_mesh_sem_varid) )
+            endif
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
        

@@ -491,7 +491,7 @@ subroutine build_kwf_grid()
 
   integer               :: iel, ipol, jpol, ct, ipt, idest
   real(sp), allocatable :: points(:,:)
-  integer, allocatable  :: mapping(:)
+  integer, allocatable  :: grid(:,:), mapping(:)
   logical, allocatable  :: check(:), mask_tp_elem(:)
   
   allocate(mask_tp_elem(nelem))
@@ -604,6 +604,74 @@ subroutine build_kwf_grid()
      write(6,*) 'compression:               ', &
                  real(npoint_kwf) / real(nelem_kwf * (npol + 1)**2)
   endif
+
+  allocate(midpoint_mesh_kwf(1:nelem_kwf))
+  
+  if (lpr) write(6,*) '   .... constructing midpoint grid for kwf output'
+  
+  ct = 1
+
+  do iel=1, nel_solid
+      if (.not.  mask_tp_elem(iel)) cycle
+      midpoint_mesh_kwf(ct) = mapping_ijel_ikwf(npol/2,npol/2,iel) - 1
+      ct = ct + 1
+  enddo
+  
+  do iel=1, nel_fluid
+      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+      midpoint_mesh_kwf(ct) = mapping_ijel_ikwf(npol/2,npol/2,iel + nel_solid) - 1
+      ct = ct + 1
+  enddo
+
+  allocate(fem_mesh_kwf(1:4, 1:nelem_kwf))
+  
+  if (lpr) write(6,*) '   .... constructing finite element grid for kwf output'
+  
+  ct = 1
+
+  do iel=1, nel_solid
+      if (.not.  mask_tp_elem(iel)) cycle
+      fem_mesh_kwf(1,ct) = mapping_ijel_ikwf(   0,   0,iel) - 1
+      fem_mesh_kwf(2,ct) = mapping_ijel_ikwf(npol,   0,iel) - 1
+      fem_mesh_kwf(3,ct) = mapping_ijel_ikwf(npol,npol,iel) - 1
+      fem_mesh_kwf(4,ct) = mapping_ijel_ikwf(   0,npol,iel) - 1
+      ct = ct + 1
+  enddo
+  
+  do iel=1, nel_fluid
+      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+      fem_mesh_kwf(1,ct) = mapping_ijel_ikwf(   0,   0,iel + nel_solid) - 1
+      fem_mesh_kwf(2,ct) = mapping_ijel_ikwf(npol,   0,iel + nel_solid) - 1
+      fem_mesh_kwf(3,ct) = mapping_ijel_ikwf(npol,npol,iel + nel_solid) - 1
+      fem_mesh_kwf(4,ct) = mapping_ijel_ikwf(   0,npol,iel + nel_solid) - 1
+      ct = ct + 1
+  enddo
+
+  allocate(sem_mesh_kwf(0:npol, 0:npol, 1:nelem_kwf))
+  
+  if (lpr) write(6,*) '   .... constructing finite element grid for kwf output'
+  
+  ct = 1
+
+  do iel=1, nel_solid
+      if (.not.  mask_tp_elem(iel)) cycle
+      do ipol=0, npol
+         do jpol=0, npol
+            sem_mesh_kwf(ipol,jpol,ct) = mapping_ijel_ikwf(ipol,jpol,iel) - 1
+         enddo
+      enddo
+      ct = ct + 1
+  enddo
+  
+  do iel=1, nel_fluid
+      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+      do ipol=0, npol
+         do jpol=0, npol
+            sem_mesh_kwf(ipol,jpol,ct) = mapping_ijel_ikwf(ipol,jpol,iel + nel_solid) - 1
+         enddo
+      enddo
+      ct = ct + 1
+  enddo
   
   if (lpr) write(6,*) '   .... finished construction of mapping for kwf output'
 
@@ -655,8 +723,6 @@ subroutine dump_kwf_grid()
      write(6,*) 'ERROR: binary output for non-duplicate mesh not implemented'
      call abort()
   endif
-  
-  if (lpr) write(6,*) '   .... finished construction of mapping for kwf output'
 
 end subroutine dump_kwf_grid
 !-----------------------------------------------------------------------------------------
