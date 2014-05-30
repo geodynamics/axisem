@@ -45,6 +45,7 @@ program field_transformation
     integer                         :: ncout_surf_varids(6), ncin_surf_grpid, ncin_surf_varids(6)
     integer                         :: nsurfelem, ncomp, nstraincomp
     character(len=8)                :: sourcetype
+    character(len=12)               :: dump_type
     integer                         :: dimids(2)
     character(len=16), allocatable  :: varnamelist(:), varname_surf(:)
     integer, dimension(9)           :: ncin_field_varid
@@ -107,20 +108,41 @@ program field_transformation
     call check( nf90_get_att(ncin_id, NF90_GLOBAL, "excitation type", sourcetype))
 
     if (verbose) &
-        print *, sourcetype
-    
-    if (sourcetype=='monopole')  then
-        nvar = 6
-        allocate(varnamelist(nvar))
-        varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
-                        'straintrace', 'velo_s     ', 'velo_z     '/)
+        print *, 'source type  ', sourcetype
+
+    ! get dump type 
+    call check( nf90_get_att(ncin_id, NF90_GLOBAL, "dump type (displ_only, displ_velo, fullfields)", dump_type))
+
+    if (verbose) &
+        print *, 'dump type    ', dump_type
+
+    if (trim(dump_type) == 'displ_only') then
+       if (sourcetype=='monopole')  then
+           nvar = 2
+           allocate(varnamelist(nvar))
+           varnamelist = ['disp_s     ', 'disp_z     ']
+       else
+           nvar = 3
+           allocate(varnamelist(nvar))
+           varnamelist = ['disp_s     ', 'disp_p     ', 'disp_z     ']
+       end if
+
+    elseif (trim(dump_type) == 'fullfields') then
+       if (sourcetype=='monopole')  then
+           nvar = 6
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'straintrace', 'velo_s     ', 'velo_z     '/)
+       else
+           nvar = 9
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'strain_dsup', 'strain_dzup', 'straintrace', &
+                           'velo_s     ', 'velo_p     ', 'velo_z     '/)
+       end if
     else
-        nvar = 9
-        allocate(varnamelist(nvar))
-        varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
-                        'strain_dsup', 'strain_dzup', 'straintrace', &
-                        'velo_s     ', 'velo_p     ', 'velo_z     '/)
-    end if
+       stop
+    endif
 
     ! get variable ids of the fields
     do ivar=1, nvar
