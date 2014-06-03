@@ -76,7 +76,7 @@ subroutine prepare_waves
   if (rot_src ) call def_rot_matrix
  
   ! build mapping to avoid duplicate points at element boundaries
-  if (dump_wavefields .and. dump_type == 'displ_only') &
+  if (use_netcdf .and. trim(dump_type) == 'displ_only') then
      call build_kwf_grid()
 
   ! Define velocity/density model (velocities in m/s, density in kg/m^3 ) AND 
