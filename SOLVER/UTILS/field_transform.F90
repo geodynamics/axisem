@@ -33,12 +33,12 @@ program field_transformation
 
 #ifdef unc
     integer                         :: nvar, ivar
-    integer                         :: nsnap, ntimes, ngll, ngllread, npol, nelem
+    integer                         :: nsnap, ngll, ngllread, npol, nelem
     integer                         :: nmode
 
     integer                         :: ncin_id, ncin_snap_grpid, ncin_mesh_grpid
     integer                         :: ncout_id, ncout_fields_grpid, ncout_gll_dimid
-    integer                         :: ncout_freq_dimid, ncout_snap_dimid, ncout_mesh_grpid
+    integer                         :: ncout_snap_dimid, ncout_mesh_grpid
     integer                         :: ncout_mesh_varids(255), ncin_mesh_varids(255)
     integer                         :: ncout_surf_grpid, ncout_surfstrain_dimid, ncout_surf_dimid
     integer                         :: ncout_comp_dimid
@@ -55,12 +55,8 @@ program field_transformation
     character(len=16), allocatable  :: varnamelist(:), varname_surf(:)
     integer, dimension(9)           :: ncin_field_varid
     integer, dimension(9)           :: ncout_field_varid
-    integer                         :: ncin_snaptime_varid
 
-    integer                         :: rank, istride, ostride, nomega, nextpow2
-    integer(kind=8)                 :: plan_fftf
-    integer                         :: iret
-    integer                         :: nstep, npoints, nvars_mesh
+    integer                         :: nstep, nvars_mesh
     integer                         :: attnum, nf_att_stat
     character(len=80)               :: attname, varname
 
@@ -68,13 +64,11 @@ program field_transformation
     integer, allocatable            :: int_data_1d(:), int_data_2d(:,:), int_data_3d(:,:,:)
 
     real(kind=8), dimension(:,:), allocatable       :: datat, datat_t
-    complex(kind=8), dimension(:,:), allocatable    :: dataf
 
     double precision                :: time_fft, time_i, time_o, tick, tack
     double precision                :: space_i, space_o
 
     logical                         :: verbose = .true.
-    logical                         :: output_exist = .true.
     integer                         :: npointsperstep = 500000
                                     !< maybe replace this with cache size
     integer                         :: chunk_gll 
@@ -613,7 +607,6 @@ contains
 subroutine check(status)
     implicit none
     integer, intent ( in) :: status !< Error code
-    integer, allocatable  :: test(:), test2(:,:)
 #ifdef unc
     if(status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
