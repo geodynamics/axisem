@@ -44,7 +44,6 @@ subroutine bkgrdmodel_testing
   real(kind=dp), dimension(:,:,:), allocatable   :: h, hmin2
   real(kind=dp), dimension(:,:),   allocatable   :: crit, crit_max
   real(kind=dp), dimension(:),     allocatable   :: hmin, hmax
-  real(kind=dp), dimension(:,:,:), allocatable   :: v_p, v_s, rho
   integer               :: iel, ipol, jpol, ntoobig, ntoosmall, j
   real(kind=dp)         :: s1, z1, s2, z2, h1, h2, r, velo, velo_max, theta
   
