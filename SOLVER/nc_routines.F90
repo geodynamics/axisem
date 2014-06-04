@@ -814,7 +814,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     use data_io,     only: datapath, lfdata, strain_samp
     use data_mesh,   only: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
                            ndisc, maxind_glob, nelem_kwf_global, npoint_kwf, npoint_solid_kwf, &
-                           npoint_fluid_kwf, npol, nelem_kwf
+                           npoint_fluid_kwf, npol, nelem_kwf, npoint_kwf_global
 
     use data_source, only: src_type, t_0
     use data_time,   only: deltat, niter
@@ -918,6 +918,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
               npoints = npoint_kwf
               
               call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
+              npoint_kwf_global = npoints_global
 
               npts_sol = npoint_solid_kwf
               npts_flu = npoint_fluid_kwf
@@ -1553,7 +1554,7 @@ subroutine nc_finish_prepare
                                              varid  = nc_mesh_midpoint_varid, &
                                              start  = [nelem_myfirst],  &
                                              count  = [nelem_kwf], &
-                                             values = midpoint_mesh_kwf + npoints_myfirst))
+                                             values = midpoint_mesh_kwf + npoints_myfirst - 1))
                 endif
 
                 print '(A,I5,A)', '   ', iproc, ': dumped mesh'

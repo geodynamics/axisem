@@ -183,6 +183,12 @@ subroutine prepare_waves
 
   ! allow for different types of receiver files
   call prepare_from_recfile_seis
+  
+  ! dump meshes for displ_only kwf output
+  if (dump_wavefields .and. dump_type == "displ_only") then 
+     call dump_kwf_midpoint_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                 npoint_kwf_global, nelem_kwf_global)
+  endif
 
   ! Need to reload old seismograms and add results
   if (isim>1 .and. sum_seis ) then  

@@ -44,7 +44,7 @@ module meshes_io
   public :: dump_fluid_grid
   public :: prepare_mesh_memoryvar_vtk
   public :: build_kwf_grid
-
+  public :: dump_kwf_midpoint_xdmf
 contains
 
 !-----------------------------------------------------------------------------------------
@@ -725,6 +725,57 @@ subroutine dump_kwf_grid()
   endif
 
 end subroutine dump_kwf_grid
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine dump_kwf_midpoint_xdmf(filename, npoints, nelem)
+  character(len=*), intent(in)      :: filename
+  integer, intent(in)               :: npoints, nelem
+
+  integer                           :: iinput_xdmf
+  character(len=512)                :: filename_np
+  
+
+  ! relative filename for xdmf content
+  filename_np = trim(filename(index(filename, '/', back=.true.)+1:))
+
+  ! XML Data
+  open(newunit=iinput_xdmf, file=trim(filename)//'_mp.xdmf')
+  write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
+
+  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), "'", "'"
+
+  close(iinput_xdmf)
+
+733 format(&    
+    '<?xml version="1.0" ?>',/&
+    '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
+    '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
+    '<Domain>',/,/&
+    '<DataItem Name="points" ItemType="Function" Function="join($0, $1)" Dimensions="', i10, ' 2">',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_S',/&
+    '    </DataItem>',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_Z',/&
+    '    </DataItem>',/&
+    '</DataItem>',/,/)
+
+734 format(&    
+    '<Grid Name="grid" GridType="Uniform">',/&
+    '    <Topology TopologyType="Polyvertex" NumberOfElements="',i10,'">',/&
+    '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, '" Format="HDF">',/&
+    '        ', A, ':/Mesh/midpoint_mesh',/&
+    '        </DataItem>',/&
+    '    </Topology>',/&
+    '    <Geometry GeometryType="XY">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '    </Geometry>',/&
+    '</Grid>',/,/&
+    '</Domain>',/&
+    '</Xdmf>')
+
+end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------

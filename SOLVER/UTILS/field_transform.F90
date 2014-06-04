@@ -550,7 +550,7 @@ subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
   character(len=*), intent(in)      :: filename, varname
   integer, intent(in)               :: npoints, nsnap
 
-  integer                           :: iinput_xdmf, iinput_heavy_data
+  integer                           :: iinput_xdmf
   integer                           :: i
   character(len=512)                :: filename_np
   
