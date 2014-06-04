@@ -280,7 +280,7 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
-  integer :: iter, ielem
+  integer :: iter
 
   if (lpr) then
      write(6,*)
