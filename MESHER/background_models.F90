@@ -1384,7 +1384,6 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
   integer, intent(in)            :: idom
   character(len=3), intent(in)   :: param 
   logical                        :: success
-  type(interpolation_data)       :: interp
 
      !print *, 'R0: ', r0, ', idom:', idom
      select case(param)
@@ -1881,13 +1880,11 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   character(len=*)                :: fnam_ext_model
   integer, intent(out), optional  :: ndisc_out
   real(kind=dp), allocatable, intent(out), optional :: discont(:), vp(:,:), vs(:,:), rho(:,:)
-  integer :: idom, junk, ilayer
+  integer :: idom, ilayer
   real(kind=dp), allocatable :: grad_vp(:), grad_vs(:)
 
   integer, parameter         :: ndom_max = 100
   real(kind=dp), parameter   :: grad_threshold = 1.d-2
-  real(kind=dp)              :: disc_tmp(ndom_max), vp_tmp(ndom_max,2), vs_tmp(ndom_max,2), rho_tmp(ndom_max,2)
-  real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
   integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc, extrapolation
   integer, allocatable       :: isdisc(:)
   character(len=128)         :: fmtstring
