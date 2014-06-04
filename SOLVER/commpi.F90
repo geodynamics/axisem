@@ -409,7 +409,6 @@ subroutine send_recv_buffers_solid(nc)
 
 #ifndef serial
   integer               :: imsg, sizeb, ipdes, ipsrc
-  integer               :: ic, ip, ipg
   integer               :: msgnum, msgnum1
   integer               :: sizemsg_solid
   integer               :: ierror
@@ -543,12 +542,10 @@ subroutine send_recv_buffers_fluid
   use data_comm
   
 #ifndef serial
-  integer               :: imsg, ipg, ip, sizeb, ipdes, ipsrc
+  integer               :: imsg, sizeb, ipdes, ipsrc
   integer               :: msgnum, msgnum1
   integer               :: sizemsg_fluid
   integer               :: ierror
-  integer               :: recv_status(MPI_STATUS_SIZE, sizerecv_fluid)
-  integer               :: send_status(MPI_STATUS_SIZE, sizesend_fluid)
   
   ! Send stuff around
   call buffs_all_fluid%resetcurrent()
