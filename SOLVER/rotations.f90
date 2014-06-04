@@ -38,10 +38,6 @@ contains
 !-----------------------------------------------------------------------------
 subroutine def_rot_matrix
 
-  real(kind=realkind), dimension(3,3)  :: mom_tensor, rot_mom_tensor
-  real(kind=realkind), dimension(3)    :: single_force, rot_single_force
-  integer                              :: i, j
-
   if (lpr) then
     write(6,*)
     write(6,*) '  Need to rotate the source to the north pole!'
@@ -62,9 +58,6 @@ subroutine def_rot_matrix
   where (dabs(rot_mat)<smallval) rot_mat = 0.0
 
   trans_rot_mat = transpose(rot_mat)
-
-11 format(a25,1pe12.3)
-12 format(a25,3(1pe12.3))
 
 end subroutine def_rot_matrix
 !=============================================================================
