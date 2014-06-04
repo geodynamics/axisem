@@ -1124,7 +1124,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
                call check( nf90_def_dim( ncid   = ncid_meshout, &
                                          name   = 'npol', &
-                                         len    = npol, &
+                                         len    = npol+1, &
                                          dimid  = nc_mesh_npol_dimid) )
             endif
 
@@ -1415,7 +1415,8 @@ subroutine nc_finish_prepare
 #ifdef unc
     use data_io,   only  : datapath, lfdata, dump_wavefields, dump_type
     use data_mesh, only  : maxind, surfcoord, ind_first, ind_last, &
-                           midpoint_mesh_kwf, sem_mesh_kwf, fem_mesh_kwf, nelem_kwf, nelem_kwf_global
+                           midpoint_mesh_kwf, sem_mesh_kwf, fem_mesh_kwf, nelem_kwf, &
+                           nelem_kwf_global, npol
 
     integer             :: ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
@@ -1546,15 +1547,25 @@ subroutine nc_finish_prepare
 
                 if (trim(dump_type) == 'displ_only' .and. nelem_kwf > 0) then
                    call getvarid( ncid_meshout, "midpoint_mesh", nc_mesh_midpoint_varid ) 
-                   ! XXX TODO
-                   write(6,*) nelem_myfirst
-                   write(6,*) nelem_kwf
-                   write(6,*) nelem_kwf_global
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_midpoint_varid, &
                                              start  = [nelem_myfirst],  &
                                              count  = [nelem_kwf], &
                                              values = midpoint_mesh_kwf + npoints_myfirst - 1))
+
+                   call getvarid( ncid_meshout, "fem_mesh", nc_mesh_fem_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_fem_varid, &
+                                             start  = [1, nelem_myfirst],  &
+                                             count  = [4, nelem_kwf], &
+                                             values = fem_mesh_kwf + npoints_myfirst - 1))
+
+                   call getvarid( ncid_meshout, "sem_mesh", nc_mesh_sem_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_sem_varid, &
+                                             start  = [1, 1, nelem_myfirst],  &
+                                             count  = [npol+1, npol+1, nelem_kwf], &
+                                             values = sem_mesh_kwf + npoints_myfirst - 1))
                 endif
 
                 print '(A,I5,A)', '   ', iproc, ': dumped mesh'

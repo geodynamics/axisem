@@ -188,6 +188,10 @@ subroutine prepare_waves
   if (dump_wavefields .and. dump_type == "displ_only") then 
      call dump_kwf_midpoint_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
                                  npoint_kwf_global, nelem_kwf_global)
+     call dump_kwf_fem_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                 npoint_kwf_global, nelem_kwf_global)
+     call dump_kwf_sem_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                 npoint_kwf_global, nelem_kwf_global)
   endif
 
   ! Need to reload old seismograms and add results

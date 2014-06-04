@@ -45,6 +45,9 @@ module meshes_io
   public :: prepare_mesh_memoryvar_vtk
   public :: build_kwf_grid
   public :: dump_kwf_midpoint_xdmf
+  public :: dump_kwf_fem_xdmf
+  public :: dump_kwf_sem_xdmf
+
 contains
 
 !-----------------------------------------------------------------------------------------
@@ -541,7 +544,7 @@ subroutine build_kwf_grid()
   allocate(mapping(nglob_fluid + nglob_solid))
   allocate(mapping_ijel_ikwf(0:npol, 0:npol, nelem))
   allocate(kwf_mask(0:npol, 0:npol, nelem))
-  
+
   check = .false.
   kwf_mask = .false.
   
@@ -649,7 +652,7 @@ subroutine build_kwf_grid()
 
   allocate(sem_mesh_kwf(0:npol, 0:npol, 1:nelem_kwf))
   
-  if (lpr) write(6,*) '   .... constructing finite element grid for kwf output'
+  if (lpr) write(6,*) '   .... constructing spectral element grid for kwf output'
   
   ct = 1
 
@@ -766,6 +769,108 @@ subroutine dump_kwf_midpoint_xdmf(filename, npoints, nelem)
     '    <Topology TopologyType="Polyvertex" NumberOfElements="',i10,'">',/&
     '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, '" Format="HDF">',/&
     '        ', A, ':/Mesh/midpoint_mesh',/&
+    '        </DataItem>',/&
+    '    </Topology>',/&
+    '    <Geometry GeometryType="XY">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '    </Geometry>',/&
+    '</Grid>',/,/&
+    '</Domain>',/&
+    '</Xdmf>')
+
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine dump_kwf_fem_xdmf(filename, npoints, nelem)
+  character(len=*), intent(in)      :: filename
+  integer, intent(in)               :: npoints, nelem
+
+  integer                           :: iinput_xdmf
+  character(len=512)                :: filename_np
+  
+
+  ! relative filename for xdmf content
+  filename_np = trim(filename(index(filename, '/', back=.true.)+1:))
+
+  ! XML Data
+  open(newunit=iinput_xdmf, file=trim(filename)//'_fem.xdmf')
+  write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
+
+  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), "'", "'"
+
+  close(iinput_xdmf)
+
+733 format(&    
+    '<?xml version="1.0" ?>',/&
+    '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
+    '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
+    '<Domain>',/,/&
+    '<DataItem Name="points" ItemType="Function" Function="join($0, $1)" Dimensions="', i10, ' 2">',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_S',/&
+    '    </DataItem>',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_Z',/&
+    '    </DataItem>',/&
+    '</DataItem>',/,/)
+
+734 format(&    
+    '<Grid Name="grid" GridType="Uniform">',/&
+    '    <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
+    '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, ' 4" Format="HDF">',/&
+    '        ', A, ':/Mesh/fem_mesh',/&
+    '        </DataItem>',/&
+    '    </Topology>',/&
+    '    <Geometry GeometryType="XY">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '    </Geometry>',/&
+    '</Grid>',/,/&
+    '</Domain>',/&
+    '</Xdmf>')
+
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine dump_kwf_sem_xdmf(filename, npoints, nelem)
+  character(len=*), intent(in)      :: filename
+  integer, intent(in)               :: npoints, nelem
+
+  integer                           :: iinput_xdmf
+  character(len=512)                :: filename_np
+  
+
+  ! relative filename for xdmf content
+  filename_np = trim(filename(index(filename, '/', back=.true.)+1:))
+
+  ! XML Data
+  open(newunit=iinput_xdmf, file=trim(filename)//'_sem.xdmf')
+  write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
+
+  write(iinput_xdmf, 734) nelem, (npol+1)**2, nelem, npol+1, npol+1, trim(filename_np), "'", "'"
+
+  close(iinput_xdmf)
+
+733 format(&    
+    '<?xml version="1.0" ?>',/&
+    '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
+    '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
+    '<Domain>',/,/&
+    '<DataItem Name="points" ItemType="Function" Function="join($0, $1)" Dimensions="', i10, ' 2">',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_S',/&
+    '    </DataItem>',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_Z',/&
+    '    </DataItem>',/&
+    '</DataItem>',/,/)
+
+734 format(&    
+    '<Grid Name="grid" GridType="Uniform">',/&
+    '    <Topology TopologyType="Polygon" NumberOfElements="',i10,'" NodesPerElement="', i5, '">',/&
+    '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, i3, i3, '" Format="HDF">',/&
+    '        ', A, ':/Mesh/sem_mesh',/&
     '        </DataItem>',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
