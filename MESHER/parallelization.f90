@@ -292,7 +292,6 @@ subroutine domain_decomposition_theta(attributed, nprocl)
   
   integer                   :: iproc, iiproc, iel
   integer                   :: mycount
-  real(kind=dp)             :: deltatheta
   integer, allocatable      :: central_count(:)
   real(kind=dp)             :: pi2
 
@@ -453,7 +452,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   integer, intent(in)       :: nelmax, nelmax_fluid, nelmax_solid
   
   integer                   :: itheta, iitheta, iel
-  integer                   :: irad, iproc, iradb
+  integer                   :: irad, iproc
   integer                   :: mycount, nicb, ncmb
   integer                   :: iprocb(2), mycountb(2), j1, j2
   real(kind=dp)             :: deltatheta
@@ -866,12 +865,9 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed, ntheta
   integer, intent(out)      :: procel_solidl(:,0:), procel_fluidl(:,0:)
   
   integer :: iproc, is, iz, nthetal2
-  integer :: icount, i2count, iicount, missing
-  integer :: arclngth, area, CapA, proccount, quadels
   integer,allocatable :: proc_central(:,:),num_columns(:),upper_boundary_el(:)
   integer,allocatable :: num_columns_hi(:),num_columns_lo(:),num_el(:)
   integer,allocatable :: count_assi(:)
-  real(kind=dp)    :: a,b
 
   if (dump_mesh_info_screen) then 
      write(6,*)
@@ -1460,7 +1456,6 @@ logical function test_decomp(ndivs, proc, npart, nproc2)
                              nproc2, npart
   integer                 :: is, iz, idx, idz, ip, nelem(0:nproc2), &
                              neighbour_buff
-  logical                 :: exit_buff
 
   !test processor bounds
   do is = 0, ndivs - 1, 1

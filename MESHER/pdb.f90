@@ -1049,12 +1049,6 @@ subroutine partition_sflobal_index
   real(kind=dp), dimension(:), allocatable  :: sort_buf
 
 
-  ! valence test
-  integer           :: idest, iel, ipol, jpol
-  character(len=4)  :: appiproc
-  integer, dimension(:), allocatable        :: uglob2_solid
-  integer, dimension(:,:,:), allocatable    :: val_solid
-
   if (dump_mesh_info_screen) then 
      write(6,*)
      write(6,*)'****************************************************************'
@@ -2225,7 +2219,7 @@ subroutine write_db
   use data_gllmesh
   use background_models, only : override_ext_q
   
-  integer           :: iproc, iptp, npointotp, ipsrc, ipdes, imsg, iel, inode, ielg, idom
+  integer           :: iproc, iptp, npointotp, ipsrc, imsg, iel, inode, ielg, idom
   character(len=4)  :: appiproc
   character(len=80) :: dbname
   integer           :: lfdbname
@@ -2464,7 +2458,6 @@ subroutine create_static_header
             A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
 29 format('!:::::::::::::::::::: Input parameters :::::::::::::::::::::::::::')
 12 format('!  ',A23,A20)
-13 format('!  ',A23,L10)
 14 format('!  ',A23,1f10.4)
 16 format('!  ',A23,2(f10.4))
 15 format('!  ',A23,I10)

@@ -233,7 +233,7 @@ subroutine bkgrdmodel_testing
   
      ! avoid concurrent write access to dt in case of omp
      !$omp atomic
-     dt = min(dt, real(courant * hmin(iel)))
+     dt = min(dt, courant * hmin(iel))
 
      ! multiplication by .9999 to avoid floting point precision issues
      if (hmin(iel) < (dt / courant) * .9999) then
