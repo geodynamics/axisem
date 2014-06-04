@@ -151,7 +151,7 @@ subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
   character(len=*), intent(in)      :: filename, varname
   integer, intent(in)               :: npoints, nsnap
 
-  integer                           :: iinput_xdmf, iinput_heavy_data
+  integer                           :: iinput_xdmf
   integer                           :: i
   character(len=512)                :: filename_np
 
@@ -411,7 +411,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     use global_parameters, only: realkind
     use data_mesh,         only: loc2globrec, maxind, ind_first
 
-    integer                    :: ivar, flen, isnap_loc
+    integer                    :: ivar, isnap_loc
     real                       :: tick, tack, dumpsize_MB
     integer                    :: dumpsize
 
@@ -833,8 +833,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     character(len=256)                   :: nc_fnam
     integer                              :: ivar, i
     integer                              :: irec, iproc, nmode
-    integer                              :: nc_latr_varid, nc_lon_varid 
-    integer                              :: nc_lat_varid, nc_ph_varid
+    integer                              :: nc_ph_varid
     integer                              :: nc_thr_varid, nc_th_varid 
     integer                              :: nc_proc_varid, nc_recnam_dimid
     integer                              :: nc_recnam_varid, nc_surf_dimid

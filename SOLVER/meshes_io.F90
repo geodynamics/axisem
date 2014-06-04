@@ -493,7 +493,6 @@ subroutine build_kwf_grid()
   use data_mesh
 
   integer               :: iel, ipol, jpol, ct, ipt, idest
-  real(sp), allocatable :: points(:,:)
   integer, allocatable  :: mapping(:)
   logical, allocatable  :: check(:), mask_tp_elem(:)
   
