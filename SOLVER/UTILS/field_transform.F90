@@ -40,6 +40,8 @@ program field_transformation
     integer                         :: ncout_id, ncout_fields_grpid, ncout_gll_dimid
     integer                         :: ncout_snap_dimid, ncout_mesh_grpid
     integer                         :: ncout_mesh_varids(255), ncin_mesh_varids(255)
+    integer                         :: ncout_mesh_mps_varid, ncin_mesh_mps_varid
+    integer                         :: ncout_mesh_mpz_varid, ncin_mesh_mpz_varid
     integer                         :: ncout_surf_grpid, ncout_surfstrain_dimid, ncout_surf_dimid
     integer                         :: ncout_comp_dimid
     integer                         :: ncout_surf_varids(6), ncin_surf_grpid, ncin_surf_varids(6)
@@ -263,6 +265,18 @@ program field_transformation
                                            nc_mesh_npol_dimid, &
                                            nc_mesh_elem_dimid],&
                                  varid  = ncout_mesh_sem_varid) )
+        
+       call check( nf90_def_var( ncid       = ncout_mesh_grpid,  &
+                                 name       = 'mp_mesh_S',           &
+                                 xtype      = NF90_FLOAT,        &
+                                 dimids     = [nc_mesh_elem_dimid], &
+                                 varid      = ncout_mesh_mps_varid) )
+
+       call check( nf90_def_var( ncid       = ncout_mesh_grpid,  &
+                                 name       = 'mp_mesh_Z',           &
+                                 xtype      = NF90_FLOAT,        &
+                                 dimids     = [nc_mesh_elem_dimid], &
+                                 varid      = ncout_mesh_mpz_varid) )
     endif
 
 
@@ -462,6 +476,41 @@ program field_transformation
                                  count  = [npol+1,npol+1,nelem], &
                                  values = int_data_3d))
        deallocate(int_data_3d)
+
+
+       allocate(data_mesh(nelem))
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_mps_varid, & 
+                                   name  = 'mp_mesh_S' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_mps_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_mps_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_mpz_varid, & 
+                                   name  = 'mp_mesh_Z' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_mpz_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_mpz_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh))
+       deallocate(data_mesh)
     endif
 
     ! Done with the mesh
