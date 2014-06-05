@@ -49,6 +49,7 @@ module nc_routines
     !> Buffer variable for everything dumped in nc_dump_field_1d
     real(sp), allocatable   :: oneddumpvar(:,:,:)
     real(sp), allocatable   :: scoord1d(:), zcoord1d(:)
+    real(sp), allocatable   :: scoord1d_mp(:), zcoord1d_mp(:)
     real(sp), allocatable   :: rho1d(:), mu1d(:), lambda1d(:)
     real(sp), allocatable   :: vp1d(:), vs1d(:)
     
@@ -132,6 +133,7 @@ module nc_routines
     public              :: nc_define_outputfile, nc_finish_prepare, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
     public              :: nc_dump_mesh_kwf
+    public              :: nc_dump_mesh_mp_kwf
     public              :: nc_dump_elastic_parameters
     public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
     public              :: nc_make_snapfile, nc_dump_stf, nc_rec_checkpoint
@@ -704,6 +706,29 @@ end subroutine nc_dump_mesh_kwf
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+subroutine nc_dump_mesh_mp_kwf(coords, nel)
+
+    real(sp), intent(in) :: coords(:,:)
+    integer, intent(in)  :: nel
+#ifdef unc
+
+
+    if (size(coords, 1) /= nel) then
+       write(6,*) 'ERROR: inconsistent elemebt numbers'
+       call abort()
+    endif
+
+    allocate(scoord1d_mp(nel))
+    allocate(zcoord1d_mp(nel))
+
+    scoord1d_mp(:) = coords(:,1)
+    zcoord1d_mp(:) = coords(:,2)
+
+#endif
+end subroutine nc_dump_mesh_mp_kwf
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                       fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
 
@@ -839,6 +864,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_recnam_varid, nc_surf_dimid
     integer                              :: nc_pt_dimid
     integer                              :: nc_mesh_s_varid, nc_mesh_z_varid   
+    integer                              :: nc_mesh_s_mp_varid, nc_mesh_z_mp_varid   
     integer                              :: nc_mesh_vs_varid, nc_mesh_vp_varid   
     integer                              :: nc_mesh_mu_varid, nc_mesh_rho_varid   
     integer                              :: nc_mesh_lambda_varid
@@ -1196,6 +1222,17 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                                    nc_mesh_npol_dimid, &
                                                    nc_mesh_elem_dimid],&
                                          varid  = nc_mesh_sem_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout,  &
+                                         name   = 'mp_mesh_S', &
+                                         xtype  = NF90_FLOAT, &
+                                         dimids = nc_mesh_elem_dimid,&
+                                         varid  = nc_mesh_s_mp_varid) )
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'mp_mesh_Z', &
+                                         xtype  = NF90_FLOAT, &
+                                         dimids = nc_mesh_elem_dimid,&
+                                         varid  = nc_mesh_z_mp_varid) )
             endif
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
@@ -1419,6 +1456,7 @@ subroutine nc_finish_prepare
 
     integer             :: ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
+    integer             :: nc_mesh_s_mp_varid, nc_mesh_z_mp_varid
     integer             :: nc_mesh_vs_varid, nc_mesh_vp_varid   
     integer             :: nc_mesh_mu_varid, nc_mesh_rho_varid   
     integer             :: nc_mesh_lambda_varid
@@ -1565,6 +1603,22 @@ subroutine nc_finish_prepare
                                              start  = [1, 1, nelem_myfirst],  &
                                              count  = [npol+1, npol+1, nelem_kwf], &
                                              values = sem_mesh_kwf + npoints_myfirst - 1))
+
+                   ! S-Coordinate
+                   call getvarid( ncid_meshout, "mp_mesh_S", nc_mesh_s_mp_varid ) 
+                   call putvar_real1d( ncid   = ncid_meshout,     &
+                                       varid  = nc_mesh_s_mp_varid,  &
+                                       values = scoord1d_mp,         &
+                                       start  = nelem_myfirst,  &
+                                       count  = nelem_kwf )
+                   
+                   ! Z-Coordinate
+                   call getvarid( ncid_meshout, "mp_mesh_Z", nc_mesh_z_mp_varid ) 
+                   call putvar_real1d( ncid   = ncid_meshout,     &
+                                       varid  = nc_mesh_z_mp_varid,  &
+                                       values = zcoord1d_mp,         &
+                                       start  = nelem_myfirst,  &
+                                       count  = nelem_kwf )
                 endif
 
                 print '(A,I5,A)', '   ', iproc, ': dumped mesh'

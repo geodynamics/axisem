@@ -683,11 +683,12 @@ end subroutine build_kwf_grid
 !-----------------------------------------------------------------------------------------
 subroutine dump_kwf_grid()
 
-  use nc_routines, only : nc_dump_mesh_kwf
+  use nc_routines, only : nc_dump_mesh_kwf, nc_dump_mesh_mp_kwf
   use data_mesh
 
   integer               :: iel, ipol, jpol, ct
   real(sp), allocatable :: points(:,:)
+  real(sp), allocatable :: points_mp(:,:)
   
   if (lpr) write(6,*) '   ...collecting coordinates...'
 
@@ -719,8 +720,23 @@ subroutine dump_kwf_grid()
       enddo
   enddo
 
+  allocate(points_mp(1:nelem_kwf, 2))
+
+  points_mp = 0.
+
+  do iel=1, nel_solid
+     points_mp(iel,1) = scoord(npol/2,npol/2,ielsolid(iel))
+     points_mp(iel,2) = zcoord(npol/2,npol/2,ielsolid(iel))
+  enddo
+
+  do iel=1, nel_fluid
+     points_mp(iel + nel_solid,1) = scoord(npol/2,npol/2,ielfluid(iel))
+     points_mp(iel + nel_solid,2) = zcoord(npol/2,npol/2,ielfluid(iel))
+  enddo
+
   if (use_netcdf) then
       call nc_dump_mesh_kwf(points, npoint_solid_kwf, npoint_fluid_kwf)
+      call nc_dump_mesh_mp_kwf(points_mp, nelem_kwf)
   else
      write(6,*) 'ERROR: binary output for non-duplicate mesh not implemented'
      call abort()
@@ -769,6 +785,40 @@ subroutine dump_kwf_midpoint_xdmf(filename, npoints, nelem)
     '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, '" Format="HDF">',/&
     '        ', A, ':/Mesh/midpoint_mesh',/&
     '        </DataItem>',/&
+    '    </Topology>',/&
+    '    <Geometry GeometryType="XY">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '    </Geometry>',/&
+    '</Grid>',/,/&
+    '</Domain>',/&
+    '</Xdmf>')
+
+
+  ! XML Data
+  open(newunit=iinput_xdmf, file=trim(filename)//'_mp_vect.xdmf')
+  write(iinput_xdmf, 743) nelem, nelem, trim(filename_np), nelem, trim(filename_np)
+
+  write(iinput_xdmf, 744) nelem, "'", "'"
+
+  close(iinput_xdmf)
+
+743 format(&    
+    '<?xml version="1.0" ?>',/&
+    '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
+    '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
+    '<Domain>',/,/&
+    '<DataItem Name="points" ItemType="Function" Function="join($0, $1)" Dimensions="', i10, ' 2">',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mp_mesh_S',/&
+    '    </DataItem>',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mp_mesh_Z',/&
+    '    </DataItem>',/&
+    '</DataItem>',/,/)
+
+744 format(&    
+    '<Grid Name="grid" GridType="Uniform">',/&
+    '    <Topology TopologyType="Polyvertex" NumberOfElements="',i10,'">',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
     '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
