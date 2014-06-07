@@ -1,17 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------
-#   Filename:  PyAxi.py
-#   Purpose:   Python interface for AXISEM
-#   Author:    Kasra Hosseini
-#   Email:     hosseini@geophysik.uni-muenchen.de
-#-------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-#----------------Import required Modules (Python)-----------------------
-#-----------------------------------------------------------------------
-
 # Added this line for python 2.5 compatibility
 from __future__ import with_statement
 import os
@@ -336,63 +325,6 @@ def read_input_file():
         test_param['test'] = 'N'
         test_param['mseed'] = 'N'
 
-###################### edit_param_post_processing ######################
-def edit_param_post_processing(post_process_read):
-    """
-    edit param_post_processing file
-    """
-    global test_param
-
-    if test_param['post_rec_comp_sys'] != 'DNC':
-        post_process_read[0] = \
-            'REC_COMP_SYS    %s\n' %(test_param['post_rec_comp_sys'])
-    if test_param['post_conv_period'] != 'DNC':
-        post_process_read[1] = \
-            'CONV_PERIOD     %s\n' %(test_param['post_conv_period'])
-    if test_param['post_conv_stf'] != 'DNC':
-        post_process_read[2] = \
-            'CONV_STF        %s\n' %(test_param['post_conv_stf'])
-    if test_param['post_seistype'] != 'DNC':
-        post_process_read[3] = \
-            'SEISTYPE        %s\n' %(test_param['post_seistype'])
-    if test_param['post_load_snaps'] != 'DNC':
-        post_process_read[4] = \
-            'LOAD_SNAPS      %s\n' %(test_param['post_load_snaps'])
-    if test_param['post_data_dir'] != 'DNC':
-        post_process_read[5] = \
-            'DATA_DIR        %s\n' %(test_param['post_data_dir'])
-    if test_param['post_negative_time'] != 'DNC':
-        post_process_read[6] = \
-            'NEGATIVE_TIME   %s\n' %(test_param['post_negative_time'])
-    if test_param['post_3D_phi_start'] != 'DNC':
-        post_process_read[7] = \
-            '3D_PHI_START     %s\n' %(test_param['post_3D_phi_start'])
-    if test_param['post_3D_phi_end'] != 'DNC':
-        post_process_read[8] = \
-            '3D_PHI_END      %s\n' %(test_param['post_3D_phi_end'])
-    if test_param['post_3D_rtop'] != 'DNC':
-        post_process_read[9] = \
-            '3D_RTOP         %s\n' %(test_param['post_3D_rtop'])
-    if test_param['post_3D_rbot'] != 'DNC':
-        post_process_read[10] = \
-            '3D_RBOT         %s\n' %(test_param['post_3D_rbot'])
-    if test_param['post_3D_plot_top'] != 'DNC':
-        post_process_read[11] = \
-            '3D_PLOT_TOP     %s\n' %(test_param['post_3D_plot_top'])
-    if test_param['post_3D_plot_bot'] != 'DNC':
-        post_process_read[12] = \
-            '3D_PLOT_BOT     %s\n' %(test_param['post_3D_plot_bot'])
-    if test_param['post_3D_snap_beg'] != 'DNC':
-        post_process_read[13] = \
-            '3D_SNAP_BEG      %s\n' %(test_param['post_3D_snap_beg'])
-    if test_param['post_3D_snap_end'] != 'DNC':
-        post_process_read[14] = \
-            '3D_SNAP_END      %s\n' %(test_param['post_3D_snap_end'])
-    if test_param['post_3D_snap_stride'] != 'DNC':
-        post_process_read[15] = \
-            '3D_SNAP_STRIDE   %s\n' %(test_param['post_3D_snap_stride'])
-
-    return post_process_read
 
 ########################## axisem2mseed ################################
 def axisem2mseed(path):

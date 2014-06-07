@@ -1,17 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------
-#   Filename:  PyAxi.py
-#   Purpose:   Python interface for AXISEM
-#   Author:    Kasra Hosseini
-#   Email:     hosseini@geophysik.uni-muenchen.de
-#-------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-#----------------Import required Modules (Python)-----------------------
-#-----------------------------------------------------------------------
-
 # Added this line for python 2.5 compatibility
 from __future__ import with_statement
 import os
@@ -165,8 +154,6 @@ def PyAxi(**kwargs):
                     sys.stdout.write('Change the Source params (CMTSOLUTION)...')
                     sys.stdout.flush()
 
-                if os.path.isfile('CMTSOLUTION'):
-                    subprocess.check_call(['rm', 'CMTSOLUTION'])
                 subprocess.check_call(['cp', 'CMTSOLUTION.TEMPLATE', 'CMTSOLUTION'])
 
                 source_open = open('./CMTSOLUTION', 'r')

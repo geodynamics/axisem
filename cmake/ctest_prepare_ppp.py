@@ -1,17 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#-------------------------------------------------------------------
-#   Filename:  PyAxi.py
-#   Purpose:   Python interface for AXISEM
-#   Author:    Kasra Hosseini
-#   Email:     hosseini@geophysik.uni-muenchen.de
-#-------------------------------------------------------------------
-
-#-----------------------------------------------------------------------
-#----------------Import required Modules (Python)-----------------------
-#-----------------------------------------------------------------------
-
 # Added this line for python 2.5 compatibility
 from __future__ import with_statement
 import os
@@ -23,16 +12,6 @@ import ConfigParser
 ########################################################################
 
 def PyAxi(**kwargs):
-
-    """
-    PyAxi is the function dedicated to the main part of the code.
-
-    To run this code:
-    1. change the "inpython.cfg" file based on the inputs that you want
-    2. type: python PyAxi.py
-    3. if you have run the code once before with the same name, then PyAxi
-       will ask whether it should remove the old directory or not!
-    """
 
     # global variables
     global test_param
