@@ -625,6 +625,44 @@ subroutine build_kwf_grid()
       ct = ct + 1
   enddo
 
+  allocate(eltype_kwf(1:nelem_kwf))
+
+  eltype_kwf(:) = -2
+  
+  ct = 1
+
+  do iel=1, nel_solid
+      if (.not.  mask_tp_elem(iel)) cycle
+      if (eltype(ielsolid(iel)) == 'curved') then
+         eltype_kwf(ct) = 0
+      elseif (eltype(ielsolid(iel)) == 'linear') then
+         eltype_kwf(ct) = 1
+      elseif (eltype(ielsolid(iel)) == 'semino') then
+         eltype_kwf(ct) = 2
+      elseif (eltype(ielsolid(iel)) == 'semiso') then
+         eltype_kwf(ct) = 3
+      else
+         eltype_kwf(ct) = -1
+      endif
+      ct = ct + 1
+  enddo
+  
+  do iel=1, nel_fluid
+      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+      if (eltype(ielfluid(iel)) == 'curved') then
+         eltype_kwf(ct) = 0
+      elseif (eltype(ielfluid(iel)) == 'linear') then
+         eltype_kwf(ct) = 1
+      elseif (eltype(ielfluid(iel)) == 'semino') then
+         eltype_kwf(ct) = 2
+      elseif (eltype(ielfluid(iel)) == 'semiso') then
+         eltype_kwf(ct) = 3
+      else
+         eltype_kwf(ct) = -1
+      endif
+      ct = ct + 1
+  enddo
+
   allocate(fem_mesh_kwf(1:4, 1:nelem_kwf))
   
   if (lpr) write(6,*) '   .... constructing finite element grid for kwf output'
@@ -846,7 +884,7 @@ subroutine dump_kwf_fem_xdmf(filename, npoints, nelem)
   open(newunit=iinput_xdmf, file=trim(filename)//'_fem.xdmf')
   write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
 
-  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), "'", "'"
+  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), "'", "'", nelem, trim(filename_np)
 
   close(iinput_xdmf)
 
@@ -866,7 +904,7 @@ subroutine dump_kwf_fem_xdmf(filename, npoints, nelem)
 
 734 format(&    
     '<Grid Name="grid" GridType="Uniform">',/&
-    '    <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
+    '    <Topology TopologyType="Quadrilateral" NumberOfElements="', i10, '">',/&
     '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, ' 4" Format="HDF">',/&
     '        ', A, ':/Mesh/fem_mesh',/&
     '        </DataItem>',/&
@@ -874,6 +912,11 @@ subroutine dump_kwf_fem_xdmf(filename, npoints, nelem)
     '    <Geometry GeometryType="XY">',/&
     '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
     '    </Geometry>',/&
+    '    <Attribute Name="eltype" AttributeType="Scalar" Center="Cell">',/&
+    '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, '" Format="HDF">',/&
+    '        ', A, ':/Mesh/eltype',/&
+    '        </DataItem>',/&
+    '    </Attribute>',/&
     '</Grid>',/,/&
     '</Domain>',/&
     '</Xdmf>')
