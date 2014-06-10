@@ -211,7 +211,6 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t)
    real(dp), intent(in)            :: t
 
    character(len=4)                :: appisnap
-   integer                         :: iel, ct, ipol, jpol, ipol1, jpol1, i, j
    integer                         :: n_xdmf_fl, n_xdmf_sol
    real(sp), allocatable           :: u(:,:), usz_fl(:,:,:,:), u_fl(:,:,:,:)
    real(sp), allocatable           :: straintrace(:,:,:,:), straintrace_mask(:,:)

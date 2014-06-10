@@ -49,6 +49,7 @@ module nc_routines
     !> Buffer variable for everything dumped in nc_dump_field_1d
     real(sp), allocatable   :: oneddumpvar(:,:,:)
     real(sp), allocatable   :: scoord1d(:), zcoord1d(:)
+    real(sp), allocatable   :: scoord1d_mp(:), zcoord1d_mp(:)
     real(sp), allocatable   :: rho1d(:), mu1d(:), lambda1d(:)
     real(sp), allocatable   :: vp1d(:), vs1d(:)
     
@@ -72,6 +73,7 @@ module nc_routines
     integer             :: npoints_global
     !> Mapping of this processors GLL points to the global mesh
     integer             :: npoints_myfirst, npoints_mylast
+    integer             :: nelem_myfirst, nelem_mylast
     !> Number of GLL points to plot in solid/fluid domain
     integer             :: npts_sol, npts_flu
     !> Number of GLL points to plot in solid domain for all processors
@@ -131,6 +133,7 @@ module nc_routines
     public              :: nc_define_outputfile, nc_finish_prepare, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
     public              :: nc_dump_mesh_kwf
+    public              :: nc_dump_mesh_mp_kwf
     public              :: nc_dump_elastic_parameters
     public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
     public              :: nc_make_snapfile, nc_dump_stf, nc_rec_checkpoint
@@ -150,7 +153,7 @@ subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
   character(len=*), intent(in)      :: filename, varname
   integer, intent(in)               :: npoints, nsnap
 
-  integer                           :: iinput_xdmf, iinput_heavy_data
+  integer                           :: iinput_xdmf
   integer                           :: i
   character(len=512)                :: filename_np
 
@@ -410,7 +413,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     use global_parameters, only: realkind
     use data_mesh,         only: loc2globrec, maxind, ind_first
 
-    integer                    :: ivar, flen, isnap_loc
+    integer                    :: ivar, isnap_loc
     real                       :: tick, tack, dumpsize_MB
     integer                    :: dumpsize
 
@@ -703,6 +706,29 @@ end subroutine nc_dump_mesh_kwf
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+subroutine nc_dump_mesh_mp_kwf(coords, nel)
+
+    real(sp), intent(in) :: coords(:,:)
+    integer, intent(in)  :: nel
+#ifdef unc
+
+
+    if (size(coords, 1) /= nel) then
+       write(6,*) 'ERROR: inconsistent elemebt numbers'
+       call abort()
+    endif
+
+    allocate(scoord1d_mp(nel))
+    allocate(zcoord1d_mp(nel))
+
+    scoord1d_mp(:) = coords(:,1)
+    zcoord1d_mp(:) = coords(:,2)
+
+#endif
+end subroutine nc_dump_mesh_mp_kwf
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                       fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
 
@@ -812,8 +838,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                            dump_type
     use data_io,     only: datapath, lfdata, strain_samp
     use data_mesh,   only: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
-                           ndisc, maxind_glob, npoint_kwf, npoint_solid_kwf, &
-                           npoint_fluid_kwf
+                           ndisc, maxind_glob, nelem_kwf_global, npoint_kwf, npoint_solid_kwf, &
+                           npoint_fluid_kwf, npol, nelem_kwf, npoint_kwf_global
 
     use data_source, only: src_type, t_0
     use data_time,   only: deltat, niter
@@ -832,16 +858,22 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     character(len=256)                   :: nc_fnam
     integer                              :: ivar, i
     integer                              :: irec, iproc, nmode
-    integer                              :: nc_latr_varid, nc_lon_varid 
-    integer                              :: nc_lat_varid, nc_ph_varid
+    integer                              :: nc_ph_varid
     integer                              :: nc_thr_varid, nc_th_varid 
     integer                              :: nc_proc_varid, nc_recnam_dimid
     integer                              :: nc_recnam_varid, nc_surf_dimid
     integer                              :: nc_pt_dimid
     integer                              :: nc_mesh_s_varid, nc_mesh_z_varid   
+    integer                              :: nc_mesh_s_mp_varid, nc_mesh_z_mp_varid   
     integer                              :: nc_mesh_vs_varid, nc_mesh_vp_varid   
     integer                              :: nc_mesh_mu_varid, nc_mesh_rho_varid   
     integer                              :: nc_mesh_lambda_varid
+    integer                              :: nc_mesh_midpoint_varid
+    integer                              :: nc_mesh_fem_varid
+    integer                              :: nc_mesh_eltype_varid
+    integer                              :: nc_mesh_sem_varid
+    integer                              :: nc_mesh_elem_dimid, nc_mesh_npol_dimid
+    integer                              :: nc_mesh_cntrlpts_dimid
     !integer                              :: nc_disc_dimid, nc_disc_varid
 
     if ((mynum == 0) .and. (verbose > 1)) then
@@ -912,12 +944,15 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
               npoints = npoint_kwf
               
               call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
+              npoint_kwf_global = npoints_global
 
               npts_sol = npoint_solid_kwf
               npts_flu = npoint_fluid_kwf
 
               call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
               call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
+
+              call comm_elem_number(nelem_kwf, nelem_kwf_global, nelem_myfirst, nelem_mylast)  
               
               if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
               if (lpr) then
@@ -1098,6 +1133,27 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 !                                      name   = 'ndisc', &
 !                                      values = ndisc) )
 
+            if (trim(dump_type) == 'displ_only') then
+               call check( nf90_def_dim( ncid   = ncid_meshout, &
+                                         name   = 'elements', &
+                                         len    = nelem_kwf_global, &
+                                         dimid  = nc_mesh_elem_dimid) )
+               call check( nf90_put_att( ncid   = ncid_out, &
+                                         varid  = NF90_GLOBAL, &
+                                         name   = 'nelem_kwf_global', &
+                                         values = nelem_kwf_global) )
+
+               call check( nf90_def_dim( ncid   = ncid_meshout, &
+                                         name   = 'control_points', &
+                                         len    = 4, &
+                                         dimid  = nc_mesh_cntrlpts_dimid) )
+
+               call check( nf90_def_dim( ncid   = ncid_meshout, &
+                                         name   = 'npol', &
+                                         len    = npol+1, &
+                                         dimid  = nc_mesh_npol_dimid) )
+            endif
+
             call check( nf90_def_var( ncid   = ncid_meshout,  &
                                       name   = 'mesh_S', &
                                       xtype  = NF90_FLOAT, &
@@ -1145,6 +1201,46 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             !                          xtype  = NF90_DOUBLE, &
             !                          dimids = nc_disc_dimid,&
             !                          varid  = nc_disc_varid) )
+
+            if (trim(dump_type) == 'displ_only') then
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'midpoint_mesh', &
+                                         xtype  = NF90_INT, &
+                                         dimids = nc_mesh_elem_dimid,&
+                                         varid  = nc_mesh_midpoint_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'eltype', &
+                                         xtype  = NF90_INT, &
+                                         dimids = nc_mesh_elem_dimid,&
+                                         varid  = nc_mesh_eltype_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'fem_mesh', &
+                                         xtype  = NF90_INT, &
+                                         dimids = [nc_mesh_cntrlpts_dimid, &
+                                                   nc_mesh_elem_dimid],&
+                                         varid  = nc_mesh_fem_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'sem_mesh', &
+                                         xtype  = NF90_INT, &
+                                         dimids = [nc_mesh_npol_dimid, &
+                                                   nc_mesh_npol_dimid, &
+                                                   nc_mesh_elem_dimid],&
+                                         varid  = nc_mesh_sem_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout,  &
+                                         name   = 'mp_mesh_S', &
+                                         xtype  = NF90_FLOAT, &
+                                         dimids = nc_mesh_elem_dimid,&
+                                         varid  = nc_mesh_s_mp_varid) )
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'mp_mesh_Z', &
+                                         xtype  = NF90_FLOAT, &
+                                         dimids = nc_mesh_elem_dimid,&
+                                         varid  = nc_mesh_z_mp_varid) )
+            endif
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
        
@@ -1360,13 +1456,22 @@ end subroutine nc_write_att_int
 !> Open the NetCDF output file, check for variable IDs and dump meshes.
 subroutine nc_finish_prepare
 #ifdef unc
-    use data_io,   only  : datapath, lfdata, dump_wavefields
-    use data_mesh, only  : maxind, surfcoord, ind_first, ind_last
-    integer             :: status, ivar, nmode, iproc
+    use data_io,   only  : datapath, lfdata, dump_wavefields, dump_type
+    use data_mesh, only  : maxind, surfcoord, ind_first, ind_last, &
+                           midpoint_mesh_kwf, sem_mesh_kwf, fem_mesh_kwf, nelem_kwf, &
+                           nelem_kwf_global, npol, eltype_kwf
+
+    integer             :: ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
+    integer             :: nc_mesh_s_mp_varid, nc_mesh_z_mp_varid
     integer             :: nc_mesh_vs_varid, nc_mesh_vp_varid   
     integer             :: nc_mesh_mu_varid, nc_mesh_rho_varid   
     integer             :: nc_mesh_lambda_varid
+
+    integer             :: nc_mesh_midpoint_varid
+    integer             :: nc_mesh_eltype_varid
+    integer             :: nc_mesh_fem_varid
+    integer             :: nc_mesh_sem_varid
     
     if (mynum == 0) then
         call check(nf90_close(ncid_out))
@@ -1484,6 +1589,52 @@ subroutine nc_finish_prepare
                                     values = mu1d,             &
                                     start  = npoints_myfirst,  &
                                     count  = npoints )
+
+                if (trim(dump_type) == 'displ_only' .and. nelem_kwf > 0) then
+                   call getvarid( ncid_meshout, "midpoint_mesh", nc_mesh_midpoint_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_midpoint_varid, &
+                                             start  = [nelem_myfirst],  &
+                                             count  = [nelem_kwf], &
+                                             values = midpoint_mesh_kwf + npoints_myfirst - 1))
+
+                   call getvarid( ncid_meshout, "eltype", nc_mesh_eltype_varid) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_eltype_varid, &
+                                             start  = [nelem_myfirst],  &
+                                             count  = [nelem_kwf], &
+                                             values = eltype_kwf))
+
+                   call getvarid( ncid_meshout, "fem_mesh", nc_mesh_fem_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_fem_varid, &
+                                             start  = [1, nelem_myfirst],  &
+                                             count  = [4, nelem_kwf], &
+                                             values = fem_mesh_kwf + npoints_myfirst - 1))
+
+                   call getvarid( ncid_meshout, "sem_mesh", nc_mesh_sem_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_sem_varid, &
+                                             start  = [1, 1, nelem_myfirst],  &
+                                             count  = [npol+1, npol+1, nelem_kwf], &
+                                             values = sem_mesh_kwf + npoints_myfirst - 1))
+
+                   ! S-Coordinate
+                   call getvarid( ncid_meshout, "mp_mesh_S", nc_mesh_s_mp_varid ) 
+                   call putvar_real1d( ncid   = ncid_meshout,     &
+                                       varid  = nc_mesh_s_mp_varid,  &
+                                       values = scoord1d_mp,         &
+                                       start  = nelem_myfirst,  &
+                                       count  = nelem_kwf )
+                   
+                   ! Z-Coordinate
+                   call getvarid( ncid_meshout, "mp_mesh_Z", nc_mesh_z_mp_varid ) 
+                   call putvar_real1d( ncid   = ncid_meshout,     &
+                                       varid  = nc_mesh_z_mp_varid,  &
+                                       values = zcoord1d_mp,         &
+                                       start  = nelem_myfirst,  &
+                                       count  = nelem_kwf )
+                endif
 
                 print '(A,I5,A)', '   ', iproc, ': dumped mesh'
 

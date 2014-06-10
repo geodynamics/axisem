@@ -33,41 +33,49 @@ program field_transformation
 
 #ifdef unc
     integer                         :: nvar, ivar
-    integer                         :: nsnap, ntimes, ngll, ngllread
+    integer                         :: nsnap, ngll, ngllread, npol, nelem
     integer                         :: nmode
 
     integer                         :: ncin_id, ncin_snap_grpid, ncin_mesh_grpid
     integer                         :: ncout_id, ncout_fields_grpid, ncout_gll_dimid
-    integer                         :: ncout_freq_dimid, ncout_snap_dimid, ncout_mesh_grpid
+    integer                         :: ncout_snap_dimid, ncout_mesh_grpid
     integer                         :: ncout_mesh_varids(255), ncin_mesh_varids(255)
+    integer                         :: ncout_mesh_mps_varid, ncin_mesh_mps_varid
+    integer                         :: ncout_mesh_mpz_varid, ncin_mesh_mpz_varid
     integer                         :: ncout_surf_grpid, ncout_surfstrain_dimid, ncout_surf_dimid
     integer                         :: ncout_comp_dimid
     integer                         :: ncout_surf_varids(6), ncin_surf_grpid, ncin_surf_varids(6)
+
+    integer                         :: nc_mesh_npol_dimid, nc_mesh_cntrlpts_dimid, &
+                                       nc_mesh_elem_dimid
+    integer                         :: ncout_mesh_sem_varid, ncout_mesh_fem_varid, &
+                                       ncout_mesh_midpoint_varid
+    integer                         :: ncin_mesh_sem_varid, ncin_mesh_fem_varid, &
+                                       ncin_mesh_midpoint_varid
+    integer                         :: ncout_mesh_eltype_varid
+    integer                         :: ncin_mesh_eltype_varid
+
     integer                         :: nsurfelem, ncomp, nstraincomp
     character(len=8)                :: sourcetype
+    character(len=12)               :: dump_type
     integer                         :: dimids(2)
     character(len=16), allocatable  :: varnamelist(:), varname_surf(:)
     integer, dimension(9)           :: ncin_field_varid
     integer, dimension(9)           :: ncout_field_varid
-    integer                         :: ncin_snaptime_varid
 
-    integer                         :: rank, istride, ostride, nomega, nextpow2
-    integer(kind=8)                 :: plan_fftf
-    integer                         :: iret
-    integer                         :: nstep, npoints, nvars_mesh
+    integer                         :: nstep, nvars_mesh
     integer                         :: attnum, nf_att_stat
     character(len=80)               :: attname, varname
 
     real, allocatable               :: data_mesh(:), data_surf_1d(:), data_surf_3d(:,:,:)
+    integer, allocatable            :: int_data_1d(:), int_data_2d(:,:), int_data_3d(:,:,:)
 
     real(kind=8), dimension(:,:), allocatable       :: datat, datat_t
-    complex(kind=8), dimension(:,:), allocatable    :: dataf
 
     double precision                :: time_fft, time_i, time_o, tick, tack
     double precision                :: space_i, space_o
 
     logical                         :: verbose = .true.
-    logical                         :: output_exist = .true.
     integer                         :: npointsperstep = 500000
                                     !< maybe replace this with cache size
     integer                         :: chunk_gll 
@@ -105,22 +113,46 @@ program field_transformation
 
     ! get excitation type (monopole or multipole?)
     call check( nf90_get_att(ncin_id, NF90_GLOBAL, "excitation type", sourcetype))
+    
+    call check( nf90_get_att(ncin_id, NF90_GLOBAL, "npol", npol))
+    call check( nf90_get_att(ncin_id, NF90_GLOBAL, "nelem_kwf_global", nelem))
 
     if (verbose) &
-        print *, sourcetype
-    
-    if (sourcetype=='monopole')  then
-        nvar = 6
-        allocate(varnamelist(nvar))
-        varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
-                        'straintrace', 'velo_s     ', 'velo_z     '/)
+        print *, 'source type  ', sourcetype
+
+    ! get dump type 
+    call check( nf90_get_att(ncin_id, NF90_GLOBAL, "dump type (displ_only, displ_velo, fullfields)", dump_type))
+
+    if (verbose) &
+        print *, 'dump type    ', dump_type
+
+    if (trim(dump_type) == 'displ_only') then
+       if (sourcetype=='monopole')  then
+           nvar = 2
+           allocate(varnamelist(nvar))
+           varnamelist = ['disp_s     ', 'disp_z     ']
+       else
+           nvar = 3
+           allocate(varnamelist(nvar))
+           varnamelist = ['disp_s     ', 'disp_p     ', 'disp_z     ']
+       end if
+
+    elseif (trim(dump_type) == 'fullfields') then
+       if (sourcetype=='monopole')  then
+           nvar = 6
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'straintrace', 'velo_s     ', 'velo_z     '/)
+       else
+           nvar = 9
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'strain_dsup', 'strain_dzup', 'straintrace', &
+                           'velo_s     ', 'velo_p     ', 'velo_z     '/)
+       end if
     else
-        nvar = 9
-        allocate(varnamelist(nvar))
-        varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
-                        'strain_dsup', 'strain_dzup', 'straintrace', &
-                        'velo_s     ', 'velo_p     ', 'velo_z     '/)
-    end if
+       stop
+    endif
 
     ! get variable ids of the fields
     do ivar=1, nvar
@@ -200,6 +232,63 @@ program field_transformation
                                 varids = ncin_mesh_varids) )
     
     call check( nf90_def_grp(ncout_id, "Mesh", ncout_mesh_grpid) )
+
+    if (trim(dump_type) == 'displ_only') then
+
+       call check( nf90_def_dim( ncid   = ncout_mesh_grpid, &
+                                 name   = 'elements', &
+                                 len    = nelem, &
+                                 dimid  = nc_mesh_elem_dimid) )
+
+       call check( nf90_def_dim( ncid   = ncout_mesh_grpid, &
+                                 name   = 'control_points', &
+                                 len    = 4, &
+                                 dimid  = nc_mesh_cntrlpts_dimid) )
+
+       call check( nf90_def_dim( ncid   = ncout_mesh_grpid, &
+                                 name   = 'npol', &
+                                 len    = npol+1, &
+                                 dimid  = nc_mesh_npol_dimid) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'midpoint_mesh', &
+                                 xtype  = NF90_INT, &
+                                 dimids = nc_mesh_elem_dimid,&
+                                 varid  = ncout_mesh_midpoint_varid) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'eltype', &
+                                 xtype  = NF90_INT, &
+                                 dimids = nc_mesh_elem_dimid,&
+                                 varid  = ncout_mesh_eltype_varid) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'fem_mesh', &
+                                 xtype  = NF90_INT, &
+                                 dimids = [nc_mesh_cntrlpts_dimid, &
+                                           nc_mesh_elem_dimid],&
+                                 varid  = ncout_mesh_fem_varid) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'sem_mesh', &
+                                 xtype  = NF90_INT, &
+                                 dimids = [nc_mesh_npol_dimid, &
+                                           nc_mesh_npol_dimid, &
+                                           nc_mesh_elem_dimid],&
+                                 varid  = ncout_mesh_sem_varid) )
+        
+       call check( nf90_def_var( ncid       = ncout_mesh_grpid,  &
+                                 name       = 'mp_mesh_S',           &
+                                 xtype      = NF90_FLOAT,        &
+                                 dimids     = [nc_mesh_elem_dimid], &
+                                 varid      = ncout_mesh_mps_varid) )
+
+       call check( nf90_def_var( ncid       = ncout_mesh_grpid,  &
+                                 name       = 'mp_mesh_Z',           &
+                                 xtype      = NF90_FLOAT,        &
+                                 dimids     = [nc_mesh_elem_dimid], &
+                                 varid      = ncout_mesh_mpz_varid) )
+    endif
 
 
     do ivar = 1, nvars_mesh
@@ -344,6 +433,113 @@ program field_transformation
     end do
     deallocate(data_mesh)
 
+    if (trim(dump_type) == 'displ_only') then
+        
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_midpoint_varid, & 
+                                   name  = 'midpoint_mesh' ))
+       
+       allocate(int_data_1d(nelem))
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_midpoint_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_midpoint_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_eltype_varid, & 
+                                   name  = 'eltype' ))
+       
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_eltype_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_eltype_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+       deallocate(int_data_1d)
+
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_fem_varid, & 
+                                   name  = 'fem_mesh' ))
+
+       allocate(int_data_2d(4, nelem))
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_fem_varid, &
+                                 start  = [1,1],  &
+                                 count  = [4,nelem], &
+                                 values = int_data_2d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_fem_varid, &
+                                 start  = [1,1],  &
+                                 count  = [4,nelem], &
+                                 values = int_data_2d))
+       deallocate(int_data_2d)
+
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_sem_varid, & 
+                                   name  = 'sem_mesh' ))
+
+       allocate(int_data_3d(npol+1, npol+1, nelem))
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_sem_varid, &
+                                 start  = [1,1,1],  &
+                                 count  = [npol+1,npol+1,nelem], &
+                                 values = int_data_3d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_sem_varid, &
+                                 start  = [1,1,1],  &
+                                 count  = [npol+1,npol+1,nelem], &
+                                 values = int_data_3d))
+       deallocate(int_data_3d)
+
+
+       allocate(data_mesh(nelem))
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_mps_varid, & 
+                                   name  = 'mp_mesh_S' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_mps_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_mps_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_mpz_varid, & 
+                                   name  = 'mp_mesh_Z' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_mpz_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_mpz_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh))
+       deallocate(data_mesh)
+    endif
+
     ! Done with the mesh
 
     ! Copy surface variables
@@ -487,7 +683,6 @@ contains
 subroutine check(status)
     implicit none
     integer, intent ( in) :: status !< Error code
-    integer, allocatable  :: test(:), test2(:,:)
 #ifdef unc
     if(status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
@@ -528,7 +723,7 @@ subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
   character(len=*), intent(in)      :: filename, varname
   integer, intent(in)               :: npoints, nsnap
 
-  integer                           :: iinput_xdmf, iinput_heavy_data
+  integer                           :: iinput_xdmf
   integer                           :: i
   character(len=512)                :: filename_np
   

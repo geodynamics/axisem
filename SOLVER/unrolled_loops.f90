@@ -170,7 +170,7 @@ pure subroutine mxm_4(a,b,c)
  
   real(kind=realkind), intent(in)  :: a(0:4,0:4),b(0:4,0:4) !< Input matrices
   real(kind=realkind), intent(out) :: c(0:4,0:4)            !< Result
-  integer                          :: i, j
+  integer                          :: i
 
   do i = 0, 4
      c(i,0) = sum(a(i,:) * b(:,0))

@@ -152,10 +152,14 @@ module data_mesh
   integer, allocatable         :: mapping_ijel_iplot(:,:,:)
 
   ! for kernel wavefields in displ_only mode
-  integer                      :: nelem_kwf, npoint_kwf
+  integer                      :: nelem_kwf_global, nelem_kwf
+  integer                      :: npoint_kwf_global, npoint_kwf
   integer                      :: npoint_solid_kwf, npoint_fluid_kwf
   logical, allocatable         :: kwf_mask(:,:,:)
   integer, allocatable         :: mapping_ijel_ikwf(:,:,:)
+  integer, allocatable         :: midpoint_mesh_kwf(:), eltype_kwf(:)
+  integer, allocatable         :: fem_mesh_kwf(:,:)
+  integer, allocatable         :: sem_mesh_kwf(:,:,:)
 
   ! Only needed before the simulation and later deallocated
   ! Global mesh informations

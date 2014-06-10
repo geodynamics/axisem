@@ -1384,7 +1384,6 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
   integer, intent(in)            :: idom
   character(len=3), intent(in)   :: param 
   logical                        :: success
-  type(interpolation_data)       :: interp
 
      !print *, 'R0: ', r0, ', idom:', idom
      select case(param)
@@ -1498,12 +1497,12 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
          case('ANELASTIC') 
              call check_already_defined(exist_param_anel, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_anelastic
-             if (ext_model_is_anelastic) ncolumn = ncolumn + 3       ! vpv, vph, eta
+             if (ext_model_is_anelastic) ncolumn = ncolumn + 2 !qka, qmu
              exist_param_anel = .true.
          case('ANISOTROPIC') 
              call check_already_defined(exist_param_ani, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_ani 
-             if (ext_model_is_ani) ncolumn = ncolumn + 2 !qka, qmu
+             if (ext_model_is_ani) ncolumn = ncolumn + 3       ! vpv, vph, eta
              exist_param_ani = .true.
          case('UNITS')
              call check_already_defined(exist_param_units, keyword, iline, trim(fnam_ext_model), nerr)
@@ -1582,7 +1581,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
              allocate(columnvalue(ncolumn))
              read(line,*,iostat=line_err) keyword, columnvalue
              call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
-             print *, 'ncolumn: ', ncolumn, columnvalue
+             !print *, 'ncolumn: ', ncolumn, columnvalue
              do icolumn = 1, ncolumn
                  select case(to_lower(columnvalue(icolumn)))
                  case('depth', 'radius')
@@ -1631,8 +1630,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
          case default
              ilayer = ilayer + 1
-             !read(line, *, iostat=line_err) layertemp
-             read(line, *) layertemp
+             read(line, *, iostat=line_err) layertemp
              call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
 
              radius_layer(ilayer)  = layertemp(column_rad)
@@ -1882,13 +1880,11 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   character(len=*)                :: fnam_ext_model
   integer, intent(out), optional  :: ndisc_out
   real(kind=dp), allocatable, intent(out), optional :: discont(:), vp(:,:), vs(:,:), rho(:,:)
-  integer :: idom, junk, ilayer
+  integer :: idom, ilayer
   real(kind=dp), allocatable :: grad_vp(:), grad_vs(:)
 
   integer, parameter         :: ndom_max = 100
   real(kind=dp), parameter   :: grad_threshold = 1.d-2
-  real(kind=dp)              :: disc_tmp(ndom_max), vp_tmp(ndom_max,2), vs_tmp(ndom_max,2), rho_tmp(ndom_max,2)
-  real(kind=dp)              :: vp_laststep, vs_laststep, rho_laststep, dx, dx_min
   integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc, extrapolation
   integer, allocatable       :: isdisc(:)
   character(len=128)         :: fmtstring

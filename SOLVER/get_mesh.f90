@@ -59,13 +59,9 @@ subroutine read_db
   use background_models,  only : model_is_ani, model_is_anelastic, get_ext_disc, &
                                  override_ext_q
   
-  integer             :: iptp, ipsrc, ipdes, imsg, inode, iptcp, iel, idom, i, ioerr
+  integer             :: iptp, ipsrc, imsg, iel, idom, i, ioerr
   character(len=120)  :: dbname
   integer             :: globnaxel, globnaxel_solid, globnaxel_fluid
-  integer             :: ijunk
-
-
-
 
   dbname = 'Mesh/meshdb.dat'//appmynum
 

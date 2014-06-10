@@ -1133,7 +1133,7 @@ subroutine write_1Dmodel(discontinuities)
    integer, parameter        :: maxlayers = 10000
    real(kind=dp), dimension(0:maxlayers)  :: vpv, vsv, rho, radius
    real(kind=dp), dimension(0:maxlayers)  :: qka, qmu, vph, vsh, eta
-   real(kind=dp)             :: vp_tmp, vs_tmp, rho_tmp
+   real(kind=dp)             :: vp_tmp, vs_tmp
    integer                   :: ndom, irad, idom, ilayer, nlayer, step, nic, noc
    integer, allocatable      :: disc_layer(:)
    character(len=256)        :: fnam, fmtstring

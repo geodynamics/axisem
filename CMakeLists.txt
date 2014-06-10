@@ -6,7 +6,7 @@ ENABLE_LANGUAGE (Fortran)
 LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/)
 
 # Enable testing
-#INCLUDE (CTest)
+INCLUDE (CTest)
 
 SET(AXISEM_SOURCE_DIR ${CMAKE_SOURCE_DIR})
 
@@ -29,4 +29,58 @@ ENDIF (NETCDF_FOUND)
 
 ADD_SUBDIRECTORY("MESHER")
 ADD_SUBDIRECTORY("SOLVER")
+
+SET(TEST_NAMES test_01 test_02 test_03 test_04 test_05 test_06 test_07 test_08 test_09 test_10 test_11 test_12 test_13 test_14 test_15 test_16 test_17)
+
+FOREACH(TEST_NAME ${TEST_NAMES})
+    SET(TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/tests/${TEST_NAME}/)
+    SET(TEST_SCRIPT_DIR ${CMAKE_SOURCE_DIR}/cmake/)
+    SET(TEST_DATA_DIR ${CMAKE_SOURCE_DIR}/TESTING/automated/${TEST_NAME}/)
+    FILE(MAKE_DIRECTORY ${TEST_DIR})
+    FILE(MAKE_DIRECTORY ${TEST_DIR}/Diags/)
+    FILE(COPY ${CMAKE_SOURCE_DIR}/SOLVER/CMTSOLUTION.TEMPLATE DESTINATION ${TEST_DIR})
+
+    # Run the test input file setup
+    ADD_TEST(NAME ${TEST_NAME}_setup
+        WORKING_DIRECTORY ${TEST_DIR}
+        COMMAND ${TEST_SCRIPT_DIR}/ctest_parse_params.py ${TEST_DATA_DIR}/inpython.cfg ${TEST_DATA_DIR}/STATIONS)
+
+    # Run the mesher
+    ADD_TEST(NAME ${TEST_NAME}_mesh
+        WORKING_DIRECTORY ${TEST_DIR}
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/MESHER/xmesh)
+    SET_TESTS_PROPERTIES(${TEST_NAME}_mesh PROPERTIES DEPENDS ${TEST_NAME}_setup)
+
+    # Move the meshes to the appropriate directory
+    ADD_TEST(NAME ${TEST_NAME}_move_mesh
+        WORKING_DIRECTORY ${TEST_DIR}
+        COMMAND ${TEST_SCRIPT_DIR}/ctest_move_mesh.csh ${TEST_DIR})
+    SET_TESTS_PROPERTIES(${TEST_NAME}_move_mesh PROPERTIES DEPENDS ${TEST_NAME}_mesh)
+
+    # Run the axisem program
+    # Determine the number of processors to use
+    EXECUTE_PROCESS(COMMAND ${TEST_SCRIPT_DIR}/ctest_calc_nprocs.py ${TEST_DATA_DIR} OUTPUT_VARIABLE NPROCS)
+    ADD_TEST(NAME ${TEST_NAME}_solver
+        WORKING_DIRECTORY ${TEST_DIR}
+        COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${NPROCS} ${MPIEXEC_PREFLAGS} ${CMAKE_CURRENT_BINARY_DIR}/SOLVER/axisem ${MPIEXEC_POSTFLAGS})
+    SET_TESTS_PROPERTIES(${TEST_NAME}_solver PROPERTIES DEPENDS ${TEST_NAME}_move_mesh)
+
+    # Run the post processor param file editor
+    ADD_TEST(NAME ${TEST_NAME}_post_proc_setup
+        WORKING_DIRECTORY ${TEST_DIR}
+        COMMAND ${TEST_SCRIPT_DIR}/ctest_prepare_ppp.py ${TEST_DATA_DIR}/inpython.cfg)
+    SET_TESTS_PROPERTIES(${TEST_NAME}_post_proc_setup PROPERTIES DEPENDS ${TEST_NAME}_solver)
+
+    # Run the xpost processor
+    ADD_TEST(NAME ${TEST_NAME}_post_proc
+        WORKING_DIRECTORY ${TEST_DIR}
+        COMMAND ${TEST_SCRIPT_DIR}/ctest_post_proc.csh)
+    SET_TESTS_PROPERTIES(${TEST_NAME}_post_proc PROPERTIES DEPENDS ${TEST_NAME}_post_proc_setup)
+
+    # Check the results with the baseline values
+    ADD_TEST(NAME ${TEST_NAME}_check_results
+        WORKING_DIRECTORY ${TEST_DIR}
+        COMMAND ${TEST_SCRIPT_DIR}/ctest_check_results.py ${TEST_DATA_DIR}/inpython.cfg ${TEST_DATA_DIR}/ref_data/)
+    SET_TESTS_PROPERTIES(${TEST_NAME}_check_results PROPERTIES DEPENDS ${TEST_NAME}_post_proc)
+ENDFOREACH()
 

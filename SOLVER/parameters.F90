@@ -1444,6 +1444,7 @@ subroutine write_parameters
         call nc_write_att_char( trim(openmp),          'OpenMP')
         call nc_write_att_real( real(deltat),          'time step in sec')
         call nc_write_att_int(  niter,                 'number of time steps')
+        call nc_write_att_int(  npol,                  'npol')
         call nc_write_att_char( trim(src_type(1)),     'excitation type')
         call nc_write_att_char( trim(src_type(2)),     'source type')
         call nc_write_att_char( trim(stf_type),        'source time function')

@@ -76,7 +76,7 @@ subroutine prepare_waves
   if (rot_src ) call def_rot_matrix
  
   ! build mapping to avoid duplicate points at element boundaries
-  if (dump_wavefields .and. dump_type == 'displ_only') &
+  if (use_netcdf .and. trim(dump_type) == 'displ_only') &
      call build_kwf_grid()
 
   ! Define velocity/density model (velocities in m/s, density in kg/m^3 ) AND 
@@ -183,6 +183,16 @@ subroutine prepare_waves
 
   ! allow for different types of receiver files
   call prepare_from_recfile_seis
+  
+  ! dump meshes for displ_only kwf output
+  if (dump_wavefields .and. dump_type == "displ_only") then 
+     call dump_kwf_midpoint_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                 npoint_kwf_global, nelem_kwf_global)
+     call dump_kwf_fem_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                 npoint_kwf_global, nelem_kwf_global)
+     call dump_kwf_sem_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                 npoint_kwf_global, nelem_kwf_global)
+  endif
 
   ! Need to reload old seismograms and add results
   if (isim>1 .and. sum_seis ) then  
@@ -270,7 +280,7 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
-  integer :: iter, ielem
+  integer :: iter
 
   if (lpr) then
      write(6,*)

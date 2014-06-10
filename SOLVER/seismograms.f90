@@ -233,7 +233,7 @@ subroutine prepare_seismograms
   do iel=0,nproc-1
      call barrier
      if (mynum==iel) then
-        if (verbose > 0) write(69,*)'  number of surface elements:', maxind
+        if (verbose > 1) write(69,*)'  number of surface elements:', maxind
         if (have_epi) write(6,12)procstrg,'epicenter at', &
                                 thetacoord(0,npol,ielsolid(ielepi))/pi*180.
         if (have_equ) write(6,12)procstrg,'equator at', &

@@ -611,28 +611,29 @@ end subroutine errorf
 !! @TODO: ERF is an intrinsic in Fortran2008. Compiler support is unclear still,
 !!        so we will keep that in here for a while.
 function erf(x)
-	real(kind=dp), intent(in)        :: x
-	real(kind=dp)                    :: erfcc, erf
-    real(kind=dp)                    :: polyval
-	real(kind=dp)                    :: t,z
-    integer                          :: icoeff
-    integer, parameter               :: ncoeff = 10
-	real(kind=dp), dimension(ncoeff) :: coeffs =                         &
-        [-1.26551223,  1.00002368, 0.37409196,  0.09678418, -0.18628806, &
-          0.27886807, -1.13520398, 1.48851587, -0.82215223,  0.17087277]
 
-    z = abs(x)
-    t = 1.0 / (1.0 + 0.5 * z)
-    
-    polyval = coeffs(ncoeff)
-    do icoeff = ncoeff-1, 1, -1
-        polyval = t * polyval + coeffs(icoeff)
-    end do
-    
-    erfcc = t * exp(-z * z + polyval)
-    
-    if (x < 0.0) erfcc = 2.0 - erfcc
-    erf = 1 - erfcc 
+  real(kind=dp), intent(in)        :: x
+  real(kind=dp)                    :: erfcc, erf
+  real(kind=dp)                    :: polyval
+  real(kind=dp)                    :: t,z
+  integer                          :: icoeff
+  integer, parameter               :: ncoeff = 10
+  real(kind=dp), dimension(ncoeff) :: coeffs =                         &
+      [-1.26551223,  1.00002368, 0.37409196,  0.09678418, -0.18628806, &
+        0.27886807, -1.13520398, 1.48851587, -0.82215223,  0.17087277]
+  
+  z = abs(x)
+  t = 1.0 / (1.0 + 0.5 * z)
+  
+  polyval = coeffs(ncoeff)
+  do icoeff = ncoeff-1, 1, -1
+      polyval = t * polyval + coeffs(icoeff)
+  end do
+  
+  erfcc = t * exp(-z * z + polyval)
+  
+  if (x < 0.0) erfcc = 2.0 - erfcc
+  erf = 1 - erfcc 
 
 end function erf
 !-----------------------------------------------------------------------------------------
@@ -873,7 +874,6 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
   real(kind=realkind), intent(out) :: f(0:npol,0:npol,nel_solid)
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
   integer                          :: liel_src, lipol_src, ljpol_src, ipol, jpol, i
-  real(kind=dp)                    :: s, z, r, theta
   character(len=16)                :: fmt1
   integer                          :: nsrcelem
 
@@ -944,7 +944,6 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   real(kind=realkind), allocatable :: ds(:), dz(:)
   
   integer                          :: ielem, ipol, jpol, i, nsrcelem, nsrcelem_glob
-  real(kind=dp)                    :: s, z, r, theta, r1, r2
   character(len=16)                :: fmt1
 
   liel_src = iel_src

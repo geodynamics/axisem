@@ -220,7 +220,7 @@ subroutine time_step_memvars_4(memvar, disp)
   real(kind=realkind), intent(inout)    :: memvar(0:4,0:4,6,n_sls_attenuation,nel_solid)
   real(kind=realkind), intent(in)       :: disp(0:4,0:4,nel_solid,3)
   
-  integer               :: iel, j, ipol, jpol
+  integer               :: iel, j
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
   real(kind=dp)         :: yp_j_kappa(n_sls_attenuation)
   real(kind=dp)         :: a_j_mu(n_sls_attenuation)
@@ -351,7 +351,7 @@ subroutine time_step_memvars_generic(memvar, disp)
   real(kind=realkind), intent(inout)    :: memvar(0:npol,0:npol,6,n_sls_attenuation,nel_solid)
   real(kind=realkind), intent(in)       :: disp(0:npol,0:npol,nel_solid,3)
   
-  integer               :: iel, j, ipol, jpol
+  integer               :: iel, j
   real(kind=dp)         :: yp_j_mu(n_sls_attenuation)
   real(kind=dp)         :: yp_j_kappa(n_sls_attenuation)
   real(kind=dp)         :: a_j_mu(n_sls_attenuation)
