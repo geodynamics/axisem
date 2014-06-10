@@ -554,8 +554,8 @@ subroutine build_kwf_grid()
 
   do iel=1, nel_solid
       if (.not.  mask_tp_elem(iel)) cycle
-      do ipol=0, npol
-          do jpol=0, npol
+      do jpol=0, npol
+          do ipol=0, npol
              
               ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
               idest = igloc_solid(ipt) + nglob_fluid
@@ -577,8 +577,8 @@ subroutine build_kwf_grid()
 
   do iel=1, nel_fluid
       if (.not.  mask_tp_elem(iel + nel_solid)) cycle
-      do ipol=0, npol
-          do jpol=0, npol
+      do jpol=0, npol
+          do ipol=0, npol
              
               ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
               idest = igloc_fluid(ipt)
