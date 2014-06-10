@@ -44,18 +44,18 @@ subroutine bkgrdmodel_testing
   real(kind=dp), dimension(:,:,:), allocatable   :: h, hmin2
   real(kind=dp), dimension(:,:),   allocatable   :: crit, crit_max
   real(kind=dp), dimension(:),     allocatable   :: hmin, hmax
-  real(kind=dp), dimension(:,:,:), allocatable   :: v_p, v_s, rho
-  integer               :: iel, ipol, jpol, ntoobig, ntoosmall, j
-  real(kind=dp)         :: s1, z1, s2, z2, h1, h2, r, velo, velo_max, theta
+  integer                                        :: iel, ipol, jpol, ntoobig, ntoosmall
+  real(kind=dp)                                  :: s1, z1, s2, z2, h1, h2, r
+  real(kind=dp)                                  :: velo, velo_max, theta
   
   ! vtk
-  real(kind=sp), dimension(:,:), allocatable        :: mesh2
-  real(kind=sp), dimension(:), allocatable          :: vp1, vs1, h_real, rho1
-  real(kind=sp), dimension(:), allocatable          :: Qmu, Qka
-  real(kind=sp), dimension(:), allocatable          :: eltype_vtk
-  real(kind=sp), allocatable                        :: x(:), y(:), z(:)
-  character(len=200)                                :: fname
-  integer                                           :: npts_vtk, ct
+  real(kind=sp), dimension(:,:), allocatable     :: mesh2
+  real(kind=sp), dimension(:),   allocatable     :: vp1, vs1, h_real, rho1
+  real(kind=sp), dimension(:),   allocatable     :: Qmu, Qka
+  real(kind=sp), dimension(:),   allocatable     :: eltype_vtk
+  real(kind=sp), dimension(:),   allocatable     :: x, y, z
+  character(len=200)                             :: fname
+  integer                                        :: npts_vtk, ct
 
   allocate(crit(0:npol,0:npol))
   crit(:,:) = 0.d0 
@@ -78,7 +78,6 @@ subroutine bkgrdmodel_testing
 
   ntoobig = 0
   ntoosmall = 0
-  j = 0
 
   ! vtk preparations
   if (dump_mesh_vtk) then
@@ -98,7 +97,7 @@ subroutine bkgrdmodel_testing
   
   ! find smallest/largest grid spacing
   !$omp parallel shared(hmin2, h, npol, router, hmax, hmin, x, y, z, vp1, vs1, rho1, &
-  !$omp                 Qmu, Qka, mesh2, bkgrdmodel, v_p, v_s, rho, period) & 
+  !$omp                 Qmu, Qka, mesh2, bkgrdmodel, rho, period) & 
   !$omp          private(s1, z1, r, h1, s2, z2, h2, iel, jpol, ipol, velo, velo_max,  &
   !$omp                  crit, crit_max, theta, ct) 
   !$omp do 
@@ -234,7 +233,7 @@ subroutine bkgrdmodel_testing
   
      ! avoid concurrent write access to dt in case of omp
      !$omp atomic
-     dt = min(dt, real(courant * hmin(iel)))
+     dt = min(dt, real(courant * hmin(iel), kind=dp))
 
      ! multiplication by .9999 to avoid floting point precision issues
      if (hmin(iel) < (dt / courant) * .9999) then
