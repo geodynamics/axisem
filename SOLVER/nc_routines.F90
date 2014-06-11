@@ -871,6 +871,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_mesh_midpoint_varid
     integer                              :: nc_mesh_fem_varid
     integer                              :: nc_mesh_eltype_varid
+    integer                              :: nc_mesh_axis_varid
     integer                              :: nc_mesh_sem_varid
     integer                              :: nc_mesh_elem_dimid, nc_mesh_npol_dimid
     integer                              :: nc_mesh_cntrlpts_dimid
@@ -1216,6 +1217,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                          varid  = nc_mesh_eltype_varid) )
 
                call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'axis', &
+                                         xtype  = NF90_INT, &
+                                         dimids = nc_mesh_elem_dimid,&
+                                         varid  = nc_mesh_axis_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout, &
                                          name   = 'fem_mesh', &
                                          xtype  = NF90_INT, &
                                          dimids = [nc_mesh_cntrlpts_dimid, &
@@ -1459,7 +1466,7 @@ subroutine nc_finish_prepare
     use data_io,   only  : datapath, lfdata, dump_wavefields, dump_type
     use data_mesh, only  : maxind, surfcoord, ind_first, ind_last, &
                            midpoint_mesh_kwf, sem_mesh_kwf, fem_mesh_kwf, nelem_kwf, &
-                           nelem_kwf_global, npol, eltype_kwf
+                           nelem_kwf_global, npol, eltype_kwf, axis_kwf
 
     integer             :: ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
@@ -1470,6 +1477,7 @@ subroutine nc_finish_prepare
 
     integer             :: nc_mesh_midpoint_varid
     integer             :: nc_mesh_eltype_varid
+    integer             :: nc_mesh_axis_varid
     integer             :: nc_mesh_fem_varid
     integer             :: nc_mesh_sem_varid
     
@@ -1604,6 +1612,13 @@ subroutine nc_finish_prepare
                                              start  = [nelem_myfirst],  &
                                              count  = [nelem_kwf], &
                                              values = eltype_kwf))
+
+                   call getvarid( ncid_meshout, "axis", nc_mesh_axis_varid) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_axis_varid, &
+                                             start  = [nelem_myfirst],  &
+                                             count  = [nelem_kwf], &
+                                             values = axis_kwf))
 
                    call getvarid( ncid_meshout, "fem_mesh", nc_mesh_fem_varid ) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &

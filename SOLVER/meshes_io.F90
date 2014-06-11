@@ -663,6 +663,32 @@ subroutine build_kwf_grid()
       ct = ct + 1
   enddo
 
+  allocate(axis_kwf(1:nelem_kwf))
+
+  axis_kwf(:) = -1
+  
+  ct = 1
+
+  do iel=1, nel_solid
+      if (.not.  mask_tp_elem(iel)) cycle
+      if (axis_solid(iel)) then
+         axis_kwf(ct) = 1
+      else
+         axis_kwf(ct) = 0
+      endif
+      ct = ct + 1
+  enddo
+  
+  do iel=1, nel_fluid
+      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+      if (axis_fluid(iel)) then
+         axis_kwf(ct) = 1
+      else
+         axis_kwf(ct) = 0
+      endif
+      ct = ct + 1
+  enddo
+
   allocate(fem_mesh_kwf(1:4, 1:nelem_kwf))
   
   if (lpr) write(6,*) '   .... constructing finite element grid for kwf output'
@@ -884,7 +910,9 @@ subroutine dump_kwf_fem_xdmf(filename, npoints, nelem)
   open(newunit=iinput_xdmf, file=trim(filename)//'_fem.xdmf')
   write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
 
-  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), "'", "'", nelem, trim(filename_np)
+  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), "'", "'", &
+                          nelem, trim(filename_np), nelem, trim(filename_np)
+
 
   close(iinput_xdmf)
 
@@ -915,6 +943,11 @@ subroutine dump_kwf_fem_xdmf(filename, npoints, nelem)
     '    <Attribute Name="eltype" AttributeType="Scalar" Center="Cell">',/&
     '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, '" Format="HDF">',/&
     '        ', A, ':/Mesh/eltype',/&
+    '        </DataItem>',/&
+    '    </Attribute>',/&
+    '    <Attribute Name="axis" AttributeType="Scalar" Center="Cell">',/&
+    '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, '" Format="HDF">',/&
+    '        ', A, ':/Mesh/axis',/&
     '        </DataItem>',/&
     '    </Attribute>',/&
     '</Grid>',/,/&
