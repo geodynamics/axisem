@@ -52,8 +52,8 @@ program field_transformation
                                        ncout_mesh_midpoint_varid
     integer                         :: ncin_mesh_sem_varid, ncin_mesh_fem_varid, &
                                        ncin_mesh_midpoint_varid
-    integer                         :: ncout_mesh_eltype_varid
-    integer                         :: ncin_mesh_eltype_varid
+    integer                         :: ncout_mesh_eltype_varid, ncout_mesh_axis_varid
+    integer                         :: ncin_mesh_eltype_varid, ncin_mesh_axis_varid
 
     integer                         :: nsurfelem, ncomp, nstraincomp
     character(len=8)                :: sourcetype
@@ -263,6 +263,12 @@ program field_transformation
                                  varid  = ncout_mesh_eltype_varid) )
 
        call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'axis', &
+                                 xtype  = NF90_INT, &
+                                 dimids = nc_mesh_elem_dimid,&
+                                 varid  = ncout_mesh_axis_varid) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
                                  name   = 'fem_mesh', &
                                  xtype  = NF90_INT, &
                                  dimids = [nc_mesh_cntrlpts_dimid, &
@@ -463,6 +469,22 @@ program field_transformation
                                  values = int_data_1d))
        call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
                                  varid  = ncout_mesh_eltype_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_axis_varid, & 
+                                   name  = 'axis' ))
+       
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_axis_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_axis_varid, &
                                  start  = [1],  &
                                  count  = [nelem], &
                                  values = int_data_1d))
