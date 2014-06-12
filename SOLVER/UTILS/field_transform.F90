@@ -115,7 +115,6 @@ program field_transformation
     call check( nf90_get_att(ncin_id, NF90_GLOBAL, "excitation type", sourcetype))
     
     call check( nf90_get_att(ncin_id, NF90_GLOBAL, "npol", npol))
-    call check( nf90_get_att(ncin_id, NF90_GLOBAL, "nelem_kwf_global", nelem))
 
     if (verbose) &
         print *, 'source type  ', sourcetype
@@ -127,6 +126,7 @@ program field_transformation
         print *, 'dump type    ', dump_type
 
     if (trim(dump_type) == 'displ_only') then
+       call check( nf90_get_att(ncin_id, NF90_GLOBAL, "nelem_kwf_global", nelem))
        if (sourcetype=='monopole')  then
            nvar = 2
            allocate(varnamelist(nvar))
