@@ -621,15 +621,15 @@ than comparable 3D methods.
 
 \begin{center}
     %\includegraphics[height=50mm]{mesher_comp_cost.pdf}
-    %\hspace{5mm}
+    \includegraphics[height=50mm]{memory_usage_new.pdf}
+    \hspace{5mm}
     \includegraphics[height=50mm]{solver_totalcpu.pdf}
 \end{center}
 
-%On the left, you may deduct the mesher's RAM occupation as a function of frequency. Going
-%towards very high resolution (around and above 1Hz), you will need a rather fat node (>
-%32GB RAM) for the (serial) meshing.
-%On the right, 
-Here, we depict the computational cost
+On the left, you may deduct the mesher's RAM occupation as a function of frequency. Going
+towards very high resolution (around and above 1Hz), you will need a rather fat node (>
+16GB RAM) for the (shared memory) meshing.
+On the right, we depict the computational cost
 associated with the solver to compute seismograms of 30 min length. The relation between
 seismic period and CPU-hours is an approximate proxy to estimate how many cores and
 wall-clock time is optimal for your infrastructure. Scaling of CPU hours is approximately 
