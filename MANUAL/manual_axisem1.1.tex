@@ -620,17 +620,20 @@ Running in a 2D computational domain, the code is (obviously) significantly fast
 than comparable 3D methods. 
 
 \begin{center}
-    \includegraphics[height=50mm]{mesher_comp_cost.pdf}
-    \hspace{5mm}
+    %\includegraphics[height=50mm]{mesher_comp_cost.pdf}
+    %\hspace{5mm}
     \includegraphics[height=50mm]{solver_totalcpu.pdf}
 \end{center}
 
-On the left, you may deduct the mesher's RAM occupation as a function of frequency. Going
-towards very high resolution (around and above 1Hz), you will need a rather fat node (>
-32GB RAM) for the (serial) meshing.  On the right, we depict the computational cost
+%On the left, you may deduct the mesher's RAM occupation as a function of frequency. Going
+%towards very high resolution (around and above 1Hz), you will need a rather fat node (>
+%32GB RAM) for the (serial) meshing.
+%On the right, 
+Here, we depict the computational cost
 associated with the solver to compute seismograms of 30 min length. The relation between
 seismic period and CPU-hours is an approximate proxy to estimate how many cores and
-wall-clock time is optimal for your infrastructure. 
+wall-clock time is optimal for your infrastructure. Scaling of CPU hours is approximately 
+to the third power of the maximum frequency.
 
 \begin{center}
     \includegraphics[height=50mm]{COMPUTATIONAL_COST/strong_scaling_new.pdf}
@@ -640,8 +643,7 @@ wall-clock time is optimal for your infrastructure.
 
 Scalability plots from test runs on a Cray machine at CSCS, Switzerland. The left shows
 strong scaling (fixed global problem size), the right plot weak scaling (fixed problem
-size per CPU). A forthcoming publication (see below, (1)) will show scaling up to 8000
-CPUs.  
+size per CPU).
 
 
 \section{Typical use cases}
