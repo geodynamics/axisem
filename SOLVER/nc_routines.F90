@@ -122,9 +122,8 @@ module nc_routines
     real(kind=sp), allocatable :: stf_seis_dumpvar(:)
     real(kind=sp), allocatable :: stf_dumpvar(:)
 
-    !! @todo These parameters should move to a input file soon
     !> How many snaps should be buffered in RAM?
-    integer             :: dumpbuffersize = 512
+    integer             :: nc_dumpbuffersize
     
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
@@ -138,6 +137,7 @@ module nc_routines
     public              :: nc_dump_snapshot, nc_dump_snap_points, nc_dump_snap_grid
     public              :: nc_make_snapfile, nc_dump_stf, nc_rec_checkpoint
 
+    public              :: nc_dumpbuffersize
     public              :: set_npoints
 contains
 
@@ -886,7 +886,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     end if
 
     call barrier
-    dumpstepsnap = int(dumpbuffersize / nproc) * nproc ! Will later be reduced to nstrain, if this is smaller
+    dumpstepsnap = int(nc_dumpbuffersize / nproc) * nproc ! Will later be reduced to nstrain, if this is smaller
                                                        ! than value given here
     
     if (lpr .and. verbose > 1) write(6,*) '  Dumping NetCDF file to disk every', dumpstepsnap, ' snaps'
