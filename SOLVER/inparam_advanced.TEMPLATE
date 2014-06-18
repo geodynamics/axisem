@@ -53,6 +53,13 @@ USE_NETCDF          false
 # turn it of for runs on safe systems.
 CHECKPOINTING       true
 
+# Size of buffer for wavefield dumps. This is only used for the kernel wavefield
+# output. Determines, how many time steps should be held in memory by each 
+# processor. Increase, if disk access is too frequent, however, for short period
+# meshes (<10s), setting a value above 256 can require >>10GB of memory per CPU.
+# Default value: 128
+NETCDF_DUMP_BUFFER  128
+
 # Level of compression of wavefield data (0: off, 9:highest, default: 5)
 DEFLATE_LEVEL       5
 

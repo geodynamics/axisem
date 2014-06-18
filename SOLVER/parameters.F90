@@ -342,13 +342,14 @@ end subroutine
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
   
-  use data_mesh,  only: naxel, meshname, vphomo, vshomo, rhohomo, make_homo, do_mesh_tests
-  use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
+  use nc_routines,  only: nc_dumpbuffersize
+  use data_mesh,    only: naxel, meshname, vphomo, vshomo, rhohomo, make_homo, do_mesh_tests
+  use commun,       only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
-  integer               :: iinparam_advanced=500, ioerr
-  integer               :: npol_max = 12
-  character(len=256)    :: line
-  character(len=256)    :: keyword, keyvalue
+  integer              :: iinparam_advanced=500, ioerr
+  integer              :: npol_max = 12
+  character(len=256)   :: line
+  character(len=256)   :: keyword, keyvalue
 
   ! Default values
   seis_dt = 0.0
@@ -387,6 +388,7 @@ subroutine read_inparam_advanced
   dump_xdmf = dump_snaps_glob
   use_netcdf = .false.
   checkpointing = .false.
+  nc_dumpbuffersize = 128
 
   ! xdmf stuff
   i_n_xdmf = -1
@@ -513,6 +515,9 @@ subroutine read_inparam_advanced
          case('CHECKPOINTING')
              read(keyvalue, *) checkpointing
 
+         case('NETCDF_DUMP_BUFFER') 
+             read(keyvalue, *) nc_dumpbuffersize
+
          case('DEFLATE_LEVEL')
              read(keyvalue,*) deflate_level
 
@@ -606,6 +611,7 @@ subroutine read_inparam_advanced
   call broadcast_log(dump_vtk, 0) 
   call broadcast_log(use_netcdf, 0) 
   call broadcast_log(checkpointing, 0) 
+  call broadcast_int(nc_dumpbuffersize, 0) 
   
   call broadcast_dble(xdmf_rmin, 0) 
   call broadcast_dble(xdmf_rmax, 0) 
