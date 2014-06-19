@@ -106,6 +106,9 @@ else if ( $simtype == 'force') then
     set multisrc = 'true'
 else if ( $simtype == 'moment') then
     set multisrc = 'true'
+else 
+    echo "ERROR: unknown simulation type: " $simtype
+    exit
 endif
 
 # Run make to see whether the code has to be rebuilt and if so, do it.
@@ -283,29 +286,29 @@ endif
 # write a script that runs fieldtransform in all rundirs
 if ( $netcdf_requested == 'true') then
     if ( $simtype == 'moment' ) then
-        echo '#\!/bin/csh -f'           >  fieldtranform.csh
-        echo 'cd MZZ'                   >> fieldtranform.csh
-        echo '.././xfield_transform'    >> fieldtranform.csh
-        echo 'cd ..'                    >> fieldtranform.csh
-        echo 'cd MXX_P_MYY'             >> fieldtranform.csh
-        echo '.././xfield_transform'    >> fieldtranform.csh
-        echo 'cd ..'                    >> fieldtranform.csh
-        echo 'cd MXZ_MYZ'               >> fieldtranform.csh
-        echo '.././xfield_transform'    >> fieldtranform.csh
-        echo 'cd ..'                    >> fieldtranform.csh
-        echo 'cd MXY_MXX_M_MYY'         >> fieldtranform.csh
-        echo '.././xfield_transform'    >> fieldtranform.csh
-        echo 'cd ..'                    >> fieldtranform.csh
-        chmod +x fieldtranform.csh
+        echo '#\!/bin/csh -f'           >  fieldtransform.csh
+        echo 'cd MZZ/Data'              >> fieldtransform.csh
+        echo '../../xfield_transform'   >> fieldtransform.csh
+        echo 'cd ../..'                 >> fieldtransform.csh
+        echo 'cd MXX_P_MYY/Data'        >> fieldtransform.csh
+        echo '../../xfield_transform'   >> fieldtransform.csh
+        echo 'cd ../..'                 >> fieldtransform.csh
+        echo 'cd MXZ_MYZ/Data'          >> fieldtransform.csh
+        echo '../../xfield_transform'   >> fieldtransform.csh
+        echo 'cd ../..'                 >> fieldtransform.csh
+        echo 'cd MXY_MXX_M_MYY/Data'    >> fieldtransform.csh
+        echo '../../xfield_transform'   >> fieldtransform.csh
+        echo 'cd ../..'                 >> fieldtransform.csh
+        chmod +x fieldtransform.csh
     else if ( $simtype == 'force' ) then
-        echo '#\!/bin/csh -f'           >  fieldtranform.csh
-        echo 'cd PX'                    >> fieldtranform.csh
-        echo '.././xfield_transform'    >> fieldtranform.csh
-        echo 'cd ..'                    >> fieldtranform.csh
-        echo 'cd PZ'                    >> fieldtranform.csh
-        echo '.././xfield_transform'    >> fieldtranform.csh
-        echo 'cd ..'                    >> fieldtranform.csh
-        chmod +x fieldtranform.csh
+        echo '#\!/bin/csh -f'           >  fieldtransform.csh
+        echo 'cd PX/Data'               >> fieldtransform.csh
+        echo '../../xfield_transform'   >> fieldtransform.csh
+        echo 'cd ../..'                 >> fieldtransform.csh
+        echo 'cd PZ/Data'               >> fieldtransform.csh
+        echo '../../xfield_transform'   >> fieldtransform.csh
+        echo 'cd ../..'                 >> fieldtransform.csh
+        chmod +x fieldtransform.csh
     endif
 endif
 
