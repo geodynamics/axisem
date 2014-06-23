@@ -124,7 +124,7 @@ module nc_routines
 
     !! @todo These parameters should move to a input file soon
     !> How many snaps should be buffered in RAM?
-    integer             :: dumpbuffersize = 512
+    integer             :: dumpbuffersize = 256
     
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
