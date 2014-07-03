@@ -194,13 +194,14 @@ def PyAxi(**kwargs):
             ax.set_ylabel('l2 - misfit to reference data')
             ax.set_ylim(1e-12, 1.)
 
-            ax.axhline(y=1e-5, color='k', ls='--')
-            if np.max(l2misfit) > 1e-5:
+            ax.axhline(y=1e-8, color='k', ls='--')
+            if np.max(l2misfit) > 1e-8:
                 fwarn = open(os.path.join(test_result_folder, 'warning.dat'), 'a')
-                fwarn.write("maximum l2 norm misfit larger then 1e-5 in chan %s trace %d\n"
+                fwarn.write("maximum l2 norm misfit larger then 1e-8 in chan %s trace %d\n"
                              % (chan, np.argmax(l2misfit)))
                 fwarn.close()
-
+                sys.exit("L2 norm misfit is higher than 1e-8.")
+                
         ax = misfitplot.gca()
         ax.legend()
         if test_param['save_plots_test'] != 'N':
