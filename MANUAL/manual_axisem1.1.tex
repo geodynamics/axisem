@@ -681,7 +681,6 @@ Axisem has two principal modes, which are selected by the value \verb|SIMULATION
       \url{http://www.globalcmt.org/CMTsearch.html}
 \end{enumerate}
 
-
 \subsection{Change station locations}
 
 \verb|SOLVER/STATIONS| or \verb|SOLVER/receivers.dat|, depending on
@@ -833,6 +832,12 @@ The moment tensor, depth and location of the source must be set in the file
 postprocessing script sums the results to get correct seismograms.
 
 
+\subsection{Change source time function}
+\verb|SOLVER/inparam_advanced|, change parameter \verb|SOURCE_FUNCTION||:\\
+AxiSEM generally calculates displacement seismograms. The source time function selected here is equivalent to the moment function $m(t)$. Note that to calculate seismograms similar to those of an earthquake (i.e. with a persistent displacement at the source), the setting \verb|errorf| has to be used. That is different to some other codes that define the source time function as the moment rate function $\dot{m}(t)$.\\
+To create seismograms with a flat, zero-phased source spectrum, use the setting \verb|dirac_0|. Seismograms calculated with this setting can be convolved with other source functions in AxiSEM postprocessing or manually with a program of your choice.
+
+
 \subsection{Change seismogram length or sampling rate}
 \verb|SOLVER/inparam_basic|, change parameter \verb|SEISMOGRAM_LENGTH|:\\
 Default value is 1800~s, although the exact length is rounded to the next multiple of the
@@ -847,7 +852,7 @@ done with \textit{ObsPy} or another tool that supports filtering.
 \subsection{Include lateral heterogeneities (2.5D simulation)}
 \verb|SOLVER/inparam_basic|, change parameter \verb|LAT_HETEROGENEITY| to true:\\
 The actual heterogeneity model is set in \verb|SOLVER/inparam_hetero|. 
-
+This functionality is currently under development and not documented. See the example files \verb|SOLVER/inparam_hetero.TEMPLATE| for an idea of what to do.
 
 
 
