@@ -1606,14 +1606,11 @@ subroutine write_parameters
                     'CONV_PERIOD     0.'
            endif
            
-           write(9,'(a,/,a,/,a,/)') &
-                    '# source time function', &
-                    '# one of: gauss_0, gauss_1, qheavi', &
+           write(9,'(6(a,/))') &
+                    '# source time function (moment function) to convolve with', &
+                    '# ''gauss_0'': Gaussian with dominant period SOURCE_PERIOD', &
+                    '# ''gauss_1'': 1st derivative of gauss_0',                   &
                     'CONV_STF        gauss_0'
-           
-           write(9,'(a,/,a,/)') &
-                    '# displacement or velocity seismograms', &
-                    'SEISTYPE        disp'
            
            write(9,'(a,/,a,l1/)') &
                     '# make 3D plots of the wavefield', &
