@@ -56,6 +56,7 @@ module data_all
   logical                             :: detailed_output
   character(len=16)                   :: simtype
   logical                             :: use_netcdf
+  character(len=4), parameter		  :: seistype = 'disp'
 
   ! discrete dirac sources
   real                                :: shift_fact
@@ -65,7 +66,6 @@ module data_all
   real                                :: srccolat, srclon, src_depth
   character(len=7)                    :: conv_stf
   character(len=100)                  :: outdir
-  character(len=4)                    :: seistype
 
   real, allocatable                   :: period_final(:)
   real, allocatable                   :: trans_rot_mat(:,:)
@@ -341,10 +341,8 @@ program post_processing_seis
             seis_sglcomp(:,:) = nc_seis(:,:,i,isim)
         else
             ! load seismograms from all directories
-            open(unit=60,file = trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
-                                //seistype//'.dat')
-            write(6,*) 'opened ', trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
-                        //seistype//'.dat'
+            open(unit=60,file = trim(simdir(isim))//'/Data/'//trim(recname(i))//'_disp.dat')
+            write(6,*) 'opened ', trim(simdir(isim))//'/Data/'//trim(recname(i))//'_disp.dat'
 
             if (src_type(isim,1) == 'monopole') then 
                do iseis=1, nt_seis 
@@ -553,7 +551,7 @@ subroutine read_input
   rec_comp_sys    = 'enz'
   conv_period     = 0.
   conv_stf        = 'gauss_0'
-  seistype        = 'disp'
+  !seistype        = 'disp'
   load_snaps      = .false.
   outdir          = './Data_Postprocessing'
   negative_time   = .true.
@@ -582,8 +580,8 @@ subroutine read_input
        read(keyvalue, *) conv_period
     case('CONV_STF')
        read(keyvalue, *) conv_stf
-    case('SEISTYPE')
-       seistype = keyvalue
+    !case('SEISTYPE')
+    !   seistype = keyvalue
     case('LOAD_SNAPS')
        read(keyvalue, *) load_snaps
     case('DATA_DIR')
@@ -697,8 +695,7 @@ subroutine read_input
      write(6,*) 'ERROR: unknown coordinate system ', rec_comp_sys
      stop 2
   endif
-  
-  
+
   srclon = srclon_tmp(1)
   srccolat = srccolat_tmp(1)
   src_depth = src_depth_tmp(1)
