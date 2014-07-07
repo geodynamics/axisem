@@ -30,7 +30,10 @@ ENDIF (NETCDF_FOUND)
 ADD_SUBDIRECTORY("MESHER")
 ADD_SUBDIRECTORY("SOLVER")
 
-SET(TEST_NAMES test_01 test_02 test_03 test_04 test_05 test_06 test_07 test_08 test_09 test_10 test_11 test_12 test_13 test_14 test_15 test_16 test_17)
+SET(TEST_NAMES test_01_explosion test_02_quadpole)
+IF (NETCDF_FOUND)
+    SET(TEST_NAMES test_01_explosion test_02_quadpole test_03_netcdf)
+ENDIF (NETCDF_FOUND)
 
 FOREACH(TEST_NAME ${TEST_NAMES})
     SET(TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/tests/${TEST_NAME}/)
