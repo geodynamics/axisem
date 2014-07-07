@@ -28,6 +28,7 @@ SOURCE_PERIOD       0.0
 # 'quheavi': Heaviside function
 # 'dirac_0': Dirac delta function
 #            This should be used to convolve arbitrary STFs in Postprocessing 
+# Note that 'quheavi' and 'dirac_0' will lead to artifacts in wavefield plots!
 SOURCE_FUNCTION     errorf
 
 # Time integration scheme, allowed:
