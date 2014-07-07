@@ -835,7 +835,8 @@ postprocessing script sums the results to get correct seismograms.
 \subsection{Change source time function}
 \verb|SOLVER/inparam_advanced|, change parameter \verb|SOURCE_FUNCTION||:\\
 AxiSEM generally calculates displacement seismograms. The source time function selected here is equivalent to the moment function $m(t)$. Note that to calculate seismograms similar to those of an earthquake (i.e. with a persistent displacement at the source), the setting \verb|errorf| has to be used. That is different to some other codes that define the source time function as the moment rate function $\dot{m}(t)$.\\
-To create seismograms with a flat, zero-phased source spectrum, use the setting \verb|dirac_0|. Seismograms calculated with this setting can be convolved with other source functions in AxiSEM postprocessing or manually with a program of your choice.
+To create seismograms with a flat, zero-phased source spectrum, use the setting \verb|dirac_0|. Seismograms calculated with this setting can be convolved with other source functions in AxiSEM postprocessing or manually with a program of your choice.\\
+However, note that seismograms or wavefields calculated with a \verb|dirac_0| STF will contain numerical noise and are generally considered ugly. Therefore, visualization and wavefield plotting should be done using \verb|errorf| or one of the Gaussian STFs.
 
 
 \subsection{Change seismogram length or sampling rate}
