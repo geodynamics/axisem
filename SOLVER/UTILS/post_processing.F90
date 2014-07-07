@@ -394,7 +394,7 @@ program post_processing_seis
      ! convolve with a source time function
      if (conv_period > 0.)  then 
         write(6,*) 'conv period:', conv_stf
-        call convolve_with_stf(conv_period, dt_seis, nt_seis, src_type(1,1), conv_stf,&
+        call convolve_with_stf(conv_period, dt_seis, nt_seis, conv_stf,&
                                outdir, seis, seis_fil)
      else
         seis_fil = seis
@@ -1012,7 +1012,7 @@ end subroutine rotate_receiver_comp
 
 !-----------------------------------------------------------------------------------------
 !! convolve seismograms computed for dirac delta with a Gaussian
-subroutine convolve_with_stf(t_0, dt, nt, src_type, stf, outdir, seis, seis_fil)          
+subroutine convolve_with_stf(t_0, dt, nt, stf, outdir, seis, seis_fil)          
   
   use data_all,     only: stf_type
   use global_par,   only: pi, decay, shift_fact1, dp
@@ -1027,7 +1027,6 @@ subroutine convolve_with_stf(t_0, dt, nt, src_type, stf, outdir, seis, seis_fil)
   real, intent(in)               :: seis(nt,3)
   real, intent(out)              :: seis_fil(nt,3)
   real                           :: src_array(nt), temp_expo, alpha
-  character(len=7), intent(in)   :: src_type
   character(len=7), intent(in)   :: stf
   character(len=4)               :: appidur, appirec
 
