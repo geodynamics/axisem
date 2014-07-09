@@ -56,7 +56,7 @@ module data_all
   logical                             :: detailed_output
   character(len=16)                   :: simtype
   logical                             :: use_netcdf
-  character(len=4), parameter		  :: seistype = 'disp'
+  character(len=4), parameter         :: seistype = 'disp'
 
   ! discrete dirac sources
   real                                :: shift_fact
@@ -305,8 +305,8 @@ program post_processing_seis
                             //trim(recname(i))//'_'//seistype//'_post_'&
                             //trim(src_type(isim,2))
         
-        write(6,*) 'outname: ', i, trim(outname(i,isim))
-        write(6,*) 'outname2: ', isim, trim(outname2(i,isim))
+        !write(6,*) 'outname: ', i, trim(outname(i,isim))
+        !write(6,*) 'outname2: ', isim, trim(outname2(i,isim))
      enddo
   enddo
 
@@ -580,6 +580,8 @@ subroutine read_input
        read(keyvalue, *) conv_period
     case('CONV_STF')
        read(keyvalue, *) conv_stf
+    ! Removing this option since velocity seismograms 
+    ! are not produced in the solver
     !case('SEISTYPE')
     !   seistype = keyvalue
     case('LOAD_SNAPS')
