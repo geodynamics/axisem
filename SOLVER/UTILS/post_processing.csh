@@ -97,7 +97,7 @@ if ( $gnu_query == 1 ) then
     echo
     echo "%%%%%%%%% PLOTTING seismograms (gnuplot) %%%%%%%%%%"
     cd $outdir
-    set seistype = `grep "SEISTYPE" param_post_processing |awk '{print $2}' |sed 's/"/ /g' `
+    set seistype = "disp"
     echo "seismogram type:" $seistype
     set reclist = `cat $homedir/$simdir1/Data/receiver_names.dat |awk '{print $1}'`
     echo "1st receiver:" $reclist[1]
@@ -105,6 +105,8 @@ if ( $gnu_query == 1 ) then
     set lon = `cat $homedir/$simdir1/Data/receiver_names.dat |awk '{print $3}' |sed 's/00000/ /g'  |awk '{print $1}'`
     set epidist = `cat $homedir/$simdir1/Data/receiver_pts.dat |awk '{print $1}'`
     echo "1st receiver colatitude/longitude/epidist:" $colat[1] " " $lon[1] " " $epidist[1]
+
+    echo `SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*.dat`
 
     set reccomp = `ls SEISMOGRAMS/{$reclist[1]}_{$seistype}_post_mij_*.dat |sed 's/mij_/ /g ' |awk '{print $2}' | sed 's/_/ /g' |awk '{print $2}'  |sed 's/\.dat/ /g '`
 
