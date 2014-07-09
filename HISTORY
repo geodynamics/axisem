@@ -13,15 +13,12 @@ Changes to last version:
  - Cleaning up output
 
 Bugfixes
- - Bugfix in the serial mode, which was not even compiling
+ - Serial mode now functional and compiling without MPI
  - Bugfixes in NetCDF output of (kerner-related) wavefields
- - Corrections to the Manual
  - Bugfix of all nodes writing into the same file, receiver.dat
  - Bugfix in writing out 1D model files
  - Bugfix in mesh decomposition for fluid spheres
- - Fixed SOLVER/submit.csh script for arbitrary DATA directories, especially for 'single' simulations
- - tons of small fixes
- 
+ - Fixed SOLVER/submit.csh script for arbitrary DATA directories, especially for 'single' simulations 
 
 AxiSEM 1.0 (2013/12/19, SVN revision 1089):
 First general release of AxiSEM.
@@ -35,7 +32,7 @@ Working:
  - Anisotropy
  - General moment tensor and force sources
  - Receiver locations on the surface
- - Benchmarked for elastic models against yspec (Al Attar & Woodhose, 2008) 
+ - Benchmarked for elastic models against yspec (Al Attar & Woodhouse, 2008) 
    up to 1 Hz
  - Newmark time integration scheme tested and benchmarked against YSPEC
  - Symplectic time integration scheme tested, but not fully benchmarked

@@ -35,11 +35,11 @@ Basic instructions for running:
 
 More details are found in the manual. For a quick start:
 
-The mesher has to be run first, in order to generate a SEM mesh for the solver. 
+The mesher has to be run first to generate a SEM mesh for the solver. 
 Any changes in the resolution, spherically symmetric background model, or number 
 of processors requires a new mesh. 
-Changes in the source-receiver settings or 2.5D heterogeneities need a new solver run.
-Changes on the moment tensor need a new postprocessing run.
+Changes in the source-receiver settings or 2.5D heterogeneities only need a new solver run.
+Changes on the moment tensor, receiver components, or filtering only need a new postprocessing run.
 
 General settings and explanations for parameters needed in MESHER and SOLVER 
 are found in the inparam_* files in the respective directories. 
