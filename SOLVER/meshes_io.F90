@@ -788,14 +788,21 @@ subroutine dump_kwf_grid()
 
   points_mp = 0.
 
+  ct = 1
   do iel=1, nel_solid
-     points_mp(iel,1) = scoord(npol/2,npol/2,ielsolid(iel))
-     points_mp(iel,2) = zcoord(npol/2,npol/2,ielsolid(iel))
+     if (kwf_mask(npol/2,jpol/2,iel)) then
+        points_mp(ct,1) = scoord(npol/2,npol/2,ielsolid(iel))
+        points_mp(ct,2) = zcoord(npol/2,npol/2,ielsolid(iel))
+        ct = ct + 1
+     endif
   enddo
 
   do iel=1, nel_fluid
-     points_mp(iel + nel_solid,1) = scoord(npol/2,npol/2,ielfluid(iel))
-     points_mp(iel + nel_solid,2) = zcoord(npol/2,npol/2,ielfluid(iel))
+     if (kwf_mask(npol/2,jpol/2,iel + nel_solid)) then
+        points_mp(iel + nel_solid,1) = scoord(npol/2,npol/2,ielfluid(iel))
+        points_mp(iel + nel_solid,2) = zcoord(npol/2,npol/2,ielfluid(iel))
+        ct = ct + 1
+     endif
   enddo
 
   if (use_netcdf) then
