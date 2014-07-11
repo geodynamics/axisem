@@ -799,8 +799,8 @@ subroutine dump_kwf_grid()
 
   do iel=1, nel_fluid
      if (kwf_mask(npol/2,jpol/2,iel + nel_solid)) then
-        points_mp(iel + nel_solid,1) = scoord(npol/2,npol/2,ielfluid(iel))
-        points_mp(iel + nel_solid,2) = zcoord(npol/2,npol/2,ielfluid(iel))
+        points_mp(ct,1) = scoord(npol/2,npol/2,ielfluid(iel))
+        points_mp(ct,2) = zcoord(npol/2,npol/2,ielfluid(iel))
         ct = ct + 1
      endif
   enddo
