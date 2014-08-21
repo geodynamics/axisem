@@ -44,7 +44,7 @@ program field_transformation
     integer                         :: ncout_mesh_mpz_varid, ncin_mesh_mpz_varid
     integer                         :: ncout_surf_grpid, ncout_surfstrain_dimid, ncout_surf_dimid
     integer                         :: ncout_comp_dimid
-    integer                         :: ncout_surf_varids(6), ncin_surf_grpid, ncin_surf_varids(6)
+    integer                         :: ncout_surf_varids(7), ncin_surf_grpid, ncin_surf_varids(7)
 
     integer                         :: nc_mesh_npol_dimid, nc_mesh_cntrlpts_dimid, &
                                        nc_mesh_elem_dimid
@@ -341,9 +341,10 @@ program field_transformation
                               len    = nsurfelem,        &
                               dimid  = ncout_surf_dimid) )     
 
-    allocate(varname_surf(6))
+    allocate(varname_surf(7))
     varname_surf = ['elem_theta      ', 'displacement    ', 'velocity        ', &
-                    'disp_src        ', 'strain          ', 'stf_dump        ']
+                    'disp_src        ', 'strain          ', 'stf_dump        ', &
+                    'stf_d_dump      ']
     do ivar = 1, size(varname_surf)
         call check( nf90_inq_varid(ncid  = ncin_surf_grpid,        &
                                    varid = ncin_surf_varids(ivar), & 
@@ -385,16 +386,18 @@ program field_transformation
                                       shuffle = 1, deflate = 1,          &
                                       deflate_level = deflate_level) )
 
-    call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
-                             name       = varname_surf(6),    &
-                             xtype      = NF90_FLOAT,         &
-                             dimids     = [ncout_snap_dimid], &
-                             chunksizes = [nsnap],            &
-                             varid      = ncout_surf_varids(6)) )
-    call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                      varid   = ncout_surf_varids(6),    &
-                                      shuffle = 1, deflate = 1,          &
-                                      deflate_level = deflate_level) )
+    do ivar = 6, 7
+       call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
+                                name       = varname_surf(ivar),    &
+                                xtype      = NF90_FLOAT,         &
+                                dimids     = [ncout_snap_dimid], &
+                                chunksizes = [nsnap],            &
+                                varid      = ncout_surf_varids(ivar)) )
+       call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
+                                         varid   = ncout_surf_varids(ivar),    &
+                                         shuffle = 1, deflate = 1,          &
+                                         deflate_level = deflate_level) )
+    enddo
     
     print *, 'Surface variables defined'
 
@@ -608,16 +611,18 @@ program field_transformation
     deallocate(data_surf_3d)
 
     allocate(data_surf_1d(nsnap))
-    call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                              varid  = ncin_surf_varids(6),    &
-                              start  = [1],                    & 
-                              count  = [nsnap],                &
-                              values = data_surf_1d) )
-    call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
-                              varid  = ncout_surf_varids(6),   &
-                              start  = [1],                    & 
-                              count  = [nsnap],                &
-                              values = data_surf_1d))
+    do ivar = 6, 7
+       call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
+                                 varid  = ncin_surf_varids(ivar),    &
+                                 start  = [1],                    & 
+                                 count  = [nsnap],                &
+                                 values = data_surf_1d) )
+       call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
+                                 varid  = ncout_surf_varids(ivar),   &
+                                 start  = [1],                    & 
+                                 count  = [nsnap],                &
+                                 values = data_surf_1d))
+    end do
     deallocate(data_surf_1d)
 
 
