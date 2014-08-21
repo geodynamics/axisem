@@ -543,7 +543,7 @@ subroutine nc_dump_stf(stf)
             ! Dumping the STF in the coarse time stepping of the strain (KERNER) output
             if ( mod(i,strain_it) == 0) then
                stf_dump_dumpvar(it_d) = stf(i) 
-               stf_d_dump_dumpvar(it_s) = stf_d_dumpvar(i)
+               stf_d_dump_dumpvar(it_d) = stf_d_dumpvar(i)
                it_d = it_d + 1
             end if
         end if
