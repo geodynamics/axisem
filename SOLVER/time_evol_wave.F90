@@ -1044,8 +1044,7 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
   !^-^-^-^-^-^- Time series^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   
-  if ( mod(iter,seis_it)==0) then
-     ! receiver locations read in from file (only 3-comp. displacements)
+  if (mod(iter,seis_it)==0) then
 
      iseismo = iseismo + 1
      if (use_netcdf) then
@@ -1059,7 +1058,7 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
 
   endif
 
-  if (mod(iter, check_it)==0) then
+  if ((mod(iter, check_it)==0).and.(iter>0)) then
      if (checkpointing.and.use_netcdf) then
         call nc_rec_checkpoint()
      end if
