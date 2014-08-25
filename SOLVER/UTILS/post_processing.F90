@@ -282,7 +282,7 @@ program post_processing_seis
   ! define time series
   allocate(time(nt_seis), seis(nt_seis,3))
   do iseis=1, nt_seis
-     time(iseis) = iseis * dt_seis
+     time(iseis) = (iseis - 1) * dt_seis
   enddo
   allocate(seis_sglcomp(nt_seis,3))
 
