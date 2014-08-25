@@ -887,7 +887,7 @@ subroutine compute_numerical_parameters
   endif
   deltat_coarse = seis_dt
 
-  nseismo = ceiling(real(niter) / real(seis_it)) 
+  nseismo = floor(real(niter) / real(seis_it)) + 1
 
   ! Frequency of checkpointing. Hardcoded to every 5% of runtime
   check_it = niter / 20
