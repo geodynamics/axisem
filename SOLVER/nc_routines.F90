@@ -26,7 +26,7 @@ module nc_routines
 #ifdef unc
     use netcdf
 #endif
-    use data_io,    only : verbose, deflate_level, nseismo
+    use data_io,    only : verbose, deflate_level
     use data_proc,  only : mynum, nproc, lpr
     use global_parameters
     use commun,     only : barrier, comm_elem_number
@@ -563,8 +563,9 @@ subroutine nc_dump_rec(recfield, iseismo)
     integer, intent(in)                        :: iseismo
 #ifdef unc
    
-    recdumpvar(iseismo,:,:) = 0.0
-    where(abs(recfield)>epsi) recdumpvar(iseismo,:,:) = recfield(:,:)
+    !recdumpvar(iseismo,:,:) = 0.0
+    !where(abs(recfield)>epsi) recdumpvar(iseismo,:,:) = recfield(:,:)
+    recdumpvar(iseismo,:,:) = recfield(:,:)
 
 #endif
 end subroutine
@@ -576,8 +577,8 @@ subroutine nc_dump_rec_to_disk
     use data_mesh, only: loc2globrec, num_rec
     use data_io,   only: datapath, lfdata, nseismo
 
-    real                              :: tick, tack
-    integer                           :: irec, dumpsize, icomp
+    real              :: tick, tack
+    integer           :: irec, dumpsize, icomp
 
     call cpu_time(tick)
 
@@ -589,7 +590,8 @@ subroutine nc_dump_rec_to_disk
     dumpsize = 0
     do irec = 1, num_rec
         do icomp = 1, 3
-            call putvar_real3d(ncid   = ncid_recout, varid=nc_disp_varid, &
+            call putvar_real3d(ncid   = ncid_recout,  &
+                               varid  = nc_disp_varid, &
                                start  = [1, icomp, loc2globrec(irec)], &
                                count  = [nseismo, 1, 1], &
                                values = reshape(recdumpvar(:,icomp,irec), [nseismo, 1, 1]) )

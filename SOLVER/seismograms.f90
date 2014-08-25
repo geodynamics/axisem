@@ -899,7 +899,7 @@ subroutine nc_compute_recfile_seis_bare(disp, iseismo)
 
   use data_source, only : src_type
   use nc_routines, only : nc_dump_rec
-  use data_mesh,   only : recfile_el, num_rec, jsurfel
+  use data_mesh,   only : recfile_el, num_rec
   implicit none
   real(kind=realkind), intent(in)  :: disp(0:,0:,:,:)
   integer,             intent(in)  :: iseismo
@@ -930,7 +930,7 @@ subroutine nc_compute_recfile_seis_bare(disp, iseismo)
      enddo
   end if !src_type(1)
 
-call nc_dump_rec(disp_rec, iseismo) 
+  call nc_dump_rec(disp_rec, iseismo) 
 
 end subroutine nc_compute_recfile_seis_bare
 !=============================================================================
