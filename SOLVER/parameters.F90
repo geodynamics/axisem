@@ -887,7 +887,7 @@ subroutine compute_numerical_parameters
   endif
   deltat_coarse = seis_dt
 
-  nseismo = floor(real(niter) / real(seis_it))
+  nseismo = ceiling(real(niter) / real(seis_it)) 
 
   ! Frequency of checkpointing. Hardcoded to every 5% of runtime
   check_it = niter / 20
@@ -904,7 +904,7 @@ subroutine compute_numerical_parameters
   if (dump_vtk .or. dump_xdmf .or. dump_memory_vars) then
      snap_it = floor(snap_dt / deltat)
      open(unit=2900+mynum, file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
-     nsnap = floor(real(niter) / real(snap_it))
+     nsnap = ceiling(real(niter) / real(snap_it)) 
      
      write(2900+mynum,*) nsnap 
      do ielem=1, nsnap
@@ -1047,7 +1047,7 @@ subroutine compute_numerical_parameters
   ! strain tensor output, convert from num of dumps per period into 
   ! incremental time steps
   if (dump_wavefields) then
-     nstrain = floor(real(niter)/real(strain_it))
+     nstrain = ceiling(real(niter)/real(strain_it)) + 1
 
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
      write(2900+mynum,*) nstrain 

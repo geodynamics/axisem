@@ -1328,7 +1328,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end do
 
         ! Write out seismogram dump times
-        time_seis = dble([ (i, i = 1, nseismo) ]) * deltat
+        time_seis = dble([ (i, i = 0, nseismo-1) ]) * deltat
         call check( nf90_put_var( ncid_recout, nc_time_varid, values = time_seis ) ) 
         if (verbose > 1) write(6,*) '...done'
 

@@ -326,6 +326,10 @@ subroutine sf_time_loop_newmark
   if (verbose > 1) write(69,*) &
         '************ S T A R T I N G   T I M E   L O O P *************'
 
+  iclockdump = tick()
+  call dump_stuff(0, iseismo, istrain, isnap, disp, velo, chi, dchi, ddchi0, t)
+  iclockdump = tick(id=iddump, since=iclockdump)
+
   do iter = 1, niter
 
      t = t + deltat
@@ -532,6 +536,10 @@ subroutine symplectic_time_loop
   if (verbose > 1) write(69,*) &
         '*********** S T A R T I N G   T I M E   L O O P ************'
 
+  iclockdump = tick()
+  call dump_stuff(0, iseismo, istrain, isnap, disp,velo,chi,dchi,ddchi,t)
+  iclockdump = tick(id=iddump, since=iclockdump)
+
   do iter=1, niter
 
      t = t + deltat
@@ -645,8 +653,6 @@ subroutine symplectic_time_loop
         else
            velo(:,:,:,3) = velo(:,:,:,3) - acc(:,:,:,3) * coefv(i) * inv_mass_rho
         endif
-
-        !call dump_stuff(iter * nstages + i,disp,velo,chi,dchi,ddchi,subdt(i))
 
      enddo ! ... nstages substages
 
@@ -1113,7 +1119,7 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
 
   if (dump_wavefields) then
 
-    if (mod(iter,strain_it)==0 .or. iter==0) then
+    if (mod(iter,strain_it)==0) then
 
       ! dump displacement and velocity in each surface element
       ! for netcdf people set .true. in inparam to use it instead of the standard
