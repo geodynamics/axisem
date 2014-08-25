@@ -34,9 +34,6 @@ module data_io
   logical           :: dump_snaps_glob
   logical           :: dump_vtk 
   logical           :: dump_xdmf
-  logical           :: dump_snaps_solflu
-  !> N.B. This is not wavefield snapshots, but kernel wavefields. Belongs to nstrain and
-  !! istrain
   logical           :: dump_wavefields 
   logical           :: checkpointing
   logical           :: diagfiles !< Write diagnostic files (seismograms at antipodes, 
@@ -44,9 +41,9 @@ module data_io
 
   logical           :: need_fluid_displ
   real(kind=dp)     :: strain_samp
-  integer           :: iseismo  !< current seismogram sample
-  integer           :: istrain  !< current kernel wavefield sample
-  integer           :: isnap    !< current wavefield sample for movies
+  !integer           :: iseismo  !< current seismogram sample
+  !integer           :: istrain  !< current kernel wavefield sample
+  !integer           :: isnap    !< current wavefield sample for movies
   integer           :: nseismo  !< Number of seismogram samples
   integer           :: nstrain  !< Number of wavefield dumps for kernels
   integer           :: nsnap    !< Number of wavefield snapshots for movies

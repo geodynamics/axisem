@@ -530,10 +530,10 @@ end subroutine nc_dump_stf
 !-----------------------------------------------------------------------------------------
 !> Dump receiver specific stuff, especially displacement and velocity
 !! N.B.: Works with global indices.
-subroutine nc_dump_rec(recfield)
+subroutine nc_dump_rec(recfield, iseismo)
     use data_mesh, only: num_rec
-    use data_io,   only: iseismo
     real(sp), intent(in), dimension(3,num_rec) :: recfield
+    integer, intent(in)                        :: iseismo
 #ifdef unc
    
     recdumpvar(iseismo,:,:) = 0.0
@@ -613,12 +613,10 @@ end subroutine nc_rec_checkpoint
 
 !----------------------------------------------------------------------------------------
 !> Dump stuff along surface
-subroutine nc_dump_surface(surffield, disporvelo)!, nrec, dim2)
-    use data_mesh, only: maxind
+subroutine nc_dump_surface(surffield, disporvelo)
 
-    !integer, intent(in)                          :: nrec, dim2
     real(kind=realkind), intent(in), dimension(:,:) :: surffield
-    character(len=4), intent(in)                 :: disporvelo
+    character(len=4), intent(in)                    :: disporvelo
 #ifdef unc
    
     select case(disporvelo)
@@ -1773,15 +1771,16 @@ end subroutine nc_make_snapfile
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine nc_dump_snapshot(u, straintrace, curlinplane)
+subroutine nc_dump_snapshot(u, straintrace, curlinplane, isnap)
 
     use data_mesh,      only: npoint_plot
-    use data_io,        only: isnap, nsnap
+    use data_io,        only: nsnap
     use data_source,    only: src_type
 
     real(kind=realkind), dimension(3,npoint_plot), intent(in)  :: u
     real(kind=realkind), dimension(1,npoint_plot), intent(in)  :: straintrace
     real(kind=realkind), dimension(1,npoint_plot), intent(in)  :: curlinplane
+    integer,                                       intent(in)  :: isnap
 
 #ifdef unc
     if (src_type(1) == 'monopole') then

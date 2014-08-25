@@ -35,98 +35,14 @@ module wavefields_io
   private
 
   public :: dump_field_1d
-  public :: solid_snapshot
   public :: glob_snapshot_xdmf
   public :: glob_snapshot_midpoint
   public :: dump_velo_global
   public :: dump_disp_global
   public :: dump_disp
   public :: dump_velo_dchi
-  public :: fluid_snapshot
 
 contains
-
-!-----------------------------------------------------------------------------------------
-!> Dumps the global displacement snapshots [m] in ASCII format
-!! When reading the fluid wavefield, one needs to multiply all 
-!! components with inv_rho_fluid and the phi component with one/scoord
-!! as dumped by the corresponding routine dump_glob_grid!
-!! Convention for order in the file: First the fluid, then the solid domain.
-subroutine glob_snapshot(f_sol, chi, ibeg, iend, jbeg, jend)
-
-   use data_source,            only : src_type
-   use pointwise_derivatives,  only : axisym_gradient_fluid, dsdf_fluid_axis
-   use data_mesh,              only : npol, nel_solid, nel_fluid
-   
-   integer, intent(in)             :: ibeg, iend, jbeg, jend
-   real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
-   real(kind=realkind), intent(in) :: chi(0:,0:,:)
- 
-   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
-   character(len=4)                :: appisnap
-   integer                         :: iel, iidim
-   real(kind=realkind)             :: dsdchi, prefac
-   
-   ! When reading the fluid wavefield, one needs to multiply all components 
-   ! with inv_rho_fluid and the phi component with one/scoord!!
-   
-   if (src_type(1) == 'monopole') prefac = zero
-   if (src_type(1) == 'dipole')   prefac = one
-   if (src_type(1) == 'quadpole') prefac = two
-   
-   call define_io_appendix(appisnap, isnap)
-   
-   open(unit=2500+mynum, file=datapath(1:lfdata)//'/snap_'&
-                             //appmynum//'_'//appisnap//'.dat')
-   
-   if (have_fluid) then
-      call axisym_gradient_fluid(chi, usz_fluid)
-      do iel=1, nel_fluid
-   
-         if (axis_fluid(iel)) then
-            call dsdf_fluid_axis(chi(:,:,iel), iel, 0, dsdchi)
-            write(2500+mynum,*) usz_fluid(0,0,iel,1), &
-                                prefac * dsdchi * chi(0,0,iel), &
-                                usz_fluid(0,0,iel,2)
-         else
-            write(2500+mynum,*) usz_fluid(0,0,iel,1), &
-                                prefac * chi(0,0,iel), &
-                                usz_fluid(0,0,iel,2)
-         endif
-   
-            write(2500+mynum,*) usz_fluid(npol,0,iel,1), &
-                                prefac * chi(npol,0,iel), &
-                                usz_fluid(npol,0,iel,2)
-   
-            write(2500+mynum,*) usz_fluid(npol,npol,iel,1), &
-                                prefac * chi(npol,npol,iel), &
-                                usz_fluid(npol,npol,iel,2)
-   
-         if ( axis_fluid(iel)) then
-            call dsdf_fluid_axis(chi(:,:,iel), iel, npol, dsdchi)
-            write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
-                                prefac * dsdchi * chi(0,npol,iel), &
-                                usz_fluid(0,npol,iel,2)
-         else
-            write(2500+mynum,*) usz_fluid(0,npol,iel,1), &
-                                prefac * chi(0,npol,iel), &
-                                usz_fluid(0,npol,iel,2)
-         endif
-   
-      enddo
-   endif ! have_fluid
-   
-   do iel=1, nel_solid
-      write(2500+mynum,*) (f_sol(0,0,iel,iidim), iidim=1,3)
-      write(2500+mynum,*) (f_sol(npol,0,iel,iidim), iidim=1,3)
-      write(2500+mynum,*) (f_sol(npol,npol,iel,iidim), iidim=1,3)
-      write(2500+mynum,*) (f_sol(0,npol,iel,iidim), iidim=1,3)
-   enddo
-   
-   close(2500+mynum)
-
-end subroutine glob_snapshot
-!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 !> Dumps the global displacement snapshots [m] in binary  format
@@ -135,13 +51,13 @@ end subroutine glob_snapshot
 !! as dumped by the corresponding routine dump_glob_grid!
 !! Convention for order in the file: First the fluid, then the solid domain.
 !! MvD: loop increment npol/2 -> what if npol odd?
-subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend)
+subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend, isnap)
 
    use data_source,            only : src_type
    use pointwise_derivatives,  only : axisym_gradient_fluid, dsdf_fluid_axis
    use data_mesh,              only : npol, nel_solid, nel_fluid
    
-   integer, intent(in)             :: ibeg, iend, jbeg, jend
+   integer, intent(in)             :: ibeg, iend, jbeg, jend, isnap
    real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
    real(kind=realkind), intent(in) :: chi(0:,0:,:)
  
@@ -198,7 +114,7 @@ end subroutine glob_snapshot_midpoint
 
 !-----------------------------------------------------------------------------------------
 !> Dumps the global displacement snapshots in binary plus XDMF descriptor
-subroutine glob_snapshot_xdmf(f_sol, chi, t)
+subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
 
    use data_source,             only: src_type
    use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
@@ -209,6 +125,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t)
    real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
    real(kind=realkind), intent(in) :: chi(0:,0:,:)
    real(dp), intent(in)            :: t
+   integer, intent(in)             :: isnap
 
    character(len=4)                :: appisnap
    integer                         :: n_xdmf_fl, n_xdmf_sol
@@ -271,7 +188,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t)
                      i_arr_xdmf, j_arr_xdmf, curlinplane_mask)
    ! Write variable u to respective file (binary or netcdf)
    if (use_netcdf) then
-       call nc_dump_snapshot(u, straintrace_mask, curlinplane_mask)
+       call nc_dump_snapshot(u, straintrace_mask, curlinplane_mask, isnap)
    else
        write(13100) u(1,:)
        if (src_type(1) /= 'monopole') write(13101) u(2,:)
@@ -867,89 +784,6 @@ end function
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-!> Dumps the displacement snapshots [m] in the solid region in ASCII format
-!! Convention for order in the file: First the fluid, then the solid domain.
-subroutine solid_snapshot(f, ibeg, iend, jbeg, jend)
-
-  use data_mesh, only: nel_solid
-
-  integer, intent(in)             :: ibeg, iend, jbeg, jend
-  real(kind=realkind), intent(in) :: f(0:,0:,:,:)
-  character(len=4)                :: appisnap
-  integer                         :: iel, ipol, jpol, idim
-
-  call define_io_appendix(appisnap,isnap)
-
-  open(unit=3500+mynum, file=datapath(1:lfdata)//'/snap_solid_'&
-                             //appmynum//'_'//appisnap//'.dat')
-
-  do iel=1, nel_solid
-     do jpol=ibeg, iend
-        do ipol=jbeg, jend
-           write(3500+mynum,*) (f(ipol,jpol,iel,idim),idim=1,3)
-        enddo
-     enddo
-  enddo
-  close(3500+mynum)
-
-end subroutine solid_snapshot
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-subroutine fluid_snapshot(chi, ibeg, iend, jbeg, jend)
-
-   use data_source,            only : src_type
-   use pointwise_derivatives,  only : axisym_gradient_fluid, dsdf_fluid_axis
-   use data_mesh,              only : npol, nel_fluid
-   
-   integer, intent(in)             :: ibeg, iend, jbeg, jend
-   real(kind=realkind), intent(in) :: chi(0:,0:,:)
-
-   real(kind=realkind)             :: usz_fluid(0:npol,0:npol,1:nel_fluid,2)
-   character(len=4)                :: appisnap
-   integer                         :: iel, ipol, jpol
-   real(kind=realkind)             :: dsdchi, prefac
-   
-   ! When reading the fluid wavefield, one needs to multiply all components 
-   ! with inv_rho_fluid and the phi component with one/scoord!!
- 
-   if (src_type(1) == 'monopole') prefac = zero
-   if (src_type(1) == 'dipole')   prefac = one
-   if (src_type(1) == 'quadpole') prefac = two
- 
-   call axisym_gradient_fluid(chi, usz_fluid)
- 
-   call define_io_appendix(appisnap, isnap)
- 
-   open(unit=4500+mynum, file=datapath(1:lfdata)//'/snap_fluid_'&
-                              //appmynum//'_'//appisnap//'.dat')
- 
-   do iel=1, nel_fluid
-      do jpol=jbeg, jend
-         do ipol=ibeg, iend
-            if ( axis_fluid(iel) .and. ipol==0 ) then
-               call dsdf_fluid_axis(chi(:,:,iel), iel, jpol, dsdchi)
-               write(4500+mynum,*) usz_fluid(ipol,jpol,iel,1), &
-                                   !prefac * dsdchi * chi(ipol,jpol,iel), &
-                                   0., &
-                                   usz_fluid(ipol,jpol,iel,2)
-               ! (n.b. up_fl is zero at the axes for all source types, prefac = 0 for
-               ! monopole and chi -> 0 for dipole and quadrupole EQ 73-77 in TNM 2007)
-            else
-               write(4500+mynum,*) usz_fluid(ipol,jpol,iel,1), &
-                                   prefac * chi(ipol,jpol,iel), &
-                                   usz_fluid(ipol,jpol,iel,2)
-            endif
-         enddo
-      enddo
-   enddo
- 
-   close(4500+mynum)
-
-end subroutine fluid_snapshot
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
 subroutine dump_field_1d(f, filename, appisnap, n)
 
    use data_source,                only : have_src, src_dump_type
@@ -990,12 +824,13 @@ end subroutine dump_field_1d
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine dump_disp(u, chi)
+subroutine dump_disp(u, chi, istrain)
 
    use data_source,            only : src_type,src_dump_type
    
    real(kind=realkind), intent(in) :: u(0:,0:,:,:)
    real(kind=realkind), intent(in) :: chi(0:,0:,:)
+   integer,             intent(in) :: istrain
 
    integer                         :: i
    character(len=4)                :: appisnap
@@ -1035,12 +870,13 @@ end subroutine dump_disp
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine dump_velo_dchi(v, dchi)
+subroutine dump_velo_dchi(v, dchi, istrain)
 
    use data_source,           only : src_type, src_dump_type
    
    real(kind=realkind),intent(in) :: v(0:,0:,:,:)
    real(kind=realkind),intent(in) :: dchi(0:,0:,:)
+   integer,            intent(in) :: istrain
 
    integer                        :: i
    character(len=4)               :: appisnap
@@ -1080,7 +916,7 @@ end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine dump_velo_global(v,dchi)
+subroutine dump_velo_global(v, dchi, istrain)
 
    use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
    use data_source,             only: src_type, src_dump_type
@@ -1089,6 +925,7 @@ subroutine dump_velo_global(v,dchi)
    
    real(kind=realkind), intent(in) :: v(:,:,:,:)
    real(kind=realkind), intent(in) :: dchi(:,:,:)
+   integer,             intent(in) :: istrain
    
    real(kind=realkind)             :: phicomp(0:npol,0:npol,nel_fluid)
    integer                         :: i
@@ -1162,7 +999,7 @@ end subroutine dump_velo_global
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine dump_disp_global(u, chi)
+subroutine dump_disp_global(u, chi, istrain)
 
    use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
    use data_source,             only: src_type, src_dump_type
@@ -1171,6 +1008,7 @@ subroutine dump_disp_global(u, chi)
    
    real(kind=realkind), intent(in) :: u(:,:,:,:)
    real(kind=realkind), intent(in) :: chi(:,:,:)
+   integer,             intent(in) :: istrain
    
    real(kind=realkind)             :: phicomp(0:npol,0:npol,nel_fluid)
    integer                         :: i
