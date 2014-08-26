@@ -1392,9 +1392,9 @@ subroutine write_parameters
         write(55,22)ibeg,'  ibeg: beginning gll index for wavefield dumps'
         write(55,22)iend,'iend: end gll index for wavefield dumps'
         write(55,21)shift_fact,'source shift factor [s]'
-        write(55,22)int(shift_fact/deltat),'source shift factor for deltat'
-        write(55,22)int(shift_fact/seis_dt),'source shift factor for seis_dt'
-        write(55,22)int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
+        write(55,22)nint(shift_fact/deltat),'source shift factor for deltat'
+        write(55,22)nint(shift_fact/seis_dt),'source shift factor for seis_dt'
+        write(55,22)nint(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
         write(55,23)trim(rec_file_type),'receiver file type'
         write(55,21)dtheta_rec,'receiver spacing (0 if not even)'
         write(55,24)use_netcdf,'use netcdf for wavefield output?'
@@ -1465,9 +1465,9 @@ subroutine write_parameters
         call nc_write_att_int(  ibeg,                  'ibeg')
         call nc_write_att_int(  iend,                  'iend')
         call nc_write_att_real( shift_fact,            'source shift factor in sec')
-        call nc_write_att_int(  int(shift_fact/deltat),  'source shift factor for deltat')
-        call nc_write_att_int(  int(shift_fact/seis_dt), 'source shift factor for seis_dt')
-        call nc_write_att_int(  int(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
+        call nc_write_att_int(  nint(shift_fact/deltat),  'source shift factor for deltat')
+        call nc_write_att_int(  nint(shift_fact/seis_dt), 'source shift factor for seis_dt')
+        call nc_write_att_int(  nint(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
         call nc_write_att_char( trim(rec_file_type),   'receiver file type')
         call nc_write_att_real( dtheta_rec,            'receiver spacing (0 if not even)')
         write(clogic,*) use_netcdf
