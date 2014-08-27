@@ -904,7 +904,7 @@ subroutine compute_numerical_parameters
   if (dump_vtk .or. dump_xdmf .or. dump_memory_vars) then
      snap_it = floor(snap_dt / deltat)
      open(unit=2900+mynum, file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
-     nsnap = ceiling(real(niter) / real(snap_it)) 
+     nsnap = floor(real(niter) / real(snap_it)) + 1
      
      write(2900+mynum,*) nsnap 
      do ielem=1, nsnap
@@ -1047,7 +1047,7 @@ subroutine compute_numerical_parameters
   ! strain tensor output, convert from num of dumps per period into 
   ! incremental time steps
   if (dump_wavefields) then
-     nstrain = ceiling(real(niter)/real(strain_it)) + 1
+     nstrain = floor(real(niter)/real(strain_it)) + 1
 
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
      write(2900+mynum,*) nstrain 
