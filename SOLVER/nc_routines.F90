@@ -26,7 +26,7 @@ module nc_routines
 #ifdef unc
     use netcdf
 #endif
-    use data_io,    only : verbose, deflate_level, nseismo
+    use data_io,    only : verbose, deflate_level
     use data_proc,  only : mynum, nproc, lpr
     use global_parameters
     use commun,     only : barrier, comm_elem_number
@@ -87,13 +87,13 @@ module nc_routines
 
     integer            :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout, ncid_meshout
     integer            :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
-    integer            :: nc_times_dimid, nc_comp_dimid, nc_disp_varid, nc_stf_seis_varid
-    integer            :: nc_time_varid, nc_iter_dimid, nc_stf_iter_varid
+    integer            :: nc_times_dimid, nc_comp_dimid, nc_disp_varid, nc_stf_seis_varid, nc_stf_d_seis_varid
+    integer            :: nc_time_varid, nc_iter_dimid, nc_stf_iter_varid, nc_stf_d_iter_varid
 
     integer            :: nc_strcomp_dimid
     integer            :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
     integer            :: nc_surfelem_strain_varid, nc_surfelem_disp_src_varid
-    integer            :: nc_mesh_sol_varid, nc_mesh_flu_varid, nc_stf_dump_varid
+    integer            :: nc_mesh_sol_varid, nc_mesh_flu_varid, nc_stf_dump_varid, nc_stf_d_dump_varid
     integer            :: nc_point_dimid, nc_pt_sol_dimid, nc_pt_flu_dimid
     integer            :: nc_szcoord_dimid
     integer            :: nc_snaptime_varid, nc_elem_dom_varid, nc_surfelem_theta_varid
@@ -121,6 +121,11 @@ module nc_routines
     real(kind=sp), allocatable :: stf_dump_dumpvar(:)
     real(kind=sp), allocatable :: stf_seis_dumpvar(:)
     real(kind=sp), allocatable :: stf_dumpvar(:)
+
+    !! Buffer variables for time derivative of the STF.
+    real(kind=sp), allocatable :: stf_d_dump_dumpvar(:)
+    real(kind=sp), allocatable :: stf_d_seis_dumpvar(:)
+    real(kind=sp), allocatable :: stf_d_dumpvar(:)
 
     !> How many snaps should be buffered in RAM?
     integer             :: nc_dumpbuffersize
@@ -494,7 +499,7 @@ end subroutine nc_dump_strain_to_disk
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_stf(stf)
     use data_io,  only                       : nseismo, nstrain, dump_wavefields
-    use data_time, only                      : seis_it, strain_it, niter
+    use data_time, only                      : seis_it, strain_it, niter, deltat
     real(kind=sp), intent(in), dimension(:) :: stf   
 #ifdef unc
     integer                                 :: it_s, it_d, i
@@ -502,22 +507,44 @@ subroutine nc_dump_stf(stf)
     allocate(stf_dumpvar(niter))
     allocate(stf_seis_dumpvar(nseismo))
     allocate(stf_dump_dumpvar(nstrain))
-    stf_seis_dumpvar = 0.0
+
+    allocate(stf_d_dumpvar(niter))
+    allocate(stf_d_seis_dumpvar(nseismo))
+    allocate(stf_d_dump_dumpvar(nstrain))
+
+    stf_d_dumpvar = 0
+
+    stf_seis_dumpvar = 0
+    stf_dump_dumpvar = 0
+
+    stf_d_seis_dumpvar = 0
+    stf_d_dump_dumpvar = 0
+
+    ! compute derivative using central differences
+    do i = 2, niter-1
+       stf_d_dumpvar(i) = (stf(i+1) - stf(i-1)) / (2 * deltat)
+    enddo
+    ! compute derivative using fwd/bwd difference at the first and last sample
+    stf_d_dumpvar(1) = (stf(2) - stf(1)) / deltat
+    stf_d_dumpvar(niter) = (stf(niter) - stf(niter-1)) / deltat
+
     it_s = 1
     it_d = 1
 
     do i = 1, niter
         ! Dumping the STF in the fine time stepping of the seismogram output
         if ( mod(i,seis_it) == 0) then
-           stf_seis_dumpvar(it_s) = stf(i) 
            it_s = it_s + 1
+           stf_seis_dumpvar(it_s) = stf(i) 
+           stf_d_seis_dumpvar(it_s) = stf_d_dumpvar(i)
         end if
 
         if (dump_wavefields) then
             ! Dumping the STF in the coarse time stepping of the strain (KERNER) output
             if ( mod(i,strain_it) == 0) then
-               stf_dump_dumpvar(it_d) = stf(i) 
                it_d = it_d + 1
+               stf_dump_dumpvar(it_d) = stf(i) 
+               stf_d_dump_dumpvar(it_d) = stf_d_dumpvar(i)
             end if
         end if
     end do
@@ -530,14 +557,15 @@ end subroutine nc_dump_stf
 !-----------------------------------------------------------------------------------------
 !> Dump receiver specific stuff, especially displacement and velocity
 !! N.B.: Works with global indices.
-subroutine nc_dump_rec(recfield)
+subroutine nc_dump_rec(recfield, iseismo)
     use data_mesh, only: num_rec
-    use data_io,   only: iseismo
     real(sp), intent(in), dimension(3,num_rec) :: recfield
+    integer, intent(in)                        :: iseismo
 #ifdef unc
    
-    recdumpvar(iseismo,:,:) = 0.0
-    where(abs(recfield)>epsi) recdumpvar(iseismo,:,:) = recfield(:,:)
+    !recdumpvar(iseismo,:,:) = 0.0
+    !where(abs(recfield)>epsi) recdumpvar(iseismo,:,:) = recfield(:,:)
+    recdumpvar(iseismo,:,:) = recfield(:,:)
 
 #endif
 end subroutine
@@ -549,8 +577,8 @@ subroutine nc_dump_rec_to_disk
     use data_mesh, only: loc2globrec, num_rec
     use data_io,   only: datapath, lfdata, nseismo
 
-    real                              :: tick, tack
-    integer                           :: irec, dumpsize, icomp
+    real              :: tick, tack
+    integer           :: irec, dumpsize, icomp
 
     call cpu_time(tick)
 
@@ -562,7 +590,8 @@ subroutine nc_dump_rec_to_disk
     dumpsize = 0
     do irec = 1, num_rec
         do icomp = 1, 3
-            call putvar_real3d(ncid   = ncid_recout, varid=nc_disp_varid, &
+            call putvar_real3d(ncid   = ncid_recout,  &
+                               varid  = nc_disp_varid, &
                                start  = [1, icomp, loc2globrec(irec)], &
                                count  = [nseismo, 1, 1], &
                                values = reshape(recdumpvar(:,icomp,irec), [nseismo, 1, 1]) )
@@ -613,12 +642,10 @@ end subroutine nc_rec_checkpoint
 
 !----------------------------------------------------------------------------------------
 !> Dump stuff along surface
-subroutine nc_dump_surface(surffield, disporvelo)!, nrec, dim2)
-    use data_mesh, only: maxind
+subroutine nc_dump_surface(surffield, disporvelo)
 
-    !integer, intent(in)                          :: nrec, dim2
     real(kind=realkind), intent(in), dimension(:,:) :: surffield
-    character(len=4), intent(in)                 :: disporvelo
+    character(len=4), intent(in)                    :: disporvelo
 #ifdef unc
    
     select case(disporvelo)
@@ -1071,11 +1098,21 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                  dimids=[nc_times_dimid], &
                                  deflate_level = deflate_level, &
                                  varid=nc_stf_seis_varid) )
+
+        call check( nf90_def_var(ncid=ncid_recout, name="stf_d_seis", xtype=NF90_FLOAT,&
+                                 dimids=[nc_times_dimid], &
+                                 deflate_level = deflate_level, &
+                                 varid=nc_stf_d_seis_varid) )
         
         call check( nf90_def_var(ncid=ncid_recout, name="stf_iter", xtype=NF90_FLOAT,&
                                  dimids=[nc_iter_dimid], &
                                  deflate_level = deflate_level, &
                                  varid=nc_stf_iter_varid) )
+
+        call check( nf90_def_var(ncid=ncid_recout, name="stf_d_iter", xtype=NF90_FLOAT,&
+                                 dimids=[nc_iter_dimid], &
+                                 deflate_level = deflate_level, &
+                                 varid=nc_stf_d_iter_varid) )
         
         call check( nf90_def_var(ncid=ncid_recout, name="time", xtype=NF90_DOUBLE,&
                                  dimids=[nc_times_dimid], &
@@ -1311,6 +1348,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_def_var( ncid_surfout, "stf_dump", NF90_FLOAT, &
                                       [nc_snap_dimid], &
                                       nc_stf_dump_varid) )
+
+            call check( nf90_def_var( ncid_surfout, "stf_d_dump", NF90_FLOAT, &
+                                      [nc_snap_dimid], &
+                                      nc_stf_d_dump_varid) )
         end if
 
         
@@ -1330,7 +1371,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end do
 
         ! Write out seismogram dump times
-        time_seis = dble([ (i, i = 1, nseismo) ]) * deltat
+        time_seis = dble([ (i, i = 0, nseismo-1) ]) * deltat
         call check( nf90_put_var( ncid_recout, nc_time_varid, values = time_seis ) ) 
         if (verbose > 1) write(6,*) '...done'
 
@@ -1340,8 +1381,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                  varid  = nc_stf_iter_varid, &
                                  values = stf_dumpvar) )
         call check( nf90_put_var(ncid   = ncid_recout, &
+                                 varid  = nc_stf_d_iter_varid, &
+                                 values = stf_d_dumpvar) )
+        call check( nf90_put_var(ncid   = ncid_recout, &
                                  varid  = nc_stf_seis_varid, &
                                  values = stf_seis_dumpvar) )
+        call check( nf90_put_var(ncid   = ncid_recout, &
+                                 varid  = nc_stf_d_seis_varid, &
+                                 values = stf_d_seis_dumpvar) )
 
         if (dump_wavefields) then
             ! Write out strain dump times
@@ -1362,6 +1409,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_put_var(ncid   = ncid_surfout, &
                                      varid  = nc_stf_dump_varid, &
                                      values = stf_dump_dumpvar) )
+            call check( nf90_put_var(ncid   = ncid_surfout, &
+                                     varid  = nc_stf_d_dump_varid, &
+                                     values = stf_d_dump_dumpvar) )
 
             if (verbose > 1) write(6,*) '...done'
         end if
@@ -1773,15 +1823,16 @@ end subroutine nc_make_snapfile
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine nc_dump_snapshot(u, straintrace, curlinplane)
+subroutine nc_dump_snapshot(u, straintrace, curlinplane, isnap)
 
     use data_mesh,      only: npoint_plot
-    use data_io,        only: isnap, nsnap
+    use data_io,        only: nsnap
     use data_source,    only: src_type
 
     real(kind=realkind), dimension(3,npoint_plot), intent(in)  :: u
     real(kind=realkind), dimension(1,npoint_plot), intent(in)  :: straintrace
     real(kind=realkind), dimension(1,npoint_plot), intent(in)  :: curlinplane
+    integer,                                       intent(in)  :: isnap
 
 #ifdef unc
     if (src_type(1) == 'monopole') then

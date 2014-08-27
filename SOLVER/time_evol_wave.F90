@@ -171,12 +171,6 @@ subroutine prepare_waves
   if (anel_true .and. dump_memory_vars) &
      call prepare_mesh_memoryvar_vtk()
 
-  if (dump_snaps_solflu) then
-     if (lpr) write(6,*)'  dumping solid & fluid grids for snapshots...'
-     call dump_solid_grid(ibeg,iend,ibeg,iend)
-     if (have_fluid) call dump_fluid_grid(ibeg,iend,ibeg,iend)
-  endif
-
   ! Various seismogram output preparations...
   call prepare_seismograms
   call open_hyp_epi_equ_anti
@@ -280,7 +274,10 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
-  integer :: iter
+  integer           :: iseismo = 0 !< current seismogram sample
+  integer           :: istrain = 0 !< current kernel wavefield sample
+  integer           :: isnap   = 0 !< current wavefield sample for movies
+  integer           :: iter
 
   if (lpr) then
      write(6,*)
@@ -328,6 +325,10 @@ subroutine sf_time_loop_newmark
   if (lpr) write(6,*) '************ S T A R T I N G   T I M E   L O O P *************'
   if (verbose > 1) write(69,*) &
         '************ S T A R T I N G   T I M E   L O O P *************'
+
+  iclockdump = tick()
+  call dump_stuff(0, iseismo, istrain, isnap, disp, velo, chi, dchi, ddchi0, t)
+  iclockdump = tick(id=iddump, since=iclockdump)
 
   do iter = 1, niter
 
@@ -456,7 +457,7 @@ subroutine sf_time_loop_newmark
      acc0(:,:,:,3) = acc1(:,:,:,3)
      
      iclockdump = tick()
-     call dump_stuff(iter, disp, velo, chi, dchi, ddchi0, t)
+     call dump_stuff(iter, iseismo, istrain, isnap, disp, velo, chi, dchi, ddchi0, t)
      iclockdump = tick(id=iddump, since=iclockdump)
   end do ! time loop
   
@@ -498,7 +499,10 @@ subroutine symplectic_time_loop
   ! fluid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi, ddchi
   
-  integer :: iter, i
+  integer   :: iseismo = 0 !< current seismogram sample
+  integer   :: istrain = 0 !< current kernel wavefield sample
+  integer   :: isnap   = 0 !< current wavefield sample for movies
+  integer   :: iter, i
   
   ! symplectic stuff
   real(kind=dp), allocatable, dimension(:) :: coefd, coeff, coefv, subdt
@@ -531,6 +535,10 @@ subroutine symplectic_time_loop
   if (lpr) write(6,*)'*********** S T A R T I N G   T I M E   L O O P ************'
   if (verbose > 1) write(69,*) &
         '*********** S T A R T I N G   T I M E   L O O P ************'
+
+  iclockdump = tick()
+  call dump_stuff(0, iseismo, istrain, isnap, disp,velo,chi,dchi,ddchi,t)
+  iclockdump = tick(id=iddump, since=iclockdump)
 
   do iter=1, niter
 
@@ -646,8 +654,6 @@ subroutine symplectic_time_loop
            velo(:,:,:,3) = velo(:,:,:,3) - acc(:,:,:,3) * coefv(i) * inv_mass_rho
         endif
 
-        !call dump_stuff(iter * nstages + i,disp,velo,chi,dchi,ddchi,subdt(i))
-
      enddo ! ... nstages substages
 
 
@@ -667,7 +673,7 @@ subroutine symplectic_time_loop
      ! ::::::::::::::::::::::::: END SYMPLECTIC SOLVER ::::::::::::::::::::::::::
 
      iclockdump = tick()
-     call dump_stuff(iter,disp,velo,chi,dchi,ddchi,t)
+     call dump_stuff(iter, iseismo, istrain, isnap, disp,velo,chi,dchi,ddchi,t)
      iclockdump = tick(id=iddump, since=iclockdump)
 
   end do ! time loop
@@ -1015,7 +1021,8 @@ end subroutine add_source
 !> Includes all output action done during the time loop such as
 !! various receiver definitions, wavefield snapshots, velocity field & strain 
 !! tensor for 3-D kernels 
-subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
+subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
+                      disp, velo, chi, dchi, ddchi, time)
 
   use data_io
   use data_mesh
@@ -1024,6 +1031,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
   use nc_routines,          only: nc_rec_checkpoint, nc_dump_strain
   
   integer, intent(in)            :: iter
+  integer, intent(inout)         :: iseismo, istrain, isnap
   real(kind=dp),intent(in)       :: time
 
   real(kind=realkind),intent(in) :: disp(0:, 0:, :, :)
@@ -1036,12 +1044,11 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
   !^-^-^-^-^-^- Time series^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   
-  if ( mod(iter,seis_it)==0) then
-     ! receiver locations read in from file (only 3-comp. displacements)
+  if (mod(iter,seis_it)==0) then
 
      iseismo = iseismo + 1
      if (use_netcdf) then
-        call nc_compute_recfile_seis_bare(disp)
+        call nc_compute_recfile_seis_bare(disp, iseismo)
      else 
         call compute_recfile_seis_bare(disp)
      endif
@@ -1051,7 +1058,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
 
   endif
 
-  if (mod(iter, check_it)==0) then
+  if ((mod(iter, check_it)==0).and.(iter>0)) then
      if (checkpointing.and.use_netcdf) then
         call nc_rec_checkpoint()
      end if
@@ -1071,7 +1078,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
           write(6,*) 'Writing global snap to file: ', isnap
           write(6,*)
        endif
-       call glob_snapshot_midpoint(disp, chi, ibeg, iend, ibeg, iend)
+       call glob_snapshot_midpoint(disp, chi, ibeg, iend, ibeg, iend, isnap)
      endif
   endif
   
@@ -1083,22 +1090,9 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
            write(6,*)'Writing global xdmf snap to file:',isnap
            write(6,*)
         endif
-        call glob_snapshot_xdmf(disp, chi, time)
+        call glob_snapshot_xdmf(disp, chi, time, isnap)
      endif
   endif
-
-  !if (dump_snaps_solflu) then
-  !  if (mod(iter,snap_it)==0) then
-  !      isnap=isnap+1
-  !      if (lpr) then
-  !         write(6,*)
-  !         write(6,*)'Writing solid/fluid snap to file:',isnap
-  !         write(6,*)
-  !      endif
-  !     if (have_fluid) call fluid_snapshot(chi, ibeg, iend, ibeg, iend)
-  !     call solid_snapshot(disp, ibeg, iend, ibeg, iend)
-  !   endif
-  !endif
 
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   ! Velocity field and strain tensor wavefields for 3-D kernels^-^-^-^-^
@@ -1118,15 +1112,13 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
   ! Any kind of spatial distribution can be dumped, meaning in the long run 
   ! this should be the more effective choice.
   !
-  ! Currently, 'fullfields' is the hardcoded choice (parameters.f90:110)
-  ! 
   ! Possible cases in between these dumpsters are considered but not yet 
   ! implemented (e.g. dumping 1/s, inverse fluid density, but compute derivatives
   ! on-the-fly to warrant grid flexibility).
 
   if (dump_wavefields) then
 
-    if (mod(iter,strain_it)==0 .or. iter==0) then
+    if (mod(iter,strain_it)==0) then
 
       ! dump displacement and velocity in each surface element
       ! for netcdf people set .true. in inparam to use it instead of the standard
@@ -1134,7 +1126,7 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
       ! It starts from 
       istrain = istrain + 1
 
-      call compute_surfelem(disp,velo)
+      call compute_surfelem(disp, velo)
        
       select case (trim(dump_type))
 
@@ -1143,15 +1135,15 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
           ! Minimal permanent storage, minimal run-time memory, minimal CPU time, 
           ! but extensive post-processing (need to compute strain tensor and
           ! time derivatives, if needed).
-             call dump_disp_global(disp, chi)       ! displacement globally
+             call dump_disp_global(disp, chi, istrain)       ! displacement globally
 
         case ('displ_velo')
           ! Only dump the 3-comp displacement and velocity fields in solid 
           ! and potential & its derivative in fluid.
           ! Minimal permanent storage, minimal run-time memory, minimal CPU time, 
           ! but extensive post-processing (need to compute strain tensor).
-             call dump_disp(disp, chi)       ! displacement in solid, chi in fluid
-             call dump_velo_dchi(velo, dchi) ! velocity in solid, dchi in fluid
+             call dump_disp(disp, chi, istrain)       ! displacement in solid, chi in fluid
+             call dump_velo_dchi(velo, dchi, istrain) ! velocity in solid, dchi in fluid
 
         case ('fullfields') ! Hardcoded choice
           ! Compute strain tensor on-the-fly here and dump the 6 components.
@@ -1159,8 +1151,8 @@ subroutine dump_stuff(iter, disp, velo, chi, dchi, ddchi, time)
           ! Maximal permanent storage, maximal run-time memory, maximal CPU time, 
           ! but no post-processeing necessary as these are the fields that 
           ! constitute density and elastic kernels.
-            call compute_strain(disp, chi)    ! strain globally
-            call dump_velo_global(velo, dchi) ! velocity globally
+            call compute_strain(disp, chi, istrain)    ! strain globally
+            call dump_velo_global(velo, dchi, istrain) ! velocity globally
 
         end select
        
@@ -1227,7 +1219,7 @@ end subroutine dump_stuff
 !! scalar Ekk needs to be loaded. Be aware that diuj in the variable names does
 !! NOT stand for partial derivatives, but rather the ij component of the
 !! strain.
-subroutine compute_strain(u, chi)
+subroutine compute_strain(u, chi, istrain)
 
   use data_pointwise,           only: inv_rho_fluid, prefac_inv_s_rho_fluid
   use data_source,              only: src_type
@@ -1243,6 +1235,7 @@ subroutine compute_strain(u, chi)
   
   real(kind=realkind), intent(in) :: u(0:,0:,:,:)
   real(kind=realkind), intent(in) :: chi(0:,0:,:)
+  integer,             intent(in) :: istrain
   
   real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
   real(kind=realkind)             :: buff_solid(0:npol,0:npol,nel_solid)
@@ -1252,7 +1245,7 @@ subroutine compute_strain(u, chi)
   character(len=5)                :: appisnap
   real(kind=realkind), parameter  :: two_rk = real(2, kind=realkind)
  
-  call define_io_appendix(appisnap,istrain)
+  call define_io_appendix(appisnap, istrain)
  
   ! SSSSSSS Solid region SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS
  

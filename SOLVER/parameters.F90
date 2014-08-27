@@ -86,7 +86,6 @@ subroutine readin_parameters
   ! now pre-set. Most of these are to be considered in the post processing stage now.
   sum_seis = .false.
   sum_fields = .false.
-  dump_snaps_solflu = .false.
   num_simul = 1
    
   ! netcdf format
@@ -99,7 +98,7 @@ subroutine readin_parameters
      write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
                  enforced_period, trim(simtype), rec_file_type, &
                  sum_seis, sum_fields, time_scheme, seis_dt,  &
-                 dump_energy, dump_vtk, dump_snaps_solflu, dump_wavefields, &
+                 dump_energy, dump_vtk, dump_wavefields, &
                  dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, &
                  add_hetero, do_mesh_tests, output_format
 
@@ -182,7 +181,6 @@ subroutine readin_parameters
    12x,'Seismogram sampling rate [s]:       ',f7.3,/                        &
    12x,'Dump kin./pot. energy?              ',l2,/                          &
    12x,'Dump global snaps?                  ',l2,/                          &
-   12x,'Dump solid/fluid snaps?             ',l2,/                          &
    12x,'Dump strain?                        ',l2,/                          &
    12x,'Wavefield dumping type:             ',a12,/                         &
    12x,'First GLL to save in strains:       ',i2,/                          &
@@ -204,7 +202,7 @@ subroutine readin_parameters
 
   ! Need to decide here since this boolean is needed in def_precomp_terms
   need_fluid_displ = .false.
-  if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
+  if (dump_vtk .or. dump_xdmf .or. dump_energy .or. & 
      dump_wavefields .and. (dump_type=='fullfields' .or. dump_type=='displ_only')) then
      ! Need to add this for each new type of wavefield dumping method that 
      ! requires the fluid displacement/velocities
@@ -750,17 +748,6 @@ subroutine check_basic_parameters
 
 14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
 
-  !@ TODO: should this be an ERROR? Do we need dump_snaps_solflu at all given
-  !        the newer options?
-  if (dump_vtk .and. dump_snaps_solflu) then 
-      if (lpr) then
-         write(6,*)''
-         write(6,*)" NOT dumping the same snapshots twice (global AND solid/fluid)"
-         write(6,*)'...hence reverting to dumping global snaps only. Sorry.'
-      end if
-      dump_snaps_solflu = .false.
-  endif
-
 7 format(04x,a62)
 
   if (verbose > 1) then
@@ -902,7 +889,7 @@ subroutine compute_numerical_parameters
   endif
   deltat_coarse = seis_dt
 
-  nseismo = floor(real(niter) / real(seis_it))
+  nseismo = floor(real(niter) / real(seis_it)) + 1
 
   ! Frequency of checkpointing. Hardcoded to every 5% of runtime
   check_it = niter / 20
@@ -916,10 +903,10 @@ subroutine compute_numerical_parameters
 
   ! snapshot output, convert from interval given in seconds to 
   ! incremental time steps
-  if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu .or. dump_memory_vars) then
+  if (dump_vtk .or. dump_xdmf .or. dump_memory_vars) then
      snap_it = floor(snap_dt / deltat)
      open(unit=2900+mynum, file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
-     nsnap = floor(real(niter) / real(snap_it))
+     nsnap = floor(real(niter) / real(snap_it)) + 1
      
      write(2900+mynum,*) nsnap 
      do ielem=1, nsnap
@@ -1062,7 +1049,7 @@ subroutine compute_numerical_parameters
   ! strain tensor output, convert from num of dumps per period into 
   ! incremental time steps
   if (dump_wavefields) then
-     nstrain = floor(real(niter)/real(strain_it))
+     nstrain = floor(real(niter)/real(strain_it)) + 1
 
      open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
      write(2900+mynum,*) nstrain 
@@ -1088,11 +1075,6 @@ subroutine compute_numerical_parameters
         write(6,*)'      # points saved within an element:', ndumppts_el
      endif
   endif
-
-  ! Initialize counters for I/O
-  istrain = 0
-  isnap = 0
-  iseismo = 0
 
   s_max = zero
 
@@ -1352,9 +1334,8 @@ subroutine write_parameters
         write(6,12)'     Output info path  :',trim(infopath)
         write(6,19)'     Sum wavefields:', sum_fields
         write(6,19)'     Dump energy       :',dump_energy
-        write(6,18)'     Glob/solflu snaps :',dump_vtk,dump_snaps_solflu
         write(6,18)'     XDMF VTK          :', dump_xdmf
-        if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu) then
+        if (dump_vtk .or. dump_xdmf) then
             write(6,11)'     snap interval [s] :',snap_dt
             write(6,10)'     # snaps           :',snap_it
         endif
@@ -1401,7 +1382,7 @@ subroutine write_parameters
             write(55,22)0,'number of strain dumps'       
             write(55,21)0.,'strain dump sampling rate [s]' 
         endif
-        if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu) then
+        if (dump_vtk .or. dump_xdmf) then
             write(55,22) nsnap,'number of snapshot dumps'
             write(55,21)deltat*real(snap_it),'snapshot dump sampling rate [s]'      
         else
@@ -1413,9 +1394,9 @@ subroutine write_parameters
         write(55,22)ibeg,'  ibeg: beginning gll index for wavefield dumps'
         write(55,22)iend,'iend: end gll index for wavefield dumps'
         write(55,21)shift_fact,'source shift factor [s]'
-        write(55,22)int(shift_fact/deltat),'source shift factor for deltat'
-        write(55,22)int(shift_fact/seis_dt),'source shift factor for seis_dt'
-        write(55,22)int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
+        write(55,22)nint(shift_fact/deltat),'source shift factor for deltat'
+        write(55,22)nint(shift_fact/seis_dt),'source shift factor for seis_dt'
+        write(55,22)nint(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
         write(55,23)trim(rec_file_type),'receiver file type'
         write(55,21)dtheta_rec,'receiver spacing (0 if not even)'
         write(55,24)use_netcdf,'use netcdf for wavefield output?'
@@ -1475,7 +1456,7 @@ subroutine write_parameters
            call nc_write_att_int(0,                    'number of strain dumps')       
            call nc_write_att_dble(0.d0,                'strain dump sampling rate in sec' )
         endif
-        if (dump_vtk .or. dump_snaps_solflu) then
+        if (dump_vtk) then
            call nc_write_att_int(nsnap,                'number of snapshot dumps')
            call nc_write_att_real(real(deltat)*real(snap_it), 'snapshot dump sampling rate in sec')      
         else
@@ -1486,9 +1467,9 @@ subroutine write_parameters
         call nc_write_att_int(  ibeg,                  'ibeg')
         call nc_write_att_int(  iend,                  'iend')
         call nc_write_att_real( shift_fact,            'source shift factor in sec')
-        call nc_write_att_int(  int(shift_fact/deltat),  'source shift factor for deltat')
-        call nc_write_att_int(  int(shift_fact/seis_dt), 'source shift factor for seis_dt')
-        call nc_write_att_int(  int(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
+        call nc_write_att_int(  nint(shift_fact/deltat),  'source shift factor for deltat')
+        call nc_write_att_int(  nint(shift_fact/seis_dt), 'source shift factor for seis_dt')
+        call nc_write_att_int(  nint(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
         call nc_write_att_char( trim(rec_file_type),   'receiver file type')
         call nc_write_att_real( dtheta_rec,            'receiver spacing (0 if not even)')
         write(clogic,*) use_netcdf

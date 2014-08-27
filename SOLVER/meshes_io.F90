@@ -40,8 +40,8 @@ module meshes_io
   public :: dump_wavefields_mesh_1d
   public :: dump_glob_grid_midpoint
   public :: dump_xdmf_grid
-  public :: dump_solid_grid
-  public :: dump_fluid_grid
+  !public :: dump_solid_grid
+  !public :: dump_fluid_grid
   public :: prepare_mesh_memoryvar_vtk
   public :: build_kwf_grid
   public :: dump_kwf_midpoint_xdmf
@@ -788,14 +788,21 @@ subroutine dump_kwf_grid()
 
   points_mp = 0.
 
+  ct = 1
   do iel=1, nel_solid
-     points_mp(iel,1) = scoord(npol/2,npol/2,ielsolid(iel))
-     points_mp(iel,2) = zcoord(npol/2,npol/2,ielsolid(iel))
+     if (kwf_mask(npol/2,jpol/2,iel)) then
+        points_mp(ct,1) = scoord(npol/2,npol/2,ielsolid(iel))
+        points_mp(ct,2) = zcoord(npol/2,npol/2,ielsolid(iel))
+        ct = ct + 1
+     endif
   enddo
 
   do iel=1, nel_fluid
-     points_mp(iel + nel_solid,1) = scoord(npol/2,npol/2,ielfluid(iel))
-     points_mp(iel + nel_solid,2) = zcoord(npol/2,npol/2,ielfluid(iel))
+     if (kwf_mask(npol/2,jpol/2,iel + nel_solid)) then
+        points_mp(ct,1) = scoord(npol/2,npol/2,ielfluid(iel))
+        points_mp(ct,2) = zcoord(npol/2,npol/2,ielfluid(iel))
+        ct = ct + 1
+     endif
   enddo
 
   if (use_netcdf) then
@@ -1012,25 +1019,25 @@ end subroutine
 !> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
 !! in the solid region only.
 !! Convention for order in the file: First the fluid, then the solid domain.
-subroutine dump_solid_grid(ibeg,iend,jbeg,jend)
-
-  
-  integer, intent(in) :: ibeg,iend,jbeg,jend 
-  integer             :: iel, ipol,jpol
-
-  open(unit=2500+mynum,file=datapath(1:lfdata)//'/solid_grid_'&
-                            //appmynum//'.dat')
-  do iel=1,nel_solid
-     do jpol=jbeg,jend
-        do ipol=ibeg,iend
-           write(2500+mynum,*)scoord(ipol,jpol,ielsolid(iel)), &
-                              zcoord(ipol,jpol,ielsolid(iel))
-        enddo
-     enddo
-  enddo
-  close(2500+mynum)
-
-end subroutine dump_solid_grid
+!subroutine dump_solid_grid(ibeg,iend,jbeg,jend)
+!
+!  
+!  integer, intent(in) :: ibeg,iend,jbeg,jend 
+!  integer             :: iel, ipol,jpol
+!
+!  open(unit=2500+mynum,file=datapath(1:lfdata)//'/solid_grid_'&
+!                            //appmynum//'.dat')
+!  do iel=1,nel_solid
+!     do jpol=jbeg,jend
+!        do ipol=ibeg,iend
+!           write(2500+mynum,*)scoord(ipol,jpol,ielsolid(iel)), &
+!                              zcoord(ipol,jpol,ielsolid(iel))
+!        enddo
+!     enddo
+!  enddo
+!  close(2500+mynum)
+!
+!end subroutine dump_solid_grid
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
@@ -1040,43 +1047,43 @@ end subroutine dump_solid_grid
 !! When reading the fluid wavefield, one therefore needs to multiply all 
 !! components with inv_rho_fluid and the phi component with one/scoord!
 !! Convention for order in the file: First the fluid, then the solid domain.
-subroutine dump_fluid_grid(ibeg,iend,jbeg,jend)
-
-  use data_pointwise, only : inv_rho_fluid
-  
-  
-  integer, intent(in) :: ibeg,iend,jbeg,jend
-  integer             :: iel, ipol,jpol
-  
-  ! When reading the fluid wavefield, one needs to multiply all components 
-  ! with inv_rho_fluid and the phi component with one/scoord!!
-
-  open(unit=2500+mynum,file=datapath(1:lfdata)//&
-                            '/fluid_grid_'//appmynum//'.dat')
-  open(unit=2600+mynum,file=datapath(1:lfdata)//&
-                            '/inv_rho_scoord_fluid_flusnaps_'&
-                            //appmynum//'.dat', STATUS="REPLACE")
-  do iel=1,nel_fluid
-     do jpol=jbeg,jend
-        do ipol=ibeg,iend
-           write(2500+mynum,*)scoord(ipol,jpol,ielfluid(iel)), &
-                              zcoord(ipol,jpol,ielfluid(iel))
-           if ( axis_fluid(iel) .and. ipol==0 ) then
-              ! Axis s=0! write 1 instead of 1/s and then multiply 
-              ! with the correct factor dsdchi, obtained by L'Hospital's rule 
-              ! (see routine fluid_snapshot below).
-              write(2600+mynum,*)inv_rho_fluid(ipol,jpol,iel),one
-           else  
-              write(2600+mynum,*)inv_rho_fluid(ipol,jpol,iel), &
-                                 one/scoord(ipol,jpol,ielfluid(iel))
-           endif
-        enddo
-     enddo
-  enddo
-  close(2500+mynum)
-  close(2600+mynum)
-
-end subroutine dump_fluid_grid
+!subroutine dump_fluid_grid(ibeg,iend,jbeg,jend)
+!
+!  use data_pointwise, only : inv_rho_fluid
+!  
+!  
+!  integer, intent(in) :: ibeg,iend,jbeg,jend
+!  integer             :: iel, ipol,jpol
+!  
+!  ! When reading the fluid wavefield, one needs to multiply all components 
+!  ! with inv_rho_fluid and the phi component with one/scoord!!
+!
+!  open(unit=2500+mynum,file=datapath(1:lfdata)//&
+!                            '/fluid_grid_'//appmynum//'.dat')
+!  open(unit=2600+mynum,file=datapath(1:lfdata)//&
+!                            '/inv_rho_scoord_fluid_flusnaps_'&
+!                            //appmynum//'.dat', STATUS="REPLACE")
+!  do iel=1,nel_fluid
+!     do jpol=jbeg,jend
+!        do ipol=ibeg,iend
+!           write(2500+mynum,*)scoord(ipol,jpol,ielfluid(iel)), &
+!                              zcoord(ipol,jpol,ielfluid(iel))
+!           if ( axis_fluid(iel) .and. ipol==0 ) then
+!              ! Axis s=0! write 1 instead of 1/s and then multiply 
+!              ! with the correct factor dsdchi, obtained by L'Hospital's rule 
+!              ! (see routine fluid_snapshot below).
+!              write(2600+mynum,*)inv_rho_fluid(ipol,jpol,iel),one
+!           else  
+!              write(2600+mynum,*)inv_rho_fluid(ipol,jpol,iel), &
+!                                 one/scoord(ipol,jpol,ielfluid(iel))
+!           endif
+!        enddo
+!     enddo
+!  enddo
+!  close(2500+mynum)
+!  close(2600+mynum)
+!
+!end subroutine dump_fluid_grid
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
