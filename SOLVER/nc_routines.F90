@@ -534,17 +534,17 @@ subroutine nc_dump_stf(stf)
     do i = 1, niter
         ! Dumping the STF in the fine time stepping of the seismogram output
         if ( mod(i,seis_it) == 0) then
+           it_s = it_s + 1
            stf_seis_dumpvar(it_s) = stf(i) 
            stf_d_seis_dumpvar(it_s) = stf_d_dumpvar(i)
-           it_s = it_s + 1
         end if
 
         if (dump_wavefields) then
             ! Dumping the STF in the coarse time stepping of the strain (KERNER) output
             if ( mod(i,strain_it) == 0) then
+               it_d = it_d + 1
                stf_dump_dumpvar(it_d) = stf(i) 
                stf_d_dump_dumpvar(it_d) = stf_d_dumpvar(i)
-               it_d = it_d + 1
             end if
         end if
     end do
