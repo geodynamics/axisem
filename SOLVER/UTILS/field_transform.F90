@@ -179,7 +179,7 @@ program field_transformation
     !! Create output file
     if (verbose) print *, 'Creating output file'
     nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
-    call check( nf90_create(path="./ordered_output.nc4", cmode=nmode, ncid=ncout_id))
+    call check( nf90_create(path="./Data/ordered_output.nc4", cmode=nmode, ncid=ncout_id))
 
     ! create group for timedomain fields
     call check( nf90_def_grp(ncout_id, "Snapshots", ncout_fields_grpid) )
@@ -745,7 +745,7 @@ program field_transformation
     call check( nf90_close(ncin_id))
     call check( nf90_close(ncout_id))
 
-    call dump_mesh_data_xdmf(filename = 'ordered_output.nc4', varname='Snapshots/straintrace', &
+    call dump_mesh_data_xdmf(filename = 'Data/ordered_output.nc4', varname='Snapshots/straintrace', &
                              npoints=ngll, nsnap=nsnap)
 
     print '(A, F8.2, A)', 'Time spent for compression/fft: ', time_fft, ' s'

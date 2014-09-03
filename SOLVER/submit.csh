@@ -286,30 +286,24 @@ if ( $netcdf_requested == 'true') then
         echo '#\!/bin/csh -f'           >  fieldtransform.csh
         echo 'cd MZZ'              >> fieldtransform.csh
         echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'mv ordered* Data'   >> fieldtransform.csh
         echo 'cd ..'                 >> fieldtransform.csh
         echo 'cd MXX_P_MYY'        >> fieldtransform.csh
         echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'mv ordered* Data'   >> fieldtransform.csh
         echo 'cd ..'                 >> fieldtransform.csh
         echo 'cd MXZ_MYZ'          >> fieldtransform.csh
         echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'mv ordered* Data'   >> fieldtransform.csh
         echo 'cd ..'                 >> fieldtransform.csh
         echo 'cd MXY_MXX_M_MYY'    >> fieldtransform.csh
         echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'mv ordered* Data'   >> fieldtransform.csh
         echo 'cd ..'                 >> fieldtransform.csh
         chmod +x fieldtransform.csh
     else if ( $simtype == 'force' ) then
         echo '#bin/csh -f'           >  fieldtransform.csh
         echo 'cd PX'               >> fieldtransform.csh
         echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'mv ordered* Data'   >> fieldtransform.csh
         echo 'cd ..'                 >> fieldtransform.csh
         echo 'cd PZ'               >> fieldtransform.csh
         echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'mv ordered* Data'   >> fieldtransform.csh
         echo 'cd ..'                 >> fieldtransform.csh
         chmod +x fieldtransform.csh
     endif
