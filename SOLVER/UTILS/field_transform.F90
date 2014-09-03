@@ -215,6 +215,9 @@ program field_transformation
                                       varid=ncout_field_varid(ivar), &
                                       no_fill=1, fill=0) )
 
+        call check( nf90_def_var_fletcher32(ncid=ncout_fields_grpid, &
+                                            varid=ncout_field_varid(ivar), &
+                                            fletcher32=1) )
 
         if (deflate) then
             call check( nf90_def_var_deflate(ncid=ncout_fields_grpid, &
@@ -256,11 +259,19 @@ program field_transformation
                                  dimids = nc_mesh_elem_dimid,&
                                  varid  = ncout_mesh_midpoint_varid) )
 
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_midpoint_varid, &
+                                           fletcher32=1) )
+
        call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
                                  name   = 'eltype', &
                                  xtype  = NF90_INT, &
                                  dimids = nc_mesh_elem_dimid,&
                                  varid  = ncout_mesh_eltype_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_eltype_varid, &
+                                           fletcher32=1) )
 
        call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
                                  name   = 'axis', &
@@ -268,12 +279,20 @@ program field_transformation
                                  dimids = nc_mesh_elem_dimid,&
                                  varid  = ncout_mesh_axis_varid) )
 
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_axis_varid, &
+                                           fletcher32=1) )
+
        call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
                                  name   = 'fem_mesh', &
                                  xtype  = NF90_INT, &
                                  dimids = [nc_mesh_cntrlpts_dimid, &
                                            nc_mesh_elem_dimid],&
                                  varid  = ncout_mesh_fem_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_fem_varid, &
+                                           fletcher32=1) )
 
        call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
                                  name   = 'sem_mesh', &
@@ -283,17 +302,29 @@ program field_transformation
                                            nc_mesh_elem_dimid],&
                                  varid  = ncout_mesh_sem_varid) )
         
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_sem_varid, &
+                                           fletcher32=1) )
+
        call check( nf90_def_var( ncid       = ncout_mesh_grpid,  &
                                  name       = 'mp_mesh_S',           &
                                  xtype      = NF90_FLOAT,        &
                                  dimids     = [nc_mesh_elem_dimid], &
                                  varid      = ncout_mesh_mps_varid) )
 
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_mps_varid, &
+                                           fletcher32=1) )
+
        call check( nf90_def_var( ncid       = ncout_mesh_grpid,  &
                                  name       = 'mp_mesh_Z',           &
                                  xtype      = NF90_FLOAT,        &
                                  dimids     = [nc_mesh_elem_dimid], &
                                  varid      = ncout_mesh_mpz_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_mpz_varid, &
+                                           fletcher32=1) )
     endif
 
 
@@ -312,10 +343,15 @@ program field_transformation
                                   dimids     = [ncout_gll_dimid], &
                                   !chunksizes = [ngll],            &
                                   varid      = ncout_mesh_varids(ivar)) )
+
         !call check( nf90_def_var_deflate( ncid    = ncout_mesh_grpid,        &
         !                                  varid   = ncout_mesh_varids(ivar), &
         !                                  shuffle = 1, deflate = 1,          &
         !                                  deflate_level = deflate_level) )
+
+        call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                            varid = ncout_mesh_varids(ivar), &
+                                            fletcher32=1) )
     end do
 
     ! Create Surface variables
@@ -358,10 +394,15 @@ program field_transformation
                                    dimids     = [ncout_surf_dimid], &
                                    chunksizes = [nsurfelem],        &
                                    varid      = ncout_surf_varids(1)) )
+
     call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
                                       varid   = ncout_surf_varids(1),    &
                                       shuffle = 1, deflate = 1,          &
                                       deflate_level = deflate_level) )
+
+    call check( nf90_def_var_fletcher32(ncid  = ncout_surf_grpid, &
+                                        varid = ncout_surf_varids(1), &
+                                        fletcher32=1) )
    
     do ivar = 2, 4
         call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
@@ -370,21 +411,32 @@ program field_transformation
                                  dimids     = [ncout_snap_dimid, ncout_comp_dimid, ncout_surf_dimid], &
                                  chunksizes = [nsnap, ncomp, 1],  &
                                  varid      = ncout_surf_varids(ivar)) )
+
         call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
                                           varid   = ncout_surf_varids(ivar), &
                                           shuffle = 1, deflate = 1,          &
                                           deflate_level = deflate_level) )
+
+        call check( nf90_def_var_fletcher32(ncid  = ncout_surf_grpid, &
+                                            varid = ncout_surf_varids(ivar), &
+                                            fletcher32=1) )
     end do
+
     call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
                              name       = varname_surf(5),         &
                              xtype      = NF90_FLOAT,         &
                              dimids     = [ncout_snap_dimid, ncout_surfstrain_dimid, ncout_surf_dimid],&
                              chunksizes = [nsnap, nstraincomp, 1],  &
                              varid      = ncout_surf_varids(5)) )
+
     call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
                                       varid   = ncout_surf_varids(5),    &
                                       shuffle = 1, deflate = 1,          &
                                       deflate_level = deflate_level) )
+
+    call check( nf90_def_var_fletcher32(ncid  = ncout_surf_grpid, &
+                                        varid = ncout_surf_varids(5), &
+                                        fletcher32=1) )
 
     do ivar = 6, 7
        call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
@@ -393,10 +445,15 @@ program field_transformation
                                 dimids     = [ncout_snap_dimid], &
                                 chunksizes = [nsnap],            &
                                 varid      = ncout_surf_varids(ivar)) )
+
        call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
                                          varid   = ncout_surf_varids(ivar),    &
                                          shuffle = 1, deflate = 1,          &
                                          deflate_level = deflate_level) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_surf_grpid, &
+                                           varid = ncout_surf_varids(ivar), &
+                                           fletcher32=1) )
     enddo
     
     print *, 'Surface variables defined'
