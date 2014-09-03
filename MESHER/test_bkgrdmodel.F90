@@ -336,7 +336,7 @@ subroutine bkgrdmodel_testing
            
   
   if (dump_mesh_vtk) then
-    eltype_vtk(iel) = -2
+    eltype_vtk = -2
     do iel = 1, neltot
        if (eltypeg(iel) == 'curved') then
           eltype_vtk(iel) = 0
