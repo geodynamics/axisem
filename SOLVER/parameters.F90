@@ -1429,6 +1429,7 @@ subroutine write_parameters
         call nc_write_att_char( trim(cflags),          'CFLAGS')
         call nc_write_att_char( trim(ldflags),         'LDFLAGS')
         call nc_write_att_char( trim(openmp),          'OpenMP')
+        call nc_write_att_char( trim(time_scheme),     'time scheme')
         call nc_write_att_real( real(deltat),          'time step in sec')
         call nc_write_att_int(  niter,                 'number of time steps')
         call nc_write_att_int(  npol,                  'npol')
