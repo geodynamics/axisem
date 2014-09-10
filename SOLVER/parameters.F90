@@ -1420,6 +1420,7 @@ subroutine write_parameters
         ! write generic simulation info file
         write(6,*) ' Writing simulation info to netcdf file attributes' 
         call nc_write_att_char( trim(bkgrdmodel),      'background model')
+        call nc_write_att_dble( router / 1000,         'planet radius')
         call nc_write_att_char( trim(svn_version),     'SVN revision')
         call nc_write_att_char( trim(username),        'user name')
         call nc_write_att_char( trim(hostname),        'host name')
