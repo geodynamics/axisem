@@ -79,7 +79,7 @@ module get_model
 !!       xmgrace timestep_rad.dat or xmgrace period_rad.dat
 !-----------------------------------------------------------------------------
 subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
-                          fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
+                          fa_ani_theta, fa_ani_phi, Q_mu_1d, Q_kappa_1d)
 
   use commun, ONLY : barrier
   use lateral_heterogeneities
@@ -92,8 +92,9 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: xi_ani, phi_ani, eta_ani
   real(kind=dp), dimension(0:npol,0:npol,nelem), intent(out) :: fa_ani_theta, fa_ani_phi
 
-  real(kind=realkind), dimension(nel_solid), intent(out), optional :: Q_mu, Q_kappa
+  real(kind=realkind), dimension(nel_solid), intent(out), optional :: Q_mu_1d, Q_kappa_1d
 
+  real(kind=dp), dimension(0:npol,0:npol,nelem) :: Q_mu, Q_kappa
   real(kind=dp)    :: s,z,r,theta,r1
   real(kind=dp)    :: vphtmp, vpvtmp, vshtmp, vsvtmp
   integer :: iel,ipol,jpol,iidom,ieldom(nelem),domcount(ndisc),iel_count
@@ -244,8 +245,8 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
       do iel=1, nel_solid
           iidom = ieldom(ielsolid(iel))
           call compute_coordinates(s, z, r, theta, ielsolid(iel), npol/2 - 1, npol/2 - 1)
-          Q_mu(iel) = velocity(r, 'Qmu', iidom, modelstring, lfbkgrdmodel)
-          Q_kappa(iel) = velocity(r, 'Qka', iidom, modelstring, lfbkgrdmodel)
+          Q_mu_1d(iel) = velocity(r, 'Qmu', iidom, modelstring, lfbkgrdmodel)
+          Q_kappa_1d(iel) = velocity(r, 'Qka', iidom, modelstring, lfbkgrdmodel)
       enddo
   endif
 
@@ -263,7 +264,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 
       if (anel_true) then
          call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                             fa_ani_phi, Q_mu, Q_kappa)
+                             fa_ani_phi, Q_mu_1d, Q_kappa_1d)
       else
          call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
                                  fa_ani_phi)
@@ -272,6 +273,16 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
 
   if (use_netcdf) then
       if (anel_true) then
+          do iel = 1, nelem     ! iel
+             do ipol=0,npol     ! ipol
+                do jpol=0,npol  ! jpol
+                   call compute_coordinates(s, z, r, theta, iel, ipol, jpol)
+                   Q_mu(ipol,jpol,iel)    = velocity(r, 'Qmu', iidom, modelstring, lfbkgrdmodel)
+                   Q_kappa(ipol,jpol,iel) = velocity(r, 'Qka', iidom, modelstring, lfbkgrdmodel)
+                end do          ! jpol
+             end do             ! ipol
+          end do                ! iel  
+
           call nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                           fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
       else

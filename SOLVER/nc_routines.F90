@@ -52,6 +52,8 @@ module nc_routines
     real(sp), allocatable   :: scoord1d_mp(:), zcoord1d_mp(:)
     real(sp), allocatable   :: rho1d(:), mu1d(:), lambda1d(:)
     real(sp), allocatable   :: vp1d(:), vs1d(:)
+    real(sp), allocatable   :: xi1d(:), phi1d(:), eta1d(:)
+    real(sp), allocatable   :: Q_mu1d(:), Q_kappa1d(:)
     
     !> Number of steps before kernel specific stuff is dumped 
     integer             :: dumpstepsnap
@@ -766,7 +768,7 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
     real(kind=dp), dimension(0:,0:,:), intent(in)       :: rho, lambda, mu, xi_ani
     real(kind=dp), dimension(0:,0:,:), intent(in)       :: phi_ani, eta_ani
     real(kind=dp), dimension(0:,0:,:), intent(in)       :: fa_ani_theta, fa_ani_phi
-    real(kind=sp), dimension(:), intent(in), optional :: Q_mu, Q_kappa
+    real(kind=dp), dimension(0:,0:,:), intent(in), optional   :: Q_mu, Q_kappa
     integer :: size1d
     integer :: iel, ipol, jpol, ct
 
@@ -777,15 +779,29 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
        allocate(mu1d(npoints))
        allocate(vp1d(npoints))
        allocate(vs1d(npoints))
+       allocate(xi1d(npoints))
+       allocate(phi1d(npoints))
+       allocate(eta1d(npoints))
+       if (present(Q_mu).and.present(Q_kappa)) then
+           allocate(Q_mu1d(npoints))
+           allocate(Q_kappa1d(npoints))
+       end if
 
        do iel=1, nel_solid
            do ipol=0, npol
                do jpol=0, npol
                    if (kwf_mask(ipol,jpol,iel)) then
                        ct = mapping_ijel_ikwf(ipol,jpol,iel)
-                       rho1d(ct) = rho(ipol,jpol,ielsolid(iel))
+                       rho1d(ct)    = rho(ipol,jpol,ielsolid(iel))
                        lambda1d(ct) = lambda(ipol,jpol,ielsolid(iel))
-                       mu1d(ct) = mu(ipol,jpol,ielsolid(iel))
+                       mu1d(ct)     = mu(ipol,jpol,ielsolid(iel))
+                       xi1d(ct)     = xi_ani(ipol,jpol,ielsolid(iel))
+                       phi1d(ct)    = phi_ani(ipol,jpol,ielsolid(iel))
+                       eta1d(ct)    = eta_ani(ipol,jpol,ielsolid(iel))
+                       if (present(Q_mu).and.present(Q_kappa)) then
+                           Q_mu1d(ct)    = Q_mu(ipol,jpol,ielsolid(iel))
+                           Q_kappa1d(ct) = Q_kappa(ipol,jpol,ielsolid(iel))
+                       endif
                    endif
                enddo
            enddo
@@ -796,9 +812,16 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
                do jpol=0, npol
                    if (kwf_mask(ipol,jpol,iel + nel_solid)) then
                        ct = mapping_ijel_ikwf(ipol,jpol,iel + nel_solid)
-                       rho1d(ct) = rho(ipol,jpol,ielsolid(iel))
-                       lambda1d(ct) = lambda(ipol,jpol,ielsolid(iel))
-                       mu1d(ct) = mu(ipol,jpol,ielsolid(iel))
+                       rho1d(ct) = rho(ipol,jpol,ielfluid(iel))
+                       lambda1d(ct) = lambda(ipol,jpol,ielfluid(iel))
+                       mu1d(ct) = mu(ipol,jpol,ielfluid(iel))
+                       xi1d(ct)     = xi_ani(ipol,jpol,ielfluid(iel))
+                       phi1d(ct)    = phi_ani(ipol,jpol,ielfluid(iel))
+                       eta1d(ct)    = eta_ani(ipol,jpol,ielfluid(iel))
+                       if (present(Q_mu).and.present(Q_kappa)) then
+                           Q_mu1d(ct)    = Q_mu(ipol,jpol,ielfluid(iel))
+                           Q_kappa1d(ct) = Q_kappa(ipol,jpol,ielfluid(iel))
+                       endif
                    endif
                enddo
            enddo
@@ -815,12 +838,26 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
        allocate(mu1d(size1d))
        allocate(vp1d(size1d))
        allocate(vs1d(size1d))
+       allocate(xi1d(size1d))
+       allocate(phi1d(size1d))
+       allocate(eta1d(size1d))
        
        rho1d     = real(pack(rho(ibeg:iend, ibeg:iend, :)    ,.true.), kind=sp)
        lambda1d  = real(pack(lambda(ibeg:iend, ibeg:iend, :) ,.true.), kind=sp)
        mu1d      = real(pack(mu(ibeg:iend, ibeg:iend, :)     ,.true.), kind=sp)
        vp1d      = sqrt( (lambda1d + 2.*mu1d ) / rho1d  )
        vs1d      = sqrt( mu1d  / rho1d )
+
+       xi1d      = real(pack(xi_ani(ibeg:iend, ibeg:iend, :)     ,.true.), kind=sp)
+       phi1d      = real(pack(phi_ani(ibeg:iend, ibeg:iend, :)   ,.true.), kind=sp)
+       eta1d      = real(pack(eta_ani(ibeg:iend, ibeg:iend, :)   ,.true.), kind=sp)
+
+       if (present(Q_mu).and.present(Q_kappa)) then
+           allocate(Q_mu1d(size1d))
+           allocate(Q_kappa1d(size1d))
+           Q_mu1d     = real(pack(Q_mu(ibeg:iend, ibeg:iend, :)     ,.true.), kind=sp)
+           Q_kappa1d  = real(pack(Q_kappa(ibeg:iend, ibeg:iend, :)  ,.true.), kind=sp)
+       endif
     endif
 
 end subroutine nc_dump_elastic_parameters
@@ -866,8 +903,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     use data_io,     only: datapath, lfdata, strain_samp
     use data_mesh,   only: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
                            ndisc, maxind_glob, nelem_kwf_global, npoint_kwf, npoint_solid_kwf, &
-                           npoint_fluid_kwf, npol, nelem_kwf, npoint_kwf_global
-
+                           npoint_fluid_kwf, npol, nelem_kwf, npoint_kwf_global, anel_true
     use data_source, only: src_type, t_0
     use data_time,   only: deltat, niter
 
@@ -895,6 +931,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_mesh_vs_varid, nc_mesh_vp_varid   
     integer                              :: nc_mesh_mu_varid, nc_mesh_rho_varid   
     integer                              :: nc_mesh_lambda_varid
+    integer                              :: nc_mesh_xi_varid
+    integer                              :: nc_mesh_phi_varid
+    integer                              :: nc_mesh_eta_varid
+    integer                              :: nc_mesh_qmu_varid
+    integer                              :: nc_mesh_qka_varid
     integer                              :: nc_mesh_midpoint_varid
     integer                              :: nc_mesh_fem_varid
     integer                              :: nc_mesh_eltype_varid
@@ -1227,6 +1268,35 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       xtype  = NF90_FLOAT, &
                                       dimids = nc_pt_dimid,&
                                       varid  = nc_mesh_mu_varid) )
+            call check( nf90_def_var( ncid   = ncid_meshout, &
+                                      name   = 'mesh_xi', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_xi_varid) )
+            call check( nf90_def_var( ncid   = ncid_meshout, &
+                                      name   = 'mesh_phi', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_phi_varid) )
+            call check( nf90_def_var( ncid   = ncid_meshout, &
+                                      name   = 'mesh_eta', &
+                                      xtype  = NF90_FLOAT, &
+                                      dimids = nc_pt_dimid,&
+                                      varid  = nc_mesh_eta_varid) )
+
+            if (anel_true) then
+                               
+                call check( nf90_def_var( ncid   = ncid_meshout, &
+                                          name   = 'mesh_Qmu', &
+                                          xtype  = NF90_FLOAT, &
+                                          dimids = nc_pt_dimid,&
+                                          varid  = nc_mesh_Qmu_varid) )
+                call check( nf90_def_var( ncid   = ncid_meshout, &
+                                          name   = 'mesh_Qka', &
+                                          xtype  = NF90_FLOAT, &
+                                          dimids = nc_pt_dimid,&
+                                          varid  = nc_mesh_Qka_varid) )
+            end if
 
 !            call check( nf90_def_var( ncid   = ncid_meshout, &
 !                                      name   = 'model_domain', &
@@ -1524,6 +1594,11 @@ subroutine nc_finish_prepare
     integer             :: nc_mesh_vs_varid, nc_mesh_vp_varid   
     integer             :: nc_mesh_mu_varid, nc_mesh_rho_varid   
     integer             :: nc_mesh_lambda_varid
+    integer             :: nc_mesh_xi_varid
+    integer             :: nc_mesh_phi_varid
+    integer             :: nc_mesh_eta_varid
+    integer             :: nc_mesh_qmu_varid
+    integer             :: nc_mesh_qka_varid
 
     integer             :: nc_mesh_midpoint_varid
     integer             :: nc_mesh_eltype_varid
@@ -1647,6 +1722,50 @@ subroutine nc_finish_prepare
                                     values = mu1d,             &
                                     start  = npoints_myfirst,  &
                                     count  = npoints )
+
+                ! Anisotropic parameters            
+                ! Phi
+                call getvarid( ncid_meshout, "mesh_phi", nc_mesh_phi_varid ) 
+                call putvar_real1d( ncid   = ncid_meshout,      &
+                                    varid  = nc_mesh_mu_varid,  &
+                                    values = phi1d,             &
+                                    start  = npoints_myfirst,   &
+                                    count  = npoints )
+
+                ! Xi
+                call getvarid( ncid_meshout, "mesh_xi", nc_mesh_xi_varid ) 
+                call putvar_real1d( ncid   = ncid_meshout,     &
+                                    varid  = nc_mesh_xi_varid, &
+                                    values = xi1d,             &
+                                    start  = npoints_myfirst,  &
+                                    count  = npoints )
+
+                ! Eta
+                call getvarid( ncid_meshout, "mesh_eta", nc_mesh_eta_varid ) 
+                call putvar_real1d( ncid   = ncid_meshout,      &
+                                    varid  = nc_mesh_eta_varid, &
+                                    values = eta1d,             &
+                                    start  = npoints_myfirst,   &
+                                    count  = npoints ) 
+
+                ! Anelastic parameters
+                if (allocated(Q_mu1d).and.allocated(Q_kappa1d)) then
+                        
+                    ! Q_mu
+                    call getvarid( ncid_meshout, "mesh_Qmu", nc_mesh_Qmu_varid ) 
+                    call putvar_real1d( ncid   = ncid_meshout,      &
+                                        varid  = nc_mesh_Qmu_varid, &
+                                        values = Q_mu1d,            &
+                                        start  = npoints_myfirst,   &
+                                        count  = npoints )
+                    ! Q_kappa
+                    call getvarid( ncid_meshout, "mesh_Qka", nc_mesh_Qka_varid ) 
+                    call putvar_real1d( ncid   = ncid_meshout,      &
+                                        varid  = nc_mesh_Qka_varid, &
+                                        values = Q_kappa1d,         &
+                                        start  = npoints_myfirst,   &
+                                        count  = npoints )
+                end if
 
                 if (trim(dump_type) == 'displ_only' .and. nelem_kwf > 0) then
                    call getvarid( ncid_meshout, "midpoint_mesh", nc_mesh_midpoint_varid ) 
