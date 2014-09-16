@@ -152,16 +152,31 @@ subroutine readin_parameters
    08x,'//     Geophysical Journal International 174(3), 873-888.    //',/  & 
    08x,'//     doi:10.1111/j.1365-246X.2008.03813.x                  //',/  &
    08x,'//                                                           //',/  &
+   08x,'// (4) Martin van Driel and Tarje Nissen-Meyer (2014)        //',/  &
+   08x,'//     "Seismic wave propagation in fully anisotropic        //',/  &
+   08x,'//        axisymmetric media"                                //',/  &
+   08x,'//      Geophysical Journal International 199 (2): 880-893.  //',/  &
+   08x,'//      doi: 10.1093/gji/ggu269                              //',/  &
+   08x,'//                                                           //',/  &
+   08x,'// (5) Martin van Driel and Tarje Nissen-Meyer (2014)        //',/  &
+   08x,'//     "Optimized visco-elastic wave propagation for         //',/  &
+   08x,'//        weakly dissipative media"                          //',/  &
+   08x,'//      Geophysical Journal International, in press.         //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//                                                           //',/  &
    08x,'//     If you are publishing results obtained with this      //',/  &
-   08x,'//          code, please cite the upcoming paper:            //',/  &
+   08x,'//          code, please cite this paper:                    //',/  &
    08x,'//                                                           //',/  &
-   08x,'// (4) T. Nissen-Meyer, M. van Driel, S. Staehler,           //',/  & 
-   08x,'//     K. Hosseini, S. Hempel, A. Fournier:                  //',/  & 
-   08x,'//     "AxiSEM: Simulating high-frequency viscoelastic       //',/  &
-   08x,'//              3D global wavefields",                       //',/  & 
-   08x,'//     to be submitted to Solid Earth                        //',/  &
+   08x,'// (6) T. Nissen-Meyer, M. van Driel, S. C. Staehler,        //',/  & 
+   08x,'//     K. Hosseini, S. Hempel, L. Auer, A. Colombi           //',/  & 
+   08x,'//     and A. Fournier:                                      //',/  & 
+   08x,'//     "AxiSEM: broadband 3-D seismic wavefields in          //',/  &
+   08x,'//              axisymmetric media"                          //',/  &
+   08x,'//     Solid Earth, 5, 425-445, 2014                         //',/  &
+   08x,'//     doi:10.5194/se-5-425-2014                             //',/  &
    08x,'//                                                           //',/  &
-   08x,'//  November 2013: version 1.0                               //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//  August 2014: version 1.1                                 //',/  &
    08x,'//                                                           //',/  &
    08x,'///////////////////////////////////////////////////////////////',// &
    08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
