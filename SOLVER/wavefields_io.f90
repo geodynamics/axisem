@@ -923,6 +923,7 @@ subroutine dump_velo_global(v, dchi, istrain)
       ! tranform from +/- coordinates to s/phi
       f(:,:,:,1) = v(:,:,:,1) + v(:,:,:,2)
       f(:,:,:,2) = v(:,:,:,1) - v(:,:,:,2)
+      f(:,:,:,3) = v(:,:,:,3)
    else
       f = v
    endif
@@ -1009,6 +1010,7 @@ subroutine dump_disp_global(u, chi, istrain)
       ! tranform from +/- coordinates to s/phi
       f(:,:,:,1) = u(:,:,:,1) + u(:,:,:,2)
       f(:,:,:,2) = u(:,:,:,1) - u(:,:,:,2)
+      f(:,:,:,3) = u(:,:,:,3)
    else
       f = u
    endif
