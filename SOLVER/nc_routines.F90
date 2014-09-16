@@ -156,20 +156,21 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
-  character(len=*), intent(in)      :: filename, varname
+subroutine dump_mesh_data_xdmf(nc_filename_in, xdmf_filename_in, varname, npoints, nsnap)
+  character(len=*), intent(in)      :: nc_filename_in, xdmf_filename_in, varname
   integer, intent(in)               :: npoints, nsnap
 
   integer                           :: iinput_xdmf
   integer                           :: i
-  character(len=512)                :: filename_np
+  character(len=128)                :: xdmf_filename, nc_filename
 
-  ! relative filename for xdmf content
-  filename_np = trim(filename(index(filename, '/', back=.true.)+1:))
+  xdmf_filename = trim(nc_filename_in(:index(nc_filename_in, '/', back=.true.))) &
+                    // xdmf_filename_in
+  nc_filename = trim(nc_filename_in(index(nc_filename_in, '/', back=.true.)+1:))
 
   ! XML Data
-  open(newunit=iinput_xdmf, file=trim(filename)//'.xdmf')
-  write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
+  open(newunit=iinput_xdmf, file=trim(xdmf_filename))
+  write(iinput_xdmf, 733) npoints, npoints, trim(nc_filename), npoints, trim(nc_filename)
 
   do i=1, nsnap
      ! create new snapshot in the temporal collection
@@ -177,7 +178,7 @@ subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
 
      ! write attribute
      write(iinput_xdmf, 7342) varname, npoints, i-1, npoints, nsnap, npoints, &
-                              trim(filename_np), trim(varname)
+                              trim(nc_filename), trim(varname)
 
      write(iinput_xdmf, 7343)
   enddo
@@ -1025,7 +1026,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
               
               if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
               if (lpr) then
-                  call dump_mesh_data_xdmf(nc_fnam, 'Snapshots/disp_s',  &
+                  call dump_mesh_data_xdmf(trim(nc_fnam), 'disp_s.xdmf', 'Snapshots/disp_s',  &
+                                           npts_sol_global + npts_flu_global, & 
+                                           nstrain)
+                  if (src_type(1) /= 'monopole') &
+                     call dump_mesh_data_xdmf(trim(nc_fnam), 'disp_p.xdmf', 'Snapshots/disp_p',  &
+                                              npts_sol_global + npts_flu_global, & 
+                                              nstrain)
+                  call dump_mesh_data_xdmf(trim(nc_fnam), 'disp_z.xdmf', 'Snapshots/disp_z',  &
                                            npts_sol_global + npts_flu_global, & 
                                            nstrain)
               end if
@@ -1079,7 +1087,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
               
               if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
               if (lpr) then
-                  call dump_mesh_data_xdmf(nc_fnam, 'Snapshots/straintrace',  &
+                  call dump_mesh_data_xdmf(nc_fnam, 'straintrace.xdmf', 'Snapshots/straintrace',  &
                                            npts_sol_global + npts_flu_global, & 
                                            nstrain)
               end if
