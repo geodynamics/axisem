@@ -2193,7 +2193,11 @@ pure subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
      m4chil(0:npol,0:npol) = M4chi_fl(:,:,ielem)
 
      ! First MxM
-     call mxm(G2T, chi_l, X1)
+     if ( axis_fluid(ielem) ) then
+        call mxm(G1T, chi_l, X1)
+     else
+        call mxm(G2T, chi_l, X1)
+     endif
      call mxm(chi_l, G2, X2)
 
      ! Collocations and sums of D terms
@@ -2201,7 +2205,11 @@ pure subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
      S2 = m1chil * X1 + m4chil * X2
 
      !Second MxM
-     call mxm(G2, S1, X1)
+     if ( axis_fluid(ielem) ) then
+        call mxm(G1, S1, X1)
+     else
+        call mxm(G2, S1, X1)
+     endif
      call mxm(S2, G2T, X2)
      
      ! Final Sum
@@ -2267,7 +2275,11 @@ pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
      m4chil(0:npol,0:npol) = M4chi_fl(:,:,ielem)
 
      ! First MxM
-     call mxm_4(G2T, chi_l, X1)
+     if ( axis_fluid(ielem) ) then
+        call mxm_4(G1T, chi_l, X1)
+     else
+        call mxm_4(G2T, chi_l, X1)
+     endif
      call mxm_4(chi_l, G2, X2)
 
      ! Collocations and sums of D terms
@@ -2275,7 +2287,11 @@ pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
      S2 = m1chil * X1 + m4chil * X2
 
      !Second MxM
-     call mxm_4(G2, S1, X1)
+     if ( axis_fluid(ielem) ) then
+        call mxm_4(G1, S1, X1)
+     else
+        call mxm_4(G2, S1, X1)
+     endif
      call mxm_4(S2, G2T, X2)
      
      ! Final Sum
