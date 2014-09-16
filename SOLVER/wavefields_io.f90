@@ -919,7 +919,14 @@ subroutine dump_velo_global(v, dchi, istrain)
  
    ! sssssssssssss dump velocity vector inside solid ssssssssssssssssssssssssssss
  
-   f = v
+   if (src_type(1) == 'dipole') then
+      ! tranform from +/- coordinates to s/phi
+      f(:,:,:,1) = v(:,:,:,1) + v(:,:,:,2)
+      f(:,:,:,2) = v(:,:,:,1) - v(:,:,:,2)
+   else
+      f = v
+   endif
+
    if (src_dump_type == 'mask') then
       call eradicate_src_elem_vec_values(f)
    end if
@@ -998,7 +1005,14 @@ subroutine dump_disp_global(u, chi, istrain)
  
    ! sssssssssssss dump disp vector inside solid ssssssssssssssssssssssssssss
  
-   f = u
+   if (src_type(1) == 'dipole') then
+      ! tranform from +/- coordinates to s/phi
+      f(:,:,:,1) = u(:,:,:,1) + u(:,:,:,2)
+      f(:,:,:,2) = u(:,:,:,1) - u(:,:,:,2)
+   else
+      f = u
+   endif
+
    if (src_dump_type == 'mask') then
       call eradicate_src_elem_vec_values(f)
    end if
