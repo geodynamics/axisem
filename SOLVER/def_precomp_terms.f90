@@ -262,7 +262,6 @@ subroutine compute_pointwisederiv_matrices
   allocate(DsDxi_over_J_flu(0:npol,0:npol,1:nel_fluid))
   allocate(DzDxi_over_J_flu(0:npol,0:npol,1:nel_fluid))
   allocate(inv_s_fluid(0:npol,0:npol,1:nel_fluid))
-  allocate(prefac_inv_s_rho_fluid(0:npol,0:npol,1:nel_fluid))
 
   ! solid pointwise derivatives
   allocate(DsDeta_over_J_sol(0:npol,0:npol,1:nel_solid))
@@ -354,9 +353,6 @@ subroutine compute_pointwisederiv_matrices
          DzDxi_over_J_flu(ipol,jpol,iel) = -dzdxi / &
                   jacobian(eta(ipol),eta(jpol),local_crd_nodes,ielfluid(iel))
          
-         prefac_inv_s_rho_fluid(ipol,jpol,iel) = inv_rho_fluid(ipol,jpol,iel)/&
-                                          scoord(ipol,jpol,ielfluid(iel))
-
          inv_s_fluid(ipol,jpol,iel) = one/scoord(ipol,jpol,ielfluid(iel))  
       enddo
     enddo
@@ -376,11 +372,8 @@ subroutine compute_pointwisederiv_matrices
                   jacobian(xi_k(ipol),eta(jpol),local_crd_nodes,ielfluid(iel))
 
          if (ipol>0) then
-            prefac_inv_s_rho_fluid(ipol,jpol,iel) = inv_rho_fluid(ipol,jpol,iel)/&
-                                             scoord(ipol,jpol,ielfluid(iel))
             inv_s_fluid(ipol,jpol,iel) = one/scoord(ipol,jpol,ielfluid(iel))
          else
-            prefac_inv_s_rho_fluid(ipol,jpol,iel) = inv_rho_fluid(ipol,jpol,iel)
             inv_s_fluid(ipol,jpol,iel) = one
          endif
 
@@ -403,11 +396,6 @@ subroutine compute_pointwisederiv_matrices
   endif
 
 8 format(a25,2(1pe14.4))
-
-
-  ! Prefactor for quadrupole phi-comp of fluid displacement
-  if (src_type(1)=='monopole') prefac_inv_s_rho_fluid = zero
-  if (src_type(1)=='quadpole') prefac_inv_s_rho_fluid = two * prefac_inv_s_rho_fluid
 
 end subroutine compute_pointwisederiv_matrices
 !=============================================================================

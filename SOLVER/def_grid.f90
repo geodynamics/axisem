@@ -241,7 +241,6 @@ subroutine deallocate_preloop_arrays
      deallocate(DzDxi_over_J_flu)
 
      deallocate(inv_rho_fluid)
-     deallocate(prefac_inv_s_rho_fluid)
      deallocate(inv_s_fluid)
   endif
 
