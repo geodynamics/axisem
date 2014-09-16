@@ -88,11 +88,11 @@ subroutine glob_snapshot_midpoint(f_sol, chi, ibeg, iend, jbeg, jend, isnap)
                if (axis_fluid(iel)) then
                   call dsdf_fluid_axis(chi(:,:,iel), iel, jpol, dsdchi)
                   write(2500+mynum) usz_fluid(ipol,jpol,iel,1), &
-                                    prefac * dsdchi * chi(ipol,jpol,iel), &
+                                    0, &
                                     usz_fluid(ipol,jpol,iel,2)
                else
                   write(2500+mynum) usz_fluid(ipol,jpol,iel,1), &
-                                    prefac * chi(ipol,jpol,iel), &
+                                    0, &
                                     usz_fluid(ipol,jpol,iel,2)
                endif
             enddo
@@ -117,7 +117,7 @@ end subroutine glob_snapshot_midpoint
 subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
 
    use data_source,             only: src_type
-   use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
+   use data_pointwise,          only: inv_rho_fluid
    use pointwise_derivatives,   only: axisym_gradient_fluid, dsdf_fluid_axis
    use nc_routines,             only: nc_dump_snapshot
    use data_mesh,               only: npol, nel_solid, nel_fluid
@@ -163,7 +163,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
       n_xdmf_fl = count(plotting_mask(:,:,1:nel_fluid))
 
       u_fl(:,:,:,1) = usz_fl(:,:,:,1) * inv_rho_fluid
-      u_fl(:,:,:,2) = chi * prefac_inv_s_rho_fluid
+      u_fl(:,:,:,2) = 0
       u_fl(:,:,:,3) = usz_fl(:,:,:,2) * inv_rho_fluid
 
       call xdmf_mapping(u_fl, mapping_ijel_iplot(:,:,1:nel_fluid), plotting_mask(:,:,1:nel_fluid), &
@@ -182,7 +182,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
                      plotting_mask(:,:,:), &
                      i_arr_xdmf, j_arr_xdmf, straintrace_mask)
    
-   call calc_curlinplane(f_sol, chi, curlinplane)
+   call calc_curlinplane(f_sol, curlinplane)
    call xdmf_mapping(curlinplane, mapping_ijel_iplot(:,:,:), & 
                      plotting_mask(:,:,:), &
                      i_arr_xdmf, j_arr_xdmf, curlinplane_mask)
@@ -581,15 +581,15 @@ end subroutine glob_snapshot_xdmf
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine calc_curlinplane(f_sol,chi,curlinplane)
+subroutine calc_curlinplane(f_sol, curlinplane)
   
-   use data_pointwise,          only : inv_rho_fluid, prefac_inv_s_rho_fluid
+   use data_pointwise,          only : inv_rho_fluid
    use pointwise_derivatives,   only : axisym_gradient_solid, axisym_gradient_solid_add
    use pointwise_derivatives,   only : axisym_gradient_fluid, axisym_gradient_fluid_add
    use pointwise_derivatives,   only : f_over_s_solid, f_over_s_fluid
    use data_source,             only : src_type
  
-   real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:), chi(0:,0:,:)
+   real(kind=realkind), intent(in)  :: f_sol(0:,0:,:,:)
    real(kind=realkind), intent(out) :: curlinplane(0:,0:,:,:)
  
    real(kind=realkind)              :: grad_sol_s(0:npol,0:npol,nel_solid,2)
@@ -615,7 +615,7 @@ end subroutine
 subroutine calc_straintrace(f_sol,chi,straintrace)
 !< Calculate strain trace (for P-wave visualisation)
   
-   use data_pointwise,        only   : inv_rho_fluid, prefac_inv_s_rho_fluid
+   use data_pointwise,        only   : inv_rho_fluid
    use pointwise_derivatives, only   : axisym_gradient_solid, axisym_gradient_solid_add
    use pointwise_derivatives, only   : axisym_gradient_fluid, axisym_gradient_fluid_add
    use pointwise_derivatives, only   : f_over_s_solid, f_over_s_fluid
@@ -627,7 +627,6 @@ subroutine calc_straintrace(f_sol,chi,straintrace)
    real(kind=realkind)              :: grad_sol(0:npol,0:npol,nel_solid,2)
    real(kind=realkind)              :: buff_solid(0:npol,0:npol,nel_solid)
    real(kind=realkind)              :: usz_fluid(0:npol,0:npol,nel_fluid,2)
-   real(kind=realkind)              :: up_fluid(0:npol,0:npol,nel_fluid)
    real(kind=realkind)              :: grad_flu(0:npol,0:npol,nel_fluid,2)
    real(kind=realkind)              :: two_rk = 2
 
@@ -662,25 +661,8 @@ subroutine calc_straintrace(f_sol,chi,straintrace)
       call axisym_gradient_fluid_add(usz_fluid(:,:,:,2), grad_flu)   !1:dsuz+dzus 
                                                                      !2:dzuz+dsus
    
-      ! Components involving phi................................................
-   
-      if (src_type(1) == 'monopole') then
-         ! Calculate us/s and straintrace
-         straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1)) &
-                                             + grad_flu(:,:,:,2) 
-   
-      elseif (src_type(1) == 'dipole') then
-         up_fluid = prefac_inv_s_rho_fluid * chi
-         straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) - up_fluid) & 
-                                             + grad_flu(:,:,:,2)
-   
-      elseif (src_type(1) == 'quadpole') then
-         up_fluid = prefac_inv_s_rho_fluid * chi
-         straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1) &
-                                             - two_rk * up_fluid) &  !Ekk
-                                             + grad_flu(:,:,:,2)
-   
-      endif   !src_type
+      straintrace(:,:,1:nel_fluid,1) = f_over_s_fluid(usz_fluid(:,:,:,1)) & 
+                                        + grad_flu(:,:,:,2)
    end if
 
 end subroutine
@@ -862,7 +844,7 @@ subroutine dump_disp(u, chi, istrain)
                                 //appmynum//'_'//appisnap//'.bindat',&
                                 FORM="UNFORMATTED",STATUS="REPLACE")
    
-      write(76000+mynum)chi
+      write(76000+mynum) chi
       close(76000+mynum)
    endif 
 
@@ -918,7 +900,7 @@ end subroutine dump_velo_dchi
 !-----------------------------------------------------------------------------------------
 subroutine dump_velo_global(v, dchi, istrain)
 
-   use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
+   use data_pointwise,          only: inv_rho_fluid
    use data_source,             only: src_type, src_dump_type
    use pointwise_derivatives,   only: axisym_gradient_fluid, dsdf_fluid_allaxis
    use data_mesh,               only: npol, nel_solid, nel_fluid
@@ -927,7 +909,6 @@ subroutine dump_velo_global(v, dchi, istrain)
    real(kind=realkind), intent(in) :: dchi(:,:,:)
    integer,             intent(in) :: istrain
    
-   real(kind=realkind)             :: phicomp(0:npol,0:npol,nel_fluid)
    integer                         :: i
    character(len=4)                :: appisnap
    real(kind=realkind)             :: f(0:npol,0:npol,1:nel_solid,3)
@@ -968,13 +949,10 @@ subroutine dump_velo_global(v, dchi, istrain)
       ! compute velocity vector inside fluid
      call axisym_gradient_fluid(dchi, usz_fluid)
  
-     ! phi component needs special care: m/(s rho) dchi
-     phicomp = prefac_inv_s_rho_fluid * dchi
- 
      call define_io_appendix(appisnap,istrain)
      fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
                                      usz_fluid(ibeg:iend,ibeg:iend,:,1)
-     fflu(ibeg:iend,ibeg:iend,:,2) = phicomp(ibeg:iend,ibeg:iend,:)
+     fflu(ibeg:iend,ibeg:iend,:,2) = 0
      fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
                                      usz_fluid(ibeg:iend,ibeg:iend,:,2)      
  
@@ -1001,7 +979,7 @@ end subroutine dump_velo_global
 !-----------------------------------------------------------------------------------------
 subroutine dump_disp_global(u, chi, istrain)
 
-   use data_pointwise,          only: inv_rho_fluid, prefac_inv_s_rho_fluid
+   use data_pointwise,          only: inv_rho_fluid
    use data_source,             only: src_type, src_dump_type
    use pointwise_derivatives,   only: axisym_gradient_fluid, dsdf_fluid_allaxis
    use data_mesh,               only: npol, nel_solid, nel_fluid
@@ -1010,7 +988,6 @@ subroutine dump_disp_global(u, chi, istrain)
    real(kind=realkind), intent(in) :: chi(:,:,:)
    integer,             intent(in) :: istrain
    
-   real(kind=realkind)             :: phicomp(0:npol,0:npol,nel_fluid)
    integer                         :: i
    character(len=4)                :: appisnap
    real(kind=realkind)             :: f(0:npol,0:npol,1:nel_solid,3)
@@ -1059,12 +1036,9 @@ subroutine dump_disp_global(u, chi, istrain)
       ! compute velocity vector inside fluid
      call axisym_gradient_fluid(chi, usz_fluid)
  
-     ! phi component needs special care: m/(s rho) chi
-     phicomp = prefac_inv_s_rho_fluid * chi
- 
      call define_io_appendix(appisnap,istrain)
      fflu(:,:,:,1) = inv_rho_fluid(:,:,:) * usz_fluid(:,:,:,1)
-     fflu(:,:,:,2) = phicomp(:,:,:)
+     fflu(:,:,:,2) = 0
      fflu(:,:,:,3) = inv_rho_fluid(:,:,:) * usz_fluid(:,:,:,2)      
  
      ! dump displacement vector inside fluid
