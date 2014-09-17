@@ -2590,8 +2590,6 @@ subroutine def_solid_fluid_boundary_terms
   integer                      :: count_lower_disc,count_upper_disc
 
   allocate(bdry_matr(0:npol,nel_bdry,2))   
-  allocate(bdry_matr_fluid(0:npol,nel_bdry,2))    
-  allocate(bdry_matr_solid(0:npol,nel_bdry,2))   
   allocate(solflubdry_radius(nel_bdry))
 
   bdry_sum = zero

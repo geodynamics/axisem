@@ -88,8 +88,6 @@ module data_matr
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
   ! Solid-fluid boundary matrix
   real(kind=realkind), dimension(:,:,:), allocatable :: bdry_matr
-  real(kind=realkind), dimension(:,:,:), allocatable :: bdry_matr_fluid
-  real(kind=realkind), dimension(:,:,:), allocatable :: bdry_matr_solid
   real(kind=dp), dimension(:)          , allocatable :: solflubdry_radius
   
   !++++++++++++++++++++++++++++++++++++++++++++++++++++
