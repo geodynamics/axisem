@@ -2604,13 +2604,13 @@ subroutine def_solid_fluid_boundary_terms
      do iel=1,nel_bdry
 
         ! Map from boundary to global indexing. Choice of the solid side is random...
-        ielglob=ielsolid(bdry_solid_el(iel))
+        ielglob = ielsolid(bdry_solid_el(iel))
 
         ! closest to axis
-        call compute_coordinates(s,z,r1,theta1,ielglob,0,bdry_jpol_solid(iel))
+        call compute_coordinates(s, z, r1, theta1, ielglob, 0, bdry_jpol_solid(iel))
 
-        call compute_coordinates(s,z,rf,thetaf,ielfluid(bdry_fluid_el(iel)),&
-                                 0,bdry_jpol_fluid(iel))
+        call compute_coordinates(s, z, rf, thetaf, ielfluid(bdry_fluid_el(iel)), &
+                                 0, bdry_jpol_fluid(iel))
 
         ! test if the mapping of solid element & jpol numbers agrees for solid & fluid
         if (abs( (rf-r1) /r1 ) > 1.e-5 .or. abs((thetaf-theta1)) > 1.e-3) then 
@@ -2625,9 +2625,9 @@ subroutine def_solid_fluid_boundary_terms
         endif
 
         ! furthest away from axis
-        call compute_coordinates(s,z,r2,theta2,ielglob,npol,bdry_jpol_solid(iel))
-        call compute_coordinates(s,z,rf,thetaf,ielfluid(bdry_fluid_el(iel)),&
-                                npol,bdry_jpol_fluid(iel))
+        call compute_coordinates(s, z, r2, theta2, ielglob, npol, bdry_jpol_solid(iel))
+        call compute_coordinates(s, z, rf, thetaf, ielfluid(bdry_fluid_el(iel)), &
+                                 npol, bdry_jpol_fluid(iel))
 
         ! test if the mapping of solid element & jpol numbers agrees for solid & fluid
         if (abs( (rf-r2) /r2 ) > 1.e-5 .or. abs((thetaf-theta2)) > 1.e-3) then 
@@ -2647,12 +2647,12 @@ subroutine def_solid_fluid_boundary_terms
            stop
         endif
         !1/2 comes from d_th=1/2 (th_2 - th_1)d_xi; abs() takes care of southern elems
-        delta_th = half*abs(theta2-theta1)
+        delta_th = half * abs(theta2 - theta1)
 
         ! ::::::::::::::::axial elements::::::::::::::::
         if ( axis(ielglob) ) then
 
-           if (abs(sin(theta1))*two*pi*r1>min_distance_dim) then
+           if (abs(sin(theta1)) * two * pi * r1 > min_distance_dim) then
               write(6,*)
               write(6,*)procstrg,'Problem with axial S/F boundary element',ielglob
               write(6,*)procstrg,'Min theta is not exactly on the axis'
@@ -2662,14 +2662,14 @@ subroutine def_solid_fluid_boundary_terms
 
            do inode = 1, 8
               call compute_coordinates_mesh(local_crd_nodes(inode,1),&
-                   local_crd_nodes(inode,2),ielglob,inode)
+                                            local_crd_nodes(inode,2), ielglob, inode)
            enddo
 
            ! I>0 (off the axis)
-           do ipol=1,npol
-              call compute_coordinates(s,z,r,theta,ielglob,ipol,&
+           do ipol=1, npol
+              call compute_coordinates(s, z, r, theta, ielglob, ipol, &
                                        bdry_jpol_solid(iel))
-              if(abs(r-r1)>min_distance_dim) then 
+              if(abs(r - r1) > min_distance_dim) then 
                  write(6,*)
                  write(6,*)procstrg,'Problem with axial S/F boundary element',&
                            ielglob
@@ -2678,30 +2678,34 @@ subroutine def_solid_fluid_boundary_terms
                                                               theta*180./pi 
                  stop
               endif
-              bdry_matr(ipol,iel,1)=delta_th*wt_axial_k(ipol)* &
-                   dsin(theta)/(one+xi_k(ipol))*dsin(theta)
-              bdry_matr(ipol,iel,2)=delta_th*wt_axial_k(ipol)* &
-                   dsin(theta)/(one+xi_k(ipol))*dcos(theta)
+
+              bdry_matr(ipol,iel,1) = delta_th * wt_axial_k(ipol) * dsin(theta) &
+                                        / (one + xi_k(ipol)) * dsin(theta)
+              bdry_matr(ipol,iel,2) = delta_th * wt_axial_k(ipol) * dsin(theta) &
+                                        / (one + xi_k(ipol)) * dcos(theta)
 
               ! Test: Integrated over the whole boundary, the boundary term san sin/cos
               ! equals two: \int_0^pi sin(\theta) d\theta = two, i.e. 4 if 2 boundaries
-              bdry_sum = bdry_sum + delta_th*wt_axial_k(ipol)*dsin(theta)/ &
-                                    (one+xi_k(ipol))
+              bdry_sum = bdry_sum + delta_th * wt_axial_k(ipol) * dsin(theta) / &
+                                    (one + xi_k(ipol))
            enddo
 
            ! I=0 axis 
-           bdry_sum = bdry_sum + 1/r * delta_th * wt_axial_k(0) * &
-                              s_over_oneplusxi_axis(xi_k(0), &
-                              eta(bdry_jpol_solid(iel)),local_crd_nodes,ielglob)
+           bdry_sum = bdry_sum + 1/r * delta_th * wt_axial_k(0) &
+                            * s_over_oneplusxi_axis(xi_k(0), &
+                                                    eta(bdry_jpol_solid(iel)), &
+                                                    local_crd_nodes,ielglob)
 
            ! I=0 axis itself
-           bdry_matr(0,iel,1)=zero ! note sin(0) = 0    
+           bdry_matr(0,iel,1) = zero ! note sin(0) = 0    
 
            ! need factor 1/r to compensate for using s/(1+xi) rather than sin theta/(1+xi)
            ! note cos(0) = 1
-           bdry_matr(0,iel,2)= 1/r * delta_th * wt_axial_k(0) * &
-                              s_over_oneplusxi_axis(xi_k(0), &
-                              eta(bdry_jpol_solid(iel)),local_crd_nodes,ielglob)
+           bdry_matr(0,iel,2)= 1/r * delta_th * wt_axial_k(0) &
+                              * s_over_oneplusxi_axis(xi_k(0), &
+                                                      eta(bdry_jpol_solid(iel)), &
+                                                      local_crd_nodes,ielglob)
+
            if (verbose > 1) then
               write(69,*)
               write(69,11)'S/F axial r[km], theta[deg]   :',r1/1000.,theta1*180/pi
@@ -2737,12 +2741,12 @@ subroutine def_solid_fluid_boundary_terms
 
            ! ::::::::::::::::non-axial elements::::::::::::::::
            else
-              do ipol=0,npol
+              do ipol=0, npol
 
-                 call compute_coordinates(s,z,r,theta,ielglob,ipol,&
+                 call compute_coordinates(s, z, r, theta, ielglob, ipol, &
                                           bdry_jpol_solid(iel))
 
-                 if (abs(r-r1)>min_distance_dim) then 
+                 if (abs(r - r1) > min_distance_dim) then 
                     write(6,*)
                     write(6,*)procstrg,&
                               'Problem with non-axial S/F boundary element',ielglob
@@ -2752,12 +2756,12 @@ subroutine def_solid_fluid_boundary_terms
                     stop
                  endif
 
-                 bdry_matr(ipol,iel,1)=delta_th*wt(ipol)*dsin(theta)*dsin(theta)
-                 bdry_matr(ipol,iel,2)=delta_th*wt(ipol)*dsin(theta)*dcos(theta)
+                 bdry_matr(ipol,iel,1) = delta_th * wt(ipol) * dsin(theta) * dsin(theta)
+                 bdry_matr(ipol,iel,2) = delta_th * wt(ipol) * dsin(theta) * dcos(theta)
 
               ! Test: Integrated over the whole boundary, the boundary term san sin/cos
               ! equals two: \int_0^pi sin(\theta) d\theta = two, i.e. 4 if 2 boundaries
-              bdry_sum = bdry_sum + delta_th*wt(ipol)*dsin(theta)
+              bdry_sum = bdry_sum + delta_th * wt(ipol) * dsin(theta)
 
            enddo
         endif ! ax/nonax
@@ -2791,7 +2795,6 @@ subroutine def_solid_fluid_boundary_terms
         ! Factor r^2 stemming from the integration over spherical domain
         bdry_matr(0:npol,iel,1:2) = bdry_matr(0:npol,iel,1:2) * r * r
         solflubdry_radius(iel) = r
-
 
      enddo ! elements along solid-fluid boundary
 
