@@ -283,29 +283,39 @@ endif
 # write a script that runs fieldtransform in all rundirs
 if ( $netcdf_requested == 'true') then
     if ( $simtype == 'moment' ) then
-        echo '#\!/bin/csh -f'           >  fieldtransform.csh
-        echo 'cd MZZ'              >> fieldtransform.csh
-        echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'cd ..'                 >> fieldtransform.csh
-        echo 'cd MXX_P_MYY'        >> fieldtransform.csh
-        echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'cd ..'                 >> fieldtransform.csh
-        echo 'cd MXZ_MYZ'          >> fieldtransform.csh
-        echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'cd ..'                 >> fieldtransform.csh
-        echo 'cd MXY_MXX_M_MYY'    >> fieldtransform.csh
-        echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'cd ..'                 >> fieldtransform.csh
-        chmod +x fieldtransform.csh
+        cp ../UTILS/fieldtransform_moment.sh fieldtransform.sh
+        #echo '#\!/bin/bash '              >  fieldtransform.sh
+        #echo 'set -e'                     >> fieldtransform.sh
+        #echo 'cd MZZ'                     >> fieldtransform.sh
+        #echo 'Transforming MZZ'           >> fieldtransform.sh
+        #echo '../xfield_transform'        >> fieldtransform.sh
+        #echo 'cd ..'                      >> fieldtransform.sh
+        #echo 'cd MXX_P_MYY'               >> fieldtransform.sh
+        #echo 'Transforming MXX_P_MYY'     >> fieldtransform.sh
+        #echo '../xfield_transform'        >> fieldtransform.sh
+        #echo 'cd ..'                      >> fieldtransform.sh
+        #echo 'cd MXZ_MYZ'                 >> fieldtransform.sh
+        #echo 'Transforming MXZ_MYZ'       >> fieldtransform.sh
+        #echo '../xfield_transform'        >> fieldtransform.sh
+        #echo 'cd ..'                      >> fieldtransform.sh
+        #echo 'cd MXY_MXX_M_MYY'           >> fieldtransform.sh
+        #echo 'Transforming MXY_MXX_M_MYY' >> fieldtransform.sh
+        #echo '../xfield_transform'        >> fieldtransform.sh
+        #echo 'cd ..'                      >> fieldtransform.sh
+        chmod +x fieldtransform.sh
     else if ( $simtype == 'force' ) then
-        echo '#bin/csh -f'           >  fieldtransform.csh
-        echo 'cd PX'               >> fieldtransform.csh
-        echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'cd ..'                 >> fieldtransform.csh
-        echo 'cd PZ'               >> fieldtransform.csh
-        echo '../xfield_transform'   >> fieldtransform.csh
-        echo 'cd ..'                 >> fieldtransform.csh
-        chmod +x fieldtransform.csh
+        cp ../UTILS/fieldtransform_force.sh fieldtransform.sh
+        #echo '#\!/bin/bash '              >  fieldtransform.sh
+        #echo 'set -e'                     >> fieldtransform.sh
+        #echo 'cd PX'                      >> fieldtransform.sh
+        #echo 'Transforming PX'            >> fieldtransform.sh
+        #echo '../xfield_transform'        >> fieldtransform.sh
+        #echo 'cd ..'                      >> fieldtransform.sh
+        #echo 'cd PZ'                      >> fieldtransform.sh
+        #echo 'Transforming PZ'            >> fieldtransform.sh
+        #echo '../xfield_transform'        >> fieldtransform.sh
+        #echo 'cd ..'                      >> fieldtransform.sh
+        chmod +x fieldtransform.sh
     endif
 endif
 
