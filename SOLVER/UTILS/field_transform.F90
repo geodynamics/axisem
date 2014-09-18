@@ -727,7 +727,7 @@ program field_transformation
             time_i = time_i + tack - tick
             space_i = space_i + ngllread * nsnap * 4 / 1048576.
             if (verbose) &
-                print "('read  ', F9.2, ' MB in ', F5.2, ' s => ', F6.2, 'MB/s' )", &
+                print "('read  ', F12.2, ' MB in ', F7.2, ' s => ', F7.2, 'MB/s' )", &
                     real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
                     real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
 
@@ -749,7 +749,7 @@ program field_transformation
             time_o = time_o + tack - tick
             space_o = space_o + ngllread * nsnap * 4 / 1048576.
             if (verbose) &
-                print "('wrote ', F9.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
+                print "('wrote ', F12.2, ' MB in ', F7.2, ' s => ', F7.2, 'MB/s' )", &
                     real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
                     real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
 
