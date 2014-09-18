@@ -63,7 +63,7 @@ program field_transformation
     integer, dimension(9)           :: ncin_field_varid
     integer, dimension(9)           :: ncout_field_varid
 
-    integer                         :: isfinalized, percent                                                            
+    integer                         :: isfinalized, status, percent                                                            
     integer                         :: nstep, nvars_mesh
     integer                         :: attnum, nf_att_stat
     character(len=80)               :: attname, varname
@@ -111,13 +111,14 @@ program field_transformation
     call check( nf90_open(path="./Data/axisem_output.nc4", & 
                           mode=NF90_NOWRITE, ncid=ncin_id) )
 
-    call check( nf90_get_att(ncin_id, NF90_GLOBAL, 'finalized', isfinalized) )
+    status = nf90_get_att(ncin_id, NF90_GLOBAL, 'finalized', isfinalized) 
 
-    do while (isfinalized.ne.1)
-      call check( nf90_get_att(ncin_id, NF90_GLOBAL, 'percent completed', percent) )
-      print "('Solver run not yet finished (at ', I3, '%). Waiting for 60s')", percent
+    do while (isfinalized.ne.1 .or. status.ne.NF90_NOERR)
+      percent = 0
+      status = nf90_get_att(ncin_id, NF90_GLOBAL, 'percent completed', percent) 
+      print "('Solver run not yet finished (at ', I3, '%). Waiting for 10s')", percent
       call check( nf90_close(ncin_id))
-      call sleep(60)
+      call sleep(10)
 
       call check( nf90_open(path="./Data/axisem_output.nc4", & 
                             mode=NF90_NOWRITE, ncid=ncin_id) )
