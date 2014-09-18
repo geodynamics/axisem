@@ -400,18 +400,16 @@ subroutine sf_time_loop_newmark
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ddchi1 = - inv_mass_fluid * ddchi1
+     call bdry_copy2solid(acc1, ddchi1)
 
      select case (src_type(1))
      case ('monopole')
-        call bdry_copy2solid(acc1, ddchi1)
         call apply_axis_mask_onecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
 
      case ('dipole')
-        call bdry_copy2solid(acc1,ddchi1)
         call apply_axis_mask_twocomp(acc1, nel_solid, ax_el_solid, naxel_solid)
 
      case ('quadpole')
-        call bdry_copy2solid(acc1,ddchi1)
         call apply_axis_mask_threecomp(acc1, nel_solid, ax_el_solid, naxel_solid)
      end select
         
@@ -619,15 +617,15 @@ subroutine symplectic_time_loop
 
         ddchi = - ddchi * inv_mass_fluid
 
+        call bdry_copy2solid(acc, ddchi)
         select case (src_type(1))
            case ('monopole')
-              call bdry_copy2solid(acc, ddchi)
               call apply_axis_mask_onecomp(acc,nel_solid, ax_el_solid,naxel_solid)
+
            case ('dipole') 
-              call bdry_copy2solid(acc, ddchi)
               call apply_axis_mask_twocomp(acc,nel_solid, ax_el_solid,naxel_solid)
+
            case ('quadpole') 
-              call bdry_copy2solid(acc, ddchi)
               call apply_axis_mask_threecomp(acc,nel_solid, ax_el_solid,naxel_solid)
         end select
 
@@ -1538,7 +1536,7 @@ pure subroutine bdry_copy2solid(usol,uflu)
   
   real(kind=realkind), intent(inout) :: usol(0:,0:,:,:)
   real(kind=realkind), intent(in)    :: uflu(0:,0:,:)
-  integer                            :: iel,jpols,jpolf,iels,ielf
+  integer                            :: iel, jpols, jpolf, iels, ielf
 
   do iel = 1,nel_bdry
      jpols = bdry_jpol_solid(iel)
@@ -1548,19 +1546,18 @@ pure subroutine bdry_copy2solid(usol,uflu)
 
      if (src_type(1) == 'dipole') then 
 
-        usol(:,jpols,iels,1) = usol(:,jpols,iels,1) + &
-             bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)
-
-        usol(:,jpols,iels,2) = usol(:,jpols,iels,2) + &
-             bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)
+        usol(:,jpols,iels,1) = usol(:,jpols,iels,1) &
+                                + bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)
+        usol(:,jpols,iels,2) = usol(:,jpols,iels,2) &
+                                + bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)
 
      else
-        usol(:,jpols,iels,1) = usol(:,jpols,iels,1) + &
-             bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)        
+        usol(:,jpols,iels,1) = usol(:,jpols,iels,1) &
+                                + bdry_matr(:,iel,1) * uflu(:,jpolf,ielf)
      endif
 
-     usol(:,jpols,iels,3) = usol(:,jpols,iels,3) + &
-          bdry_matr(:,iel,2) * uflu(:,jpolf,ielf)
+     usol(:,jpols,iels,3) = usol(:,jpols,iels,3) &
+                            + bdry_matr(:,iel,2) * uflu(:,jpolf,ielf)
 
   enddo
 
