@@ -1496,6 +1496,9 @@ subroutine write_parameters
         call nc_write_att_real( dtheta_rec,            'receiver spacing (0 if not even)')
         write(clogic,*) use_netcdf
         call nc_write_att_char( clogic,                'use netcdf for wavefield output?')
+
+        call nc_write_att_int( 0,                      'percent completed')
+        call nc_write_att_int( 0,                      'finalized')
     end if
 
 
