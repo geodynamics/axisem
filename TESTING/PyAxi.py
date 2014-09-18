@@ -990,7 +990,7 @@ def PyAxi(**kwargs):
                         ax.plot(t[i], dat + n, colors[i], label='_nolegend_', ls=linestyles[i])
                 # compute l2 misfits
                 dat1 = sgs[0].select(station=stat, channel='*'+chan)[0].data
-                dat2 = sgs[2].select(station=stat, channel='*'+chan)[0].data
+                dat2 = sgs[2].select(station=stat, channel='*'+chan)[0].data[1:]
                 l2misfit.append(((dat1 - dat2)**2).sum()**.5 / maxi /
                        sgs[0][0].stats.npts)
             
