@@ -5,7 +5,7 @@ export FC=gfortran
 export INSTALL_DIR=$HOME/local
 export LDFLAGS=-L$INSTALL_DIR/lib
 export CPPFLAGS="-I$INSTALL_DIR/include -DgFortran"
-export LD_LIBRARY_PATH=$INSTALL_DIR/lib 
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_DIR/lib 
 set -e
 
 
