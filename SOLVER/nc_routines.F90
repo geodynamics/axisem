@@ -1738,7 +1738,7 @@ subroutine nc_finish_prepare
                 ! Phi
                 call getvarid( ncid_meshout, "mesh_phi", nc_mesh_phi_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,      &
-                                    varid  = nc_mesh_mu_varid,  &
+                                    varid  = nc_mesh_phi_varid,  &
                                     values = phi1d,             &
                                     start  = npoints_myfirst,   &
                                     count  = npoints )
