@@ -737,11 +737,6 @@ subroutine check_basic_parameters
         '\nchange parameter realkind in global_parameters.f90'
   call pcheck((realkind /= sp .and. realkind /= dp), errmsg)
 
-  errmsg = "!!!!!! NOT GOING ANY FURTHER !!!!!!\n" &
-        // "  It's just too much to save 10 frames of strain & velocity\n" &
-        // "  per source period! Choose something reasonable."
-  call pcheck(strain_samp > 15, errmsg)
-
   errmsg = "Need indices for GLL points to dump xdmf. Set XDMF_GLL_* in inparam_advanced"
   call pcheck(dump_xdmf .and. (i_n_xdmf == -1 .or. j_n_xdmf == -1 ), errmsg)
 
