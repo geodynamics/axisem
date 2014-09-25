@@ -958,6 +958,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     end if
 
     call barrier
+
+    if (nc_dumpbuffersize < nproc) then
+        write(6,*) 'ERROR: NETCDF_DUMP_BUFFER needs to be larger then the number of processors'
+        stop
+    endif
+
     dumpstepsnap = int(nc_dumpbuffersize / nproc) * nproc ! Will later be reduced to nstrain, if this is smaller
                                                        ! than value given here
     
