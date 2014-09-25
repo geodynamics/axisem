@@ -63,6 +63,7 @@ program field_transformation
     integer, dimension(9)           :: ncin_field_varid
     integer, dimension(9)           :: ncout_field_varid
 
+    integer                         :: isfinalized, status, percent                                                            
     integer                         :: nstep, nvars_mesh
     integer                         :: attnum, nf_att_stat
     character(len=80)               :: attname, varname
@@ -95,6 +96,8 @@ program field_transformation
     logical, parameter              :: deflate_lossy = .false.
     integer, parameter              :: sigdigits =  5       ! significant digits
                                                             ! below max of time trace
+    
+                                                            
 
     ! initialize timer
     time_fft = 0
@@ -107,6 +110,21 @@ program field_transformation
     ! open input netcdf file 
     call check( nf90_open(path="./Data/axisem_output.nc4", & 
                           mode=NF90_NOWRITE, ncid=ncin_id) )
+
+    status = nf90_get_att(ncin_id, NF90_GLOBAL, 'finalized', isfinalized) 
+
+    do while (isfinalized.ne.1 .or. status.ne.NF90_NOERR)
+      percent = 0
+      status = nf90_get_att(ncin_id, NF90_GLOBAL, 'percent completed', percent) 
+      print "('Solver run not yet finished (at ', I3, '%). Waiting for 10s')", percent
+      call check( nf90_close(ncin_id))
+      call sleep(10)
+
+      call check( nf90_open(path="./Data/axisem_output.nc4", & 
+                            mode=NF90_NOWRITE, ncid=ncin_id) )
+      call check( nf90_get_att(ncin_id, NF90_GLOBAL, 'finalized', isfinalized) )
+    end do
+
 
     ! get Snapshots group id
     call check( nf90_inq_grp_ncid(ncin_id, "Snapshots", ncin_snap_grpid) )
@@ -710,7 +728,7 @@ program field_transformation
             time_i = time_i + tack - tick
             space_i = space_i + ngllread * nsnap * 4 / 1048576.
             if (verbose) &
-                print "('read  ', F9.2, ' MB in ', F5.2, ' s => ', F6.2, 'MB/s' )", &
+                print "('read  ', F12.2, ' MB in ', F7.2, ' s => ', F7.2, 'MB/s' )", &
                     real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
                     real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
 
@@ -732,7 +750,7 @@ program field_transformation
             time_o = time_o + tack - tick
             space_o = space_o + ngllread * nsnap * 4 / 1048576.
             if (verbose) &
-                print "('wrote ', F9.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
+                print "('wrote ', F12.2, ' MB in ', F7.2, ' s => ', F7.2, 'MB/s' )", &
                     real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
                     real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
 

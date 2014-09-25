@@ -479,6 +479,9 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
                     values = copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
         dumpsize = dumpsize + 3 * maxind * ndumps
     end if
+    
+    call check( nf90_put_att(ncid_out, NF90_GLOBAL, 'percent completed', &
+                             isnap_loc*100/nstrain) )
 
     call check( nf90_close(ncid_out) ) 
     call cpu_time(tack)
@@ -1735,7 +1738,7 @@ subroutine nc_finish_prepare
                 ! Phi
                 call getvarid( ncid_meshout, "mesh_phi", nc_mesh_phi_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,      &
-                                    varid  = nc_mesh_mu_varid,  &
+                                    varid  = nc_mesh_phi_varid,  &
                                     values = phi1d,             &
                                     start  = npoints_myfirst,   &
                                     count  = npoints )
@@ -1864,10 +1867,30 @@ subroutine nc_end_output
         
         call barrier
     end do
-    !call check( nf90_close(ncid_out) )
+
+    !Set the finalized flag to true in the output file
+    if(mynum.eq.0) call nc_finalize()
 
 #endif
 end subroutine nc_end_output
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine nc_finalize
+!< Set the finalized flag to true in the output file
+#ifdef unc
+    use data_io,      only: datapath, lfdata
+
+    call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
+                          mode=NF90_WRITE, ncid=ncid_out) )
+    call check( nf90_redef(ncid_out))
+
+    call check( nf90_put_att(ncid_out, NF90_GLOBAL, &
+                             'finalized', 1) )
+
+    call check( nf90_close(ncid = ncid_out))
+#endif
+end subroutine nc_finalize
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
