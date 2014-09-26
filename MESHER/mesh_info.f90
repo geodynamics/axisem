@@ -267,6 +267,7 @@ subroutine define_boundaries
   real(kind=dp), allocatable :: bdry_radius(:)
 
   if (neltot_fluid>0 .and. neltot_solid>0 ) then 
+     ! TODO: This is only true, if the fluid is not layered!!!
      nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
 
      if (.not. solid_domain(ndisc)) nbcnd = nbcnd - 1
