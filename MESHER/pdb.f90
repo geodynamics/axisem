@@ -1122,7 +1122,8 @@ subroutine partition_sflobal_index
                  enddo
                  if (inbr > 8) then
                     write(6,*) 'ERORR: having more then 8 neighbours (+myself)'
-                    write(6,*) '       check mesh decomposition)'
+                    write(6,*) '       check mesh decomposition in the solid)'
+                    write(6,*) '       iproct = ', iproct
                     stop
                  endif
                  if (myneighbours_solid(iproct,inbr) == -1) myneighbours_solid(iproct,inbr) = ipdes
@@ -1445,7 +1446,8 @@ subroutine partition_sflobal_index
                     enddo
                     if (inbr > 8) then
                        write(6,*) 'ERORR: having more then 8 neighbours (+myself)'
-                       write(6,*) '       check mesh decomposition)'
+                       write(6,*) '       check mesh decomposition in the fluid)'
+                       write(6,*) '       iproct = ', iproct
                        stop
                     endif
                     if (myneighbours_fluid(iproct,inbr) == -1) myneighbours_fluid(iproct,inbr) = ipdes
