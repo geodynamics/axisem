@@ -328,7 +328,7 @@ subroutine nc_dump_strain(isnap_loc)
         ! MvD: I am not sure if cpu_time is a correct measure here, as we idle
         !      until IO is finished.
         !      Therefor testing system_clock, from the clocks module.
-        if (mod(isnap_loc, dumpstepsnap) == outputplan) then
+        if (mod(isnap_loc, dumpstepsnap) == outputplan .and. (npoints > 0 .or. maxind > 0)) then
             if (verbose>1) then
                 write(*,"('   Proc ', I4, ': Would like to dump data and waits for his turn')") mynum
                 call flush(6)
@@ -338,7 +338,7 @@ subroutine nc_dump_strain(isnap_loc)
 
         iclocknbio = tick()
         do iproc=0, nproc-1
-            if (iproc == mynum) then
+            if (iproc == mynum .and. (npoints > 0 .or. maxind > 0)) then
                 call c_wait_for_io()
                 call flush(6)
             end if
@@ -347,7 +347,7 @@ subroutine nc_dump_strain(isnap_loc)
         iclocknbio = tick(id=idnbio, since=iclocknbio)
 
         ! non blocking write
-        if (mod(isnap_loc, dumpstepsnap) == outputplan) then 
+        if (mod(isnap_loc, dumpstepsnap) == outputplan .and. (npoints > 0 .or. maxind > 0)) then 
             call cpu_time(tackl)
             if ((tackl-tickl) > 0.5 .and. verbose > 0) then
                 write(6,"('WARNING: Computation was halted for ', F7.2, ' s to wait for ',&
@@ -386,7 +386,7 @@ subroutine nc_dump_strain(isnap_loc)
             end if
         end do
         do iproc=0,nproc-1
-            if (iproc == mynum) then
+            if (iproc == mynum .and. (npoints > 0 .or. maxind > 0)) then
                 isnap_global = nstrain 
                 ndumps = stepstodump
 
@@ -631,7 +631,7 @@ subroutine nc_rec_checkpoint
     do iproc=0, nproc-1
         call barrier
         if (iproc == mynum) then
-            if (num_rec>0) then 
+            if (num_rec > 0) then 
                 if (verbose > 1) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
                 call nc_dump_rec_to_disk()
                 call flush(6)
@@ -1603,7 +1603,7 @@ subroutine nc_finish_prepare
     use data_io,   only  : datapath, lfdata, dump_wavefields, dump_type
     use data_mesh, only  : maxind, surfcoord, ind_first, ind_last, &
                            midpoint_mesh_kwf, sem_mesh_kwf, fem_mesh_kwf, nelem_kwf, &
-                           nelem_kwf_global, npol, eltype_kwf, axis_kwf
+                           nelem_kwf_global, npol, eltype_kwf, axis_kwf, num_rec
 
     integer             :: ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
@@ -1635,7 +1635,7 @@ subroutine nc_finish_prepare
 
     do iproc = 0, nproc
         call barrier
-        if (iproc.eq.mynum) then
+        if (iproc == mynum .and. (npoints > 0 .or. maxind > 0 .or. num_rec > 0)) then
             if (verbose>1) then
                write(6,*) '  Processor ', iproc, ' opened the output file and will dump '
                write(6,*) '  his part of the mesh.'
