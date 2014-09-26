@@ -451,7 +451,7 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   integer, intent(in)       :: nprocl, nthetal, nrl
   integer, intent(in)       :: nelmax, nelmax_fluid, nelmax_solid
   
-  integer                   :: itheta, iitheta, iel
+  integer                   :: itheta, iitheta, iel, nel_fluid_theta
   integer                   :: irad, iproc
   integer                   :: mycount, nicb, ncmb
   integer                   :: iprocb(2), mycountb(2), j1, j2
@@ -510,44 +510,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   ! **************** END OF INNER CUBE****************
 
 
-  ! sort inner core elements according to radius
-  ! Using same stupid choice as in inner core decomposition 
-
-  if (solid_domain(ndisc)) then 
-     do itheta = 0, nthetal-1
-        allocate(inner_core_buf(central_count(itheta)))
-        allocate(inner_core_r(central_count(itheta)))
-        inner_core_buf(:) = thetaslel_solid(1:central_count(itheta),itheta)
-
-        do iel = 1, central_count(itheta)
-           inner_core_r(iel) = rcom(inner_core_buf(iel))
-        enddo
-  
-        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
-        
-        thetaslel_solid(1:central_count(itheta),itheta) = inner_core_buf(:)
-
-        deallocate(inner_core_buf)
-        deallocate(inner_core_r)
-     enddo
-  else
-     do itheta = 0, nthetal-1
-        allocate(inner_core_buf(central_count(itheta)))
-        allocate(inner_core_r(central_count(itheta)))
-        inner_core_buf(:) = thetaslel_fluid(1:central_count(itheta),itheta)
-
-        do iel = 1, central_count(itheta)
-           inner_core_r(iel) = rcom(inner_core_buf(iel))
-        enddo
-  
-        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
-        
-        thetaslel_fluid(1:central_count(itheta),itheta) = inner_core_buf(:)
-
-        deallocate(inner_core_buf)
-        deallocate(inner_core_r)
-     enddo
-  endif
   
   ! add the extra requirement that element iel to be in appropriate theta slice
   do itheta = 0, nthetal-1
@@ -655,6 +617,48 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   if (any(.not. attributed)) then
      write(6,*) 'ERROR: not all elements assigned to a theta-slice'
      stop
+  endif
+
+
+  ! sort inner core elements according to radius
+  ! Using same stupid choice as in inner core decomposition 
+
+  if (solid_domain(ndisc)) then 
+     do itheta = 0, nthetal-1
+        allocate(inner_core_buf(central_count(itheta)))
+        allocate(inner_core_r(central_count(itheta)))
+        inner_core_buf(:) = thetaslel_solid(1:central_count(itheta),itheta)
+
+        do iel = 1, central_count(itheta)
+           inner_core_r(iel) = rcom(inner_core_buf(iel))
+        enddo
+  
+        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
+        
+        thetaslel_solid(1:central_count(itheta),itheta) = inner_core_buf(:)
+
+        deallocate(inner_core_buf)
+        deallocate(inner_core_r)
+     enddo
+  else
+     do itheta = 0, nthetal-1
+        nel_fluid_theta = sum(nel_fluid(itheta:itheta+nrl-1))
+        allocate(inner_core_buf(nel_fluid_theta))
+        allocate(inner_core_r(nel_fluid_theta))
+        inner_core_buf(:) = thetaslel_fluid(1:nel_fluid_theta,itheta)
+
+        do iel = 1, nel_fluid_theta
+           ! sort by radius, if radius is the same, theta makes the difference
+           inner_core_r(iel) = rcom(inner_core_buf(iel)) + 1e-10 * thetacom(inner_core_buf(iel))
+        enddo
+
+        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
+
+        thetaslel_fluid(1:nel_fluid_theta,itheta) = inner_core_buf(:)
+
+        deallocate(inner_core_buf)
+        deallocate(inner_core_r)
+     enddo
   endif
 
   ! reset, as we have to touch each element again!
