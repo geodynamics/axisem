@@ -799,9 +799,9 @@ subroutine compute_numerical_parameters
 
   ! Overwrite time step or source period if demanded by input
   if (enforced_dt > zero) then
-     if (time_scheme=='newmark2' .and. enforced_dt>deltat .or. & 
-          time_scheme=='symplec4' .and. enforced_dt>1.5*deltat .or. &
-          time_scheme=='SS_35o10' .and. enforced_dt>3.0*deltat  ) then 
+     if (time_scheme == 'newmark2' .and. enforced_dt > deltat .or. & 
+         time_scheme == 'symplec4' .and. enforced_dt > 1.5 * deltat .or. &
+         time_scheme == 'SS_35o10' .and. enforced_dt > 3.0 * deltat  ) then 
         write(errmsg,*) &
               'PROBLEM: Time step larger than allowed by mesh!\n', &
               'Chosen value (in inparam file) [s] :', enforced_dt, '\n', &
@@ -818,6 +818,16 @@ subroutine compute_numerical_parameters
         deltat = enforced_dt
      endif
   else
+     ! mesher suggestion is based on newmark scheme, the higher order schemes are stable
+     ! for longer time steps
+     select case (time_scheme)
+     case ('newmark')
+        deltat = deltat
+     case ('symplec4')
+        deltat = deltat * 1.5
+     case ('SS_35o10')
+        deltat = deltat * 3.0
+     end select
      if (lpr .and. verbose > 1) then 
         write(6,'(/,a)')'    Using time step precalculated by the mesher:',deltat
      endif
