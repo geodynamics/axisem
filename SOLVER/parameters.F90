@@ -1439,8 +1439,9 @@ subroutine write_parameters
     if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
         ! write generic simulation info file
         write(6,*) ' Writing simulation info to netcdf file attributes' 
-        call nc_write_att_int(  3,                     'file version')
+        call nc_write_att_int(  4,                     'file version')
         call nc_write_att_char( trim(bkgrdmodel),      'background model')
+        call nc_write_att_int(  merge(1, 0, do_anel),  'attenuation') ! merge: hacky conversion of logical to int
         call nc_write_att_dble( router / 1000,         'planet radius')
         call nc_write_att_char( trim(svn_version),     'SVN revision')
         call nc_write_att_char( trim(username),        'user name')
