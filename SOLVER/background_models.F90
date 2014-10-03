@@ -1608,7 +1608,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
                  end select
              end do
 
-             print *, 'Checking value order in external model'
+             if (lpr) print *, 'Checking value order in external model'
              nmissing = 0
              nmissing = nmissing + check_exist(column_rad, 'rad')
              nmissing = nmissing + check_exist(column_vpv, 'vpv')
@@ -1906,7 +1906,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   upper_layer(1) = 1
 
-  print *, 'Checking for discontinuities in the external velocity model'
+  if (lpr) print *, 'Checking for discontinuities in the external velocity model'
 
   do ilayer = 2, nlayer-1
      if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
@@ -1916,7 +1916,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
         lower_layer(idom-1) = ilayer
         upper_layer(idom)   = ilayer + 1
         fmtstring = "('  1st order disc. at radius', F12.1, ', layer: ', I5)"
-        print fmtstring, radius_layer(ilayer), ilayer
+        if (lpr) print fmtstring, radius_layer(ilayer), ilayer
      else
         grad_vp(ilayer) = (vpv_layer(ilayer+1) - vpv_layer(ilayer)) / &
                           (radius_layer(ilayer+1) - radius_layer(ilayer))
@@ -1932,14 +1932,14 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
            upper_layer(idom)   = ilayer + 1 
 
            fmtstring = "('  2nd order disc. at radius', F12.1, ', layer: ',I5, ', grad:', F12.5)"
-           print fmtstring, radius_layer(ilayer+1), ilayer+1, grad_vp(ilayer)
+           if (lpr) print fmtstring, radius_layer(ilayer+1), ilayer+1, grad_vp(ilayer)
         end if
          
      end if
   end do
 
   if (idom==1) then ! Introduce at least one discontinuity. 
-    print *, 'Adding blind discontinuity in the middle of the model, since it has none naturally'
+    if (lpr) print *, 'Adding blind discontinuity in the middle of the model, since it has none naturally'
     upper_layer(2) = nlayer / 2
     lower_layer(1) = nlayer / 2
     idom = idom + 1
@@ -1951,7 +1951,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
                ! the last at the ICB, above the last domain
 
   if (lpr) print "(A,I3,A)", ' External model has ', idom, ' discontinuities'
-  print *, ''
+  if (lpr) print *, ''
   ndisc = idom
 
   if (lpr) print *, 'Creating interpolation objects'
@@ -2015,7 +2015,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
      extrapolation = extrapolation_none
   end do
 
-  print *, ''
+  if (lpr) print *, ''
 
   if (present(ndisc_out)) then
      ndisc_out = ndisc
