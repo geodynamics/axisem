@@ -945,6 +945,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_mesh_eltype_varid
     integer                              :: nc_mesh_axis_varid
     integer                              :: nc_mesh_sem_varid
+    integer                              :: nc_mesh_G0_varid
+    integer                              :: nc_mesh_G1_varid
+    integer                              :: nc_mesh_G2_varid
+    integer                              :: nc_mesh_gll_varid
+    integer                              :: nc_mesh_glj_varid
     integer                              :: nc_mesh_elem_dimid, nc_mesh_npol_dimid
     integer                              :: nc_mesh_cntrlpts_dimid
     !integer                              :: nc_disc_dimid, nc_disc_varid
@@ -1371,6 +1376,34 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                          xtype  = NF90_FLOAT, &
                                          dimids = nc_mesh_elem_dimid,&
                                          varid  = nc_mesh_z_mp_varid) )
+
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'G0', &
+                                         xtype  = NF90_DOUBLE, &
+                                         dimids = nc_mesh_npol_dimid, &
+                                         varid  = nc_mesh_G0_varid) )
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'G1', &
+                                         xtype  = NF90_DOUBLE, &
+                                         dimids = [nc_mesh_npol_dimid, &
+                                                   nc_mesh_npol_dimid], &
+                                         varid  = nc_mesh_G1_varid) )
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'G2', &
+                                         xtype  = NF90_DOUBLE, &
+                                         dimids = [nc_mesh_npol_dimid, &
+                                                   nc_mesh_npol_dimid], &
+                                         varid  = nc_mesh_G2_varid) )
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'gll', &
+                                         xtype  = NF90_DOUBLE, &
+                                         dimids = nc_mesh_npol_dimid, &
+                                         varid  = nc_mesh_gll_varid) )
+               call check( nf90_def_var( ncid   = ncid_meshout, &
+                                         name   = 'glj', &
+                                         xtype  = NF90_DOUBLE, &
+                                         dimids = nc_mesh_npol_dimid, &
+                                         varid  = nc_mesh_glj_varid) )
             endif
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
@@ -1604,6 +1637,7 @@ subroutine nc_finish_prepare
     use data_mesh, only  : maxind, surfcoord, ind_first, ind_last, &
                            midpoint_mesh_kwf, sem_mesh_kwf, fem_mesh_kwf, nelem_kwf, &
                            nelem_kwf_global, npol, eltype_kwf, axis_kwf, num_rec
+    use data_spec, only  : G0, G1, G2, xi_k, eta
 
     integer             :: ivar, nmode, iproc
     integer             :: nc_mesh_s_varid, nc_mesh_z_varid
@@ -1622,6 +1656,11 @@ subroutine nc_finish_prepare
     integer             :: nc_mesh_axis_varid
     integer             :: nc_mesh_fem_varid
     integer             :: nc_mesh_sem_varid
+    integer             :: nc_mesh_G0_varid
+    integer             :: nc_mesh_G1_varid
+    integer             :: nc_mesh_G2_varid
+    integer             :: nc_mesh_gll_varid
+    integer             :: nc_mesh_glj_varid
     
     if (mynum == 0) then
         call check(nf90_close(ncid_out))
@@ -1835,6 +1874,42 @@ subroutine nc_finish_prepare
                                        values = zcoord1d_mp,         &
                                        start  = nelem_myfirst,  &
                                        count  = nelem_kwf )
+
+                   ! SEM stuff
+                   call getvarid( ncid_meshout, "gll", nc_mesh_gll_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_gll_varid, &
+                                             start  = [1],  &
+                                             count  = [npol+1], &
+                                             values = eta))
+
+                   call getvarid( ncid_meshout, "glj", nc_mesh_glj_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_glj_varid, &
+                                             start  = [1],  &
+                                             count  = [npol+1], &
+                                             values = xi_k))
+
+                   call getvarid( ncid_meshout, "G0", nc_mesh_G0_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_G0_varid, &
+                                             start  = [1],  &
+                                             count  = [npol+1], &
+                                             values = G0))
+
+                   call getvarid( ncid_meshout, "G1", nc_mesh_G1_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_G1_varid, &
+                                             start  = [1, 1],  &
+                                             count  = [npol+1, npol+1], &
+                                             values = G1))
+
+                   call getvarid( ncid_meshout, "G2", nc_mesh_G2_varid ) 
+                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                             varid  = nc_mesh_G2_varid, &
+                                             start  = [1, 1],  &
+                                             count  = [npol+1, npol+1], &
+                                             values = G2))
                 endif
 
                 print '(A,I5,A)', '   ', iproc, ': dumped mesh'
