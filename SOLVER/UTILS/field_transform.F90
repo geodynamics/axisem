@@ -52,6 +52,13 @@ program field_transformation
                                        ncout_mesh_midpoint_varid
     integer                         :: ncin_mesh_sem_varid, ncin_mesh_fem_varid, &
                                        ncin_mesh_midpoint_varid
+
+    integer                         :: ncin_mesh_G0_varid, ncout_mesh_G0_varid
+    integer                         :: ncin_mesh_G1_varid, ncout_mesh_G1_varid
+    integer                         :: ncin_mesh_G2_varid, ncout_mesh_G2_varid
+    integer                         :: ncin_mesh_gll_varid, ncout_mesh_gll_varid
+    integer                         :: ncin_mesh_glj_varid, ncout_mesh_glj_varid
+
     integer                         :: ncout_mesh_eltype_varid, ncout_mesh_axis_varid
     integer                         :: ncin_mesh_eltype_varid, ncin_mesh_axis_varid
 
@@ -70,6 +77,7 @@ program field_transformation
 
     real, allocatable               :: data_mesh(:), data_surf_1d(:), data_surf_3d(:,:,:)
     integer, allocatable            :: int_data_1d(:), int_data_2d(:,:), int_data_3d(:,:,:)
+    double precision, allocatable   :: dp_data_1d(:), dp_data_2d(:,:)
 
     real(kind=8), dimension(:,:), allocatable       :: datat, datat_t
 
@@ -343,6 +351,34 @@ program field_transformation
        call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
                                            varid = ncout_mesh_mpz_varid, &
                                            fletcher32=1) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'G0', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = nc_mesh_npol_dimid, &
+                                 varid  = ncout_mesh_G0_varid) )
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'G1', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = [nc_mesh_npol_dimid, &
+                                           nc_mesh_npol_dimid], &
+                                 varid  = ncout_mesh_G1_varid) )
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'G2', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = [nc_mesh_npol_dimid, &
+                                           nc_mesh_npol_dimid], &
+                                 varid  = ncout_mesh_G2_varid) )
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'gll', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = nc_mesh_npol_dimid, &
+                                 varid  = ncout_mesh_gll_varid) )
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'glj', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = nc_mesh_npol_dimid, &
+                                 varid  = ncout_mesh_glj_varid) )
     endif
 
 
@@ -638,6 +674,92 @@ program field_transformation
                                  count  = [nelem],                 &
                                  values = data_mesh))
        deallocate(data_mesh)
+
+       allocate(dp_data_1d(0:npol))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_gll_varid, & 
+                                   name  = 'gll' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_gll_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_gll_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_glj_varid, & 
+                                   name  = 'glj' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_glj_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_glj_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_G0_varid, & 
+                                   name  = 'G0' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_G0_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_G0_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d))
+
+       deallocate(dp_data_1d)
+
+       allocate(dp_data_2d(0:npol,0:npol))
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_G1_varid, & 
+                                   name  = 'G1' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_G1_varid, &
+                                 start  = [1,1],                    & 
+                                 count  = [npol+1, npol+1],     &
+                                 values = dp_data_2d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_G1_varid, &
+                                 start  = [1,1],                    & 
+                                 count  = [npol+1, npol+1],     &
+                                 values = dp_data_2d))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_G2_varid, & 
+                                   name  = 'G2' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_G2_varid, &
+                                 start  = [1,1],                    & 
+                                 count  = [npol+1, npol+1],     &
+                                 values = dp_data_2d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_G2_varid, &
+                                 start  = [1,1],                    & 
+                                 count  = [npol+1, npol+1],     &
+                                 values = dp_data_2d))
+       deallocate(dp_data_2d)
     endif
 
     ! Done with the mesh
