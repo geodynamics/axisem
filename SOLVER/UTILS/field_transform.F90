@@ -163,6 +163,19 @@ program field_transformation
            varnamelist = ['disp_s     ', 'disp_p     ', 'disp_z     ']
        end if
 
+    elseif (trim(dump_type) == 'strain_only') then
+       if (sourcetype=='monopole')  then
+           nvar = 4
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'straintrace'/)
+       else
+           nvar = 6
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'strain_dsup', 'strain_dzup', 'straintrace'/)
+       end if
+
     elseif (trim(dump_type) == 'fullfields') then
        if (sourcetype=='monopole')  then
            nvar = 6
