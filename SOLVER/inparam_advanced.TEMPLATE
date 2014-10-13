@@ -125,6 +125,7 @@ KERNEL_WAVEFIELDS   false
 # different modes of dumping wavefields for kernel:
 #  - fullfields: strain and velocity at a subset of local GLL points (see below)
 #  - displ_only: displacement at all global points
+#  - strain_only: strain at a subset of local GLL points (see below)
 KERNEL_DUMPTYPE     fullfields
 
 # Samples per period
@@ -137,7 +138,7 @@ KERNEL_SPP          8
 KERNEL_SOURCE       mask
 
 # GLL points to save, starting and ending GLL point index 
-# (ignored for dumptype displ_only)
+# (overwritten with 0 and npol for dumptype displ_only)
 KERNEL_IBEG         1
 KERNEL_IEND         3
 

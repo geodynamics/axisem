@@ -47,6 +47,7 @@ module meshes_io
   public :: dump_kwf_midpoint_xdmf
   public :: dump_kwf_fem_xdmf
   public :: dump_kwf_sem_xdmf
+  public :: dump_kwf_gll_xdmf
 
 contains
 
@@ -491,6 +492,7 @@ subroutine build_kwf_grid()
 
   use nc_routines, only : set_npoints
   use data_mesh
+  use data_io,     only: ibeg, iend
 
   integer               :: iel, ipol, jpol, ct, ipt, idest
   integer, allocatable  :: mapping(:)
@@ -554,8 +556,8 @@ subroutine build_kwf_grid()
 
   do iel=1, nel_solid
       if (.not.  mask_tp_elem(iel)) cycle
-      do jpol=0, npol
-          do ipol=0, npol
+      do jpol=ibeg, iend
+          do ipol=ibeg, iend
              
               ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
               idest = igloc_solid(ipt) + nglob_fluid
@@ -577,8 +579,8 @@ subroutine build_kwf_grid()
 
   do iel=1, nel_fluid
       if (.not.  mask_tp_elem(iel + nel_solid)) cycle
-      do jpol=0, npol
-          do ipol=0, npol
+      do jpol=ibeg, iend
+          do ipol=ibeg, iend
              
               ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
               idest = igloc_fluid(ipt)
@@ -601,119 +603,121 @@ subroutine build_kwf_grid()
   call set_npoints(npoint_kwf)
 
   if (lpr) then
-     write(6,*) 'local point number:        ', nelem_kwf * (npol + 1)**2
+     write(6,*) 'local point number:        ', nelem_kwf * (iend - ibeg + 1)**2
      write(6,*) 'after removing duplicates: ', npoint_kwf
      write(6,*) 'compression:               ', &
                  real(npoint_kwf) / real(nelem_kwf * (npol + 1)**2)
   endif
 
-  allocate(midpoint_mesh_kwf(1:nelem_kwf))
-  
-  if (lpr) write(6,*) '   .... constructing midpoint grid for kwf output'
-  
-  ct = 1
+  if (trim(dump_type) == 'displ_only') then
+     allocate(midpoint_mesh_kwf(1:nelem_kwf))
+     
+     if (lpr) write(6,*) '   .... constructing midpoint grid for kwf output'
+     
+     ct = 1
 
-  do iel=1, nel_solid
-      if (.not.  mask_tp_elem(iel)) cycle
-      midpoint_mesh_kwf(ct) = mapping_ijel_ikwf(npol/2,npol/2,iel) - 1
-      ct = ct + 1
-  enddo
-  
-  do iel=1, nel_fluid
-      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
-      midpoint_mesh_kwf(ct) = mapping_ijel_ikwf(npol/2,npol/2,iel + nel_solid) - 1
-      ct = ct + 1
-  enddo
+     do iel=1, nel_solid
+         if (.not.  mask_tp_elem(iel)) cycle
+         midpoint_mesh_kwf(ct) = mapping_ijel_ikwf(npol/2,npol/2,iel) - 1
+         ct = ct + 1
+     enddo
+     
+     do iel=1, nel_fluid
+         if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+         midpoint_mesh_kwf(ct) = mapping_ijel_ikwf(npol/2,npol/2,iel + nel_solid) - 1
+         ct = ct + 1
+     enddo
 
-  allocate(eltype_kwf(1:nelem_kwf))
+     allocate(eltype_kwf(1:nelem_kwf))
 
-  eltype_kwf(:) = -2
-  
-  ct = 1
+     eltype_kwf(:) = -2
+     
+     ct = 1
 
-  do iel=1, nel_solid
-      if (.not.  mask_tp_elem(iel)) cycle
-      if (eltype(ielsolid(iel)) == 'curved') then
-         eltype_kwf(ct) = 0
-      elseif (eltype(ielsolid(iel)) == 'linear') then
-         eltype_kwf(ct) = 1
-      elseif (eltype(ielsolid(iel)) == 'semino') then
-         eltype_kwf(ct) = 2
-      elseif (eltype(ielsolid(iel)) == 'semiso') then
-         eltype_kwf(ct) = 3
-      else
-         eltype_kwf(ct) = -1
-      endif
-      ct = ct + 1
-  enddo
-  
-  do iel=1, nel_fluid
-      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
-      if (eltype(ielfluid(iel)) == 'curved') then
-         eltype_kwf(ct) = 0
-      elseif (eltype(ielfluid(iel)) == 'linear') then
-         eltype_kwf(ct) = 1
-      elseif (eltype(ielfluid(iel)) == 'semino') then
-         eltype_kwf(ct) = 2
-      elseif (eltype(ielfluid(iel)) == 'semiso') then
-         eltype_kwf(ct) = 3
-      else
-         eltype_kwf(ct) = -1
-      endif
-      ct = ct + 1
-  enddo
+     do iel=1, nel_solid
+         if (.not.  mask_tp_elem(iel)) cycle
+         if (eltype(ielsolid(iel)) == 'curved') then
+            eltype_kwf(ct) = 0
+         elseif (eltype(ielsolid(iel)) == 'linear') then
+            eltype_kwf(ct) = 1
+         elseif (eltype(ielsolid(iel)) == 'semino') then
+            eltype_kwf(ct) = 2
+         elseif (eltype(ielsolid(iel)) == 'semiso') then
+            eltype_kwf(ct) = 3
+         else
+            eltype_kwf(ct) = -1
+         endif
+         ct = ct + 1
+     enddo
+     
+     do iel=1, nel_fluid
+         if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+         if (eltype(ielfluid(iel)) == 'curved') then
+            eltype_kwf(ct) = 0
+         elseif (eltype(ielfluid(iel)) == 'linear') then
+            eltype_kwf(ct) = 1
+         elseif (eltype(ielfluid(iel)) == 'semino') then
+            eltype_kwf(ct) = 2
+         elseif (eltype(ielfluid(iel)) == 'semiso') then
+            eltype_kwf(ct) = 3
+         else
+            eltype_kwf(ct) = -1
+         endif
+         ct = ct + 1
+     enddo
 
-  allocate(axis_kwf(1:nelem_kwf))
+     allocate(axis_kwf(1:nelem_kwf))
 
-  axis_kwf(:) = -1
-  
-  ct = 1
+     axis_kwf(:) = -1
+     
+     ct = 1
 
-  do iel=1, nel_solid
-      if (.not.  mask_tp_elem(iel)) cycle
-      if (axis_solid(iel)) then
-         axis_kwf(ct) = 1
-      else
-         axis_kwf(ct) = 0
-      endif
-      ct = ct + 1
-  enddo
-  
-  do iel=1, nel_fluid
-      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
-      if (axis_fluid(iel)) then
-         axis_kwf(ct) = 1
-      else
-         axis_kwf(ct) = 0
-      endif
-      ct = ct + 1
-  enddo
+     do iel=1, nel_solid
+         if (.not.  mask_tp_elem(iel)) cycle
+         if (axis_solid(iel)) then
+            axis_kwf(ct) = 1
+         else
+            axis_kwf(ct) = 0
+         endif
+         ct = ct + 1
+     enddo
+     
+     do iel=1, nel_fluid
+         if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+         if (axis_fluid(iel)) then
+            axis_kwf(ct) = 1
+         else
+            axis_kwf(ct) = 0
+         endif
+         ct = ct + 1
+     enddo
 
-  allocate(fem_mesh_kwf(1:4, 1:nelem_kwf))
-  
-  if (lpr) write(6,*) '   .... constructing finite element grid for kwf output'
-  
-  ct = 1
+     allocate(fem_mesh_kwf(1:4, 1:nelem_kwf))
+     
+     if (lpr) write(6,*) '   .... constructing finite element grid for kwf output'
+     
+     ct = 1
 
-  do iel=1, nel_solid
-      if (.not.  mask_tp_elem(iel)) cycle
-      fem_mesh_kwf(1,ct) = mapping_ijel_ikwf(   0,   0,iel) - 1
-      fem_mesh_kwf(2,ct) = mapping_ijel_ikwf(npol,   0,iel) - 1
-      fem_mesh_kwf(3,ct) = mapping_ijel_ikwf(npol,npol,iel) - 1
-      fem_mesh_kwf(4,ct) = mapping_ijel_ikwf(   0,npol,iel) - 1
-      ct = ct + 1
-  enddo
-  
-  do iel=1, nel_fluid
-      if (.not.  mask_tp_elem(iel + nel_solid)) cycle
-      fem_mesh_kwf(1,ct) = mapping_ijel_ikwf(   0,   0,iel + nel_solid) - 1
-      fem_mesh_kwf(2,ct) = mapping_ijel_ikwf(npol,   0,iel + nel_solid) - 1
-      fem_mesh_kwf(3,ct) = mapping_ijel_ikwf(npol,npol,iel + nel_solid) - 1
-      fem_mesh_kwf(4,ct) = mapping_ijel_ikwf(   0,npol,iel + nel_solid) - 1
-      ct = ct + 1
-  enddo
+     do iel=1, nel_solid
+         if (.not.  mask_tp_elem(iel)) cycle
+         fem_mesh_kwf(1,ct) = mapping_ijel_ikwf(   0,   0,iel) - 1
+         fem_mesh_kwf(2,ct) = mapping_ijel_ikwf(npol,   0,iel) - 1
+         fem_mesh_kwf(3,ct) = mapping_ijel_ikwf(npol,npol,iel) - 1
+         fem_mesh_kwf(4,ct) = mapping_ijel_ikwf(   0,npol,iel) - 1
+         ct = ct + 1
+     enddo
+     
+     do iel=1, nel_fluid
+         if (.not.  mask_tp_elem(iel + nel_solid)) cycle
+         fem_mesh_kwf(1,ct) = mapping_ijel_ikwf(   0,   0,iel + nel_solid) - 1
+         fem_mesh_kwf(2,ct) = mapping_ijel_ikwf(npol,   0,iel + nel_solid) - 1
+         fem_mesh_kwf(3,ct) = mapping_ijel_ikwf(npol,npol,iel + nel_solid) - 1
+         fem_mesh_kwf(4,ct) = mapping_ijel_ikwf(   0,npol,iel + nel_solid) - 1
+         ct = ct + 1
+     enddo
+  endif
 
-  allocate(sem_mesh_kwf(0:npol, 0:npol, 1:nelem_kwf))
+  allocate(sem_mesh_kwf(ibeg:iend, ibeg:iend, 1:nelem_kwf))
   
   if (lpr) write(6,*) '   .... constructing spectral element grid for kwf output'
   
@@ -721,8 +725,8 @@ subroutine build_kwf_grid()
 
   do iel=1, nel_solid
       if (.not.  mask_tp_elem(iel)) cycle
-      do ipol=0, npol
-         do jpol=0, npol
+      do ipol=ibeg, iend
+         do jpol=ibeg, iend
             sem_mesh_kwf(ipol,jpol,ct) = mapping_ijel_ikwf(ipol,jpol,iel) - 1
          enddo
       enddo
@@ -731,8 +735,8 @@ subroutine build_kwf_grid()
   
   do iel=1, nel_fluid
       if (.not.  mask_tp_elem(iel + nel_solid)) cycle
-      do ipol=0, npol
-         do jpol=0, npol
+      do ipol=ibeg, iend
+         do jpol=ibeg, iend
             sem_mesh_kwf(ipol,jpol,ct) = mapping_ijel_ikwf(ipol,jpol,iel + nel_solid) - 1
          enddo
       enddo
@@ -980,7 +984,8 @@ subroutine dump_kwf_sem_xdmf(filename, npoints, nelem)
   open(newunit=iinput_xdmf, file=trim(filename)//'_sem.xdmf')
   write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
 
-  write(iinput_xdmf, 734) nelem, (npol+1)**2, nelem, npol+1, npol+1, trim(filename_np), "'", "'"
+  write(iinput_xdmf, 734) nelem, (iend-ibeg+1)**2, nelem, iend-ibeg+1, iend-ibeg+1, &
+                          trim(filename_np), "'", "'"
 
   close(iinput_xdmf)
 
@@ -1004,6 +1009,54 @@ subroutine dump_kwf_sem_xdmf(filename, npoints, nelem)
     '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, i3, i3, '" Format="HDF">',/&
     '        ', A, ':/Mesh/sem_mesh',/&
     '        </DataItem>',/&
+    '    </Topology>',/&
+    '    <Geometry GeometryType="XY">',/&
+    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '    </Geometry>',/&
+    '</Grid>',/,/&
+    '</Domain>',/&
+    '</Xdmf>')
+
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine dump_kwf_gll_xdmf(filename, npoints)
+  character(len=*), intent(in)      :: filename
+  integer, intent(in)               :: npoints
+
+  integer                           :: iinput_xdmf
+  character(len=512)                :: filename_np
+  
+
+  ! relative filename for xdmf content
+  filename_np = trim(filename(index(filename, '/', back=.true.)+1:))
+
+  ! XML Data
+  open(newunit=iinput_xdmf, file=trim(filename)//'_gll.xdmf')
+  write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
+
+  write(iinput_xdmf, 734) npoints, "'", "'"
+
+  close(iinput_xdmf)
+
+733 format(&    
+    '<?xml version="1.0" ?>',/&
+    '<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>',/&
+    '<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.2">',/&
+    '<Domain>',/,/&
+    '<DataItem Name="points" ItemType="Function" Function="join($0, $1)" Dimensions="', i10, ' 2">',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_S',/&
+    '    </DataItem>',/&
+    '    <DataItem Name="points" DataType="Float" Precision="8" Dimensions="', i10, '" Format="HDF">',/&
+    '    ', A, ':/Mesh/mesh_Z',/&
+    '    </DataItem>',/&
+    '</DataItem>',/,/)
+
+734 format(&    
+    '<Grid Name="grid" GridType="Uniform">',/&
+    '    <Topology TopologyType="Polyvertex" NumberOfElements="',i10'">',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
     '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
@@ -1128,7 +1181,7 @@ subroutine dump_wavefields_mesh_1d
 
   endif
 
-  if (dump_type == 'displ_only') then
+  if (dump_type == 'displ_only' .or. dump_type == 'strain_only') then
      call dump_kwf_grid()
   else
      ! compute solid grid
@@ -1188,7 +1241,11 @@ subroutine dump_wavefields_mesh_1d
   select case (dump_type)
   case ('displ_only')
      if (lpr) then
-        write(6,*)'  strain dump: only global displacement'
+        write(6,*)'  strain dump: only elementwise displacement'
+     endif
+  case ('strain_only')
+     if (lpr) then
+        write(6,*)'  strain dump: only pointwise strain '
      endif
   case ('displ_velo')
      if (lpr) then     

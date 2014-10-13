@@ -215,8 +215,9 @@ subroutine readin_parameters
 
   ! Need to decide here since this boolean is needed in def_precomp_terms
   need_fluid_displ = .false.
-  if (dump_vtk .or. dump_xdmf .or. dump_energy .or. & 
-     dump_wavefields .and. (dump_type=='fullfields' .or. dump_type=='displ_only')) then
+  if (dump_vtk .or. dump_xdmf .or. dump_energy .or. dump_wavefields .and. &
+        (dump_type=='fullfields' .or. dump_type=='displ_only' &
+        .or. dump_type=='strain_only')) then
      ! Need to add this for each new type of wavefield dumping method that 
      ! requires the fluid displacement/velocities
      need_fluid_displ = .true.
@@ -469,6 +470,7 @@ subroutine read_inparam_advanced
              dump_type = to_lower(dump_type)
              if (trim(dump_type) /= 'fullfields' .and. &
                  trim(dump_type) /= 'displ_only' .and. &
+                 trim(dump_type) /= 'strain_only' .and. &
                  trim(dump_type) /= 'displ_velo') then
                    write(6,*) dump_type
                    stop 'ERROR: invalid value for KERNEL_DUMPTYPE!'
@@ -581,7 +583,7 @@ subroutine read_inparam_advanced
          end select parameter_to_read
      end do
   endif
-  
+
 
   call broadcast_dble(seis_dt, 0) 
   call broadcast_dble(enforced_period, 0) 

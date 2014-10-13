@@ -777,7 +777,7 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
     integer :: iel, ipol, jpol, ct
 
     !print *, 'Processor', mynum,' has been here'
-    if (dump_type == 'displ_only') then
+    if (dump_type == 'displ_only' .or. dump_type == 'strain_only') then
        allocate(rho1d(npoints))
        allocate(lambda1d(npoints))
        allocate(mu1d(npoints))
@@ -1051,6 +1051,48 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                            npts_sol_global + npts_flu_global, & 
                                            nstrain)
               end if
+
+           case ('strain_only')
+              if (src_type(1) == 'monopole') then
+                  nvar = 8
+              else
+                  nvar = 12
+              end if
+              allocate(varname(nvar))
+              allocate(varnamelist(nvar))
+              allocate(nc_varnamelist(nvar/2))
+              allocate(nc_field_varid(nvar/2))
+
+              if (src_type(1)  ==  'monopole') then 
+                  varnamelist =    ['strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
+                                    'straintrace_sol', &
+                                    'strain_dsus_flu', 'strain_dsuz_flu', 'strain_dpup_flu', &
+                                    'straintrace_flu']
+                    
+                  nc_varnamelist = ['strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                                    'straintrace']
+              else
+                  varnamelist =    ['strain_dsus_sol', 'strain_dsuz_sol', 'strain_dpup_sol', &
+                                    'strain_dsup_sol', 'strain_dzup_sol', 'straintrace_sol', &
+                                    'strain_dsus_flu', 'strain_dsuz_flu', 'strain_dpup_flu', &
+                                    'strain_dsup_flu', 'strain_dzup_flu', 'straintrace_flu']
+                    
+                  nc_varnamelist = ['strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                                    'strain_dsup', 'strain_dzup', 'straintrace']
+              end if
+
+              npoints = npoint_kwf
+              
+              call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
+              npoint_kwf_global = npoints_global
+
+              npts_sol = npoint_solid_kwf
+              npts_flu = npoint_fluid_kwf
+
+              call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
+              call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
+
+              if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
 
            case ('displ_velo')
               write(6,*) 'ERROR: not yet implemented with netcdf'
