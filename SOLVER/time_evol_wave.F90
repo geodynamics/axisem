@@ -1140,6 +1140,11 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
           ! time derivatives, if needed).
              call dump_disp_global(disp, chi, istrain)       ! displacement globally
 
+        case ('strain_only')
+          ! Compute strain tensor on-the-fly here and dump the 6 components.
+          ! Also compute corresponding fields in the fluid.
+            call compute_strain(disp, chi, istrain)    ! strain globally
+
         case ('displ_velo')
           ! Only dump the 3-comp displacement and velocity fields in solid 
           ! and potential & its derivative in fluid.
@@ -1148,7 +1153,7 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
              call dump_disp(disp, chi, istrain)       ! displacement in solid, chi in fluid
              call dump_velo_dchi(velo, dchi, istrain) ! velocity in solid, dchi in fluid
 
-        case ('fullfields') ! Hardcoded choice
+        case ('fullfields')
           ! Compute strain tensor on-the-fly here and dump the 6 components.
           ! Also compute corresponding fields in the fluid.
           ! Maximal permanent storage, maximal run-time memory, maximal CPU time, 

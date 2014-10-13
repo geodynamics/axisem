@@ -1094,6 +1094,29 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
               if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
 
+              if (lpr) then
+                  call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dsus.xdmf', 'Snapshots/strain_dsus',  &
+                                           npts_sol_global + npts_flu_global, & 
+                                           nstrain)
+                  call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dsuz.xdmf', 'Snapshots/strain_dsuz',  &
+                                           npts_sol_global + npts_flu_global, & 
+                                           nstrain)
+                  call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dpup.xdmf', 'Snapshots/strain_dpup',  &
+                                           npts_sol_global + npts_flu_global, & 
+                                           nstrain)
+                  call dump_mesh_data_xdmf(trim(nc_fnam), 'straintrace.xdmf', 'Snapshots/straintrace',  &
+                                           npts_sol_global + npts_flu_global, & 
+                                           nstrain)
+                  if (src_type(1) /= 'monopole') then 
+                     call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dsup.xdmf', 'Snapshots/strain_dsup',  &
+                                              npts_sol_global + npts_flu_global, & 
+                                              nstrain)
+                     call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dzup.xdmf', 'Snapshots/strain_dzup',  &
+                                              npts_sol_global + npts_flu_global, & 
+                                              nstrain)
+                  endif
+              end if
+
            case ('displ_velo')
               write(6,*) 'ERROR: not yet implemented with netcdf'
               stop 2

@@ -784,12 +784,25 @@ subroutine dump_field_1d(f, filename, appisnap, n)
         call eradicate_src_elem_values(floc)
  
    if (use_netcdf) then
+       
        if (n==nel_solid) then
-           call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
+          if (dump_type == 'strain_only') then
+             if (npoint_solid_kwf > 0) &
+                call nc_dump_field_solid(kwf_mapping_sol(floc), filename(2:))
+          else
+             call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
                                     filename(2:))
+          endif
+       
        elseif (n==nel_fluid) then
-           call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
+          if (dump_type == 'strain_only') then
+             if (npoint_fluid_kwf > 0) &
+                call nc_dump_field_fluid(kwf_mapping_sol(floc), filename(2:))
+          else
+             call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
                                     filename(2:))
+          endif
+       
        else
            write(6,*) 'Neither solid nor fluid. What''s wrong here?'
            stop 2
