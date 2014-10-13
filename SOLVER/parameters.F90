@@ -1441,7 +1441,7 @@ subroutine write_parameters
     if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
         ! write generic simulation info file
         write(6,*) ' Writing simulation info to netcdf file attributes' 
-        call nc_write_att_int(  5,                     'file version')
+        call nc_write_att_int(  6,                     'file version')
         call nc_write_att_char( trim(bkgrdmodel),      'background model')
         call nc_write_att_int(  merge(1, 0, do_anel),  'attenuation') ! merge: hacky conversion of logical to int
         call nc_write_att_dble( router / 1000,         'planet radius')
@@ -1476,11 +1476,16 @@ subroutine write_parameters
            call nc_write_att_int(nstrain,              'number of strain dumps')
            call nc_write_att_dble(deltat_coarse,       'strain dump sampling rate in sec')
            call nc_write_att_char(trim(dump_type),     'dump type (displ_only, displ_velo, fullfields)')
-           if (dump_type == 'displ_only') then
+           if (dump_type == 'displ_only' .or. dump_type == 'strain_only') then
               call nc_write_att_dble(kwf_rmin / 1000,  'kernel wavefield rmin')
               call nc_write_att_dble(min(kwf_rmax, router) / 1000,  'kernel wavefield rmax')
               call nc_write_att_dble(kwf_thetamin / pi * 180.,  'kernel wavefield colatmin')
               call nc_write_att_dble(kwf_thetamax / pi * 180.,  'kernel wavefield colatmax')
+           else
+              call nc_write_att_dble(0d0,               'kernel wavefield rmin')
+              call nc_write_att_dble(router / 1000,     'kernel wavefield rmax')
+              call nc_write_att_dble(0d0,               'kernel wavefield colatmin')
+              call nc_write_att_dble(0d0,               'kernel wavefield colatmax')
            endif
         else
            call nc_write_att_int(0,                    'number of strain dumps')       
