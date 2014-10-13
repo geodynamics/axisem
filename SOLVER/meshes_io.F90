@@ -609,6 +609,22 @@ subroutine build_kwf_grid()
               endif
               mapping_ijel_ikwf(ipol,jpol,iel + nel_solid) = mapping(idest)
           enddo
+
+          ! add gll points on the axis
+          if (axis_fluid(iel)) then
+              ipol = 0
+
+              ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
+              idest = igloc_fluid(ipt)
+              
+              if (.not. check(idest)) then
+                  ct = ct + 1
+                  check(idest) = .true.
+                  mapping(idest) = ct
+                  kwf_mask(ipol,jpol,iel + nel_solid) = .true.
+              endif
+              mapping_ijel_ikwf(ipol,jpol,iel + nel_solid) = mapping(idest)
+          endif
       enddo
   enddo
   
