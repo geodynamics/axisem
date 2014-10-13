@@ -111,7 +111,7 @@ subroutine prepare_waves
 
   if (dump_vtk) then
      if (lpr) write(6,*)'  dumping global grids for snapshots...'
-     call dump_glob_grid_midpoint(ibeg,iend,ibeg,iend)
+     call dump_glob_grid_midpoint(ibeg,iend,jbeg,jend)
   endif
 
   if (dump_xdmf) then
@@ -1081,7 +1081,7 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
           write(6,*) 'Writing global snap to file: ', isnap
           write(6,*)
        endif
-       call glob_snapshot_midpoint(disp, chi, ibeg, iend, ibeg, iend, isnap)
+       call glob_snapshot_midpoint(disp, chi, ibeg, iend, jbeg, jend, isnap)
      endif
   endif
   

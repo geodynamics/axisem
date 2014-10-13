@@ -99,7 +99,7 @@ subroutine readin_parameters
                  enforced_period, trim(simtype), rec_file_type, &
                  sum_seis, sum_fields, time_scheme, seis_dt,  &
                  dump_energy, dump_vtk, dump_wavefields, &
-                 dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, &
+                 dump_type, ibeg, iend, jbeg, jend, strain_samp, src_dump_type, make_homo, &
                  add_hetero, do_mesh_tests, output_format
 
 20 format(/&
@@ -196,6 +196,8 @@ subroutine readin_parameters
    12x,'Dump global snaps?                  ',l2,/                          &
    12x,'Dump strain?                        ',l2,/                          &
    12x,'Wavefield dumping type:             ',a12,/                         &
+   12x,'First GLL to save in strains:       ',i2,/                          &
+   12x,'Last GLL to save in strains:        ',i2,/                          &
    12x,'First GLL to save in strains:       ',i2,/                          &
    12x,'Last GLL to save in strains:        ',i2,/                          &
    12x,'Samples per period for strains:     ',f7.3,/                        &
@@ -384,6 +386,8 @@ subroutine read_inparam_advanced
   src_dump_type = 'mask'
   ibeg = 1
   iend = 3
+  jbeg = 1
+  jend = 3
 
   kwf_rmin = 0
   kwf_rmax = 7d6
@@ -488,7 +492,12 @@ subroutine read_inparam_advanced
 
          case('KERNEL_IEND')
              read(keyvalue,*) iend
-             !iend = npol - iend
+
+         case('KERNEL_JBEG')
+             read(keyvalue,*) jbeg
+
+         case('KERNEL_JEND')
+             read(keyvalue,*) jend
 
          case('KERNEL_RMIN')
              read(keyvalue, *) kwf_rmin
@@ -609,6 +618,8 @@ subroutine read_inparam_advanced
   
   call broadcast_int(ibeg, 0) 
   call broadcast_int(iend, 0) 
+  call broadcast_int(jbeg, 0) 
+  call broadcast_int(jend, 0) 
 
   call broadcast_log(dump_energy, 0) 
   call broadcast_log(make_homo, 0) 
@@ -1088,10 +1099,11 @@ subroutine compute_numerical_parameters
         write(6,13)'    ...that is, every          :',strain_it,'timestep'
      endif
 
-     ndumppts_el = (iend - ibeg + 1)**2
+     ndumppts_el = (iend - ibeg + 1) * (jend - jbeg + 1)
      if (lpr) then 
         write(6,*)'    Define limitation of GLL points in the dumped fields:'
         write(6,*)'      ibeg=', ibeg, 'iend=', iend
+        write(6,*)'      jbeg=', jbeg, 'jend=', jend
         write(6,*)'      # points saved within an element:', ndumppts_el
      endif
   endif
@@ -1501,6 +1513,8 @@ subroutine write_parameters
         call nc_write_att_char( 'cyl',                 'receiver components ')
         call nc_write_att_int(  ibeg,                  'ibeg')
         call nc_write_att_int(  iend,                  'iend')
+        call nc_write_att_int(  jbeg,                  'jbeg')
+        call nc_write_att_int(  jend,                  'jend')
         call nc_write_att_real( shift_fact,            'source shift factor in sec')
         call nc_write_att_int(  nint(shift_fact/deltat),  'source shift factor for deltat')
         call nc_write_att_int(  nint(shift_fact/seis_dt), 'source shift factor for seis_dt')

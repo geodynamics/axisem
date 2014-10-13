@@ -61,8 +61,9 @@ module data_io
   ! indices to limit dumping to select contiguous range of GLL points:
   ! 0<=ibeg<=iend<=npol
   ! For the time being: dump the same in xeta and eta directions
-  integer           :: ibeg,iend
-  ! ndumppts_el=(iend-ibeg+1)**2
+  integer           :: ibeg, iend
+  integer           :: jbeg, jend
+  ! ndumppts_el = (iend-ibeg+1) * (jend-jbeg+1)
   integer           :: ndumppts_el
 
   ! for xdmf dumps

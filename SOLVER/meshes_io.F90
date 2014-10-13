@@ -492,7 +492,7 @@ subroutine build_kwf_grid()
 
   use nc_routines, only : set_npoints
   use data_mesh
-  use data_io,     only: ibeg, iend
+  use data_io,     only: ibeg, iend, jbeg, jend
 
   integer               :: iel, ipol, jpol, ct, ipt, idest
   integer, allocatable  :: mapping(:)
@@ -556,7 +556,7 @@ subroutine build_kwf_grid()
 
   do iel=1, nel_solid
       if (.not.  mask_tp_elem(iel)) cycle
-      do jpol=ibeg, iend
+      do jpol=jbeg, jend
           do ipol=ibeg, iend
              
               ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
@@ -595,7 +595,7 @@ subroutine build_kwf_grid()
 
   do iel=1, nel_fluid
       if (.not.  mask_tp_elem(iel + nel_solid)) cycle
-      do jpol=ibeg, iend
+      do jpol=jbeg, jend
           do ipol=ibeg, iend
              
               ipt = (iel-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
@@ -635,7 +635,7 @@ subroutine build_kwf_grid()
   call set_npoints(npoint_kwf)
 
   if (lpr) then
-     write(6,*) 'local point number:        ', nelem_kwf * (iend - ibeg + 1)**2
+     write(6,*) 'local point number:        ', nelem_kwf * (iend - ibeg + 1) * (jend - jbeg + 1)
      write(6,*) 'after removing duplicates: ', npoint_kwf
      write(6,*) 'compression:               ', &
                  real(npoint_kwf) / real(nelem_kwf * (npol + 1)**2)
@@ -749,7 +749,7 @@ subroutine build_kwf_grid()
      enddo
   endif
 
-  allocate(sem_mesh_kwf(ibeg:iend, ibeg:iend, 1:nelem_kwf))
+  allocate(sem_mesh_kwf(ibeg:iend, jbeg:jend, 1:nelem_kwf))
   
   if (lpr) write(6,*) '   .... constructing spectral element grid for kwf output'
   
@@ -758,7 +758,7 @@ subroutine build_kwf_grid()
   do iel=1, nel_solid
       if (.not.  mask_tp_elem(iel)) cycle
       do ipol=ibeg, iend
-         do jpol=ibeg, iend
+         do jpol=jbeg, jend
             sem_mesh_kwf(ipol,jpol,ct) = mapping_ijel_ikwf(ipol,jpol,iel) - 1
          enddo
       enddo
@@ -768,7 +768,7 @@ subroutine build_kwf_grid()
   do iel=1, nel_fluid
       if (.not.  mask_tp_elem(iel + nel_solid)) cycle
       do ipol=ibeg, iend
-         do jpol=ibeg, iend
+         do jpol=jbeg, jend
             sem_mesh_kwf(ipol,jpol,ct) = mapping_ijel_ikwf(ipol,jpol,iel + nel_solid) - 1
          enddo
       enddo
@@ -1016,7 +1016,7 @@ subroutine dump_kwf_sem_xdmf(filename, npoints, nelem)
   open(newunit=iinput_xdmf, file=trim(filename)//'_sem.xdmf')
   write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
 
-  write(iinput_xdmf, 734) nelem, (iend-ibeg+1)**2, nelem, iend-ibeg+1, iend-ibeg+1, &
+  write(iinput_xdmf, 734) nelem, (npol+1)**2, nelem, npol+1, npol+1, &
                           trim(filename_np), "'", "'"
 
   close(iinput_xdmf)
@@ -1188,7 +1188,7 @@ end subroutine
 subroutine dump_wavefields_mesh_1d
 
   use data_mesh
-  use data_io,      only: ibeg, iend, ndumppts_el
+  use data_io,      only: ibeg, iend, jbeg, jend, ndumppts_el
   use data_spec,    only: G1T, G2T, G2
   use data_pointwise
   use nc_routines,  only: nc_dump_mesh_sol, nc_dump_mesh_flu
@@ -1203,13 +1203,14 @@ subroutine dump_wavefields_mesh_1d
      
      if (lpr) then
         write(6,*)'  set strain dumping GLL boundaries to:'
-        write(6,*)'    ipol=',ibeg,iend
+        write(6,*)'    ipol=', ibeg, iend
+        write(6,*)'    jpol=', jbeg, jend
      endif
 
-     allocate(ssol(ibeg:iend,ibeg:iend,nel_solid))
-     allocate(zsol(ibeg:iend,ibeg:iend,nel_solid))
-     allocate(sflu(ibeg:iend,ibeg:iend,nel_fluid))
-     allocate(zflu(ibeg:iend,ibeg:iend,nel_fluid))
+     allocate(ssol(ibeg:iend,jbeg:jend,nel_solid))
+     allocate(zsol(ibeg:iend,jbeg:jend,nel_solid))
+     allocate(sflu(ibeg:iend,jbeg:jend,nel_fluid))
+     allocate(zflu(ibeg:iend,jbeg:jend,nel_fluid))
 
   endif
 
@@ -1218,7 +1219,7 @@ subroutine dump_wavefields_mesh_1d
   else
      ! compute solid grid
      do iel=1,nel_solid
-         do jpol=ibeg,iend
+         do jpol=jbeg,jend
              do ipol=ibeg,iend
                  ssol(ipol,jpol,iel) = scoord(ipol,jpol,ielsolid(iel))
                  zsol(ipol,jpol,iel) = zcoord(ipol,jpol,ielsolid(iel))
@@ -1228,15 +1229,15 @@ subroutine dump_wavefields_mesh_1d
 
      if (lpr) write(6,*)'  dumping solid submesh for kernel wavefields...'
      if (use_netcdf) then
-         call nc_dump_mesh_sol(real(ssol(ibeg:iend,ibeg:iend,:)), &
-                               real(zsol(ibeg:iend,ibeg:iend,:)))
+         call nc_dump_mesh_sol(real(ssol(ibeg:iend,jbeg:jend,:)), &
+                               real(zsol(ibeg:iend,jbeg:jend,:)))
 
      else
          open(unit=2500+mynum,file=datapath(1:lfdata)//'/strain_mesh_sol_'&
                                    //appmynum//'.dat', &
                                    FORM="UNFORMATTED",STATUS="REPLACE")
 
-         write(2500+mynum)ssol(ibeg:iend,ibeg:iend,:),zsol(ibeg:iend,ibeg:iend,:)
+         write(2500+mynum)ssol(ibeg:iend,jbeg:jend,:),zsol(ibeg:iend,jbeg:jend,:)
          close(2500+mynum)
      end if
      deallocate(ssol,zsol)
@@ -1244,7 +1245,7 @@ subroutine dump_wavefields_mesh_1d
      ! compute fluid grid
      if (have_fluid) then
          do iel=1,nel_fluid
-             do jpol=ibeg,iend
+             do jpol=jbeg,jend
                  do ipol=ibeg,iend
                      sflu(ipol,jpol,iel) = scoord(ipol,jpol,ielfluid(iel))
                      zflu(ipol,jpol,iel) = zcoord(ipol,jpol,ielfluid(iel))
@@ -1253,13 +1254,13 @@ subroutine dump_wavefields_mesh_1d
          enddo
          if (lpr) write(6,*)'  dumping fluid submesh for kernel wavefields...'
          if (use_netcdf) then
-             call nc_dump_mesh_flu(real(sflu(ibeg:iend,ibeg:iend,:)),&
-                                   real(zflu(ibeg:iend,ibeg:iend,:)))
+             call nc_dump_mesh_flu(real(sflu(ibeg:iend,jbeg:jend,:)),&
+                                   real(zflu(ibeg:iend,jbeg:jend,:)))
          else
              open(unit=2600+mynum,file=datapath(1:lfdata)//'/strain_mesh_flu_'&
                   //appmynum//'.dat', &
                   FORM="UNFORMATTED",STATUS="REPLACE")
-             write(2600+mynum)sflu(ibeg:iend,ibeg:iend,:),zflu(ibeg:iend,ibeg:iend,:)
+             write(2600+mynum)sflu(ibeg:iend,jbeg:jend,:),zflu(ibeg:iend,jbeg:jend,:)
              close(2600+mynum)
          end if
          deallocate(sflu,zflu)

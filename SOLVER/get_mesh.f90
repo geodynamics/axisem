@@ -54,7 +54,7 @@ subroutine read_db
   use data_comm
   use data_proc
   use data_time
-  use data_io,            only : do_anel, ibeg, iend, dump_type
+  use data_io,            only : do_anel, ibeg, iend, jbeg, jend, dump_type
   use commun,             only : barrier, psum, pmax, pmin
   use background_models,  only : model_is_ani, model_is_anelastic, get_ext_disc, &
                                  override_ext_q
@@ -92,6 +92,8 @@ subroutine read_db
   if (trim(dump_type) == 'displ_only') then
      ibeg = 0
      iend = npol
+     jbeg = 0
+     jend = npol
   endif
 
   !!!!!!!!!!!! BACKGROUND MODEL !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -226,7 +226,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
      ! write out for later snaps
      if (do_mesh_tests) then
         do ipol=ibeg, iend
-           do jpol=ibeg, iend
+           do jpol=jbeg, jend
               call compute_coordinates(s,z,r,theta,iel,ipol,jpol)
               write(60000+mynum,14)r,theta,rho(ipol,jpol,iel),&
                  sqrt( (lambda(ipol,jpol,iel)+2.*mu(ipol,jpol,iel))/rho(ipol,jpol,iel)), &

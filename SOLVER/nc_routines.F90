@@ -765,7 +765,7 @@ end subroutine nc_dump_mesh_mp_kwf
 subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                                       fa_ani_theta, fa_ani_phi, Q_mu, Q_kappa)
 
-    use data_io,      only: ibeg, iend, dump_type
+    use data_io,      only: ibeg, iend, jbeg, jend, dump_type
     use data_mesh,    only: mapping_ijel_ikwf, ielsolid, ielfluid, nel_solid, nel_fluid, &
                             npol, kwf_mask
 
@@ -835,7 +835,7 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
        vs1d      = sqrt( mu1d  / rho1d )
 
     else
-       size1d = size(rho(ibeg:iend, ibeg:iend, :))
+       size1d = size(rho(ibeg:iend, jbeg:jend, :))
        print *, ' NetCDF: Mesh elastic parameter variables have size:', size1d
        allocate(rho1d(size1d))
        allocate(lambda1d(size1d))
@@ -846,21 +846,21 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
        allocate(phi1d(size1d))
        allocate(eta1d(size1d))
        
-       rho1d     = real(pack(rho(ibeg:iend, ibeg:iend, :)    ,.true.), kind=sp)
-       lambda1d  = real(pack(lambda(ibeg:iend, ibeg:iend, :) ,.true.), kind=sp)
-       mu1d      = real(pack(mu(ibeg:iend, ibeg:iend, :)     ,.true.), kind=sp)
+       rho1d     = real(pack(rho(ibeg:iend, jbeg:jend, :)    ,.true.), kind=sp)
+       lambda1d  = real(pack(lambda(ibeg:iend, jbeg:jend, :) ,.true.), kind=sp)
+       mu1d      = real(pack(mu(ibeg:iend, jbeg:jend, :)     ,.true.), kind=sp)
        vp1d      = sqrt( (lambda1d + 2.*mu1d ) / rho1d  )
        vs1d      = sqrt( mu1d  / rho1d )
 
-       xi1d      = real(pack(xi_ani(ibeg:iend, ibeg:iend, :)     ,.true.), kind=sp)
-       phi1d      = real(pack(phi_ani(ibeg:iend, ibeg:iend, :)   ,.true.), kind=sp)
-       eta1d      = real(pack(eta_ani(ibeg:iend, ibeg:iend, :)   ,.true.), kind=sp)
+       xi1d      = real(pack(xi_ani(ibeg:iend, jbeg:jend, :)     ,.true.), kind=sp)
+       phi1d      = real(pack(phi_ani(ibeg:iend, jbeg:jend, :)   ,.true.), kind=sp)
+       eta1d      = real(pack(eta_ani(ibeg:iend, jbeg:jend, :)   ,.true.), kind=sp)
 
        if (present(Q_mu).and.present(Q_kappa)) then
            allocate(Q_mu1d(size1d))
            allocate(Q_kappa1d(size1d))
-           Q_mu1d     = real(pack(Q_mu(ibeg:iend, ibeg:iend, :)     ,.true.), kind=sp)
-           Q_kappa1d  = real(pack(Q_kappa(ibeg:iend, ibeg:iend, :)  ,.true.), kind=sp)
+           Q_mu1d     = real(pack(Q_mu(ibeg:iend, jbeg:jend, :)     ,.true.), kind=sp)
+           Q_kappa1d  = real(pack(Q_kappa(ibeg:iend, jbeg:jend, :)  ,.true.), kind=sp)
        endif
     endif
 
@@ -902,8 +902,8 @@ end subroutine nc_dump_elastic_parameters
 !! and allocate buffer variables.
 subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec_proc)
 
-    use data_io,     only: nseismo, nstrain, nseismo, ibeg, iend, dump_wavefields, &
-                           dump_type
+    use data_io,     only: nseismo, nstrain, nseismo, ibeg, iend, jbeg, jend, &
+                           dump_wavefields, dump_type
     use data_io,     only: datapath, lfdata, strain_samp
     use data_mesh,   only: maxind, num_rec, discont, nelem, nel_solid, nel_fluid, &
                            ndisc, maxind_glob, nelem_kwf_global, npoint_kwf, npoint_solid_kwf, &
@@ -1153,7 +1153,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                     'velo_s     ', 'velo_p     ', 'velo_z     ']
               end if
 
-              gllperelem = (iend - ibeg + 1)**2
+              gllperelem = (iend - ibeg + 1) * (jend - jbeg + 1)
               npoints = nelem * gllperelem
               
               call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  

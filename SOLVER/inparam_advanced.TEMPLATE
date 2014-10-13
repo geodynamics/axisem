@@ -141,6 +141,8 @@ KERNEL_SOURCE       mask
 # (overwritten with 0 and npol for dumptype displ_only)
 KERNEL_IBEG         1
 KERNEL_IEND         3
+KERNEL_JBEG         1
+KERNEL_JEND         3
 
 # minimal and maximal colatitude in degree for kernel wavefields
 # (only for dumptype displ_only)

@@ -790,7 +790,7 @@ subroutine dump_field_1d(f, filename, appisnap, n)
              if (npoint_solid_kwf > 0) &
                 call nc_dump_field_solid(kwf_mapping_sol(floc), filename(2:))
           else
-             call nc_dump_field_solid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
+             call nc_dump_field_solid(pack(floc(ibeg:iend,jbeg:jend,:), .true.), &
                                     filename(2:))
           endif
        
@@ -799,7 +799,7 @@ subroutine dump_field_1d(f, filename, appisnap, n)
              if (npoint_fluid_kwf > 0) &
                 call nc_dump_field_fluid(kwf_mapping_flu(floc), filename(2:))
           else
-             call nc_dump_field_fluid(pack(floc(ibeg:iend,ibeg:iend,:), .true.), &
+             call nc_dump_field_fluid(pack(floc(ibeg:iend,jbeg:jend,:), .true.), &
                                     filename(2:))
           endif
        
@@ -811,7 +811,7 @@ subroutine dump_field_1d(f, filename, appisnap, n)
       open(unit=25000+mynum, file=datapath(1:lfdata)//filename//'_' &
                                   //appmynum//'_'//appisnap//'.bindat', &
            FORM="UNFORMATTED", STATUS="UNKNOWN", POSITION="REWIND")
-      write(25000+mynum) pack(floc(ibeg:iend,ibeg:iend,:), .true.)
+      write(25000+mynum) pack(floc(ibeg:iend,jbeg:jend,:), .true.)
       close(25000+mynum)
    end if
 
@@ -845,9 +845,9 @@ subroutine dump_disp(u, chi, istrain)
                              FORM="UNFORMATTED",STATUS="REPLACE")
  
    if (src_type(1)/='monopole') then
-      write(75000+mynum) (f(ibeg:iend,ibeg:iend,:,i),i=1,3)
+      write(75000+mynum) (f(ibeg:iend,jbeg:jend,:,i),i=1,3)
    else
-      write(75000+mynum) f(ibeg:iend,ibeg:iend,:,1:3:2)
+      write(75000+mynum) f(ibeg:iend,jbeg:jend,:,1:3:2)
    endif
    close(75000+mynum)
  
@@ -891,9 +891,9 @@ subroutine dump_velo_dchi(v, dchi, istrain)
                               FORM="UNFORMATTED",STATUS="REPLACE")
  
    if (src_type(1)/='monopole') then 
-      write(85000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
+      write(85000+mynum) (f(ibeg:iend,jbeg:jend,:,i), i=1,3)
    else
-      write(85000+mynum) f(ibeg:iend,ibeg:iend,:,1), f(ibeg:iend,ibeg:iend,:,3)
+      write(85000+mynum) f(ibeg:iend,jbeg:jend,:,1), f(ibeg:iend,jbeg:jend,:,3)
    endif
    close(85000+mynum)
  
@@ -947,19 +947,19 @@ subroutine dump_velo_global(v, dchi, istrain)
  
    if (use_netcdf) then
       if (src_type(1)/='monopole') then
-         call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,2),.true.), 'velo_sol_p')
+         call nc_dump_field_solid(pack(f(ibeg:iend,jbeg:jend,:,2),.true.), 'velo_sol_p')
       end if
-      call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,1),.true.), 'velo_sol_s')
-      call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,3),.true.), 'velo_sol_z')
+      call nc_dump_field_solid(pack(f(ibeg:iend,jbeg:jend,:,1),.true.), 'velo_sol_s')
+      call nc_dump_field_solid(pack(f(ibeg:iend,jbeg:jend,:,3),.true.), 'velo_sol_z')
    else
       open(unit=95000+mynum,file=datapath(1:lfdata)//'/velo_sol_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
                                  FORM="UNFORMATTED",STATUS="REPLACE")
       if (src_type(1)/='monopole') then
-         write(95000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
+         write(95000+mynum) (f(ibeg:iend,jbeg:jend,:,i), i=1,3)
       else
-         write(95000+mynum) f(ibeg:iend,ibeg:iend,:,1), &
-                            f(ibeg:iend,ibeg:iend,:,3)
+         write(95000+mynum) f(ibeg:iend,jbeg:jend,:,1), &
+                            f(ibeg:iend,jbeg:jend,:,3)
       end if
       close(95000+mynum)
    end if
@@ -971,25 +971,25 @@ subroutine dump_velo_global(v, dchi, istrain)
      call axisym_gradient_fluid(dchi, usz_fluid)
  
      call define_io_appendix(appisnap,istrain)
-     fflu(ibeg:iend,ibeg:iend,:,1) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
-                                     usz_fluid(ibeg:iend,ibeg:iend,:,1)
-     fflu(ibeg:iend,ibeg:iend,:,2) = 0
-     fflu(ibeg:iend,ibeg:iend,:,3) = inv_rho_fluid(ibeg:iend,ibeg:iend,:) * &
-                                     usz_fluid(ibeg:iend,ibeg:iend,:,2)      
+     fflu(ibeg:iend,jbeg:jend,:,1) = inv_rho_fluid(ibeg:iend,jbeg:jend,:) * &
+                                     usz_fluid(jbeg:jend,jbeg:jend,:,1)
+     fflu(ibeg:iend,jbeg:jend,:,2) = 0
+     fflu(ibeg:iend,jbeg:jend,:,3) = inv_rho_fluid(ibeg:iend,jbeg:jend,:) * &
+                                     usz_fluid(ibeg:iend,jbeg:jend,:,2)      
  
      ! dump velocity vector inside fluid
      if (use_netcdf) then
-        call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,1), .true.), 'velo_flu_s')
-        call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,3), .true.), 'velo_flu_z')
+        call nc_dump_field_fluid(pack(fflu(ibeg:iend,jbeg:jend,:,1), .true.), 'velo_flu_s')
+        call nc_dump_field_fluid(pack(fflu(ibeg:iend,jbeg:jend,:,3), .true.), 'velo_flu_z')
         if (src_type(1)/='monopole') then
-          call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,2), .true.), 'velo_flu_p')
+          call nc_dump_field_fluid(pack(fflu(ibeg:iend,jbeg:jend,:,2), .true.), 'velo_flu_p')
         end if
      else
         open(unit=960000+mynum,file=datapath(1:lfdata)//'/velo_flu_'&
                                   //appmynum//'_'//appisnap//'.bindat',&
                                    FORM="UNFORMATTED",STATUS="REPLACE")
  
-        write(960000+mynum) (fflu(ibeg:iend,ibeg:iend,:,i), i=1,3)
+        write(960000+mynum) (fflu(ibeg:iend,jbeg:jend,:,i), i=1,3)
         close(960000+mynum)
      end if ! netcdf
    endif ! have_fluid
@@ -1041,20 +1041,20 @@ subroutine dump_disp_global(u, chi, istrain)
 
    elseif (use_netcdf .and. dump_type /= 'displ_only') then
       if (src_type(1)/='monopole') then
-         call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,2),.true.), 'disp_sol_p')
+         call nc_dump_field_solid(pack(f(ibeg:iend,jbeg:jend,:,2),.true.), 'disp_sol_p')
       end if
-      call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,1),.true.), 'disp_sol_s')
-      call nc_dump_field_solid(pack(f(ibeg:iend,ibeg:iend,:,3),.true.), 'disp_sol_z')
+      call nc_dump_field_solid(pack(f(ibeg:iend,jbeg:jend,:,1),.true.), 'disp_sol_s')
+      call nc_dump_field_solid(pack(f(ibeg:iend,jbeg:jend,:,3),.true.), 'disp_sol_z')
    
    else
       open(unit=95000+mynum,file=datapath(1:lfdata)//'/disp_sol_'&
                                  //appmynum//'_'//appisnap//'.bindat',&
                                  FORM="UNFORMATTED",STATUS="REPLACE")
       if (src_type(1)/='monopole') then
-         write(95000+mynum) (f(ibeg:iend,ibeg:iend,:,i), i=1,3)
+         write(95000+mynum) (f(ibeg:iend,jbeg:jend,:,i), i=1,3)
       else
-         write(95000+mynum) f(ibeg:iend,ibeg:iend,:,1), &
-                            f(ibeg:iend,ibeg:iend,:,3)
+         write(95000+mynum) f(ibeg:iend,jbeg:jend,:,1), &
+                            f(ibeg:iend,jbeg:jend,:,3)
       end if
       close(95000+mynum)
    end if
@@ -1079,17 +1079,17 @@ subroutine dump_disp_global(u, chi, istrain)
         call nc_dump_field_fluid(kwf_mapping_flu(fflu(:,:,:,3)), 'disp_flu_z')
 
      elseif (use_netcdf .and. dump_type /= 'displ_only') then
-        call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,1), .true.), 'disp_flu_s')
-        call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,3), .true.), 'disp_flu_z')
+        call nc_dump_field_fluid(pack(fflu(ibeg:iend,jbeg:jend,:,1), .true.), 'disp_flu_s')
+        call nc_dump_field_fluid(pack(fflu(ibeg:iend,jbeg:jend,:,3), .true.), 'disp_flu_z')
         if (src_type(1)/='monopole') then
-          call nc_dump_field_fluid(pack(fflu(ibeg:iend,ibeg:iend,:,2), .true.), 'disp_flu_p')
+          call nc_dump_field_fluid(pack(fflu(ibeg:iend,jbeg:jend,:,2), .true.), 'disp_flu_p')
         end if
      else
         open(unit=960000+mynum,file=datapath(1:lfdata)//'/disp_flu_'&
                                   //appmynum//'_'//appisnap//'.bindat',&
                                    FORM="UNFORMATTED",STATUS="REPLACE")
  
-        write(960000+mynum) (fflu(ibeg:iend,ibeg:iend,:,i), i=1,3)
+        write(960000+mynum) (fflu(ibeg:iend,jbeg:jend,:,i), i=1,3)
         close(960000+mynum)
      end if ! netcdf
    endif ! have_fluid
