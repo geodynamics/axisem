@@ -11,6 +11,7 @@ MPIRUN  = mpirun
 
 # Enable NetCDF
 USE_NETCDF = false
+USE_PAR_NETCDF = false
 NETCDF_PATH =       # e.g. $(HOME)/local, uses /usr/include if not defined
 
 # compile without MPI (possible values: 'false', 'true')

@@ -28,7 +28,12 @@ OBJS =	background_models.o commpi.o commun.o get_model.o \
 	wavefields_io.o ftz.o pthread.o
 
 ifeq ($(strip $(USE_NETCDF)),true)
-   FFLAGS += -Dunc
+   ifeq ($(strip $(USE_PAR_NETCDF)),true)
+   	   FFLAGS += -Dupnc
+   else
+   	   FFLAGS += -Dunc
+   endif
+
    ifdef NETCDF_PATH
        LIBS = -L $(strip $(NETCDF_PATH))/lib -lnetcdff -Wl,-rpath,$(strip $(NETCDF_PATH))/lib
        INCLUDE = -I $(strip $(NETCDF_PATH))/include
@@ -42,8 +47,8 @@ else
 endif
 
 ifeq ($(strip $(SERIAL)),true)
-    FFLAGS += -Dserial
-    LDFLAGS += -pthread
+   FFLAGS += -Dserial
+   LDFLAGS += -pthread
 endif
 
 
@@ -57,7 +62,12 @@ FFLAGS += -Dsolver
 all: $(PROG) utils 
 
 $(PROG): $(OBJS)
-	$(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+    ifeq ($(strip $(SERIAL)),true)
+        ifeq ($(strip $(USE_PAR_NETCDF)),true)
+   	    	$(error SERIAL and USE_PAR_NETCDF cannot be true at the same time)
+        endif
+    endif
+    $(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(PROG) $(OBJS) *.M *.mod *.d *.il core 
