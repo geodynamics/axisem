@@ -28,10 +28,9 @@ OBJS =	background_models.o commpi.o commun.o get_model.o \
 	wavefields_io.o ftz.o pthread.o
 
 ifeq ($(strip $(USE_NETCDF)),true)
+   FFLAGS += -Dunc
    ifeq ($(strip $(USE_PAR_NETCDF)),true)
    	   FFLAGS += -Dupnc
-   else
-   	   FFLAGS += -Dunc
    endif
 
    ifdef NETCDF_PATH
