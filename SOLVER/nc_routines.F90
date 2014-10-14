@@ -911,6 +911,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     use data_source, only: src_type, t_0
     use data_time,   only: deltat, niter
 
+#ifdef upnc
+    use mpi
+#endif
+
 
     integer, intent(in)                  :: nrec              !< Number of receivers
     character(len=40),intent(in)         :: rec_names(nrec)   !< Receiver names
@@ -991,14 +995,22 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     nc_fnam = datapath(1:lfdata)//"/axisem_output.nc4"
 
+#ifndef upnc
     if (mynum == 0) then
         if (verbose > 1) write (6,*) ' Preparing netcdf file for ', nproc, ' processors'
         nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
-        call check( nf90_create(path=nc_fnam, &
-                                cmode=nmode, ncid=ncid_out) )
+        call check( nf90_create(path=nc_fnam, cmode=nmode, ncid=ncid_out) )
         if (verbose > 1) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
     end if
-
+#else
+    if (verbose > 1) write (6,*) ' Preparing netcdf file for parallel IO'
+    nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
+    nmode = ior(nmode, NF90_MPIIO)
+    !nmode = ior(nmode, NF90_CLASSIC_MODEL)
+    call check( nf90_create(path=nc_fnam, cmode=nmode, ncid=ncid_out, &
+                            comm=MPI_COMM_WORLD, info=MPI_INFO_NULL) )
+    if (verbose > 1) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
+#endif
 
     if (dump_wavefields) then
         select case (trim(dump_type))
@@ -1176,7 +1188,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     end if ! dump_wavefields
 
 
+#ifndef upnc
     if (mynum == 0) then    
+#endif
         if (verbose > 1) write(6,*) '  Producing groups for Seismograms and Snapshots'
 
         call check( nf90_def_grp(ncid_out, "Seismograms", ncid_recout) )
@@ -1224,27 +1238,27 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_seis", xtype=NF90_FLOAT,&
                                  dimids=[nc_times_dimid], &
-                                 deflate_level = deflate_level, &
+                                 !deflate_level = deflate_level, &
                                  varid=nc_stf_seis_varid) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_d_seis", xtype=NF90_FLOAT,&
                                  dimids=[nc_times_dimid], &
-                                 deflate_level = deflate_level, &
+                                 !deflate_level = deflate_level, &
                                  varid=nc_stf_d_seis_varid) )
-        
+
         call check( nf90_def_var(ncid=ncid_recout, name="stf_iter", xtype=NF90_FLOAT,&
                                  dimids=[nc_iter_dimid], &
-                                 deflate_level = deflate_level, &
+                                 !deflate_level = deflate_level, &
                                  varid=nc_stf_iter_varid) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_d_iter", xtype=NF90_FLOAT,&
                                  dimids=[nc_iter_dimid], &
-                                 deflate_level = deflate_level, &
+                                 !deflate_level = deflate_level, &
                                  varid=nc_stf_d_iter_varid) )
         
         call check( nf90_def_var(ncid=ncid_recout, name="time", xtype=NF90_DOUBLE,&
                                  dimids=[nc_times_dimid], &
-                                 deflate_level = deflate_level, &
+                                 !deflate_level = deflate_level, &
                                  varid=nc_time_varid) )
 
         call check( nf90_def_var(ncid   = ncid_recout,   &
@@ -1260,7 +1274,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                  [nc_rec_dimid], nc_proc_varid) )
         call check( nf90_def_var(ncid_recout, "receiver_name", NF90_CHAR, &
                                  [nc_rec_dimid, nc_recnam_dimid], nc_recnam_varid) )
-
+        
         if (dump_wavefields) then
             ! Wavefields group of output file N.B: Snapshots for kernel calculation
             if (verbose > 1) write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file', &
@@ -1544,6 +1558,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         ! Leave definition mode
         call check( nf90_enddef(ncid_out))
 
+#ifdef upnc
+    if (mynum == 0) then    
+#endif
         if (verbose > 1) write(6,*) 'Writing station info into NetCDF file...'
         call check( nf90_put_var( ncid_recout, nc_th_varid,   values = rec_th) )
         call check( nf90_put_var( ncid_recout, nc_ph_varid,   values = rec_ph) )
