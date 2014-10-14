@@ -1006,7 +1006,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     if (verbose > 1) write (6,*) ' Preparing netcdf file for parallel IO'
     nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
     nmode = ior(nmode, NF90_MPIIO)
-    !nmode = ior(nmode, NF90_CLASSIC_MODEL)
     call check( nf90_create(path=nc_fnam, cmode=nmode, ncid=ncid_out, &
                             comm=MPI_COMM_WORLD, info=MPI_INFO_NULL) )
     if (verbose > 1) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
@@ -1228,9 +1227,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         call check( nf90_def_var(ncid=ncid_recout, name="displacement", xtype=NF90_FLOAT,&
                                  dimids=[nc_times_dimid, nc_comp_dimid, nc_rec_dimid], &
-                                 !storage = NF90_CHUNKED, chunksizes=[nseismo,3,1], &
                                  contiguous = .false., chunksizes=[nseismo,3,1], &
-                                 !deflate_level = deflate_level, &
                                  varid=nc_disp_varid) )
 
         call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )
@@ -1238,27 +1235,22 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_seis", xtype=NF90_FLOAT,&
                                  dimids=[nc_times_dimid], &
-                                 !deflate_level = deflate_level, &
                                  varid=nc_stf_seis_varid) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_d_seis", xtype=NF90_FLOAT,&
                                  dimids=[nc_times_dimid], &
-                                 !deflate_level = deflate_level, &
                                  varid=nc_stf_d_seis_varid) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_iter", xtype=NF90_FLOAT,&
                                  dimids=[nc_iter_dimid], &
-                                 !deflate_level = deflate_level, &
                                  varid=nc_stf_iter_varid) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_d_iter", xtype=NF90_FLOAT,&
                                  dimids=[nc_iter_dimid], &
-                                 !deflate_level = deflate_level, &
                                  varid=nc_stf_d_iter_varid) )
         
         call check( nf90_def_var(ncid=ncid_recout, name="time", xtype=NF90_DOUBLE,&
                                  dimids=[nc_times_dimid], &
-                                 !deflate_level = deflate_level, &
                                  varid=nc_time_varid) )
 
         call check( nf90_def_var(ncid   = ncid_recout,   &
@@ -1303,15 +1295,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       xtype  = NF90_FLOAT, &
                                       dimids = nc_snap_dimid,&
                                       varid  = nc_snaptime_varid) )
-
-!            call check( nf90_def_dim( ncid   = ncid_meshout, &
-!                                      name   = 'discontinuities', &
-!                                      len    = ndisc, &
-!                                      dimid  = nc_disc_dimid) )
-!            call check( nf90_put_att( ncid   = ncid_meshout, &
-!                                      varid  = NF90_GLOBAL, &
-!                                      name   = 'ndisc', &
-!                                      values = ndisc) )
 
             if (trim(dump_type) == 'displ_only') then
                call check( nf90_def_dim( ncid   = ncid_meshout, &
@@ -1398,18 +1381,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                           dimids = nc_pt_dimid,&
                                           varid  = nc_mesh_Qka_varid) )
             end if
-
-!            call check( nf90_def_var( ncid   = ncid_meshout, &
-!                                      name   = 'model_domain', &
-!                                      xtype  = NF90_BYTE, &
-!                                      dimids = nc_pt_dimid,&
-!                                      varid  = nc_elem_dom_varid) )
-            
-            !call check( nf90_def_var( ncid   = ncid_meshout, &
-            !                          name   = 'disc_depths', &
-            !                          xtype  = NF90_DOUBLE, &
-            !                          dimids = nc_disc_dimid,&
-            !                          varid  = nc_disc_varid) )
 
             if (trim(dump_type) == 'displ_only') then
                call check( nf90_def_var( ncid   = ncid_meshout, &
@@ -1600,11 +1571,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_put_var(ncid   = ncid_out, &
                                      varid  = nc_snaptime_varid, &
                                      values = time_strain ) ) 
-            ! Write out discontinuity depths
-            !if (verbose > 1) write(6,*) 'Writing discontinuity depths into NetCDF file...'
-            !call check( nf90_put_var(ncid   = ncid_meshout, &
-            !                         varid  = nc_disc_varid, &
-            !                         values = discont) )
             
             ! Write out STF values at kernel dump points
             if (verbose > 1) write(6,*) 'Writing STF in strain dumps'
