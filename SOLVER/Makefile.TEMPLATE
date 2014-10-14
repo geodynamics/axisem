@@ -67,7 +67,7 @@ $(PROG): $(OBJS)
    	    	$(error SERIAL and USE_PAR_NETCDF cannot be true at the same time)
         endif
     endif
-    $(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
+	$(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
 
 clean:
 	rm -f $(PROG) $(OBJS) *.M *.mod *.d *.il core 
