@@ -1740,38 +1740,61 @@ subroutine nc_finish_prepare
             call getvarid( ncid_recout, "displacement", nc_disp_varid ) 
             
             if (dump_wavefields) then
+                
+                ! first get all IDs
                 call getgrpid(ncid_out, "Snapshots", ncid_snapout) 
                 do ivar=1, nvar/2
                     call getvarid( ncid_snapout, nc_varnamelist(ivar), &
                                 nc_field_varid(ivar)) 
                 end do
                
-                if (maxind>0) then !If this proc has elements at the surface
-                    call getvarid( ncid_surfout, "elem_theta", &
-                                   nc_surfelem_theta_varid) 
-                    call putvar_real1d(ncid   = ncid_surfout, &
-                                       varid  = nc_surfelem_theta_varid, &
-                                       values = surfcoord, &
-                                       start  = ind_first, &
-                                       count  = maxind  )
+                call getvarid(ncid_surfout, "elem_theta",   nc_surfelem_theta_varid)
+                call getvarid(ncid_surfout, "displacement", nc_surfelem_disp_varid)
+                call getvarid(ncid_surfout, "velocity",     nc_surfelem_velo_varid)
+                call getvarid(ncid_surfout, "strain",       nc_surfelem_strain_varid)
+                call getvarid(ncid_surfout, "disp_src",     nc_surfelem_disp_src_varid)
+
+                call getvarid(ncid_meshout, "mesh_S",       nc_mesh_s_varid) 
+                call getvarid(ncid_meshout, "mesh_Z",       nc_mesh_z_varid) 
+                call getvarid(ncid_meshout, "mesh_vp",      nc_mesh_vp_varid)
+                call getvarid(ncid_meshout, "mesh_vs",      nc_mesh_vs_varid) 
+                call getvarid(ncid_meshout, "mesh_rho",     nc_mesh_rho_varid) 
+                call getvarid(ncid_meshout, "mesh_lambda",  nc_mesh_lambda_varid) 
+                call getvarid(ncid_meshout, "mesh_mu",      nc_mesh_mu_varid) 
+                call getvarid(ncid_meshout, "mesh_phi",     nc_mesh_phi_varid) 
+                call getvarid(ncid_meshout, "mesh_xi",      nc_mesh_xi_varid) 
+                call getvarid(ncid_meshout, "mesh_eta",     nc_mesh_eta_varid) 
+
+                if (allocated(Q_mu1d).and.allocated(Q_kappa1d)) then
+                    call getvarid(ncid_meshout, "mesh_Qmu", nc_mesh_Qmu_varid) 
+                    call getvarid(ncid_meshout, "mesh_Qka", nc_mesh_Qka_varid) 
                 end if
-                
-                
-                call getvarid( ncid_surfout, "displacement", &
-                               nc_surfelem_disp_varid) 
 
-                call getvarid( ncid_surfout, "velocity", &
-                               nc_surfelem_velo_varid ) 
+                if (trim(dump_type) == 'displ_only') then
+                   call getvarid(ncid_meshout, "midpoint_mesh", nc_mesh_midpoint_varid) 
+                   call getvarid(ncid_meshout, "eltype",        nc_mesh_eltype_varid) 
+                   call getvarid(ncid_meshout, "axis",          nc_mesh_axis_varid) 
+                   call getvarid(ncid_meshout, "fem_mesh",      nc_mesh_fem_varid) 
+                   call getvarid(ncid_meshout, "sem_mesh",      nc_mesh_sem_varid) 
+                   call getvarid(ncid_meshout, "mp_mesh_S",     nc_mesh_s_mp_varid) 
+                   call getvarid(ncid_meshout, "mp_mesh_Z",     nc_mesh_z_mp_varid) 
+                   call getvarid(ncid_meshout, "gll",           nc_mesh_gll_varid) 
+                   call getvarid(ncid_meshout, "glj",           nc_mesh_glj_varid) 
+                   call getvarid(ncid_meshout, "G0",            nc_mesh_G0_varid) 
+                   call getvarid(ncid_meshout, "G1",            nc_mesh_G1_varid) 
+                   call getvarid(ncid_meshout, "G2",            nc_mesh_G2_varid) 
+                end if
 
-                call getvarid( ncid_surfout, "strain", &
-                               nc_surfelem_strain_varid ) 
-
-                call getvarid( ncid_surfout, "disp_src", &
-                               nc_surfelem_disp_src_varid ) 
                 print '(A,I5,A)', '   ', iproc, ': inquired variable IDs'
+
+                call putvar_real1d(ncid   = ncid_surfout, &
+                                   varid  = nc_surfelem_theta_varid, &
+                                   values = surfcoord, &
+                                   start  = ind_first, &
+                                   count  = maxind  )
+                
             
                 ! S-Coordinate
-                call getvarid( ncid_meshout, "mesh_S", nc_mesh_s_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_s_varid,  &
                                     values = scoord1d,         &
@@ -1779,7 +1802,6 @@ subroutine nc_finish_prepare
                                     count  = npoints )
                 
                 ! Z-Coordinate
-                call getvarid( ncid_meshout, "mesh_Z", nc_mesh_z_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_z_varid,  &
                                     values = zcoord1d,         &
@@ -1787,7 +1809,6 @@ subroutine nc_finish_prepare
                                     count  = npoints )
 
                 ! Vp
-                call getvarid( ncid_meshout, "mesh_vp", nc_mesh_vp_varid )
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_vp_varid, &
                                     values = vp1d,             &
@@ -1795,7 +1816,6 @@ subroutine nc_finish_prepare
                                     count  = npoints )
 
                 ! Vs
-                call getvarid( ncid_meshout, "mesh_vs", nc_mesh_vs_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_vs_varid, &
                                     values = vs1d,             &
@@ -1803,7 +1823,6 @@ subroutine nc_finish_prepare
                                     count  = npoints )
 
                 ! Rho                     
-                call getvarid( ncid_meshout, "mesh_rho", nc_mesh_rho_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,     & 
                                     varid  = nc_mesh_rho_varid,&
                                     values = rho1d,            &
@@ -1811,8 +1830,6 @@ subroutine nc_finish_prepare
                                     count  = npoints )
 
                 ! Lambda
-                call getvarid( ncid_meshout, "mesh_lambda",    &
-                                           nc_mesh_lambda_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,     & 
                                     varid  = nc_mesh_lambda_varid, &
                                     values = lambda1d,         &
@@ -1820,7 +1837,6 @@ subroutine nc_finish_prepare
                                     count  = npoints )
 
                 ! Mu
-                call getvarid( ncid_meshout, "mesh_mu", nc_mesh_mu_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_mu_varid, &
                                     values = mu1d,             &
@@ -1829,7 +1845,6 @@ subroutine nc_finish_prepare
 
                 ! Anisotropic parameters            
                 ! Phi
-                call getvarid( ncid_meshout, "mesh_phi", nc_mesh_phi_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,      &
                                     varid  = nc_mesh_phi_varid,  &
                                     values = phi1d,             &
@@ -1837,7 +1852,6 @@ subroutine nc_finish_prepare
                                     count  = npoints )
 
                 ! Xi
-                call getvarid( ncid_meshout, "mesh_xi", nc_mesh_xi_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_xi_varid, &
                                     values = xi1d,             &
@@ -1845,7 +1859,6 @@ subroutine nc_finish_prepare
                                     count  = npoints )
 
                 ! Eta
-                call getvarid( ncid_meshout, "mesh_eta", nc_mesh_eta_varid ) 
                 call putvar_real1d( ncid   = ncid_meshout,      &
                                     varid  = nc_mesh_eta_varid, &
                                     values = eta1d,             &
@@ -1856,14 +1869,12 @@ subroutine nc_finish_prepare
                 if (allocated(Q_mu1d).and.allocated(Q_kappa1d)) then
                         
                     ! Q_mu
-                    call getvarid( ncid_meshout, "mesh_Qmu", nc_mesh_Qmu_varid ) 
                     call putvar_real1d( ncid   = ncid_meshout,      &
                                         varid  = nc_mesh_Qmu_varid, &
                                         values = Q_mu1d,            &
                                         start  = npoints_myfirst,   &
                                         count  = npoints )
                     ! Q_kappa
-                    call getvarid( ncid_meshout, "mesh_Qka", nc_mesh_Qka_varid ) 
                     call putvar_real1d( ncid   = ncid_meshout,      &
                                         varid  = nc_mesh_Qka_varid, &
                                         values = Q_kappa1d,         &
@@ -1871,36 +1882,31 @@ subroutine nc_finish_prepare
                                         count  = npoints )
                 end if
 
-                if (trim(dump_type) == 'displ_only' .and. nelem_kwf > 0) then
-                   call getvarid( ncid_meshout, "midpoint_mesh", nc_mesh_midpoint_varid ) 
+                if (trim(dump_type) == 'displ_only') then
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_midpoint_varid, &
                                              start  = [nelem_myfirst],  &
                                              count  = [nelem_kwf], &
                                              values = midpoint_mesh_kwf + npoints_myfirst - 1))
 
-                   call getvarid( ncid_meshout, "eltype", nc_mesh_eltype_varid) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_eltype_varid, &
                                              start  = [nelem_myfirst],  &
                                              count  = [nelem_kwf], &
                                              values = eltype_kwf))
 
-                   call getvarid( ncid_meshout, "axis", nc_mesh_axis_varid) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_axis_varid, &
                                              start  = [nelem_myfirst],  &
                                              count  = [nelem_kwf], &
                                              values = axis_kwf))
 
-                   call getvarid( ncid_meshout, "fem_mesh", nc_mesh_fem_varid ) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_fem_varid, &
                                              start  = [1, nelem_myfirst],  &
                                              count  = [4, nelem_kwf], &
                                              values = fem_mesh_kwf + npoints_myfirst - 1))
 
-                   call getvarid( ncid_meshout, "sem_mesh", nc_mesh_sem_varid ) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_sem_varid, &
                                              start  = [1, 1, nelem_myfirst],  &
@@ -1908,7 +1914,6 @@ subroutine nc_finish_prepare
                                              values = sem_mesh_kwf + npoints_myfirst - 1))
 
                    ! S-Coordinate
-                   call getvarid( ncid_meshout, "mp_mesh_S", nc_mesh_s_mp_varid ) 
                    call putvar_real1d( ncid   = ncid_meshout,     &
                                        varid  = nc_mesh_s_mp_varid,  &
                                        values = scoord1d_mp,         &
@@ -1916,7 +1921,6 @@ subroutine nc_finish_prepare
                                        count  = nelem_kwf )
                    
                    ! Z-Coordinate
-                   call getvarid( ncid_meshout, "mp_mesh_Z", nc_mesh_z_mp_varid ) 
                    call putvar_real1d( ncid   = ncid_meshout,     &
                                        varid  = nc_mesh_z_mp_varid,  &
                                        values = zcoord1d_mp,         &
@@ -1924,35 +1928,30 @@ subroutine nc_finish_prepare
                                        count  = nelem_kwf )
 
                    ! SEM stuff
-                   call getvarid( ncid_meshout, "gll", nc_mesh_gll_varid ) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_gll_varid, &
                                              start  = [1],  &
                                              count  = [npol+1], &
                                              values = eta))
 
-                   call getvarid( ncid_meshout, "glj", nc_mesh_glj_varid ) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_glj_varid, &
                                              start  = [1],  &
                                              count  = [npol+1], &
                                              values = xi_k))
 
-                   call getvarid( ncid_meshout, "G0", nc_mesh_G0_varid ) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_G0_varid, &
                                              start  = [1],  &
                                              count  = [npol+1], &
                                              values = G0))
 
-                   call getvarid( ncid_meshout, "G1", nc_mesh_G1_varid ) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_G1_varid, &
                                              start  = [1, 1],  &
                                              count  = [npol+1, npol+1], &
                                              values = G1))
 
-                   call getvarid( ncid_meshout, "G2", nc_mesh_G2_varid ) 
                    call check(nf90_put_var ( ncid   = ncid_meshout,     &
                                              varid  = nc_mesh_G2_varid, &
                                              start  = [1, 1],  &
@@ -1964,7 +1963,9 @@ subroutine nc_finish_prepare
 
             end if !dump_wavefields
             call check( nf90_close( ncid_out))
-            if (verbose > 1) write(6,"('  Proc ', I3, ' dumped its mesh and is ready to rupture')") mynum
+            if (verbose > 1) &
+                write(6,"('  Proc ', I3, ' dumped its mesh and is ready to rupture')") &
+                    mynum
         end if !mynum.eq.iproc
     end do
 #endif
