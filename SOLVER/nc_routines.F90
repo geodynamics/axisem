@@ -1187,6 +1187,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     end if ! dump_wavefields
 
 
+! in case of parallel IO, we all ranks do the definition
 #ifndef upnc
     if (mynum == 0) then    
 #endif
@@ -1529,6 +1530,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         ! Leave definition mode
         call check( nf90_enddef(ncid_out))
 
+! in case of parallel IO, only the first rank writes
 #ifdef upnc
     if (mynum == 0) then    
 #endif
@@ -1585,7 +1587,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end if
     
     end if ! (mynum == 0)
-   
+    
 
 ! Allocation of Dump buffer variables. Done on all procs
 90  format(' Allocated ', A20, ', uses ',F10.3,'MB')
@@ -1709,7 +1711,9 @@ subroutine nc_finish_prepare
     integer             :: nc_mesh_G2_varid
     integer             :: nc_mesh_gll_varid
     integer             :: nc_mesh_glj_varid
-    
+
+! in case of parallel IO, we keep it open on all procs
+#ifndef upnc
     if (mynum == 0) then
         call check(nf90_close(ncid_out))
         if (verbose > 1) then
@@ -1731,12 +1735,14 @@ subroutine nc_finish_prepare
             call check( nf90_open( path = datapath(1:lfdata)//"/axisem_output.nc4", & 
                                    mode = nmode,                                    &
                                    ncid = ncid_out) )
-
             print '(A,I5,A)', '   ', iproc, ': opened file'
+#endif
+
+
             call getgrpid(ncid_out, "Seismograms", ncid_recout) 
             call getgrpid(ncid_out, "Surface", ncid_surfout) 
             call getgrpid(ncid_out, "Mesh", ncid_meshout) 
-            print '(A,I5,A)', '   ', iproc, ': inquired dimension IDs'
+            !print '(A,I5,A)', '   ', iproc, ': inquired dimension IDs'
             call getvarid( ncid_recout, "displacement", nc_disp_varid ) 
             
             if (dump_wavefields) then
@@ -1787,13 +1793,73 @@ subroutine nc_finish_prepare
 
                 print '(A,I5,A)', '   ', iproc, ': inquired variable IDs'
 
+#ifdef upnc
+                ! enable collective IO in case of parallel IO
+                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_theta_varid,    &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_disp_varid,     &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_velo_varid,     &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_strain_varid,   &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_disp_src_varid, &
+                                               NF90_COLLECTIVE))
+
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_s_varid,      &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_z_varid,      &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_vp_varid,     &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_vs_varid,     &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_rho_varid,    &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_lambda_varid, &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_mu_varid,     &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_phi_varid,    &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_xi_varid,     &
+                                               NF90_COLLECTIVE))
+                call check(nf90_var_par_access(ncid_meshout, nc_mesh_eta_varid,    &
+                                               NF90_COLLECTIVE))
+
+                if (allocated(Q_mu1d).and.allocated(Q_kappa1d)) then
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_Qmu_varid, &
+                                                  NF90_COLLECTIVE))
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_Qka_varid, &
+                                                  NF90_COLLECTIVE))
+                endif
+
+                if (trim(dump_type) == 'displ_only') then
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_midpoint_varid, &
+                                                  NF90_COLLECTIVE))
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_eltype_varid,   &
+                                                  NF90_COLLECTIVE))
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_axis_varid,     &
+                                                  NF90_COLLECTIVE))
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_fem_varid,      &
+                                                  NF90_COLLECTIVE))
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_sem_varid,      &
+                                                  NF90_COLLECTIVE))
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_s_mp_varid,     &
+                                                  NF90_COLLECTIVE))
+                   call check(nf90_var_par_access(ncid_meshout, nc_mesh_z_mp_varid,     &
+                                                  NF90_COLLECTIVE))
+                endif
+#endif
+
+                ! start writing to file
+   
                 call putvar_real1d(ncid   = ncid_surfout, &
                                    varid  = nc_surfelem_theta_varid, &
                                    values = surfcoord, &
                                    start  = ind_first, &
-                                   count  = maxind  )
+                                   count  = maxind  ) ! count = 0 should be valid?
                 
-            
                 ! S-Coordinate
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_s_varid,  &
@@ -1928,46 +1994,52 @@ subroutine nc_finish_prepare
                                        count  = nelem_kwf )
 
                    ! SEM stuff
-                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
-                                             varid  = nc_mesh_gll_varid, &
-                                             start  = [1],  &
-                                             count  = [npol+1], &
-                                             values = eta))
+                   if (mynum == 0) then ! these are not processorwise, so only rank zero
+                                        ! writes
+                      call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                                varid  = nc_mesh_gll_varid, &
+                                                start  = [1],  &
+                                                count  = [npol+1], &
+                                                values = eta))
 
-                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
-                                             varid  = nc_mesh_glj_varid, &
-                                             start  = [1],  &
-                                             count  = [npol+1], &
-                                             values = xi_k))
+                      call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                                varid  = nc_mesh_glj_varid, &
+                                                start  = [1],  &
+                                                count  = [npol+1], &
+                                                values = xi_k))
 
-                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
-                                             varid  = nc_mesh_G0_varid, &
-                                             start  = [1],  &
-                                             count  = [npol+1], &
-                                             values = G0))
+                      call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                                varid  = nc_mesh_G0_varid, &
+                                                start  = [1],  &
+                                                count  = [npol+1], &
+                                                values = G0))
 
-                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
-                                             varid  = nc_mesh_G1_varid, &
-                                             start  = [1, 1],  &
-                                             count  = [npol+1, npol+1], &
-                                             values = G1))
+                      call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                                varid  = nc_mesh_G1_varid, &
+                                                start  = [1, 1],  &
+                                                count  = [npol+1, npol+1], &
+                                                values = G1))
 
-                   call check(nf90_put_var ( ncid   = ncid_meshout,     &
-                                             varid  = nc_mesh_G2_varid, &
-                                             start  = [1, 1],  &
-                                             count  = [npol+1, npol+1], &
-                                             values = G2))
+                      call check(nf90_put_var ( ncid   = ncid_meshout,     &
+                                                varid  = nc_mesh_G2_varid, &
+                                                start  = [1, 1],  &
+                                                count  = [npol+1, npol+1], &
+                                                values = G2))
+                   endif
                 endif
 
                 print '(A,I5,A)', '   ', iproc, ': dumped mesh'
 
             end if !dump_wavefields
-            call check( nf90_close( ncid_out))
             if (verbose > 1) &
                 write(6,"('  Proc ', I3, ' dumped its mesh and is ready to rupture')") &
                     mynum
+#ifndef upnc
+            call check( nf90_close( ncid_out))
         end if !mynum.eq.iproc
     end do
+#endif
+
 #endif
 end subroutine nc_finish_prepare
 !-----------------------------------------------------------------------------------------
@@ -2208,7 +2280,7 @@ subroutine getvarid(ncid, name, varid)
     if (status.ne.NF90_NOERR) then
         write(6,100) mynum, trim(name), ncid
         stop
-    elseif (verbose>1) then
+    elseif (verbose > 1) then
         write(6,101) trim(name), ncid, varid
         call flush(6)
     end if

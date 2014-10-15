@@ -1450,9 +1450,14 @@ subroutine write_parameters
 
     endif ! lpr
 
-    if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
+! in case of parallel IO, all ranks write attributes
+#ifdef upnc
+    if ((use_netcdf)) then
+#else
+    if ((mynum == 0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
+#endif
         ! write generic simulation info file
-        write(6,*) ' Writing simulation info to netcdf file attributes' 
+        if (mynum == 0) write(6,*) ' Writing simulation info to netcdf file attributes' 
         call nc_write_att_int(  6,                     'file version')
         call nc_write_att_char( trim(bkgrdmodel),      'background model')
         call nc_write_att_int(  merge(1, 0, do_anel),  'attenuation') ! merge: hacky conversion of logical to int
