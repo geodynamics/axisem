@@ -381,12 +381,12 @@ subroutine nc_dump_strain(isnap_loc)
 #endif
     end if 
 
-#ifndef upnc
     ! Final and last dump of all remaining 
     ! not done in unblocking fashion using a thread, as there is nothing to
     ! compute anymore
     ! Make sure, nobody is accessing the output file anymore
     if (isnap_loc == nstrain) then 
+#ifndef upnc
         do iproc=0, nproc-1
             if (iproc == mynum) then
                 call c_wait_for_io()
@@ -395,6 +395,7 @@ subroutine nc_dump_strain(isnap_loc)
         end do
         do iproc=0,nproc-1
             if (iproc == mynum .and. (npoints > 0 .or. maxind > 0)) then
+#endif
                 isnap_global = nstrain 
                 ndumps = stepstodump
 
@@ -412,11 +413,12 @@ subroutine nc_dump_strain(isnap_loc)
 
                 call nc_dump_strain_to_disk()
                 if (verbose > 1) write(6,*) mynum, 'finished dumping strain'
+#ifndef upnc
             end if
             call barrier
         end do
-    end if
 #endif
+    end if
 
 #endif
 end subroutine nc_dump_strain
@@ -968,8 +970,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         stop
     endif
 
-    dumpstepsnap = int(nc_dumpbuffersize / nproc) * nproc ! Will later be reduced to nstrain, if this is smaller
-                                                       ! than value given here
+    dumpstepsnap = int(nc_dumpbuffersize / nproc) * nproc
+        ! Will later be reduced to nstrain, if this is smaller than value given here
     
     if (lpr .and. verbose > 1) write(6,*) '  Dumping NetCDF file to disk every', dumpstepsnap, ' snaps'
 
@@ -987,11 +989,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end if
         call barrier ! for nicer output only
     end do
+    if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
 #else
     ! in parallel IO, always everybody dumps collectively
-    dumpstepsnap = 1
+    dumpstepsnap = nc_dumpbuffersize
+    if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
     allocate(dumpposition(0:dumpstepsnap-1))
-    dumpposition = .true.
+    dumpposition(:) = .false.
+    dumpposition(0) = .true.
     outputplan = 0
 #endif
 
@@ -1051,7 +1056,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
               call comm_elem_number(nelem_kwf, nelem_kwf_global, nelem_myfirst, nelem_mylast)  
               
-              if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
               if (lpr) then
                   call dump_mesh_data_xdmf(trim(nc_fnam), 'disp_s.xdmf', 'Snapshots/disp_s',  &
                                            npts_sol_global + npts_flu_global, & 
@@ -1104,8 +1108,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
               call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
               call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
-
-              if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
 
               if (lpr) then
                   call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dsus.xdmf', 'Snapshots/strain_dsus',  &
@@ -1177,7 +1179,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
               call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
               call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
               
-              if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
               if (lpr) then
                   call dump_mesh_data_xdmf(nc_fnam, 'straintrace.xdmf', 'Snapshots/straintrace',  &
                                            npts_sol_global + npts_flu_global, & 
