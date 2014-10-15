@@ -320,6 +320,7 @@ subroutine nc_dump_strain(isnap_loc)
     stepstodump = stepstodump + 1
     if (isnap_loc == 0) return
 
+#ifndef upnc
     if (dumpposition(mod(isnap_loc, dumpstepsnap))) then
 
         ! wait for other processes to finish writing, measure waiting time and
@@ -353,6 +354,7 @@ subroutine nc_dump_strain(isnap_loc)
                          & 'dumping processor. Consider adapting netCDF output variables',&
                          & '(disable compression, increase dumpstepsnap)')") tackl-tickl
             end if
+#endif
 
             isnap_global = isnap_loc 
             ndumps = stepstodump
@@ -369,11 +371,17 @@ subroutine nc_dump_strain(isnap_loc)
             copy_surfdumpvar_velo     = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)
             copy_surfdumpvar_srcdisp  = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind) 
 
+#ifndef upnc
             call c_spawn_dumpthread(stepstodump)
             stepstodump = 0
         end if
     end if 
+#else
+    call nc_dump_strain_to_disk
+    stepstodump = 0
+#endif
 
+#ifndef upnc
     ! Final and last dump of all remaining 
     ! not done in unblocking fashion using a thread, as there is nothing to
     ! compute anymore
@@ -408,6 +416,7 @@ subroutine nc_dump_strain(isnap_loc)
             call barrier
         end do
     end if
+#endif
 
 #endif
 end subroutine nc_dump_strain
@@ -429,9 +438,12 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     dumpsize = 0
     call cpu_time(tick)
 
+#ifndef upnc
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
+#endif
     
+    call barrier
     call getgrpid(ncid_out, "Snapshots", ncid_snapout) 
     isnap_loc = isnap_global
     if (verbose > 0) then
@@ -482,7 +494,9 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     call check( nf90_put_att(ncid_out, NF90_GLOBAL, 'percent completed', &
                              isnap_loc*100/nstrain) )
 
+#ifndef upnc
     call check( nf90_close(ncid_out) ) 
+#endif
     call cpu_time(tack)
 
     deallocate(copy_oneddumpvar)
@@ -948,6 +962,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     call barrier
 
+#ifndef upnc
     if (nc_dumpbuffersize < nproc) then
         write(6,*) 'ERROR: NETCDF_DUMP_BUFFER needs to be larger then the number of processors'
         stop
@@ -972,6 +987,13 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end if
         call barrier ! for nicer output only
     end do
+#else
+    ! in parallel IO, always everybody dumps collectively
+    dumpstepsnap = 1
+    allocate(dumpposition(0:dumpstepsnap-1))
+    dumpposition = .true.
+    outputplan = 0
+#endif
 
     nc_fnam = datapath(1:lfdata)//"/axisem_output.nc4"
 
