@@ -445,47 +445,46 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
         end if
     end if
 
-
     do ivar=1, nvar/2
-        call putvar_real2d(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
-                           start=[npoints_myfirst, isnap_loc-ndumps+1], &
-                           count=[npoints, ndumps], &
-                           values=copy_oneddumpvar(1:npoints,1:ndumps,ivar)) 
+        call putvar_real2d(ncid   = ncid_snapout,   &
+                           varid  = nc_field_varid(ivar), &
+                           start  = [npoints_myfirst, isnap_loc-ndumps+1], &
+                           count  = [npoints, ndumps], &
+                           values = copy_oneddumpvar(1:npoints,1:ndumps,ivar)) 
         dumpsize = dumpsize + npoints * ndumps
     end do
         
     !> Surface dumps 
-    if (maxind>0) then
-        call putvar_real3d(ncid_surfout, nc_surfelem_disp_varid, &
-                    start = [isnap_loc-ndumps+1, 1, ind_first], &
-                    count = [ndumps, 3, maxind], &
-                    values = copy_surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)) 
-        dumpsize = dumpsize + 3 * maxind * ndumps
+    call putvar_real3d(ncid_surfout, nc_surfelem_disp_varid, &
+                start = [isnap_loc-ndumps+1, 1, ind_first], &
+                count = [ndumps, 3, maxind], &
+                values = copy_surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)) 
+    dumpsize = dumpsize + 3 * maxind * ndumps
 
-        call putvar_real3d(ncid_surfout, nc_surfelem_velo_varid, &
-                    start = [isnap_loc-ndumps+1, 1, ind_first], &
-                    count = [ndumps, 3, maxind], &
-                    values = copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)) 
-        dumpsize = dumpsize + 3 * maxind * ndumps
+    call putvar_real3d(ncid_surfout, nc_surfelem_velo_varid, &
+                start = [isnap_loc-ndumps+1, 1, ind_first], &
+                count = [ndumps, 3, maxind], &
+                values = copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)) 
+    dumpsize = dumpsize + 3 * maxind * ndumps
 
-        call putvar_real3d(ncid_surfout, nc_surfelem_strain_varid, &
-                    start = [isnap_loc-ndumps+1, 1, ind_first], &
-                    count = [ndumps, 6, maxind], &
-                    values = copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)) 
-        dumpsize = dumpsize + 6 * maxind * ndumps
+    call putvar_real3d(ncid_surfout, nc_surfelem_strain_varid, &
+                start = [isnap_loc-ndumps+1, 1, ind_first], &
+                count = [ndumps, 6, maxind], &
+                values = copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)) 
+    dumpsize = dumpsize + 6 * maxind * ndumps
 
-        call putvar_real3d(ncid_surfout, nc_surfelem_disp_src_varid, &
-                    start = [isnap_loc-ndumps+1, 1, ind_first], &
-                    count = [ndumps, 3, maxind], &
-                    values = copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
-        dumpsize = dumpsize + 3 * maxind * ndumps
-    end if
+    call putvar_real3d(ncid_surfout, nc_surfelem_disp_src_varid, &
+                start = [isnap_loc-ndumps+1, 1, ind_first], &
+                count = [ndumps, 3, maxind], &
+                values = copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
+    dumpsize = dumpsize + 3 * maxind * ndumps
     
     call check( nf90_put_att(ncid_out, NF90_GLOBAL, 'percent completed', &
                              isnap_loc*100/nstrain) )
 
     call check( nf90_close(ncid_out) ) 
     call cpu_time(tack)
+
     deallocate(copy_oneddumpvar)
     deallocate(copy_surfdumpvar_disp)
     deallocate(copy_surfdumpvar_strain)
@@ -1440,13 +1439,18 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
        
-                call check( nf90_def_var(ncid=ncid_snapout, name=trim(nc_varnamelist(ivar)), &
-                                         xtype = NF90_FLOAT, &
-                                         dimids = [nc_pt_dimid, nc_snap_dimid],&
-                                         varid = nc_field_varid(ivar), &
+                call check( nf90_def_var(ncid       = ncid_snapout, &
+                                         name       = trim(nc_varnamelist(ivar)), &
+                                         xtype      = NF90_FLOAT, &
+                                         dimids     = [nc_pt_dimid, nc_snap_dimid],&
+                                         varid      = nc_field_varid(ivar), &
                                          chunksizes = [npoints_global, 1] ))
-                call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
-                                              no_fill=1, fill=0) )
+
+                call check( nf90_def_var_fill(ncid    = ncid_snapout, &
+                                              varid   = nc_field_varid(ivar), &
+                                              no_fill = 1, &
+                                              fill    = 0) )
+
                 if (verbose > 2) write(6,"(' Netcdf variable ', A16,' with ID ', I3, ' and length', &
                         & I8, ' created.')") &
                           trim(nc_varnamelist(ivar)), nc_field_varid(ivar), npoints_global
@@ -1731,8 +1735,7 @@ subroutine nc_finish_prepare
                 ! first get all IDs
                 call getgrpid(ncid_out, "Snapshots", ncid_snapout) 
                 do ivar=1, nvar/2
-                    call getvarid( ncid_snapout, nc_varnamelist(ivar), &
-                                nc_field_varid(ivar)) 
+                   call getvarid(ncid_snapout, nc_varnamelist(ivar), nc_field_varid(ivar)) 
                 end do
                
                 call getvarid(ncid_surfout, "elem_theta",   nc_surfelem_theta_varid)
@@ -1776,6 +1779,10 @@ subroutine nc_finish_prepare
 
 #ifdef upnc
                 ! enable collective IO in case of parallel IO
+                do ivar=1, nvar/2
+                   call check(nf90_var_par_access(ncid_snapout, nc_field_varid(ivar),    &
+                                                  NF90_COLLECTIVE))
+                end do
                 call check(nf90_var_par_access(ncid_meshout, nc_surfelem_theta_varid,    &
                                                NF90_COLLECTIVE))
                 call check(nf90_var_par_access(ncid_meshout, nc_surfelem_disp_varid,     &
