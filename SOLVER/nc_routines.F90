@@ -585,12 +585,13 @@ subroutine nc_dump_rec_to_disk
 
     call cpu_time(tick)
 
+#ifndef upnc
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
+#endif
     call getgrpid( ncid_out, "Seismograms", ncid_recout)
     call getvarid( ncid_recout, "displacement", nc_disp_varid ) 
 
-    dumpsize = 0
     do irec = 1, num_rec
         do icomp = 1, 3
             call putvar_real3d(ncid   = ncid_recout,  &
@@ -602,7 +603,9 @@ subroutine nc_dump_rec_to_disk
     end do
 
     dumpsize = nseismo * 3 * num_rec
+#ifndef upnc
     call check( nf90_close(ncid=ncid_out))
+#endif
     call cpu_time(tack)
 
     if (verbose > 1) then
@@ -617,6 +620,7 @@ end subroutine nc_dump_rec_to_disk
 subroutine nc_rec_checkpoint
     use data_mesh, only: loc2globrec, num_rec
 #ifdef unc
+#ifndef upnc
     interface
         subroutine c_wait_for_io() bind(c, name='c_wait_for_io')
         end subroutine 
@@ -628,6 +632,7 @@ subroutine nc_rec_checkpoint
     do iproc=0, nproc-1
         call barrier
         if (iproc == mynum) then
+#endif
             if (num_rec > 0) then 
                 if (verbose > 1) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
                 call nc_dump_rec_to_disk()
@@ -635,9 +640,11 @@ subroutine nc_rec_checkpoint
             else
                 if (verbose > 1) write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
             end if
+#ifndef upnc
         end if
         
     end do
+#endif
     call barrier
 #endif
 end subroutine nc_rec_checkpoint
@@ -2052,6 +2059,7 @@ subroutine nc_end_output
     use data_io,   only: dump_xdmf
     integer           :: iproc
 
+#ifndef upnc
     call barrier
     do iproc=0, nproc-1
         if (iproc == mynum) then
@@ -2061,16 +2069,24 @@ subroutine nc_end_output
             else
                 if (verbose > 1) write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
             end if
-            if (dump_xdmf) then
-                call check(nf90_close(ncid_out_snap))
-            end if
         end if
-        
         call barrier
     end do
+#else
+    if (num_rec > 0) then 
+        if (verbose > 1) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
+        call nc_dump_rec_to_disk()
+    endif
+#endif
+    if (dump_xdmf) then
+        call check(nf90_close(ncid_out_snap))
+    end if
 
     !Set the finalized flag to true in the output file
-    if(mynum.eq.0) call nc_finalize()
+#ifndef upnc
+    if(mynum.eq.0) &
+#endif
+        call nc_finalize()
 
 #endif
 end subroutine nc_end_output
@@ -2082,8 +2098,10 @@ subroutine nc_finalize
 #ifdef unc
     use data_io,      only: datapath, lfdata
 
+#ifndef upnc
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
+#endif
     call check( nf90_redef(ncid_out))
 
     call check( nf90_put_att(ncid_out, NF90_GLOBAL, &

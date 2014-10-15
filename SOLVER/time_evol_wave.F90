@@ -1061,8 +1061,8 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
 
   endif
 
-  if ((mod(iter, check_it)==0).and.(iter>0)) then
-     if (checkpointing.and.use_netcdf) then
+  if ((mod(iter, check_it) == 0) .and. (iter > 0)) then
+     if (checkpointing .and. use_netcdf) then
         call nc_rec_checkpoint()
      end if
   end if
