@@ -446,7 +446,6 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 #endif
     
     call barrier
-    call getgrpid(ncid_out, "Snapshots", ncid_snapout) 
     isnap_loc = isnap_global
     if (verbose > 0) then
         if (ndumps == 0) then 
@@ -459,6 +458,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
         end if
     end if
 
+    call getgrpid(ncid_out, "Snapshots", ncid_snapout) 
     do ivar=1, nvar/2
         call putvar_real2d(ncid   = ncid_snapout,   &
                            varid  = nc_field_varid(ivar), &
