@@ -909,23 +909,23 @@ subroutine nc_compute_recfile_seis_bare(disp, iseismo)
 
   if (src_type(1) == 'monopole') then
      do i=1, num_rec
-          disp_rec(1,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1))
+          disp_rec(1,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1)
           disp_rec(2,i) = 0
-          disp_rec(3,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3))  
+          disp_rec(3,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3)
      enddo
   elseif (src_type(1) == 'dipole') then
      do i=1, num_rec
-          disp_rec(1,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1) &
-                             + disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2))
-          disp_rec(2,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1) &
-                             - disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2))
-          disp_rec(3,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3))
+          disp_rec(1,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1) &
+                        + disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2)
+          disp_rec(2,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1) &
+                        - disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2)
+          disp_rec(3,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3)
      enddo
   elseif (src_type(1) == 'quadpole') then
      do i=1, num_rec
-          disp_rec(1,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1))
-          disp_rec(2,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2))
-          disp_rec(3,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3))  
+          disp_rec(1,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1)
+          disp_rec(2,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2)
+          disp_rec(3,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3)
      enddo
   end if !src_type(1)
 
