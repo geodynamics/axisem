@@ -602,8 +602,6 @@ subroutine comm_elem_number(my_elems, glob_elems, my_first, my_last)
 
   if (nproc>1) then
 #ifndef serial
-     my_first = 0
-     my_last  = 0
      all_elems(mynum) = my_elems
 
      do iproc = 0, nproc-1
@@ -611,8 +609,8 @@ subroutine comm_elem_number(my_elems, glob_elems, my_first, my_last)
      end do
 
      if (my_elems == 0) then
-         my_first = 0
-         my_last  = 0
+         my_first = 1
+         my_last  = 1
      else
          my_first = sum(all_elems(0:mynum-1)) + 1
          my_last  = sum(all_elems(0:mynum))
