@@ -274,7 +274,6 @@ subroutine nc_dump_field_fluid(f, varname)
 #ifdef unc
     integer                           :: ivar
 
-
     do ivar=1, nvar
         !< Check whether this Variable actually exists in file ncid_out
         if (trim(varnamelist(ivar)) == trim(varname)) exit
@@ -363,6 +362,7 @@ subroutine nc_dump_strain(isnap_loc)
             allocate(copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind))
             allocate(copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind))
             allocate(copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind))
+
             copy_oneddumpvar          = oneddumpvar(1:npoints,1:ndumps,1:nvar/2)
             copy_surfdumpvar_disp     = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)
             copy_surfdumpvar_strain   = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)
@@ -395,6 +395,7 @@ subroutine nc_dump_strain(isnap_loc)
                 allocate(copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind))
                 allocate(copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind))
                 allocate(copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind))
+
                 copy_oneddumpvar          = oneddumpvar(1:npoints,1:ndumps,1:nvar/2)
                 copy_surfdumpvar_disp     = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)
                 copy_surfdumpvar_strain   = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)
@@ -619,8 +620,10 @@ end subroutine nc_dump_rec_to_disk
 !-----------------------------------------------------------------------------------------
 subroutine nc_rec_checkpoint
     use data_mesh, only: loc2globrec, num_rec
+
 #ifdef unc
 #ifndef upnc
+
     interface
         subroutine c_wait_for_io() bind(c, name='c_wait_for_io')
         end subroutine 
@@ -634,11 +637,13 @@ subroutine nc_rec_checkpoint
         if (iproc == mynum) then
 #endif
             if (num_rec > 0) then 
-                if (verbose > 2) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
+                if (verbose > 2) & 
+                    write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
                 call nc_dump_rec_to_disk()
                 call flush(6)
             else
-                if (verbose > 2) write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
+                if (verbose > 2) &
+                    write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
             end if
 #ifndef upnc
         end if
@@ -749,9 +754,8 @@ subroutine nc_dump_mesh_mp_kwf(coords, nel)
     integer, intent(in)  :: nel
 #ifdef unc
 
-
     if (size(coords, 1) /= nel) then
-       write(6,*) 'ERROR: inconsistent elemebt numbers'
+       write(6,*) 'ERROR: inconsistent element numbers'
        call abort()
     endif
 
@@ -777,6 +781,7 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
     real(kind=dp), dimension(0:,0:,:), intent(in)       :: phi_ani, eta_ani
     real(kind=dp), dimension(0:,0:,:), intent(in)       :: fa_ani_theta, fa_ani_phi
     real(kind=dp), dimension(0:,0:,:), intent(in), optional   :: Q_mu, Q_kappa
+
     integer :: size1d
     integer :: iel, ipol, jpol, ct
 
@@ -800,14 +805,16 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
                do jpol=0, npol
                    if (kwf_mask(ipol,jpol,iel)) then
                        ct = mapping_ijel_ikwf(ipol,jpol,iel)
-                       rho1d(ct)    = rho(ipol,jpol,ielsolid(iel))
+
+                       rho1d(ct) = rho(ipol,jpol,ielsolid(iel))
                        lambda1d(ct) = lambda(ipol,jpol,ielsolid(iel))
-                       mu1d(ct)     = mu(ipol,jpol,ielsolid(iel))
-                       xi1d(ct)     = xi_ani(ipol,jpol,ielsolid(iel))
-                       phi1d(ct)    = phi_ani(ipol,jpol,ielsolid(iel))
-                       eta1d(ct)    = eta_ani(ipol,jpol,ielsolid(iel))
+                       mu1d(ct) = mu(ipol,jpol,ielsolid(iel))
+                       xi1d(ct) = xi_ani(ipol,jpol,ielsolid(iel))
+                       phi1d(ct) = phi_ani(ipol,jpol,ielsolid(iel))
+                       eta1d(ct) = eta_ani(ipol,jpol,ielsolid(iel))
+
                        if (present(Q_mu).and.present(Q_kappa)) then
-                           Q_mu1d(ct)    = Q_mu(ipol,jpol,ielsolid(iel))
+                           Q_mu1d(ct) = Q_mu(ipol,jpol,ielsolid(iel))
                            Q_kappa1d(ct) = Q_kappa(ipol,jpol,ielsolid(iel))
                        endif
                    endif
@@ -820,14 +827,16 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
                do jpol=0, npol
                    if (kwf_mask(ipol,jpol,iel + nel_solid)) then
                        ct = mapping_ijel_ikwf(ipol,jpol,iel + nel_solid)
+
                        rho1d(ct) = rho(ipol,jpol,ielfluid(iel))
                        lambda1d(ct) = lambda(ipol,jpol,ielfluid(iel))
                        mu1d(ct) = mu(ipol,jpol,ielfluid(iel))
-                       xi1d(ct)     = xi_ani(ipol,jpol,ielfluid(iel))
-                       phi1d(ct)    = phi_ani(ipol,jpol,ielfluid(iel))
-                       eta1d(ct)    = eta_ani(ipol,jpol,ielfluid(iel))
+                       xi1d(ct) = xi_ani(ipol,jpol,ielfluid(iel))
+                       phi1d(ct) = phi_ani(ipol,jpol,ielfluid(iel))
+                       eta1d(ct) = eta_ani(ipol,jpol,ielfluid(iel))
+
                        if (present(Q_mu).and.present(Q_kappa)) then
-                           Q_mu1d(ct)    = Q_mu(ipol,jpol,ielfluid(iel))
+                           Q_mu1d(ct) = Q_mu(ipol,jpol,ielfluid(iel))
                            Q_kappa1d(ct) = Q_kappa(ipol,jpol,ielfluid(iel))
                        endif
                    endif
@@ -835,8 +844,8 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
            enddo
        enddo
 
-       vp1d      = sqrt( (lambda1d + 2.*mu1d ) / rho1d  )
-       vs1d      = sqrt( mu1d  / rho1d )
+       vp1d = sqrt((lambda1d + 2 * mu1d ) / rho1d)
+       vs1d = sqrt(mu1d  / rho1d)
 
     else
        size1d = size(rho(ibeg:iend, jbeg:jend, :))
@@ -850,55 +859,25 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
        allocate(phi1d(size1d))
        allocate(eta1d(size1d))
        
-       rho1d     = real(pack(rho(ibeg:iend, jbeg:jend, :)    ,.true.), kind=sp)
-       lambda1d  = real(pack(lambda(ibeg:iend, jbeg:jend, :) ,.true.), kind=sp)
-       mu1d      = real(pack(mu(ibeg:iend, jbeg:jend, :)     ,.true.), kind=sp)
-       vp1d      = sqrt( (lambda1d + 2.*mu1d ) / rho1d  )
-       vs1d      = sqrt( mu1d  / rho1d )
+       rho1d = real(pack(rho(ibeg:iend, jbeg:jend, :), .true.), kind=sp)
+       lambda1d = real(pack(lambda(ibeg:iend, jbeg:jend, :), .true.), kind=sp)
+       mu1d = real(pack(mu(ibeg:iend, jbeg:jend, :), .true.), kind=sp)
+       vp1d = sqrt((lambda1d + 2 * mu1d ) / rho1d)
+       vs1d = sqrt(mu1d / rho1d)
 
-       xi1d      = real(pack(xi_ani(ibeg:iend, jbeg:jend, :)     ,.true.), kind=sp)
-       phi1d      = real(pack(phi_ani(ibeg:iend, jbeg:jend, :)   ,.true.), kind=sp)
-       eta1d      = real(pack(eta_ani(ibeg:iend, jbeg:jend, :)   ,.true.), kind=sp)
+       xi1d = real(pack(xi_ani(ibeg:iend, jbeg:jend, :), .true.), kind=sp)
+       phi1d = real(pack(phi_ani(ibeg:iend, jbeg:jend, :), .true.), kind=sp)
+       eta1d = real(pack(eta_ani(ibeg:iend, jbeg:jend, :), .true.), kind=sp)
 
        if (present(Q_mu).and.present(Q_kappa)) then
            allocate(Q_mu1d(size1d))
            allocate(Q_kappa1d(size1d))
-           Q_mu1d     = real(pack(Q_mu(ibeg:iend, jbeg:jend, :)     ,.true.), kind=sp)
-           Q_kappa1d  = real(pack(Q_kappa(ibeg:iend, jbeg:jend, :)  ,.true.), kind=sp)
+           Q_mu1d = real(pack(Q_mu(ibeg:iend, jbeg:jend, :), .true.), kind=sp)
+           Q_kappa1d = real(pack(Q_kappa(ibeg:iend, jbeg:jend, :), .true.), kind=sp)
        endif
     endif
 
 end subroutine nc_dump_elastic_parameters
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-!subroutine nc_dump_mesh_to_disk()
-!    use data_io, only : datapath, lfdata
-!    integer iproc, nc_mesh_s_varid, nc_mesh_z_varid
-!
-!    do iproc=0, nproc-1
-!        if (mynum == iproc) then
-!            call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
-!                                  mode=NF90_WRITE, ncid=ncid_out) )
-!
-!            call check( nf90_inq_varid( ncid_snapout, "mesh S", nc_mesh_s_varid ) )
-!            call check( nf90_put_var(ncid_snapout, varid = nc_mesh_s_varid, &
-!                                     values = scoord1d, &
-!                                     start  = [1,mynum*npoints+1], &
-!                                     count  = [1,npoints] ))
-!            call check( nf90_inq_varid( ncid_snapout, "mesh Z", nc_mesh_z_varid ) )
-!            call check( nf90_put_var(ncid_snapout, varid = nc_mesh_z_varid, &
-!                                     values = zcoord1d, &
-!                                     start  = [1,mynum*npoints+1], &
-!                                     count  = [1,npoints] ))
-!            
-!            call check( nf90_close(ncid_out))
-!        end if
-!        call barrier
-!    end do
-!
-!
-!end subroutine nc_dump_mesh_to_disk
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
@@ -918,7 +897,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 #ifdef upnc
     use mpi
 #endif
-
 
     integer, intent(in)                  :: nrec              !< Number of receivers
     character(len=40),intent(in)         :: rec_names(nrec)   !< Receiver names
@@ -960,7 +938,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_mesh_glj_varid
     integer                              :: nc_mesh_elem_dimid, nc_mesh_npol_dimid
     integer                              :: nc_mesh_cntrlpts_dimid
-    !integer                              :: nc_disc_dimid, nc_disc_varid
 
     if ((mynum == 0) .and. (verbose > 1)) then
         write(6,*)
