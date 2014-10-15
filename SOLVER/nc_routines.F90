@@ -320,8 +320,8 @@ subroutine nc_dump_strain(isnap_loc)
     stepstodump = stepstodump + 1
     if (isnap_loc == 0) return
 
-#ifndef upnc
     if (dumpposition(mod(isnap_loc, dumpstepsnap))) then
+#ifndef upnc
 
         ! wait for other processes to finish writing, measure waiting time and
         ! issue warning in case waiting longer then .5 sec
@@ -375,11 +375,11 @@ subroutine nc_dump_strain(isnap_loc)
             call c_spawn_dumpthread(stepstodump)
             stepstodump = 0
         end if
-    end if 
 #else
-    call nc_dump_strain_to_disk
-    stepstodump = 0
+            call nc_dump_strain_to_disk
+            stepstodump = 0
 #endif
+    end if 
 
 #ifndef upnc
     ! Final and last dump of all remaining 
