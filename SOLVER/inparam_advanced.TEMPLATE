@@ -103,6 +103,7 @@ XDMF_GLL_J       '3 0 2 4'
 # 0: only errors
 # 1: errors plus some information (default)
 # 2: extra stories for spare time
+# 3: every single detail of netcdf IO
 VERBOSITY               1
 
 # Extra diagnostic file output? (default: false)

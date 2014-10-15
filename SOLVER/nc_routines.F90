@@ -608,7 +608,7 @@ subroutine nc_dump_rec_to_disk
 #endif
     call cpu_time(tack)
 
-    if (verbose > 1) then
+    if (verbose > 2) then
         write(6,"(I3,': Receiver data, Wrote ', F8.3, ' MB in ', F6.2, 's')") &
             mynum, real(dumpsize) * 4. / 1048576., tack-tick 
     end if
@@ -634,11 +634,11 @@ subroutine nc_rec_checkpoint
         if (iproc == mynum) then
 #endif
             if (num_rec > 0) then 
-                if (verbose > 1) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
+                if (verbose > 2) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
                 call nc_dump_rec_to_disk()
                 call flush(6)
             else
-                if (verbose > 1) write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
+                if (verbose > 2) write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
             end if
 #ifndef upnc
         end if
@@ -1007,12 +1007,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         if (verbose > 1) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
     end if
 #else
-    if (verbose > 1) write (6,*) ' Preparing netcdf file for parallel IO'
+    if (verbose > 1 .and. mynum == 0) write (6,*) ' Preparing netcdf file for parallel IO'
     nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
     nmode = ior(nmode, NF90_MPIIO)
     call check( nf90_create(path=nc_fnam, cmode=nmode, ncid=ncid_out, &
                             comm=MPI_COMM_WORLD, info=MPI_INFO_NULL) )
-    if (verbose > 1) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
+    if (verbose > 1 .and. mynum == 0) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
 #endif
 
     if (dump_wavefields) then
@@ -1195,39 +1195,39 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 #ifndef upnc
     if (mynum == 0) then    
 #endif
-        if (verbose > 1) write(6,*) '  Producing groups for Seismograms and Snapshots'
+        if (verbose > 2) write(6,*) '  Producing groups for Seismograms and Snapshots'
 
         call check( nf90_def_grp(ncid_out, "Seismograms", ncid_recout) )
         call check( nf90_def_grp(ncid_out, "Snapshots", ncid_snapout) )
         call check( nf90_def_grp(ncid_out, "Surface", ncid_surfout) )
         call check( nf90_def_grp(ncid_out, "Mesh", ncid_meshout) )
-        if (verbose > 1) write(6,*) '  Seismograms group has ID', ncid_recout
-        if (verbose > 1) write(6,*) '  Snapshots group has ID', ncid_snapout
-        if (verbose > 1) write(6,*) '  Surface group has ID', ncid_surfout
-        if (verbose > 1) write(6,*) '  Mesh group has ID', ncid_meshout
+        if (verbose > 2) write(6,*) '  Seismograms group has ID', ncid_recout
+        if (verbose > 2) write(6,*) '  Snapshots group has ID', ncid_snapout
+        if (verbose > 2) write(6,*) '  Surface group has ID', ncid_surfout
+        if (verbose > 2) write(6,*) '  Mesh group has ID', ncid_meshout
         
-        if (verbose > 1) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
+        if (verbose > 2) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
 
-        if (verbose > 1) write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
+        if (verbose > 2) write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
 110     format(' Dimension ', A20, ' with length ', I8, ' and ID', I6, ' created.') 
         call check( nf90_def_dim(ncid_out, "seis_timesteps", nseismo, nc_times_dimid) )
-        if (verbose > 1) write(6,110) "seis_timesteps", nseismo, nc_times_dimid 
+        if (verbose > 2) write(6,110) "seis_timesteps", nseismo, nc_times_dimid 
 
         call check( nf90_def_dim(ncid_out, "sim_timesteps", niter, nc_iter_dimid) )
-        if (verbose > 1) write(6,110) "sim_timesteps", niter, nc_iter_dimid 
+        if (verbose > 2) write(6,110) "sim_timesteps", niter, nc_iter_dimid 
 
         call check( nf90_def_dim(ncid_recout, "receivers", nrec, nc_rec_dimid) )
-        if (verbose > 1) write(6,110) "receivers", nrec, nc_rec_dimid
+        if (verbose > 2) write(6,110) "receivers", nrec, nc_rec_dimid
 
         call check( nf90_def_dim(ncid_out, "components", 3, nc_comp_dimid) )
-        if (verbose > 1) write(6,110) "components", 3, nc_comp_dimid
+        if (verbose > 2) write(6,110) "components", 3, nc_comp_dimid
 
         call check( nf90_def_dim(ncid_recout, "recnamlength", 40, nc_recnam_dimid) ) 
-        if (verbose > 1) write(6,110) "recnamlength", 40, nc_recnam_dimid
+        if (verbose > 2) write(6,110) "recnamlength", 40, nc_recnam_dimid
 
-        if (verbose > 1) write(6,*) 'NetCDF dimensions defined'
+        if (verbose > 2) write(6,*) 'NetCDF dimensions defined'
 
-        if (verbose > 1) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
+        if (verbose > 2) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
         call flush(6)
 
         call check( nf90_def_var(ncid=ncid_recout, name="displacement", xtype=NF90_FLOAT,&
@@ -1274,7 +1274,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         
         if (dump_wavefields) then
             ! Wavefields group of output file N.B: Snapshots for kernel calculation
-            if (verbose > 1) write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file', &
+            if (verbose > 2) write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file', &
                                         '  awaiting', nstrain, ' snapshots'
 
             call check( nf90_def_dim( ncid   = ncid_out, &
@@ -1470,27 +1470,27 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                          chunksizes = [npoints_global, 1] ))
                 call check( nf90_def_var_fill(ncid=ncid_snapout, varid=nc_field_varid(ivar), &
                                               no_fill=1, fill=0) )
-                if (verbose > 1) write(6,"(' Netcdf variable ', A16,' with ID ', I3, ' and length', &
+                if (verbose > 2) write(6,"(' Netcdf variable ', A16,' with ID ', I3, ' and length', &
                         & I8, ' created.')") &
                           trim(nc_varnamelist(ivar)), nc_field_varid(ivar), npoints_global
             end do
 
             ! Surface group in output file
-            if (verbose > 1) write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
+            if (verbose > 2) write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
             call check( nf90_put_att( ncid   = ncid_surfout, &
                                       name   = 'nstrain', &
                                       varid  = NF90_GLOBAL, &
                                       values = nstrain) )
             call check( nf90_def_dim( ncid_surfout, "straincomponents", len=6, &
                                       dimid=nc_strcomp_dimid) )
-            if (verbose > 1) write(6,110) "straincomponents", 6, nc_strcomp_dimid
+            if (verbose > 2) write(6,110) "straincomponents", 6, nc_strcomp_dimid
             
             call check( nf90_def_dim( ncid_surfout, "surf_elems", maxind_glob, nc_surf_dimid) )     
             call check( nf90_put_att( ncid   = ncid_surfout, &
                                       name   = 'nsurfelem', &
                                       varid  = NF90_GLOBAL, &
                                       values = maxind_glob) )
-            if (verbose > 1) write(6,110) "surf_elems", maxind_glob, nc_surf_dimid
+            if (verbose > 2) write(6,110) "surf_elems", maxind_glob, nc_surf_dimid
 
             call check( nf90_def_var( ncid_surfout, "elem_theta", NF90_FLOAT, &
                                       [nc_surf_dimid ], &
@@ -1530,7 +1530,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end if
 
         
-        if (verbose > 1) write(6,'(a/)') 'NetCDF variables defined'
+        if (verbose > 2) write(6,'(a/)') 'NetCDF variables defined'
         ! Leave definition mode
         call check( nf90_enddef(ncid_out))
 
@@ -1616,7 +1616,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         surfdumpvar_strain = 0.0
         surfdumpvar_srcdisp = 0.0
 
-        if (mynum == 0 .and. verbose > 1) then
+        if (mynum == 0 .and. verbose > 2) then
             write(6,*)  'Allocating NetCDF buffer variables'
             write(6,90) 'recdumpvar', real(size(recdumpvar))/262144.
             write(6,90) 'surfdumpvar_disp', real(size(surfdumpvar_disp))/262144.
@@ -1731,7 +1731,7 @@ subroutine nc_finish_prepare
     do iproc = 0, nproc
         call barrier
         if (iproc == mynum .and. (npoints > 0 .or. maxind > 0 .or. num_rec > 0)) then
-            if (verbose>1) then
+            if (verbose > 1) then
                write(6,*) '  Processor ', iproc, ' opened the output file and will dump '
                write(6,*) '  his part of the mesh.'
             end if
@@ -2059,6 +2059,7 @@ subroutine nc_end_output
     use data_io,   only: dump_xdmf
     integer           :: iproc
 
+    call flush(6)
 #ifndef upnc
     call barrier
     do iproc=0, nproc-1
@@ -2074,7 +2075,7 @@ subroutine nc_end_output
     end do
 #else
     if (num_rec > 0) then 
-        if (verbose > 1) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
+        if (verbose > 2) write(6,"('   Proc ', I3, ' will dump receiver seismograms')") mynum
         call nc_dump_rec_to_disk()
     endif
 #endif
@@ -2297,7 +2298,7 @@ subroutine getvarid(ncid, name, varid)
     if (status.ne.NF90_NOERR) then
         write(6,100) mynum, trim(name), ncid
         stop
-    elseif (verbose > 1) then
+    elseif (verbose > 2) then
         write(6,101) trim(name), ncid, varid
         call flush(6)
     end if
@@ -2323,7 +2324,7 @@ subroutine getgrpid(ncid, name, grpid)
     if (status.ne.NF90_NOERR) then
         write(6,100) mynum, trim(name), ncid
         stop
-    elseif (verbose>1) then
+    elseif (verbose > 2) then
         write(6,101) trim(name), ncid, grpid
         call flush(6)
     end if
@@ -2400,7 +2401,7 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
        print *, trim(nf90_strerror(status))
        stop
    
-   elseif (verbose>1) then
+   elseif (verbose > 2) then
        write(*,200) mynum, real(count) * 4. / 1048576., ncid, varid
        call flush(6)
    end if
@@ -2504,7 +2505,7 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
 
        stop
    
-   elseif (verbose>1) then
+   elseif (verbose > 2) then
        ! Everything okay
        write(*,200) mynum, real(product(count)) * 4. / 1048576., ncid, varid
        call flush(6)
@@ -2609,7 +2610,7 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
 
        stop
    
-   elseif (verbose>1) then
+   elseif (verbose > 2) then
        ! Everything okay
        write(6,200) mynum, real(product(count)) * 4. / 1048576., ncid, varid
        call flush(6)
