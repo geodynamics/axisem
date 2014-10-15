@@ -567,12 +567,9 @@ subroutine nc_dump_rec(recfield, iseismo)
     use data_mesh, only: num_rec
     real(sp), intent(in), dimension(3,num_rec) :: recfield
     integer, intent(in)                        :: iseismo
-#ifdef unc
-   
-    !recdumpvar(iseismo,:,:) = 0.0
-    !where(abs(recfield)>epsi) recdumpvar(iseismo,:,:) = recfield(:,:)
-    recdumpvar(iseismo,:,:) = recfield(:,:)
 
+#ifdef unc
+    recdumpvar(iseismo,:,:) = recfield(:,:)
 #endif
 end subroutine
 !-----------------------------------------------------------------------------------------
@@ -2034,6 +2031,8 @@ subroutine nc_finish_prepare
             if (verbose > 1) &
                 write(6,"('  Proc ', I3, ' dumped its mesh and is ready to rupture')") &
                     mynum
+
+! in case of parallel IO, we keep it open on all procs
 #ifndef upnc
             call check( nf90_close( ncid_out))
         end if !mynum.eq.iproc

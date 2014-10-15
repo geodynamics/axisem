@@ -19,10 +19,9 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> Various subroutines for seismogram preparation and dumping
-!========================
 module seismograms
-!========================
 
   use global_parameters
   use data_io
@@ -35,7 +34,7 @@ module seismograms
 
 contains
   
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prepare_seismograms
 
   use utlity
@@ -316,9 +315,9 @@ subroutine prepare_seismograms
   endif
 
 end subroutine prepare_seismograms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Read colatitudes [deg] from a file receivers.dat and locate closest grid 
 !! point for seismograms, output grid point locations in 
 !! receiver_pts.dat<PROCID>
@@ -719,9 +718,9 @@ subroutine prepare_from_recfile_seis
   endif
 
 end subroutine prepare_from_recfile_seis
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Open files for generic checks: hypocenter,epicenter,equator,antipode.
 !! File output names: seis<LOCATION>{1,2,3}.dat
 !!                    where 1=s-component, 2=phi-component, 3=z-component.
@@ -771,9 +770,9 @@ subroutine open_hyp_epi_equ_anti
  endif ! if maxind > 0
 
 end subroutine open_hyp_epi_equ_anti
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Generic seismograms for quick checks: hypocenter,epicenter,equator,antipode.
 !! Not writing the transverse component for monopole sources.
 !! See open_hyp_epi_equ_anti for component explanation.
@@ -851,9 +850,9 @@ subroutine compute_hyp_epi_equ_anti(t,disp)
   endif ! if maxind > 0
 
 end subroutine compute_hyp_epi_equ_anti
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine compute_recfile_seis_bare(disp)
 
   use data_source, only : src_type
@@ -891,16 +890,16 @@ subroutine compute_recfile_seis_bare(disp)
   endif !src_type(1)
 
 end subroutine compute_recfile_seis_bare
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !! Calculate displacement at receiver locations and pass to nc_dump_rec
 subroutine nc_compute_recfile_seis_bare(disp, iseismo) 
 
   use data_source, only : src_type
   use nc_routines, only : nc_dump_rec
   use data_mesh,   only : recfile_el, num_rec
-  implicit none
+
   real(kind=realkind), intent(in)  :: disp(0:,0:,:,:)
   integer,             intent(in)  :: iseismo
 
@@ -908,66 +907,34 @@ subroutine nc_compute_recfile_seis_bare(disp, iseismo)
   integer                          :: i
 
 
-  if (src_type(1)=='monopole') then
-     do i=1,num_rec
-          disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-          disp_rec(2,i)= 0.0 
-          disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+  if (src_type(1) == 'monopole') then
+     do i=1, num_rec
+          disp_rec(1,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1))
+          disp_rec(2,i) = 0
+          disp_rec(3,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3))  
      enddo
-  elseif (src_type(1)=='dipole') then
-     do i=1,num_rec
-          disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) &
-                             + disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-          disp_rec(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) &
-                             - disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-          disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+  elseif (src_type(1) == 'dipole') then
+     do i=1, num_rec
+          disp_rec(1,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1) &
+                             + disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2))
+          disp_rec(2,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1) &
+                             - disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2))
+          disp_rec(3,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3))
      enddo
-  elseif (src_type(1)=='quadpole') then
-     do i=1,num_rec
-          disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-          disp_rec(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-          disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+  elseif (src_type(1) == 'quadpole') then
+     do i=1, num_rec
+          disp_rec(1,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1))
+          disp_rec(2,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2))
+          disp_rec(3,i) = real(disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3))  
      enddo
   end if !src_type(1)
 
   call nc_dump_rec(disp_rec, iseismo) 
 
 end subroutine nc_compute_recfile_seis_bare
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
-!subroutine compute_recfile_cmb(velo,grad_sol)
-!
-!  use data_source, only : src_type
-!  use data_mesh
-!  
-!  real(kind=realkind), intent(in) :: velo(0:,0:,:,:)
-!  real(kind=realkind)             :: grad_sol(0:,0:,:,:)
-!  integer :: i
-!
-!  if (src_type(1)=='monopole') then
-!  do i=1,num_cmb
-!     write(200000+i,*)velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1),&
-!                      velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),3)
-!
-!     write(250000+i,*)grad_sol(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1) 
-!  enddo
-!
-!  else
-!     do i=1,num_cmb
-!     write(200000+i,*)velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1),&
-!                      velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),2),&
-!                      velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),3)  
-!
-!     write(250000+i,*)grad_sol(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1) 
-!
-!     enddo
-!  endif
-!
-!end subroutine compute_recfile_cmb
-!=============================================================================
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Save one displacement and velocity trace for each element on the surface 
 !! which are both needed for kernels (du and v0 inside the cross-correlation)
 subroutine compute_surfelem(disp, velo)
@@ -1030,9 +997,9 @@ subroutine compute_surfelem(disp, velo)
   end if !netcdf
 
 end subroutine compute_surfelem
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Save one displacement and velocity trace for each element on the surface 
 !! which are both needed for kernels (du and v0 inside the cross-correlation)
 !!
@@ -1134,9 +1101,8 @@ subroutine compute_surfelem_strain(u)
   end if
 
 end subroutine compute_surfelem_strain
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!========================
 end module seismograms
-!========================
+!=========================================================================================
  
