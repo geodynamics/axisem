@@ -41,9 +41,6 @@ module data_io
 
   logical           :: need_fluid_displ
   real(kind=dp)     :: strain_samp
-  !integer           :: iseismo  !< current seismogram sample
-  !integer           :: istrain  !< current kernel wavefield sample
-  !integer           :: isnap    !< current wavefield sample for movies
   integer           :: nseismo  !< Number of seismogram samples
   integer           :: nstrain  !< Number of wavefield dumps for kernels
   integer           :: nsnap    !< Number of wavefield snapshots for movies

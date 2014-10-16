@@ -26,6 +26,7 @@ program axisem
   use data_proc,      only : nproc, mynum, appnproc, appmynum, lpr, procstrg
   use data_io,        only : dump_xdmf, use_netcdf, verbose
   use nc_routines,    only : nc_end_output, nc_finish_prepare
+  use nc_snapshots,   only : nc_close_snapfile
   use data_source,    only : isim,num_simul
   use data_mesh,      only : do_mesh_tests
   use parameters,     only : open_local_output_file, readin_parameters, &
@@ -101,7 +102,8 @@ program axisem
   
   if (dump_xdmf) then
      if (lpr .and. verbose >= 1) write(6,*)'MAIN: Finishing xdmf xml file...'
-     call finish_xdmf_xml() ! meshes_io
+     call finish_xdmf_xml ! meshes_io
+     call nc_close_snapfile ! nc_snapshots
   endif
 
   call end_clock ! clocks

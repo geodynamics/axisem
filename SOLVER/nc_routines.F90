@@ -1940,7 +1940,6 @@ subroutine nc_end_output
 #ifdef enable_netcdf
     use data_mesh, only: num_rec
     use data_io,   only: dump_xdmf
-    use nc_snapshots
     integer           :: iproc
 
     call flush(6)
@@ -1963,9 +1962,6 @@ subroutine nc_end_output
         call nc_dump_rec_to_disk()
     endif
 #endif
-    if (dump_xdmf) then
-        call nc_close_snapfile
-    end if
 
     !Set the finalized flag to true in the output file
 #ifndef enable_parallel_netcdf
