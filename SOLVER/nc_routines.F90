@@ -23,7 +23,7 @@
 !> Contains all the routines for NetCDF handling.
 module nc_routines
 
-#ifdef unc
+#ifdef enable_netcdf
     use netcdf
 #endif
     use data_io,    only : verbose, deflate_level
@@ -244,7 +244,7 @@ subroutine nc_dump_field_solid(f, varname)
     real(kind=realkind), intent(in)   :: f(:)     !< Data to dump, size should be npts_sol
     character(len=*), intent(in)      :: varname  !< Internal name of data to dump. 
     !! Is used to identify the NetCDF Variable in question
-#ifdef unc
+#ifdef enable_netcdf
     integer                           :: ivar
 
     do ivar=1, nvar
@@ -271,7 +271,7 @@ subroutine nc_dump_field_fluid(f, varname)
     real(kind=realkind), intent(in)   :: f(:)  !< Data to dump, size should be npts_flu
     character(len=*), intent(in)      :: varname  !< Internal name of data to dump. 
     !! Is used to identify the NetCDF Variable in question
-#ifdef unc
+#ifdef enable_netcdf
     integer                           :: ivar
 
     do ivar=1, nvar
@@ -313,7 +313,7 @@ subroutine nc_dump_strain(isnap_loc)
     end interface
 
     integer, intent(in) :: isnap_loc
-#ifdef unc
+#ifdef enable_netcdf
     integer             :: iproc
     real                :: tickl, tackl
     
@@ -321,7 +321,7 @@ subroutine nc_dump_strain(isnap_loc)
     if (isnap_loc == 0) return
 
     if (dumpposition(mod(isnap_loc, dumpstepsnap))) then
-#ifndef upnc
+#ifndef enable_parallel_netcdf
 
         ! wait for other processes to finish writing, measure waiting time and
         ! issue warning in case waiting longer then .5 sec
@@ -371,7 +371,7 @@ subroutine nc_dump_strain(isnap_loc)
             copy_surfdumpvar_velo     = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)
             copy_surfdumpvar_srcdisp  = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind) 
 
-#ifndef upnc
+#ifndef enable_parallel_netcdf
             call c_spawn_dumpthread(stepstodump)
             stepstodump = 0
         end if
@@ -386,7 +386,7 @@ subroutine nc_dump_strain(isnap_loc)
     ! compute anymore
     ! Make sure, nobody is accessing the output file anymore
     if (isnap_loc == nstrain) then 
-#ifndef upnc
+#ifndef enable_parallel_netcdf
         do iproc=0, nproc-1
             if (iproc == mynum) then
                 call c_wait_for_io()
@@ -413,7 +413,7 @@ subroutine nc_dump_strain(isnap_loc)
 
                 call nc_dump_strain_to_disk()
                 if (verbose > 1) write(6,*) mynum, 'finished dumping strain'
-#ifndef upnc
+#ifndef enable_parallel_netcdf
             end if
             call barrier
         end do
@@ -426,7 +426,7 @@ end subroutine nc_dump_strain
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
-#ifdef unc
+#ifdef enable_netcdf
 
     use data_io
     use data_source,       only: src_type
@@ -440,7 +440,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     dumpsize = 0
     call cpu_time(tick)
 
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
 #else
@@ -497,7 +497,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     call check( nf90_put_att(ncid_out, NF90_GLOBAL, 'percent completed', &
                              isnap_loc*100/nstrain) )
 
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     call check( nf90_close(ncid_out) ) 
 #endif
     call cpu_time(tack)
@@ -524,7 +524,7 @@ subroutine nc_dump_stf(stf)
     use data_io,  only                       : nseismo, nstrain, dump_wavefields
     use data_time, only                      : seis_it, strain_it, niter, deltat
     real(kind=sp), intent(in), dimension(:) :: stf   
-#ifdef unc
+#ifdef enable_netcdf
     integer                                 :: it_s, it_d, i
 
     allocate(stf_dumpvar(niter))
@@ -585,7 +585,7 @@ subroutine nc_dump_rec(recfield, iseismo)
     real(sp), intent(in), dimension(3,num_rec) :: recfield
     integer, intent(in)                        :: iseismo
 
-#ifdef unc
+#ifdef enable_netcdf
     recdumpvar(iseismo,:,:) = recfield(:,:)
 #endif
 end subroutine
@@ -593,7 +593,7 @@ end subroutine
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_rec_to_disk
-#ifdef unc
+#ifdef enable_netcdf
     use data_mesh, only: loc2globrec, num_rec
     use data_io,   only: datapath, lfdata, nseismo
 
@@ -602,7 +602,7 @@ subroutine nc_dump_rec_to_disk
 
     call cpu_time(tick)
 
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
 #endif
@@ -620,7 +620,7 @@ subroutine nc_dump_rec_to_disk
     end do
 
     dumpsize = nseismo * 3 * num_rec
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     call check( nf90_close(ncid=ncid_out))
 #endif
     call cpu_time(tack)
@@ -637,8 +637,8 @@ end subroutine nc_dump_rec_to_disk
 subroutine nc_rec_checkpoint
     use data_mesh, only: loc2globrec, num_rec
 
-#ifdef unc
-#ifndef upnc
+#ifdef enable_netcdf
+#ifndef enable_parallel_netcdf
 
     interface
         subroutine c_wait_for_io() bind(c, name='c_wait_for_io')
@@ -661,7 +661,7 @@ subroutine nc_rec_checkpoint
                 if (verbose > 2) &
                     write(6,"('   Proc ', I3, ' has no receivers and just waits for the others')") mynum
             end if
-#ifndef upnc
+#ifndef enable_parallel_netcdf
         end if
         
     end do
@@ -677,7 +677,7 @@ subroutine nc_dump_surface(surffield, disporvelo)
 
     real(kind=realkind), intent(in), dimension(:,:) :: surffield
     character(len=4), intent(in)                    :: disporvelo
-#ifdef unc
+#ifdef enable_netcdf
    
     select case(disporvelo)
         case('disp')
@@ -702,7 +702,7 @@ subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
     real(sp), intent(in) :: scoord_sol(:,:,:)
     real(sp), intent(in) :: zcoord_sol(size(scoord_sol,1), size(scoord_sol,2), &
                                        size(scoord_sol,3))
-#ifdef unc
+#ifdef enable_netcdf
 
     npts_sol = size(scoord_sol)
 
@@ -725,7 +725,7 @@ subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
     real(sp), intent(in) :: scoord_flu(:,:,:)
     real(sp), intent(in) :: zcoord_flu(size(scoord_flu,1), size(scoord_flu,2), &
                                        size(scoord_flu,3))
-#ifdef unc
+#ifdef enable_netcdf
 
     npts_flu = size(scoord_flu)
 
@@ -741,7 +741,7 @@ subroutine nc_dump_mesh_kwf(coords, nsol, nflu)
 
     real(sp), intent(in) :: coords(:,:)
     integer, intent(in)  :: nsol, nflu
-#ifdef unc
+#ifdef enable_netcdf
 
     npts_sol = nsol
     npts_flu = nflu
@@ -768,7 +768,7 @@ subroutine nc_dump_mesh_mp_kwf(coords, nel)
 
     real(sp), intent(in) :: coords(:,:)
     integer, intent(in)  :: nel
-#ifdef unc
+#ifdef enable_netcdf
 
     if (size(coords, 1) /= nel) then
        write(6,*) 'ERROR: inconsistent element numbers'
@@ -910,7 +910,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     use data_source, only: src_type, t_0
     use data_time,   only: deltat, niter
 
-#ifdef upnc
+#ifdef enable_parallel_netcdf
     use mpi
 #endif
 
@@ -920,7 +920,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     real(dp), dimension(nrec),intent(in) :: rec_th_req        !< Requested receiver theta
     real(dp), dimension(nrec),intent(in) :: rec_ph            !< Receiver phi
     integer, dimension(nrec),intent(in)  :: rec_proc          !< Receiver processor
-#ifdef unc
+#ifdef enable_netcdf
     real(dp), dimension(nstrain)         :: time_strain
     real(dp), dimension(nseismo)         :: time_seis
     character(len=16), allocatable       :: varname(:)
@@ -965,7 +965,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     call barrier
 
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     if (nc_dumpbuffersize < nproc) then
         write(6,*) 'ERROR: NETCDF_DUMP_BUFFER needs to be larger then the number of processors'
         stop
@@ -1003,7 +1003,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     nc_fnam = datapath(1:lfdata)//"/axisem_output.nc4"
 
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     if (mynum == 0) then
         if (verbose > 1) write (6,*) ' Preparing netcdf file for ', nproc, ' processors'
         nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
@@ -1192,7 +1192,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
 
 ! in case of parallel IO, we all ranks do the definition
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     if (mynum == 0) then    
 #endif
         if (verbose > 2) write(6,*) '  Producing groups for Seismograms and Snapshots'
@@ -1540,7 +1540,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_enddef(ncid_out))
 
 ! in case of parallel IO, only the first rank writes
-#ifdef upnc
+#ifdef enable_parallel_netcdf
     if (mynum == 0) then    
 #endif
         if (verbose > 1) write(6,*) 'Writing station info into NetCDF file...'
@@ -1646,7 +1646,7 @@ end subroutine nc_define_outputfile
 subroutine nc_write_att_char(attribute_value, attribute_name)
     character(len=*), intent(in)    :: attribute_name, attribute_value
 
-#ifdef unc
+#ifdef enable_netcdf
     call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 #endif
 end subroutine nc_write_att_char
@@ -1658,7 +1658,7 @@ subroutine nc_write_att_real(attribute_value, attribute_name)
   character(len=*),  intent(in)      :: attribute_name
   real(sp), intent(in)               :: attribute_value
 
-#ifdef unc
+#ifdef enable_netcdf
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 #endif
 end subroutine nc_write_att_real
@@ -1670,7 +1670,7 @@ subroutine nc_write_att_dble(attribute_value, attribute_name)
   character(len=*),  intent(in)      :: attribute_name
   real(dp), intent(in)               :: attribute_value
 
-#ifdef unc
+#ifdef enable_netcdf
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 #endif
 end subroutine nc_write_att_dble
@@ -1682,7 +1682,7 @@ subroutine nc_write_att_int(attribute_value, attribute_name)
   character(len=*),  intent(in)     :: attribute_name
   integer, intent(in)               :: attribute_value
 
-#ifdef unc
+#ifdef enable_netcdf
   call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
 #endif
 end subroutine nc_write_att_int
@@ -1691,7 +1691,7 @@ end subroutine nc_write_att_int
 !-----------------------------------------------------------------------------------------
 !> Open the NetCDF output file, check for variable IDs and dump meshes.
 subroutine nc_finish_prepare
-#ifdef unc
+#ifdef enable_netcdf
     use data_io,   only  : datapath, lfdata, dump_wavefields, dump_type
     use data_mesh, only  : maxind, surfcoord, ind_first, ind_last, &
                            midpoint_mesh_kwf, sem_mesh_kwf, fem_mesh_kwf, nelem_kwf, &
@@ -1722,7 +1722,7 @@ subroutine nc_finish_prepare
     integer             :: nc_mesh_glj_varid
 
 ! in case of parallel IO, we keep it open on all procs
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     if (mynum == 0) then
         call check(nf90_close(ncid_out))
         if (verbose > 1) then
@@ -1801,7 +1801,7 @@ subroutine nc_finish_prepare
 
                 print '(A,I5,A)', '   ', iproc, ': inquired variable IDs'
 
-#ifdef upnc
+#ifdef enable_parallel_netcdf
                 ! enable collective IO in case of parallel IO
                 do ivar=1, nvar/2
                    call check(nf90_var_par_access(ncid_snapout, nc_field_varid(ivar),    &
@@ -2048,7 +2048,7 @@ subroutine nc_finish_prepare
                     mynum
 
 ! in case of parallel IO, we keep it open on all procs
-#ifndef upnc
+#ifndef enable_parallel_netcdf
             call check( nf90_close( ncid_out))
         end if !mynum.eq.iproc
     end do
@@ -2062,13 +2062,13 @@ end subroutine nc_finish_prepare
 !> Final dumps to netCDF file. In the moment contains only dump of 
 !! receiver seismograms.
 subroutine nc_end_output
-#ifdef unc
+#ifdef enable_netcdf
     use data_mesh, only: num_rec
     use data_io,   only: dump_xdmf
     integer           :: iproc
 
     call flush(6)
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     call barrier
     do iproc=0, nproc-1
         if (iproc == mynum) then
@@ -2092,7 +2092,7 @@ subroutine nc_end_output
     end if
 
     !Set the finalized flag to true in the output file
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     if(mynum.eq.0) &
 #endif
         call nc_finalize()
@@ -2104,10 +2104,10 @@ end subroutine nc_end_output
 !-----------------------------------------------------------------------------------------
 subroutine nc_finalize
 !< Set the finalized flag to true in the output file
-#ifdef unc
+#ifdef enable_netcdf
     use data_io,      only: datapath, lfdata
 
-#ifndef upnc
+#ifndef enable_parallel_netcdf
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
 #endif
@@ -2129,7 +2129,7 @@ subroutine nc_make_snapfile
     use data_io,      only: datapath, lfdata, nsnap
     use data_source,  only: src_type
 
-#ifdef unc
+#ifdef enable_netcdf
     integer              :: nmode, nc_snappoint_dimid, nc_snapelem_dimid, nc_snapdim_dimid
     integer              :: nc_snaptime_dimid, nc_snapconnec_dimid
     character(len=120)   :: fname
@@ -2212,7 +2212,7 @@ subroutine nc_dump_snapshot(u, straintrace, curlinplane, isnap)
     real(kind=realkind), dimension(1,npoint_plot), intent(in)  :: curlinplane
     integer,                                       intent(in)  :: isnap
 
-#ifdef unc
+#ifdef enable_netcdf
     if (src_type(1) == 'monopole') then
        call putvar_real3d(ncid   = ncid_out_snap, &
                           varid  = nc_snap_disp_varid, &
@@ -2267,7 +2267,7 @@ subroutine nc_dump_snap_points(points)
     use data_mesh, only: npoint_plot
     real(sp), dimension(2,npoint_plot), intent(in)       :: points
 
-#ifdef unc
+#ifdef enable_netcdf
     call check(nf90_put_var(ncid   = ncid_out_snap, &
                             varid  = nc_snap_point_varid, &
                             count  = [2, npoint_plot], &
@@ -2283,7 +2283,7 @@ subroutine nc_dump_snap_grid(grid)
     use data_mesh, only: nelem_plot
     integer, dimension(4, nelem_plot), intent(in)       :: grid 
 
-#ifdef unc
+#ifdef enable_netcdf
     call check(nf90_put_var(ncid   = ncid_out_snap, &
                             varid  = nc_snap_grid_varid, &
                             count  = [4, nelem_plot], &
@@ -2297,7 +2297,7 @@ subroutine getvarid(ncid, name, varid)
     integer, intent(in)          :: ncid
     character(len=*), intent(in) :: name
     integer, intent(out)         :: varid
-#ifdef unc
+#ifdef enable_netcdf
     integer                      :: status
 
     status = nf90_inq_varid( ncid  = ncid, &
@@ -2323,7 +2323,7 @@ subroutine getgrpid(ncid, name, grpid)
     integer, intent(in)          :: ncid
     character(len=*), intent(in) :: name
     integer, intent(out)         :: grpid
-#ifdef unc
+#ifdef enable_netcdf
     integer                      :: status
 
     status = nf90_inq_ncid( ncid     = ncid, &
@@ -2350,7 +2350,7 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
    integer, intent(in)          :: ncid, varid, start, count
    real, intent(in)             :: values(:)
 
-#ifdef unc
+#ifdef enable_netcdf
    integer                      :: xtype, ndims, status, dimsize
    integer                      :: dimid(10)
    character(len=nf90_max_name) :: varname, dimname
@@ -2439,7 +2439,7 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
    integer, intent(in)          :: start(2), count(2)
    real, intent(in)             :: values(:,:)
 
-#ifdef unc
+#ifdef enable_netcdf
    integer                      :: xtype, ndims, status, dimsize, idim
    integer                      :: dimid(10)
    character(len=nf90_max_name) :: varname, dimname
@@ -2544,7 +2544,7 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
    integer, intent(in)          :: start(3), count(3)
    real, intent(in)             :: values(:,:,:)
 
-#ifdef unc
+#ifdef enable_netcdf
    integer                      :: xtype, ndims, status, dimsize, idim
    integer                      :: dimid(10)
    character(len=nf90_max_name) :: varname, dimname
@@ -2646,7 +2646,7 @@ end subroutine putvar_real3d
 !> Translates NetCDF error code into readable message
 subroutine check(status)
     integer, intent ( in) :: status !< Error code
-#ifdef unc
+#ifdef enable_netcdf
     if (status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
         call abort()

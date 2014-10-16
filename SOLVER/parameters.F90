@@ -735,7 +735,7 @@ subroutine check_basic_parameters
   errmsg = 'MESHNAME is not defined in input file inparam_basic'
   call pcheck(trim(meshname) == 'undefined', errmsg)
 
-#ifndef unc
+#ifndef enable_netcdf
   errmsg = 'trying to use netcdf IO but axisem was compiled without netcdf'
   call pcheck(use_netcdf, errmsg)
 #endif
