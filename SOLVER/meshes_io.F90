@@ -40,8 +40,6 @@ module meshes_io
   public :: dump_wavefields_mesh_1d
   public :: dump_glob_grid_midpoint
   public :: dump_xdmf_grid
-  !public :: dump_solid_grid
-  !public :: dump_fluid_grid
   public :: prepare_mesh_memoryvar_vtk
   public :: build_kwf_grid
   public :: dump_kwf_midpoint_xdmf
@@ -1101,77 +1099,6 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-!> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
-!! in the solid region only.
-!! Convention for order in the file: First the fluid, then the solid domain.
-!subroutine dump_solid_grid(ibeg,iend,jbeg,jend)
-!
-!  
-!  integer, intent(in) :: ibeg,iend,jbeg,jend 
-!  integer             :: iel, ipol,jpol
-!
-!  open(unit=2500+mynum,file=datapath(1:lfdata)//'/solid_grid_'&
-!                            //appmynum//'.dat')
-!  do iel=1,nel_solid
-!     do jpol=jbeg,jend
-!        do ipol=ibeg,iend
-!           write(2500+mynum,*)scoord(ipol,jpol,ielsolid(iel)), &
-!                              zcoord(ipol,jpol,ielsolid(iel))
-!        enddo
-!     enddo
-!  enddo
-!  close(2500+mynum)
-!
-!end subroutine dump_solid_grid
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-!> Dumps the mesh (s,z) [m] in ASCII format as needed to visualize snapshots 
-!! in the fluid region only, and additionally the constant factors preceding 
-!! the displacement in the fluid, namely rho^{-1} and (rho s)^{-1}.
-!! When reading the fluid wavefield, one therefore needs to multiply all 
-!! components with inv_rho_fluid and the phi component with one/scoord!
-!! Convention for order in the file: First the fluid, then the solid domain.
-!subroutine dump_fluid_grid(ibeg,iend,jbeg,jend)
-!
-!  use data_pointwise, only : inv_rho_fluid
-!  
-!  
-!  integer, intent(in) :: ibeg,iend,jbeg,jend
-!  integer             :: iel, ipol,jpol
-!  
-!  ! When reading the fluid wavefield, one needs to multiply all components 
-!  ! with inv_rho_fluid and the phi component with one/scoord!!
-!
-!  open(unit=2500+mynum,file=datapath(1:lfdata)//&
-!                            '/fluid_grid_'//appmynum//'.dat')
-!  open(unit=2600+mynum,file=datapath(1:lfdata)//&
-!                            '/inv_rho_scoord_fluid_flusnaps_'&
-!                            //appmynum//'.dat', STATUS="REPLACE")
-!  do iel=1,nel_fluid
-!     do jpol=jbeg,jend
-!        do ipol=ibeg,iend
-!           write(2500+mynum,*)scoord(ipol,jpol,ielfluid(iel)), &
-!                              zcoord(ipol,jpol,ielfluid(iel))
-!           if ( axis_fluid(iel) .and. ipol==0 ) then
-!              ! Axis s=0! write 1 instead of 1/s and then multiply 
-!              ! with the correct factor dsdchi, obtained by L'Hospital's rule 
-!              ! (see routine fluid_snapshot below).
-!              write(2600+mynum,*)inv_rho_fluid(ipol,jpol,iel),one
-!           else  
-!              write(2600+mynum,*)inv_rho_fluid(ipol,jpol,iel), &
-!                                 one/scoord(ipol,jpol,ielfluid(iel))
-!           endif
-!        enddo
-!     enddo
-!  enddo
-!  close(2500+mynum)
-!  close(2600+mynum)
-!
-!end subroutine dump_fluid_grid
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
 !> Dumps the mesh (s,z) [m] and related constant fields in binary format as 
 !! needed to compute waveform kernels from the strain and velocity fields. 
 !! The distinction between different dumping methods is honored here, 
@@ -1183,8 +1110,6 @@ end subroutine
 !! The latter choice is more memory- and CPU-efficient, but requires 
 !! significant post-processing AND dumping the entire SEM mesh. 
 !! See compute_strain in time_evol_wave.f90 for more info.
-!! 
-!! CURRENTLY HARDCODED TO dump_type=='fullfields'
 subroutine dump_wavefields_mesh_1d
 
   use data_mesh
