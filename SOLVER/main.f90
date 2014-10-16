@@ -18,10 +18,8 @@
 !    You should have received a copy of the GNU General Public License
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
-
-!===================
+!=========================================================================================
 program axisem 
-!===================
 
   use data_proc,      only : nproc, mynum, appnproc, appmynum, lpr, procstrg
   use data_io,        only : dump_xdmf, use_netcdf, verbose
@@ -113,17 +111,13 @@ program axisem
   if(lpr) write(6,*) '=========PROGRAM axisem FINISHED============='
   if (verbose > 1) write(69,*) '=========PROGRAM axisem FINISHED============='
 
-!=======================
 end program axisem
-!=======================
+!=========================================================================================
 
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine start_clock
-  !
   ! Driver routine to start the timing, using the clocks_mod module.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use data_time,  only : idcomm, iddump, idmpi, idmpiws, idmpiwf, idnbio, idold, &
                          idstiff, idanelts, idanelst
@@ -161,14 +155,11 @@ subroutine start_clock
   idnbio   = clock_id('Non Blocking IO red light')
 
 end subroutine start_clock
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine end_clock 
-  !
   ! Wapper routine to end timing and display clock informations.
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   use clocks_mod, only : clocks_exit
   use data_proc,  only : mynum
@@ -186,15 +177,12 @@ subroutine end_clock
   if (mynum==0) write(6,*)
 
 end subroutine end_clock
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine define_io_appendix(app,iproc)
-  !
   ! Defines the 4 digit character string appended to any 
   ! data or io file related to process myid. 
-  !
-  !-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
   implicit none
   integer, intent(in)           :: iproc
@@ -203,4 +191,4 @@ subroutine define_io_appendix(app,iproc)
   write(app,"(I4.4)") iproc
 
 end subroutine define_io_appendix
-!=============================================================================
+!-----------------------------------------------------------------------------------------
