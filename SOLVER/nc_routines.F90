@@ -1159,31 +1159,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_def_grp(ncid_out, "Snapshots", ncid_snapout) )
         call check( nf90_def_grp(ncid_out, "Surface", ncid_surfout) )
         call check( nf90_def_grp(ncid_out, "Mesh", ncid_meshout) )
-        if (verbose > 2) write(6,*) '  Seismograms group has ID', ncid_recout
-        if (verbose > 2) write(6,*) '  Snapshots group has ID', ncid_snapout
-        if (verbose > 2) write(6,*) '  Surface group has ID', ncid_surfout
-        if (verbose > 2) write(6,*) '  Mesh group has ID', ncid_meshout
         
         if (verbose > 2) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
 
-        if (verbose > 2) write(6,*) '  ''Seismograms'' group has ID ', ncid_recout
-110     format(' Dimension ', A20, ' with length ', I8, ' and ID', I6, ' created.') 
         call check( nf90_def_dim(ncid_out, "seis_timesteps", nseismo, nc_times_dimid) )
-        if (verbose > 2) write(6,110) "seis_timesteps", nseismo, nc_times_dimid 
-
         call check( nf90_def_dim(ncid_out, "sim_timesteps", niter, nc_iter_dimid) )
-        if (verbose > 2) write(6,110) "sim_timesteps", niter, nc_iter_dimid 
-
         call check( nf90_def_dim(ncid_recout, "receivers", nrec, nc_rec_dimid) )
-        if (verbose > 2) write(6,110) "receivers", nrec, nc_rec_dimid
-
         call check( nf90_def_dim(ncid_out, "components", 3, nc_comp_dimid) )
-        if (verbose > 2) write(6,110) "components", 3, nc_comp_dimid
-
         call check( nf90_def_dim(ncid_recout, "recnamlength", 40, nc_recnam_dimid) ) 
-        if (verbose > 2) write(6,110) "recnamlength", 40, nc_recnam_dimid
-
-        if (verbose > 2) write(6,*) 'NetCDF dimensions defined'
 
         if (verbose > 2) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
         call flush(6)
@@ -1197,30 +1180,22 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_put_att(ncid_recout, nc_disp_varid, '_FillValue', 0.0) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_seis", xtype=NF90_FLOAT,&
-                                 dimids=[nc_times_dimid], &
-                                 varid=nc_stf_seis_varid) )
+                                 dimids=[nc_times_dimid], varid=nc_stf_seis_varid) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_d_seis", xtype=NF90_FLOAT,&
-                                 dimids=[nc_times_dimid], &
-                                 varid=nc_stf_d_seis_varid) )
+                                 dimids=[nc_times_dimid], varid=nc_stf_d_seis_varid) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_iter", xtype=NF90_FLOAT,&
-                                 dimids=[nc_iter_dimid], &
-                                 varid=nc_stf_iter_varid) )
+                                 dimids=[nc_iter_dimid], varid=nc_stf_iter_varid) )
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_d_iter", xtype=NF90_FLOAT,&
-                                 dimids=[nc_iter_dimid], &
-                                 varid=nc_stf_d_iter_varid) )
+                                 dimids=[nc_iter_dimid], varid=nc_stf_d_iter_varid) )
         
         call check( nf90_def_var(ncid=ncid_recout, name="time", xtype=NF90_DOUBLE,&
-                                 dimids=[nc_times_dimid], &
-                                 varid=nc_time_varid) )
+                                 dimids=[nc_times_dimid], varid=nc_time_varid) )
 
-        call check( nf90_def_var(ncid   = ncid_recout,   &
-                                 name   = "phi",         &
-                                 xtype  = NF90_FLOAT,    &
-                                 dimids = [nc_rec_dimid],&
-                                 varid  = nc_ph_varid) )
+        call check( nf90_def_var(ncid=ncid_recout, name="phi", xtype=NF90_FLOAT,&
+                                 dimids=[nc_rec_dimid], varid=nc_ph_varid) )
         call check( nf90_def_var(ncid_recout, "theta_requested", NF90_FLOAT, &
                                  [nc_rec_dimid], nc_thr_varid) )
         call check( nf90_def_var(ncid_recout, "theta", NF90_FLOAT, &
@@ -1432,10 +1407,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                               varid   = nc_field_varid(ivar), &
                                               no_fill = 1, &
                                               fill    = 0) )
-
-                if (verbose > 2) write(6,"(' Netcdf variable ', A16,' with ID ', I3, ' and length', &
-                        & I8, ' created.')") &
-                          trim(nc_varnamelist(ivar)), nc_field_varid(ivar), npoints_global
             end do
 
             ! Surface group in output file
@@ -1446,18 +1417,15 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       values = nstrain) )
             call check( nf90_def_dim( ncid_surfout, "straincomponents", len=6, &
                                       dimid=nc_strcomp_dimid) )
-            if (verbose > 2) write(6,110) "straincomponents", 6, nc_strcomp_dimid
             
             call check( nf90_def_dim( ncid_surfout, "surf_elems", maxind_glob, nc_surf_dimid) )     
             call check( nf90_put_att( ncid   = ncid_surfout, &
                                       name   = 'nsurfelem', &
                                       varid  = NF90_GLOBAL, &
                                       values = maxind_glob) )
-            if (verbose > 2) write(6,110) "surf_elems", maxind_glob, nc_surf_dimid
 
             call check( nf90_def_var( ncid_surfout, "elem_theta", NF90_FLOAT, &
-                                      [nc_surf_dimid ], &
-                                      nc_surfelem_theta_varid) )
+                                      [nc_surf_dimid ], nc_surfelem_theta_varid) )
             call check( nf90_put_att(ncid_surfout, nc_surfelem_theta_varid, 'units', 'degrees'))
            
             call check( nf90_def_var( ncid_surfout, "displacement", NF90_FLOAT, &
@@ -1484,12 +1452,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                       ' ') )
 
             call check( nf90_def_var( ncid_surfout, "stf_dump", NF90_FLOAT, &
-                                      [nc_snap_dimid], &
-                                      nc_stf_dump_varid) )
+                                      [nc_snap_dimid], nc_stf_dump_varid) )
 
             call check( nf90_def_var( ncid_surfout, "stf_d_dump", NF90_FLOAT, &
-                                      [nc_snap_dimid], &
-                                      nc_stf_d_dump_varid) )
+                                      [nc_snap_dimid], nc_stf_d_dump_varid) )
         end if
 
         
