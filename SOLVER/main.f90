@@ -34,7 +34,7 @@ program axisem
   use time_evol_wave, only : prepare_waves, time_loop
   use commun,         only : pinit, pend, barrier
   use meshes_io,      only : finish_xdmf_xml
-  use data_io,        only : verbose
+  use data_io,        only : verbose, define_io_appendix
   use clocks_mod,     only : start_clock, end_clock
   
   implicit none
@@ -44,10 +44,9 @@ program axisem
   call read_inparam_basic_verbosity ! parameters
   if (lpr .and. verbose >= 1) write(6,'(/,a,/)') ' MAIN: Welcome to AxiSEM!'
 
-  call define_io_appendix(appmynum,mynum)
-  call define_io_appendix(appnproc,nproc)
+  call define_io_appendix(appmynum, mynum)
+  call define_io_appendix(appnproc, nproc)
   
-  !call get_mesh_params !Get very basic mesh params, including pol. order, needed later
   call open_local_output_file ! parameters, open file for processor-specific screen output 
   call start_clock !clocks
 
@@ -112,18 +111,3 @@ program axisem
 
 end program axisem
 !=========================================================================================
-
-
-!-----------------------------------------------------------------------------------------
-subroutine define_io_appendix(app, iproc)
-  ! Defines the 4 digit character string appended to any 
-  ! data or io file related to process myid. 
-
-  implicit none
-  integer, intent(in)           :: iproc
-  character(len=4), intent(out) :: app
-  
-  write(app,"(I4.4)") iproc
-
-end subroutine define_io_appendix
-!-----------------------------------------------------------------------------------------

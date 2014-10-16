@@ -76,5 +76,21 @@ module data_io
   character(len=80), dimension(:), allocatable :: fname_rec_seis
   character(len=80), dimension(:), allocatable :: fname_rec_velo
 
+contains
+
+!-----------------------------------------------------------------------------------------
+subroutine define_io_appendix(app, iproc)
+  ! Defines the 4 digit character string appended to any 
+  ! data or io file related to process myid. 
+
+  implicit none
+  integer, intent(in)           :: iproc
+  character(len=4), intent(out) :: app
+  
+  write(app,"(I4.4)") iproc
+
+end subroutine define_io_appendix
+!-----------------------------------------------------------------------------------------
+
 end module data_io
 !=========================================================================================

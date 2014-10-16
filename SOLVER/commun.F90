@@ -318,8 +318,8 @@ end subroutine assembmass_sum_solid
 subroutine assembmass_sum_fluid(f1,res)
 
   use data_mesh,   only: igloc_fluid
-  use data_mesh,        only: gvec_fluid
-  use data_mesh,        only: gvec_solid, npol, nel_fluid
+  use data_mesh,   only: gvec_fluid
+  use data_mesh,   only: gvec_solid, npol, nel_fluid
   
   real(kind=realkind), intent(in)   :: f1(0:,0:,:)
   real(kind=dp)   , intent(out)     :: res
@@ -350,8 +350,9 @@ end subroutine assembmass_sum_fluid
 !-----------------------------------------------------------------------------------------
 subroutine pinit
 
-  integer ioerr, nproc_mesh
-  character(len=20) dbname
+  use data_io, only: define_io_appendix
+  integer           :: ioerr, nproc_mesh
+  character(len=20) :: dbname
  
   ! Get mesh number of processors
 
