@@ -355,7 +355,7 @@ end subroutine
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
   
-  use nc_routines,  only: nc_dumpbuffersize
+  use nc_routines,  only: nc_dumpbuffersize, nc_chunk_time_traces
   use data_mesh,    only: naxel, meshname, do_mesh_tests
   use commun,       only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
@@ -400,6 +400,7 @@ subroutine read_inparam_advanced
   use_netcdf = .false.
   checkpointing = .false.
   nc_dumpbuffersize = 128
+  nc_chunk_time_traces = .false.
 
   ! xdmf stuff
   i_n_xdmf = -1
@@ -520,6 +521,9 @@ subroutine read_inparam_advanced
          case('NETCDF_DUMP_BUFFER') 
              read(keyvalue, *) nc_dumpbuffersize
 
+         case('CHUNK_TIME_TRACES') 
+             read(keyvalue, *) nc_chunk_time_traces
+
          case('DEFLATE_LEVEL')
              read(keyvalue,*) deflate_level
 
@@ -611,6 +615,7 @@ subroutine read_inparam_advanced
   call broadcast_log(use_netcdf, 0) 
   call broadcast_log(checkpointing, 0) 
   call broadcast_int(nc_dumpbuffersize, 0) 
+  call broadcast_log(nc_chunk_time_traces, 0) 
   
   call broadcast_dble(xdmf_rmin, 0) 
   call broadcast_dble(xdmf_rmax, 0) 

@@ -125,6 +125,10 @@ module nc_routines
 
     !> How many snaps should be buffered in RAM?
     integer             :: nc_dumpbuffersize
+
+    !> chunking
+    logical             :: nc_chunk_time_traces
+    integer, parameter  :: disk_block_size = 8192
     
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
@@ -135,7 +139,7 @@ module nc_routines
     public              :: nc_dump_elastic_parameters
     public              :: nc_dump_stf, nc_rec_checkpoint
 
-    public              :: nc_dumpbuffersize
+    public              :: nc_dumpbuffersize, nc_chunk_time_traces
     public              :: set_npoints
 contains
 
@@ -956,6 +960,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_mesh_elem_dimid, nc_mesh_npol_dimid
     integer                              :: nc_mesh_cntrlpts_dimid
 
+    integer                              :: chunk_pt, chunk_time
+                                    !< Contains chunk size in GLL points. Should be system 
+                                    !! int(disk_block_size / nsnap)
+
     if ((mynum == 0) .and. (verbose > 1)) then
         write(6,*)
         write(6,*) '************************************************************************'
@@ -1392,6 +1400,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                          varid  = nc_mesh_glj_varid) )
             endif
 
+            if (nc_chunk_time_traces) then
+                chunk_pt = max(1, disk_block_size / nstrain)
+                chunk_time = nstrain
+            else
+                chunk_pt = npoints_global
+                chunk_time = 1
+            endif
+
             do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
        
                 call check( nf90_def_var(ncid       = ncid_snapout, &
@@ -1399,7 +1415,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                          xtype      = NF90_FLOAT, &
                                          dimids     = [nc_pt_dimid, nc_snap_dimid],&
                                          varid      = nc_field_varid(ivar), &
-                                         chunksizes = [npoints_global, 1] ))
+                                         chunksizes = [chunk_pt, chunk_time] ))
 
                 call check( nf90_def_var_fill(ncid    = ncid_snapout, &
                                               varid   = nc_field_varid(ivar), &
