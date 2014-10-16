@@ -111,7 +111,7 @@ end subroutine dump_glob_grid_midpoint
 !-----------------------------------------------------------------------------------------
 subroutine dump_xdmf_grid()
 
-  use nc_routines,      only: nc_dump_snap_points, nc_dump_snap_grid, nc_make_snapfile
+  use nc_snapshots,      only: nc_dump_snap_points, nc_dump_snap_grid, nc_make_snapfile
   use data_mesh
 
   integer               :: iel, ipol, jpol, ipol1, jpol1, i, j, ct, ipt, idest

@@ -29,6 +29,7 @@ module wavefields_io
   use data_proc
   use data_io
   use nc_routines
+  use nc_snapshots
   
   implicit none
 
@@ -119,7 +120,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
    use data_source,             only: src_type
    use data_pointwise,          only: inv_rho_fluid
    use pointwise_derivatives,   only: axisym_gradient_fluid, dsdf_fluid_axis
-   use nc_routines,             only: nc_dump_snapshot
+   use nc_snapshots,            only: nc_dump_snapshot
    use data_mesh,               only: npol, nel_solid, nel_fluid
    
    real(kind=realkind), intent(in) :: f_sol(0:,0:,:,:)
