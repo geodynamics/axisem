@@ -443,9 +443,10 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 #ifndef upnc
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
+#else
+    call barrier
 #endif
     
-    call barrier
     isnap_loc = isnap_global
     if (verbose > 0) then
         if (ndumps == 0) then 
