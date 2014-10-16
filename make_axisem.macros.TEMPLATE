@@ -25,15 +25,15 @@ SERIAL = false
 # GFORTRAN (fast)
 # OpenMP is supported by the MESHER and is useful for high-frequency
 # Meshes, i.e. <5s period. Uses up to 8 threads. Does not affect the SOLVER.
-CC      = gcc                                # C compiler
-FC      = mpif90                             # Fortran compiler
+CC      = gcc
+FC      = mpif90
 FFLAGS  = -O3 #-march=native -fopenmp        
 CFLAGS  = -O3 #-march=native                
 LDFLAGS = -O3 #-march=native -fopenmp      
 
 # GFORTRAN (debug)
-#CC      = gcc                                # C compiler
-#FC      = mpif90                             # Fortran compiler
+#CC      = gcc
+#FC      = mpif90
 #FFLAGS  = -g -fbacktrace -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic
 #CFLAGS  = -g -fbacktrace -Wall 
 #LDFLAGS = -g -fbacktrace -Wall
