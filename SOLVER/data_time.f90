@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> Various variables around timing
 module data_time
 
@@ -60,3 +61,4 @@ module data_time
   real(kind=realkind) :: decay, shift_fact
 
 end module data_time
+!=========================================================================================
