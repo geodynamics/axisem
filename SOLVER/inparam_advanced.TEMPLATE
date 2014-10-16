@@ -212,9 +212,3 @@ COARSE_GRAINED      true
 ######################## FOR THE INCLINED ######################################
 # Save global kinetic/potential energy? generally not needed
 SAVE_ENERGY         .false.
-
-# overwrite background model with homogeneous parameters?
-HOMO_MODEL          .false.
-HOMO_VP             10.
-HOMO_VS             5.77
-HOMO_RHO            3.

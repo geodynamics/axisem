@@ -101,14 +101,6 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
   logical :: foundit
   character(len=100) :: modelstring
 
-  if (make_homo ) then 
-       write(6,*)'  '
-       write(6,*)'ERROR: homogeneous AND anisotropic model does not make '
-       write(6,*)'       sense, check input file'
-       write(6,*)'  '
-       stop
-  endif
-
   ! Set elastic parameters to crazy values to later check if all have been filled
   rho(0:npol,0:npol,1:nelem) = -1.E30
   lambda(0:npol,0:npol,1:nelem) = -1.E30

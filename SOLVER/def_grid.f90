@@ -1223,9 +1223,6 @@ subroutine compute_volume
   elseif (bkgrdmodel(1:4) == 'iasp') then
      router_fluid = 3482000.d0 ! CMB
      rinner_fluid = 1217000.d0 ! ICB
-  elseif (bkgrdmodel(1:4)=='homo') then 
-     rinner_fluid = 3000.d0
-     router_fluid = rinner_fluid
   else
      write(6,*)'  !!WARNING!! Do not know the fluid for model',bkgrdmodel
      write(6,*)'             ....setting outer/inner equal -> assuming no fluid'

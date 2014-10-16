@@ -75,7 +75,7 @@ end subroutine
 !! data paths, specification of wavefield dumping etc.
 subroutine readin_parameters
 
-  use data_mesh, only: make_homo, do_mesh_tests
+  use data_mesh, only: do_mesh_tests
 
   call read_inparam_basic
   
@@ -98,7 +98,7 @@ subroutine readin_parameters
                  enforced_period, trim(simtype), rec_file_type, &
                  sum_seis, sum_fields, time_scheme, seis_dt,  &
                  dump_energy, dump_vtk, dump_wavefields, &
-                 dump_type, ibeg, iend, jbeg, jend, strain_samp, src_dump_type, make_homo, &
+                 dump_type, ibeg, iend, jbeg, jend, strain_samp, src_dump_type, &
                  add_hetero, do_mesh_tests, output_format
 
 20 format(/&
@@ -200,7 +200,6 @@ subroutine readin_parameters
    12x,'Last GLL to save in strains:        ',i2,/                          &
    12x,'Samples per period for strains:     ',f7.3,/                        &
    12x,'Source dumping type:                ',a4,/                          &
-   12x,'Homogenize background model?        ',l2,/                          &
    12x,'Add heterogeneous region?           ',l2,/                          &
    12x,'Perform extensive mesh tests?       ',l2,/                          &
    12x,'Output format (seism., wavefields): ',a6,/                          &
@@ -357,7 +356,7 @@ end subroutine
 subroutine read_inparam_advanced
   
   use nc_routines,  only: nc_dumpbuffersize
-  use data_mesh,    only: naxel, meshname, vphomo, vshomo, rhohomo, make_homo, do_mesh_tests
+  use data_mesh,    only: naxel, meshname, do_mesh_tests
   use commun,       only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
   integer              :: iinparam_advanced=500, ioerr
@@ -393,10 +392,6 @@ subroutine read_inparam_advanced
   kwf_thetamax = pi
   
   dump_energy = .false.
-  make_homo = .false.
-  vphomo = 10.
-  vshomo = 10.
-  rhohomo = 10.
   
   deflate_level = 5
   snap_dt = 20.
@@ -516,21 +511,6 @@ subroutine read_inparam_advanced
          case('SAVE_ENERGY')
              read(keyvalue,*) dump_energy
 
-         case('HOMO_MODEL')
-             read(keyvalue,*) make_homo
-
-         case('HOMO_VP')
-             read(keyvalue,*) vphomo 
-             vphomo = vphomo * 1.e3
-
-         case('HOMO_VS')
-             read(keyvalue,*) vshomo 
-             vshomo = vshomo * 1.e3
-
-         case('HOMO_RHO')
-             read(keyvalue,*) rhohomo 
-             rhohomo = rhohomo * 1.e3
-         
          case('USE_NETCDF')
              read(keyvalue, *) use_netcdf
 
@@ -620,11 +600,6 @@ subroutine read_inparam_advanced
   call broadcast_int(jend, 0) 
 
   call broadcast_log(dump_energy, 0) 
-  call broadcast_log(make_homo, 0) 
-  
-  call broadcast_dble(vphomo, 0) 
-  call broadcast_dble(vshomo, 0) 
-  call broadcast_dble(rhohomo, 0) 
   
   call broadcast_int(deflate_level, 0) 
   call broadcast_dble(snap_dt, 0) 
