@@ -313,6 +313,7 @@ subroutine nc_dump_strain(isnap_loc)
     end interface
 
     integer, intent(in) :: isnap_loc
+
 #ifdef enable_netcdf
     integer             :: iproc
     real                :: tickl, tackl
@@ -321,6 +322,7 @@ subroutine nc_dump_strain(isnap_loc)
     if (isnap_loc == 0) return
 
     if (dumpposition(mod(isnap_loc, dumpstepsnap))) then
+
 #ifndef enable_parallel_netcdf
 
         ! wait for other processes to finish writing, measure waiting time and
@@ -372,6 +374,7 @@ subroutine nc_dump_strain(isnap_loc)
             copy_surfdumpvar_srcdisp  = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind) 
 
 #ifndef enable_parallel_netcdf
+
             call c_spawn_dumpthread(stepstodump)
             stepstodump = 0
         end if
@@ -386,6 +389,7 @@ subroutine nc_dump_strain(isnap_loc)
     ! compute anymore
     ! Make sure, nobody is accessing the output file anymore
     if (isnap_loc == nstrain) then 
+
 #ifndef enable_parallel_netcdf
         do iproc=0, nproc-1
             if (iproc == mynum) then
@@ -448,7 +452,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 #endif
     
     isnap_loc = isnap_global
-    if (verbose > 0) then
+    if (verbose > 1) then
         if (ndumps == 0) then 
             write(6,"('   Proc ', I4, ': in dump routine, isnap =', I5, &
                     & ', nothing to dump, returning...')") mynum, isnap_loc
@@ -500,6 +504,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
 #ifndef enable_parallel_netcdf
     call check( nf90_close(ncid_out) ) 
 #endif
+
     call cpu_time(tack)
 
     deallocate(copy_oneddumpvar)
@@ -508,7 +513,7 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     deallocate(copy_surfdumpvar_velo)
     deallocate(copy_surfdumpvar_srcdisp)
 
-    if (verbose > 0) then
+    if (verbose > 1) then
         dumpsize_MB = real(dumpsize) * 4 / 1048576
         write(6,"('   Proc', I5,': Wrote ', F8.2, ' MB in ', F6.2, 's (', F8.2, ' MB/s)')") &
             mynum, dumpsize_MB, tack-tick, dumpsize_MB / (tack - tick)
@@ -524,6 +529,7 @@ subroutine nc_dump_stf(stf)
     use data_io,  only                       : nseismo, nstrain, dump_wavefields
     use data_time, only                      : seis_it, strain_it, niter, deltat
     real(kind=sp), intent(in), dimension(:) :: stf   
+
 #ifdef enable_netcdf
     integer                                 :: it_s, it_d, i
 
@@ -606,6 +612,7 @@ subroutine nc_dump_rec_to_disk
     call check( nf90_open(path=datapath(1:lfdata)//"/axisem_output.nc4", & 
                           mode=NF90_WRITE, ncid=ncid_out) )
 #endif
+
     call getgrpid( ncid_out, "Seismograms", ncid_recout)
     call getvarid( ncid_recout, "displacement", nc_disp_varid ) 
 
@@ -620,9 +627,11 @@ subroutine nc_dump_rec_to_disk
     end do
 
     dumpsize = nseismo * 3 * num_rec
+
 #ifndef enable_parallel_netcdf
     call check( nf90_close(ncid=ncid_out))
 #endif
+    
     call cpu_time(tack)
 
     if (verbose > 2) then
@@ -801,7 +810,6 @@ subroutine nc_dump_elastic_parameters(rho, lambda, mu, xi_ani, phi_ani, eta_ani,
     integer :: size1d
     integer :: iel, ipol, jpol, ct
 
-    !print *, 'Processor', mynum,' has been here'
     if (dump_type == 'displ_only' .or. dump_type == 'strain_only') then
        allocate(rho1d(npoints))
        allocate(lambda1d(npoints))
@@ -910,6 +918,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     use data_source, only: src_type, t_0
     use data_time,   only: deltat, niter
 
+! using mpi here is fine, because enable_parallel_netcdf can only be set if
+! compiled with mpi
 #ifdef enable_parallel_netcdf
     use mpi
 #endif
@@ -984,7 +994,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     dumpposition = .false.
     do iproc=0, nproc-1
         dumpposition(iproc*(dumpstepsnap/nproc)) = .true.
-        if ((iproc .eq. mynum) .and. (verbose > 1)) then
+        if ((iproc == mynum) .and. (verbose > 1)) then
             write(6,"(' Proc ', I4, ' will dump at position ', I4)") mynum, outputplan
             call flush(6)
         end if
@@ -993,12 +1003,13 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
 #else
     ! in parallel IO, always everybody dumps collectively
-    dumpstepsnap = nc_dumpbuffersize
-    if (nstrain <= dumpstepsnap) dumpstepsnap = nstrain
+    dumpstepsnap = min(nstrain, nc_dumpbuffersize)
     allocate(dumpposition(0:dumpstepsnap-1))
     dumpposition(:) = .false.
     dumpposition(0) = .true.
     outputplan = 0
+    if ((mynum == 0) .and. (verbose > 1)) then
+            write(6,"(' all Procs will dump every ', I4, ' steps')") dumpstepsnap
 #endif
 
     nc_fnam = datapath(1:lfdata)//"/axisem_output.nc4"
@@ -1045,30 +1056,11 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
               end if
 
               npoints = npoint_kwf
-              
-              call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
-              npoint_kwf_global = npoints_global
 
               npts_sol = npoint_solid_kwf
               npts_flu = npoint_fluid_kwf
 
-              call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
-              call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
-
               call comm_elem_number(nelem_kwf, nelem_kwf_global, nelem_myfirst, nelem_mylast)  
-              
-              if (lpr) then
-                  call dump_mesh_data_xdmf(trim(nc_fnam), 'disp_s.xdmf', 'Snapshots/disp_s',  &
-                                           npts_sol_global + npts_flu_global, & 
-                                           nstrain)
-                  if (src_type(1) /= 'monopole') &
-                     call dump_mesh_data_xdmf(trim(nc_fnam), 'disp_p.xdmf', 'Snapshots/disp_p',  &
-                                              npts_sol_global + npts_flu_global, & 
-                                              nstrain)
-                  call dump_mesh_data_xdmf(trim(nc_fnam), 'disp_z.xdmf', 'Snapshots/disp_z',  &
-                                           npts_sol_global + npts_flu_global, & 
-                                           nstrain)
-              end if
 
            case ('strain_only')
               if (src_type(1) == 'monopole') then
@@ -1101,37 +1093,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
               npoints = npoint_kwf
               
-              call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
-              npoint_kwf_global = npoints_global
 
               npts_sol = npoint_solid_kwf
               npts_flu = npoint_fluid_kwf
 
-              call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
-              call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
-
-              if (lpr) then
-                  call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dsus.xdmf', 'Snapshots/strain_dsus',  &
-                                           npts_sol_global + npts_flu_global, & 
-                                           nstrain)
-                  call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dsuz.xdmf', 'Snapshots/strain_dsuz',  &
-                                           npts_sol_global + npts_flu_global, & 
-                                           nstrain)
-                  call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dpup.xdmf', 'Snapshots/strain_dpup',  &
-                                           npts_sol_global + npts_flu_global, & 
-                                           nstrain)
-                  call dump_mesh_data_xdmf(trim(nc_fnam), 'straintrace.xdmf', 'Snapshots/straintrace',  &
-                                           npts_sol_global + npts_flu_global, & 
-                                           nstrain)
-                  if (src_type(1) /= 'monopole') then 
-                     call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dsup.xdmf', 'Snapshots/strain_dsup',  &
-                                              npts_sol_global + npts_flu_global, & 
-                                              nstrain)
-                     call dump_mesh_data_xdmf(trim(nc_fnam), 'strain_dzup.xdmf', 'Snapshots/strain_dzup',  &
-                                              npts_sol_global + npts_flu_global, & 
-                                              nstrain)
-                  endif
-              end if
 
            case ('displ_velo')
               write(6,*) 'ERROR: not yet implemented with netcdf'
@@ -1171,22 +1136,22 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
               gllperelem = (iend - ibeg + 1) * (jend - jbeg + 1)
               npoints = nelem * gllperelem
-              
-              call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
 
               npts_sol = nel_solid * gllperelem
               npts_flu = nel_fluid * gllperelem 
 
-              call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
-              call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
-              
-              if (lpr) then
-                  call dump_mesh_data_xdmf(nc_fnam, 'straintrace.xdmf', 'Snapshots/straintrace',  &
-                                           npts_sol_global + npts_flu_global, & 
-                                           nstrain)
-              end if
-        
         end select
+
+        call comm_elem_number(npoints, npoints_global, npoints_myfirst, npoints_mylast)  
+        npoint_kwf_global = npoints_global
+        call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
+        call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
+
+        do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
+            call dump_mesh_data_xdmf(trim(nc_fnam), trim(nc_varnamelist(ivar))//'.xdmf', &
+                                     'Snapshots/'//trim(nc_varnamelist(ivar)),  &
+                                     npts_sol_global + npts_flu_global,  nstrain)
+        enddo
 
     end if ! dump_wavefields
 
