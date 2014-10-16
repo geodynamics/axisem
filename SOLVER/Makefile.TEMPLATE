@@ -63,7 +63,7 @@ all: $(PROG) utils
 $(PROG): $(OBJS)
     ifeq ($(strip $(SERIAL)),true)
         ifeq ($(strip $(USE_PAR_NETCDF)),true)
-   	    	$(error SERIAL and USE_PAR_NETCDF cannot be true at the same time)
+        	$(error SERIAL and USE_PAR_NETCDF cannot be true at the same time)
         endif
     endif
 	$(FC) $(LDFLAGS) -o $@ $(OBJS) $(LIBS)
@@ -123,9 +123,8 @@ pointwise_derivatives.o: data_mesh.o data_pointwise.o data_spec.o \
 	global_parameters.o unrolled_loops.o Makefile ../make_axisem.macros 
 rotations.o: data_io.o data_mesh.o data_proc.o data_source.o \
 	global_parameters.o Makefile ../make_axisem.macros 
-seismograms.o: commun.o data_io.o data_mesh.o data_pointwise.o data_proc.o \
-	data_source.o data_time.o global_parameters.o nc_routines.o \
-	pointwise_derivatives.o rotations.o utlity.o Makefile ../make_axisem.macros 
+seismograms.o: commun.o data_io.o data_mesh.o data_proc.o data_source.o \
+	data_time.o global_parameters.o nc_routines.o rotations.o utlity.o Makefile ../make_axisem.macros 
 source.o: apply_masks.o commun.o data_io.o data_mesh.o data_proc.o \
 	data_source.o data_spec.o data_time.o global_parameters.o \
 	nc_routines.o pointwise_derivatives.o utlity.o Makefile ../make_axisem.macros 
@@ -152,7 +151,7 @@ lateral_heterogeneities.o: background_models.o commun.o data_heterogeneous.o \
 meshes_io.o: data_io.o data_matr.o data_mesh.o data_pointwise.o data_proc.o \
 	data_source.o data_spec.o global_parameters.o nc_routines.o utlity.o Makefile ../make_axisem.macros 
 nc_routines.o: clocks.o commun.o data_io.o data_mesh.o data_proc.o \
-	data_source.o data_time.o global_parameters.o Makefile ../make_axisem.macros 
+	data_source.o data_spec.o data_time.o global_parameters.o Makefile ../make_axisem.macros 
 parameters.o: attenuation.o commun.o data_comm.o data_io.o data_mesh.o \
 	data_proc.o data_source.o data_time.o global_parameters.o \
 	nc_routines.o utlity.o Makefile ../make_axisem.macros 
