@@ -25,7 +25,7 @@ program axisem
   use data_io,        only : dump_xdmf, use_netcdf, verbose
   use nc_routines,    only : nc_end_output, nc_finish_prepare
   use nc_snapshots,   only : nc_close_snapfile
-  use data_source,    only : isim,num_simul
+  use data_source,    only : isim
   use data_mesh,      only : do_mesh_tests
   use parameters,     only : open_local_output_file, readin_parameters, &
                              read_inparam_basic_verbosity
@@ -68,38 +68,27 @@ program axisem
      call mesh_tests ! def_grid
   endif 
 
-  if (num_simul .ne. 1) then
-     write(6,*) 'ERROR: implementation of multiple simulations within one run'
-     write(6,*) '       not finished yet.'
-     write(6,*) '       For now set number of simulations in inparam to 1, splitting '
-     write(6,*) '       to the different sources is then done by the submit script.'
-     stop 2
-  endif
+  if (lpr .and. verbose >= 1) &
+     write(6,*) 'MAIN: Starting wave preparation...........................'
+  call prepare_waves ! time_evol_wave
 
-  do isim=1, num_simul
-
-     if (lpr .and. verbose >= 1) &
-        write(6,*) 'MAIN: Starting wave preparation...........................'
-     call prepare_waves ! time_evol_wave
-
-     ! Deallocate all the large arrays that are not needed in the time loop,
-     ! specifically those from data_mesh_preloop and data_pointwise
-     if (lpr .and. verbose >= 1) &
-        write(6,*) 'MAIN: Deallocating arrays not needed in the time loop.....'
-     call deallocate_preloop_arrays ! def_grid
+  ! Deallocate all the large arrays that are not needed in the time loop,
+  ! specifically those from data_mesh_preloop and data_pointwise
+  if (lpr .and. verbose >= 1) &
+     write(6,*) 'MAIN: Deallocating arrays not needed in the time loop.....'
+  call deallocate_preloop_arrays ! def_grid
  
-     if (use_netcdf) then
-        if (lpr .and. verbose >= 1) &
-           write(6,*) 'MAIN: Finish preparation of NetCDF file...................'
-        call nc_finish_prepare
-     endif
-    
-     call barrier ! Just making sure we're all ready to rupture...
-     
+  if (use_netcdf) then
      if (lpr .and. verbose >= 1) &
-        write(6,*) 'MAIN: Starting wave propagation...........................'
-     call time_loop ! time_evol_wave
-  enddo
+        write(6,*) 'MAIN: Finish preparation of NetCDF file...................'
+     call nc_finish_prepare
+  endif
+  
+  call barrier ! Just making sure we're all ready to rupture...
+  
+  if (lpr .and. verbose >= 1) &
+     write(6,*) 'MAIN: Starting wave propagation...........................'
+  call time_loop ! time_evol_wave
 
   if (use_netcdf) then
      if (lpr .and. verbose >= 1) &

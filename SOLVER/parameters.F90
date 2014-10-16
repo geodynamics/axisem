@@ -18,7 +18,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
-
+!=========================================================================================
 !> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
 !! compute other parameters for the simulation;
 !! write out summaries of all relevant simulation settings.
@@ -86,7 +86,6 @@ subroutine readin_parameters
   ! now pre-set. Most of these are to be considered in the post processing stage now.
   sum_seis = .false.
   sum_fields = .false.
-  num_simul = 1
    
   ! netcdf format
   output_format = 'binary'
@@ -95,7 +94,7 @@ subroutine readin_parameters
   call barrier
   if (lpr) then
      write(6,20)
-     write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
+     write(6,21) datapath, infopath, seislength_t, enforced_dt,  &
                  enforced_period, trim(simtype), rec_file_type, &
                  sum_seis, sum_fields, time_scheme, seis_dt,  &
                  dump_energy, dump_vtk, dump_wavefields, &
@@ -182,7 +181,6 @@ subroutine readin_parameters
    08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
    12x,'Data I/O path:                      ',a20,/                         &
    12x,'Info I/O path:                      ',a20,/                         &
-   12x,'Number of source simulations:       ',i2,/                          &
    12x,'Simulation length [s]:              ',f9.3,/                        &
    12x,'Enforced time step [s]:             ',f7.3,/                        &
    12x,'Enforced source period [s]:         ',f7.3,/                        &
@@ -1842,4 +1840,4 @@ end subroutine check_parameters
 !-----------------------------------------------------------------------------------------
 
 end module parameters
-
+!=========================================================================================
