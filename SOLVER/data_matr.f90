@@ -19,10 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!===================
+!=========================================================================================
 module data_matr
-!===================
-  !
   ! Global arrays (i.e. defined on each GLL point) that are
   ! needed for the mass, stiffness and boundary terms of the 
   ! temporal ODE. 
@@ -115,7 +113,9 @@ module data_matr
 
 contains
 
-subroutine set_mass_matrices(npol, nel_solid, nel_fluid, inv_mass_rho_loc, inv_mass_fluid_loc)
+!-----------------------------------------------------------------------------------------
+subroutine set_mass_matrices(npol, nel_solid, nel_fluid, inv_mass_rho_loc, &
+                             inv_mass_fluid_loc)
 
   integer, intent(in)        :: npol, nel_solid, nel_fluid
   real(kind=realkind), intent(in)  :: inv_mass_rho_loc(:,:,:), inv_mass_fluid_loc(:,:,:)
@@ -127,8 +127,7 @@ subroutine set_mass_matrices(npol, nel_solid, nel_fluid, inv_mass_rho_loc, inv_m
   inv_mass_fluid = inv_mass_fluid_loc
   
 end subroutine set_mass_matrices
+!-----------------------------------------------------------------------------------------
 
-
-!=====================
 end module data_matr
-!=====================
+!=========================================================================================

@@ -928,7 +928,6 @@ end subroutine define_bodyforce
 subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   
   use data_mesh
-  use data_spec, only : shp_deri_k
   
   use apply_masks
   use utlity

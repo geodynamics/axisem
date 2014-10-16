@@ -18,6 +18,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
+
 !=========================================================================================
 !> Miscellaneous variables relevant to any read/write process such as 
 !! paths, logicals describing what to save, sampling rate of dumps

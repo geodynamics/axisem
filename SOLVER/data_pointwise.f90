@@ -19,12 +19,11 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> This module is only known during the time loop if the strain tensor 
 !! is computed on-the-fly. The fluid section is additionally known if global 
 !! snapshots are dumped (to compute the displacement in the fluid).
-!===================
  module data_pointwise
-!===================
   
   use global_parameters, only: realkind
   
@@ -63,6 +62,5 @@
   real(kind=realkind), allocatable :: DsDxi_over_J_flu(:,:,:)
   real(kind=realkind), allocatable :: DzDxi_over_J_flu(:,:,:)
 
-!=======================
  end module data_pointwise
-!=======================
+!=========================================================================================
