@@ -50,17 +50,21 @@ program axisem
   call open_local_output_file ! parameters, open file for processor-specific screen output 
   call start_clock !clocks
 
-  if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Reading parameters..................................'
+  if (lpr .and. verbose >= 1) &
+     write(6,*) 'MAIN: Reading parameters..................................'
   call readin_parameters ! parameters
   
-  if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Reading mesh database...............................'
+  if (lpr .and. verbose >= 1) &
+     write(6,*) 'MAIN: Reading mesh database...............................'
   call read_db  ! get_mesh
 
-  if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Initializing grid...................................'
+  if (lpr .and. verbose >= 1) &
+     write(6,*) 'MAIN: Initializing grid...................................'
   call init_grid ! def_grid
 
   if (do_mesh_tests) then
-     if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Testing the mesh....................................'
+     if (lpr .and. verbose >= 1) &
+         write(6,*) 'MAIN: Testing the mesh....................................'
      call mesh_tests ! def_grid
   endif 
 
@@ -74,27 +78,32 @@ program axisem
 
   do isim=1, num_simul
 
-     if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Starting wave preparation...........................'
+     if (lpr .and. verbose >= 1) &
+        write(6,*) 'MAIN: Starting wave preparation...........................'
      call prepare_waves ! time_evol_wave
 
      ! Deallocate all the large arrays that are not needed in the time loop,
      ! specifically those from data_mesh_preloop and data_pointwise
-     if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Deallocating arrays not needed in the time loop.....'
+     if (lpr .and. verbose >= 1) &
+        write(6,*) 'MAIN: Deallocating arrays not needed in the time loop.....'
      call deallocate_preloop_arrays ! def_grid
  
      if (use_netcdf) then
-        if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Finish preparation of NetCDF file...................'
+        if (lpr .and. verbose >= 1) &
+           write(6,*) 'MAIN: Finish preparation of NetCDF file...................'
         call nc_finish_prepare
      endif
     
      call barrier ! Just making sure we're all ready to rupture...
      
-     if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Starting wave propagation...........................'
+     if (lpr .and. verbose >= 1) &
+        write(6,*) 'MAIN: Starting wave propagation...........................'
      call time_loop ! time_evol_wave
   enddo
 
   if (use_netcdf) then
-     if (lpr .and. verbose >= 1) write(6,*) 'MAIN: Flush and close all netcdf files ...................'
+     if (lpr .and. verbose >= 1) &
+        write(6,*) 'MAIN: Flush and close all netcdf files ...................'
      call nc_end_output ! Dump receiver seismograms to finalize netcdf output 
   end if
   
@@ -135,7 +144,8 @@ subroutine start_clock
 
 11 format('     Simulation started on ', A2,'/',A2,'/',A4,' at ', A2,'h ',A2,'min',/)
 
-  if (verbose > 1) write(69,11) mydate(5:6), mydate(7:8), mydate(1:4), mytime(1:2), mytime(3:4)
+  if (verbose > 1) write(69,11) mydate(5:6), mydate(7:8), mydate(1:4), &
+                                mytime(1:2), mytime(3:4)
 
   if (verbose > 1) then
       call clocks_init(mynum)
