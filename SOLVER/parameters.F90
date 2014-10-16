@@ -1174,8 +1174,7 @@ end subroutine compute_numerical_parameters
 subroutine write_parameters
 
     use data_comm
-    use nc_routines
-    !use data_mesh, ONLY : nglob,nglob_solid
+    use nc_helpers
     use data_mesh
 
     integer          :: iel,curvel,linel,seminoel,semisoel

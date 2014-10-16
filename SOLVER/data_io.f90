@@ -52,6 +52,7 @@ module data_io
   logical           :: sum_seis, sum_fields
   logical           :: add_hetero, file_exists, use_netcdf 
   character(len=6)  :: output_format  !< netcdf or binary
+  integer           :: ncid_out
   logical           :: do_anel
   integer           :: verbose
 

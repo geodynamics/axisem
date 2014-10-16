@@ -27,7 +27,7 @@ module nc_routines
     use netcdf
 #endif
     use nc_helpers
-    use data_io,    only : verbose, deflate_level
+    use data_io,    only : verbose, deflate_level, ncid_out
     use data_proc,  only : mynum, nproc, lpr
     use global_parameters
     use commun,     only : barrier, comm_elem_number
@@ -88,7 +88,7 @@ module nc_routines
     !> Mapping of local fluid points to global
     integer             :: npts_flu_myfirst, npts_flu_mylast
 
-    integer            :: ncid_out, ncid_recout, ncid_snapout, ncid_surfout, ncid_meshout
+    integer            :: ncid_recout, ncid_snapout, ncid_surfout, ncid_meshout
     integer            :: nc_snap_dimid, nc_proc_dimid, nc_rec_dimid, nc_recproc_dimid
     integer            :: nc_times_dimid, nc_comp_dimid, nc_disp_varid, nc_stf_seis_varid, nc_stf_d_seis_varid
     integer            :: nc_time_varid, nc_iter_dimid, nc_stf_iter_varid, nc_stf_d_iter_varid
@@ -128,8 +128,6 @@ module nc_routines
     
     public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
     public              :: nc_dump_field_solid, nc_dump_field_fluid
-    public              :: nc_write_att_char, nc_write_att_real, nc_write_att_int
-    public              :: nc_write_att_dble
     public              :: nc_define_outputfile, nc_finish_prepare, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
     public              :: nc_dump_mesh_kwf
@@ -1563,53 +1561,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     
 #endif
 end subroutine nc_define_outputfile
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-!> Write NetCDF attribute of type Character
-subroutine nc_write_att_char(attribute_value, attribute_name)
-    character(len=*), intent(in)    :: attribute_name, attribute_value
-
-#ifdef enable_netcdf
-    call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
-#endif
-end subroutine nc_write_att_char
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-!> Write NetCDF attribute of type Real
-subroutine nc_write_att_real(attribute_value, attribute_name)
-  character(len=*),  intent(in)      :: attribute_name
-  real(sp), intent(in)               :: attribute_value
-
-#ifdef enable_netcdf
-  call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
-#endif
-end subroutine nc_write_att_real
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-!> Write NetCDF attribute of type Double
-subroutine nc_write_att_dble(attribute_value, attribute_name)
-  character(len=*),  intent(in)      :: attribute_name
-  real(dp), intent(in)               :: attribute_value
-
-#ifdef enable_netcdf
-  call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
-#endif
-end subroutine nc_write_att_dble
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-!> Write NetCDF attribute of type Integer
-subroutine nc_write_att_int(attribute_value, attribute_name)
-  character(len=*),  intent(in)     :: attribute_name
-  integer, intent(in)               :: attribute_value
-
-#ifdef enable_netcdf
-  call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
-#endif
-end subroutine nc_write_att_int
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------

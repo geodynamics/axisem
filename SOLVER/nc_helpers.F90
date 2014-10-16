@@ -26,8 +26,9 @@ module nc_helpers
 #ifdef enable_netcdf
     use netcdf
 #endif
-    use data_io,    only : verbose
+    use data_io,    only : verbose, ncid_out
     use data_proc,  only : mynum
+    use global_parameters
 
     implicit none
     private 
@@ -38,6 +39,10 @@ module nc_helpers
     public :: putvar_real3d
     public :: getgrpid
     public :: getvarid
+    public :: nc_write_att_int
+    public :: nc_write_att_real
+    public :: nc_write_att_dble
+    public :: nc_write_att_char
 
 contains
 
@@ -402,6 +407,53 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
 200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into 3D variable in NCID', I7, ', with ID:', I7)
 #endif
 end subroutine putvar_real3d
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+!> Write NetCDF attribute of type Character
+subroutine nc_write_att_char(attribute_value, attribute_name)
+    character(len=*), intent(in)    :: attribute_name, attribute_value
+
+#ifdef enable_netcdf
+    call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
+#endif
+end subroutine nc_write_att_char
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+!> Write NetCDF attribute of type Real
+subroutine nc_write_att_real(attribute_value, attribute_name)
+  character(len=*),  intent(in)      :: attribute_name
+  real(sp), intent(in)               :: attribute_value
+
+#ifdef enable_netcdf
+  call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
+#endif
+end subroutine nc_write_att_real
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+!> Write NetCDF attribute of type Double
+subroutine nc_write_att_dble(attribute_value, attribute_name)
+  character(len=*),  intent(in)      :: attribute_name
+  real(dp), intent(in)               :: attribute_value
+
+#ifdef enable_netcdf
+  call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
+#endif
+end subroutine nc_write_att_dble
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+!> Write NetCDF attribute of type Integer
+subroutine nc_write_att_int(attribute_value, attribute_name)
+  character(len=*),  intent(in)     :: attribute_name
+  integer, intent(in)               :: attribute_value
+
+#ifdef enable_netcdf
+  call check( nf90_put_att(ncid_out, NF90_GLOBAL, attribute_name, attribute_value) )
+#endif
+end subroutine nc_write_att_int
 !-----------------------------------------------------------------------------------------
 
 end module nc_helpers
