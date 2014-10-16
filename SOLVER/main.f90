@@ -35,6 +35,7 @@ program axisem
   use commun,         only : pinit, pend, barrier
   use meshes_io,      only : finish_xdmf_xml
   use data_io,        only : verbose
+  use clocks_mod,     only : start_clock, end_clock
   
   implicit none
 
@@ -114,72 +115,7 @@ end program axisem
 
 
 !-----------------------------------------------------------------------------------------
-subroutine start_clock
-  ! Driver routine to start the timing, using the clocks_mod module.
-
-  use data_time,  only : idcomm, iddump, idmpi, idmpiws, idmpiwf, idnbio, idold, &
-                         idstiff, idanelts, idanelst
-  use data_proc,  only : lpr, mynum
-  use clocks_mod, only : clock_id, clocks_init
-  use data_io,    only : verbose
-  
-  implicit none
-  
-  character(len=8)  :: mydate
-  character(len=10) :: mytime
-
-  call date_and_time(mydate,mytime) 
-  if (lpr) write(6,11) mydate(5:6), mydate(7:8), mydate(1:4), mytime(1:2), mytime(3:4)
-
-11 format('     Simulation started on ', A2,'/',A2,'/',A4,' at ', A2,'h ',A2,'min',/)
-
-  if (verbose > 1) write(69,11) mydate(5:6), mydate(7:8), mydate(1:4), &
-                                mytime(1:2), mytime(3:4)
-
-  if (verbose > 1) then
-      call clocks_init(mynum)
-  else
-      call clocks_init()
-  endif
-
-  idold    = clock_id('Time loop routine')
-  idcomm   = clock_id('Assembly/MPI routines')
-  idmpi    = clock_id(' > Only MPI routine')
-  idmpiws  = clock_id(' > Only solid MPI_WAIT')
-  idmpiwf  = clock_id(' > Only fluid MPI_WAIT')
-  idstiff  = clock_id('Stiffness routine')
-  idanelst = clock_id(' > Anelastic stiffness routine')
-  idanelts = clock_id('Anelastic time step routine')
-  iddump   = clock_id('Dump routine')
-  idnbio   = clock_id('Non Blocking IO red light')
-
-end subroutine start_clock
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-subroutine end_clock 
-  ! Wapper routine to end timing and display clock informations.
-
-  use clocks_mod, only : clocks_exit
-  use data_proc,  only : mynum
-
-  implicit none
-
-  if (mynum==0) then
-     write(6,*)
-     write(6,"(10x,'Summary of timing measurements:')")
-     write(6,*)
-  endif
-
-  call clocks_exit(mynum)
-
-  if (mynum==0) write(6,*)
-
-end subroutine end_clock
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-subroutine define_io_appendix(app,iproc)
+subroutine define_io_appendix(app, iproc)
   ! Defines the 4 digit character string appended to any 
   ! data or io file related to process myid. 
 
