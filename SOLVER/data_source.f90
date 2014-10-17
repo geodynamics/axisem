@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> Variables describing anything related to the source
 module data_source
 
@@ -32,7 +33,7 @@ module data_source
   character(len=7)                 :: stf_type
   real(kind=dp)                    :: src_depth, zsrc, srccolat, srclon
   integer                          :: iel_src, ipol_src, jpol_src
-  integer                          :: isim, num_simul
+  integer                          :: isim
   logical                          :: have_src
   real(kind=realkind), allocatable :: stf(:)
   logical                          :: rot_src
@@ -53,3 +54,4 @@ module data_source
   character(len=4)    :: src_dump_type
 
 end module data_source
+!=========================================================================================

@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module attenuation
 !< Variables and routines for viscoelastic wave propagation
 
@@ -693,9 +694,8 @@ subroutine prepare_attenuation(lambda, mu)
   use get_mesh,             only: compute_coordinates_mesh
   use data_mesh,            only: axis_solid, npol, nelem, ielsolid, nel_solid
   use data_spec,            only: eta, xi_k, wt, wt_axial_k
-  use geom_transf,          only: jacobian
   use utlity,               only: scoord
-  use analytic_mapping,     only: compute_partial_derivatives
+  use analytic_mapping,     only: compute_partial_derivatives, jacobian
   use data_source,          only: nelsrc, ielsrc
   use data_pointwise
   use commun,               only: broadcast_int, broadcast_log, &
@@ -1343,3 +1343,4 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 end module
+!=========================================================================================

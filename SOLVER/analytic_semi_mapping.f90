@@ -19,9 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!==================================
+!=========================================================================================
 module analytic_semi_mapping
-!==================================
 !
 !	10/01/2002: This module contains the 
 ! machinery necessary to describe analytically
@@ -417,7 +416,5 @@ pure subroutine compute_theta(theta,s,z,a,b)
 end subroutine compute_theta
 !-----------------------------------------------------------------------------------------
 
-
-!=======================================
 end module analytic_semi_mapping
-!=======================================
+!=========================================================================================

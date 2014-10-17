@@ -19,7 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!-----------------------------------------------------------------------------------------
+!=========================================================================================
 !> Miscellaneous variables relevant to any read/write process such as 
 !! paths, logicals describing what to save, sampling rate of dumps
 module data_io
@@ -41,9 +41,6 @@ module data_io
 
   logical           :: need_fluid_displ
   real(kind=dp)     :: strain_samp
-  !integer           :: iseismo  !< current seismogram sample
-  !integer           :: istrain  !< current kernel wavefield sample
-  !integer           :: isnap    !< current wavefield sample for movies
   integer           :: nseismo  !< Number of seismogram samples
   integer           :: nstrain  !< Number of wavefield dumps for kernels
   integer           :: nsnap    !< Number of wavefield snapshots for movies
@@ -52,6 +49,7 @@ module data_io
   logical           :: sum_seis, sum_fields
   logical           :: add_hetero, file_exists, use_netcdf 
   character(len=6)  :: output_format  !< netcdf or binary
+  integer           :: ncid_out
   logical           :: do_anel
   integer           :: verbose
 
@@ -79,5 +77,21 @@ module data_io
   character(len=80), dimension(:), allocatable :: fname_rec_seis
   character(len=80), dimension(:), allocatable :: fname_rec_velo
 
-end module data_io
+contains
+
 !-----------------------------------------------------------------------------------------
+subroutine define_io_appendix(app, iproc)
+  ! Defines the 4 digit character string appended to any 
+  ! data or io file related to process myid. 
+
+  implicit none
+  integer, intent(in)           :: iproc
+  character(len=4), intent(out) :: app
+  
+  write(app,"(I4.4)") iproc
+
+end subroutine define_io_appendix
+!-----------------------------------------------------------------------------------------
+
+end module data_io
+!=========================================================================================

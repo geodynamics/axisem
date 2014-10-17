@@ -19,24 +19,19 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!======================
+!=========================================================================================
 !> Read elastic information of the background model, define precomputable 
 !! matrices for mass, stiffness, boundary terms, pointwise derivatives.
-!! This is the quintessential module of the code...
 module def_precomp_terms
-!======================
-
   
   use global_parameters
   use data_mesh
   use data_spec
-  !use data_matr
   use data_source, only : src_type
   use data_io,     only : verbose
   use data_proc
   
   use get_mesh,    only : compute_coordinates_mesh
-  use geom_transf
   use utlity
   use analytic_mapping
   
@@ -46,7 +41,7 @@ module def_precomp_terms
   private
 contains
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Wrapper routine to contain globally defined large matrices that are not 
 !! used in the time loop to this module (e.g. rho, lambda, mu).
 !! Also fills up Q with values (which is used in the time loop)
@@ -55,7 +50,8 @@ subroutine read_model_compute_terms
   use get_model
   use attenuation,  only: prepare_attenuation
   use commun,       only: barrier
-  use data_matr,    only: Q_mu, Q_kappa, M_w_fl, M0_w_fl, M1chi_fl, M2chi_fl, M4chi_fl, bdry_matr
+  use data_matr,    only: Q_mu, Q_kappa, M_w_fl, M0_w_fl, M1chi_fl, M2chi_fl, M4chi_fl, &
+                          bdry_matr
   
   
   real(kind=dp), dimension(:,:,:),allocatable :: rho, lambda, mu, massmat_kwts2
@@ -108,9 +104,11 @@ subroutine read_model_compute_terms
   call compute_pointwisederiv_matrices
 
   if (do_mesh_tests) then
-     if (lpr .and. verbose > 1) write(6,*)'   test pointwise derivatives & Laplacian in solid....'
+     if (lpr .and. verbose > 1) &
+         write(6,*)'   test pointwise derivatives & Laplacian in solid....'
      call test_pntwsdrvtvs_solid
-     if (lpr .and. verbose > 1) write(6,*)'   test pointwise derivatives & Laplacian in fluid....'
+     if (lpr .and. verbose > 1) &
+         write(6,*)'   test pointwise derivatives & Laplacian in fluid....'
      if (have_fluid) call test_pntwsdrvtvs_fluid
   endif
 
@@ -142,13 +140,14 @@ subroutine read_model_compute_terms
 
   if (lpr .and. verbose > 1) write(6,*) '   ...deallocated unnecessary elastic arrays'
   
-  if (lpr .and. verbose > 0) write(6,*) ' :::::::DONE BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
+  if (lpr .and. verbose > 0) &
+     write(6,*) ' :::::::DONE BACKGROUND MODEL & PRECOMPUTED MATRICES:::::'
   call flush(6)
 
 end subroutine read_model_compute_terms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine lagrange_derivs
 !< Defines elemental arrays for the derivatives of Lagrange interpolating 
 !! functions either upon 
@@ -165,53 +164,34 @@ subroutine lagrange_derivs
   character(len=16) :: fmt1
   logical           :: tensorwrong
   
-  ! shp_deri_k only needed for the source and pointwise derivatives,
-  ! otherwise (stiffness terms) we apply G0, G1, G2 and their transposes.
-  allocate(shp_deri_k(0:npol,0:npol,2,2))
   allocate(G1(0:npol,0:npol))
   allocate(G1T(0:npol,0:npol))
   allocate(G2(0:npol,0:npol))
   allocate(G2T(0:npol,0:npol))
   allocate(G0(0:npol))
 
-
-  shp_deri_k(:,:,:,:) = zero
-
+  ! Define elemental Lagrange interpolant derivatives as needed for stiffness
+  ! Derivative in z direction: \partial_\eta (l_j(\eta_q))
   ! non-axial elements
   do ishp = 0, npol
-     call hn_jprime(eta,ishp,npol,df)
-     call hn_jprime(eta,ishp,npol,dg)
-     do jpol = 0, npol
-        shp_deri_k(ishp,jpol,1,1)=df(jpol)
-        shp_deri_k(ishp,jpol,1,2)=dg(jpol)
-     end do
+     call hn_jprime(eta, ishp, npol, df)
+     G2(ishp,:) = df
   end do
-
-  ! axial elements
-  do ishp = 0, npol
-     call lag_interp_deriv_wgl(df,xi_k,ishp,npol)
-     call hn_jprime(eta,ishp,npol,dg)
-     do jpol = 0, npol 
-        shp_deri_k(ishp,jpol,2,1)=df(jpol)
-        shp_deri_k(ishp,jpol,2,2)=dg(jpol)
-     end do
-  end do
-
-  ! Define elemental Lagrange interpolant derivatives as needed for stiffness
-
-  ! Derivative in z direction: \partial_\eta (l_j(\eta_q))
-  G2 = shp_deri_k(0:npol,0:npol,1,2)
   G2T = transpose(G2)
 
   ! Derivative in s-direction: \partial_\xi (\bar{l}_i(\xi_p))
-  G1 = shp_deri_k(0:npol,0:npol,2,1)
+  ! axial elements
+  do ishp = 0, npol
+     call lag_interp_deriv_wgl(df,xi_k,ishp,npol)
+     G1(ishp,:) = df
+  end do
   G1T = transpose(G1)
 
   ! Axial vector
-  G0 = shp_deri_k(0:npol,0,2,1)
+  G0 = G1(:,0)
 
   ! Simple test on Lagrange derivative tensor's antisymmetries...
-  tensorwrong=.false.
+  tensorwrong = .false.
   if ( mod(npol,2) == 0 ) then
      do jpol = 0,npol-1
         do ishp = 0,npol-1
@@ -238,9 +218,9 @@ subroutine lagrange_derivs
   endif
 
 end subroutine lagrange_derivs
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine compute_pointwisederiv_matrices
 !< The 4 necessary global matrices due to pointwise derivatives d/ds and d/dz:
 !! dzdeta/J, dzdxi/J, dsdeta/J, dsdxi/J (J: Jacobian).
@@ -398,9 +378,9 @@ subroutine compute_pointwisederiv_matrices
 8 format(a25,2(1pe14.4))
 
 end subroutine compute_pointwisederiv_matrices
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine test_pntwsdrvtvs_solid
   !< Test pointwise derivatives & axisymmetric Laplacian in solid region
 
@@ -542,9 +522,9 @@ subroutine test_pntwsdrvtvs_solid
   deallocate(elderiv)
 
 end subroutine test_pntwsdrvtvs_solid
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine test_pntwsdrvtvs_fluid
   !< Test pointwise derivatives & axisymmetric Laplacian in fluid
   
@@ -686,9 +666,9 @@ subroutine test_pntwsdrvtvs_fluid
   deallocate(elderiv)
 
 end subroutine test_pntwsdrvtvs_fluid
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
 !< This routine computes and stores the coefficients of the diagonal 
 !! mass matrix, when a weighted Gauss-Lobatto quadrature for axial elements.
@@ -704,7 +684,8 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   use data_io,          only : need_fluid_displ, dump_energy
   use commun,           only : pdistsum_solid_1D, pdistsum_fluid
   use data_pointwise,   only : inv_rho_fluid
-  use data_matr,        only : set_mass_matrices, unassem_mass_rho_solid, unassem_mass_lam_fluid
+  use data_matr,        only : set_mass_matrices, unassem_mass_rho_solid, &
+                               unassem_mass_lam_fluid
 
   use data_mesh,        only : npol, nelem, nel_solid, nel_fluid
   
@@ -842,7 +823,7 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
     allocate(unassem_mass_rho_solid(0:npol,0:npol,nel_solid))
     unassem_mass_rho_solid = inv_mass_rho
     if (src_type(1)=='dipole') &
-                   unassem_mass_rho_solid = two * unassem_mass_rho_solid
+       unassem_mass_rho_solid = two * unassem_mass_rho_solid
   endif
 
 
@@ -1087,9 +1068,9 @@ subroutine def_mass_matrix_k(rho,lambda,mu,massmat_kwts2)
   deallocate(drdxi)
 
 end subroutine def_mass_matrix_k
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine compute_mass_earth(rho)
 !< A straight computation of the mass of the sphere and that of its 
 !! solid and fluid sub-volumes. This is the same as computing the volume 
@@ -1103,7 +1084,6 @@ subroutine compute_mass_earth(rho)
   use background_models,    only : velocity
   use commun,               only : psum
   use data_io,              only : infopath,lfinfo
-  
   
   real(kind=dp)   , intent(in)     :: rho(0:npol,0:npol,nelem)
   integer                          :: iel,ipol,jpol,idom,iidom,idisc
@@ -1256,10 +1236,11 @@ subroutine compute_mass_earth(rho)
   deallocate(massmat_fluid)
 
 end subroutine compute_mass_earth
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
-subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
+!-----------------------------------------------------------------------------------------
+subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani, &
+                                     eta_ani, fa_ani_theta, fa_ani_phi)
 !< This routine is a merged version to minimize global work 
 !! array definitions. The terms alpha_wt_k etc. are now 
 !! merely elemental arrays, and defined on the fly when 
@@ -1281,11 +1262,12 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
   
   real(kind=dp), dimension(0:,0:,:), intent(in) :: lambda,mu
   real(kind=dp), dimension(0:,0:,:), intent(in) :: massmat_kwts2
-  real(kind=dp), dimension(0:,0:,:), intent(in), optional :: xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi
+  real(kind=dp), dimension(0:,0:,:), intent(in), optional :: xi_ani, phi_ani, eta_ani, &
+                                                             fa_ani_theta, fa_ani_phi
   
   real(kind=dp) :: local_crd_nodes(8,2)
-  integer       :: ielem,ipol,jpol,inode
-  real(kind=dp) :: dsdxi,dzdeta,dzdxi,dsdeta
+  integer       :: ielem, ipol, jpol, inode
+  real(kind=dp) :: dsdxi, dzdeta, dzdxi, dsdeta
   
   real(kind=dp) :: alpha_wt_k(0:npol,0:npol)
   real(kind=dp) :: beta_wt_k(0:npol,0:npol)
@@ -1720,9 +1702,9 @@ subroutine def_solid_stiffness_terms(lambda, mu, massmat_kwts2, xi_ani, phi_ani,
   deallocate(non_diag_fact)
 
 end subroutine def_solid_stiffness_terms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                        lambda,mu,xi_ani,phi_ani,eta_ani, &
                                        fa_ani_theta, fa_ani_phi, &
@@ -1904,9 +1886,9 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
   enddo ! ipol
 
 end subroutine compute_monopole_stiff_terms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
                                       fa_ani_theta, fa_ani_phi, &
@@ -1922,34 +1904,34 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
   
   integer, intent(in) :: ielem,jpol
   
-  real(kind=dp)   , intent(in) :: lambda(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: mu(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: xi_ani(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: phi_ani(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: eta_ani(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
-  real(kind=dp)   , intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: lambda(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: mu(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: xi_ani(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: phi_ani(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: eta_ani(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: fa_ani_theta(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: fa_ani_phi(0:npol,0:npol,nelem)
+  real(kind=dp), intent(in) :: massmat_kwts2(0:npol,0:npol,nelem)
   
-  real(kind=dp)   , intent(in) :: non_diag_fact(0:npol,nel_solid)
-  real(kind=dp)   , intent(in) :: local_crd_nodes(8,2)
+  real(kind=dp), intent(in) :: non_diag_fact(0:npol,nel_solid)
+  real(kind=dp), intent(in) :: local_crd_nodes(8,2)
   
-  real(kind=dp)   , intent(in) :: alpha_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: beta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: gamma_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: delta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: epsil_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: zeta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: alpha_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: beta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: gamma_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: delta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: epsil_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: zeta_wt_k(0:npol,0:npol)
   
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: Ms_z_eta_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: Ms_z_eta_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: Ms_z_xi_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: Ms_z_xi_s_xi_wt_k(0:npol,0:npol)
   
-  real(kind=dp)   , intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
-  real(kind=dp)   , intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: M_s_xi_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: M_z_xi_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: M_z_eta_wt_k(0:npol,0:npol)
+  real(kind=dp), intent(in) :: M_s_eta_wt_k(0:npol,0:npol)
   
   integer          :: ipol
   real(kind=dp)    :: dsdxi, dzdeta, dzdxi, dsdeta
@@ -2159,9 +2141,9 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
   endif
 
 end subroutine compute_dipole_stiff_terms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine compute_quadrupole_stiff_terms(ielem,jpol, &
                                       lambda,mu,xi_ani,phi_ani,eta_ani, &
                                       fa_ani_theta, fa_ani_phi, &
@@ -2379,11 +2361,11 @@ subroutine compute_quadrupole_stiff_terms(ielem,jpol, &
    endif
 
 end subroutine compute_quadrupole_stiff_terms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 real(kind=dp) function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
-                                     theta_fa, phi_fa, i, j, k, l)
+                                  theta_fa, phi_fa, i, j, k, l)
 !< returns the stiffness tensor as defined in Nolet(2008), Eq. (16.2)
 !! i, j, k and l should be in [1,3]
 !
@@ -2431,9 +2413,9 @@ real(kind=dp) function c_ijkl_ani(lambda, mu, xi_ani, phi_ani, eta_ani, &
           * (s(i) * s(j) * s(k) * s(l))
 
 end function c_ijkl_ani
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
 !< Fluid precomputed matrices definitions for all sources.
 !! Note that in this routine terms alpha etc. are scalars 
@@ -2569,9 +2551,9 @@ subroutine def_fluid_stiffness_terms(rho,massmat_kwts2)
   deallocate(non_diag_fact)
 
 end subroutine def_fluid_stiffness_terms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine def_solid_fluid_boundary_terms
 !< Defines the 1-d vector-array bdry_matr which acts as the diagonal matrix
 !! to accomodate the exchange of fields across solid-fluid boundaries 
@@ -2880,8 +2862,7 @@ subroutine def_solid_fluid_boundary_terms
 15 format(4(1pe12.4))
 
 end subroutine def_solid_fluid_boundary_terms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!=========================
 end module def_precomp_terms
-!=========================
+!=========================================================================================

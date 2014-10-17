@@ -19,9 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!===================
+!=========================================================================================
 module data_mesh
-!===================
 
   ! Arrays here pertain to some sort of mesh peculiarities and mainly serve 
   ! as information or parameters for many "if"-decisions such as
@@ -126,8 +125,6 @@ module data_mesh
   logical, allocatable        :: solid_domain(:)
   integer, allocatable        :: idom_fluid(:)
   real(kind=dp)               :: rmin, minh_ic, maxh_ic, maxh_icb
-  logical                     :: make_homo
-  real(kind=dp)               :: vphomo, vshomo, rhohomo
   logical                     :: anel_true ! anelastic model?
   !--------------------------------------------------------------------------
 
@@ -292,6 +289,5 @@ subroutine read_mesh_axel(iounit)
 end subroutine
 !-----------------------------------------------------------------------------------------
 
-!=======================
 end module data_mesh
-!=======================
+!=========================================================================================

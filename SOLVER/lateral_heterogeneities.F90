@@ -19,9 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!========================
+!=========================================================================================
 module lateral_heterogeneities
-!========================
 
   use global_parameters
   use data_heterogeneous
@@ -1929,6 +1928,7 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename, varname)
    !write(6,*)'...saved ',trim(filename)//'.vtk'
 
 end subroutine write_VTK_bin_scal_pts
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
 end module lateral_heterogeneities
+!=========================================================================================

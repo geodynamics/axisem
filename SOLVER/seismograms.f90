@@ -19,10 +19,9 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> Various subroutines for seismogram preparation and dumping
-!========================
 module seismograms
-!========================
 
   use global_parameters
   use data_io
@@ -35,7 +34,7 @@ module seismograms
 
 contains
   
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prepare_seismograms
 
   use utlity
@@ -103,12 +102,6 @@ subroutine prepare_seismograms
                 dabs(z-router) < smallval*router)  then
               ielepi = iel
               if (verbose > 1) then
-                 !write(6,*)'Proc ', mynum, ' found: '
-                 !write(6,*)'Epicenter element:',ielepi
-                 !write(6,*)'Epicenter radius [km], colat [deg]:', &
-                 !          r/1000.,theta/pi*180. 
-                 !write(6,*)''
-                 !call flush(6)
                  write(69,*)'Proc ', mynum, ' found: '
                  write(69,*)'Epicenter element:',ielepi
                  write(69,*)'Epicenter radius [km], colat [deg]:', &
@@ -126,12 +119,6 @@ subroutine prepare_seismograms
           if ( dabs(theta-pi) < min_distance_nondim*pi) then 
              ielantipode=iel
              if (verbose > 1) then
-                !write(6,*)'Proc ', mynum, ' found: '
-                !write(6,*)'Antipodal element:',ielantipode
-                !write(6,*)'Antipode radius [km], colat [deg]:',&
-                !           r/1000.,theta/pi*180.
-                !write(6,*)''
-                ! call flush(6)
                 write(69,*)'Proc ', mynum, ' found: '
                 write(69,*)'Antipodal element:',ielantipode
                 write(69,*)'Antipode radius [km], colat [deg]:',&
@@ -149,13 +136,6 @@ subroutine prepare_seismograms
            if ( dabs(z) < smallval_sngl)  then 
               ielequ=iel
               if (verbose > 1) then
-                 !write(6,*)'Proc ', mynum, ' found: '
-                 !write(6,*)'Equatorial element:',ielequ
-                 !write(6,*)'Equatorial radius [km], colat [deg]:',&
-                 !           r/1000.,theta/pi*180.
-                 !write(6,*)''
-                 !call flush(6)
-
                  write(69,*)'Proc ', mynum, ' found: '
                  write(69,*)'Equatorial element:',ielequ
                  write(69,*)'Equatorial radius [km], colat [deg]:',&
@@ -316,9 +296,9 @@ subroutine prepare_seismograms
   endif
 
 end subroutine prepare_seismograms
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Read colatitudes [deg] from a file receivers.dat and locate closest grid 
 !! point for seismograms, output grid point locations in 
 !! receiver_pts.dat<PROCID>
@@ -719,9 +699,9 @@ subroutine prepare_from_recfile_seis
   endif
 
 end subroutine prepare_from_recfile_seis
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Open files for generic checks: hypocenter,epicenter,equator,antipode.
 !! File output names: seis<LOCATION>{1,2,3}.dat
 !!                    where 1=s-component, 2=phi-component, 3=z-component.
@@ -736,16 +716,6 @@ subroutine open_hyp_epi_equ_anti
   use data_mesh,   only : have_epi, have_equ, have_antipode, maxind
 
   if (maxind>0) then
-
-    ! @TODO: this might be problematic if two processors have the source - then
-    !        both open the same file. IMHO these files are pretty useless
-    !        anyway, so not fixing it for now
-    !if (have_src) then
-    !   open(10001,file=datapath(1:lfdata)//'/seishypocenter1.dat') 
-    !   if (src_type(1)/='monopole') &
-    !        open(10002,file=datapath(1:lfdata)//'/seishypocenter2.dat') 
-    !   open(10003,file=datapath(1:lfdata)//'/seishypocenter3.dat') 
-    !endif
 
     if (have_epi) then
        open(900,file=datapath(1:lfdata)//'/seisepicenter1.dat') 
@@ -771,9 +741,9 @@ subroutine open_hyp_epi_equ_anti
  endif ! if maxind > 0
 
 end subroutine open_hyp_epi_equ_anti
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Generic seismograms for quick checks: hypocenter,epicenter,equator,antipode.
 !! Not writing the transverse component for monopole sources.
 !! See open_hyp_epi_equ_anti for component explanation.
@@ -786,29 +756,6 @@ subroutine compute_hyp_epi_equ_anti(t,disp)
   real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
 
   if (maxind>0) then
-     !if (mynum==0) then
-     !   if (ipol_src /= 0 ) then
-     !      write(6,*)'PROBLEM in hypocenter location!'
-     !      write(6,*)'ipol  is not equal to zero, hence off the axis!',ipol_src
-     !      stop
-     !   endif
-     !endif
-
-     ! hypocenter
-     !if (have_src) then
-     !  if (src_type(1)=='dipole') then 
-     !     write(10001,*)t,disp(ipol_src,jpol_src,iel_src,1)+&
-     !                   disp(ipol_src,jpol_src,iel_src,2) ! s
-     !     write(10002,*)t,disp(ipol_src,jpol_src,iel_src,1)-&
-     !                   disp(ipol_src,jpol_src,iel_src,2) ! phi
-     !  else
-     !     write(10001,*)t,disp(ipol_src,jpol_src,iel_src,1) ! s
-     !     if (src_type(1)=='quadpole') &
-     !          write(10002,*)t,disp(ipol_src,jpol_src,iel_src,2) ! phi
-     !   endif
-     !   write(10003,*)t,disp(ipol_src,jpol_src,iel_src,3)  ! z
-     !endif
-   
      ! epicenter
      if (have_epi) then
         if (src_type(1)=='dipole') then 
@@ -851,9 +798,9 @@ subroutine compute_hyp_epi_equ_anti(t,disp)
   endif ! if maxind > 0
 
 end subroutine compute_hyp_epi_equ_anti
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine compute_recfile_seis_bare(disp)
 
   use data_source, only : src_type
@@ -891,16 +838,16 @@ subroutine compute_recfile_seis_bare(disp)
   endif !src_type(1)
 
 end subroutine compute_recfile_seis_bare
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !! Calculate displacement at receiver locations and pass to nc_dump_rec
 subroutine nc_compute_recfile_seis_bare(disp, iseismo) 
 
   use data_source, only : src_type
   use nc_routines, only : nc_dump_rec
   use data_mesh,   only : recfile_el, num_rec
-  implicit none
+
   real(kind=realkind), intent(in)  :: disp(0:,0:,:,:)
   integer,             intent(in)  :: iseismo
 
@@ -908,66 +855,34 @@ subroutine nc_compute_recfile_seis_bare(disp, iseismo)
   integer                          :: i
 
 
-  if (src_type(1)=='monopole') then
-     do i=1,num_rec
-          disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-          disp_rec(2,i)= 0.0 
-          disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+  if (src_type(1) == 'monopole') then
+     do i=1, num_rec
+          disp_rec(1,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1)
+          disp_rec(2,i) = 0
+          disp_rec(3,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3)
      enddo
-  elseif (src_type(1)=='dipole') then
-     do i=1,num_rec
-          disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) &
-                             + disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-          disp_rec(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1) &
-                             - disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-          disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))
+  elseif (src_type(1) == 'dipole') then
+     do i=1, num_rec
+          disp_rec(1,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1) &
+                        + disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2)
+          disp_rec(2,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1) &
+                        - disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2)
+          disp_rec(3,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3)
      enddo
-  elseif (src_type(1)=='quadpole') then
-     do i=1,num_rec
-          disp_rec(1,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),1))
-          disp_rec(2,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),2))
-          disp_rec(3,i)=real(disp(recfile_el(i,2),recfile_el(i,3),recfile_el(i,1),3))  
+  elseif (src_type(1) == 'quadpole') then
+     do i=1, num_rec
+          disp_rec(1,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),1)
+          disp_rec(2,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),2)
+          disp_rec(3,i) = disp(recfile_el(i,2), recfile_el(i,3), recfile_el(i,1),3)
      enddo
   end if !src_type(1)
 
   call nc_dump_rec(disp_rec, iseismo) 
 
 end subroutine nc_compute_recfile_seis_bare
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
-!subroutine compute_recfile_cmb(velo,grad_sol)
-!
-!  use data_source, only : src_type
-!  use data_mesh
-!  
-!  real(kind=realkind), intent(in) :: velo(0:,0:,:,:)
-!  real(kind=realkind)             :: grad_sol(0:,0:,:,:)
-!  integer :: i
-!
-!  if (src_type(1)=='monopole') then
-!  do i=1,num_cmb
-!     write(200000+i,*)velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1),&
-!                      velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),3)
-!
-!     write(250000+i,*)grad_sol(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1) 
-!  enddo
-!
-!  else
-!     do i=1,num_cmb
-!     write(200000+i,*)velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1),&
-!                      velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),2),&
-!                      velo(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),3)  
-!
-!     write(250000+i,*)grad_sol(cmbfile_el(i,2),cmbfile_el(i,3),cmbfile_el(i,1),1) 
-!
-!     enddo
-!  endif
-!
-!end subroutine compute_recfile_cmb
-!=============================================================================
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Save one displacement and velocity trace for each element on the surface 
 !! which are both needed for kernels (du and v0 inside the cross-correlation)
 subroutine compute_surfelem(disp, velo)
@@ -1030,113 +945,7 @@ subroutine compute_surfelem(disp, velo)
   end if !netcdf
 
 end subroutine compute_surfelem
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
-!> Save one displacement and velocity trace for each element on the surface 
-!! which are both needed for kernels (du and v0 inside the cross-correlation)
-!!
-!!@TODO
-!! MvD: - computes strain in the whole earth, but dumps it only at the surface
-!!      - another example copy&paste code -> should go into a proper function
-!!      - cannot give the correct result at the axis, i.e. at the antipode and
-!!        the epicenter (where 1/s needs treatment with l'hopital)
-!!      - what is j? never initatlized....
-!!      - sign errors in components 23 and 12 of the strain
-subroutine compute_surfelem_strain(u)
-
-  use data_pointwise,         only: inv_s_solid
-  use data_source,            only: src_type
-  use pointwise_derivatives,  only: axisym_gradient_solid, axisym_gradient_solid_add
-  use nc_routines,            only: nc_dump_surface
-  use data_mesh,              only: npol, nel_solid, surfelem, maxind
-  real(kind=realkind), intent(in) :: u(0:,0:,:,:)
-  
-  real(kind=realkind)             :: grad_sol(0:npol,0:npol,nel_solid,2)
-  real(kind=realkind)             :: dumpvar(maxind, 6)
-  real(kind=realkind)             :: strain(0:npol,nel_solid,6)
-
-  integer :: i, jj, j
-
-  print *, "You should seriously consider rewriting compute_surfelem_strain()"
-  print *, "in seismograms.f90, I am pretty sure it is buggy"
-  print *, "If you do not believe me, just go ahead and comment out the stop in"
-  print *, "   seismograms.f90:1340"
-  stop
-
-  strain = 0.
-
-  if (src_type(1)=='dipole') then
-    call axisym_gradient_solid(u(:,:,:,1)+u(:,:,:,2),grad_sol)
-  else
-    call axisym_gradient_solid(u(:,:,:,1),grad_sol) ! 1: dsus, 2: dzus
-  endif
-  strain(:,:,1)  = grad_sol(npol/2,:,:,1) ! ds us
-
-  call axisym_gradient_solid_add(u(:,:,:,3),grad_sol) ! 1:dsuz+dzus,2:dzuz+dsus
-
-  ! calculate entire E31 term: (dsuz+dzus)/2
-  strain(:,:,4) = grad_sol(npol/2,:,:,1) * real(.5,kind=realkind) ! ds uz
-
-  ! Components involving phi....................................................
-  if (src_type(1)=='monopole') then
-     strain(:,:,2) = inv_s_solid(npol/2,:,:) * u(npol/2,:,:,1) ! dp up
-     strain(:,:,3) = grad_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
-
-  elseif (src_type(1)=='dipole') then 
-     strain(:,:,2) = real(2.,kind=realkind) * inv_s_solid(npol/2,:,:) * u(npol/2,:,:,1) ! dp up
-     strain(:,:,3) = grad_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
-
-     call axisym_gradient_solid(u(:,:,:,1)-u(:,:,:,2),grad_sol) !1:dsup,2:dzup
-     strain(:,:,5) = ( inv_s_solid(npol/2,:,:) * u(npol/2,:,:,2)  &
-                       + real(.5,kind=realkind) * grad_sol(npol/2,:,:,1) ) ! ds up
-
-     strain(:,:,6) = real(.5,kind=realkind) * (inv_s_solid(npol/2,:,:) * u(npol/2,:,:,3)  &
-                                               + grad_sol(npol/2,:,:,2) ) ! dz up
-
-  elseif (src_type(1)=='quadpole') then
-     strain(:,:,2) = inv_s_solid(npol/2,:,:) & ! dp up
-                          *  ( u(npol/2,:,:,1) - real(2.,kind=realkind) * u(npol/2,:,:,2))
-     strain(:,:,3) = grad_sol(npol/2,:,:,2) - strain(:,:,1) ! dz uz
-
-     call axisym_gradient_solid(u(:,:,:,2), grad_sol) ! 1: dsup, 2: dzup
-
-     strain(:,:,5) = real(.5,kind=realkind) * ( inv_s_solid(npol/2,:,:) &
-                             * (real(2.,kind=realkind)* u(npol/2,:,:,1) - u(npol/2,:,:,2)) &
-                             + grad_sol(npol/2,:,:,1) ) ! ds up
-
-     strain(:,:,6) = ( inv_s_solid(npol/2,:,:) *u(npol/2,:,:,3) &
-                             + real(.5,kind=realkind) *grad_sol(npol/2,:,:,2) ) ! dz up
-
-  endif
-
-  if (use_netcdf) then
-      do i=1, maxind
-         dumpvar(i,:) = real(strain(j,surfelem(i),1:6))
-      enddo
-      call nc_dump_surface(dumpvar(:,1:6), 'stra')
-      do i=1, maxind
-        dumpvar(i,1:3) = real(u(npol/2,j,surfelem(i),1:3))
-      enddo
-      call nc_dump_surface(dumpvar(:,1:3), 'srcd')
-  end if
-
-  if (.not. use_netcdf) then
-      do i=1, maxind
-         do j=0, npol
-            write(60000000+i,20) (real(strain(j,surfelem(i),jj)), jj=1,6)
-            write(70000000+i,30) (real(u(npol/2,j,surfelem(i),jj)), jj=1,3)
-         enddo
-      enddo
-
-20 format(6(1pe11.3))
-30 format(3(1pe11.3))
-  end if
-
-end subroutine compute_surfelem_strain
-!=============================================================================
-
-!========================
 end module seismograms
-!========================
- 
+!=========================================================================================

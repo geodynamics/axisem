@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
 !! compute other parameters for the simulation;
 !! write out summaries of all relevant simulation settings.
@@ -75,7 +76,7 @@ end subroutine
 !! data paths, specification of wavefield dumping etc.
 subroutine readin_parameters
 
-  use data_mesh, only: make_homo, do_mesh_tests
+  use data_mesh, only: do_mesh_tests
 
   call read_inparam_basic
   
@@ -86,7 +87,6 @@ subroutine readin_parameters
   ! now pre-set. Most of these are to be considered in the post processing stage now.
   sum_seis = .false.
   sum_fields = .false.
-  num_simul = 1
    
   ! netcdf format
   output_format = 'binary'
@@ -95,11 +95,11 @@ subroutine readin_parameters
   call barrier
   if (lpr) then
      write(6,20)
-     write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
+     write(6,21) datapath, infopath, seislength_t, enforced_dt,  &
                  enforced_period, trim(simtype), rec_file_type, &
                  sum_seis, sum_fields, time_scheme, seis_dt,  &
                  dump_energy, dump_vtk, dump_wavefields, &
-                 dump_type, ibeg, iend, jbeg, jend, strain_samp, src_dump_type, make_homo, &
+                 dump_type, ibeg, iend, jbeg, jend, strain_samp, src_dump_type, &
                  add_hetero, do_mesh_tests, output_format
 
 20 format(/&
@@ -182,7 +182,6 @@ subroutine readin_parameters
    08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
    12x,'Data I/O path:                      ',a20,/                         &
    12x,'Info I/O path:                      ',a20,/                         &
-   12x,'Number of source simulations:       ',i2,/                          &
    12x,'Simulation length [s]:              ',f9.3,/                        &
    12x,'Enforced time step [s]:             ',f7.3,/                        &
    12x,'Enforced source period [s]:         ',f7.3,/                        &
@@ -202,7 +201,6 @@ subroutine readin_parameters
    12x,'Last GLL to save in strains:        ',i2,/                          &
    12x,'Samples per period for strains:     ',f7.3,/                        &
    12x,'Source dumping type:                ',a4,/                          &
-   12x,'Homogenize background model?        ',l2,/                          &
    12x,'Add heterogeneous region?           ',l2,/                          &
    12x,'Perform extensive mesh tests?       ',l2,/                          &
    12x,'Output format (seism., wavefields): ',a6,/                          &
@@ -358,8 +356,8 @@ end subroutine
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
   
-  use nc_routines,  only: nc_dumpbuffersize
-  use data_mesh,    only: naxel, meshname, vphomo, vshomo, rhohomo, make_homo, do_mesh_tests
+  use nc_routines,  only: nc_dumpbuffersize, nc_chunk_time_traces
+  use data_mesh,    only: naxel, meshname, do_mesh_tests
   use commun,       only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
   integer              :: iinparam_advanced=500, ioerr
@@ -395,10 +393,6 @@ subroutine read_inparam_advanced
   kwf_thetamax = pi
   
   dump_energy = .false.
-  make_homo = .false.
-  vphomo = 10.
-  vshomo = 10.
-  rhohomo = 10.
   
   deflate_level = 5
   snap_dt = 20.
@@ -407,6 +401,7 @@ subroutine read_inparam_advanced
   use_netcdf = .false.
   checkpointing = .false.
   nc_dumpbuffersize = 128
+  nc_chunk_time_traces = .false.
 
   ! xdmf stuff
   i_n_xdmf = -1
@@ -518,21 +513,6 @@ subroutine read_inparam_advanced
          case('SAVE_ENERGY')
              read(keyvalue,*) dump_energy
 
-         case('HOMO_MODEL')
-             read(keyvalue,*) make_homo
-
-         case('HOMO_VP')
-             read(keyvalue,*) vphomo 
-             vphomo = vphomo * 1.e3
-
-         case('HOMO_VS')
-             read(keyvalue,*) vshomo 
-             vshomo = vshomo * 1.e3
-
-         case('HOMO_RHO')
-             read(keyvalue,*) rhohomo 
-             rhohomo = rhohomo * 1.e3
-         
          case('USE_NETCDF')
              read(keyvalue, *) use_netcdf
 
@@ -541,6 +521,9 @@ subroutine read_inparam_advanced
 
          case('NETCDF_DUMP_BUFFER') 
              read(keyvalue, *) nc_dumpbuffersize
+
+         case('CHUNK_TIME_TRACES') 
+             read(keyvalue, *) nc_chunk_time_traces
 
          case('DEFLATE_LEVEL')
              read(keyvalue,*) deflate_level
@@ -622,11 +605,6 @@ subroutine read_inparam_advanced
   call broadcast_int(jend, 0) 
 
   call broadcast_log(dump_energy, 0) 
-  call broadcast_log(make_homo, 0) 
-  
-  call broadcast_dble(vphomo, 0) 
-  call broadcast_dble(vshomo, 0) 
-  call broadcast_dble(rhohomo, 0) 
   
   call broadcast_int(deflate_level, 0) 
   call broadcast_dble(snap_dt, 0) 
@@ -638,6 +616,7 @@ subroutine read_inparam_advanced
   call broadcast_log(use_netcdf, 0) 
   call broadcast_log(checkpointing, 0) 
   call broadcast_int(nc_dumpbuffersize, 0) 
+  call broadcast_log(nc_chunk_time_traces, 0) 
   
   call broadcast_dble(xdmf_rmin, 0) 
   call broadcast_dble(xdmf_rmax, 0) 
@@ -735,7 +714,7 @@ subroutine check_basic_parameters
   errmsg = 'MESHNAME is not defined in input file inparam_basic'
   call pcheck(trim(meshname) == 'undefined', errmsg)
 
-#ifndef unc
+#ifndef enable_netcdf
   errmsg = 'trying to use netcdf IO but axisem was compiled without netcdf'
   call pcheck(use_netcdf, errmsg)
 #endif
@@ -1174,8 +1153,7 @@ end subroutine compute_numerical_parameters
 subroutine write_parameters
 
     use data_comm
-    use nc_routines
-    !use data_mesh, ONLY : nglob,nglob_solid
+    use nc_helpers
     use data_mesh
 
     integer          :: iel,curvel,linel,seminoel,semisoel
@@ -1450,9 +1428,14 @@ subroutine write_parameters
 
     endif ! lpr
 
-    if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
+! in case of parallel IO, all ranks write attributes
+#ifdef upnc
+    if ((use_netcdf)) then
+#else
+    if ((mynum == 0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
+#endif
         ! write generic simulation info file
-        write(6,*) ' Writing simulation info to netcdf file attributes' 
+        if (mynum == 0) write(6,*) ' Writing simulation info to netcdf file attributes' 
         call nc_write_att_int(  6,                     'file version')
         call nc_write_att_char( trim(bkgrdmodel),      'background model')
         call nc_write_att_int(  merge(1, 0, do_anel),  'attenuation') ! merge: hacky conversion of logical to int
@@ -1676,18 +1659,6 @@ subroutine write_parameters
                     '3D_RTOP        ', router/1000.,&
                     '3D_RBOT         3190.'
            
-           ! deactivated because of bug #30 and to avoid confusion in the
-           ! tutorial
-           !write(9,'(a,/,a,/)') &
-           !         '# colatitude of meridional cross section', &
-           !         '3D_MERI_COLAT   60.'
-           !         
-           !write(9,'(a,/,a,/,a,/,a,/)') &
-           !         '# switches for bottom, top and meridonial surface', &
-           !         '3D_PLOT_TOP     T', &
-           !         '3D_PLOT_BOT     T', &
-           !         '3D_PLOT_MERI    F'
-
            write(9,'(a,/,a,/,a,/)') &
                     '# switches for bottom, top and meridonial surface', &
                     '3D_PLOT_TOP     T', &
@@ -1838,4 +1809,4 @@ end subroutine check_parameters
 !-----------------------------------------------------------------------------------------
 
 end module parameters
-
+!=========================================================================================

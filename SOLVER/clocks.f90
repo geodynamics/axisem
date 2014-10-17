@@ -18,10 +18,8 @@
 !    You should have received a copy of the GNU General Public License
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
-
-!=======================
+!=========================================================================================
 module clocks_mod
-!=======================
 
 !-----------------------------------------------------------------------
 !                  CLOCKS module (for timing code sections)
@@ -48,14 +46,14 @@ module clocks_mod
 
     private
 
-    integer, private              :: ticks_per_sec, max_ticks, ref_tick, start_tick, end_tick
-    real(kind=4), private         :: tick_rate
-    integer, private, parameter   :: max_clocks = 256
-    integer, private              :: clock_num = 0
-    logical, private              :: clocks_initialized = .FALSE.
+    integer                       :: ticks_per_sec, max_ticks, ref_tick, start_tick, end_tick
+    real(kind=4)                  :: tick_rate
+    integer, parameter            :: max_clocks = 256
+    integer                       :: clock_num = 0
+    logical, private              :: clocks_initialized = .false.
 
     !clocks are stored in this internal type
-    type, private                 :: clock
+    type                          :: clock
        character(len=32)          :: name
        integer                    :: ticks, calls
     end type clock
@@ -63,13 +61,81 @@ module clocks_mod
     type(clock)                   :: clocks(0:max_clocks)
 
     public                        :: clocks_init, clocks_exit, get_clock, clock_id, tick
+    public                        :: start_clock, end_clock
 
     character(len=256), private   :: &
          version = '$Id: clocks.F90,v 2.2 2001/02/14 19:06:12 vb Exp $'
 
   contains
 
-!-----------------------------------------------------------------------
+!--- WRAPPER ROUTINES, SPECIFIC TO AXISEM -----------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine start_clock
+  ! Driver routine to start the timing, using the clocks_mod module.
+
+  use data_time,  only : idcomm, iddump, idmpi, idmpiws, idmpiwf, idnbio, idold, &
+                         idstiff, idanelts, idanelst
+  use data_proc,  only : lpr, mynum
+  use data_io,    only : verbose
+  
+  implicit none
+  
+  character(len=8)  :: mydate
+  character(len=10) :: mytime
+
+  call date_and_time(mydate,mytime) 
+  if (lpr) write(6,11) mydate(5:6), mydate(7:8), mydate(1:4), mytime(1:2), mytime(3:4)
+
+11 format('     Simulation started on ', A2,'/',A2,'/',A4,' at ', A2,'h ',A2,'min',/)
+
+  if (verbose > 1) write(69,11) mydate(5:6), mydate(7:8), mydate(1:4), &
+                                mytime(1:2), mytime(3:4)
+
+  if (verbose > 1) then
+      call clocks_init(mynum)
+  else
+      call clocks_init()
+  endif
+
+  idold    = clock_id('Time loop routine')
+  idcomm   = clock_id('Assembly/MPI routines')
+  idmpi    = clock_id(' > Only MPI routine')
+  idmpiws  = clock_id(' > Only solid MPI_WAIT')
+  idmpiwf  = clock_id(' > Only fluid MPI_WAIT')
+  idstiff  = clock_id('Stiffness routine')
+  idanelst = clock_id(' > Anelastic stiffness routine')
+  idanelts = clock_id('Anelastic time step routine')
+  iddump   = clock_id('Dump routine')
+  idnbio   = clock_id('Non Blocking IO red light')
+
+end subroutine start_clock
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine end_clock 
+  ! Wapper routine to end timing and display clock informations.
+
+  use data_proc,  only : mynum
+
+  implicit none
+
+  if (mynum==0) then
+     write(6,*)
+     write(6,"(10x,'Summary of timing measurements:')")
+     write(6,*)
+  endif
+
+  call clocks_exit(mynum)
+
+  if (mynum==0) write(6,*)
+
+end subroutine end_clock
+!-----------------------------------------------------------------------------------------
+
+!--- END WRAPPER ROUTINES, SPECIFIC TO AXISEM --------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine clocks_init(flag)
     !initialize clocks module
     !if flag is set, only print if flag=0
@@ -109,10 +175,9 @@ subroutine clocks_init(flag)
 
     return
 end subroutine clocks_init
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 function clock_id(name)
     !return an ID for a new or existing clock
     integer                         :: clock_id
@@ -124,8 +189,8 @@ function clock_id(name)
        clock_id = clock_id + 1
        if( clock_id.GT.clock_num )then
            if( clock_num.EQ.max_clocks )then
-               print *, &
-                    'CLOCKS ERROR: you are requesting too many clocks, max clocks=', max_clocks
+               print *, 'CLOCKS ERROR: you are requesting too many clocks, max clocks=', &
+                         max_clocks
                return
            else
                clock_num = clock_id
@@ -136,10 +201,9 @@ function clock_id(name)
     end do
     return
 end function clock_id
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 function tick( string, id, name, since )
     integer                                 :: tick
     character(len=*), intent(in), optional  :: string
@@ -186,10 +250,9 @@ function tick( string, id, name, since )
 
     return
 end function tick
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine get_clock( id, ticks, calls, total_time, time_per_call )
     integer, intent(in)                 :: id
     integer, intent(out), optional      :: ticks, calls
@@ -207,9 +270,9 @@ subroutine get_clock( id, ticks, calls, total_time, time_per_call )
 
     return
 end subroutine get_clock
-!-----------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine clocks_exit(flag)
     !print all cumulative clocks
     !if flag is set, only print if flag=0
@@ -242,8 +305,7 @@ subroutine clocks_exit(flag)
     return
 
 end subroutine clocks_exit
-!--------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!=======================
 end module clocks_mod
-!=======================
+!=========================================================================================

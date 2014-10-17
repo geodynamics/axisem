@@ -19,12 +19,11 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!========================
+!=========================================================================================
 !> Contains all functions for the wave propagation. prepare_waves has to be
 !! called beforehand and then time_loop is the only allowed entry point to start
 !! wave propagation.
 module time_evol_wave
-!========================
 
   use global_parameters
   use data_proc  
@@ -41,7 +40,7 @@ module time_evol_wave
 
 contains
  
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Contains all the preliminaries to propagate waves; such as the 
 !! background model, the stiffness and mass terms, the source and receiver 
 !! parameters, and preparations for I/O (dumping meshes, opening files).
@@ -215,9 +214,9 @@ subroutine prepare_waves
   if (lpr) write(6,*) 'done preparing waves.'
 
 end subroutine prepare_waves
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Entry point into the module time_evol_wave. Calls specific time loop
 ! !functions, either for newmark or symplectic time scheme. 
 subroutine time_loop
@@ -235,14 +234,13 @@ subroutine time_loop
   iclockold = tick(id=idold, since=iclockold)
  
 end subroutine time_loop
-!=============================================================================
-
+!-----------------------------------------------------------------------------------------
 
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 !           T I M E   E X T R A P O L A T I O N   R O U T I N E S
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> The conventional explicit, acceleration-driven Newmark scheme of 2nd order.
 !! (e.g. Chaljub & Valette, 2004). The mass matrix is diagonal; we only store 
 !! its pre-assembled inverse at the stage of the time loop.
@@ -259,7 +257,10 @@ subroutine sf_time_loop_newmark
   use commun
   use global_parameters
   use apply_masks
-  use stiffness
+  use stiffness_mono
+  use stiffness_di
+  use stiffness_quad
+  use stiffness_fluid
   use clocks_mod
   use data_matr,            only: inv_mass_rho, inv_mass_fluid
   use attenuation,          only: time_step_memvars
@@ -465,25 +466,28 @@ subroutine sf_time_loop_newmark
   end do ! time loop
   
 end subroutine sf_time_loop_newmark
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> SOLVE coupled solid-fluid system of temporal ODEs:
 !!   M*\dot{u}    = -K*u - B*\ddot{\chi} + F (solid)
 !!   M*\ddot{chi} = -K*\chi - B*u (fluid)
 !! using symplectic time integration schemes of 4th, 6th, 8th, 10th order 
 !!
-!! The time step can be chosen 1.5 times larger than in Newmark, resulting 
-!! in CPU times about 2.5 times longer than Newmark, but considerably more 
-!! accurate. Consult Ampuero & Nissen-Meyer (2007) for examples of when 
-!! this choice might be more appropriate. Generally, for long propagation 
-!! distances (say, > 100 wavelengths), it is worthwhile considering this.
+!! The time step can be chosen 1.5 times larger than in Newmark, resulting in CPU
+!! times about 2.5 times longer than Newmark, but considerably more accurate.
+!! Consult Ampuero & Nissen-Meyer (to be submitted 2007) for examples of when this
+!! choice might be more appropriate. Generally, for long propagation distances
+!! (say, > 100 wavelengths), it is worthwhile considering this.
 subroutine symplectic_time_loop
 
   use global_parameters
   use commun
   use apply_masks
-  use stiffness
+  use stiffness_mono
+  use stiffness_di
+  use stiffness_quad
+  use stiffness_fluid
   use clocks_mod
   use source,       only: compute_stf_t
   use data_matr,    only: inv_mass_rho,inv_mass_fluid
@@ -682,13 +686,13 @@ subroutine symplectic_time_loop
   end do ! time loop
 
 end subroutine symplectic_time_loop
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 !     E N D   O F   T I M E   E X T R A P O L A T I O N   R O U T I N E S
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine symplectic_coefficients(coefd,coeff,coefv)
 
   use commun, only : barrier,pend
@@ -908,9 +912,9 @@ subroutine symplectic_coefficients(coefd,coeff,coefv)
 12 format('   ',i3,' coeffd,coeffv,sub_dt:',3(1pe10.2))
 
 end subroutine symplectic_coefficients
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> coefficients for symmetric compositions of symmetric methods
 subroutine SS_scheme(n,a,b,g)
   
@@ -933,9 +937,9 @@ subroutine SS_scheme(n,a,b,g)
   enddo
 
 end subroutine SS_scheme
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Print time step, time, min/max displacement and potential values
 !! and stop the simulation if displacements blow up beyond acceptable...
 subroutine runtime_info(iter, disp, chi)
@@ -997,9 +1001,9 @@ subroutine runtime_info(iter, disp, chi)
   endif
 
 end subroutine runtime_info
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Add source term inside source elements only if source time function non-zero
 !! and I have the source.
 pure subroutine add_source(acc1, stf1)
@@ -1018,9 +1022,9 @@ pure subroutine add_source(acc1, stf1)
   endif
 
 end subroutine add_source
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Includes all output action done during the time loop such as
 !! various receiver definitions, wavefield snapshots, velocity field & strain 
 !! tensor for 3-D kernels 
@@ -1061,8 +1065,8 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
 
   endif
 
-  if ((mod(iter, check_it)==0).and.(iter>0)) then
-     if (checkpointing.and.use_netcdf) then
+  if ((mod(iter, check_it) == 0) .and. (iter > 0)) then
+     if (checkpointing .and. use_netcdf) then
         call nc_rec_checkpoint()
      end if
   end if
@@ -1070,9 +1074,9 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
   ! Compute kinetic and potential energy globally
   if (dump_energy) call energy(disp, velo, dchi, ddchi)
 
-  !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
-  !^-^-^-^-^-^ Wavefield snapshots-^-^^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^
-  !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
+  !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^
+  !^-^-^-^-^-^ Wavefield snapshots-^-^^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^
+  !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^-^
   if (dump_vtk) then
     if (mod(iter, snap_it)==0) then
        isnap = isnap + 1
@@ -1173,51 +1177,9 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
 endif   ! dump_wavefields?
 
 end subroutine dump_stuff
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!!-----------------------------------------------------------------------------
-!!> This is for quick checks and singular computations of the bulk moduli kernels
-!!! hence only the trace of the strain tensor is needed and computed. 
-!subroutine dump_velo_straintrace_cmb(u,velo)
-!
-!  use data_source,              only: src_type
-!  use pointwise_derivatives,    only: axisym_gradient_solid
-!  use pointwise_derivatives,    only: f_over_s_solid
-!  
-!  
-!  real(kind=realkind), intent(in)   :: u(0:npol,0:npol,nel_solid,3)
-!  real(kind=realkind), intent(in)   :: velo(0:npol,0:npol,nel_solid,3)
-!  real(kind=realkind)               :: grad_sol(0:npol,0:npol,nel_solid,3)
-!
-!  if (src_type(1)=='dipole') then
-!     call axisym_gradient_solid(u(:,:,:,1)+u(:,:,:,2),grad_sol(:,:,:,1:2))
-!  else
-!     call axisym_gradient_solid(u(:,:,:,1),grad_sol(:,:,:,1:2)) ! dsus, dzus
-!  endif
-!  call axisym_gradient_solid(u(:,:,:,3),grad_sol(:,:,:,2:3)) ! dsuz, dzuz
-!
-!  if (src_type(1)=='monopole') then
-!     grad_sol(:,:,:,2)=u(:,:,:,1)
-!
-!  elseif (src_type(1)=='dipole') then 
-!     grad_sol(:,:,:,2)=real(2.,kind=realkind)*u(:,:,:,2)
-!
-!  elseif (src_type(1)=='quadpole') then
-!     grad_sol(:,:,:,2)=u(:,:,:,1)-real(2.,kind=realkind)*u(:,:,:,2)
-!
-!  endif
-!
-!  grad_sol(:,:,:,2) = f_over_s_solid(grad_sol(:,:,:,2))
-!
-!  ! Slightly dirty, but memory-cheaper: sum of 3 diag strain elements
-!  grad_sol(:,:,:,1) = grad_sol(:,:,:,1) + grad_sol(:,:,:,2) + grad_sol(:,:,:,3)
-!
-!  call compute_recfile_cmb(velo,grad_sol(:,:,:,1))
-!
-!end subroutine dump_velo_straintrace_cmb
-!!=============================================================================
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Compute the full, global strain tensor on-the-fly. Each of 6 (monopole: 4)
 !! components is stored separately for solid and fluid domains respectively.
 !! The dipole case is transfered to the (s,phi,z) system here.
@@ -1374,10 +1336,9 @@ subroutine compute_strain(u, chi, istrain)
   endif   ! have_fluid
  
 end subroutine compute_strain
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Computes the kinetic and potential/elastic/stored energy in the solid and 
 !! fluid subdomains separately. This involves one additional evaluation of 
 !! the stiffness system (for the velocity vector rather than displacement) 
@@ -1392,7 +1353,10 @@ subroutine energy(disp1,vel,dchi1,ddchi)
   
   use data_source, only: src_type
   use data_matr, only : unassem_mass_rho_solid, unassem_mass_lam_fluid
-  use stiffness
+  use stiffness_mono
+  use stiffness_di
+  use stiffness_quad
+  use stiffness_fluid
   use apply_masks
   use commun
   use data_mesh
@@ -1488,9 +1452,9 @@ subroutine energy(disp1,vel,dchi1,ddchi)
 9 format(4(1pe16.6))
 
 end subroutine energy
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> FLUID: solid-fluid boundary term (solid displ.) added to fluid stiffness
 !!        minus sign in accordance with the definition of bdry_matr
 pure subroutine bdry_copy2fluid(uflu,usol)
@@ -1533,9 +1497,9 @@ pure subroutine bdry_copy2fluid(uflu,usol)
   endif
 
 end subroutine bdry_copy2fluid
-!============================================================================
+!-----------------------------------------------------------------------------------------
 
-!----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> SOLID: solid-fluid boundary term (fluid potential) added to solid stiffness
 !!        plus sign in accordance with definition of bdry_matr
 pure subroutine bdry_copy2solid(usol,uflu)
@@ -1573,9 +1537,9 @@ pure subroutine bdry_copy2solid(usol,uflu)
 
 
 end subroutine bdry_copy2solid
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 
-!============================
 end module time_evol_wave
-!============================
+!=========================================================================================
