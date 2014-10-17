@@ -19,9 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!====================
+!=========================================================================================
 module stiffness
-!====================
 
   use global_parameters, only: realkind
   use data_matr
@@ -48,7 +47,7 @@ module stiffness
 
 contains
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure function outerprod(a,b) 
   ! outer product (dyadic) from numerical recipes
   
@@ -57,9 +56,9 @@ pure function outerprod(a,b)
 
   outerprod = spread(a, dim=2, ncopies=size(b)) * spread(b, dim=1, ncopies=size(a))
 end function outerprod
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure function outerprod_4(a,b) 
   ! outer product (dyadic) from numerical recipes
   
@@ -68,9 +67,9 @@ pure function outerprod_4(a,b)
 
   outerprod_4 = spread(a, dim=2, ncopies=5) * spread(b, dim=1, ncopies=5)
 end function outerprod_4
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Wrapper routine to avoid if statements in the timeloop
 pure subroutine glob_stiffness_mono(glob_stiffness,u)
   use data_mesh, only: npol, nel_solid
@@ -85,9 +84,9 @@ pure subroutine glob_stiffness_mono(glob_stiffness,u)
   endif
 
 end subroutine glob_stiffness_mono
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
 
   use data_mesh, only: nel_solid
@@ -186,9 +185,9 @@ pure subroutine glob_stiffness_mono_4(glob_stiffness,u)
   end do
 
 end subroutine glob_stiffness_mono_4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_stiffness_mono_generic(glob_stiffness,u)
 
   use data_mesh, only: npol, nel_solid
@@ -310,9 +309,9 @@ pure subroutine glob_stiffness_mono_generic(glob_stiffness,u)
   enddo
 
 end subroutine glob_stiffness_mono_generic
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono(glob_stiffness, R, R_cg, cg)
   use data_mesh,    only: npol
   
@@ -332,9 +331,9 @@ pure subroutine glob_anel_stiffness_mono(glob_stiffness, R, R_cg, cg)
   endif
 
 end subroutine glob_anel_stiffness_mono
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono_generic(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -434,9 +433,9 @@ pure subroutine glob_anel_stiffness_mono_generic(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_mono_generic
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono_4(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -536,9 +535,9 @@ pure subroutine glob_anel_stiffness_mono_4(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_mono_4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -618,9 +617,9 @@ pure subroutine glob_anel_stiffness_mono_cg4(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_mono_cg4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Wrapper routine to avoid if statements in the timeloop
 pure subroutine glob_stiffness_di(glob_stiffness,u)
   use data_mesh, only: npol, nel_solid
@@ -635,9 +634,9 @@ pure subroutine glob_stiffness_di(glob_stiffness,u)
   endif
 
 end subroutine glob_stiffness_di
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_stiffness_di_4(glob_stiffness,u)
 
   use data_mesh, only: nel_solid
@@ -835,10 +834,9 @@ pure subroutine glob_stiffness_di_4(glob_stiffness,u)
   enddo
 
 end subroutine glob_stiffness_di_4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_stiffness_di_generic(glob_stiffness,u)
 
   use data_mesh, only: npol, nel_solid
@@ -1035,9 +1033,9 @@ pure subroutine glob_stiffness_di_generic(glob_stiffness,u)
   enddo
 
 end subroutine glob_stiffness_di_generic
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di(glob_stiffness, R, R_cg, cg)
   use data_mesh,    only: npol
   
@@ -1057,9 +1055,9 @@ pure subroutine glob_anel_stiffness_di(glob_stiffness, R, R_cg, cg)
   endif
 
 end subroutine glob_anel_stiffness_di
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di_generic(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -1180,9 +1178,9 @@ pure subroutine glob_anel_stiffness_di_generic(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_di_generic
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di_4(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -1303,9 +1301,9 @@ pure subroutine glob_anel_stiffness_di_4(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_di_4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -1405,9 +1403,9 @@ pure subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_di_cg4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Wrapper routine to avoid if statements in the timeloop
 pure subroutine glob_stiffness_quad(glob_stiffness,u)
   use data_mesh, only: npol, nel_solid
@@ -1422,9 +1420,9 @@ pure subroutine glob_stiffness_quad(glob_stiffness,u)
   endif
 
 end subroutine glob_stiffness_quad
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_stiffness_quad_generic(glob_stiffness,u)
 
   use data_mesh, only: npol, nel_solid
@@ -1600,9 +1598,9 @@ pure subroutine glob_stiffness_quad_generic(glob_stiffness,u)
   enddo
 
 end subroutine glob_stiffness_quad_generic
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_stiffness_quad_4(glob_stiffness,u)
 
   use data_mesh, only: nel_solid
@@ -1779,9 +1777,9 @@ pure subroutine glob_stiffness_quad_4(glob_stiffness,u)
   enddo
 
 end subroutine glob_stiffness_quad_4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_quad(glob_stiffness, R, R_cg, cg)
   use data_mesh,    only: npol
   
@@ -1801,9 +1799,9 @@ pure subroutine glob_anel_stiffness_quad(glob_stiffness, R, R_cg, cg)
   endif
 
 end subroutine glob_anel_stiffness_quad
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_quad_generic(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -1918,9 +1916,9 @@ pure subroutine glob_anel_stiffness_quad_generic(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_quad_generic
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -2035,9 +2033,9 @@ pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_quad_4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
@@ -2141,9 +2139,9 @@ pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
   enddo
 
 end subroutine glob_anel_stiffness_quad_cg4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Wrapper routine to avoid if statements in the timeloop
 pure subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
   use data_mesh, only: npol, nel_fluid
@@ -2158,9 +2156,9 @@ pure subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
   endif
 
 end subroutine glob_fluid_stiffness
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
 
   use data_mesh, only: npol, nel_fluid
@@ -2238,9 +2236,9 @@ pure subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
   enddo
 
 end subroutine glob_fluid_stiffness_generic
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
 
   use data_mesh, only: nel_fluid
@@ -2320,8 +2318,7 @@ pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
   enddo
 
 end subroutine glob_fluid_stiffness_4
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!====================
 end module stiffness
-!====================
+!=========================================================================================

@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> Contains all routines that dump entire wavefields during the time loop. 
 !! Optimization of I/O therefore happens here and nowhere else.
 !! The corresponding meshes are dumped in meshes_io.
@@ -1137,3 +1138,4 @@ end subroutine eradicate_src_elem_values
 !-----------------------------------------------------------------------------------------
 
 end module wavefields_io
+!=========================================================================================

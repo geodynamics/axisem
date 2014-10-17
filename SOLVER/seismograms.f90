@@ -102,12 +102,6 @@ subroutine prepare_seismograms
                 dabs(z-router) < smallval*router)  then
               ielepi = iel
               if (verbose > 1) then
-                 !write(6,*)'Proc ', mynum, ' found: '
-                 !write(6,*)'Epicenter element:',ielepi
-                 !write(6,*)'Epicenter radius [km], colat [deg]:', &
-                 !          r/1000.,theta/pi*180. 
-                 !write(6,*)''
-                 !call flush(6)
                  write(69,*)'Proc ', mynum, ' found: '
                  write(69,*)'Epicenter element:',ielepi
                  write(69,*)'Epicenter radius [km], colat [deg]:', &
@@ -125,12 +119,6 @@ subroutine prepare_seismograms
           if ( dabs(theta-pi) < min_distance_nondim*pi) then 
              ielantipode=iel
              if (verbose > 1) then
-                !write(6,*)'Proc ', mynum, ' found: '
-                !write(6,*)'Antipodal element:',ielantipode
-                !write(6,*)'Antipode radius [km], colat [deg]:',&
-                !           r/1000.,theta/pi*180.
-                !write(6,*)''
-                ! call flush(6)
                 write(69,*)'Proc ', mynum, ' found: '
                 write(69,*)'Antipodal element:',ielantipode
                 write(69,*)'Antipode radius [km], colat [deg]:',&
@@ -148,13 +136,6 @@ subroutine prepare_seismograms
            if ( dabs(z) < smallval_sngl)  then 
               ielequ=iel
               if (verbose > 1) then
-                 !write(6,*)'Proc ', mynum, ' found: '
-                 !write(6,*)'Equatorial element:',ielequ
-                 !write(6,*)'Equatorial radius [km], colat [deg]:',&
-                 !           r/1000.,theta/pi*180.
-                 !write(6,*)''
-                 !call flush(6)
-
                  write(69,*)'Proc ', mynum, ' found: '
                  write(69,*)'Equatorial element:',ielequ
                  write(69,*)'Equatorial radius [km], colat [deg]:',&
@@ -736,16 +717,6 @@ subroutine open_hyp_epi_equ_anti
 
   if (maxind>0) then
 
-    ! @TODO: this might be problematic if two processors have the source - then
-    !        both open the same file. IMHO these files are pretty useless
-    !        anyway, so not fixing it for now
-    !if (have_src) then
-    !   open(10001,file=datapath(1:lfdata)//'/seishypocenter1.dat') 
-    !   if (src_type(1)/='monopole') &
-    !        open(10002,file=datapath(1:lfdata)//'/seishypocenter2.dat') 
-    !   open(10003,file=datapath(1:lfdata)//'/seishypocenter3.dat') 
-    !endif
-
     if (have_epi) then
        open(900,file=datapath(1:lfdata)//'/seisepicenter1.dat') 
        if (src_type(1)/='monopole') &
@@ -785,29 +756,6 @@ subroutine compute_hyp_epi_equ_anti(t,disp)
   real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
 
   if (maxind>0) then
-     !if (mynum==0) then
-     !   if (ipol_src /= 0 ) then
-     !      write(6,*)'PROBLEM in hypocenter location!'
-     !      write(6,*)'ipol  is not equal to zero, hence off the axis!',ipol_src
-     !      stop
-     !   endif
-     !endif
-
-     ! hypocenter
-     !if (have_src) then
-     !  if (src_type(1)=='dipole') then 
-     !     write(10001,*)t,disp(ipol_src,jpol_src,iel_src,1)+&
-     !                   disp(ipol_src,jpol_src,iel_src,2) ! s
-     !     write(10002,*)t,disp(ipol_src,jpol_src,iel_src,1)-&
-     !                   disp(ipol_src,jpol_src,iel_src,2) ! phi
-     !  else
-     !     write(10001,*)t,disp(ipol_src,jpol_src,iel_src,1) ! s
-     !     if (src_type(1)=='quadpole') &
-     !          write(10002,*)t,disp(ipol_src,jpol_src,iel_src,2) ! phi
-     !   endif
-     !   write(10003,*)t,disp(ipol_src,jpol_src,iel_src,3)  ! z
-     !endif
-   
      ! epicenter
      if (have_epi) then
         if (src_type(1)=='dipole') then 
