@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module data_spec
 
   use global_parameters, only                   : sp, dp
@@ -27,9 +28,11 @@ module data_spec
   public 
 
   integer :: npol
-  real(kind=dp)   , dimension(:),allocatable   :: xi_k, eta
-  real(kind=dp)   , dimension(:),allocatable   :: dxi
-  real(kind=dp)   , dimension (:), allocatable :: wt          !Quadrature weights
-  real(kind=dp)   , dimension (:), allocatable :: wt_axial_k  !Quad. wgts for the 
-                                                              !nonaxisymmetric components
+  real(kind=dp), dimension(:), allocatable :: xi_k, eta
+  real(kind=dp), dimension(:), allocatable :: dxi
+  real(kind=dp), dimension(:), allocatable :: wt          !Quadrature weights
+  real(kind=dp), dimension(:), allocatable :: wt_axial_k  !Quad. wgts for the 
+                                                          !nonaxisymmetric components
+
 end module data_spec
+!=========================================================================================

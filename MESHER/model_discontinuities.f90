@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module model_discontinuities
 
   use data_bkgrdmodel
@@ -30,7 +31,7 @@ module model_discontinuities
 
   contains
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine define_discont
    use data_diag, only: dump_1dmodel
 
@@ -88,9 +89,9 @@ subroutine define_discont
   end if
 
 end subroutine define_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine ak135f_discont
 ! Montagner and Kennett 1996
 
@@ -190,9 +191,9 @@ subroutine ak135f_discont
     discont = discont * 1000.
   
 end subroutine ak135f_discont
-!--------------------------------------------------------------------------
- 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 subroutine ak135_discont
 ! Kennett et al., 1995: Constrains on seismic velocities in the Earth
 
@@ -267,11 +268,10 @@ subroutine ak135_discont
   discont = discont * 1000.
   
 end subroutine ak135_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prem_discont
-
 ! PREM discontinuities to be honored by the mesh
 ! each index represents the layer *below* its corresponding discontinuity
 
@@ -360,9 +360,9 @@ subroutine prem_discont
   discont = discont * 1000.
 
 end subroutine prem_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prem_ani_discont
 
 ! PREM discontinuities to be honored by the mesh
@@ -455,9 +455,9 @@ subroutine prem_ani_discont
   discont = discont * 1000.
 
 end subroutine prem_ani_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prem_solid_discont
 
 ! PREM discontinuities to be honored by the mesh
@@ -549,9 +549,9 @@ subroutine prem_solid_discont
   discont = discont * 1000.
 
 end subroutine prem_solid_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prem_onecrust_discont
 
 ! PREM discontinuities to be honored by the mesh
@@ -638,9 +638,9 @@ subroutine prem_onecrust_discont
   discont = discont * 1000.
 
 end subroutine prem_onecrust_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prem_onecrust_ani_discont
 
 ! PREM discontinuities to be honored by the mesh
@@ -728,9 +728,9 @@ subroutine prem_onecrust_ani_discont
   discont = discont * 1000.
   
 end subroutine prem_onecrust_ani_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prem_light_discont
 
 ! PREM LIGHT discontinuities to be honored by the mesh:
@@ -812,9 +812,9 @@ subroutine prem_light_discont
   discont = discont * 1000.
 
 end subroutine prem_light_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prem_light_ani_discont
 
 ! PREM discontinuities to be honored by the mesh
@@ -897,11 +897,10 @@ subroutine prem_light_ani_discont
   discont = discont * 1000.
 
 end subroutine prem_light_ani_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine prem_solid_light_discont
-
 ! PREM LIGHT discontinuities to be honored by the mesh:
 ! isotropic PREM without the crust, extending the upper mantle to the surface
 ! No fluid outer core, but instead vs=vp/sqrt(3)
@@ -982,11 +981,10 @@ subroutine prem_solid_light_discont
   discont = discont * 1000.
 
 end subroutine prem_solid_light_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine iasp91_discont
-
 ! IASP91 discontinuities to be honored by the mesh
 ! each index represents the layer *below* its corresponding discontinuity
 
@@ -1101,9 +1099,9 @@ subroutine iasp91_discont
   discont = discont * 1000.
 
 end subroutine iasp91_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 subroutine arbitrmodel_discont
 
   use background_models, only: get_ext_disc
@@ -1121,8 +1119,9 @@ subroutine arbitrmodel_discont
   end do
      
 end subroutine arbitrmodel_discont
-!--------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
 subroutine write_1Dmodel(discontinuities)
    ! Write out the current model in a .bm file, which can be reused by the mesher.
    use global_parameters, only: smallval_dble
@@ -1350,7 +1349,8 @@ subroutine write_1Dmodel(discontinuities)
    end do
    close(2000)
 
-
-
 end subroutine write_1Dmodel
+!-----------------------------------------------------------------------------------------
+
 end module model_discontinuities
+!=========================================================================================
