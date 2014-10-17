@@ -14,8 +14,8 @@ SRCS =	background_models.F90 commpi.F90 commun.F90 get_model.F90 \
 	interpolation.f90 kdtree2.f90 list.f90 main.f90 \
 	pointwise_derivatives.f90 rotations.f90 seismograms.f90 source.f90 \
 	stiffness_di.f90 stiffness_fluid.f90 stiffness_mono.f90 \
-	stiffness_quad.f90 unrolled_loops.f90 utlity.f90 wavefields_io.f90 \
-	ftz.c pthread.c
+	stiffness_quad.f90 subpar_mapping.f90 unrolled_loops.f90 utlity.f90 \
+	wavefields_io.f90 ftz.c pthread.c
 
 OBJS =	background_models.o commpi.o commun.o get_model.o \
 	lateral_heterogeneities.o meshes_io.o nc_helpers.o nc_routines.o \
@@ -27,7 +27,8 @@ OBJS =	background_models.o commpi.o commun.o get_model.o \
 	global_parameters.o interpolation.o kdtree2.o list.o main.o \
 	pointwise_derivatives.o rotations.o seismograms.o source.o \
 	stiffness_di.o stiffness_fluid.o stiffness_mono.o stiffness_quad.o \
-	unrolled_loops.o utlity.o wavefields_io.o ftz.o pthread.o
+	subpar_mapping.o unrolled_loops.o utlity.o wavefields_io.o ftz.o \
+	pthread.o
 
 ifeq ($(strip $(USE_NETCDF)),true)
    FFLAGS += -Denable_netcdf
@@ -88,7 +89,7 @@ utils:
 	$(FC) $(FFLAGS) -c $(INCLUDE) $<
 
 analytic_mapping.o: analytic_semi_mapping.o analytic_spheroid_mapping.o \
-	data_mesh.o global_parameters.o Makefile ../make_axisem.macros 
+	data_mesh.o global_parameters.o subpar_mapping.o Makefile ../make_axisem.macros 
 analytic_semi_mapping.o: global_parameters.o Makefile ../make_axisem.macros 
 analytic_spheroid_mapping.o: data_mesh.o global_parameters.o Makefile ../make_axisem.macros 
 apply_masks.o: global_parameters.o Makefile ../make_axisem.macros 
@@ -138,6 +139,7 @@ stiffness_mono.o: attenuation.o data_matr.o data_mesh.o data_source.o \
 	data_spec.o global_parameters.o unrolled_loops.o Makefile ../make_axisem.macros 
 stiffness_quad.o: attenuation.o data_matr.o data_mesh.o data_source.o \
 	data_spec.o global_parameters.o unrolled_loops.o Makefile ../make_axisem.macros 
+subpar_mapping.o: global_parameters.o Makefile ../make_axisem.macros 
 unrolled_loops.o: data_mesh.o global_parameters.o Makefile ../make_axisem.macros 
 utlity.o: analytic_mapping.o data_mesh.o data_spec.o global_parameters.o Makefile ../make_axisem.macros 
 wavefields_io.o: data_io.o data_mesh.o data_pointwise.o data_proc.o \
