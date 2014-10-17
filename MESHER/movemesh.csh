@@ -42,7 +42,6 @@ mv mesh_params.h $meshpath
 mv OUTPUT $meshpath
 #mv Diags $meshpath
 cp -p inparam_mesh $meshpath
-cp -p background_models.F90 $meshpath
 
 set bgmodel = `grep "^BACKGROUND_MODEL" inparam_mesh | awk '{print $2}'`
 echo $bgmodel

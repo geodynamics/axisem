@@ -19,7 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!-----------------------------------------------------------------------------
+!=========================================================================================
 !> This module is identical in the mesher and solver.
 !! Function "velocity" retrieves the velocity (or density) of the given 
 !! background model (see different cases and respective routines below)
@@ -63,7 +63,7 @@ module background_models
 
 contains
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> Wrapper function to call velocities upon different background models 
 !! for a given radius r0 [m], parameter type param (rho,vs,vp) and idom
 real(kind=dp)  function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
@@ -97,8 +97,6 @@ real(kind=dp)  function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
         velocity = prem_solid_light_sub(r0, param, idom)
      case('iasp91')
         velocity = iasp91_sub(r0, param, idom)
-!     case('solar')
-!        velocity = arbitr_sub_solar(r0, param, idom, bkgrdmodel2)
      case('external')
         velocity = arbitr_sub_solar(r0, param, idom)
      case default
@@ -107,9 +105,9 @@ real(kind=dp)  function velocity(r0, param, idom, bkgrdmodel2, lfbkgrdmodel2)
   end select
 
 end function velocity
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> returns true if the model is radially anisotrpoic
 logical function model_is_ani(bkgrdmodel2)
 
@@ -129,9 +127,9 @@ logical function model_is_ani(bkgrdmodel2)
   end select
 
 end function model_is_ani
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> returns true if the model is radially anisotrpoic
 logical function model_is_anelastic(bkgrdmodel2)
 
@@ -161,9 +159,9 @@ logical function model_is_anelastic(bkgrdmodel2)
   end select
 
 end function model_is_anelastic
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> from Montagner and Kennett (1995)
 !! interpolated between discontinuities using matlab's polyfit, use radii!!!
 !! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
@@ -281,9 +279,9 @@ real(kind=dp) function ak135f(r0, param, idom)
     endif
 
 end function ak135f
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> from Kennett, Engdahl and Buland, 1995
 !! interpolated between discontinuities using matlab's polyfit, use radii!!!
 !! use routine axisem_ak135_fitting.m and ak135/iasp whatever as nd-files
@@ -389,9 +387,9 @@ real(kind=dp) function ak135(r0, param, idom)
   endif
 
 end function ak135
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> isotropic prem model in terms of domains separated by discontinuities
 real(kind=dp) function prem_sub(r0, param, idom)
 
@@ -500,9 +498,9 @@ real(kind=dp) function prem_sub(r0, param, idom)
   endif
 
 end function prem_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> prem model in terms of domains separated by discontinuities
 real(kind=dp) function prem_ani_sub(r0, param, idom)
 
@@ -636,9 +634,9 @@ real(kind=dp) function prem_ani_sub(r0, param, idom)
   endif
 
 end function prem_ani_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> isotropic prem model in terms of domains separated by discontinuities
 !! No fluid outer core, but instead vs=vp/sqrt(3)
 real(kind=dp) function prem_solid_sub(r0,param,idom)
@@ -721,9 +719,9 @@ real(kind=dp) function prem_solid_sub(r0,param,idom)
   endif
 
 end function prem_solid_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> isotropic prem model in terms of domains separated by discontinuities
 !! but with lower crust extended to the surface
 real(kind=dp) function prem_onecrust_sub(r0, param, idom)
@@ -802,9 +800,9 @@ real(kind=dp) function prem_onecrust_sub(r0, param, idom)
   endif
 
 end function prem_onecrust_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 ! prem model in terms of domains separated by discontinuities
 real(kind=dp) function prem_onecrust_ani_sub(r0, param, idom)
 
@@ -930,9 +928,9 @@ real(kind=dp) function prem_onecrust_ani_sub(r0, param, idom)
   endif
 
 end function prem_onecrust_ani_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 ! isotropic prem_light model (crust removed) in terms of domains separated by disconts.
 real(kind=dp) function prem_light_sub(r0, param, idom)
 
@@ -1029,9 +1027,9 @@ real(kind=dp) function prem_light_sub(r0, param, idom)
   endif
 
 end function prem_light_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 ! anisotropic prem_light model (crust removed) in terms of domains separated by disconts.
 real(kind=dp) function prem_light_ani_sub(r0, param, idom)
 
@@ -1149,9 +1147,9 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
   endif
 
 end function prem_light_ani_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> isotropic prem_light model (crust removed) in terms of domains separated by disconts.
 !! No fluid outer core, but instead vs=vp/sqrt(3)
 real(kind=dp) function prem_solid_light_sub(r0, param, idom)
@@ -1226,9 +1224,9 @@ real(kind=dp) function prem_solid_light_sub(r0, param, idom)
   endif
 
 end function prem_solid_light_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> iasp91 model in terms of domains separated by discontinuities
 !! with PREM density and attenuation
 real(kind=dp) function iasp91_sub(r0, param, idom)
@@ -1370,9 +1368,9 @@ real(kind=dp) function iasp91_sub(r0, param, idom)
   endif
 
 end function iasp91_sub
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 !> file-based, step-wise model in terms of domains separated by disconts.
 !! format:
 !! ndisc
@@ -1437,9 +1435,9 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
 
 
 end function arbitr_sub_solar
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
                           vpv_layer_out, vsv_layer_out, radius_layer_out)
 
@@ -1450,8 +1448,10 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   real(kind=dp), allocatable, intent(out), optional  :: radius_layer_out(:)
   integer, intent(out), optional                     :: nlayer_out
   integer                          :: ilayer, ierr, icolumn, ncolumn, iline, line_err, nerr = 0
-  integer                          :: column_rad = 0, column_vpv = 0, column_vsv = 0, column_rho = 0
-  integer                          :: column_qka = 0, column_qmu = 0, column_vph = 0, column_vsh = 0
+  integer                          :: column_rad = 0, column_vpv = 0
+  integer                          :: column_vsv = 0, column_rho = 0
+  integer                          :: column_qka = 0, column_qmu = 0
+  integer                          :: column_vph = 0, column_vsh = 0
   integer                          :: column_eta = 0, nmissing = 0
   real(kind=sp), allocatable       :: layertemp(:)
   character(len=6), allocatable    :: columnvalue(:)
@@ -1529,12 +1529,6 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      call check_defined(exist_param_ani,   'ANISOTROPIC', trim(fnam_ext_model), nerr)
      call check_defined(exist_param_col,   'COLUMNS', trim(fnam_ext_model), nerr)
      call check_defined(exist_param_units, 'UNITS', trim(fnam_ext_model), nerr)
-
-     !if (.not.(exist_param_col.and.exist_param_anel.and.exist_param_ani.and.exist_model_in_km)) then
-     !    print *, 'ERROR: One or more mandatory lines in ', trim(fnam_ext_model), &
-     !             ' is missing'
-     !    stop
-     !end if
 
      if (nerr>0) then
          print "('ERROR: ', I0, ' errors reading external model')", nerr
@@ -1764,9 +1758,9 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   end if
 
 end subroutine read_ext_model
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 subroutine check_defined(exists, keyword, fnam, nerr)
 !< Checks whether exists==.true., which means that this keyword has been defined
 !! in the input file. Increases nerr, if not.
@@ -1785,9 +1779,9 @@ subroutine check_defined(exists, keyword, fnam, nerr)
     end if
 
 end subroutine
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 subroutine check_already_defined(exists, keyword, iline, fnam, nerr)
 !< Checks whether exists==.true., which means that this keyword appears twice
 !! in the input file. Increases error count nerr, if so.
@@ -1807,9 +1801,9 @@ subroutine check_already_defined(exists, keyword, iline, fnam, nerr)
     end if
 
 end subroutine
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 subroutine check_line_err(ierr, iline, line, fnam, nerr)
     integer, intent(in)           :: ierr, iline
     integer, intent(inout)        :: nerr
@@ -1826,9 +1820,9 @@ subroutine check_line_err(ierr, iline, line, fnam, nerr)
     end if
 
 end subroutine
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 function check_exist(column, param_name)
 !< Checks whether column is larger than 0 (means that it has been found in the
 !! list of column values above. If not found, writes an error message, but does
@@ -1849,9 +1843,9 @@ function check_exist(column, param_name)
     end if
 
 end function
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 function to_lower(strIn) result(strOut)
 !< Converts string to lowercase, adapted from http://www.star.le.ac.uk/~cgp/fortran.html
     implicit none
@@ -1870,9 +1864,9 @@ function to_lower(strIn) result(strOut)
     end do
 
 end function to_lower
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   use global_parameters, only : smallval_dble
@@ -2034,6 +2028,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
 
 end subroutine
-
+!-----------------------------------------------------------------------------------------
 
 end module background_models
+!=========================================================================================

@@ -79,12 +79,6 @@ set bgmodel = `grep ^BACKGROUND_MODEL $meshdir/inparam_mesh | awk '{print $2}'`
 echo 'copying mesh_params.h from ' $meshdir
 cp $meshdir/mesh_params.h .
 
-# if the mesh has different background_models.F90, copy over
-if ( `diff background_models.F90 $meshdir/background_models.F90 | wc -l` != "0" ) then
-  echo 'copying background_models.F90 from ' $meshdir
-  cp $meshdir/background_models.F90 .
-endif
-
 # Check arguments: source types and submission queues
 set newqueue = 'false'
 if ( "$2" == '-q') then
