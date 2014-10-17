@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(description=
     'Run nightly tests for the axisem solver.')
 
 parser.add_argument('-t', '--test', help='run only selected tests',
-                    choices=range(1,20), type=int)
+                    choices=range(1,21), type=int)
 parser.add_argument('-a', '--all', help='run all tests', action='store_const',
                     const=True, default=False)
 args = parser.parse_args()
