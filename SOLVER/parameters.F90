@@ -18,6 +18,7 @@
 !    You should have received a copy of the GNU General Public License
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
+
 !=========================================================================================
 !> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
 !! compute other parameters for the simulation;
@@ -1658,18 +1659,6 @@ subroutine write_parameters
                     '3D_RTOP        ', router/1000.,&
                     '3D_RBOT         3190.'
            
-           ! deactivated because of bug #30 and to avoid confusion in the
-           ! tutorial
-           !write(9,'(a,/,a,/)') &
-           !         '# colatitude of meridional cross section', &
-           !         '3D_MERI_COLAT   60.'
-           !         
-           !write(9,'(a,/,a,/,a,/,a,/)') &
-           !         '# switches for bottom, top and meridonial surface', &
-           !         '3D_PLOT_TOP     T', &
-           !         '3D_PLOT_BOT     T', &
-           !         '3D_PLOT_MERI    F'
-
            write(9,'(a,/,a,/,a,/)') &
                     '# switches for bottom, top and meridonial surface', &
                     '3D_PLOT_TOP     T', &
