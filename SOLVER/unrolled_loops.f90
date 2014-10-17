@@ -207,5 +207,28 @@ pure subroutine vxm_4(a,b,c)
 end subroutine vxm_4
 !-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
+pure function outerprod(a,b) 
+  ! outer product (dyadic) from numerical recipes
+  
+  real(kind=realkind), dimension(:), intent(in)     :: a, b
+  real(kind=realkind), dimension(size(a),size(b))   :: outerprod
+
+  outerprod = spread(a, dim=2, ncopies=size(b)) * spread(b, dim=1, ncopies=size(a))
+end function outerprod
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+pure function outerprod_4(a,b) 
+  ! outer product (dyadic) from numerical recipes
+  
+  real(kind=realkind), dimension(0:4), intent(in)   :: a, b
+  real(kind=realkind), dimension(0:4,0:4)           :: outerprod_4
+
+  outerprod_4 = spread(a, dim=2, ncopies=5) * spread(b, dim=1, ncopies=5)
+end function outerprod_4
+!-----------------------------------------------------------------------------------------
+
+
 end module unrolled_loops
 !=========================================================================================

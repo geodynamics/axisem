@@ -257,7 +257,10 @@ subroutine sf_time_loop_newmark
   use commun
   use global_parameters
   use apply_masks
-  use stiffness
+  use stiffness_mono
+  use stiffness_di
+  use stiffness_quad
+  use stiffness_fluid
   use clocks_mod
   use data_matr,            only: inv_mass_rho, inv_mass_fluid
   use attenuation,          only: time_step_memvars
@@ -481,7 +484,10 @@ subroutine symplectic_time_loop
   use global_parameters
   use commun
   use apply_masks
-  use stiffness
+  use stiffness_mono
+  use stiffness_di
+  use stiffness_quad
+  use stiffness_fluid
   use clocks_mod
   use source,       only: compute_stf_t
   use data_matr,    only: inv_mass_rho,inv_mass_fluid
@@ -1347,7 +1353,10 @@ subroutine energy(disp1,vel,dchi1,ddchi)
   
   use data_source, only: src_type
   use data_matr, only : unassem_mass_rho_solid, unassem_mass_lam_fluid
-  use stiffness
+  use stiffness_mono
+  use stiffness_di
+  use stiffness_quad
+  use stiffness_fluid
   use apply_masks
   use commun
   use data_mesh
