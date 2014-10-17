@@ -76,6 +76,10 @@ print MAKEFILE "    FFLAGS += -Dserial\n";
 print MAKEFILE "    LDFLAGS += -pthread\n";
 print MAKEFILE "endif\n";
 
+print MAKEFILE "ifeq (\$(strip \$(INCLUDE_MPI)),true)\n";
+print MAKEFILE "    FFLAGS += -Dinclude_mpi\n";
+print MAKEFILE "endif\n";
+
 print MAKEFILE "\n\n";
 print MAKEFILE "# cancel m2c implicit rule \n";
 print MAKEFILE "%.o : %.mod \n ";
@@ -117,6 +121,7 @@ print MAKEFILE "\t\$(FC) \$(FFLAGS) -c \$(INCLUDE) \$<\n\n";
 # Dependency listings
 #
 &MakeDependsf90($ARGV[1]);
+
 &MakeDepends("*.f *.F", '^\s*include\s+["\']([^"\']+)["\']');
 &MakeDepends("*.c",     '^\s*#\s*include\s+["\']([^"\']+)["\']');
 
@@ -252,7 +257,7 @@ sub MakeDependsf90 {
    foreach $file (<*.f90 *.F90>) {
       open(FILE, $file);
       while (<FILE>) {
-         /^\s*include\s+["\']([^"\']+)["\']/i && push(@incs,$1);
+        #/^\s*include\s+["\']([^"\']+)["\']/i && push(@incs,$1);
          /^\s*use\s+([^\s,!]+)/i && push(@modules, &toLower($1));
          }
       ($objfile = $file) =~ s/\.(f|F)90$/.o/;
