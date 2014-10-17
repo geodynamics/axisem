@@ -50,20 +50,9 @@ subroutine init_grid
   use data_mesh, only : nelem, nel_fluid, npoint_solid
   use data_comm
   use commun
-  use splib, only: zemngl2, get_welegl_axial, zelegl, get_welegl
-  
   
   integer :: iel, ipol, jpol, idest, ipt, icount, ipg, ip, imsg
   
-  ! Axial elements, s-direction: Gauss-Lobatto-Jacobi (0,1) quadrature
-  call zemngl2(npol, xi_k)                   
-  call get_welegl_axial(npol, xi_k, wt_axial_k, 2) 
-
-  ! All elements, z-direction & s-direction non-axial elements: 
-  ! Gauss-Lobatto-Legendre quadrature
-  call zelegl(npol, eta, dxi)                  
-  call get_welegl(npol, eta, wt)        
-
   ! Define logical arrays to determine whether element is on the axis or not.
   ! We safely use "zero" here since coordinates have been "masked" to eliminate 
   ! round-off errors above in read_db (the choice to use jpol=npol is random)

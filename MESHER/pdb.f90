@@ -2220,6 +2220,7 @@ subroutine write_db
 ! Writes out a database file to be read by the solver for each processor.
 
   use data_gllmesh
+  use data_spec
   use background_models, only : override_ext_q
   
   integer           :: iproc, iptp, npointotp, ipsrc, imsg, iel, inode, ielg, idom
@@ -2252,7 +2253,18 @@ subroutine write_db
      write(10) nbdry_el(iproc)              ! nel_bdry
      write(10) ndisc                        ! ndisc
      write(10) lfbkgrdmodel                 ! lfbkgrdmodel
-     
+
+     ! write spectral stuff
+     write(10) xi_k
+     write(10) eta 
+     write(10) dxi       
+     write(10) wt        
+     write(10) wt_axial_k
+     write(10) G0
+     write(10) G1
+     write(10) G1T
+     write(10) G2
+     write(10) G2T
      
      ! Coordinates of control points
      if (dump_mesh_info_screen) &

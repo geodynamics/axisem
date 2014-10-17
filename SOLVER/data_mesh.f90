@@ -207,8 +207,32 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine read_mesh_advanced(iounit)
    use data_io, only     : verbose 
+   use data_spec
    integer, intent(in)  :: iounit
    integer              :: iptcp, iel, inode
+
+   allocate(eta(0:npol))
+   allocate(dxi(0:npol))
+   allocate(wt(0:npol))
+   allocate(xi_k(0:npol))
+   allocate(wt_axial_k(0:npol))
+   allocate(G1(0:npol,0:npol))
+   allocate(G1T(0:npol,0:npol))
+   allocate(G2(0:npol,0:npol))
+   allocate(G2T(0:npol,0:npol))
+   allocate(G0(0:npol))
+
+   ! spectral stuff
+   read(iounit) xi_k        
+   read(iounit) eta 
+   read(iounit) dxi       
+   read(iounit) wt        
+   read(iounit) wt_axial_k
+   read(iounit) G0
+   read(iounit) G1
+   read(iounit) G1T
+   read(iounit) G2
+   read(iounit) G2T
 
    read(iounit) npoin
    

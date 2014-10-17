@@ -88,9 +88,6 @@ subroutine read_model_compute_terms
     call read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, fa_ani_phi)
   endif
 
-  if (lpr .and. verbose > 1) write(6,*) '   compute Lagrange interpolant derivatives...'
-  call lagrange_derivs
-
   if (lpr .and. verbose > 1) write(6,*) '   define mass matrix....'
   call def_mass_matrix_k(rho, lambda, mu, massmat_kwts2)
    
@@ -145,79 +142,6 @@ subroutine read_model_compute_terms
   call flush(6)
 
 end subroutine read_model_compute_terms
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-subroutine lagrange_derivs
-!< Defines elemental arrays for the derivatives of Lagrange interpolating 
-!! functions either upon 
-!! Gauss-Lobatto-Legendre (all eta, and xi direction for non-axial elements) or 
-!! Gauss-Lobatto-Jacobi (0,1) points (axial xi direction):
-!! G1(i,j) = \partial_\xi ( \bar{l}_i(\xi_j) )  i.e. axial xi direction
-!! G2(i,j) = \partial_\eta ( l_i(\eta_j) )  i.e. all eta/non-ax xi directions 
-
-  use splib, only : hn_jprime, lag_interp_deriv_wgl
-  use data_mesh
-  
-  real(kind=dp)     :: df(0:npol),dg(0:npol)
-  integer           :: ishp,jpol
-  character(len=16) :: fmt1
-  logical           :: tensorwrong
-  
-  allocate(G1(0:npol,0:npol))
-  allocate(G1T(0:npol,0:npol))
-  allocate(G2(0:npol,0:npol))
-  allocate(G2T(0:npol,0:npol))
-  allocate(G0(0:npol))
-
-  ! Define elemental Lagrange interpolant derivatives as needed for stiffness
-  ! Derivative in z direction: \partial_\eta (l_j(\eta_q))
-  ! non-axial elements
-  do ishp = 0, npol
-     call hn_jprime(eta, ishp, npol, df)
-     G2(ishp,:) = df
-  end do
-  G2T = transpose(G2)
-
-  ! Derivative in s-direction: \partial_\xi (\bar{l}_i(\xi_p))
-  ! axial elements
-  do ishp = 0, npol
-     call lag_interp_deriv_wgl(df,xi_k,ishp,npol)
-     G1(ishp,:) = df
-  end do
-  G1T = transpose(G1)
-
-  ! Axial vector
-  G0 = G1(:,0)
-
-  ! Simple test on Lagrange derivative tensor's antisymmetries...
-  tensorwrong = .false.
-  if ( mod(npol,2) == 0 ) then
-     do jpol = 0,npol-1
-        do ishp = 0,npol-1
-           if (.not.reldiff_small(G2(ishp,jpol),-G2(npol-ishp,npol-jpol)))&
-              then 
-              write(6,*)procstrg, &
-                        'PROBLEM: Lagrange deriv tensor in eta not symmetric!'
-              write(6,*)procstrg,'polynomial order:',npol
-              write(6,*)procstrg,'ishp,jpol,G2',ishp,jpol,G2(ishp,jpol)
-              write(6,*)
-              tensorwrong=.true.
-           endif
-        enddo
-     enddo
-     if (tensorwrong) then
-        fmt1 = "(K(f10.3))"
-        write(fmt1(2:2),'(i1.1)') npol+1
-        write(6,*)'....Lagrange derivative tensor in eta:'
-        do jpol=0,npol
-           write(6,fmt1)(G2(ishp,jpol),ishp=0,npol)
-        enddo
-        stop
-     endif
-  endif
-
-end subroutine lagrange_derivs
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------

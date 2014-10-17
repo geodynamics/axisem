@@ -28,7 +28,7 @@ module data_spec
   implicit none
   public 
 
-  real(kind=dp), allocatable, dimension(:) :: xi_k, eta   ! Allocated in splib
+  real(kind=dp), allocatable, dimension(:) :: xi_k, eta   ! Allocated in data_mesh
   real(kind=dp), allocatable, dimension(:) :: dxi         ! " 
   real(kind=dp), allocatable, dimension(:) :: wt          !Quadrature weights
   real(kind=dp), allocatable, dimension(:) :: wt_axial_k  !Quad. wgts for the   
