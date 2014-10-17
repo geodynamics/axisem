@@ -35,11 +35,21 @@ module commpi
   ! in case you have problems with the mpi module, you might try to use the
   ! include below, in which case you will have to specify the location in the 
   ! Makefile or copy to the build directory!
-#ifndef serial
+  ! This usually happens when the MPI library was built with a different version
+  ! of the same compiler and the modules are incompatible.
+# ifndef serial
+# ifndef include_mpi  
   use mpi
-#endif
+# endif
+# endif
   implicit none
-  !include 'mpif.h'
+
+  ! This preprocessor flag allows to include mpi instead of using the module. 
+  ! This makes it compiler-version independent, but leads to an invalid entry
+  ! 'mpif.h' in the Makefile, when using makemake.pl
+# ifdef include_mpi  
+  include 'mpif.h'
+# endif
   
   public :: ppsum, ppsum_int, ppsum_dble
   public :: ppmin, ppmax, ppmax_int

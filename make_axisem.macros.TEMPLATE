@@ -17,6 +17,11 @@ NETCDF_PATH =       # e.g. $(HOME)/local, uses /usr/include if not defined
 # make sure to build mesh with one processor
 SERIAL = false
 
+# Include the file mpif.h, instead of using the FORTRAN MPI module 
+# Sometimes necessary when the local OpenMPI-version was not compiled with the
+# same version of the compiler than the one specified as $FC
+INCLUDE_MPI = false
+
 ####################################
 # Choose compiler names and flags: #
 ####################################
