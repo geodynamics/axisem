@@ -272,7 +272,7 @@ end subroutine deallocate_preloop_arrays
 !! Feb 2007: Also needed for computing discontinuity surfaces in get_model.
 subroutine massmatrix(masstmp,nel,domain)
 
-  use geom_transf
+  use analytic_mapping
   use get_mesh, only : compute_coordinates_mesh
   
   
@@ -328,7 +328,7 @@ end subroutine massmatrix
 !! Same as routine massmatrix above but in real(kind=dp)   .
 subroutine massmatrix_dble(masstmp,nel,domain)
 
-  use geom_transf
+  use analytic_mapping
   use get_mesh, only : compute_coordinates_mesh
   
   

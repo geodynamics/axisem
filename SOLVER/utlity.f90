@@ -144,10 +144,10 @@ pure subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
 !< Given the elemental grid point index, outputs s,z,r,theta coordinate [m,rad].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes, axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   real(kind=dp), intent(out)    :: s,z,r,theta
   integer, intent(in)           :: ielem,ipol,jpol
@@ -188,10 +188,10 @@ pure real(kind=dp) function scoord(ipol,jpol,ielem)
 !< Given the elemental grid point index, outputs the s coordinate [m].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes, axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   integer, intent(in)  :: ielem, ipol, jpol
   integer              :: ipt, inode
@@ -221,10 +221,10 @@ pure real(kind=dp)    function zcoord(ipol,jpol,ielem)
 !< Given the elemental grid point index, outputs the z coordinate [m].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes, axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   integer, intent(in)  :: ielem, ipol, jpol
   integer              :: ipt, inode
@@ -254,10 +254,10 @@ pure real(kind=dp)    function rcoord(ipol,jpol,ielem)
 !< Given the elemental grid point index, outputs the radius coordinate [m].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes, axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   integer, intent(in)  :: ielem, ipol, jpol
   integer              :: ipt, inode
@@ -290,10 +290,10 @@ pure real(kind=dp) function thetacoord(ipol,jpol,ielem)
 !< Given the elemental grid point index, outputs the theta coordinate [rad].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes,axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes,axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   integer, intent(in)  :: ielem, ipol, jpol
   integer              :: ipt, inode

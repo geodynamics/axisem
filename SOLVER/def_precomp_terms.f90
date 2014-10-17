@@ -32,7 +32,6 @@ module def_precomp_terms
   use data_proc
   
   use get_mesh,    only : compute_coordinates_mesh
-  use geom_transf
   use utlity
   use analytic_mapping
   
