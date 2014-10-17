@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(description=
     'Run nightly tests for the axisem solver.')
 
 parser.add_argument('-t', '--test', help='run only selected tests',
-                    choices=range(1,17), type=int)
+                    choices=range(1,20), type=int)
 parser.add_argument('-a', '--all', help='run all tests', action='store_const',
                     const=True, default=False)
 args = parser.parse_args()
@@ -52,10 +52,13 @@ else:
               '15. test15: dipole (mxz)\n' + \
               '16. test16: quadpole (mxy)\n' + \
               '17. test17: external mesh (PREM)\n' + \
+              '18. test18: like test05, but with Gfortran 4.7\n' + \
+              '19. test19: like test05, but with Gfortran 4.8\n' + \
+              '20. test20: like test05, but with Gfortran 4.9\n' + \
               '\n(format = 01,02 OR 1,2,3)' + \
               '\n')
   else:
-      test_no = '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17'
+      test_no = '1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20'
 
 print '=========================================='
 print 'Requested Test numbers:'
