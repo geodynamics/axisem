@@ -230,9 +230,10 @@ foreach isim  (${srcapp})
     endif
     
     mkdir Code
-    cp -p $homedir/*.f90 Code
-    cp -p $homedir/*.F90 Code
-    cp -p $homedir/Makefile Code
+    cp -Lp $homedir/*.c   Code
+    cp -Lp $homedir/*.f90 Code
+    cp -Lp $homedir/*.F90 Code
+    cp -Lp $homedir/Makefile Code
     
     echo "copying crucial files for the simulation..."
     
