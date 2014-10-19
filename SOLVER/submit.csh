@@ -168,7 +168,17 @@ endif
 echo 'source names:' $srcapp
 echo 'source components:' $srctype
 
+echo 'Create the run directory ' $1
 mkdir $1
+
+
+# Copy the make_axisem.macros file, in which the exact compiler settings are stored
+echo 'copying make_axisem.macros from ../'
+cp ../make_axisem.macros $1
+
+# Copy inparam_mesh, just for archival purposes
+cp $meshdir/inparam_mesh $1
+
 cd $1
 set mainrundir = $PWD
 
@@ -211,16 +221,6 @@ foreach isim  (${srcapp})
         mkdir -p $datapath_isim
         ln -s $datapath_isim ./Data
     endif
-
-    #    #if ( "(ls -A $datapath)" ) then
-    #    ln -s $datapath
-    #else
-    #    echo "creating $datapath" 
-    #    mkdir $datapath
-    #    if ( $multisrc == 'true' ) then
-    #        mkdir $datapath/MZZ $datapath/MXX_P_MYY $datapath/MXZ_MYZ $datapath/MXY_MXX_M_MYY
-    #    endif
-    #endif
         
     if ( -d $infopath) then 
         echo " saving info into $infopath"
