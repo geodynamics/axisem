@@ -22,21 +22,21 @@
 !=========================================================================================
 program axisem 
 
-  use data_proc,      only : nproc, mynum, appnproc, appmynum, lpr, procstrg
-  use data_io,        only : dump_xdmf, use_netcdf, verbose
-  use nc_routines,    only : nc_end_output, nc_finish_prepare
-  use nc_snapshots,   only : nc_close_snapfile
-  use data_source,    only : isim
-  use data_mesh,      only : do_mesh_tests
-  use parameters,     only : open_local_output_file, readin_parameters, &
-                             read_inparam_basic_verbosity
-  use get_mesh,       only : read_db 
-  use def_grid,       only : init_grid, mesh_tests, deallocate_preloop_arrays
-  use time_evol_wave, only : prepare_waves, time_loop
-  use commun,         only : pinit, pend, barrier
-  use meshes_io,      only : finish_xdmf_xml
-  use data_io,        only : verbose, define_io_appendix
-  use clocks_mod,     only : start_clock, end_clock
+  use data_proc,             only : nproc, mynum, appnproc, appmynum, lpr, procstrg
+  use data_io,               only : dump_xdmf, use_netcdf, verbose
+  use nc_routines,           only : nc_end_output, nc_finish_prepare
+  use nc_snapshots,          only : nc_close_snapfile
+  use data_source,           only : isim
+  use data_mesh,             only : do_mesh_tests
+  use parameters,            only : open_local_output_file, readin_parameters, &
+                                    read_inparam_basic_verbosity
+  use get_mesh,              only : read_db 
+  use def_grid,              only : init_grid, mesh_tests, deallocate_preloop_arrays
+  use time_evol_wave,        only : prepare_waves, time_loop
+  use commun,                only : pinit, pend, barrier
+  use meshes_io,             only : finish_xdmf_xml
+  use data_io,               only : verbose, define_io_appendix
+  use clocks_wrapper_solver, only : start_clock, end_clock
   
   implicit none
 
@@ -49,7 +49,7 @@ program axisem
   call define_io_appendix(appnproc, nproc)
   
   call open_local_output_file ! parameters, open file for processor-specific screen output 
-  call start_clock !clocks
+  call start_clock !clocks_wrapper_solver
 
   if (lpr .and. verbose >= 1) &
      write(6,*) 'MAIN: Reading parameters..................................'
@@ -103,11 +103,11 @@ program axisem
      call nc_close_snapfile ! nc_snapshots
   endif
 
-  call end_clock ! clocks
+  call end_clock ! clocks_wrapper_solver
 
   call pend ! commun
 
-  if(lpr) write(6,*) '=========PROGRAM axisem FINISHED============='
+  if (lpr)         write(6,*)  '=========PROGRAM axisem FINISHED============='
   if (verbose > 1) write(69,*) '=========PROGRAM axisem FINISHED============='
 
 end program axisem
