@@ -27,8 +27,6 @@ module commpi
 
   use global_parameters
   use data_proc
-  use data_mesh,        only : gvec_solid, gvec_fluid
-  use data_io,          only : verbose
   use linked_list
 
   ! in case you have problems with the mpi module, you might try to use the
