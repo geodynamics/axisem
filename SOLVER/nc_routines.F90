@@ -1007,7 +1007,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     dumpposition(:) = .false.
     dumpposition(0) = .true.
     outputplan = 0
-    if ((mynum == 0) .and. (verbose > 1)) then
+    if ((mynum == 0) .and. (verbose > 1)) &
             write(6,"(' all Procs will dump every ', I4, ' steps')") dumpstepsnap
 #endif
 
