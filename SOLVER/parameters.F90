@@ -35,7 +35,7 @@ module parameters
     
     implicit none
 
-    character(len=100)  :: hostname, username, svn_version
+    character(len=100)  :: hostname, username, git_hash
     character(len=100)  :: compiler, compilerversion 
     character(len=255)  :: fflags, cflags, ldflags
     character(len=3)    :: openmp
@@ -643,7 +643,7 @@ subroutine get_runinfo
 
   hostname = 'UNKNOWN'
   username = 'UNKNOWN'
-  svn_version = 'UNKNOWN'
+  git_hash = 'UNKNOWN'
 
   if (lpr .and. verbose > 1) write(6, '(A)', advance='no') '    Reading runinfo... '
   open(unit=iget_runinfo, file='runinfo', status='old', action='read',  iostat=ioerr)
@@ -651,7 +651,7 @@ subroutine get_runinfo
      if (lpr .and. verbose > 1) &
         write(6,*) 'No file ''runinfo'' found, continuing without.'
   else
-     read(iget_runinfo,*) svn_version
+     read(iget_runinfo,*) git_hash
      read(iget_runinfo,*) username
      read(iget_runinfo,*) hostname 
      read(iget_runinfo,'(A)') fflags
@@ -1169,6 +1169,15 @@ subroutine write_parameters
     real(kind=dp)    :: hmax,hmaxglob,hmin,hminglob
     character(len=7) :: clogic
 
+    character(len=8)  :: mydate
+    character(len=10) :: mytime
+    character(len=19) :: mydatetime
+
+    call date_and_time(mydate,mytime) 
+    write(mydatetime,1212) mydate(1:4), mydate(7:8), mydate(5:6), mytime(1:2), mytime(3:4), mytime(5:6)
+
+1212 format(A4,'-',A2,'-',A2,'T', A2,':',A2,':',A2)
+
     if (verbose > 1) then
        write(69,*)'  writing out all relevant simulation parameters...'
        write(69,*)'  number of respective element types...'
@@ -1254,7 +1263,7 @@ subroutine write_parameters
         write(6,*)':::::::::::::::: SIMULATION PARAMETERS::::::::::::::::::::::::'
 
         write(6,*)'  Code information_____________________________________'
-        write(6,12)'     svn revision      :', svn_version
+        write(6,12)'     svn revision      :', git_hash
         write(6,12)'     username          :', username
         write(6,12)'     hostname          :', hostname
         write(6,12)'     compiler          :', compiler
@@ -1436,11 +1445,12 @@ subroutine write_parameters
 #endif
         ! write generic simulation info file
         if (mynum == 0) write(6,*) ' Writing simulation info to netcdf file attributes' 
-        call nc_write_att_int(  6,                     'file version')
+        call nc_write_att_int(  7,                     'file version')
         call nc_write_att_char( trim(bkgrdmodel),      'background model')
         call nc_write_att_int(  merge(1, 0, do_anel),  'attenuation') ! merge: hacky conversion of logical to int
         call nc_write_att_dble( router / 1000,         'planet radius')
-        call nc_write_att_char( trim(svn_version),     'SVN revision')
+        call nc_write_att_char( trim(mydatetime),      'datetime')
+        call nc_write_att_char( trim(git_hash),        'git commit hash')
         call nc_write_att_char( trim(username),        'user name')
         call nc_write_att_char( trim(hostname),        'host name')
         call nc_write_att_char( trim(compiler),        'compiler brand')
