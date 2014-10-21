@@ -1171,12 +1171,13 @@ subroutine write_parameters
 
     character(len=8)  :: mydate
     character(len=10) :: mytime
-    character(len=19) :: mydatetime
+    character(len=5)  :: myzone
+    character(len=24) :: mydatetime
 
-    call date_and_time(mydate,mytime) 
-    write(mydatetime,1212) mydate(1:4), mydate(7:8), mydate(5:6), mytime(1:2), mytime(3:4), mytime(5:6)
+    call date_and_time(mydate, mytime, myzone) 
+    write(mydatetime,1212) mydate(1:4), mydate(5:6), mydate(7:8), mytime(1:2), mytime(3:4), mytime(5:6), myzone
 
-1212 format(A4,'-',A2,'-',A2,'T', A2,':',A2,':',A2)
+1212 format(A4,'-',A2,'-',A2,'T', A2,':',A2,':',A2, A5)
 
     if (verbose > 1) then
        write(69,*)'  writing out all relevant simulation parameters...'
