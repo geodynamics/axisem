@@ -1439,7 +1439,7 @@ subroutine write_parameters
     endif ! lpr
 
 ! in case of parallel IO, all ranks write attributes
-#ifdef upnc
+#ifdef enable_parallel_netcdf
     if ((use_netcdf)) then
 #else
     if ((mynum == 0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
