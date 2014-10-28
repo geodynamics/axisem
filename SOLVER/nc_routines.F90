@@ -1626,7 +1626,7 @@ subroutine nc_finish_prepare
 
     do iproc = 0, nproc
         call barrier
-        if (iproc == mynum .and. (npoints > 0 .or. maxind > 0 .or. num_rec > 0)) then
+        if (iproc == mynum .and. (npoints > 0 .or. maxind > 0 .or. num_rec > 0 .or. mynum == 0)) then
             if (verbose > 1) then
                write(6,*) '  Processor ', iproc, ' opened the output file and will dump '
                write(6,*) '  his part of the mesh.'
