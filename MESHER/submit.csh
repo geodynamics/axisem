@@ -63,6 +63,35 @@ else if ( $1 == 'slurm' ) then
 else if ( $1 == 'slurmlocal' ) then 
     ######## slurm #######
     aprun -n 1 ./xmesh > OUTPUT &
+
+else if ( $1 == 'SuperMUC') then
+    # Submit Mesher job on a FAT node on SuperMUC
+    # Allows to use up to 40 threads with OpenMP
+    set current_dir=$PWD
+    echo "# This job command file calls the AxiSEM MESHER"        > job.cmd
+    echo '#@ output = job_$(jobid).out '                         >> job.cmd
+    echo '#@ error = job_$(jobid).err '                          >> job.cmd
+    echo "#@ job_type = parallel "                               >> job.cmd
+    echo "#@ class = fat"                                        >> job.cmd
+    echo "#@ total_tasks=1 "                                     >> job.cmd
+    echo "#@ node = 1 "                                          >> job.cmd
+    echo "#@ network.MPI = sn_all,not_shared,us "                >> job.cmd
+    echo "#@ wall_clock_limit = 1:00:00"                         >> job.cmd
+    echo "#@ job_name = AXISEM_MESHER"                           >> job.cmd
+    echo "#@ initialdir = $current_dir"                          >> job.cmd
+    echo "#@ notification=always"                                >> job.cmd
+    echo "#@ energy_policy_tag = Axisem_Mesher  "                >> job.cmd
+    echo "#@ minimize_time_to_solution = yes    "                >> job.cmd
+    echo "#@ queue "                                             >> job.cmd
+    echo ". /etc/profile"                                        >> job.cmd
+    echo ". /etc/profile.d/modules.sh"                           >> job.cmd
+    echo "export OMP_NUM_THREADS=40"                             >> job.cmd
+    echo "export KMP_AFFINITY=""granularity=core,compact,1"" "   >> job.cmd
+    echo "module load intel"                                     >> job.cmd
+    echo "./xmesh > OUTPUT"                                      >> job.cmd
+
+    llsubmit job.cmd
+
 else
     ######## SUBMIT LOCALLY #######
     #setenv OMP_NUM_THREADS 4
