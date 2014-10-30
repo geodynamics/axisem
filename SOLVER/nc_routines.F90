@@ -1630,7 +1630,7 @@ subroutine nc_finish_prepare
 
     do iproc = 0, nproc
         call barrier
-        if (iproc == mynum .and. (npoints > 0 .or. maxind > 0 .or. num_rec > 0)) then
+        if (iproc == mynum .and. (npoints > 0 .or. maxind > 0 .or. num_rec > 0 .or. mynum == 0)) then
             if (verbose > 1) then
                write(6,*) '  Processor ', iproc, ' opened the output file and will dump '
                write(6,*) '  his part of the mesh.'
@@ -1694,7 +1694,7 @@ subroutine nc_finish_prepare
                    call getvarid(ncid_meshout, "G2",            nc_mesh_G2_varid) 
                 end if
 
-                print '(A,I5,A)', '   ', iproc, ': inquired variable IDs'
+                !print '(A,I5,A)', '   ', iproc, ': inquired variable IDs'
 
 #ifdef enable_parallel_netcdf
                 ! enable collective IO in case of parallel IO
@@ -1766,7 +1766,7 @@ subroutine nc_finish_prepare
                                    values = surfcoord, &
                                    start  = ind_first, &
                                    count  = maxind  ) ! count = 0 should be valid?
-                
+
                 ! S-Coordinate
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_s_varid,  &
@@ -1935,7 +1935,7 @@ subroutine nc_finish_prepare
                    endif
                 endif
 
-                print '(A,I5,A)', '   ', iproc, ': dumped mesh'
+                !print '(A,I5,A)', '   ', iproc, ': dumped mesh'
 
             end if !dump_wavefields
             if (verbose > 1) &

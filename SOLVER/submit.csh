@@ -377,6 +377,32 @@ foreach isim (${srcapp})
             echo "$mpiruncmd -n ${nodnum} $PWD/axisem  > $outputname " >> run_solver.pbs
             qsub run_solver.pbs
 
+        ############### SuperMUC ###################
+        else if ( $queue == 'SuperMUC') then
+            set current_dir=$PWD
+            @ nnodes = ($nodnum / 16)
+            echo "# This job command file is called job.cmd "             > job.cmd
+            echo '#@ output = job_$(jobid).out '                         >> job.cmd
+            echo '#@ error = job_$(jobid).err '                          >> job.cmd
+            echo "#@ job_type = parallel "                               >> job.cmd
+            echo "#@ class = general "                                   >> job.cmd
+            echo "#@ total_tasks=$nodnum "                               >> job.cmd
+            echo "#@ node = $nnodes "                                    >> job.cmd
+            echo "#@ network.MPI = sn_all,not_shared,us "                >> job.cmd
+            echo "#@ wall_clock_limit = 1:00:00"                         >> job.cmd
+            echo "#@ job_name = $outputname"                             >> job.cmd
+            echo "#@ initialdir = $current_dir"                          >> job.cmd
+            echo "#@ notification=always"                                >> job.cmd
+            echo "#@ energy_policy_tag = Axisem_Solver  "                >> job.cmd
+            echo "#@ minimize_time_to_solution = yes    "                >> job.cmd
+            echo "#@ queue "                                             >> job.cmd
+            echo ". /etc/profile"                                        >> job.cmd
+            echo ". /etc/profile.d/modules.sh"                           >> job.cmd
+            echo "module load netcdf/mpi"                                >> job.cmd
+            echo "module load intel"                                     >> job.cmd
+            echo "poe ./axisem > $outputname "                           >> job.cmd
+
+            llsubmit job.cmd
         endif
 
     ######## SUBMIT LOCALLY #######
