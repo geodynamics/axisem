@@ -403,7 +403,7 @@ subroutine pinit
 
   call define_io_appendix(appmynum, mynum)
  
-  procstrg = 'Proc '//appmynum(3:4)//' '
+  procstrg = 'Pr '//appmynum(1:4)//' '
 
   if (lpr) write(6,'(a,i5)') '    Initialized run for nproc =', nproc
 
@@ -592,7 +592,7 @@ end subroutine pcheck
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine comm_elem_number(my_elems, glob_elems, my_first, my_last)
+subroutine comm_elem_number(my_elems, glob_elems, my_first, my_last, var_name)
 !< Communicates the number of elements this processor has to the others and
 !! retrieves global number of local first and last element
 
@@ -600,9 +600,19 @@ subroutine comm_elem_number(my_elems, glob_elems, my_first, my_last)
   integer, intent(in)              :: my_elems
   integer, intent(out)             :: glob_elems, my_first, my_last
   integer                          :: all_elems(0:nproc-1), iproc
+  character(len=*), optional       :: var_name
 
   if (nproc>1) then
 #ifndef serial
+     if (verbose>1.and.mynum==0) then
+       if (present(var_name)) then
+         write(*,"(A,A)") '   Communicating local element numbers of var ', trim(var_name)
+       else
+         write(*,"(A)") '   Communicating local element numbers'
+       end if
+       call flush(6)
+     end if
+    
      all_elems(mynum) = my_elems
 
      do iproc = 0, nproc-1
@@ -618,12 +628,18 @@ subroutine comm_elem_number(my_elems, glob_elems, my_first, my_last)
      end if
 
      if (verbose>1) then
-         if (my_elems == 0) then
-             write(*,"('   Proc:', I5, ' has no elements of this type')") mynum
-         else
-             write(*,"('   Proc:', I5, ', first elem:', I10, ', last elem:', I10)" ) &
-                   mynum, my_first, my_last 
-         end if
+         do iproc = 0, nproc-1
+             if (iproc.eq.mynum) then
+               if (my_elems == 0) then
+                   write(*,"('   Proc:', I5, ' has no elements of this type')") mynum
+               else
+                   write(*,"('   Proc:', I5, ', first elem:', I10, ', last elem:', I10)" ) &
+                         mynum, my_first, my_last 
+               end if
+             end if
+             call flush(6)
+             call barrier
+         end do
      end if
 
      glob_elems = sum(all_elems(:))
