@@ -1146,11 +1146,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
         call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
 
-        do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
-            call dump_mesh_data_xdmf(trim(nc_fnam), trim(nc_varnamelist(ivar))//'.xdmf', &
-                                     'Snapshots/'//trim(nc_varnamelist(ivar)),  &
-                                     npts_sol_global + npts_flu_global,  nstrain)
-        enddo
+        if (lpr) then ! This has to be called by just one processor. Since 0 will have to
+                      ! do more stuff further below, let's assign lpr to this task
+          do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
+              call dump_mesh_data_xdmf(trim(nc_fnam), trim(nc_varnamelist(ivar))//'.xdmf', &
+                                       'Snapshots/'//trim(nc_varnamelist(ivar)),  &
+                                       npts_sol_global + npts_flu_global,  nstrain)
+          enddo
+        end if
 
     end if ! dump_wavefields
 
@@ -1473,9 +1476,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         end if
 
         
-        if (verbose > 2) write(6,'(a/)') 'NetCDF variables defined'
+        if (verbose > 2) write(6,'(I6, a/)') mynum, 'NetCDF variables defined'
         ! Leave definition mode
         call check( nf90_enddef(ncid_out))
+        if (verbose > 2) write(6,'(I6, a/)') mynum, 'NetCDF definition mode left!'
 
 ! in case of parallel IO, only the first rank writes
 #ifdef enable_parallel_netcdf
