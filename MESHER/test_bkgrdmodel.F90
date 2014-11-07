@@ -177,7 +177,7 @@ subroutine bkgrdmodel_testing
   !$omp end single 
   !$omp do 
   do iel = 1, neltot
-     do jpol = 0, npol
+     do jpol = npol, 0, -1
         do ipol = 0,npol
            s1 = sgll(ipol,jpol,iel)
            z1 = zgll(ipol,jpol,iel) 
