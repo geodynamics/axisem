@@ -114,7 +114,8 @@ program field_transformation
         cache_size = 1024
     else
         call get_command_argument(1, cache_size_char)
-        read(*, cache_size_char) cache_size
+        read(cache_size_char, *) cache_size
+        print '(A,I6,A)', 'Using ', cache_size, ' MB of memory for field_transformation' 
     end if
 
     ! initialize timer
