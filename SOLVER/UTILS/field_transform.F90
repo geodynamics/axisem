@@ -85,9 +85,10 @@ program field_transformation
     double precision                :: space_i, space_o
 
     logical                         :: verbose = .true.
-    integer                         :: npointsperstep = 500000
-                                    !< maybe replace this with cache size
+    integer                         :: npointsperstep, cache_size, narg
     integer                         :: chunk_gll 
+
+    character(len=32)               :: cache_size_char
                                     !< Contains chunk size in GLL points. Should be system 
                                     !! int(disk_block_size / nsnap)
     integer, parameter              :: disk_block_size = 8192
@@ -106,6 +107,15 @@ program field_transformation
                                                             ! below max of time trace
     
                                                             
+    
+    narg = command_argument_count()
+    if (narg<1) then
+        print *, 'Warning: Argument "cache size" is missing, default: 1024 (MB)'
+        cache_size = 1024
+    else
+        call get_command_argument(1, cache_size_char)
+        read(*, cache_size_char) cache_size
+    end if
 
     ! initialize timer
     time_fft = 0
@@ -844,6 +854,8 @@ program field_transformation
         ! loop over subsets of the gll points
         nstep = 0
         do while (nstep + 1 < ngll)
+
+            npointsperstep = cache_size * 1048576 / 4 / nsnap
 
             ngllread = min(npointsperstep, ngll - nstep)
 
