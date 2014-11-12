@@ -403,7 +403,7 @@ subroutine pinit
 
   call define_io_appendix(appmynum, mynum)
  
-  procstrg = 'Pr '//appmynum(1:4)//' '
+  procstrg = 'Proc '//appmynum(3:4)//' '
 
   if (lpr) write(6,'(a,i5)') '    Initialized run for nproc =', nproc
 
