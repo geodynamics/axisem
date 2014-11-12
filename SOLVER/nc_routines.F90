@@ -159,6 +159,7 @@ subroutine dump_mesh_data_xdmf(nc_filename_in, xdmf_filename_in, varname, npoint
   integer                           :: i
   character(len=128)                :: xdmf_filename, nc_filename
 
+
   xdmf_filename = trim(nc_filename_in(:index(nc_filename_in, '/', back=.true.))) &
                     // xdmf_filename_in
   nc_filename = trim(nc_filename_in(index(nc_filename_in, '/', back=.true.)+1:))
@@ -972,6 +973,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         write(6,*)
     end if
 
+    nc_fnam = datapath(1:lfdata)//"/axisem_output.nc4"
+
     call barrier
 
 #ifndef enable_parallel_netcdf
@@ -1011,23 +1014,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             write(6,"(' all Procs will dump every ', I4, ' steps')") dumpstepsnap
 #endif
 
-    nc_fnam = datapath(1:lfdata)//"/axisem_output.nc4"
-
-#ifndef enable_parallel_netcdf
-    if (mynum == 0) then
-        if (verbose > 1) write (6,*) ' Preparing netcdf file for ', nproc, ' processors'
-        nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
-        call check( nf90_create(path=nc_fnam, cmode=nmode, ncid=ncid_out) )
-        if (verbose > 1) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
-    end if
-#else
-    if (verbose > 1 .and. mynum == 0) write (6,*) ' Preparing netcdf file for parallel IO'
-    nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
-    nmode = ior(nmode, NF90_MPIIO)
-    call check( nf90_create(path=nc_fnam, cmode=nmode, ncid=ncid_out, &
-                            comm=MPI_COMM_WORLD, info=MPI_INFO_NULL) )
-    if (verbose > 1 .and. mynum == 0) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
-#endif
 
     if (dump_wavefields) then
         select case (trim(dump_type))
@@ -1101,7 +1087,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
               write(6,*) 'ERROR: not yet implemented with netcdf'
               stop 2
 
-           case ('fullfields') ! Hardcoded choice
+           case ('fullfields') 
               if (src_type(1) == 'monopole') then
                   nvar = 12
               else
@@ -1145,9 +1131,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         npoint_kwf_global = npoints_global
         call comm_elem_number(npts_sol, npts_sol_global, npts_sol_myfirst, npts_sol_mylast)
         call comm_elem_number(npts_flu, npts_flu_global, npts_flu_myfirst, npts_flu_mylast)
-
-        if (lpr) then ! This has to be called by just one processor. Since 0 will have to
-                      ! do more stuff further below, let's assign lpr to this task
+  
+        if (lpr) then
           do ivar=1, nvar/2 ! The big snapshot variables for the kerner.
               call dump_mesh_data_xdmf(trim(nc_fnam), trim(nc_varnamelist(ivar))//'.xdmf', &
                                        'Snapshots/'//trim(nc_varnamelist(ivar)),  &
@@ -1157,19 +1142,21 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     end if ! dump_wavefields
 
+    if (mynum == 0) then
+        if (verbose > 1) write (6,*) ' Preparing netcdf file for ', nproc, ' processors'
+        nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
+        call check( nf90_create(path=nc_fnam, cmode=nmode, ncid=ncid_out) )
+        if (verbose > 1) write(6,*) ' Netcdf file with ID ', ncid_out, ' produced.'
+   
 
-! in case of parallel IO, we all ranks do the definition
-#ifndef enable_parallel_netcdf
-    if (mynum == 0) then    
-#endif
-        if (verbose > 2) write(6,*) '  Producing groups for Seismograms and Snapshots'
+        if (verbose > 1) write(6,*) '  Producing groups for Seismograms and Snapshots'
 
         call check( nf90_def_grp(ncid_out, "Seismograms", ncid_recout) )
         call check( nf90_def_grp(ncid_out, "Snapshots", ncid_snapout) )
         call check( nf90_def_grp(ncid_out, "Surface", ncid_surfout) )
         call check( nf90_def_grp(ncid_out, "Mesh", ncid_meshout) )
         
-        if (verbose > 2) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
+        if (verbose > 1) write(6,*) 'Define dimensions in ''Seismograms'' group of NetCDF output file'
 
         call check( nf90_def_dim(ncid_out, "seis_timesteps", nseismo, nc_times_dimid) )
         call check( nf90_def_dim(ncid_out, "sim_timesteps", niter, nc_iter_dimid) )
@@ -1177,7 +1164,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_def_dim(ncid_out, "components", 3, nc_comp_dimid) )
         call check( nf90_def_dim(ncid_recout, "recnamlength", 40, nc_recnam_dimid) ) 
 
-        if (verbose > 2) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
+        if (verbose > 1) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
         call flush(6)
 
         call check( nf90_def_var(ncid=ncid_recout, name="displacement", xtype=NF90_FLOAT,&
@@ -1216,7 +1203,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         
         if (dump_wavefields) then
             ! Wavefields group of output file N.B: Snapshots for kernel calculation
-            if (verbose > 2) write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file', &
+            if (verbose > 1) write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file', &
                                         '  awaiting', nstrain, ' snapshots'
 
             call check( nf90_def_dim( ncid   = ncid_out, &
@@ -1420,11 +1407,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                          varid      = nc_field_varid(ivar), &
                                          chunksizes = [chunk_pt, chunk_time] ))
 
-                call check( nf90_def_var_fill(ncid    = ncid_snapout, &
+                call check( nf90_def_var_fill(ncid    = ncid_snapout,         &
                                               varid   = nc_field_varid(ivar), &
-                                              no_fill = 1, &
+                                              no_fill = 1,                    &
                                               fill    = 0) )
             end do
+
 
             ! Surface group in output file
             if (verbose > 2) write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
@@ -1474,18 +1462,21 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             call check( nf90_def_var( ncid_surfout, "stf_d_dump", NF90_FLOAT, &
                                       [nc_snap_dimid], nc_stf_d_dump_varid) )
         end if
-
         
-        if (verbose > 2) write(6,'(I6, a/)') mynum, 'NetCDF variables defined'
-        ! Leave definition mode
+        if (verbose > 1) write(6,'(I6,a/)') mynum, 'NetCDF variables defined'
+            
+
         call check( nf90_enddef(ncid_out))
-        if (verbose > 2) write(6,'(I6, a/)') mynum, 'NetCDF definition mode left!'
+
 
 ! in case of parallel IO, only the first rank writes
-#ifdef enable_parallel_netcdf
-    if (mynum == 0) then    
-#endif
-        if (verbose > 1) write(6,*) 'Writing station info into NetCDF file...'
+!#ifdef enable_parallel_netcdf
+!    if (mynum == 0) then    
+!#endif
+        if (verbose > 1) then
+            write(6,*) 'Writing station info into NetCDF file...'
+            call flush(6)
+        end if
         call check( nf90_put_var( ncid_recout, nc_th_varid,   values = rec_th) )
         call check( nf90_put_var( ncid_recout, nc_ph_varid,   values = rec_ph) )
         call check( nf90_put_var( ncid_recout, nc_thr_varid,  values = rec_th_req) )
@@ -1499,10 +1490,17 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         ! Write out seismogram dump times
         time_seis = dble([ (i, i = 0, nseismo-1) ]) * deltat
         call check( nf90_put_var( ncid_recout, nc_time_varid, values = time_seis ) ) 
-        if (verbose > 1) write(6,*) '...done'
+        if (verbose > 1) then
+            write(6,*) '...done'
+            call flush(6)
+        end if
 
         ! Write out STFs
-        if (verbose > 1) write(6,*) 'Writing stf into NetCDF file...'
+        if (verbose > 1) then
+            write(6,*) 'Writing stf into NetCDF file...'
+            call flush(6)
+        end if
+
         call check( nf90_put_var(ncid   = ncid_recout, &
                                  varid  = nc_stf_iter_varid, &
                                  values = stf_dumpvar) )
@@ -1518,7 +1516,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         if (dump_wavefields) then
             ! Write out strain dump times
-            if (verbose > 1) write(6,*) 'Writing strain dump times into NetCDF file...'
+            if (verbose > 1) then
+                write(6,*) 'Writing strain dump times into NetCDF file...'
+                call flush(6)
+            end if
             time_strain = dble([ (i, i = 1, nstrain) ])
             time_strain = time_strain * t_0 / strain_samp
             call check( nf90_put_var(ncid   = ncid_out, &
@@ -1526,7 +1527,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                      values = time_strain ) ) 
             
             ! Write out STF values at kernel dump points
-            if (verbose > 1) write(6,*) 'Writing STF in strain dumps'
+            if (verbose > 1) then
+                write(6,*) 'Writing STF in strain dumps'
+                call flush(6)
+            end if
             call check( nf90_put_var(ncid   = ncid_surfout, &
                                      varid  = nc_stf_dump_varid, &
                                      values = stf_dump_dumpvar) )
@@ -1534,7 +1538,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                                      varid  = nc_stf_d_dump_varid, &
                                      values = stf_d_dump_dumpvar) )
 
-            if (verbose > 1) write(6,*) '...done'
+            if (verbose > 1) then
+                write(6,*) '...done'
+                call flush(6)
+            end if
         end if
     
     end if ! (mynum == 0)
@@ -1578,7 +1585,27 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             write(6,*)
         end if
     end if
-    
+
+#ifdef enable_parallel_netcdf
+    if (mynum==0) call check( nf90_close(ncid = ncid_out))
+    call barrier()
+
+    if (verbose > 0 .and. mynum == 0) then
+        write (6,*) ' Opening netcdf file for parallel IO'
+        call flush(6)
+    end if
+    nmode = ior(NF90_WRITE, NF90_NETCDF4)
+    nmode = ior(nmode, NF90_MPIIO)
+    call check( nf90_open(path=nc_fnam, mode=nmode, ncid=ncid_out, &
+                          comm=MPI_COMM_WORLD, info=MPI_INFO_NULL) )
+    call barrier()
+    if (verbose > 0 .and. mynum == 0) then
+        write(6,*) ' Netcdf file with ID ', ncid_out, ' opened on all procs.'
+        call flush(6)
+    end if
+#endif
+    call barrier()
+
 #endif
 end subroutine nc_define_outputfile
 !-----------------------------------------------------------------------------------------
