@@ -178,19 +178,22 @@ subroutine prepare_waves
   ! allow for different types of receiver files
   call prepare_from_recfile_seis
   
-  ! dump meshes for displ_only kwf output
-  if (dump_wavefields .and. dump_type == "displ_only") then 
-     call dump_kwf_midpoint_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
-                                 npoint_kwf_global, nelem_kwf_global)
-     call dump_kwf_fem_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
-                                 npoint_kwf_global, nelem_kwf_global)
-     call dump_kwf_sem_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
-                                 npoint_kwf_global, nelem_kwf_global)
+  if (lpr) then ! This has to be called by just one processor. Since 0 will have to
+                ! do more stuff further below, let's assign lpr to this task
+     ! dump meshes for displ_only kwf output
+     if (dump_wavefields .and. dump_type == "displ_only") then 
+        call dump_kwf_midpoint_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                    npoint_kwf_global, nelem_kwf_global)
+        call dump_kwf_fem_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                    npoint_kwf_global, nelem_kwf_global)
+        call dump_kwf_sem_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                    npoint_kwf_global, nelem_kwf_global)
 
-  else if (dump_wavefields .and. dump_type == "strain_only") then 
-     call dump_kwf_gll_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
-                                 npoint_kwf_global)
-  endif
+     else if (dump_wavefields .and. dump_type == "strain_only") then 
+        call dump_kwf_gll_xdmf(datapath(1:lfdata)//'/axisem_output.nc4', &
+                                    npoint_kwf_global)
+     endif
+  end if !lpr
 
   ! Need to reload old seismograms and add results
   if (isim>1 .and. sum_seis ) then  
