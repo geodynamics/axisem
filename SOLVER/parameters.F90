@@ -1061,12 +1061,16 @@ subroutine compute_numerical_parameters
   if (dump_wavefields) then
      nstrain = floor(real(niter)/real(strain_it)) + 1
 
-     open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
-     write(2900+mynum,*) nstrain 
-     do ielem = 1, nstrain 
-        write(2900+mynum,*)real(ielem)*t_0/real(strain_samp),ielem*strain_it
-     enddo
-     close(2900+mynum)
+     ! This causes problems for massively parallel jobs on parallel file systems 
+     ! GPFS allows only a few hundreds of files in one directory
+     if (diagfiles) then
+        open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
+        write(2900+mynum,*) nstrain 
+        do ielem = 1, nstrain 
+           write(2900+mynum,*)real(ielem)*t_0/real(strain_samp),ielem*strain_it
+        enddo
+        close(2900+mynum)
+     end if
 
      if (lpr) then
         write(6,*)
