@@ -331,6 +331,9 @@ foreach isim (${srcapp})
     endif
 
     if ( $newqueue == 'true' ) then 
+        
+        set jobname = `echo $1 |sed 's/\//_/g'`"_"`echo $isim |sed 's/\//_/g'`
+
 
         ########## LSF SCHEDULER ######################
         if ( $queue == 'lsf' ) then 
@@ -388,18 +391,21 @@ foreach isim (${srcapp})
             echo "#@ class = general "                                   >> job.cmd
             echo "#@ total_tasks=$nodnum "                               >> job.cmd
             echo "#@ node = $nnodes "                                    >> job.cmd
+            echo "#@ island_count = 1"                                   >> job.cmd
             echo "#@ network.MPI = sn_all,not_shared,us "                >> job.cmd
-            echo "#@ wall_clock_limit = 1:00:00"                         >> job.cmd
-            echo "#@ job_name = $outputname"                             >> job.cmd
+            echo "#@ wall_clock_limit =00:10:00"                         >> job.cmd
+            echo "#@ job_name = $jobname"                                >> job.cmd
             echo "#@ initialdir = $current_dir"                          >> job.cmd
             echo "#@ notification=always"                                >> job.cmd
+            echo "#@ notify_user = MAILADRESS"                           >> job.cmd
             echo "#@ energy_policy_tag = Axisem_Solver  "                >> job.cmd
             echo "#@ minimize_time_to_solution = yes    "                >> job.cmd
             echo "#@ queue "                                             >> job.cmd
             echo ". /etc/profile"                                        >> job.cmd
             echo ". /etc/profile.d/modules.sh"                           >> job.cmd
-            echo "module load netcdf/mpi"                                >> job.cmd
-            echo "module load intel"                                     >> job.cmd
+            echo "module load mpi.ibm"                                   >> job.cmd
+            echo "module load netcdf/mpi/4.3"                            >> job.cmd
+            echo "module load fortran/intel"                             >> job.cmd
             echo "poe ./axisem > $outputname "                           >> job.cmd
 
             llsubmit job.cmd
