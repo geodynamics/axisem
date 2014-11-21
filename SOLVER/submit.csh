@@ -384,9 +384,13 @@ foreach isim (${srcapp})
         else if ( $queue == 'SuperMUC') then
             set current_dir=$PWD
             @ nnodes = ($nodnum / 16)
-            echo "# This job command file is called job.cmd "             > job.cmd
+            echo "# Job file for AxiSEM run, followed by field_transform" > job.cmd
+            echo "#@ job_name = $jobname"                                >> job.cmd
+            echo " "                                                     >> job.cmd
+            echo "# JOB STEP SOLVER"                                     >> job.cmd
+            echo "#@ step_name = SOLVER "                                >> job.cmd
             echo '#@ output = job_$(jobid).out '                         >> job.cmd
-            echo '#@ error = job_$(jobid).err '                          >> job.cmd
+            echo '#@ error = job_$(jobid).err  '                         >> job.cmd
             echo "#@ job_type = parallel "                               >> job.cmd
             echo "#@ class = general "                                   >> job.cmd
             echo "#@ total_tasks=$nodnum "                               >> job.cmd
@@ -394,20 +398,46 @@ foreach isim (${srcapp})
             echo "#@ island_count = 1"                                   >> job.cmd
             echo "#@ network.MPI = sn_all,not_shared,us "                >> job.cmd
             echo "#@ wall_clock_limit =00:10:00"                         >> job.cmd
-            echo "#@ job_name = $jobname"                                >> job.cmd
             echo "#@ initialdir = $current_dir"                          >> job.cmd
+            echo "#@ executable = $current_dir/exe_solver.sh"            >> job.cmd
             echo "#@ notification=always"                                >> job.cmd
             echo "#@ notify_user = MAILADRESS"                           >> job.cmd
             echo "#@ energy_policy_tag = Axisem_Solver  "                >> job.cmd
             echo "#@ minimize_time_to_solution = yes    "                >> job.cmd
             echo "#@ queue "                                             >> job.cmd
-            echo ". /etc/profile"                                        >> job.cmd
-            echo ". /etc/profile.d/modules.sh"                           >> job.cmd
-            echo "module load mpi.ibm"                                   >> job.cmd
-            echo "module load netcdf/mpi/4.3"                            >> job.cmd
-            echo "module load fortran/intel"                             >> job.cmd
-            echo "poe ./axisem > $outputname "                           >> job.cmd
+            echo " "                                                     >> job.cmd
+            echo "# JOB STEP FIELD_TRANSFORM"                            >> job.cmd
+            echo "#@ step_name = FIELD_TRANSFORM"                        >> job.cmd
+            echo "#@ dependency = (SOLVER == 0)"                         >> job.cmd
+            echo '#@ output = job_$(jobid).out '                         >> job.cmd
+            echo '#@ error = job_$(jobid).err  '                         >> job.cmd
+            echo "#@ class = micro   "                                   >> job.cmd
+            echo "#@ total_tasks=1 "                                     >> job.cmd
+            echo "#@ node = 1 "                                          >> job.cmd
+            echo "#@ wall_clock_limit =48:00:00"                         >> job.cmd
+            echo "#@ initialdir = $current_dir"                          >> job.cmd
+            echo "#@ executable = $current_dir/exe_FT.sh"                >> job.cmd
+            echo "#@ notification=always"                                >> job.cmd
+            echo "#@ notify_user = MAILADRESS"                           >> job.cmd
+            echo "#@ energy_policy_tag = Axisem_FT  "                    >> job.cmd
+            echo "#@ minimize_time_to_solution = yes    "                >> job.cmd
+            echo "#@ queue "                                             >> job.cmd
 
+            # Create Solver executable script
+            echo ". /etc/profile"                                         > exe_solver.sh
+            echo ". /etc/profile.d/modules.sh"                           >> exe_solver.sh
+            echo "module load mpi.ibm"                                   >> exe_solver.sh
+            echo "module load netcdf/mpi/4.3"                            >> exe_solver.sh
+            echo "module load fortran/intel"                             >> exe_solver.sh
+            echo "poe ./axisem > $outputname "                           >> exe_solver.sh
+
+            # Create Field transform executable script
+            echo ". /etc/profile"                                         > exe_FT.sh
+            echo ". /etc/profile.d/modules.sh"                           >> exe_FT.sh
+            echo "module load mpi.ibm"                                   >> exe_FT.sh
+            echo "module load netcdf/mpi/4.3"                            >> exe_FT.sh
+            echo "module load fortran/intel"                             >> exe_FT.sh
+            echo "../xfield_transform > OUTPUT_FT "                      >> exe_FT.sh
             llsubmit job.cmd
         endif
 
