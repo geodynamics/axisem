@@ -79,13 +79,13 @@ subroutine prepare_waves
                         .or. trim(dump_type) == 'strain_only')) &
      call build_kwf_grid()
 
+  ! compute/output some more parameters
+  call compute_numerical_parameters
+
   ! Define velocity/density model (velocities in m/s, density in kg/m^3 ) AND 
   ! compute all global matrices (Jacobian, mapping, mass matrix, S/F boundary)
   ! for solid and fluid domains respectively
   call read_model_compute_terms
-
-  ! compute/output some more parameters 
-  call compute_numerical_parameters
 
   ! compute source time function
   call compute_stf

@@ -779,7 +779,6 @@ subroutine compute_numerical_parameters
   use attenuation, only: dump_memory_vars
   use data_mesh
 
-
   real(kind=dp)         :: s,z,r,theta,s_max,dshift
   real(kind=dp)         :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
   real(kind=dp)         :: minds(nelem),maxds(nelem),mindz(nelem),maxdz(nelem)
