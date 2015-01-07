@@ -31,12 +31,13 @@ SOURCE_PERIOD       0.0
 SOURCE_FUNCTION     errorf
 
 # Time integration scheme, allowed:
-# newmark2:  default, tested
-# symplec4
-# ML_SO4m5
-# ML_SO6m7
-# KL_O8m17
-# SS_35o10
+# newmark2:  default, well tested
+# symplec4:  well tested, should be used when propagating waves for more then 100
+#            wavelenghts
+# ML_SO4m5:  experimental
+# ML_SO6m7:  experimental
+# KL_O8m17:  experimental
+# SS_35o10:  experimental
 
 TIME_SCHEME     newmark2
 
@@ -69,7 +70,7 @@ CHECKPOINTING       true
 # Default value: 128
 NETCDF_DUMP_BUFFER  128
 
-# Chunking of the kernel wavefields: Default is snapshots to write to contiguos
+# Chunking of the kernel wavefields: Default is snapshots to write to contiguous
 # regions on the drive. When running on many cores and using collective IO, it
 # might be useful to write time traces directly and avoid the rechunking
 # (fieldtransfom) usually done in postprocessing. 
@@ -129,7 +130,7 @@ MESH_TEST           false
 
 
 ######################## SENSITIVITY KERNELS ###################################
-# Save necessary wavefields for Kernel calculation
+# Save necessary wavefields for Kernel calculation or Instaseis databases
 # N.b. Kernel calculation needs Axisem Kerner (sold separately)
 KERNEL_WAVEFIELDS   false 
 
@@ -137,7 +138,7 @@ KERNEL_WAVEFIELDS   false
 #  - fullfields: strain and velocity at a subset of local GLL points (see below)
 #  - displ_only: displacement at all global points
 #  - strain_only: strain at a subset of local GLL points (see below)
-KERNEL_DUMPTYPE     fullfields
+KERNEL_DUMPTYPE     displ_only
 
 # Samples per period
 KERNEL_SPP          8
