@@ -883,6 +883,8 @@ done with \textit{ObsPy} or another tool that supports filtering.
     spatial scheme:
 
 \begin{verbatim}
+SOURCE_FUNCTION     gauss_0
+
 KERNEL_WAVEFIELDS   true
 
 KERNEL_DUMPTYPE     displ_only
@@ -900,6 +902,11 @@ KERNEL_RMAX         7000.
     simulate both the vertical and the horizontal database. To generate just one of the
     two, set it to \verb|single| and select either \verb|thetaforce| or \verb|vertforce|
     in \\\verb|SOLVER/inparam_source|
+
+    \item once the AxiSEM runs are finished, go to the rundirectory and run
+    \verb|./fieltransform.sh| (in case of single runs just run \verb|./fieltransform|
+    directly). This rechunks the wavefields in the netcdf file to optimize them for
+    reading as time series instead of snapshots.
 
 \end{itemize}
 
