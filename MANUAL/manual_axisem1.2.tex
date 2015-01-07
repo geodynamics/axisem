@@ -302,11 +302,11 @@ element approach.\\
 
 
 \subsubsection{NetCDF}
+\label{sssec:netcdf}
 
-AxiSEM allows to output larger datasets, especially wavefields in the NetCDF format. The
-current version also has full support for binary dumps, but the development will move
-towards NetCDF containers.\\
-Unfortunately, the installation of the NetCDF libraries may still be cumbersome; below we list some limited support for installing NetCDF..
+AxiSEM allows to output larger datasets, especially wavefields in the NetCDF format. \\
+Unfortunately, the installation of the NetCDF libraries may still be cumbersome; below we
+list some limited support for installing NetCDF..
 
 \begin{description}
     \item[HPC systems:] The libraries should be provided by the system. Use the
@@ -652,7 +652,7 @@ size per CPU).
 \subsection{Change source type}
 
 \verb|SOLVER/inparam_source|, \verb|SOLVER/CMTSOLUTION| and \verb|SOLVER/inparam_basic|.
-AxiSEM has two principal modes, which are selected by the value \verb|SIMULATION_TYPE| in
+AxiSEM has three principal modes, which are selected by the value \verb|SIMULATION_TYPE| in
 \verb|SOLVER/inparam_basic|.
 
 \begin{enumerate}
@@ -680,6 +680,11 @@ AxiSEM has two principal modes, which are selected by the value \verb|SIMULATION
       on the depth).  The \verb|CMTSOLUTION| file is a standard format and can be
       downloaded from many sites in the web, including
       \url{http://www.globalcmt.org/CMTsearch.html}
+
+\item \verb|SIMULATION_TYPE force|:\\
+      The submit.csh script starts two separate simulations for the basic types $P_r$ and
+      $P_\theta$. This mode is used to compute the databases for instaseis. Note, that the
+      postprocessing does not handle these runs yet appropriately.
 \end{enumerate}
 
 \subsection{Change station locations}
@@ -858,6 +863,45 @@ to compare amplitude spectra with a normal modes summation (Nissen-Meyer et al, 
 By default, the sampling rate is set to the time step length of the simulation. We
 strongly recommend to leave it as such to avoid aliasing. The resampling can better be
 done with \textit{ObsPy} or another tool that supports filtering.
+
+\subsection{Output wavefields in netcdf format needed for \textit{Instaseis}}
+
+\begin{itemize}
+    \item Compile with netcdf (see section~\ref{sssec:netcdf} for hints on the
+    installation): in \verb|make_axisem.macros| set \verb|USE_NETCDF| to \verb|true|
+    and if netcdf is not in your \verb|PATH|, also set \verb|NETCDF_PATH| to the location
+    of your netcdf installation. If you have netcdf compiled with MPI and run on a
+    supercomputer, using \verb|USE_PARALLEL_NETCDF true| might be beneficial for short
+    period runs.
+    \item In \verb|SOLVER/inparam_advanced| set \verb|USE_NETCDF| to \verb|true| to
+    use netcdf output in the solver
+    \item In \verb|SOLVER/inparam_advanced| set \verb|DATA_DIR| to some location where you
+    have enough free space and in case you use parallel IO this should be on a parallel
+    file system
+    \item further settings in \verb|SOLVER/inparam_advanced| to generate a full database,
+    that is all epicentral distances and source down to 700km and using the fourth order
+    spatial scheme:
+
+\begin{verbatim}
+KERNEL_WAVEFIELDS   true
+
+KERNEL_DUMPTYPE     displ_only
+KERNEL_SPP          4
+KERNEL_SOURCE       igno
+
+KERNEL_COLAT_MIN    0.
+KERNEL_COLAT_MAX    180.
+
+KERNEL_RMIN         5671.
+KERNEL_RMAX         7000.
+\end{verbatim}
+
+    \item in \verb|SOLVER/inparam_basic| set \verb|SIMULATION_TYPE| to \verb|force| to
+    simulate both the vertical and the horizontal database. To generate just one of the
+    two, set it to \verb|single| and select either \verb|thetaforce| or \verb|vertforce|
+    in \\\verb|SOLVER/inparam_source|
+
+\end{itemize}
 
 
 \subsection{Include lateral heterogeneities (2.5D simulation)}
