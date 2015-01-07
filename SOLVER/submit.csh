@@ -279,37 +279,9 @@ endif
 if ( $netcdf_requested == 'true') then
     if ( $simtype == 'moment' ) then
         cp ../UTILS/fieldtransform_moment.sh fieldtransform.sh
-        #echo '#\!/bin/bash '              >  fieldtransform.sh
-        #echo 'set -e'                     >> fieldtransform.sh
-        #echo 'cd MZZ'                     >> fieldtransform.sh
-        #echo 'Transforming MZZ'           >> fieldtransform.sh
-        #echo '../xfield_transform'        >> fieldtransform.sh
-        #echo 'cd ..'                      >> fieldtransform.sh
-        #echo 'cd MXX_P_MYY'               >> fieldtransform.sh
-        #echo 'Transforming MXX_P_MYY'     >> fieldtransform.sh
-        #echo '../xfield_transform'        >> fieldtransform.sh
-        #echo 'cd ..'                      >> fieldtransform.sh
-        #echo 'cd MXZ_MYZ'                 >> fieldtransform.sh
-        #echo 'Transforming MXZ_MYZ'       >> fieldtransform.sh
-        #echo '../xfield_transform'        >> fieldtransform.sh
-        #echo 'cd ..'                      >> fieldtransform.sh
-        #echo 'cd MXY_MXX_M_MYY'           >> fieldtransform.sh
-        #echo 'Transforming MXY_MXX_M_MYY' >> fieldtransform.sh
-        #echo '../xfield_transform'        >> fieldtransform.sh
-        #echo 'cd ..'                      >> fieldtransform.sh
         chmod +x fieldtransform.sh
     else if ( $simtype == 'force' ) then
         cp ../UTILS/fieldtransform_force.sh fieldtransform.sh
-        #echo '#\!/bin/bash '              >  fieldtransform.sh
-        #echo 'set -e'                     >> fieldtransform.sh
-        #echo 'cd PX'                      >> fieldtransform.sh
-        #echo 'Transforming PX'            >> fieldtransform.sh
-        #echo '../xfield_transform'        >> fieldtransform.sh
-        #echo 'cd ..'                      >> fieldtransform.sh
-        #echo 'cd PZ'                      >> fieldtransform.sh
-        #echo 'Transforming PZ'            >> fieldtransform.sh
-        #echo '../xfield_transform'        >> fieldtransform.sh
-        #echo 'cd ..'                      >> fieldtransform.sh
         chmod +x fieldtransform.sh
     endif
 endif
