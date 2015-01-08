@@ -249,7 +249,7 @@ program field_transformation
 
     print *, 'Defined snapshots dimension'
 
-    chunk_gll = disk_block_size / nsnap 
+    chunk_gll = max(disk_block_size / nsnap, 1)
     print *, 'Chunksize: [', chunk_gll, ',', nsnap, ']'
 
     ! create variables
