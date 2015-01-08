@@ -118,56 +118,23 @@ subroutine readin_parameters
    08x,'//                                                           //',/  &
    08x,'//                                                           //',/  &
    08x,'//  Authors : Tarje Nissen-Meyer (Oxford University)         //',/  &
-   08x,'//            Alexandre Fournier (IPG Paris)                 //',/  &
    08x,'//              Martin van Driel (ETH Zurich)                //',/  &
    08x,'//                 Simon Stähler (LMU Munich)                //',/  &
    08x,'//                Kasra Hosseini (LMU Munich)                //',/  &
    08x,'//               Stefanie Hempel (University of Muenster)    //',/  &
+   08x,'//            Alexandre Fournier (IPG Paris)                 //',/  &
    08x,'//                   Tony Dahlen (Princeton University)      //',/  &
    08x,'//                                                           //',/  &
    08x,'//   Contact:     info@axisem.info                           //',/  &  
    08x,'//   Information: www.axisem.info                            //',/  &
-   08x,'//                                                           //',/  &
-   08x,'//       Comprehensive description of the underlying         //',/  &
-   08x,'//           numerical analysis can be found in:             //',/  &
    08x,'//                                                           //')
 
-21 format(&
-   08x,'// (1) Tarje Nissen-Meyer, F. A. Dahlen, A Fournier (2007)   //',/  &
-   08x,'//     "Spherical-earth Frechet sensitivity kernels"         //',/  & 
-   08x,'//     Geophysical Journal International 168(3),1051-1066.   //',/  & 
-   08x,'//     doi:10.1111/j.1365-246X.2006.03123.x                  //',/  &
-   08x,'//                                                           //',/  &
-   08x,'// (2) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  & 
-   08x,'//     "A two-dimensional spectral-element method for        //',/  &  
-   08x,'//        computing spherical-earth seismograms -            //',/  & 
-   08x,'//        I. Moment-tensor source"                           //',/  & 
-   08x,'//     Geophysical Journal International 168(3), 1067-1092.  //',/  & 
-   08x,'//     doi:10.1111/j.1365-246X.2006.03121.x                  //',/  &
-   08x,'//                                                           //',/  &
-   08x,'// (3) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  &
-   08x,'//     "A two-dimensional spectral-element method for        //',/  &  
-   08x,'//        computing spherical-earth seismograms -            //',/  & 
-   08x,'//        II.  Waves in solid-fluid media"                   //',/  &
-   08x,'//     Geophysical Journal International 174(3), 873-888.    //',/  & 
-   08x,'//     doi:10.1111/j.1365-246X.2008.03813.x                  //',/  &
-   08x,'//                                                           //',/  &
-   08x,'// (4) Martin van Driel and Tarje Nissen-Meyer (2014)        //',/  &
-   08x,'//     "Seismic wave propagation in fully anisotropic        //',/  &
-   08x,'//        axisymmetric media"                                //',/  &
-   08x,'//      Geophysical Journal International 199 (2): 880-893.  //',/  &
-   08x,'//      doi: 10.1093/gji/ggu269                              //',/  &
-   08x,'//                                                           //',/  &
-   08x,'// (5) Martin van Driel and Tarje Nissen-Meyer (2014)        //',/  &
-   08x,'//     "Optimized visco-elastic wave propagation for         //',/  &
-   08x,'//        weakly dissipative media"                          //',/  &
-   08x,'//      Geophysical Journal International, in press.         //',/  &
-   08x,'//                                                           //',/  &
+21 format(/&
    08x,'//                                                           //',/  &
    08x,'//     If you are publishing results obtained with this      //',/  &
    08x,'//          code, please cite this paper:                    //',/  &
    08x,'//                                                           //',/  &
-   08x,'// (6) T. Nissen-Meyer, M. van Driel, S. C. Staehler,        //',/  & 
+   08x,'// (1) T. Nissen-Meyer, M. van Driel, S. C. Staehler,        //',/  & 
    08x,'//     K. Hosseini, S. Hempel, L. Auer, A. Colombi           //',/  & 
    08x,'//     and A. Fournier:                                      //',/  & 
    08x,'//     "AxiSEM: broadband 3-D seismic wavefields in          //',/  &
@@ -175,8 +142,42 @@ subroutine readin_parameters
    08x,'//     Solid Earth, 5, 425-445, 2014                         //',/  &
    08x,'//     doi:10.5194/se-5-425-2014                             //',/  &
    08x,'//                                                           //',/  &
+   08x,'//       Comprehensive description of the underlying         //',/  &
+   08x,'//           numerical analysis can be found in:             //',/  &
    08x,'//                                                           //',/  &
-   08x,'//  August 2014: version 1.1                                 //',/  &
+   08x,'// (2) Tarje Nissen-Meyer, F. A. Dahlen, A Fournier (2007)   //',/  &
+   08x,'//     "Spherical-earth Frechet sensitivity kernels"         //',/  & 
+   08x,'//     Geophysical Journal International 168(3),1051-1066.   //',/  & 
+   08x,'//     doi:10.1111/j.1365-246X.2006.03123.x                  //',/  &
+   08x,'//                                                           //',/  &
+   08x,'// (3) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  & 
+   08x,'//     "A two-dimensional spectral-element method for        //',/  &  
+   08x,'//        computing spherical-earth seismograms -            //',/  & 
+   08x,'//        I. Moment-tensor source"                           //',/  & 
+   08x,'//     Geophysical Journal International 168(3), 1067-1092.  //',/  & 
+   08x,'//     doi:10.1111/j.1365-246X.2006.03121.x                  //',/  &
+   08x,'//                                                           //',/  &
+   08x,'// (4) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  &
+   08x,'//     "A two-dimensional spectral-element method for        //',/  &  
+   08x,'//        computing spherical-earth seismograms -            //',/  & 
+   08x,'//        II.  Waves in solid-fluid media"                   //',/  &
+   08x,'//     Geophysical Journal International 174(3), 873-888.    //',/  & 
+   08x,'//     doi:10.1111/j.1365-246X.2008.03813.x                  //',/  &
+   08x,'//                                                           //',/  &
+   08x,'// (5) Martin van Driel and Tarje Nissen-Meyer (2014)        //',/  &
+   08x,'//     "Seismic wave propagation in fully anisotropic        //',/  &
+   08x,'//        axisymmetric media"                                //',/  &
+   08x,'//      Geophysical Journal International 199 (2): 880-893.  //',/  &
+   08x,'//      doi: 10.1093/gji/ggu269                              //',/  &
+   08x,'//                                                           //',/  &
+   08x,'// (6) Martin van Driel and Tarje Nissen-Meyer (2014)        //',/  &
+   08x,'//     "Optimized visco-elastic wave propagation for         //',/  &
+   08x,'//        weakly dissipative media"                          //',/  &
+   08x,'//      Geophysical Journal International 199 (2): 1078-1093.//',/  &
+   08x,'//      doi: 10.1093/gji/ggu314                              //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//  January 2015: version 1.2                                //',/  &
    08x,'//                                                           //',/  &
    08x,'///////////////////////////////////////////////////////////////',// &
    08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
