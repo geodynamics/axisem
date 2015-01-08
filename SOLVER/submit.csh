@@ -39,8 +39,7 @@ if ( $netcdf_requested == 'true' && $netcdf_compiled != 'true') then
   exit
 endif
 
-set svnversion = `git rev-parse --short HEAD`
-echo $svnversion " SVN_VERSION      " > runinfo
+echo $svnversion " SVN_VERSION      RELEASE_1.2" > runinfo
 set username = `whoami`
 echo $username "USER_NAME        " >> runinfo
 set hostname = `hostname`
