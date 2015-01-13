@@ -39,8 +39,7 @@ if ( $netcdf_requested == 'true' && $netcdf_compiled != 'true') then
   exit
 endif
 
-set gitversion = `git describe --dirty --abbrev=4 --always --tags`
-echo $gitversion "GIT_VERSION"  > runinfo
+echo "v1.2-release GIT_VERSION"  > runinfo
 set username = `whoami`
 echo $username "USER_NAME" >> runinfo
 set hostname = `hostname`
