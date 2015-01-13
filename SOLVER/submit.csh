@@ -39,7 +39,7 @@ if ( $netcdf_requested == 'true' && $netcdf_compiled != 'true') then
   exit
 endif
 
-echo $svnversion " SVN_VERSION      RELEASE_1.2" > runinfo
+echo "SVN_VERSION      RELEASE_1.2" > runinfo
 set username = `whoami`
 echo $username "USER_NAME        " >> runinfo
 set hostname = `hostname`
