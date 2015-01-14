@@ -867,6 +867,13 @@ By default, the sampling rate is set to the time step length of the simulation. 
 strongly recommend to leave it as such to avoid aliasing. The resampling can better be
 done with \textit{ObsPy} or another tool that supports filtering.
 
+\subsection{Time Schemes}
+For high frequencies and propagation lengths over 100 wavelengths, the symplectic time
+scheme is recommended instead of the default Newmark scheme to keep the dispersion errors
+small (compare benchmarks in van Driel \& Nissen-Meyer 2014a,b):\\ 
+In \verb|SOLVER/inparam_advanced| set \verb|TIME_SCHEME| to \verb|symplec4|. 
+
+
 \subsection{\textit{Instaseis}-ready wavefield output in netcdf format}
 
 \begin{itemize}
@@ -901,11 +908,6 @@ KERNEL_RMIN         5671.
 KERNEL_RMAX         7000.
 \end{verbatim}
 
-
-    \item For high frequencies and propagation lengths over 100 wavelengths, the 
-    symplectic time scheme is recommended to keep the dispersion errors small 
-    (compare benchmarks in van Driel \& Nissen-Meyer 2014a,b):\\
-    In \verb|SOLVER/inparam_advanced| set \verb|TIME_SCHEME| to \verb|symplec4|. 
 
     \item in \verb|SOLVER/inparam_basic| set \verb|SIMULATION_TYPE| to \verb|force| to
     simulate both the vertical and the horizontal database. To generate just one of the
