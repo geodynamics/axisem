@@ -1,0 +1,72 @@
+AxiSEM 1.2 (2015/01/15):
+
+Questions/contact: info@axisem.info
+Webpage/distribution: http://www.axisem.info
+
+New features since v1.1:
+ - parallel synchronous IO via netcdf/mpiio for wavefields, output now scales
+   on up to 10K machines instead of 100
+ - 'displ_only' mode for wavefield output: stores the displacement on all GLL
+   points to a netcdf file
+ - 'strain_only' mode for wavefield output: stores the strain on a subset of
+   GLL points to a netcdf file
+ - output format consistent with the format expected by Instaseis
+   (www.instaseis.net)
+ - some code refactoring to use same modules in MESHER and SOLVER
+ - additional tests for the nightly builds
+
+Bugfixes
+ - Symplectic fourth order time scheme ('symplec4') well tested
+ - Bugfix for correct dt to be used in the attenuation module when a custom
+   value is used
+
+-------------------------------------------------------------------------------
+
+AxiSEM 1.1 (2014/07/07, Git revision 304a002):
+
+First bugfix release of AxiSEM.
+
+Changes to last version:
+ - Format of external (1D) models is changed and simplified
+ - Power-law Q in attenuation
+ - Full-field output for kernel wavefields and rdbm
+ - Better checking of user input
+ - Cleaning up output
+
+Bugfixes
+ - Serial mode now functional and compiling without MPI
+ - Bugfixes in NetCDF output of (kerner-related) wavefields
+ - Bugfix of all nodes writing into the same file, receiver.dat
+ - Bugfix in writing out 1D model files
+ - Bugfix in mesh decomposition for fluid spheres
+ - Fixed SOLVER/submit.csh script for arbitrary DATA directories, especially
+   for 'single' simulations 
+
+-------------------------------------------------------------------------------
+
+AxiSEM 1.0 (2013/12/19, SVN revision 1089):
+First general release of AxiSEM.
+
+Working: 
+ - 1D models included (PREM, IASP91, AK135 with different modifications)
+ - External 1D models
+ - Models can include solid and fluid zones
+ - Axially symmetric heterogeneities
+ - Attenuation
+ - Anisotropy
+ - General moment tensor and force sources
+ - Receiver locations on the surface
+ - Benchmarked for elastic models against yspec (Al Attar & Woodhouse, 2008) 
+   up to 1 Hz
+ - Newmark time integration scheme tested and benchmarked against YSPEC
+ - Symplectic time integration scheme tested, but not fully benchmarked
+ - NetCDF output 
+ - Postprocessing to produce ASCII seismogram files
+ - Mesh decomposition up to 32 processors radially and 500+ (depending on 
+   frequency) laterally
+
+Known issues:
+ - Other time integration schemes are not reliably working.
+ - Source time function 'quheavi' is not working reliably.
+ - Receivers must be on surface.
+ - Uppermost layer of model must be solid.
