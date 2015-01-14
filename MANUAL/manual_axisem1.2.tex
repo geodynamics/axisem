@@ -304,12 +304,11 @@ element approach.\\
 
 AxiSEM allows to output larger datasets, especially wavefields in the NetCDF format. \\
 Unfortunately, the installation of the NetCDF libraries may still be cumbersome; below we
-list some limited support for installing NetCDF..
+list some limited support for installing NetCDF.
 
 \begin{description}
     \item[HPC systems:] The libraries should be provided by the system. Use the
-          recommended settings. AxiSEM has worked with NetCDF versions down to 4.1.2, but 
-          unpredictable errors still occur.
+          recommended settings. AxiSEM has worked reliably with NetCDF versions starting from 4.2. 
           If you want to use the new Parallel NetCDF output, choose a package named netcdf-mpi 
           or similar.
     \item[Ubuntu 12.10 and newer, Debian Wheezy and newer]: The code is working with the NetCDF libraries delivered
@@ -868,7 +867,7 @@ By default, the sampling rate is set to the time step length of the simulation. 
 strongly recommend to leave it as such to avoid aliasing. The resampling can better be
 done with \textit{ObsPy} or another tool that supports filtering.
 
-\subsection{Output wavefields in netcdf format needed for \textit{Instaseis}}
+\subsection{\textit{Instaseis}-ready wavefield output in netcdf format}
 
 \begin{itemize}
     \item Compile with netcdf (see section~\ref{sssec:netcdf} for hints on the
@@ -902,13 +901,19 @@ KERNEL_RMIN         5671.
 KERNEL_RMAX         7000.
 \end{verbatim}
 
+
+    \item For high frequencies and propagation lengths over 100 wavelengths, the 
+    symplectic time scheme is recommended to keep the dispersion errors small 
+    (compare benchmarks in van Driel \& Nissen-Meyer 2014a,b):\\
+    In \verb|SOLVER/inparam_advanced| set \verb|TIME_SCHEME| to \verb|symplec4|. 
+
     \item in \verb|SOLVER/inparam_basic| set \verb|SIMULATION_TYPE| to \verb|force| to
     simulate both the vertical and the horizontal database. To generate just one of the
     two, set it to \verb|single| and select either \verb|thetaforce| or \verb|vertforce|
     in \\\verb|SOLVER/inparam_source|
 
     \item once the AxiSEM runs are finished, go to the rundirectory and run
-    \verb|./fieltransform.sh| (in case of single runs just run \verb|./fieltransform|
+    \verb|./fieldtransform.sh| (in case of single runs just run \verb|./fieldtransform|
     directly). This rechunks the wavefields in the netcdf file to optimize them for
     reading as time series instead of snapshots.
 
