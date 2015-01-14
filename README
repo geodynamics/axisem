@@ -50,21 +50,21 @@ Basic instructions for running:
 
 More details are found in the manual. For a quick start:
 
-The mesher has to be run first to generate a SEM mesh for the solver. 
-Any changes in the resolution, spherically symmetric background model, or number 
-of processors requires a new mesh. 
-Changes in the source-receiver settings or 2.5D heterogeneities only need a new solver run.
-Changes on the moment tensor, receiver components, or filtering only need a new postprocessing run.
+The mesher has to be run first to generate a SEM mesh for the solver.  Any
+changes in the resolution, spherically symmetric background model, or number of
+processors requires a new mesh.  Changes in the source-receiver settings or
+2.5D heterogeneities only need a new solver run.  Changes on the moment tensor,
+receiver components, or filtering only need a new postprocessing run.
 
-General settings and explanations for parameters needed in MESHER and SOLVER 
+General settings and explanations for parameters needed in MESHER and SOLVER
 are found in the inparam_* files in the respective directories. 
 
 1) Run copytemplates.sh to set up a generic run with pre-set parameters
 
-2) Go into the MESHER directory, run ./submit.csh . This compiles the code using
-gfortran and mpif90 as default compilers, and then submits a job on a single node. 
-For high resolution (seismic period below 3s), this requires significant amounts 
-of RAM, see manual.
+2) Go into the MESHER directory, run ./submit.csh . This compiles the code
+using gfortran and mpif90 as default compilers, and then submits a job on a
+single node.  For high resolution (seismic period below 3s), this requires
+significant amounts of RAM, see manual.
 
 3) Check OUTPUT; if finished, then run ./movemesh.csh <MESH_NAME>
 
