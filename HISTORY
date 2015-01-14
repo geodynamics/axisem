@@ -10,6 +10,8 @@ New features since v1.1:
    points to a netcdf file
  - 'strain_only' mode for wavefield output: stores the strain on a subset of
    GLL points to a netcdf file
+ - 'force' simulation type: horizontal and vertical single force source, needed
+   for reciprocal database mode in instaseis
  - output format consistent with the format expected by Instaseis
    (www.instaseis.net)
  - some code refactoring to use same modules in MESHER and SOLVER
