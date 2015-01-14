@@ -163,7 +163,7 @@ Tarje Nissen-Meyer\\Martin van Driel\\Simon St\"{a}hler\\Kasra Hosseini\\Stefani
                   LMU M\"{u}nchen (Germany), \textsuperscript{4} Universit\"{a}t
                   M\"{u}nster (Germany), \textsuperscript{5} IPG Paris
                   (France)}\\
-                {\large Oxford, UK -- July 7, 2014}
+                {\large Oxford, UK -- January 15, 2015}
             \end{center}
         \end{minipage}
     \end{tabularx}
@@ -206,11 +206,12 @@ Fournier, Martin van Driel, Simon St\"{a}hler, Kasra Hosseini, Stefanie Hempel.\
  J.-P. Ampuero, E. Chaljub, A. Colombi, F. A. Dahlen, D. Komatitsch,
  G. Nolet, J. Tromp.\vspace*{0.3cm}\\
 \noindent \textbf{Research funding:} \\Princeton University, NSF, HP2C Petaquake, 
-QUEST ITN (Marie Curie), ETH Zurich, Oxford University.\vspace*{0.3cm}\\
+QUEST ITN (Marie Curie), ETH Zurich, Munich Center for Advanced Computing, 
+Oxford University.\vspace*{0.3cm}\\
 %
 \noindent \textbf{Copyright}\\
 \copyright  \hspace*{0.1cm} 
-2013, Tarje Nissen-Meyer,
+2015, Tarje Nissen-Meyer,
 Alexandre Fournier, Martin van Driel, Simon St\"{a}hler, Kasra Hosseini, Stefanie Hempel.\vspace*{0.3cm}\\
 
 AxiSEM is free software: you may redistribute it and/or modify it
@@ -226,7 +227,7 @@ for more details: \verb|LICENSE_GPL.txt|
 \newpage
 \tableofcontents
 %
-\vspace*{1cm}
+\newpage
 
 \section{Preliminaries}
 
@@ -271,9 +272,6 @@ element approach.\\
     \end{minipage}%
 \end{center}
 
-\newpage
-
-
 \subsection{Software and hardware requirements}
 
 
@@ -310,10 +308,16 @@ list some limited support for installing NetCDF..
 
 \begin{description}
     \item[HPC systems:] The libraries should be provided by the system. Use the
-          recommended settings.
+          recommended settings. AxiSEM has worked with NetCDF versions down to 4.1.2, but 
+          unpredictable errors still occur.
+          If you want to use the new Parallel NetCDF output, choose a package named netcdf-mpi 
+          or similar.
     \item[Ubuntu 12.10 and newer, Debian Wheezy and newer]: The code is working with the NetCDF libraries delivered
           with the system (for gfortran). They can be installed by \\
           \verb|sudo apt-get install libnetcdff5|
+          Note that this only installs libraries for serial output. However, serial output 
+          is fine for any number of processors usually encountered on self-administered
+          Ubuntu machines (read: <200 CPUs).
     \item[Ubuntu 12.04 and older; MacOS]: The libraries delivered with Ubuntu 12.04 and
           earlier do not seem to work reliably. We therefore generally recommend to
           compile the NetCDF libraries from source. This can be done with the script
@@ -921,14 +925,17 @@ files \verb|SOLVER/inparam_hetero.TEMPLATE| for an idea of what to do.
 \newpage
 \section{References}
 
-\noindent \textbf{Directly dealing with this code:}\vspace*{0.2cm}\\
-When using this code, please cite one or more of these publications. \vspace*{0.2cm}\\
+\noindent \textbf{Official release paper:}\vspace*{0.2cm}\\
+When using this code, please cite this publication: \\
 
-
-(1) Tarje Nissen-Meyer, M. van Driel, S. C. Stähler, K. Hosseini, S. Hempel, L. Auer, 
+(1) Tarje Nissen-Meyer, M. van Driel, S. C. St\"{a}hler, K. Hosseini, S. Hempel, L. Auer, 
 A. Colombi, and A. Fournier (2014), \textit{AxiSEM: broadband 3-D seismic wavefields
 in axisymmetric media},  Solid Earth, 5, 425-445. \\
 doi:10.5194/se-5-425-2014\\
+
+\noindent \textbf{Directly dealing with this code:}\vspace*{0.2cm}\\
+When especially using certain aspects of this code (like anisotropy or attenuation), 
+please cite one or more of these publications. \\
 
 (2) Tarje Nissen-Meyer, F. A. Dahlen, A. Fournier (2007),
 \textit{Spherical-earth Fr\'{e}chet sensitivity kernels},        
@@ -962,16 +969,11 @@ doi:10.1093/gji/ggu269.\\
 Geophysical Journal International 199 (2) 1078–1093.\\
 doi:10.1093/gji/ggu314.\\
 
-%
-% (5) Jean-Paul Ampuero, Tarje Nissen-Meyer (2011),
-% \textit{High-order conservative time schemes in spectral-element methods 
-% for seismic wave propagation.}, To be submitted to Geophys. J. Int.\\
-
 %\noindent \textbf{NOTE:} Most important sections of these papers are in the Theory section below.\\
 
 \noindent \textbf{Other references:}\vspace*{0.2cm}
 
-(8) Martin van Driel, Lion Krischer, Simon Stähler, Kasra Hosseini, and Tarje Nissen-Meyer (2015),
+(8) Martin van Driel, Lion Krischer, Simon St\"{a}hler, Kasra Hosseini, and Tarje Nissen-Meyer (2015),
 \textit{Instaseis: Instant Global Broadband Seismograms Based on a Waveform Database},
 To be submitted to Solid Earth\\
 
