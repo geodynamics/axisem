@@ -258,7 +258,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
                              fa_ani_phi, Q_mu_1d, Q_kappa_1d)
       else
          call plot_model_vtk(rho, lambda, mu, xi_ani, phi_ani, eta_ani, fa_ani_theta, &
-                                 fa_ani_phi)
+                             fa_ani_phi)
       endif
   end if
 
@@ -267,6 +267,7 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           do iel = 1, nelem     ! iel
              do ipol=0,npol     ! ipol
                 do jpol=0,npol  ! jpol
+                   iidom = ieldom(iel)
                    call compute_coordinates(s, z, r, theta, iel, ipol, jpol)
                    Q_mu(ipol,jpol,iel)    = velocity(r, 'Qmu', iidom, modelstring, lfbkgrdmodel)
                    Q_kappa(ipol,jpol,iel) = velocity(r, 'Qka', iidom, modelstring, lfbkgrdmodel)
