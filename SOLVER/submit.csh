@@ -39,11 +39,12 @@ if ( $netcdf_requested == 'true' && $netcdf_compiled != 'true') then
   exit
 endif
 
-echo $svnversion " SVN_VERSION      RELEASE_1.2" > runinfo
+set gitversion = `git describe --dirty --abbrev=4 --always --tags`
+echo $gitversion "GIT_VERSION"  > runinfo
 set username = `whoami`
-echo $username "USER_NAME        " >> runinfo
+echo $username "USER_NAME" >> runinfo
 set hostname = `hostname`
-echo $hostname "HOST_NAME        " >> runinfo
+echo $hostname "HOST_NAME" >> runinfo
 set FFLAGS = `grep "^FFLAGS" ../make_axisem.macros`
 echo $FFLAGS  >> runinfo 
 set CFLAGS = `grep "^CFLAGS" ../make_axisem.macros`
