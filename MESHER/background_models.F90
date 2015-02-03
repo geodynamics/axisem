@@ -1878,9 +1878,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   real(kind=dp), allocatable :: grad_vp(:), grad_vs(:)
 
   integer, parameter         :: ndom_max = 100
-  real(kind=dp), parameter   :: grad_threshold = 1.d-2
+  real(kind=dp), parameter   :: grad_threshold = 1.d-2, grad_step_threshold = 5.d-3
   integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc, extrapolation
-  integer, allocatable       :: isdisc(:)
   character(len=128)         :: fmtstring
 
   call read_ext_model(fnam_ext_model) 
@@ -1890,11 +1889,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   ! Calculate gradient
   
-  allocate(isdisc(nlayer))
-
   grad_vs = 0.0
   grad_vp = 0.0
-  isdisc  = 0
 
   idom = 1
 
@@ -1902,31 +1898,41 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
 
   if (lpr) print *, 'Checking for discontinuities in the external velocity model'
 
+  do ilayer = 1, nlayer-1
+     if (.not. (abs(radius_layer(ilayer + 1) - radius_layer(ilayer)) < smallval_dble)) then
+        grad_vp(ilayer) = (vpv_layer(ilayer + 1) - vpv_layer(ilayer)) / &
+                          (radius_layer(ilayer + 1) - radius_layer(ilayer))
+        grad_vs(ilayer) = (vsv_layer(ilayer + 1) - vsv_layer(ilayer)) / &
+                          (radius_layer(ilayer + 1) - radius_layer(ilayer))
+     endif
+  enddo
+  
   do ilayer = 2, nlayer-1
      if (abs(radius_layer(ilayer+1) - radius_layer(ilayer)) < smallval_dble) then
         ! First order discontinuity
         idom = idom + 1
-        isdisc(ilayer) = 1
         lower_layer(idom-1) = ilayer
         upper_layer(idom)   = ilayer + 1
         fmtstring = "('  1st order disc. at radius', F12.1, ', layer: ', I5)"
         if (lpr) print fmtstring, radius_layer(ilayer), ilayer
      else
-        grad_vp(ilayer) = (vpv_layer(ilayer+1) - vpv_layer(ilayer)) / &
-                          (radius_layer(ilayer+1) - radius_layer(ilayer))
-        grad_vs(ilayer) = (vsv_layer(ilayer+1) - vsv_layer(ilayer)) / &
-                          (radius_layer(ilayer+1) - radius_layer(ilayer))
-        if ((abs(grad_vp(ilayer)).gt.grad_threshold.or.        &
-             abs(grad_vs(ilayer)).gt.grad_threshold    ).and.  &
-            radius_layer(ilayer+1).gt.smallval_dble) then
-           ! Second order discontinuity
+        !if ((abs(grad_vp(ilayer)).gt.grad_threshold.or.        &
+        !     abs(grad_vs(ilayer)).gt.grad_threshold    ).and.  &
+        !    radius_layer(ilayer+1).gt.smallval_dble) then
+        !   ! Second order discontinuity 
+        !   ! MvD: No, this is just a steep Gradient, not a discontinuity in the gradient, hence no 2nd order discontinuity
+        if ((abs(grad_vp(ilayer) - grad_vp(ilayer - 1)) >= grad_step_threshold .or.        &
+             abs(grad_vs(ilayer) - grad_vs(ilayer - 1)) >= grad_step_threshold).and.  &
+            radius_layer(ilayer).gt.smallval_dble) then
            idom = idom + 1
-           isdisc(ilayer+1) = 2
-           lower_layer(idom-1) = ilayer + 1
-           upper_layer(idom)   = ilayer + 1 
+           lower_layer(idom-1) = ilayer
+           upper_layer(idom)   = ilayer
 
-           fmtstring = "('  2nd order disc. at radius', F12.1, ', layer: ',I5, ', grad:', F12.5)"
-           if (lpr) print fmtstring, radius_layer(ilayer+1), ilayer+1, grad_vp(ilayer)
+           fmtstring = "('  2nd order disc. at radius', F12.1, ', layer: ',I5, &
+                        ', gradient step vp:', F12.5, ', gradient step vs:', F12.5)"
+           if (lpr) print fmtstring, radius_layer(ilayer), ilayer, &
+                            abs(grad_vp(ilayer) - grad_vp(ilayer - 1)), &
+                            abs(grad_vs(ilayer) - grad_vs(ilayer - 1))
         end if
          
      end if
