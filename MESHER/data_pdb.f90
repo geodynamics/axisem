@@ -96,8 +96,5 @@ module data_pdb
 
   real(kind=dp), dimension(:), allocatable   :: theta_min_proc, theta_max_proc
 
-  ! global to glocal mapping
-  integer, dimension(:,:), allocatable       :: glob2gloc
-
 end module data_pdb
 !=========================================================================================

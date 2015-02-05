@@ -740,37 +740,6 @@ end subroutine define_sflocal_numbering
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine define_global2glocal
-! Define bookkeeping array that for a given global number, returns 
-! the glocal number. Used later on to partition global index into message bins,
-! and deallocated there, in partition_global_index
-! Both this and partition_global_index might well be redundant after all....
-
-  integer :: ipt, iel, ipol, jpol, iproc, ielg, iptg, igg, igp
-  allocate(glob2gloc(nglobglob,0:nproc-1))
-  glob2gloc(:,:) = 0
-
-  do iproc = 0, nproc-1
-     do iel = 1, nel(iproc)
-        ielg = procel(iel,iproc)
-        do jpol = 0, npol
-           do ipol = 0, npol
-              iptg = (ielg-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-              ipt  = (iel -1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1 
-              igg = iglob(iptg)      ! global #
-              igp = igloc(ipt,iproc) ! glocal # 
-              glob2gloc(igg,iproc) = igp 
-           end do
-        end do
-     end do
-  end do
-
-  deallocate(igloc)
-
-end subroutine define_global2glocal
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
 subroutine define_sflobal2sflocal(iproc, solorflu)
 ! Define bookkeeping array that for a given sflobal number, returns 
 ! the sflocal number. Used later on to partition global index into message 
