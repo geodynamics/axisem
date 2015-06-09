@@ -1196,7 +1196,7 @@ subroutine write_1Dmodel(discontinuities)
          end if
       end if
 
-      disc_layer(idom) = ilayer+1
+      disc_layer(idom) = ilayer
    end do !idom = 1, ndom-1
 
    ! Layers within the last domain
@@ -1267,14 +1267,14 @@ subroutine write_1Dmodel(discontinuities)
                                                'qmu', 'vph', 'vsh', 'eta'
          idom = 1
          do ilayer = 1, nlayer
+            write(2000, '("           ", f9.0, 3f9.2, 2f11.1, 2f9.2, f9.5)') &
+                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                        qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
             if (ilayer==disc_layer(idom)) then
                 write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, &
                              (radius(1)-radius(ilayer))*0.001
                 idom = idom + 1
             end if
-            write(2000, '("           ", f9.0, 3f9.2, 2f11.1, 2f9.2, f9.5)') &
-                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
-                        qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
          end do
 
       else !ANI=false, ANE=true
@@ -1282,14 +1282,14 @@ subroutine write_1Dmodel(discontinuities)
                                                'qmu'
          idom = 1
          do ilayer = 1, nlayer
+            write(2000, '("           ", f9.0, 3f9.2, 2f11.1)') &
+                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                        qka(ilayer), qmu(ilayer)
             if (ilayer==disc_layer(idom)) then
                 write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, &
                              (radius(1)-radius(ilayer))*0.001
                 idom = idom + 1
             end if
-            write(2000, '("           ", f9.0, 3f9.2, 2f11.1)') &
-                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
-                        qka(ilayer), qmu(ilayer)
          end do
       end if
 
@@ -1299,26 +1299,26 @@ subroutine write_1Dmodel(discontinuities)
                                     'vsh', 'eta'
          idom = 1
          do ilayer = 1, nlayer
+            write(2000, '("           ", f9.0, 3f9.2, 2f9.2, f9.5)') &
+                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
+                        vph(ilayer), vsh(ilayer), eta(ilayer)
             if (ilayer==disc_layer(idom)) then
                 write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, &
                              (radius(1)-radius(ilayer))*0.001
                 idom = idom + 1
             end if
-            write(2000, '("           ", f9.0, 3f9.2, 2f9.2, f9.5)') &
-                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
-                        vph(ilayer), vsh(ilayer), eta(ilayer)
          end do
       else !ANI=false, ANE=false
          write(2000,'(A11, 6(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv'
          idom = 1
          do ilayer = 1, nlayer
+            write(2000, '("           ", f9.0, 3f9.2, 2f9.1)') &
+                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer)
             if (ilayer==disc_layer(idom)) then
                 write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, & 
                              (radius(1)-radius(ilayer))*0.001
                 idom = idom + 1
             end if
-            write(2000, '("           ", f9.0, 3f9.2, 2f9.1)') &
-                        radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer)
          end do
       end if
    end if
