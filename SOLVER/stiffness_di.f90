@@ -229,7 +229,7 @@ pure subroutine glob_stiffness_di_4(glob_stiffness,u)
 
         S1p = outerprod_4(G0, m0_w1l * V2 + m0_w3l * V3)
         
-        S1m = outerprod_4(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w6l  * V4 &
+        S1m = outerprod_4(G0, m0_w1l * V1 + (m0_w2l + m0_w6l)  * V4 &
                                         + m0_w9l * V2 + m0_w10l * V3)
         
         S1z = outerprod_4(G0, m0_w3l * V1 + (m0_w4l + m0_w8l) * V4 + m0_w7l * V3 &
@@ -428,7 +428,7 @@ pure subroutine glob_stiffness_di_generic(glob_stiffness,u)
 
         S1p = outerprod(G0, m0_w1l * V2 + m0_w3l * V3)
         
-        S1m = outerprod(G0, m0_w1l * V1 + m0_w2l * V5 + m0_w6l  * V4 &
+        S1m = outerprod(G0, m0_w1l * V1 + (m0_w2l + m0_w6l) * V4 &
                                         + m0_w9l * V2 + m0_w10l * V3)
         
         S1z = outerprod(G0, m0_w3l * V1 + (m0_w4l + m0_w8l) * V4 + m0_w7l * V3 &
