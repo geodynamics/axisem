@@ -1805,7 +1805,7 @@ subroutine compute_monopole_stiff_terms(ielem,jpol,local_crd_nodes, &
         M0_w1(jpol,ielem) = (2 * C12 + C22) * non_diag_fact(jpol,ielem)
         M0_w2(jpol,ielem) = C25 * non_diag_fact(jpol,ielem)
         M0_w3(jpol,ielem) = C23 * dsdxi * wt_axial_k(0) * wt(jpol) &
-                          + C25 * dzdxi * wt_axial_k(0) * wt(jpol)
+                          - C25 * dzdxi * wt_axial_k(0) * wt(jpol)
      endif
   enddo ! ipol
 
@@ -2024,10 +2024,10 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
              xi_k(0),eta(jpol),local_crd_nodes,ielsolid(ielem))
 
         M0_w1(jpol,ielem) = (C12 + C66) * two * non_diag_fact(jpol,ielem)
-        M0_w2(jpol,ielem) = (C12 + C66) * two * dzdxi * wt_axial_k(0) * wt(jpol)
+        M0_w2(jpol,ielem) = - (C12 + C66) * two * dzdxi * wt_axial_k(0) * wt(jpol)
         
         M0_w3(jpol,ielem) = C46 * non_diag_fact(jpol,ielem)
-        M0_w4(jpol,ielem) = C46 * dzdxi * wt_axial_k(0) * wt(jpol)
+        M0_w4(jpol,ielem) = - C46 * dzdxi * wt_axial_k(0) * wt(jpol)
         
         M0_w6(jpol,ielem) = (C25 + C46) * two * dsdxi * wt_axial_k(0) * wt(jpol)
 
@@ -2042,13 +2042,6 @@ subroutine compute_dipole_stiff_terms(ielem,jpol,local_crd_nodes, &
   enddo
 
   if ( axis_solid(ielem) ) then
-
-     M11s(0,jpol,ielem) = zero
-     M12s(0,jpol,ielem) = zero
-     M42s(0,jpol,ielem) = zero
-     M32s(0,jpol,ielem) = zero
-     M43s(0,jpol,ielem) = zero
-     M11z(0,jpol,ielem) = zero
 
      M_1(0,jpol,ielem) = zero
      M_2(0,jpol,ielem) = zero
