@@ -281,7 +281,7 @@ subroutine compute_src
      case default
         if (lpr) write(6,*) '  ...moment tensor elements for ', src_type(2)
         call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
-        source_term = source_term / (two * pi)
+        source_term = source_term / (2 * pi)
 
      end select
 
@@ -309,7 +309,7 @@ subroutine compute_src
      if (lpr) write(6,*)'  computing QUADRUPOLE Source with...'
      if (lpr) write(6,*)'  ...moment tensor elements for ',src_type(2)
      call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
-     source_term = source_term / pi
+     source_term = source_term / (2 * pi)
 
   case default
      write(errmsg,*) 'we only support monopoles, dipoles, quadrupoles, and not ',src_type(1)
@@ -939,8 +939,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   real(kind=realkind), intent(out) :: source_term(0:npol,0:npol,nel_solid,3)
   integer                          :: liel_src, lipol_src, ljpol_src
   
-  real(kind=realkind), allocatable :: ws(:,:,:), dsws(:,:,:)
-  real(kind=realkind), allocatable :: ws_over_s(:,:,:), dzwz(:,:,:)
+  real(kind=realkind), allocatable :: ws(:,:,:), dsws(:,:,:), dzwz(:,:,:)
   real(kind=realkind), allocatable :: ds(:), dz(:)
   
   integer                          :: ielem, ipol, jpol, i, nsrcelem, nsrcelem_glob
@@ -962,14 +961,8 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
   allocate(ws(0:npol,0:npol,1:nsrcelem))
   allocate(dsws(0:npol,0:npol,1:nsrcelem))
-  allocate(ws_over_s(0:npol,0:npol,1:nsrcelem))
   allocate(dzwz(0:npol,0:npol,1:nsrcelem))
   allocate(ds(0:npol),dz(0:npol))
-
-  dzwz(:,:,:) = zero
-  dsws(:,:,:) = zero
-  ws_over_s(:,:,:) = zero
-  source_term(:,:,:,:) = zero
 
   ! global number of source elements (in case source is on processor boundary)
   nsrcelem_glob = psum_int(nsrcelem)
@@ -1059,7 +1052,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                     source_term(ipol,jpol,liel_src,1) = &
                          dsws(lipol_src,ljpol_src,i) 
                     source_term(ipol,jpol,liel_src,2) = &
-                         ws_over_s(lipol_src,ljpol_src,i) 
+                         dsws(lipol_src,ljpol_src,i) 
                  case default
                     write(6,'(a,a,/,a,a,a)') &
                          procstrg, "PROBLEM: Didn't compute any source!", &
