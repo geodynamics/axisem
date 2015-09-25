@@ -1234,15 +1234,15 @@ subroutine write_1Dmodel(discontinuities)
    if (radius(ilayer)>smallval_dble) then
       ilayer = ilayer + 1
       radius(ilayer) = 0.0d0
-      vpv(ilayer)    = velocity(0.0d0, 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-      vsv(ilayer)    = velocity(0.0d0, 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
-      rho(ilayer)   = velocity(0.0d0, 'rho', idom, bkgrdmodel, lfbkgrdmodel)
+      vpv(ilayer) = velocity(0.0d0, 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
+      vsv(ilayer) = velocity(0.0d0, 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+      rho(ilayer) = velocity(0.0d0, 'rho', idom, bkgrdmodel, lfbkgrdmodel)
       if (model_is_anelastic(bkgrdmodel)) then
-          qka(ilayer)   = velocity(0.0d0, 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
-          qmu(ilayer)   = velocity(0.0d0, 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
-          vph(ilayer)   = velocity(0.0d0, 'vph', idom, bkgrdmodel, lfbkgrdmodel)
-          vsh(ilayer)   = velocity(0.0d0, 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
-          eta(ilayer)   = velocity(0.0d0, 'eta', idom, bkgrdmodel, lfbkgrdmodel)
+          qka(ilayer) = velocity(0.0d0, 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
+          qmu(ilayer) = velocity(0.0d0, 'Qmu', idom, bkgrdmodel, lfbkgrdmodel)
+          vph(ilayer) = velocity(0.0d0, 'vph', idom, bkgrdmodel, lfbkgrdmodel)
+          vsh(ilayer) = velocity(0.0d0, 'vsh', idom, bkgrdmodel, lfbkgrdmodel)
+          eta(ilayer) = velocity(0.0d0, 'eta', idom, bkgrdmodel, lfbkgrdmodel)
       end if
    end if
 
@@ -1335,10 +1335,17 @@ subroutine write_1Dmodel(discontinuities)
 
    ! Write input file for YSPEC
    fnam = trim(diagpath)//'/1dmodel_yspec.bm'
-   noc = count(radius(1:nlayer)<=discontinuities(ndom-1).and.radius(1:nlayer)>discontinuities(ndom))
-   nic = count(radius(1:nlayer)<=discontinuities(ndom)) - 1
+   noc = count(radius(1:nlayer) <= discontinuities(ndom-1) .and. radius(1:nlayer) > discontinuities(ndom))
+   nic = count(radius(1:nlayer) <= discontinuities(ndom)) - 1
+
+   ! detect absence of inner core:
+   if (vsv(nlayer) <= 0 .or. vsh(nlayer) <= 0) then
+      noc = nic
+      nic = 0
+   endif
+
    open(2000, file=fnam, action='write')
-   write (2000,*) 'AXISEM model for YSPEC: ', bkgrdmodel(1:lfbkgrdmodel) 
+   write (2000,*) 'AXISEM model for YSPEC: ', bkgrdmodel(1:lfbkgrdmodel), ' ', trim(model_name_ext_model)
    if (model_is_ani(bkgrdmodel)) then
        write (2000,'(i2,f4.1)') 1, 1.
    else
