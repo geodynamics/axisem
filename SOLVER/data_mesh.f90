@@ -38,19 +38,19 @@ module data_mesh
   public 
 
   ! Very basic mesh parameters, have been in mesh_params.h before
-  integer , protected ::         npol !<            polynomial order
-  integer , protected ::        nelem !<                   proc. els
-  integer , protected ::       npoint !<               proc. all pts
-  integer , protected ::    nel_solid !<             proc. solid els
-  integer , protected ::    nel_fluid !<             proc. fluid els
-  integer , protected :: npoint_solid !<             proc. solid pts
-  integer , protected :: npoint_fluid !<             proc. fluid pts
-  integer , protected ::  nglob_solid !<            proc. slocal pts
-  integer , protected ::  nglob_fluid !<            proc. flocal pts
-  integer , protected ::     nel_bdry !< proc. solid-fluid bndry els
-  integer , protected ::        ndisc !<   # disconts in bkgrd model
-  integer , protected ::   nproc_mesh !<        number of processors
-  integer , protected :: lfbkgrdmodel !<   length of bkgrdmodel name
+  integer, protected ::         npol !<            polynomial order
+  integer, protected ::        nelem !<                   proc. els
+  integer, protected ::       npoint !<               proc. all pts
+  integer, protected ::    nel_solid !<             proc. solid els
+  integer, protected ::    nel_fluid !<             proc. fluid els
+  integer, protected :: npoint_solid !<             proc. solid pts
+  integer, protected :: npoint_fluid !<             proc. fluid pts
+  integer, protected ::  nglob_solid !<            proc. slocal pts
+  integer, protected ::  nglob_fluid !<            proc. flocal pts
+  integer, protected ::     nel_bdry !< proc. solid-fluid bndry els
+  integer, protected ::        ndisc !<   # disconts in bkgrd model
+  integer, protected ::   nproc_mesh !<        number of processors
+  integer, protected :: lfbkgrdmodel !<   length of bkgrdmodel name
 
   ! global number in solid varies across procs due to central cube domain decomposition
   integer                                       :: nglob
@@ -73,6 +73,7 @@ module data_mesh
   
   ! Global mesh informations
   real(kind=dp)                     :: router ! Outer radius (surface)
+  character(len=100)                :: model_name_ext_model ! name of external model
 
   ! critical mesh parameters (spacing/velocity, characteristic lead time etc)
   real(kind=dp)                     :: pts_wavelngth

@@ -1441,6 +1441,12 @@ end function arbitr_sub_solar
 subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
                           vpv_layer_out, vsv_layer_out, radius_layer_out)
 
+#ifdef solver
+  use data_mesh, only: model_name_ext_model
+#else
+  use data_bkgrdmodel, only: model_name_ext_model
+#endif
+
   character(len=*), intent(in)                       :: fnam_ext_model
   real(kind=dp), allocatable, intent(out), optional  :: vpv_layer_out(:) 
   real(kind=dp), allocatable, intent(out), optional  :: vsv_layer_out(:) 
@@ -1459,6 +1465,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   logical                          :: model_in_depth    = .false., model_in_km     = .false.
   logical                          :: exist_param_units = .false., exist_param_col = .false.
   logical                          :: exist_param_anel  = .false., exist_param_ani = .false.
+  logical                          :: exist_param_name  = .false.
   logical                          :: override_radius   = .false.
   character(len=128)               :: fmtstring, keyword, keyvalue
   character(len=512)               :: line
@@ -1483,6 +1490,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      ierr = 0
      nerr = 0
      iline = 0
+     model_name_ext_model = 'external_model'
 
      do while (ierr==0)
          read(77, fmt='(a512)', iostat=ierr) line
@@ -1494,6 +1502,10 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
         
          call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
          select case(keyword) 
+         case('NAME') 
+             call check_already_defined(exist_param_name, keyword, iline, trim(fnam_ext_model), nerr)
+             model_name_ext_model = trim(keyvalue)
+             exist_param_name = .true.
          case('ANELASTIC') 
              call check_already_defined(exist_param_anel, keyword, iline, trim(fnam_ext_model), nerr)
              read(keyvalue, *) ext_model_is_anelastic
@@ -1566,6 +1578,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
 
          read(line,*) keyword, keyvalue 
          select case(keyword) 
+         case('NAME') 
          case('ANISOTROPIC') 
          case('ANELASTIC') 
          case('UNITS')

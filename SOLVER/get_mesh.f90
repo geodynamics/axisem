@@ -128,7 +128,7 @@ subroutine read_db
   if (verbose > 1.and.lpr) print *, '  Background model: ', trim(bkgrdmodel)
 
   if (trim(bkgrdmodel).eq.'external') then
-     if (verbose > 1.and.lpr) write(69,*)'reading external velocity model file...'
+     if (verbose > 1.and.lpr) write(*,*)'reading external velocity model file...'
      call get_ext_disc('./external_model.bm')
   end if
 
