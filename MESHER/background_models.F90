@@ -1942,7 +1942,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
            upper_layer(idom)   = ilayer
 
            fmtstring = "('  2nd order disc. at radius', F12.1, ', layer: ',I5, &
-                        ', gradient step vp:', F12.5, ', gradient step vs:', F12.5)"
+                        &', gradient step vp:', F12.5, ', gradient step vs:', F12.5)"
            if (lpr) print fmtstring, radius_layer(ilayer), ilayer, &
                             abs(grad_vp(ilayer) - grad_vp(ilayer - 1)), &
                             abs(grad_vs(ilayer) - grad_vs(ilayer - 1))

@@ -328,8 +328,10 @@ subroutine prepare_from_recfile_seis
   
   ! Additional arrays within the STATIONS file
   character(len=20), allocatable, dimension(:) :: rec_name,rec_network
-  real(kind=dp)   , allocatable, dimension(:) :: reclat,reclon,recelevation,recbury
-  integer ierror
+  character(len=20)                            :: rec_name_temp, rec_network_temp
+  real(kind=dp)   , allocatable, dimension(:)  :: rec_lat, rec_lon, rec_elevation, rec_bury
+  real(kind=dp)                                :: rec_lat_temp, rec_lon_temp, rec_elevation_temp, rec_bury_temp
+  integer                                      :: ierror, irec_different
 
   irec=0
   count_diff_loc=0
@@ -415,29 +417,74 @@ subroutine prepare_from_recfile_seis
      close(34)
      if (lpr) write(6,*)'  ...counted number of stations:', num_rec_glob
 
-     allocate(recfile_readth(1:num_rec_glob),recfile_th_glob(1:num_rec_glob))
-     allocate(recfile_th_loc(1:num_rec_glob),recfile_el_loc(1:num_rec_glob,3))
-     allocate(loc2globrec_loc(1:num_rec_glob),rec2proc(1:num_rec_glob))
+     open(unit=34,file='STATIONS', iostat=ierror, status='old', action='read')
+
+     ! Open file into which redundant stations are written
+     if (mynum==0) open(unit=33,file=datapath(1:lfdata)//'/receiver_names_redundant.dat', iostat=ierror, action='write')
+
+
+     allocate(rec_name(num_rec_glob))
+     allocate(rec_network(num_rec_glob))
+     allocate(rec_lat(num_rec_glob))
+     allocate(rec_lon(num_rec_glob))
+     allocate(rec_elevation(num_rec_glob))
+     allocate(rec_bury(num_rec_glob))
+
+     irec_different = 0
+
+     do i = 1, num_rec_glob
+        read(34,*) rec_name_temp, rec_network_temp, rec_lat_temp, rec_lon_temp, rec_elevation_temp, rec_bury_temp
+
+        if (any((rec_name_temp.eq.rec_name).and.(rec_network_temp.eq.rec_network))) then
+          ! Same station name occurs twice
+          if (mynum==0) write(33,*) rec_name_temp, rec_network_temp, rec_lat_temp, rec_lon_temp, &
+                                    rec_elevation_temp, rec_bury_temp
+
+
+          cycle
+        else
+          irec_different = irec_different + 1
+          rec_name(irec_different)      = rec_name_temp
+          rec_network(irec_different)   = rec_network_temp
+          rec_lat(irec_different)       = rec_lat_temp
+          rec_lon(irec_different)       = rec_lon_temp
+          rec_elevation(irec_different) = rec_elevation_temp
+          rec_bury(irec_different)      = rec_bury_temp
+
+        end if
+
+     enddo
+
+     close(34)
+     if (mynum==0) close(33)
+     
+     ! Reduce num_rec_glob to the number of different stations
+     num_rec_glob = irec_different
+     if (lpr) write(6,*)'  ...out of which are unique stations:', num_rec_glob
+
+     ! Allocate receiver variables
+     allocate(recfile_readth(1:num_rec_glob))
+     allocate(recfile_th_glob(1:num_rec_glob))
+     allocate(recfile_th_loc(1:num_rec_glob))
+     allocate(recfile_el_loc(1:num_rec_glob,3))
+     allocate(loc2globrec_loc(1:num_rec_glob))
+     allocate(rec2proc(1:num_rec_glob))
      allocate(recfile_readph(1:num_rec_glob))
      allocate(recfile_ph_loc2(1:num_rec_glob))     
-     allocate(rec_name(num_rec_glob),rec_network(num_rec_glob))
-     allocate(reclat(num_rec_glob),reclon(num_rec_glob),recelevation(num_rec_glob),recbury(num_rec_glob))
-     allocate(receiver_name(num_rec_glob))
-     open(unit=34,file='STATIONS',iostat=ierror,status='old',action='read',position='rewind')
-     if (mynum==0) open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
+     allocate(receiver_name(1:num_rec_glob))
 
-     do i=1,num_rec_glob
-        read(34,*)rec_name(i),rec_network(i),reclat(i),reclon(i),recelevation(i),recbury(i)
-        if (reclon(i)<=zero) then 
-           recfile_readph(i)=reclon(i)+360.d0 
-        else
-           recfile_readph(i)= reclon(i)
-        endif
-        recfile_readth(i) = 90.d0 - reclat(i)
+     recfile_readth = 90.d0 - rec_lat(1:num_rec_glob)
+     recfile_readph = rec_lon(1:num_rec_glob)
+
+     where (recfile_readph<=0) 
+       recfile_readph = recfile_readph + 360.d0 
+     end where
+
+     if (mynum==0) open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
+     do i = 1, num_rec_glob
         receiver_name(i) = trim(rec_name(i))//'_'//trim(rec_network(i))
-        if (mynum==0) write(30,*)trim(receiver_name(i)),recfile_readth(i),recfile_readph(i)
-     enddo
-     close(34)
+        if (mynum==0) write(30,*) trim(receiver_name(i)), recfile_readth(i), recfile_readph(i)
+     end do
      if (mynum==0) close(30)
 
      
@@ -687,16 +734,6 @@ subroutine prepare_from_recfile_seis
   end if
 
 13 format(i3,3(1pe12.4),i8,2(i2))
-
-  deallocate(recfile_ph_loc,recfile_readph)
-  deallocate(recfile_readth)
-  deallocate(recfile_th_glob,recfile_th,recfile_th_loc)
-  deallocate(recfile_el_loc,loc2globrec_loc,rec2proc)
-
-  if (rec_file_type=='stations') then 
-    deallocate(rec_name,rec_network)
-    deallocate(reclat,reclon,recelevation,recbury)
-  endif
 
 end subroutine prepare_from_recfile_seis
 !-----------------------------------------------------------------------------------------
