@@ -48,6 +48,7 @@ module data_bkgrdmodel
 
   ! The following variables are only needed by external models
   character(len=100)         :: fnam_ext_model
+  character(len=100)         :: model_name_ext_model = ''
 
 end module data_bkgrdmodel
 !=========================================================================================

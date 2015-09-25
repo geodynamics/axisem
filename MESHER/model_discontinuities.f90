@@ -1255,9 +1255,17 @@ subroutine write_1Dmodel(discontinuities)
    call date_and_time(mydate,mytime)
 
    open(2000, file=fnam, action='write')
-11 format('# Input file for AXISEM created from external model on ', &
-            A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
-   write(2000,11) mydate(7:8), mydate(5:6), mydate(1:4), mytime(1:2), mytime(3:4)
+   write(2000,"('# Input file for AXISEM created from ', A, ' model on ', &
+                A2, '/', A2, '/', A4, ', at ', A2, 'h ', A2, 'min')")  &
+      trim(bkgrdmodel), mydate(7:8), mydate(5:6), mydate(1:4), mytime(1:2), mytime(3:4)
+   
+   
+   if (trim(bkgrdmodel) == 'external') then
+      write(2000,'("NAME         ", A)') trim(model_name_ext_model)
+   else
+      write(2000,'("NAME         ", A)') trim(bkgrdmodel)
+   endif
+   
    write(2000,'("ANELASTIC    ", L4)') model_is_anelastic(bkgrdmodel)
    write(2000,'("ANISOTROPIC  ", L4)') model_is_ani(bkgrdmodel)
    write(2000,'("UNITS        m")')
