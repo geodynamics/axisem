@@ -9,7 +9,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$INSTALL_DIR/lib
 set -e
 
 
-#zlib 1.2.8
+##zlib 1.2.8
 rm -rf zlib-1.2.8 zlib-1.2.8.tar.gz
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4/zlib-1.2.8.tar.gz
 tar -xvf zlib-1.2.8.tar.gz
@@ -18,28 +18,28 @@ cd zlib-1.2.8
 make check
 make install
 cd ..
-
-
-#HDF 1.8.12
-rm -rf hdf5-1.8.12 hdf5-1.8.12.tar.bz2
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4/hdf5-1.8.12.tar.gz ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4/hdf5-1.8.9.tar.gz
-tar -xvf hdf5-1.8.12.tar.gz
-cd hdf5-1.8.12
+#
+#
+##HDF 1.8.14
+rm -rf hdf5-*
+wget http://www.hdfgroup.org/ftp/HDF5/current/src/hdf5-1.8.15-patch1.tar.bz2
+tar -xf hdf5-1.8.15-patch1.tar.bz2
+cd hdf5-1.8.15-patch1/
 
 ./configure --prefix=$INSTALL_DIR --with-zlib=$INSTALL_DIR
 
 # -j parallelizes make;  -s reduces output
 make -sj
-make check 
+#make check 
 make install
 cd ..
 
 
-# netcdf-4.3.1.1
-rm -rf netcdf-4.3.1.1.tar.gz netcdf-4.3.1.1
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.1.1.tar.gz  
-tar -xvf netcdf-4.3.1.1.tar.gz
-cd netcdf-4.3.1.1
+# netcdf-4.3.3.1
+rm -rf netcdf-4.*
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
+tar -xvf netcdf-4.3.3.1.tar.gz
+cd netcdf-4.3.3.1
 ./configure --enable-netcdf-4 --enable-dap --enable-shared --prefix=$INSTALL_DIR
 make -sj
 make check # all tests should succeed.
@@ -48,11 +48,11 @@ cd ..
 
 
 #netcdf-fortran-4.4$
-rm -rf netcdf-fortran-4.4-beta1.tar.gz netcdf-fortran-4.4-beta1
+rm -rf netcdf-fortran-4.*
 export LDFLAGS="-L$INSTALL_DIR/lib -lnetcdf "
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-4.4-beta1.tar.gz
-tar -xvf netcdf-fortran-4.4-beta1.tar.gz
-cd netcdf-fortran-4.4-beta1
+wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-4.4.2.tar.gz
+tar -xvf netcdf-fortran-4.4.2.tar.gz
+cd netcdf-fortran-4.4.2
 ./configure --prefix=$INSTALL_DIR --enable-netcdf-4
 make -sj
 make check
