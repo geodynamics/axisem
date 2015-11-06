@@ -975,7 +975,7 @@ subroutine prem_solid_light_discont
   
   ! D" LAYER
   discont(7) = 3630.
-  vp(6,1) = 13.6805
+  vp(7,1) = 13.6805
   vs(7,1) = 7.2660
   vp(7,2) = 13.7166
   vs(7,2) = 7.2647
