@@ -744,72 +744,79 @@ subroutine prem_light_discont
 ! isotropic PREM without the crust, extending the upper mantle to the surface
 ! each index represents the layer *below* its corresponding discontinuity
 
-  ndisc = 9
+  ndisc = 10
   
   allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2))
   
-  ! 0 --> 220
+  ! LID
   discont(1) = 6371.
   vp(1,1) = 8.1257
   vs(1,1) = 4.5000
-  vp(1,2) = 7.9897
-  vs(1,2) = 4.4189
+  vp(1,2) = 8.0762
+  vs(1,2) = 4.4705
+
+  ! LVZ
+  discont(2) = 6291.
+  vp(2,1) = 8.0762
+  vs(2,1) = 4.4705
+  vp(2,2) = 7.9897
+  vs(2,2) = 4.4189
   
   ! TRANSITION ZONE: 220 --> 400
-  discont(2) = 6151.
-  vp(2,1) = 8.55895
-  vs(2,1) = 4.64390
-  vp(2,2) = 8.90524
-  vs(2,2) = 4.76990
+  discont(3) = 6151.
+  vp(3,1) = 8.55895
+  vs(3,1) = 4.64390
+  vp(3,2) = 8.90524
+  vs(3,2) = 4.76990
   
   ! 400 --> 600
-  discont(3) = 5971.
-  vp(3,1) = 9.133917
-  vs(3,1) = 4.932487
-  vp(3,2) = 10.15783
-  vs(3,2) = 5.515931
+  discont(4) = 5971.
+  vp(4,1) = 9.133917
+  vs(4,1) = 4.932487
+  vp(4,2) = 10.15783
+  vs(4,2) = 5.515931
   
   ! 600 --> 670
-  discont(4) = 5771.
-  vp(4,1) = 10.15776
-  vs(4,1) = 5.516017
-  vp(4,2) = 10.26617
-  vs(4,2) = 5.570211
+  discont(5) = 5771.
+  vp(5,1) = 10.15776
+  vs(5,1) = 5.516017
+  vp(5,2) = 10.26617
+  vs(5,2) = 5.570211
   
   ! 670 --> 770
-  discont(5) = 5701.
-  vp(5,1) = 10.7513
-  vs(5,1) = 5.9451
-  vp(5,2) = 11.0656
-  vs(5,2) = 6.2405
+  discont(6) = 5701.
+  vp(6,1) = 10.7513
+  vs(6,1) = 5.9451
+  vp(6,2) = 11.0656
+  vs(6,2) = 6.2405
   
   !LOWER MANTLE: 770 --> TOP D"
-  discont(6) = 5600.
-  vp(6,1) = 11.0656
-  vs(6,1) = 6.2404
-  vp(6,2) = 13.6804
-  vs(6,2) = 7.2659
+  discont(7) = 5600.
+  vp(7,1) = 11.0656
+  vs(7,1) = 6.2404
+  vp(7,2) = 13.6804
+  vs(7,2) = 7.2659
   
   ! D" LAYER
-  discont(7) = 3630.
-  vp(6,1) = 13.6805
-  vs(7,1) = 7.2660
-  vp(7,2) = 13.7166
-  vs(7,2) = 7.2647
+  discont(8) = 3630.
+  vp(8,1) = 13.6805
+  vs(8,1) = 7.2660
+  vp(8,2) = 13.7166
+  vs(8,2) = 7.2647
   
   ! FLUID OUTER CORE: CMB --> ICB
-  discont(8) = 3480.
-  vp(8,1) = 8.0650
-  vs(8,1) = 0.0
-  vp(8,2) = 10.3557
-  vs(8,2) = 0.0
+  discont(9) = 3480.
+  vp(9,1) = 8.0650
+  vs(9,1) = 0.0
+  vp(9,2) = 10.3557
+  vs(9,2) = 0.0
   
   ! SOLID INNER CORE: ICB --> CENTER
-  discont(9) = 1221.5
-  vp(9,1) = 11.0283
-  vs(9,1) = 3.5043
-  vp(9,2) = 11.2622
-  vs(9,2) = 3.6678
+  discont(10) = 1221.5
+  vp(10,1) = 11.0283
+  vs(10,1) = 3.5043
+  vp(10,2) = 11.2622
+  vs(10,2) = 3.6678
   
   ! numbering relates to regions within, i.e. counting numbers as in discont
   ! for regions above the respective discontinuities
