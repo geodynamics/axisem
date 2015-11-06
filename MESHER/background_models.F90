@@ -1079,6 +1079,15 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
      Qmu = 600.0
      Qkappa = 57827.0
   elseif(idom==2)then
+     ro_prem  =  2.6910 + 0.6924 * x_prem
+     vpv_prem =  0.8317 + 7.2180 * x_prem
+     vph_prem =  3.5908 + 4.6172 * x_prem
+     vsv_prem =  5.8582 - 1.4678 * x_prem
+     vsh_prem = -1.0839 + 5.7176 * x_prem
+     eta_aniso=  3.3687 - 2.4778 * x_prem
+     Qmu = 80.0
+     Qkappa = 57827.0
+  elseif(idom==3)then
      ro_prem  =  7.1089 - 3.8045 * x_prem
      vpv_prem = 20.3926 -12.2569 * x_prem
      vsv_prem =  8.9496 - 4.4597 * x_prem
@@ -1086,7 +1095,7 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
      vsh_prem = vsv_prem
      Qmu = 143.0
      Qkappa = 57827.0
-  elseif(idom==3)then
+  elseif(idom==4)then
      ro_prem  = 11.2494 -  8.0298 * x_prem
      vpv_prem = 39.7027 - 32.6166 * x_prem
      vsv_prem = 22.3512 - 18.5856 * x_prem
@@ -1094,7 +1103,7 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
      vsh_prem = vsv_prem
      Qmu = 143.0
      Qkappa = 57827.0
-  elseif(idom==4)then
+  elseif(idom==5)then
      ro_prem  =  5.3197 - 1.4836 * x_prem
      vpv_prem = 19.0957 - 9.8672 * x_prem
      vsv_prem =  9.9839 - 4.9324 * x_prem
@@ -1102,7 +1111,7 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
      vsh_prem = vsv_prem
      Qmu = 143.0
      Qkappa = 57827.0
-  elseif(idom==5)then   !lower mantle
+  elseif(idom==6)then   !lower mantle
      ro_prem =  7.9565 -  6.4761 * x_prem + 5.5283 * x_prem**2 - 3.0807 * x_prem**3
      vpv_prem= 29.2766 - 23.6027 * x_prem + 5.5242 * x_prem**2 - 2.5514 * x_prem**3
      vsv_prem= 22.3459 - 17.2473 * x_prem - 2.0834 * x_prem**2 + 0.9783 * x_prem**3
@@ -1110,7 +1119,7 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
      vsh_prem = vsv_prem
      Qmu = 312.0
      Qkappa = 57827.0
-  elseif(idom==6)then
+  elseif(idom==7)then
      ro_prem  =  7.9565 -  6.4761 * x_prem +  5.5283 * x_prem**2 -  3.0807 * x_prem**3
      vpv_prem = 24.9520 - 40.4673 * x_prem + 51.4832 * x_prem**2 - 26.6419 * x_prem**3
      vsv_prem = 11.1671 - 13.7818 * x_prem + 17.4575 * x_prem**2 -  9.2777 * x_prem**3
@@ -1118,7 +1127,7 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
      vsh_prem = vsv_prem
      Qmu = 312.0
      Qkappa = 57827.0
-  elseif(idom==7)then
+  elseif(idom==8)then
      ro_prem  =  7.9565 - 6.4761 * x_prem + 5.5283 * x_prem**2 - 3.0807 * x_prem**3
      vpv_prem = 15.3891 - 5.3181 * x_prem + 5.5242 * x_prem**2 - 2.5514 * x_prem**3
      vsv_prem =  6.9254 + 1.4672 * x_prem - 2.0834 * x_prem**2 + 0.9783 * x_prem**3
@@ -1126,7 +1135,7 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
      vsh_prem = vsv_prem
      Qmu = 312.0
      Qkappa = 57827.0
-  elseif(idom==8)then  ! outer core
+  elseif(idom==9)then  ! outer core
      ro_prem  = 12.5815 - 1.2638 * x_prem - 3.6426 * x_prem**2 -  5.5281 * x_prem**3
      vpv_prem = 11.0487 - 4.0362 * x_prem + 4.8023 * x_prem**2 - 13.5732 * x_prem**3
      vsv_prem = 0.0
@@ -1134,7 +1143,7 @@ real(kind=dp) function prem_light_ani_sub(r0, param, idom)
      vsh_prem = vsv_prem
      Qmu = 0.0
      Qkappa = 57827.0
-  elseif(idom==9)then                        ! inner core
+  elseif(idom==10)then                        ! inner core
      ro_prem  = 13.0885 - 8.8381 * x_prem**2
      vpv_prem = 11.2622 - 6.3640 * x_prem**2
      vsv_prem =  3.6678 - 4.4475 * x_prem**2
