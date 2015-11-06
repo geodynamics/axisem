@@ -271,7 +271,6 @@ subroutine get_global(nspec2, xp, yp, iglob2, loc2, ifseg2, nglob2, npointot2, &
      else
         ninseg(nseg) = ninseg(nseg) + 1
      endif
-
   enddo
   
   ! sort within each segment
