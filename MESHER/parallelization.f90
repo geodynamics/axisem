@@ -1455,6 +1455,26 @@ end subroutine decompose_inner_cube_opt
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+logical function xor(a,b)
+  logical, intent(in)     :: a, b
+
+  if (a) then
+      if (b) then
+          xor = .false.
+      else
+          xor = .true.
+      end if
+  else
+      if (b) then
+          xor = .true.
+      else
+          xor = .false.
+      end if
+  end if
+end function xor
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 logical function test_decomp(ndivs, proc, npart, nproc2)
 
   integer, intent(in)     :: ndivs, proc(0:ndivs-1,0:ndivs-1), &
