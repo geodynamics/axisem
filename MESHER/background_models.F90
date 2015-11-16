@@ -126,6 +126,12 @@ logical function model_is_ani(bkgrdmodel2)
     model_is_ani = .true.
   case('prem_ani_light')
     model_is_ani = .true.
+  case('prem_crust20_ocean')
+    model_is_ani = .true.
+  case('prem_crust20_cont')
+    model_is_ani = .true.
+  case('prem_crust20_global')
+    model_is_ani = .true.
   case('external')
     model_is_ani = ext_model_is_ani
   case default
@@ -157,6 +163,12 @@ logical function model_is_anelastic(bkgrdmodel2)
   case('prem_iso_light')
     model_is_anelastic = .true.
   case('iasp91')
+    model_is_anelastic = .true.
+  case('prem_crust20_ocean')
+    model_is_anelastic = .true.
+  case('prem_crust20_cont')
+    model_is_anelastic = .true.
+  case('prem_crust20_global')
     model_is_anelastic = .true.
   case('external')
     model_is_anelastic = ext_model_is_anelastic 
