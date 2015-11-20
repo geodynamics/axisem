@@ -16,6 +16,11 @@ from progressbar import Percentage, ProgressBar, Bar, ETA, FileTransferSpeed
 import subprocess
 import warnings
 
+class FileTransferSpeedinMB(FileTransferSpeed):
+   def update(self, pbar):
+       string = FileTransferSpeed.update(self, pbar) 
+       return string.split(' ')[1] + ' MB/s'
+
 # parse command line arguments
 parser = argparse.ArgumentParser(
     description="Postprocess AxiSEM's Kernel Wavefields: rechunkink for "
@@ -126,8 +131,10 @@ for p in paths:
 
         # start a new progressbar
         widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
-                   ETA(), ' ', FileTransferSpeed()]
-        pbar = ProgressBar(widgets=widgets, maxval=ndumps * npoints * 4)
+                   ETA(), ' ', FileTransferSpeedinMB()]
+        
+        pbar = ProgressBar(widgets=widgets, 
+                           maxval=int(ndumps * (npoints / 256)))
         pbar.start()
 
         # copy large fields chunkwise
@@ -137,7 +144,7 @@ for p in paths:
             var_out[:, nstep:nstep+npointread] = \
                 var_in[:, nstep:nstep+npointread]
 
-            pbar.update(ndumps * nstep * 4)
+            pbar.update(int(ndumps * nstep / 256))
 
             # set a checkpoint to variable attribute
             var_out.nstep = nstep + npointread
