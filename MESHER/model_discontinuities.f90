@@ -1648,7 +1648,7 @@ subroutine write_1Dmodel(discontinuities)
 
    open(2000, file=fnam, action='write')
    write(2000,"('# Input file for AXISEM created from ', A, ' model on ', &
-                A2, '/', A2, '/', A4, ', at ', A2, 'h ', A2, 'min')")  &
+               & A2, '/', A2, '/', A4, ', at ', A2, 'h ', A2, 'min')")  &
       trim(bkgrdmodel), mydate(7:8), mydate(5:6), mydate(1:4), mytime(1:2), mytime(3:4)
    
    
@@ -1664,7 +1664,7 @@ subroutine write_1Dmodel(discontinuities)
    if (model_is_anelastic(bkgrdmodel)) then
       if (model_is_ani(bkgrdmodel)) then !ANI=true, ANE=true
          write(2000,'(A11, 9(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', 'qka', &
-                                               'qmu', 'vph', 'vsh', 'eta'
+                                   &'qmu', 'vph', 'vsh', 'eta'
          idom = 1
          do ilayer = 1, nlayer
             write(2000, '("           ", f9.0, 3f9.2, 2f11.1, 2f9.2, f9.5)') &
