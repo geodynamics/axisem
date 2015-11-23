@@ -147,7 +147,7 @@ for p in paths:
 
         # start a new progressbar
         widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
-                   ETA(), ' ', FileTransferSpeedScaled(scale=1e3)]
+                   ETA(), ' ', FileTransferSpeedScaled(scale=256.)]
 
         pbar = ProgressBar(widgets=widgets, maxval=ndumps * npoints / 256.)
         pbar.start()
