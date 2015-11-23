@@ -20,8 +20,6 @@ SEISMOGRAM_LENGTH  1800.
 # colatlon: Colatitude and Longitude for each station.
 # stations: SPECFEM-style stations file with latitude, longitude
 #           and station name (default)
-# database: One station at each GLL point, arbitrary station locations 
-#           can be reconstructed from this.
 
 RECFILE_TYPE      stations 
 
