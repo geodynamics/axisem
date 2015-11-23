@@ -225,76 +225,6 @@ subroutine prepare_seismograms
   enddo
 12 format('   ',a8,'has the ',a13,f9.3,' degrees.')
 
-
-  if (lpr.and.verbose>1) write(6,*)'  communicating local numbers of surface elements...'
-  call comm_elem_number(maxind, maxind_glob, ind_first, ind_last)
-  if (lpr.and.verbose>0) write(6,*)'  global number of surface elements:',maxind_glob
-
-  ! open files for displacement and velocity traces in each surface element
-
-  allocate(jsurfel(maxind)) ! for surface strain
-  allocate(surfcoord(maxind)) ! theta of surface elements dumped for surface strain
-
-  do iproc=0,nproc-1
-     call barrier
-     if (mynum==iproc) then 
-        call barrier
-        if (diagfiles) then
-            open(33333,file=datapath(1:lfdata)// &
-                             '/surfelem_coords.dat',position='append')
-            open(33334,file=datapath(1:lfdata)// &
-                             '/surfelem_coords_jpol.dat',position='append')
-            if (mynum==0) write(33334,*)maxind_glob
-            if (mynum==0) write(33333,*)maxind_glob
-        end if
-
-        do iel=1,maxind
-           if (thetacoord(npol/2,npol/2,ielsolid(surfelem(iel)))<=pi/2) then
-              jsurfel(iel)=npol
-           else
-              jsurfel(iel)=0
-           endif
-
-           surfcoord(iel) = 180. / pi * &
-                            thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel)))
-           if (diagfiles) then
-               write(33333,*) surfcoord(iel) 
-               write(33334,11) 180./pi* &
-                    thetacoord(npol/2,jsurfel(iel),ielsolid(surfelem(iel))),&
-                    (rcoord(npol/2,j,ielsolid(surfelem(iel))),j=0,npol)
-           end if
-        enddo
-        if (diagfiles) then
-            close(33333)
-            close(33334)
-        end if
-        call barrier
-     endif
-     call barrier
-  enddo
-
-11 format(6(1pe11.4))
-
-  if (dump_wavefields.and.(.not.use_netcdf)) then
-    do iel=1,maxind
-       call define_io_appendix(appielem,iel+mynum*maxind)
-       open(unit=40000000+iel,file=datapath(1:lfdata)// &
-                 '/surfelem_disp.dat'//appielem)
-
-
-       open(unit=50000000+iel,file=datapath(1:lfdata)// &
-                                   '/surfelem_velo.dat'//appielem)
-    enddo
-
-    do iel=1,maxind
-       call define_io_appendix(appielem,iel+mynum*maxind)
-       open(unit=60000000+iel,file=datapath(1:lfdata)// &
-            '/surfelem_strain.dat'//appielem)
-       open(unit=70000000+iel,file=datapath(1:lfdata)// &
-            '/surfelem_disp_src.dat'//appielem)
-    enddo
-  endif
-
 end subroutine prepare_seismograms
 !-----------------------------------------------------------------------------------------
 
@@ -367,42 +297,6 @@ subroutine prepare_from_recfile_seis
      enddo
      close(34) 
      if (mynum==0) close(30)
-
-
-  case('database') 
-     if (lpr) write(6,*)'  generating receiver colatitudes at every element edge and midpoint...'
-     if (lpr) write(6,*)'  ... which is useful for databases and sinc interpolation'
-     dtheta_rec = abs( (thetacoord(npol,npol,ielsolid(surfelem(1))) &
-                      - thetacoord(0,   npol,ielsolid(surfelem(1))) ) * 180. / pi ) / 2
-     num_rec_glob = ceiling(180./dtheta_rec)+1
-     if (lpr) then
-       write(6,*) 'delta theta (mid-to-edge), (edge-to-edge) [deg]:', dtheta_rec, &
-                  abs( (thetacoord(npol,npol,ielsolid(surfelem(1))) &
-                      - thetacoord(0,   npol,ielsolid(surfelem(1))) ) * 180. / pi )
-       write(6,*)mynum,'number of surface elements:',maxind
-       write(6,*)mynum,'number of global recs (ideal,real):',(180./dtheta_rec)+1,num_rec_glob
-     end if
-     allocate(recfile_readth(num_rec_glob),recfile_readph(num_rec_glob))
-     do i=1,num_rec_glob
-        recfile_readth(i) = dtheta_rec*real(i-1)
-     enddo
-     if(lpr) write(6,*)mynum,'min,max receiver theta [deg]:',minval(recfile_readth),maxval(recfile_readth)
-     call flush(6)
-     recfile_readph = 0.
-     allocate(recfile_th_loc(1:num_rec_glob),recfile_el_loc(1:num_rec_glob,3))
-     allocate(loc2globrec_loc(1:num_rec_glob),rec2proc(1:num_rec_glob))
-     allocate(recfile_ph_loc2(1:num_rec_glob),recfile_th_glob(1:num_rec_glob))   
-     allocate(receiver_name(1:num_rec_glob))
-     if (mynum==0) open(unit=30,file=datapath(1:lfdata)//'/receiver_names.dat')
-     do i=1,num_rec_glob
-        !call define_io_appendix(appielem,i) Does only work for nrec<9999
-        !receiver_name(i) = 'recfile_'//appielem
-        write(receiver_name(i),112) i
-112     format('recfile_',I6.6)          
-        if (mynum==0) write(30,*)trim(receiver_name(i)),recfile_readth(i),recfile_readph(i)
-     enddo
-     if (mynum==0) close(30)
-     if (lpr) write(6,*)mynum,'done with database receiver writing.';call flush(6)
 
 
   case('stations')
@@ -917,71 +811,6 @@ subroutine nc_compute_recfile_seis_bare(disp, iseismo)
   call nc_dump_rec(disp_rec, iseismo) 
 
 end subroutine nc_compute_recfile_seis_bare
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
-!> Save one displacement and velocity trace for each element on the surface 
-!! which are both needed for kernels (du and v0 inside the cross-correlation)
-subroutine compute_surfelem(disp, velo)
-
-  use data_source, only : src_type
-  use nc_routines, only : nc_dump_surface
-  use data_mesh,   only : npol, jsurfel, surfelem, maxind
-  
-  real(kind=realkind), intent(in) :: disp(0:,0:,:,:)
-  real(kind=realkind), intent(in) :: velo(0:,0:,:,:)
-  real                            :: dumpvar(maxind, 3)
-  integer                         :: i
-
-  dumpvar = 0.0
-
-  if (use_netcdf) then
-      if (src_type(1)=='monopole') then
-          do i=1,maxind
-              dumpvar(i,1) = real(disp(npol/2,jsurfel(i),surfelem(i),1))
-              dumpvar(i,2) = real(disp(npol/2,jsurfel(i),surfelem(i),3))
-          enddo
-      else
-          do i=1,maxind
-              dumpvar(i,:) = real(disp(npol/2,jsurfel(i),surfelem(i),:))
-          end do
-      end if !monopole
-      call nc_dump_surface(dumpvar(:,:), 'disp')
-      
-      if (src_type(1)=='monopole') then
-          do i=1,maxind
-              dumpvar(i,1) = real(velo(npol/2,jsurfel(i),surfelem(i),1))
-              dumpvar(i,2) = real(velo(npol/2,jsurfel(i),surfelem(i),3))
-          end do
-      else
-          do i=1,maxind    
-              dumpvar(i,:) = real(velo(npol/2,jsurfel(i),surfelem(i),:))
-          end do
-      end if !monopole
-      call nc_dump_surface(dumpvar(:,:), 'velo')
-
-  else !use_netcdf
-      if (src_type(1)=='monopole') then
-      do i=1,maxind
-         write(40000000+i,*)real(disp(npol/2,jsurfel(i),surfelem(i),1)),&
-                            real(disp(npol/2,jsurfel(i),surfelem(i),3))
-         write(50000000+i,*)real(velo(npol/2,jsurfel(i),surfelem(i),1)),&
-                            real(velo(npol/2,jsurfel(i),surfelem(i),3))
-      enddo
-
-      else
-         do i=1,maxind
-         write(40000000+i,*)real(disp(npol/2,jsurfel(i),surfelem(i),1)),&
-                            real(disp(npol/2,jsurfel(i),surfelem(i),2)),&
-                            real(disp(npol/2,jsurfel(i),surfelem(i),3))  
-         write(50000000+i,*)real(velo(npol/2,jsurfel(i),surfelem(i),1)),&
-                            real(velo(npol/2,jsurfel(i),surfelem(i),2)),&
-                            real(velo(npol/2,jsurfel(i),surfelem(i),3))
-         enddo
-      end if !monopole
-  end if !netcdf
-
-end subroutine compute_surfelem
 !-----------------------------------------------------------------------------------------
 
 end module seismograms
