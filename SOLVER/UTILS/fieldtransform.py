@@ -10,16 +10,12 @@ Postprocessing for AxiSEM's Kernel Wavefields
     (http://www.gnu.org/licenses/gpl.html)
 """
 import argparse
+import math
 import netCDF4
 import os.path
 from progressbar import Percentage, ProgressBar, Bar, ETA, FileTransferSpeed
 import subprocess
 import warnings
-
-class FileTransferSpeedinMB(FileTransferSpeed):
-   def update(self, pbar):
-       string = FileTransferSpeed.update(self, pbar) 
-       return string.split(' ')[1] + ' MB/s'
 
 # parse command line arguments
 parser = argparse.ArgumentParser(
@@ -27,8 +23,8 @@ parser = argparse.ArgumentParser(
                 "faster time series reading, optional compression.")
 
 parser.add_argument('-r', '--resume', dest='resume', action='store_true',
-                    default=False, help='If copying was interrupted, resume at '
-                    'last checkpoint')
+                    default=False, help='If copying was interrupted, resume '
+                    'at last checkpoint')
 
 parser.add_argument('-d', '--deflate_level', dest='deflate_level', type=int,
                     default=2, help='deflate level for large variables. 0 for '
@@ -42,6 +38,26 @@ parser.add_argument('-c', '--cache_size', dest='cache_size_mb', type=int,
                     'in MB. Default = 10')
 
 args = parser.parse_args()
+
+# The default FileTransferSpeed class had integer overflows for large DBs (size
+# in Bytes larger than largest integer number). This version includes an
+# optional scaling factor.
+class FileTransferSpeedScaled(FileTransferSpeed):
+    def __init__(self, unit='B', scale=1.):
+        super(FileTransferSpeedScaled, self).__init__(unit)
+        self.scale = scale
+
+    def update(self, pbar):
+        'Updates the widget with the current SI prefixed speed.'
+
+        if pbar.seconds_elapsed < 2e-6 or pbar.currval < 2e-6:  # =~ 0
+            scaled = power = 0
+        else:
+            speed = pbar.currval * self.scale / pbar.seconds_elapsed
+            power = int(math.log(speed, 1000))
+            scaled = speed / 1000.**power
+
+        return self.format % (scaled, self.prefixes[power], self.unit)
 
 fname_in = 'axisem_output.nc4'
 fname_out = 'ordered_output.nc4'
@@ -131,10 +147,9 @@ for p in paths:
 
         # start a new progressbar
         widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
-                   ETA(), ' ', FileTransferSpeedinMB()]
-        
-        pbar = ProgressBar(widgets=widgets, 
-                           maxval=int(ndumps * (npoints / 256)))
+                   ETA(), ' ', FileTransferSpeedScaled(scale=1e3)]
+
+        pbar = ProgressBar(widgets=widgets, maxval=ndumps * npoints / 256.)
         pbar.start()
 
         # copy large fields chunkwise
@@ -144,7 +159,7 @@ for p in paths:
             var_out[:, nstep:nstep+npointread] = \
                 var_in[:, nstep:nstep+npointread]
 
-            pbar.update(int(ndumps * nstep / 256))
+            pbar.update(ndumps * nstep / 256.)
 
             # set a checkpoint to variable attribute
             var_out.nstep = nstep + npointread
