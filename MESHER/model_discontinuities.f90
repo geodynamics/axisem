@@ -1539,14 +1539,9 @@ subroutine write_1Dmodel(discontinuities)
    ! Domains from first to second-last
    do idom = 1, ndom-1
       ! Adapt layer spacing according to overall size of domain. Should be at least 5
-      ! layers in each domain
-      if (discontinuities(idom) - discontinuities(idom+1) < 25000.) then
-         step = -1000
-      elseif (discontinuities(idom) - discontinuities(idom+1) < 250000.) then
-         step = -5000
-      else
-         step = -10000
-      end if
+      ! layers in each domain, maximum layer thickness 50km
+      step = (discontinuities(idom+1) - discontinuities(idom)) / 5.
+      step = max(-50000, step)
       fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
       print fmtstring, idom, discontinuities(idom) - discontinuities(idom+1), step
       ! Layers within the domain
@@ -1592,13 +1587,8 @@ subroutine write_1Dmodel(discontinuities)
    end do !idom = 1, ndom-1
 
    ! Layers within the last domain
-   if (discontinuities(ndom) < 25000.) then
-      step = -1000
-   elseif (discontinuities(ndom) < 250000.) then
-      step = -5000
-   else
-      step = -10000
-   end if
+   step = - discontinuities(ndom) / 5.
+   step = max(-50000, step)
    
    fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
    print fmtstring, idom, discontinuities(ndom), step
@@ -1739,11 +1729,11 @@ subroutine write_1Dmodel(discontinuities)
    open(2000, file=fnam, action='write')
    write (2000,*) 'AXISEM model for YSPEC: ', bkgrdmodel(1:lfbkgrdmodel), ' ', trim(model_name_ext_model)
    if (model_is_ani(bkgrdmodel)) then
-       write (2000,'(i2,f4.1)') 1, 1.
+       write (2000,'(i2,f4.1, i2)') 1, 1., 1
    else
-       write (2000,'(i2,f4.1)') 0, 1.
+       write (2000,'(i2,f4.1, i2)') 0, 1., 1
    endif
-   write(2000,*) nlayer, nic, noc
+   write(2000,*) nlayer, nic, noc + nic
    do ilayer = nlayer, 1, -1
       if (model_is_anelastic(bkgrdmodel)) then
           write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
