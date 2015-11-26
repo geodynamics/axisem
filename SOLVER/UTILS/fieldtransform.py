@@ -149,7 +149,7 @@ for p in paths:
         widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
                    ETA(), ' ', FileTransferSpeedScaled(scale=256.)]
 
-        pbar = ProgressBar(widgets=widgets, maxval=ndumps * npoints / 256.)
+        pbar = ProgressBar(widgets=widgets, maxval=(ndumps / 256.) * npoints )
         pbar.start()
 
         # copy large fields chunkwise
@@ -159,7 +159,7 @@ for p in paths:
             var_out[:, nstep:nstep+npointread] = \
                 var_in[:, nstep:nstep+npointread]
 
-            pbar.update(ndumps * nstep / 256.)
+            pbar.update((ndumps / 256.) * nstep)
 
             # set a checkpoint to variable attribute
             var_out.nstep = nstep + npointread
