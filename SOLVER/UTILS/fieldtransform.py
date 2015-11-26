@@ -39,25 +39,6 @@ parser.add_argument('-c', '--cache_size', dest='cache_size_mb', type=int,
 
 args = parser.parse_args()
 
-# The default FileTransferSpeed class had integer overflows for large DBs (size
-# in Bytes larger than largest integer number). This version includes an
-# optional scaling factor.
-class FileTransferSpeedScaled(FileTransferSpeed):
-    def __init__(self, unit='B', scale=1.):
-        super(FileTransferSpeedScaled, self).__init__(unit)
-        self.scale = scale
-
-    def update(self, pbar):
-        'Updates the widget with the current SI prefixed speed.'
-
-        if pbar.seconds_elapsed < 2e-6 or pbar.currval < 2e-6:  # =~ 0
-            scaled = power = 0
-        else:
-            speed = pbar.currval * self.scale / pbar.seconds_elapsed
-            power = int(math.log(speed, 1000))
-            scaled = speed / 1000.**power
-
-        return self.format % (scaled, self.prefixes[power], self.unit)
 
 fname_in = 'axisem_output.nc4'
 fname_out = 'ordered_output.nc4'
@@ -147,9 +128,11 @@ for p in paths:
 
         # start a new progressbar
         widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
-                   ETA(), ' ', FileTransferSpeedScaled(scale=256.)]
+                   ETA(), ' ', FileTransferSpeed()]
 
-        pbar = ProgressBar(widgets=widgets, maxval=(ndumps / 256.) * npoints )
+        # convert to floats to avoid buffer overflow
+        pbar = ProgressBar(widgets=widgets,
+                           maxval=float(ndumps) * float(npoints))
         pbar.start()
 
         # copy large fields chunkwise
@@ -159,7 +142,7 @@ for p in paths:
             var_out[:, nstep:nstep+npointread] = \
                 var_in[:, nstep:nstep+npointread]
 
-            pbar.update((ndumps / 256.) * nstep)
+            pbar.update(float(ndumps) * float(nstep))
 
             # set a checkpoint to variable attribute
             var_out.nstep = nstep + npointread
