@@ -76,11 +76,11 @@ nc_cmd = ['nccopy']
 # bufsize and chunk cache size
 nc_cmd.append('-m %sM -h %sM' % (args.cache_size_mb, args.cache_size_mb))
 
-# only include these groups (and not the Surface group)
-nc_cmd.append('-G Seismograms,Snapshots,Mesh')
-
 # only include the data of these groups (Snapshots to be copied manually)
 nc_cmd.append('-g Seismograms,Mesh')
+
+# only include these groups (and not the Surface group)
+nc_cmd.append('-G Seismograms,Snapshots,Mesh')
 
 # compression
 nc_cmd.append('-d %d' % (args.deflate_level,))
@@ -130,7 +130,7 @@ for p in paths:
         widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
                    ETA(), ' ', FileTransferSpeed()]
 
-        # convert to floats to avoid buffer overflow
+        # convert to floats to avoid integer overflow
         pbar = ProgressBar(widgets=widgets,
                            maxval=float(ndumps) * float(npoints))
         pbar.start()
