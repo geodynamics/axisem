@@ -1332,17 +1332,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             end do
 
 
-            ! Surface group in output file
-            if (verbose > 2) write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
-            call check( nf90_put_att( ncid   = ncid_surfout, &
-                                      name   = 'nstrain', &
-                                      varid  = NF90_GLOBAL, &
-                                      values = nstrain) )
-            
-            call check( nf90_def_var( ncid_surfout, "stf_dump", NF90_FLOAT, &
+            call check( nf90_def_var( ncid_snapout, "stf_dump", NF90_FLOAT, &
                                       [nc_snap_dimid], nc_stf_dump_varid) )
 
-            call check( nf90_def_var( ncid_surfout, "stf_d_dump", NF90_FLOAT, &
+            call check( nf90_def_var( ncid_snapout, "stf_d_dump", NF90_FLOAT, &
                                       [nc_snap_dimid], nc_stf_d_dump_varid) )
         end if
         
@@ -1414,10 +1407,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                 write(6,*) 'Writing STF in strain dumps'
                 call flush(6)
             end if
-            call check( nf90_put_var(ncid   = ncid_surfout, &
+            call check( nf90_put_var(ncid   = ncid_snapout, &
                                      varid  = nc_stf_dump_varid, &
                                      values = stf_dump_dumpvar) )
-            call check( nf90_put_var(ncid   = ncid_surfout, &
+            call check( nf90_put_var(ncid   = ncid_snapout, &
                                      varid  = nc_stf_d_dump_varid, &
                                      values = stf_d_dump_dumpvar) )
 
