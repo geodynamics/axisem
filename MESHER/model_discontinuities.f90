@@ -1530,6 +1530,7 @@ subroutine write_1Dmodel(discontinuities)
    character(len=256)        :: fnam, fmtstring
    character(len=8)          :: mydate
    character(len=10)         :: mytime
+   logical                   :: firstlayer_in_domain
 
    ndom = size(discontinuities)
    allocate(disc_layer(ndom))
@@ -1545,10 +1546,11 @@ subroutine write_1Dmodel(discontinuities)
       fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
       print fmtstring, idom, discontinuities(idom) - discontinuities(idom+1), step
       ! Layers within the domain
+      firstlayer_in_domain = .true.
       do irad = nint(discontinuities(idom)), nint(discontinuities(idom+1)), step
-         vp_tmp = velocity(real(irad, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-         vs_tmp = velocity(real(irad, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
-         if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
+         vp_tmp = velocity(real(irad, kind=dp), 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+         vs_tmp = velocity(real(irad, kind=dp), 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
+         if ((vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)).or.firstlayer_in_domain) then
             ilayer = ilayer + 1
             radius(ilayer) = real(irad, kind=dp)
             vpv(ilayer)   = vp_tmp
@@ -1563,16 +1565,15 @@ subroutine write_1Dmodel(discontinuities)
             end if
 
          end if
-         !write(2000,*) real(irad, kind=dp), rho, vp, vs
-
+         firstlayer_in_domain = .false.
       end do
      
       ! Layer at the bottom of the domain
       if ((radius(ilayer)-discontinuities(idom+1))>smallval_dble*radius(ilayer)) then
          ilayer = ilayer + 1
          radius(ilayer) = discontinuities(idom+1)
-         vpv(ilayer)   = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-         vsv(ilayer)   = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+         vpv(ilayer)   = velocity(discontinuities(idom+1), 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+         vsv(ilayer)   = velocity(discontinuities(idom+1), 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
          rho(ilayer)   = velocity(discontinuities(idom+1), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
          if (model_is_anelastic(bkgrdmodel)) then
              qka(ilayer)   = velocity(discontinuities(idom+1), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
@@ -1593,10 +1594,11 @@ subroutine write_1Dmodel(discontinuities)
    fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
    print fmtstring, idom, discontinuities(ndom), step
 
+   firstlayer_in_domain = .true.
    do irad = nint(discontinuities(ndom)), 0, step
-      vp_tmp = velocity(real(irad, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-      vs_tmp = velocity(real(irad, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
-      if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
+      vp_tmp = velocity(real(irad, kind=dp), 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+      vs_tmp = velocity(real(irad, kind=dp), 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
+      if ((vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)).or.firstlayer_in_domain) then
          ilayer = ilayer + 1
          radius(ilayer) = real(irad, kind=dp)
          vpv(ilayer)    = vp_tmp
@@ -1610,14 +1612,15 @@ subroutine write_1Dmodel(discontinuities)
             eta(ilayer)   = velocity(real(irad, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
          end if
       end if
+      firstlayer_in_domain = .false.
    end do
 
    ! Layer at the bottom of the model
    if (radius(ilayer)>smallval_dble) then
       ilayer = ilayer + 1
       radius(ilayer) = 0.0d0
-      vpv(ilayer) = velocity(0.0d0, 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-      vsv(ilayer) = velocity(0.0d0, 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+      vpv(ilayer) = velocity(0.0d0, 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+      vsv(ilayer) = velocity(0.0d0, 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
       rho(ilayer) = velocity(0.0d0, 'rho', idom, bkgrdmodel, lfbkgrdmodel)
       if (model_is_anelastic(bkgrdmodel)) then
           qka(ilayer) = velocity(0.0d0, 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
