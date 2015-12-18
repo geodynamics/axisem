@@ -1136,10 +1136,7 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
       ! It starts from 
       istrain = istrain + 1
 
-      call compute_surfelem(disp, velo)
-       
       select case (trim(dump_type))
-
         case ('displ_only')
           ! Only dump the 3-comp displacement in solid and fluid.
           ! Minimal permanent storage, minimal run-time memory, minimal CPU time, 

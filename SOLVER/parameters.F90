@@ -1450,7 +1450,7 @@ subroutine write_parameters
 #endif
         ! write generic simulation info file
         if (mynum == 0) write(6,*) ' Writing simulation info to netcdf file attributes' 
-        call nc_write_att_int(  8,                     'file version')
+        call nc_write_att_int(  9,                     'file version')
         call nc_write_att_char( trim(bkgrdmodel),      'background model')
         call nc_write_att_char( trim(model_name_ext_model), 'external model name')
         call nc_write_att_int(  merge(1, 0, do_anel),  'attenuation') ! merge: hacky conversion of logical to int

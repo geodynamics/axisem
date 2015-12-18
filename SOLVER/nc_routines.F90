@@ -38,14 +38,6 @@ module nc_routines
 
     !> Buffer variable for recorder 
     real(sp), allocatable   :: recdumpvar(:,:,:)
-    !> Buffer variable for displacement at surface
-    real(sp), allocatable   :: surfdumpvar_disp(:,:,:)
-    !> Buffer variable for velocity at surface 
-    real(sp), allocatable   :: surfdumpvar_velo(:,:,:)
-    !> Buffer variable for strain at surface
-    real(sp), allocatable   :: surfdumpvar_strain(:,:,:)
-    !> Buffer variable for source displacement at surface
-    real(sp), allocatable   :: surfdumpvar_srcdisp(:,:,:)
 
     !> Buffer variable for everything dumped in nc_dump_field_1d
     real(sp), allocatable   :: oneddumpvar(:,:,:)
@@ -94,12 +86,10 @@ module nc_routines
     integer            :: nc_time_varid, nc_iter_dimid, nc_stf_iter_varid, nc_stf_d_iter_varid
 
     integer            :: nc_strcomp_dimid
-    integer            :: nc_surfelem_disp_varid, nc_surfelem_velo_varid
-    integer            :: nc_surfelem_strain_varid, nc_surfelem_disp_src_varid
     integer            :: nc_mesh_sol_varid, nc_mesh_flu_varid, nc_stf_dump_varid, nc_stf_d_dump_varid
     integer            :: nc_point_dimid, nc_pt_sol_dimid, nc_pt_flu_dimid
     integer            :: nc_szcoord_dimid
-    integer            :: nc_snaptime_varid, nc_elem_dom_varid, nc_surfelem_theta_varid
+    integer            :: nc_snaptime_varid, nc_elem_dom_varid
     integer,allocatable :: nc_field_varid(:)
     character(len=16), allocatable  :: varnamelist(:)
     character(len=12), allocatable  :: nc_varnamelist(:)
@@ -107,10 +97,6 @@ module nc_routines
 
     !! Buffer variables to hand over to the dumping thread
     real(kind=sp), allocatable, dimension(:,:,:)  :: copy_oneddumpvar         
-    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_surfdumpvar_disp    
-    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_surfdumpvar_strain  
-    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_surfdumpvar_velo    
-    real(kind=sp), allocatable, dimension(:,:,:)  :: copy_surfdumpvar_srcdisp 
 
 
     !! Buffer variables for the STF.
@@ -130,7 +116,7 @@ module nc_routines
     logical             :: nc_chunk_time_traces
     integer, parameter  :: disk_block_size = 8192
     
-    public              :: nc_dump_strain, nc_dump_rec, nc_dump_surface
+    public              :: nc_dump_strain, nc_dump_rec
     public              :: nc_dump_field_solid, nc_dump_field_fluid
     public              :: nc_define_outputfile, nc_finish_prepare, nc_end_output
     public              :: nc_dump_strain_to_disk, nc_dump_mesh_sol, nc_dump_mesh_flu
@@ -358,16 +344,8 @@ subroutine nc_dump_strain(isnap_loc)
             ndumps = stepstodump
 
             allocate(copy_oneddumpvar(1:npoints,1:ndumps,1:nvar/2))
-            allocate(copy_surfdumpvar_disp(1:ndumps, 1:3, 1:maxind))
-            allocate(copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind))
-            allocate(copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind))
-            allocate(copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind))
 
             copy_oneddumpvar          = oneddumpvar(1:npoints,1:ndumps,1:nvar/2)
-            copy_surfdumpvar_disp     = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)
-            copy_surfdumpvar_strain   = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)
-            copy_surfdumpvar_velo     = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)
-            copy_surfdumpvar_srcdisp  = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind) 
 
 #ifndef enable_parallel_netcdf
 
@@ -400,16 +378,8 @@ subroutine nc_dump_strain(isnap_loc)
                 ndumps = stepstodump
 
                 allocate(copy_oneddumpvar(1:npoints,1:ndumps,1:nvar/2))
-                allocate(copy_surfdumpvar_disp(1:ndumps, 1:3, 1:maxind))
-                allocate(copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind))
-                allocate(copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind))
-                allocate(copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind))
 
                 copy_oneddumpvar          = oneddumpvar(1:npoints,1:ndumps,1:nvar/2)
-                copy_surfdumpvar_disp     = surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)
-                copy_surfdumpvar_strain   = surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)
-                copy_surfdumpvar_velo     = surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)
-                copy_surfdumpvar_srcdisp  = surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind) 
 
                 call nc_dump_strain_to_disk()
                 if (verbose > 1) write(6,*) mynum, 'finished dumping strain'
@@ -469,31 +439,6 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
         dumpsize = dumpsize + npoints * ndumps
     end do
         
-    !> Surface dumps 
-    call putvar_real3d(ncid_surfout, nc_surfelem_disp_varid, &
-                start = [isnap_loc-ndumps+1, 1, ind_first], &
-                count = [ndumps, 3, maxind], &
-                values = copy_surfdumpvar_disp(1:ndumps, 1:3, 1:maxind)) 
-    dumpsize = dumpsize + 3 * maxind * ndumps
-
-    call putvar_real3d(ncid_surfout, nc_surfelem_velo_varid, &
-                start = [isnap_loc-ndumps+1, 1, ind_first], &
-                count = [ndumps, 3, maxind], &
-                values = copy_surfdumpvar_velo(1:ndumps, 1:3, 1:maxind)) 
-    dumpsize = dumpsize + 3 * maxind * ndumps
-
-    call putvar_real3d(ncid_surfout, nc_surfelem_strain_varid, &
-                start = [isnap_loc-ndumps+1, 1, ind_first], &
-                count = [ndumps, 6, maxind], &
-                values = copy_surfdumpvar_strain(1:ndumps, 1:6, 1:maxind)) 
-    dumpsize = dumpsize + 6 * maxind * ndumps
-
-    call putvar_real3d(ncid_surfout, nc_surfelem_disp_src_varid, &
-                start = [isnap_loc-ndumps+1, 1, ind_first], &
-                count = [ndumps, 3, maxind], &
-                values = copy_surfdumpvar_srcdisp(1:ndumps, 1:3, 1:maxind)) 
-    dumpsize = dumpsize + 3 * maxind * ndumps
-    
     call check( nf90_put_att(ncid_out, NF90_GLOBAL, 'percent completed', &
                              isnap_loc*100/nstrain) )
 
@@ -504,10 +449,6 @@ subroutine nc_dump_strain_to_disk() bind(c, name="nc_dump_strain_to_disk")
     call cpu_time(tack)
 
     deallocate(copy_oneddumpvar)
-    deallocate(copy_surfdumpvar_disp)
-    deallocate(copy_surfdumpvar_strain)
-    deallocate(copy_surfdumpvar_velo)
-    deallocate(copy_surfdumpvar_srcdisp)
 
     if (verbose > 1) then
         dumpsize_MB = real(dumpsize) * 4 / 1048576
@@ -675,29 +616,6 @@ subroutine nc_rec_checkpoint
 #endif
 end subroutine nc_rec_checkpoint
 !----------------------------------------------------------------------------------------
-
-!----------------------------------------------------------------------------------------
-!> Dump stuff along surface
-subroutine nc_dump_surface(surffield, disporvelo)
-
-    real(kind=realkind), intent(in), dimension(:,:) :: surffield
-    character(len=4), intent(in)                    :: disporvelo
-#ifdef enable_netcdf
-   
-    select case(disporvelo)
-        case('disp')
-            surfdumpvar_disp(stepstodump+1,:,:) = transpose(surffield(:,:))
-        case('velo')
-            surfdumpvar_velo(stepstodump+1,:,:) = transpose(surffield(:,:))
-        case('stra')
-            surfdumpvar_strain(stepstodump+1,:,:) = transpose(surffield(:,:))
-        case('srcd')
-            surfdumpvar_srcdisp(stepstodump+1,:,:) = transpose(surffield(:,:))
-    end select
-
-#endif
-end subroutine nc_dump_surface
-!-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
@@ -936,7 +854,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     integer                              :: nc_ph_varid
     integer                              :: nc_thr_varid, nc_th_varid 
     integer                              :: nc_proc_varid, nc_recnam_dimid
-    integer                              :: nc_recnam_varid, nc_surf_dimid
+    integer                              :: nc_recnam_varid
     integer                              :: nc_pt_dimid
     integer                              :: nc_mesh_s_varid, nc_mesh_z_varid   
     integer                              :: nc_mesh_s_mp_varid, nc_mesh_z_mp_varid   
@@ -1414,52 +1332,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             end do
 
 
-            ! Surface group in output file
-            if (verbose > 2) write(6,*) 'Define variables in ''Surface'' group of NetCDF output file'
-            call check( nf90_put_att( ncid   = ncid_surfout, &
-                                      name   = 'nstrain', &
-                                      varid  = NF90_GLOBAL, &
-                                      values = nstrain) )
-            call check( nf90_def_dim( ncid_surfout, "straincomponents", len=6, &
-                                      dimid=nc_strcomp_dimid) )
-            
-            call check( nf90_def_dim( ncid_surfout, "surf_elems", maxind_glob, nc_surf_dimid) )     
-            call check( nf90_put_att( ncid   = ncid_surfout, &
-                                      name   = 'nsurfelem', &
-                                      varid  = NF90_GLOBAL, &
-                                      values = maxind_glob) )
-
-            call check( nf90_def_var( ncid_surfout, "elem_theta", NF90_FLOAT, &
-                                      [nc_surf_dimid ], nc_surfelem_theta_varid) )
-            call check( nf90_put_att(ncid_surfout, nc_surfelem_theta_varid, 'units', 'degrees'))
-           
-            call check( nf90_def_var( ncid_surfout, "displacement", NF90_FLOAT, &
-                                      [nc_snap_dimid, nc_comp_dimid, nc_surf_dimid ], &
-                                      nc_surfelem_disp_varid) )
-            call check( nf90_put_att(ncid_surfout, nc_surfelem_disp_varid, 'units', 'meters'))
-            
-            call check( nf90_def_var( ncid_surfout, "velocity", NF90_FLOAT, &
-                                      [nc_snap_dimid, nc_comp_dimid, nc_surf_dimid ], &
-                                      nc_surfelem_velo_varid) )
-            call check( nf90_put_att( ncid_surfout, nc_surfelem_velo_varid, 'units', &
-                                      'meters per second') )
-            
-            call check( nf90_def_var( ncid_surfout, "disp_src", NF90_FLOAT, &
-                                      [nc_snap_dimid, nc_comp_dimid, nc_surf_dimid ], &
-                                      nc_surfelem_disp_src_varid) )
-            call check( nf90_put_att( ncid_surfout, nc_surfelem_disp_src_varid, 'units', &
-                                      'meters') )
-
-            call check( nf90_def_var( ncid_surfout, "strain", NF90_FLOAT, &
-                                      [nc_snap_dimid, nc_strcomp_dimid, nc_surf_dimid ], &
-                                      nc_surfelem_strain_varid) )
-            call check( nf90_put_att( ncid_surfout, nc_surfelem_strain_varid, 'units', &
-                                      ' ') )
-
-            call check( nf90_def_var( ncid_surfout, "stf_dump", NF90_FLOAT, &
+            call check( nf90_def_var( ncid_snapout, "stf_dump", NF90_FLOAT, &
                                       [nc_snap_dimid], nc_stf_dump_varid) )
 
-            call check( nf90_def_var( ncid_surfout, "stf_d_dump", NF90_FLOAT, &
+            call check( nf90_def_var( ncid_snapout, "stf_d_dump", NF90_FLOAT, &
                                       [nc_snap_dimid], nc_stf_d_dump_varid) )
         end if
         
@@ -1531,10 +1407,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
                 write(6,*) 'Writing STF in strain dumps'
                 call flush(6)
             end if
-            call check( nf90_put_var(ncid   = ncid_surfout, &
+            call check( nf90_put_var(ncid   = ncid_snapout, &
                                      varid  = nc_stf_dump_varid, &
                                      values = stf_dump_dumpvar) )
-            call check( nf90_put_var(ncid   = ncid_surfout, &
+            call check( nf90_put_var(ncid   = ncid_snapout, &
                                      varid  = nc_stf_d_dump_varid, &
                                      values = stf_d_dump_dumpvar) )
 
@@ -1554,10 +1430,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     if (dump_wavefields) then
         stepstodump = 0
-        allocate(surfdumpvar_disp(dumpstepsnap,3,maxind))
-        allocate(surfdumpvar_velo(dumpstepsnap,3,maxind))
-        allocate(surfdumpvar_strain(dumpstepsnap,6,maxind))
-        allocate(surfdumpvar_srcdisp(dumpstepsnap,3,maxind))
        
         if (src_type(1) == 'monopole') then
             allocate(oneddumpvar(npoints, dumpstepsnap, 6))
@@ -1565,18 +1437,9 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             allocate(oneddumpvar(npoints, dumpstepsnap, 9))
         end if
 
-        surfdumpvar_disp = 0.0
-        surfdumpvar_velo = 0.0
-        surfdumpvar_strain = 0.0
-        surfdumpvar_srcdisp = 0.0
-
         if (mynum == 0 .and. verbose > 2) then
             write(6,*)  'Allocating NetCDF buffer variables'
             write(6,90) 'recdumpvar', real(size(recdumpvar))/262144.
-            write(6,90) 'surfdumpvar_disp', real(size(surfdumpvar_disp))/262144.
-            write(6,90) 'surfdumpvar_velo', real(size(surfdumpvar_velo))/262144.
-            write(6,90) 'surfdumpvar_strain', real(size(surfdumpvar_strain))/262144.
-            write(6,90) 'surfdumpvar_srcdisp', real(size(surfdumpvar_srcdisp))/262144.
             write(6,90) 'oneddumpvar', real(size(oneddumpvar))/262144.
             write(6,*)
             write(6,*)  '*********************************************************************'
@@ -1615,7 +1478,7 @@ end subroutine nc_define_outputfile
 subroutine nc_finish_prepare
 #ifdef enable_netcdf
     use data_io,   only  : datapath, lfdata, dump_wavefields, dump_type
-    use data_mesh, only  : maxind, surfcoord, ind_first, ind_last, &
+    use data_mesh, only  : maxind, ind_first, ind_last, &
                            midpoint_mesh_kwf, sem_mesh_kwf, fem_mesh_kwf, nelem_kwf, &
                            nelem_kwf_global, npol, eltype_kwf, axis_kwf, num_rec
     use data_spec, only  : G0, G1, G2, xi_k, eta
@@ -1684,12 +1547,6 @@ subroutine nc_finish_prepare
                    call getvarid(ncid_snapout, nc_varnamelist(ivar), nc_field_varid(ivar)) 
                 end do
                
-                call getvarid(ncid_surfout, "elem_theta",   nc_surfelem_theta_varid)
-                call getvarid(ncid_surfout, "displacement", nc_surfelem_disp_varid)
-                call getvarid(ncid_surfout, "velocity",     nc_surfelem_velo_varid)
-                call getvarid(ncid_surfout, "strain",       nc_surfelem_strain_varid)
-                call getvarid(ncid_surfout, "disp_src",     nc_surfelem_disp_src_varid)
-
                 call getvarid(ncid_meshout, "mesh_S",       nc_mesh_s_varid) 
                 call getvarid(ncid_meshout, "mesh_Z",       nc_mesh_z_varid) 
                 call getvarid(ncid_meshout, "mesh_vp",      nc_mesh_vp_varid)
@@ -1729,16 +1586,6 @@ subroutine nc_finish_prepare
                    call check(nf90_var_par_access(ncid_snapout, nc_field_varid(ivar),    &
                                                   NF90_COLLECTIVE))
                 end do
-                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_theta_varid,    &
-                                               NF90_COLLECTIVE))
-                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_disp_varid,     &
-                                               NF90_COLLECTIVE))
-                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_velo_varid,     &
-                                               NF90_COLLECTIVE))
-                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_strain_varid,   &
-                                               NF90_COLLECTIVE))
-                call check(nf90_var_par_access(ncid_meshout, nc_surfelem_disp_src_varid, &
-                                               NF90_COLLECTIVE))
 
                 call check(nf90_var_par_access(ncid_meshout, nc_mesh_s_varid,      &
                                                NF90_COLLECTIVE))
@@ -1788,12 +1635,6 @@ subroutine nc_finish_prepare
 
                 ! start writing to file
    
-                call putvar_real1d(ncid   = ncid_surfout, &
-                                   varid  = nc_surfelem_theta_varid, &
-                                   values = surfcoord, &
-                                   start  = ind_first, &
-                                   count  = maxind  ) ! count = 0 should be valid?
-
                 ! S-Coordinate
                 call putvar_real1d( ncid   = ncid_meshout,     &
                                     varid  = nc_mesh_s_varid,  &

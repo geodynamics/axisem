@@ -40,6 +40,26 @@ parser.add_argument('-c', '--cache_size', dest='cache_size_mb', type=int,
 args = parser.parse_args()
 
 
+# The default FileTransferSpeed class had integer overflows for large DBs (size
+# in Bytes larger than largest integer number). This version includes an
+# optional scaling factor.
+class FileTransferSpeedScaled(FileTransferSpeed):
+    def __init__(self, unit='B', scale=1.):
+        super(FileTransferSpeedScaled, self).__init__(unit)
+        self.scale = scale
+
+    def update(self, pbar):
+        'Updates the widget with the current SI prefixed speed.'
+
+        if pbar.seconds_elapsed < 2e-6 or pbar.currval < 2e-6:  # =~ 0
+            scaled = power = 0
+        else:
+            speed = pbar.currval * self.scale / pbar.seconds_elapsed
+            power = int(math.log(speed, 1000))
+            scaled = speed / 1000.**power
+
+        return self.format % (scaled, self.prefixes[power], self.unit)
+
 fname_in = 'axisem_output.nc4'
 fname_out = 'ordered_output.nc4'
 
@@ -76,11 +96,11 @@ nc_cmd = ['nccopy']
 # bufsize and chunk cache size
 nc_cmd.append('-m %sM -h %sM' % (args.cache_size_mb, args.cache_size_mb))
 
-# only include the data of these groups (Snapshots to be copied manually)
-nc_cmd.append('-g Seismograms,Mesh')
-
 # only include these groups (and not the Surface group)
 nc_cmd.append('-G Seismograms,Snapshots,Mesh')
+
+# only include the data of these groups (Snapshots to be copied manually)
+nc_cmd.append('-g Seismograms,Mesh')
 
 # compression
 nc_cmd.append('-d %d' % (args.deflate_level,))
@@ -115,40 +135,44 @@ for p in paths:
     for var_in in nc_in.groups['Snapshots'].variables.values():
         var_out = nc_out.groups['Snapshots'].variables[var_in.name]
 
-        if args.resume:
-            # try to resume, might fail to read nstep from the attribute
-            try:
-                nstep = var_out.nstep
-            except:
-                warnings.warn(
-                    'Restart unsuccessful, starting to copy from beginning')
-                nstep = 0
+        if var_in.name in ('stf_dump', 'stf_d_dump'):
+            # Not really a large field, is copied in one go
+            var_out[:] = var_in[:]
+
         else:
-            nstep = 0
 
-        # start a new progressbar
-        widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
-                   ETA(), ' ', FileTransferSpeed()]
+            if args.resume:
+                # try to resume, might fail to read nstep from the attribute
+                try:
+                    nstep = var_out.nstep
+                except:
+                    warnings.warn(
+                        'Restart unsuccessful, starting to copy from beginning')
+                    nstep = 0
+            else:
+                nstep = 0
 
-        # convert to floats to avoid integer overflow
-        pbar = ProgressBar(widgets=widgets,
-                           maxval=float(ndumps) * float(npoints))
-        pbar.start()
+            # start a new progressbar
+            widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
+                       ETA(), ' ', FileTransferSpeedScaled(scale=256.)]
 
-        # copy large fields chunkwise
-        while (nstep < npoints):
-            npointread = min(npointsperstep, npoints - nstep)
+            pbar = ProgressBar(widgets=widgets, maxval=ndumps * npoints / 256.)
+            pbar.start()
 
-            var_out[:, nstep:nstep+npointread] = \
-                var_in[:, nstep:nstep+npointread]
+            # copy large fields chunkwise
+            while (nstep < npoints):
+                npointread = min(npointsperstep, npoints - nstep)
 
-            pbar.update(float(ndumps) * float(nstep))
+                var_out[:, nstep:nstep+npointread] = \
+                    var_in[:, nstep:nstep+npointread]
 
-            # set a checkpoint to variable attribute
-            var_out.nstep = nstep + npointread
+                pbar.update(ndumps * nstep / 256.)
 
-            nstep = nstep + npointread
-        pbar.finish()
+                # set a checkpoint to variable attribute
+                var_out.nstep = nstep + npointread
+
+                nstep = nstep + npointread
+            pbar.finish()
 
     # close files
     nc_in.close()
