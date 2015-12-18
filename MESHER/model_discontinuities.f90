@@ -72,6 +72,15 @@ subroutine define_discont
      case('prem_iso_solid_light')
         write(6,*)'Reading PREM_SOLID_LIGHT discontinuities...'
         call prem_solid_light_discont
+     case('prem_crust20_ocean')
+        write(6,*)'Reading PREM_CRUST20_OCEAN discontinuities...'
+        call prem_crust20_ocean_discont
+     case('prem_crust20_cont')
+        write(6,*)'Reading PREM_CRUST20_CONT discontinuities...'
+        call prem_crust20_cont_discont
+     case('prem_crust20_global')
+        write(6,*)'Reading PREM_CRUST20_GLOBAL discontinuities...'
+        call prem_crust20_global_discont
      case('iasp91')
         write(6,*)'Reading IASP91 discontinuities...'
         call iasp91_discont
@@ -469,6 +478,354 @@ subroutine prem_ani_discont
   discont = discont * 1000.
 
 end subroutine prem_ani_discont
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine prem_crust20_ocean_discont
+
+! PREM discontinuities to be honored by the mesh
+! each index represents the layer *below* its corresponding discontinuity
+
+! for the anisotropic case: vp = max(vpv, vph), vs=min(vsv, vsh)
+
+  ndisc = 15
+  
+  allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2))
+  !Layer 1
+  discont(1) = 6371.000
+  vp(1,:)    =    1.920
+  vs(1,:)    =    0.880
+ 
+  !Layer 2
+  discont(2) = 6367.590
+  vp(2,:)    =    3.690
+  vs(2,:)    =    1.930
+ 
+  !Layer 3
+  discont(3) = 6365.330
+  vp(3,:)    =    5.090
+  vs(3,:)    =    2.590
+ 
+  !Layer 4
+  discont(4) = 6364.040
+  vp(4,:)    =    6.600
+  vs(4,:)    =    3.650
+ 
+  !Layer 5
+  discont(5) = 6361.190
+  vp(5,:)    =    7.110
+  vs(5,:)    =    3.910 
+
+  ! LID
+  discont(6) = 6358.090
+  vp(6,1) = 8.19032
+  vs(6,1) = 4.39602
+  vp(6,2) = 8.15002
+  vs(6,2) = 4.40883
+
+  ! LVZ
+  discont(7) = 6291.
+  vp(7,1) = 8.15002
+  vs(7,1) = 4.40883
+  vp(7,2) = 8.04856
+  vs(7,2) = 4.43626
+  
+  ! TRANSITION ZONE: 220 --> 400
+  discont(8) = 6151.
+  vp(8,1) = 8.55895
+  vs(8,1) = 4.64390
+  vp(8,2) = 8.90524
+  vs(8,2) = 4.76990
+  
+  ! 400 --> 600
+  discont(9) = 5971.
+  vp(9,1) = 9.133917
+  vs(9,1) = 4.932487
+  vp(9,2) = 10.15783
+  vs(9,2) = 5.515931
+  
+  ! 600 --> 670
+  discont(10) = 5771.
+  vp(10,1) = 10.15776
+  vs(10,1) = 5.516017
+  vp(10,2) = 10.26617
+  vs(10,2) = 5.570211
+  
+  ! 670 --> 770
+  discont(11) = 5701.
+  vp(11,1) = 10.7513
+  vs(11,1) = 5.9451
+  vp(11,2) = 11.0656
+  vs(11,2) = 6.2405
+  
+  !LOWER MANTLE: 770 --> TOP D"
+  discont(12) = 5600.
+  vp(12,1) = 11.0656
+  vs(12,1) = 6.2404
+  vp(12,2) = 13.6804
+  vs(12,2) = 7.2659
+  
+  ! D" LAYER
+  discont(13) = 3630.
+  vp(13,1) = 13.6805
+  vs(13,1) = 7.2660
+  vp(13,2) = 13.7166
+  vs(13,2) = 7.2647
+  
+  ! FLUID OUTER CORE: CMB --> ICB
+  discont(14) = 3480.
+  vp(14,1) = 8.0650
+  vs(14,1) = 0.0
+  vp(14,2) = 10.3557
+  vs(14,2) = 0.0
+  
+  ! SOLID INNER CORE: ICB --> CENTER
+  discont(15) = 1221.5
+  vp(15,1) = 11.0283
+  vs(15,1) = 3.5043
+  vp(15,2) = 11.2622
+  vs(15,2) = 3.6678
+  
+  ! numbering relates to regions within, i.e. counting numbers as in discont
+  ! for regions above the respective discontinuities
+  
+  vp = vp * 1000.
+  vs = vs * 1000.
+  discont = discont * 1000.
+
+end subroutine prem_crust20_ocean_discont
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine prem_crust20_cont_discont
+
+! PREM discontinuities to be honored by the mesh
+! each index represents the layer *below* its corresponding discontinuity
+
+! for the anisotropic case: vp = max(vpv, vph), vs=min(vsv, vsh)
+
+  ndisc = 15
+  
+  allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2))
+  !Layer 1
+  discont(1) = 6371.000
+  vp(1,:)    =    2.420
+  vs(1,:)    =    1.170
+ 
+  !Layer 2
+  discont(2) = 6370.040
+  vp(2,:)    =    3.810
+  vs(2,:)    =    2.010
+ 
+  !Layer 3
+  discont(3) = 6369.210
+  vp(3,:)    =    6.130
+  vs(3,:)    =    3.540
+ 
+  !Layer 4
+  discont(4) = 6356.330
+  vp(4,:)    =    6.520
+  vs(4,:)    =    3.670
+ 
+  !Layer 5
+  discont(5) = 6343.720
+  vp(5,:)    =    7.090
+  vs(5,:)    =    3.930 
+
+  ! LID
+  discont(6) = 6332.840
+  vp(6,1) = 8.19032
+  vs(6,1) = 4.39602
+  vp(6,2) = 8.15002
+  vs(6,2) = 4.40883
+
+  ! LVZ
+  discont(7) = 6291.
+  vp(7,1) = 8.15002
+  vs(7,1) = 4.40883
+  vp(7,2) = 8.04856
+  vs(7,2) = 4.43626
+  
+  ! TRANSITION ZONE: 220 --> 400
+  discont(8) = 6151.
+  vp(8,1) = 8.55895
+  vs(8,1) = 4.64390
+  vp(8,2) = 8.90524
+  vs(8,2) = 4.76990
+  
+  ! 400 --> 600
+  discont(9) = 5971.
+  vp(9,1) = 9.133917
+  vs(9,1) = 4.932487
+  vp(9,2) = 10.15783
+  vs(9,2) = 5.515931
+  
+  ! 600 --> 670
+  discont(10) = 5771.
+  vp(10,1) = 10.15776
+  vs(10,1) = 5.516017
+  vp(10,2) = 10.26617
+  vs(10,2) = 5.570211
+  
+  ! 670 --> 770
+  discont(11) = 5701.
+  vp(11,1) = 10.7513
+  vs(11,1) = 5.9451
+  vp(11,2) = 11.0656
+  vs(11,2) = 6.2405
+  
+  !LOWER MANTLE: 770 --> TOP D"
+  discont(12) = 5600.
+  vp(12,1) = 11.0656
+  vs(12,1) = 6.2404
+  vp(12,2) = 13.6804
+  vs(12,2) = 7.2659
+  
+  ! D" LAYER
+  discont(13) = 3630.
+  vp(13,1) = 13.6805
+  vs(13,1) = 7.2660
+  vp(13,2) = 13.7166
+  vs(13,2) = 7.2647
+  
+  ! FLUID OUTER CORE: CMB --> ICB
+  discont(14) = 3480.
+  vp(14,1) = 8.0650
+  vs(14,1) = 0.0
+  vp(14,2) = 10.3557
+  vs(14,2) = 0.0
+  
+  ! SOLID INNER CORE: ICB --> CENTER
+  discont(15) = 1221.5
+  vp(15,1) = 11.0283
+  vs(15,1) = 3.5043
+  vp(15,2) = 11.2622
+  vs(15,2) = 3.6678
+  
+  ! numbering relates to regions within, i.e. counting numbers as in discont
+  ! for regions above the respective discontinuities
+  
+  vp = vp * 1000.
+  vs = vs * 1000.
+  discont = discont * 1000.
+
+end subroutine prem_crust20_cont_discont
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine prem_crust20_global_discont
+
+! PREM discontinuities to be honored by the mesh
+! each index represents the layer *below* its corresponding discontinuity
+
+! for the anisotropic case: vp = max(vpv, vph), vs=min(vsv, vsh)
+
+  ndisc = 15
+  
+  allocate(discont(ndisc),vp(ndisc,2),vs(ndisc,2))
+    !Layer 1
+  discont(1) = 6371.000
+  vp(1,:)    =    2.100
+  vs(1,:)    =    0.980
+ 
+  !Layer 2
+  discont(2) = 6368.800
+  vp(2,:)    =    3.730
+  vs(2,:)    =    1.960
+ 
+  !Layer 3
+  discont(3) = 6367.340
+  vp(3,:)    =    5.460
+  vs(3,:)    =    2.920
+ 
+  !Layer 4
+  discont(4) = 6361.320
+  vp(4,:)    =    6.570
+  vs(4,:)    =    3.660
+ 
+  !Layer 5
+  discont(5) = 6355.030
+  vp(5,:)    =    7.100
+  vs(5,:)    =    3.920
+ 
+  !LID
+  discont(6) = 6349.180
+  vp(6,1) = 8.19032
+  vs(6,1) = 4.39602
+  vp(6,2) = 8.15002
+  vs(6,2) = 4.40883
+
+  ! LVZ
+  discont(7) = 6291.
+  vp(7,1) = 8.15002
+  vs(7,1) = 4.40883
+  vp(7,2) = 8.04856
+  vs(7,2) = 4.43626
+  
+  ! TRANSITION ZONE: 220 --> 400
+  discont(8) = 6151.
+  vp(8,1) = 8.55895
+  vs(8,1) = 4.64390
+  vp(8,2) = 8.90524
+  vs(8,2) = 4.76990
+  
+  ! 400 --> 600
+  discont(9) = 5971.
+  vp(9,1) = 9.133917
+  vs(9,1) = 4.932487
+  vp(9,2) = 10.15783
+  vs(9,2) = 5.515931
+  
+  ! 600 --> 670
+  discont(10) = 5771.
+  vp(10,1) = 10.15776
+  vs(10,1) = 5.516017
+  vp(10,2) = 10.26617
+  vs(10,2) = 5.570211
+  
+  ! 670 --> 770
+  discont(11) = 5701.
+  vp(11,1) = 10.7513
+  vs(11,1) = 5.9451
+  vp(11,2) = 11.0656
+  vs(11,2) = 6.2405
+  
+  !LOWER MANTLE: 770 --> TOP D"
+  discont(12) = 5600.
+  vp(12,1) = 11.0656
+  vs(12,1) = 6.2404
+  vp(12,2) = 13.6804
+  vs(12,2) = 7.2659
+  
+  ! D" LAYER
+  discont(13) = 3630.
+  vp(13,1) = 13.6805
+  vs(13,1) = 7.2660
+  vp(13,2) = 13.7166
+  vs(13,2) = 7.2647
+  
+  ! FLUID OUTER CORE: CMB --> ICB
+  discont(14) = 3480.
+  vp(14,1) = 8.0650
+  vs(14,1) = 0.0
+  vp(14,2) = 10.3557
+  vs(14,2) = 0.0
+  
+  ! SOLID INNER CORE: ICB --> CENTER
+  discont(15) = 1221.5
+  vp(15,1) = 11.0283
+  vs(15,1) = 3.5043
+  vp(15,2) = 11.2622
+  vs(15,2) = 3.6678
+  
+  ! numbering relates to regions within, i.e. counting numbers as in discont
+  ! for regions above the respective discontinuities
+  
+  vp = vp * 1000.
+  vs = vs * 1000.
+  discont = discont * 1000.
+
+end subroutine prem_crust20_global_discont
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
@@ -1173,6 +1530,7 @@ subroutine write_1Dmodel(discontinuities)
    character(len=256)        :: fnam, fmtstring
    character(len=8)          :: mydate
    character(len=10)         :: mytime
+   logical                   :: firstlayer_in_domain
 
    ndom = size(discontinuities)
    allocate(disc_layer(ndom))
@@ -1188,10 +1546,11 @@ subroutine write_1Dmodel(discontinuities)
       fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
       print fmtstring, idom, discontinuities(idom) - discontinuities(idom+1), step
       ! Layers within the domain
+      firstlayer_in_domain = .true.
       do irad = nint(discontinuities(idom)), nint(discontinuities(idom+1)), step
-         vp_tmp = velocity(real(irad, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-         vs_tmp = velocity(real(irad, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
-         if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
+         vp_tmp = velocity(real(irad, kind=dp), 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+         vs_tmp = velocity(real(irad, kind=dp), 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
+         if ((vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)).or.firstlayer_in_domain) then
             ilayer = ilayer + 1
             radius(ilayer) = real(irad, kind=dp)
             vpv(ilayer)   = vp_tmp
@@ -1206,16 +1565,15 @@ subroutine write_1Dmodel(discontinuities)
             end if
 
          end if
-         !write(2000,*) real(irad, kind=dp), rho, vp, vs
-
+         firstlayer_in_domain = .false.
       end do
      
       ! Layer at the bottom of the domain
       if ((radius(ilayer)-discontinuities(idom+1))>smallval_dble*radius(ilayer)) then
          ilayer = ilayer + 1
          radius(ilayer) = discontinuities(idom+1)
-         vpv(ilayer)   = velocity(discontinuities(idom+1), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-         vsv(ilayer)   = velocity(discontinuities(idom+1), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+         vpv(ilayer)   = velocity(discontinuities(idom+1), 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+         vsv(ilayer)   = velocity(discontinuities(idom+1), 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
          rho(ilayer)   = velocity(discontinuities(idom+1), 'rho', idom, bkgrdmodel, lfbkgrdmodel)
          if (model_is_anelastic(bkgrdmodel)) then
              qka(ilayer)   = velocity(discontinuities(idom+1), 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
@@ -1236,10 +1594,11 @@ subroutine write_1Dmodel(discontinuities)
    fmtstring = "(' Domain:', I3, ', width: ', F12.1, ', step:', I7)"
    print fmtstring, idom, discontinuities(ndom), step
 
+   firstlayer_in_domain = .true.
    do irad = nint(discontinuities(ndom)), 0, step
-      vp_tmp = velocity(real(irad, kind=dp), 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-      vs_tmp = velocity(real(irad, kind=dp), 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
-      if (vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)) then
+      vp_tmp = velocity(real(irad, kind=dp), 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+      vs_tmp = velocity(real(irad, kind=dp), 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
+      if ((vp_tmp.ne.vpv(ilayer).or.vs_tmp.ne.vsv(ilayer)).or.firstlayer_in_domain) then
          ilayer = ilayer + 1
          radius(ilayer) = real(irad, kind=dp)
          vpv(ilayer)    = vp_tmp
@@ -1253,14 +1612,15 @@ subroutine write_1Dmodel(discontinuities)
             eta(ilayer)   = velocity(real(irad, kind=dp), 'eta', idom, bkgrdmodel, lfbkgrdmodel)
          end if
       end if
+      firstlayer_in_domain = .false.
    end do
 
    ! Layer at the bottom of the model
    if (radius(ilayer)>smallval_dble) then
       ilayer = ilayer + 1
       radius(ilayer) = 0.0d0
-      vpv(ilayer) = velocity(0.0d0, 'v_p', idom, bkgrdmodel, lfbkgrdmodel)
-      vsv(ilayer) = velocity(0.0d0, 'v_s', idom, bkgrdmodel, lfbkgrdmodel)
+      vpv(ilayer) = velocity(0.0d0, 'vpv', idom, bkgrdmodel, lfbkgrdmodel)
+      vsv(ilayer) = velocity(0.0d0, 'vsv', idom, bkgrdmodel, lfbkgrdmodel)
       rho(ilayer) = velocity(0.0d0, 'rho', idom, bkgrdmodel, lfbkgrdmodel)
       if (model_is_anelastic(bkgrdmodel)) then
           qka(ilayer) = velocity(0.0d0, 'Qka', idom, bkgrdmodel, lfbkgrdmodel)
