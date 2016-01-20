@@ -401,8 +401,9 @@ If the Solver is re-run with different parameters but the same mesh, you may sta
 To change model, frequency or number of CPUs, repeat steps 3. to 7. and select the new
 mesh in \verb|SOLVER/inparam_basic|. \\
 The solver input can be changed in \verb|inparam_basic| between 8. and 9.,
-changing post-processing input between 11. and 12. Using a new mesh requires
-recompilation of the solver (done automatically in step 9.). If post
+changing post-processing input between 11. and 12. Using a new mesh usually
+does not require
+recompilation of the solver (if so, it is done automatically in step 9.). If post
 processing parameters are changed, also change the post processing directory or
 delete the old one.
 
