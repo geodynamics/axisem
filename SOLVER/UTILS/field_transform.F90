@@ -42,9 +42,9 @@ program field_transformation
     integer                         :: ncout_mesh_varids(255), ncin_mesh_varids(255)
     integer                         :: ncout_mesh_mps_varid, ncin_mesh_mps_varid
     integer                         :: ncout_mesh_mpz_varid, ncin_mesh_mpz_varid
-    integer                         :: ncout_surf_grpid, ncout_surfstrain_dimid, ncout_surf_dimid
     integer                         :: ncout_comp_dimid
-    integer                         :: ncout_surf_varids(7), ncin_surf_grpid, ncin_surf_varids(7)
+    integer                         :: ncout_stf_varids(2)
+    integer                         :: ncin_stf_varids(2)
 
     integer                         :: nc_mesh_npol_dimid, nc_mesh_cntrlpts_dimid, &
                                        nc_mesh_elem_dimid
@@ -62,11 +62,11 @@ program field_transformation
     integer                         :: ncout_mesh_eltype_varid, ncout_mesh_axis_varid
     integer                         :: ncin_mesh_eltype_varid, ncin_mesh_axis_varid
 
-    integer                         :: nsurfelem, ncomp, nstraincomp
+    integer                         :: ncomp, nstraincomp
     character(len=8)                :: sourcetype
     character(len=12)               :: dump_type
     integer                         :: dimids(2)
-    character(len=16), allocatable  :: varnamelist(:), varname_surf(:)
+    character(len=16), allocatable  :: varnamelist(:), varname_stf(:)
     integer, dimension(9)           :: ncin_field_varid
     integer, dimension(9)           :: ncout_field_varid
 
@@ -75,7 +75,7 @@ program field_transformation
     integer                         :: attnum, nf_att_stat
     character(len=80)               :: attname, varname
 
-    real, allocatable               :: data_mesh(:), data_surf_1d(:), data_surf_3d(:,:,:)
+    real, allocatable               :: data_mesh(:), data_stf_1d(:)
     integer, allocatable            :: int_data_1d(:), int_data_2d(:,:), int_data_3d(:,:,:)
     double precision, allocatable   :: dp_data_1d(:), dp_data_2d(:,:)
 
@@ -432,109 +432,35 @@ program field_transformation
                                             fletcher32=1) )
     end do
 
-    ! Create Surface variables
-    print *, 'Creating surface variables'
-    nstraincomp = 6
-    ncomp       = 3
-    call check( nf90_inq_grp_ncid(ncin_id, "Surface", ncin_surf_grpid) )
-    call check( nf90_def_grp(ncout_id, "Surface", ncout_surf_grpid) )
-    call check( nf90_def_dim( ncid  = ncout_surf_grpid,   &
-                              name  = "straincomponents", &
-                              len   = nstraincomp,                  &
-                              dimid = ncout_surfstrain_dimid) )
-    call check( nf90_def_dim( ncid  = ncout_surf_grpid,   &
-                              name  = "components", &
-                              len   = ncomp,                  &
-                              dimid = ncout_comp_dimid) )
-    call check( nf90_get_att( ncid   = ncin_surf_grpid, &
-                              name   = 'nsurfelem',     &
-                              varid  = NF90_GLOBAL,     &
-                              values = nsurfelem) )
-    call check( nf90_def_dim( ncid   = ncout_surf_grpid, &
-                              name   = "surf_elems",     &
-                              len    = nsurfelem,        &
-                              dimid  = ncout_surf_dimid) )     
-
-    allocate(varname_surf(7))
-    varname_surf = ['elem_theta      ', 'displacement    ', 'velocity        ', &
-                    'disp_src        ', 'strain          ', 'stf_dump        ', &
+    print *, 'Copy source time function'
+    allocate(varname_stf(2))
+    varname_stf  = ['stf_dump        ', &
                     'stf_d_dump      ']
-    do ivar = 1, size(varname_surf)
-        call check( nf90_inq_varid(ncid  = ncin_surf_grpid,        &
-                                   varid = ncin_surf_varids(ivar), & 
-                                   name  = varname_surf(ivar) ))
-        !print *, 'Found surface variable: ', trim(varname_surf(ivar))
+    do ivar = 1, size(varname_stf)
+        call check( nf90_inq_varid(ncid  = ncin_snap_grpid,        &
+                                   varid = ncin_stf_varids(ivar), & 
+                                   name  = varname_stf(ivar) ))
     end do
 
-    call check( nf90_def_var(      ncid       = ncout_surf_grpid,   &
-                                   name       = varname_surf(1),    &
-                                   xtype      = NF90_FLOAT,         &
-                                   dimids     = [ncout_surf_dimid], &
-                                   chunksizes = [nsurfelem],        &
-                                   varid      = ncout_surf_varids(1)) )
-
-    call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                      varid   = ncout_surf_varids(1),    &
-                                      shuffle = 1, deflate = 1,          &
-                                      deflate_level = deflate_level) )
-
-    call check( nf90_def_var_fletcher32(ncid  = ncout_surf_grpid, &
-                                        varid = ncout_surf_varids(1), &
-                                        fletcher32=1) )
-   
-    do ivar = 2, 4
-        call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
-                                 name       = varname_surf(ivar), &
-                                 xtype      = NF90_FLOAT,         &
-                                 dimids     = [ncout_snap_dimid, ncout_comp_dimid, ncout_surf_dimid], &
-                                 chunksizes = [nsnap, ncomp, 1],  &
-                                 varid      = ncout_surf_varids(ivar)) )
-
-        call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                          varid   = ncout_surf_varids(ivar), &
-                                          shuffle = 1, deflate = 1,          &
-                                          deflate_level = deflate_level) )
-
-        call check( nf90_def_var_fletcher32(ncid  = ncout_surf_grpid, &
-                                            varid = ncout_surf_varids(ivar), &
-                                            fletcher32=1) )
-    end do
-
-    call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
-                             name       = varname_surf(5),         &
-                             xtype      = NF90_FLOAT,         &
-                             dimids     = [ncout_snap_dimid, ncout_surfstrain_dimid, ncout_surf_dimid],&
-                             chunksizes = [nsnap, nstraincomp, 1],  &
-                             varid      = ncout_surf_varids(5)) )
-
-    call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                      varid   = ncout_surf_varids(5),    &
-                                      shuffle = 1, deflate = 1,          &
-                                      deflate_level = deflate_level) )
-
-    call check( nf90_def_var_fletcher32(ncid  = ncout_surf_grpid, &
-                                        varid = ncout_surf_varids(5), &
-                                        fletcher32=1) )
-
-    do ivar = 6, 7
-       call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
-                                name       = varname_surf(ivar),    &
+    do ivar = 1, 2
+       call check( nf90_def_var(ncid       = ncout_fields_grpid,   &
+                                name       = varname_stf(ivar),    &
                                 xtype      = NF90_FLOAT,         &
                                 dimids     = [ncout_snap_dimid], &
                                 chunksizes = [nsnap],            &
-                                varid      = ncout_surf_varids(ivar)) )
+                                varid      = ncout_stf_varids(ivar)) )
 
-       call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                         varid   = ncout_surf_varids(ivar),    &
+       call check( nf90_def_var_deflate( ncid    = ncout_fields_grpid,        &
+                                         varid   = ncout_stf_varids(ivar),    &
                                          shuffle = 1, deflate = 1,          &
                                          deflate_level = deflate_level) )
 
-       call check( nf90_def_var_fletcher32(ncid  = ncout_surf_grpid, &
-                                           varid = ncout_surf_varids(ivar), &
+       call check( nf90_def_var_fletcher32(ncid  = ncout_fields_grpid, &
+                                           varid = ncout_stf_varids(ivar), &
                                            fletcher32=1) )
     enddo
     
-    print *, 'Surface variables defined'
+    print *, 'STF variables defined'
 
     ! Copy all attributes
     nf_att_stat = NF90_NOERR
@@ -788,67 +714,24 @@ program field_transformation
 
     ! Done with the mesh
 
-    ! Copy surface variables
-    print *, 'Copying surface variables'
-    allocate(data_surf_1d(nsurfelem))
-    call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                              varid  = ncin_surf_varids(1),    &
-                              start  = [1],                    & 
-                              count  = [nsurfelem],            &
-                              values = data_surf_1d) )
-    call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
-                              varid  = ncout_surf_varids(1),   &
-                              start  = [1],                    & 
-                              count  = [nsurfelem],            &
-                              values = data_surf_1d))
-    deallocate(data_surf_1d)
-
-    allocate(data_surf_3d(nsnap, ncomp, nsurfelem))
-    do ivar = 2, 4
-        call check( nf90_get_var( ncid   = ncin_surf_grpid,           &
-                                  varid  = ncin_surf_varids(ivar),    &
-                                  start  = [1,1,1],                   & 
-                                  count  = [nsnap, ncomp, nsurfelem], &
-                                  values = data_surf_3d) )
-        call check( nf90_put_var( ncid   = ncout_surf_grpid,          &
-                                  varid  = ncout_surf_varids(ivar),   &
-                                  start  = [1,1,1],                   & 
-                                  count  = [nsnap, ncomp, nsurfelem], &
-                                  values = data_surf_3d))
-    end do
-    deallocate(data_surf_3d)
-
-    allocate(data_surf_3d(nsnap, nstraincomp, nsurfelem))
-    call check( nf90_get_var( ncid   = ncin_surf_grpid,                 &
-                              varid  = ncin_surf_varids(5),             &
-                              start  = [1,1,1],                         & 
-                              count  = [nsnap, nstraincomp, nsurfelem], &
-                              values = data_surf_3d) )
-    call check( nf90_put_var( ncid   = ncout_surf_grpid,                &
-                              varid  = ncout_surf_varids(5),            &
-                              start  = [1,1,1],                         & 
-                              count  = [nsnap, nstraincomp, nsurfelem], &
-                              values = data_surf_3d))
-    deallocate(data_surf_3d)
-
-    allocate(data_surf_1d(nsnap))
-    do ivar = 6, 7
-       call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                                 varid  = ncin_surf_varids(ivar),    &
+    ! Copy STF
+    allocate(data_stf_1d(nsnap))
+    do ivar = 1, 2
+       call check( nf90_get_var( ncid   = ncin_snap_grpid,        &
+                                 varid  = ncin_stf_varids(ivar),  &
                                  start  = [1],                    & 
                                  count  = [nsnap],                &
-                                 values = data_surf_1d) )
-       call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
-                                 varid  = ncout_surf_varids(ivar),   &
+                                 values = data_stf_1d) )
+       call check( nf90_put_var( ncid   = ncout_fields_grpid,     &
+                                 varid  = ncout_stf_varids(ivar), &
                                  start  = [1],                    & 
                                  count  = [nsnap],                &
-                                 values = data_surf_1d))
+                                 values = data_stf_1d))
     end do
-    deallocate(data_surf_1d)
+    deallocate(data_stf_1d)
 
 
-
-    ! loop over fields
+    ! loop over fields in snapshots group
     do ivar=1, nvar
         if (verbose) &
             print *, varnamelist(ivar)

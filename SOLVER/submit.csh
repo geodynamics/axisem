@@ -275,14 +275,14 @@ if ( $simtype == 'moment' ) then
     cp $homedir/CMTSOLUTION .
 endif
 
-# write a script that runs fieldtransform in all rundirs
+# write a script that runs field_transform in all rundirs
 if ( $netcdf_requested == 'true') then
     if ( $simtype == 'moment' ) then
-        cp ../UTILS/fieldtransform_moment.sh fieldtransform.sh
-        chmod +x fieldtransform.sh
+        cp ../UTILS/field_transform_moment.sh field_transform.sh
+        chmod +x field_transform.sh
     else if ( $simtype == 'force' ) then
-        cp ../UTILS/fieldtransform_force.sh fieldtransform.sh
-        chmod +x fieldtransform.sh
+        cp ../UTILS/field_transform_force.sh field_transform.sh
+        chmod +x field_transform.sh
     endif
 endif
 
@@ -446,6 +446,7 @@ cp -p $homedir/UTILS/xpost_processing .
 
 cp -p $homedir/UTILS/xfield_transform .
 cp -p $homedir/UTILS/field_transform.F90 .
+cp -p $homedir/UTILS/field_transform.py .
 
 cp -p $homedir/UTILS/plot_recfile_seis.csh .
 cp -p $homedir/UTILS/plot_recs.plot .
