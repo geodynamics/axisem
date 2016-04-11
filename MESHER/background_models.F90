@@ -2462,7 +2462,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   real(kind=dp), allocatable :: grad_vp(:), grad_vs(:)
 
   integer, parameter         :: ndom_max = 100
-  real(kind=dp), parameter   :: grad_threshold = 1.d-2, grad_step_threshold = 5.d-3
+  real(kind=dp), parameter   :: grad_threshold = 1.d-1, grad_step_threshold = 5.d-3
   integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc, extrapolation
   character(len=128)         :: fmtstring
 
