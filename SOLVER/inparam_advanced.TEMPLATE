@@ -28,7 +28,7 @@ SOURCE_PERIOD       0.0
 # 'quheavi': Heaviside function
 # 'dirac_0': Dirac delta function
 #            This should be used to convolve arbitrary STFs in Postprocessing 
-SOURCE_FUNCTION     errorf
+SOURCE_FUNCTION     gauss_0
 
 # Time integration scheme, allowed:
 # newmark2:  default, well tested
@@ -131,7 +131,7 @@ MESH_TEST           false
 
 ######################## SENSITIVITY KERNELS ###################################
 # Save necessary wavefields for Kernel calculation or Instaseis databases
-# N.b. Kernel calculation needs Axisem Kerner (sold separately)
+# N.b. Kernel calculation needs MCKernel (sold separately)
 KERNEL_WAVEFIELDS   false 
 
 # different modes of dumping wavefields for kernel:
@@ -141,13 +141,13 @@ KERNEL_WAVEFIELDS   false
 KERNEL_DUMPTYPE     displ_only
 
 # Samples per period
-KERNEL_SPP          8
+KERNEL_SPP          4
 
 # source vicinity in wavefields? 
-# igno
-# mask  (default)
+# igno (default)
+# mask 
 # anal 
-KERNEL_SOURCE       mask
+KERNEL_SOURCE       igno
 
 # GLL points to save, starting and ending GLL point index 
 # (overwritten with 0 and npol for dumptype displ_only)
