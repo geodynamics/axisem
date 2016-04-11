@@ -53,7 +53,7 @@ INFO_DIR        "./Info"
 # Enabling this option will put all seismograms and wavefields into one file
 # axisem_output.nc4 in the $DATA directory. Postprocessing will automatically
 # read and process this file.
-USE_NETCDF          false
+USE_NETCDF          true
 
 # Do Checkpointing for the NetCDF seismogram output. Will save the seismograms 
 # every 5% of the total runtime to have at least something, should the solver
