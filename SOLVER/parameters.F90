@@ -747,6 +747,9 @@ subroutine check_basic_parameters
      endif
   endif
 
+  errmsg = "KERNEL_WAVEFIELDS can only be written with USE_NETCDF true in inparam_advanced"
+  call pcheck(dump_wavefields .and. .not. use_netcdf, errmsg)
+
 14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
 
 7 format(04x,a62)
