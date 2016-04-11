@@ -104,7 +104,8 @@ pdb.o: background_models.o clocks.o data_bkgrdmodel.o data_diag.o \
 sorting.o: clocks.o data_time.o global_parameters.o Makefile ../make_axisem.macros 
 splib.o: global_parameters.o Makefile ../make_axisem.macros 
 subpar_mapping.o: global_parameters.o Makefile ../make_axisem.macros 
-background_models.o: global_parameters.o interpolation.o Makefile ../make_axisem.macros 
+background_models.o: data_bkgrdmodel.o data_mesh.o global_parameters.o \
+	interpolation.o Makefile ../make_axisem.macros 
 test_bkgrdmodel.o: background_models.o data_bkgrdmodel.o data_diag.o \
 	data_gllmesh.o data_grid.o data_mesh.o data_spec.o \
 	global_parameters.o Makefile ../make_axisem.macros 
