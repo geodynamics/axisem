@@ -1,69 +1,37 @@
 #AxiSEM 1.3
  
-Axially symmetric Spectral Element Method
+##Axially symmetric Spectral Element Method
 
 Copyright 2016, Tarje Nissen-Meyer, Martin van Driel, Simon Stähler, Kasra Hosseini, Stefanie Hempel, Alexandre Fournier
-
 
 Webpage and distribution: http://www.axisem.info
 Contact and information:  info@axisem.info
 
 April, 11, 2016 
 
+## Citation
+If you are publishing results obtained with this code, please cite this paper:
 
-               If you are publishing results obtained with this
-                         code, please cite this paper:
+T. Nissen-Meyer, M. van Driel, S. C. Staehler, K. Hosseini, S. Hempel, L. Auer, A. Colombi and A. Fournier:
+**"AxiSEM: broadband 3-D seismic wavefields in axisymmetric media"**, *Solid Earth*, 5, 425-445, 2014
+doi:10.5194/se-5-425-2014 http://www.solid-earth.net/5/425/2014/
 
-                T. Nissen-Meyer, M. van Driel, S. C. Staehler,
-         K. Hosseini, S. Hempel, L. Auer, A. Colombi and A. Fournier:
+## Content of the repository
+`manual_axisem_1.3.pdf` - PDF manual
 
-       "AxiSEM: broadband 3-D seismic wavefields in axisymmetric media"
+`MESHER` - The program to generate 2D meshes for the SEM forward solver
 
-                         Solid Earth, 5, 425-445, 2014
-                           doi:10.5194/se-5-425-2014
+`SOLVER` - the SEM forward solver itself
 
+`make_axisem.macros` - macro file to set compiler options
 
-## Content 
+`copytemplates.sh` - reset all input files to default templates 
 
-PDF manual
-```
-manual_axisem_1.3.pdf
-```
+`COPYING` - The GNU General Public License
 
-```
-MESHER              
-```
-The program to generate 2D meshes for the SEM forward solver
+`HISTORY` - changelog
 
-```
-SOLVER
-```
-the SEM forward solver itself
-
-```
-make_axisem.macros 
-```
-macro file to set compiler options
-
-```
-copytemplates.sh 
-```
-reset all input files to default templates 
-
-```
-COPYING  
-```
-the GNU General Public License
-
-```
-HISTORY 
-```
-changelog
-
-```
-README
-```
-this file
+`README` - this file
 
 ##Basic instructions for running:
 
@@ -88,7 +56,7 @@ of RAM, see manual.
 
 3) Check `OUTPUT`; if finished, then run `./movemesh.csh <MESH_NAME>`
 
-4) go into `SOLVER/MESHES/<MESH_NAME>`, check vtk files with paraview
+4) go into `SOLVER`, check the vtk files in `/MESHES/<MESH_NAME>` with Paraview, if you want
 
 5) Edit `inparam_basic` to the desired `<MESH_NAME>`
 
