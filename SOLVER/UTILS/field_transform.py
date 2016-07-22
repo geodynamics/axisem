@@ -10,7 +10,6 @@ Postprocessing for AxiSEM's Kernel Wavefields
     (http://www.gnu.org/licenses/gpl.html)
 """
 import argparse
-import math
 import netCDF4
 import os.path
 try:
@@ -67,9 +66,16 @@ paths = ['%s/Data/' % st for st in simulation_type_map[simulation_type]]
 
 # get some numbers to determine chunking from the global attributes
 nc = netCDF4.Dataset(paths[0] + fname_in, "r", format="NETCDF4")
-ndumps = getattr(nc, "number of strain dumps")
-npoints = getattr(nc, "npoints")
-nc.close()
+
+try:
+    ndumps = getattr(nc, "number of strain dumps")
+    npoints = getattr(nc, "npoints")
+    nc.close()
+except AttributeError:
+    print 'Wavefield output for kernels/Instaseis was not switched for the ' + \
+          'simulation! Check Option KERNEL_WAVEFIELDS in inparam_advanced!'
+    raise RuntimeError
+
 
 # how many gll points fit into the cache
 npointsperstep = args.cache_size_mb * 1048576 / 4 / ndumps
@@ -138,8 +144,8 @@ for p in paths:
 
             if progressbar_installed:
                 # start a new progressbar
-                widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(), ' ',
-                           ETA(), ' ', FileTransferSpeed()]
+                widgets = ['%s: ' % (var_out.name,), Percentage(), ' ', Bar(),
+                           ' ', ETA(), ' ', FileTransferSpeed()]
 
                 # convert to floats to avoid buffer overflow
                 maxval = float(ndumps) * float(npoints)
