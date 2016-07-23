@@ -267,7 +267,7 @@ subroutine create_subregions
         call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
                            icount_glob, ic, ns_ref)
         ! Storing radial info into global arrays
-        if (current) iclev_glob(ic) = nz_glob - icount_glob + 1
+        if (current) iclev_glob(ic) = nz_glob - icount_glob ! + 1
         dz_glob(icount_glob) = dz 
         ds_glob(icount_glob) = ds
         radius_arr(icount_glob) = current_radius
