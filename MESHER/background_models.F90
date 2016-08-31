@@ -2462,7 +2462,7 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
   real(kind=dp), allocatable :: grad_vp(:), grad_vs(:)
 
   integer, parameter         :: ndom_max = 100
-  real(kind=dp), parameter   :: grad_threshold = 1.d-1, grad_step_threshold = 5.d-3
+  real(kind=dp), parameter   :: grad_threshold = 1.d-1, grad_step_threshold = 1.d-1
   integer                    :: upper_layer(ndom_max), lower_layer(ndom_max), ndisc, extrapolation
   character(len=128)         :: fmtstring
 
@@ -2500,14 +2500,12 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
         fmtstring = "('  1st order disc. at radius', F12.1, ', layer: ', I5)"
         if (lpr) print fmtstring, radius_layer(ilayer), ilayer
      else
-        !if ((abs(grad_vp(ilayer)).gt.grad_threshold.or.        &
-        !     abs(grad_vs(ilayer)).gt.grad_threshold    ).and.  &
-        !    radius_layer(ilayer+1).gt.smallval_dble) then
         !   ! Second order discontinuity 
-        !   ! MvD: No, this is just a steep Gradient, not a discontinuity in the gradient, hence no 2nd order discontinuity
-        if ((abs(grad_vp(ilayer) - grad_vp(ilayer - 1)) >= grad_step_threshold .or.        &
-             abs(grad_vs(ilayer) - grad_vs(ilayer - 1)) >= grad_step_threshold).and.  &
-            radius_layer(ilayer).gt.smallval_dble) then
+        if ((abs(grad_vp(ilayer) - grad_vp(ilayer - 1)) >= grad_step_threshold .or.   & ! Vp gradient above threshold
+             abs(grad_vs(ilayer) - grad_vs(ilayer - 1)) >= grad_step_threshold).and.  & ! Vs gradient above threshold
+            radius_layer(ilayer).gt.smallval_dble.and.                                & ! Not in the center of the model
+            .not.(abs(radius_layer(ilayer) - radius_layer(ilayer-1)) < smallval_dble) & ! The last line has not been a 1st order discontinuity
+            ) then
            idom = idom + 1
            lower_layer(idom-1) = ilayer
            upper_layer(idom)   = ilayer
@@ -2519,6 +2517,8 @@ subroutine get_ext_disc(fnam_ext_model, ndisc_out, discont, vp, vs, rho)
                             abs(grad_vs(ilayer) - grad_vs(ilayer - 1))
         end if
          
+         !fmtstring = "('  Nothing at radius', F12.1, ', layer: ',I5)"
+         !if (lpr) print fmtstring, radius_layer(ilayer), ilayer 
      end if
   end do
 
