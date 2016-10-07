@@ -19,9 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!================
+!=========================================================================================
 module utlity
-!================
 
   use global_parameters
   implicit none
@@ -35,7 +34,7 @@ module utlity
 
 contains
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure logical function dblreldiff_small(x1,x2)
 
   real(kind=dp), intent(in) :: x1,x2
@@ -51,9 +50,9 @@ pure logical function dblreldiff_small(x1,x2)
   endif
 
 end function dblreldiff_small
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure logical function reldiff_small(x1,x2)
 
   real(kind=realkind), intent(in) :: x1,x2
@@ -73,9 +72,9 @@ pure logical function reldiff_small(x1,x2)
   endif
 
 end function reldiff_small
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure real(kind=realkind) function reldiff(x1,x2)
 
   real(kind=realkind), intent(in) :: x1,x2
@@ -89,9 +88,9 @@ pure real(kind=realkind) function reldiff(x1,x2)
   endif
 
 end function reldiff
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure real(kind=dp) function dblereldiff(x1,x2)
 
   real(kind=dp), intent(in) :: x1,x2
@@ -105,9 +104,9 @@ pure real(kind=dp) function dblereldiff(x1,x2)
   endif
 
 end function dblereldiff
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure real(kind=realkind) function absreldiff(x1,x2)
 
   real(kind=realkind), intent(in) :: x1,x2
@@ -121,9 +120,9 @@ pure real(kind=realkind) function absreldiff(x1,x2)
   endif
 
 end function absreldiff
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure real(kind=dp) function dbleabsreldiff(x1,x2)
 
   real(kind=dp), intent(in) :: x1,x2
@@ -137,17 +136,17 @@ pure real(kind=dp) function dbleabsreldiff(x1,x2)
   endif
 
 end function dbleabsreldiff
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
 !< Given the elemental grid point index, outputs s,z,r,theta coordinate [m,rad].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes, axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   real(kind=dp), intent(out)    :: s,z,r,theta
   integer, intent(in)           :: ielem,ipol,jpol
@@ -181,17 +180,17 @@ pure subroutine compute_coordinates(s,z,r,theta,ielem,ipol,jpol)
   if (theta == zero .and. z < 0) theta = pi
 
 end subroutine compute_coordinates
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure real(kind=dp) function scoord(ipol,jpol,ielem)
 !< Given the elemental grid point index, outputs the s coordinate [m].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes, axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   integer, intent(in)  :: ielem, ipol, jpol
   integer              :: ipt, inode
@@ -214,17 +213,17 @@ pure real(kind=dp) function scoord(ipol,jpol,ielem)
   if (abs(scoord) < min_distance_dim) scoord=zero
 
 end function scoord
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure real(kind=dp)    function zcoord(ipol,jpol,ielem)
 !< Given the elemental grid point index, outputs the z coordinate [m].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes, axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   integer, intent(in)  :: ielem, ipol, jpol
   integer              :: ipt, inode
@@ -247,17 +246,17 @@ pure real(kind=dp)    function zcoord(ipol,jpol,ielem)
   if (abs(zcoord) < min_distance_dim) zcoord=zero
 
 end function zcoord
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure real(kind=dp)    function rcoord(ipol,jpol,ielem)
 !< Given the elemental grid point index, outputs the radius coordinate [m].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes, axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes, axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   integer, intent(in)  :: ielem, ipol, jpol
   integer              :: ipt, inode
@@ -283,17 +282,17 @@ pure real(kind=dp)    function rcoord(ipol,jpol,ielem)
   if (abs(rcoord) < min_distance_dim) rcoord=zero
 
 end function rcoord
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 pure real(kind=dp) function thetacoord(ipol,jpol,ielem)
 !< Given the elemental grid point index, outputs the theta coordinate [rad].
 !! These coordinates are by default ALWAYS global (no solid or fluid domains).
   
-  use data_mesh,            ONLY: min_distance_dim
-  use data_mesh,            ONLY: lnods, crd_nodes,axis
-  use data_spec,            ONLY: xi_k, eta
-  use geom_transf,          ONLY: mapping
+  use data_mesh,            only: min_distance_dim
+  use data_mesh,            only: lnods, crd_nodes,axis
+  use data_spec,            only: xi_k, eta
+  use analytic_mapping,     only: mapping
   
   integer, intent(in)  :: ielem, ipol, jpol
   integer              :: ipt, inode
@@ -319,9 +318,9 @@ pure real(kind=dp) function thetacoord(ipol,jpol,ielem)
   if (thetacoord == zero .and. z < 0) thetacoord = pi
 
 end function thetacoord
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 
-!=============================================================================
+!-----------------------------------------------------------------------------------------
 function to_lower(strIn) result(strOut)
 !< Converts string to lowercase, adapted from http://www.star.le.ac.uk/~cgp/fortran.html
     implicit none
@@ -340,8 +339,7 @@ function to_lower(strIn) result(strOut)
     end do
 
 end function to_lower
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
-!====================
 end module utlity
-!====================
+!=========================================================================================

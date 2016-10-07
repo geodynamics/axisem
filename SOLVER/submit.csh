@@ -39,13 +39,12 @@ if ( $netcdf_requested == 'true' && $netcdf_compiled != 'true') then
   exit
 endif
 
-
-set svnrevision = `svnversion`
-echo $svnrevision "SVN_VERSION      " > runinfo
+set gitversion = `git describe --dirty --abbrev=4 --always --tags`
+echo $gitversion "GIT_VERSION"  > runinfo
 set username = `whoami`
-echo $username "USER_NAME        " >> runinfo
+echo $username "USER_NAME" >> runinfo
 set hostname = `hostname`
-echo $hostname "HOST_NAME        " >> runinfo
+echo $hostname "HOST_NAME" >> runinfo
 set FFLAGS = `grep "^FFLAGS" ../make_axisem.macros`
 echo $FFLAGS  >> runinfo 
 set CFLAGS = `grep "^CFLAGS" ../make_axisem.macros`
@@ -72,58 +71,41 @@ if ( -d $datapath) then
     endif
 endif
 
-
 set bgmodel = `grep ^BACKGROUND_MODEL $meshdir/inparam_mesh | awk '{print $2}'`
 
-if ( ! -f inparam_hetero) then 
-  cp inparam_hetero.TEMPLATE inparam_hetero
-endif
-
-# if the mesh has different mesh_params.h, copy here
-if ( ! -f mesh_params.h || `diff mesh_params.h $meshdir/mesh_params.h | wc -l` != "0" ) then
-  echo 'copying mesh_params.h from ' $meshdir
-  cp $meshdir/mesh_params.h .
-endif
-
-# if the mesh has different background_models.F90, copy over
-if ( `diff background_models.F90 $meshdir/background_models.F90 | wc -l` != "0" ) then
-  echo 'copying background_models.F90 from ' $meshdir
-  cp $meshdir/background_models.F90 .
-endif
+# Since the compiling does not depend on mesh_params.h anymore, we just copy it here anyway.
+# actually mesh_params.h is not needed anymore by the solver, just keeping it for
+# informational purposes
+echo 'copying mesh_params.h from ' $meshdir
+cp $meshdir/mesh_params.h .
 
 # Check arguments: source types and submission queues
 set newqueue = 'false'
 if ( "$2" == '-q') then
     set queue = $3
     set newqueue = 'true'
+	echo "Submitting to queue type" $queue
 endif
 
 set multisrc = 'false'
-
-# @TODO grep is not stable if SIMULATION_TYPE is there twice, e.g. in a comment line!!
-
-set srctype = `grep "^SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
-set src_file_type = 'sourceparams'
+set simtype = `grep "^SIMULATION_TYPE" inparam_basic |awk '{print $2}'`
 set srcfile = 'inparam_source'
 
-if ( $srctype == 'single') then
+if ( $simtype == 'single') then
     set multisrc = 'false'
-else if ( $srctype == 'force') then
+else if ( $simtype == 'force') then
     set multisrc = 'true'
-else if ( $srctype == 'moment') then
+else if ( $simtype == 'moment') then
     set multisrc = 'true'
-endif
-
-if ( $newqueue == 'true' ) then 
-	echo "Submitting to queue type" $queue
+else 
+    echo "ERROR: unknown simulation type: " $simtype
+    exit
 endif
 
 # Run make to see whether the code has to be rebuilt and if so, do it.
 # If 'make' returns an Error (something >0), then exit.
 
-# MvD: I do not get this: it checks == 0 where 0 is the status when exited without
-# problems???
-if ( { make -j } == 0 ) then
+if ! { make -j }  then
   echo "ERROR: Compilation failed, please check the errors."
   exit
 endif
@@ -153,25 +135,23 @@ if ( ! -f $homedir/$recfile ) then
 endif
 echo "Source file:" $srcfile, "Receiver file:" $recfile
 
-set num_src = 1
-set num_src_arr = ( 1 )
 if ( $multisrc == 'true' ) then
     # multiple simulations
-    echo "setting up multiple simulations for full" $srctype "source type"
-    if ( $srctype == 'moment' ) then 
-        set mij_sourceparams = ( 0. 0. 0. 0. 0. 0. )
-        set map_mij = ( 1 2 4 6 )
-        set numsim = 4
+    echo "setting up multiple simulations for full" $simtype "source type"
+    if ( $simtype == 'moment' ) then 
         set srcapp = ( MZZ MXX_P_MYY MXZ_MYZ MXY_MXX_M_MYY )
         set srctype  = ( "mrr" "mtt_p_mpp" "mtr" "mtp" )
         set srcdepth = `grep "depth: " $homedir/CMTSOLUTION  |awk '{print $2}'`
         set srclat   = `grep "latitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
         set srclon   = `grep "longitude: " $homedir/CMTSOLUTION  |awk '{print $2}'`
 
-    else if ( $srctype == 'force' ) then 
-        set numsim   = 2
+    else if ( $simtype == 'force' ) then 
         set srcapp   = ( PZ PX )
-        set srctype  = ( "vertforce" "xforce" )
+        set srctype  = ( "vertforce" "thetaforce" )
+        # TODO hardcoded for testing. need to define an input file for force sources!
+        set srcdepth = '0.0'
+        set srclat   = '90.0'
+        set srclon   = '0.0'
 
     else
         echo " ERROR: Unrecognized source type" $srctype
@@ -181,7 +161,6 @@ if ( $multisrc == 'true' ) then
 
 else if ( $multisrc == 'false' ) then
     # one simulation
-    set numsim = 1; 
     set srctype = `grep "^SOURCE_TYPE" $srcfile  |awk '{print $2}'`
     set srcapp = ( "./"  )
 endif 
@@ -189,7 +168,17 @@ endif
 echo 'source names:' $srcapp
 echo 'source components:' $srctype
 
+echo 'Create the run directory ' $1
 mkdir $1
+
+
+# Copy the make_axisem.macros file, in which the exact compiler settings are stored
+echo 'copying make_axisem.macros from ../'
+cp ../make_axisem.macros $1
+
+# Copy inparam_mesh, just for archival purposes
+cp $meshdir/inparam_mesh $1
+
 cd $1
 set mainrundir = $PWD
 
@@ -197,118 +186,105 @@ set mainrundir = $PWD
 cp -p $homedir/$srcfile $mainrundir/
 
 
-
 # Prepare and copy relevant files for each simulation
-foreach isrc (${num_src_arr})
-    set i = 0
-    foreach isim  (${srcapp})
+set i = 0
+foreach isim  (${srcapp})
 
-        @ i ++
+    @ i ++
 
-        set num = 6
-        echo ""
-        echo "Setting up simulation" $isim
-        # construct different source file for each simulation
-        if  ( $multisrc == 'true' ) then
-            echo "constructing separate source files for" $isim 
+    echo ""
+    echo "Setting up simulation" $isim
+    # construct different source file for each simulation
+    if  ( $multisrc == 'true' ) then
+        echo "constructing separate source files for" $isim 
 
-            echo 'SOURCE_TYPE'  $srctype[$i]  >  $srcfile.$isrc.$isim
-            echo 'SOURCE_DEPTH' $srcdepth     >> $srcfile.$isrc.$isim
-            echo 'SOURCE_LAT'   $srclat       >> $srcfile.$isrc.$isim
-            echo 'SOURCE_LON'   $srclon       >> $srcfile.$isrc.$isim
-            echo 'SOURCE_AMPLITUDE  1.E20'    >> $srcfile.$isrc.$isim
-        endif 
-        
-        if ( $multisrc == 'false' ) then
-            set simdir = './'
-        else 
-            if ( $num_src == 1 ) then
-                set simdir = $isim
-                mkdir $simdir
-                cd $simdir
-            else 
-                set simdir = $isrc"_"$isim
-                mkdir $simdir
-                cd $simdir
-            endif
-        endif 
-        
-   
-        if ( $datapath == './Data' ) then
-            mkdir $datapath
-        else
-            if ( $multisrc == 'true' ) then
-                set datapath_isim = $datapath/$isim
-                echo "creating $datapath_isim" 
-            else
-                set datapath_isim = $datapath
-            endif
-            mkdir -p $datapath_isim
-            ln -s $datapath_isim ./Data
-        endif
+        echo 'SOURCE_TYPE'  $srctype[$i]  >  $srcfile.$isim
+        echo 'SOURCE_DEPTH' $srcdepth     >> $srcfile.$isim
+        echo 'SOURCE_LAT'   $srclat       >> $srcfile.$isim
+        echo 'SOURCE_LON'   $srclon       >> $srcfile.$isim
+        echo 'SOURCE_AMPLITUDE  1.E20'    >> $srcfile.$isim
+    
+        mkdir $isim
+        cd $isim
+    endif 
+    
 
-#            #if ( "(ls -A $datapath)" ) then
-#            ln -s $datapath
-#        else
-#            echo "creating $datapath" 
-#            mkdir $datapath
-#            if ( $multisrc == 'true' ) then
-#                mkdir $datapath/MZZ $datapath/MXX_P_MYY $datapath/MXZ_MYZ $datapath/MXY_MXX_M_MYY
-#            endif
-#        endif
-        
-        if ( -d $infopath) then 
-            echo " saving info into $infopath"
-        else
-            echo "creating $infopath"
-            mkdir $infopath
-        endif
-        
-        mkdir Code
-        cp -p $homedir/*.f90 Code
-        cp -p $homedir/*.F90 Code
-        cp -p $homedir/Makefile Code
-        
-        echo "copying crucial files for the simulation..."
-        
+    if ( $datapath == './Data' ) then
+        mkdir $datapath
+    else
         if ( $multisrc == 'true' ) then
-            mv ../$srcfile.$isrc.$isim $srcfile
-        else 
-            cp $homedir/$srcfile $srcfile
+            set datapath_isim = $datapath/$isim
+            echo "creating $datapath_isim" 
+        else
+            set datapath_isim = $datapath
         endif
+        mkdir -p $datapath_isim
+        ln -s $datapath_isim ./Data
+    endif
         
-        cp $homedir/axisem .
-        cp $homedir/mesh_params.h .
-        #cp $homedir/mesh_params.dat .
-        cp $homedir/runinfo .
-        cp $homedir/$recfile . 
-        cp $homedir/inparam_basic .
-        cp $homedir/inparam_advanced .
-        cp $homedir/inparam_hetero .
+    if ( -d $infopath) then 
+        echo " saving info into $infopath"
+    else
+        echo "creating $infopath"
+        mkdir $infopath
+    endif
+    
+    mkdir Code
+    cp -Lp $homedir/*.c   Code
+    cp -Lp $homedir/*.f90 Code
+    cp -Lp $homedir/*.F90 Code
+    cp -Lp $homedir/Makefile Code
+    
+    echo "copying crucial files for the simulation..."
+    
+    if ( $multisrc == 'true' ) then
+        mv ../$srcfile.$isim $srcfile
+    else 
+        cp $homedir/$srcfile $srcfile
+    endif
+    
+    cp $homedir/axisem .
+    cp $homedir/mesh_params.h .
+    cp $homedir/runinfo .
+    cp $homedir/$recfile . 
+    cp $homedir/inparam_basic .
+    cp $homedir/inparam_advanced .
+    cp $homedir/inparam_hetero .
 
-        if ( $multisrc == 'false' ) then
-            ln -s ../$meshdir/ Mesh
-        else 
-            ln -s ../../$meshdir/ Mesh
-        endif
-        
-        if ( $bgmodel == 'external' ) then
-            cp Mesh/external_model.bm .
-        endif
-        cd $mainrundir
+    if ( $multisrc == 'false' ) then
+        ln -s ../$meshdir/ Mesh
+    else 
+        ln -s ../../$meshdir/ Mesh
+    endif
+    
+    if ( $bgmodel == 'external' ) then
+        cp Mesh/external_model.bm .
+    endif
+    cd $mainrundir
 
-        cp $homedir/mesh_params.h .
-        cp $homedir/inparam_basic .
-        cp $homedir/inparam_advanced .
-        cp $homedir/inparam_hetero .
-
-        if ( $multisrc == 'true' ) then
-            cp $homedir/CMTSOLUTION .
-        endif
-    end
 end
 
+cp $homedir/mesh_params.h .
+cp $homedir/inparam_basic .
+cp $homedir/inparam_advanced .
+cp $homedir/inparam_hetero .
 
+
+if ( $simtype == 'moment' ) then
+    # TODO could also be forces
+    cp $homedir/CMTSOLUTION .
+endif
+
+# write a script that runs field_transform in all rundirs
+if ( $netcdf_requested == 'true') then
+    if ( $simtype == 'moment' ) then
+        cp ../UTILS/field_transform_moment.sh field_transform.sh
+        chmod +x field_transform.sh
+    else if ( $simtype == 'force' ) then
+        cp ../UTILS/field_transform_force.sh field_transform.sh
+        chmod +x field_transform.sh
+    endif
+endif
 
 ########################################################
 ######### submit the jobs ##############################
@@ -317,101 +293,161 @@ end
 set nodnum = `grep nproc_mesh $homedir/mesh_params.h |awk '{print $6}'`
 echo "preparing job on $nodnum nodes..."
 
-foreach isrc (${num_src_arr})
-    foreach isim  (${srcapp})
-        if ( $num_src == 1) then 
-            cd $isim
-        else 
-            cd $isrc"_"$isim
-        endif
+foreach isim (${srcapp})
+    cd $isim
 
-        if ( $multisrc == 'true' ) then
-            set outputname = "OUTPUT_"`echo $isim |sed 's/\//_/g'`
-        else
-            set outputname = "OUTPUT_"`echo $1 |sed 's/\//_/g'`
-        endif
+    if ( $multisrc == 'true' ) then
+        set outputname = "OUTPUT_"`echo $isim |sed 's/\//_/g'`
+    else
+        set outputname = "OUTPUT_"`echo $1 |sed 's/\//_/g'`
+    endif
 
-        if ( $newqueue == 'true' ) then 
+    if ( $newqueue == 'true' ) then 
+        
+        set jobname = `echo $1 |sed 's/\//_/g'`"_"`echo $isim |sed 's/\//_/g'`
 
-            ########## LSF SCHEDULER ######################
-            if ( $queue == 'lsf' ) then 
-                # for Brutus: http://brutuswiki.ethz.ch/brutus/OpenMPI#Issues_when_Using_Many_Cores
-                #unset OMPI_MCA_btl_openib_receive_queues
-                #bsub -R "rusage[mem=2048]" -n $nodnum -W 167:59 $mpiruncmd -n $nodnum ./axisem > $outputname &
-                bsub -R "rusage[mem=2048]" -I -n $nodnum $mpiruncmd -n $nodnum ./axisem 2>&1 > $outputname &
 
-            ######## slurm  #######
-            else if ( $queue == 'slurmlocal' ) then 
-            	aprun -n $nodnum ./axisem >& $outputname &
+        ########## LSF SCHEDULER ######################
+        if ( $queue == 'lsf' ) then 
+            # for Brutus: http://brutuswiki.ethz.ch/brutus/OpenMPI#Issues_when_Using_Many_Cores
+            #unset OMPI_MCA_btl_openib_receive_queues
+            #bsub -R "rusage[mem=2048]" -n $nodnum -W 167:59 $mpiruncmd -n $nodnum ./axisem > $outputname &
+            bsub -R "rusage[mem=2048]" -I -n $nodnum $mpiruncmd -n $nodnum ./axisem 2>&1 > $outputname &
+
+        ######## slurm  #######
+        else if ( $queue == 'slurmlocal' ) then 
+        	aprun -n $nodnum ./axisem >& $outputname &
+        
+        else if ( $queue == 'slurm' ) then 
+
+            set ntaskspernode = 32
+            echo "ntaskspernode = $ntaskspernode"
             
-            else if ( $queue == 'slurm' ) then 
-
-                set ntaskspernode = 32
-                echo "ntaskspernode = $ntaskspernode"
-                
-                echo '#\!/bin/bash -l'                          >  sbatch.sh
-                echo "#SBATCH --ntasks=$nodnum"                 >> sbatch.sh
-                echo "#SBATCH --ntasks-per-node=$ntaskspernode" >> sbatch.sh
-                echo "#SBATCH --time=00:59:00"                  >> sbatch.sh
+            echo '#\!/bin/bash -l'                          >  sbatch.sh
+            echo "#SBATCH --ntasks=$nodnum"                 >> sbatch.sh
+            echo "#SBATCH --ntasks-per-node=$ntaskspernode" >> sbatch.sh
+            echo "#SBATCH --time=00:59:00"                  >> sbatch.sh
+                            
+            echo "module load slurm"                        >> sbatch.sh
+            
+            echo 'echo "The current job ID is $SLURM_JOB_ID"'           >> sbatch.sh
+            echo 'echo "Running on $SLURM_JOB_NUM_NODES nodes"'         >> sbatch.sh
+            echo 'echo "Using $SLURM_NTASKS_PER_NODE tasks per node"'   >> sbatch.sh
+            echo 'echo "A total of $SLURM_NTASKS tasks is used"'        >> sbatch.sh
+            
+            echo  'aprun -n $SLURM_NTASKS ./axisem >& '$outputname      >> sbatch.sh
                                 
-                echo "module load slurm"                        >> sbatch.sh
-                
-                echo 'echo "The current job ID is $SLURM_JOB_ID"'           >> sbatch.sh
-                echo 'echo "Running on $SLURM_JOB_NUM_NODES nodes"'         >> sbatch.sh
-                echo 'echo "Using $SLURM_NTASKS_PER_NODE tasks per node"'   >> sbatch.sh
-                echo 'echo "A total of $SLURM_NTASKS tasks is used"'        >> sbatch.sh
-                
-                echo  'aprun -n $SLURM_NTASKS ./axisem >& '$outputname      >> sbatch.sh
-                                    
-                sbatch sbatch.sh 
+            sbatch sbatch.sh 
 
-	    ######## TORQUE/MAUI SCHEDULER #######
-            else if ( $queue == 'torque' ) then 
-		# this is a crazy line, but with pure integer division its hard to handle.
-                #set nodes = `echo ${nodnum} | awk '{printf "%.0f\n", $1/16+0.49}'`
+        ######## TORQUE/MAUI SCHEDULER #######
+        else if ( $queue == 'torque' ) then 
+	        # this is a crazy line, but with pure integer division its hard to handle.
+            #set nodes = `echo ${nodnum} | awk '{printf "%.0f\n", $1/16+0.49}'`
 
-                echo "# Sample PBS for parallel jobs" > run_solver.pbs
-                echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
-                #echo "#PBS -l nodes=${nodes}:ppn=16" >> run_solver.pbs
-                echo "ulimit -s unlimited " >> run_solver.pbs
-                echo "cd $PWD " >> run_solver.pbs
-                echo "$mpiruncmd -n ${nodnum} $PWD/axisem  > $outputname " >> run_solver.pbs
-                qsub run_solver.pbs
+            echo "# Sample PBS for parallel jobs" > run_solver.pbs
+            echo "#PBS -l nodes=$nodnum,walltime=7:59:00" >> run_solver.pbs
+            #echo "#PBS -l nodes=${nodes}:ppn=16" >> run_solver.pbs
+            echo "ulimit -s unlimited " >> run_solver.pbs
+            echo "cd $PWD " >> run_solver.pbs
+            echo "$mpiruncmd -n ${nodnum} $PWD/axisem  > $outputname " >> run_solver.pbs
+            qsub run_solver.pbs
 
-            endif
+        ############### SuperMUC ###################
+        else if ( $queue == 'SuperMUC') then
+            set current_dir=$PWD
+            @ nnodes = ($nodnum / 16)
+            echo "# Job file for AxiSEM run, followed by field_transform" > job.cmd
+            echo "#@ job_name = $jobname"                                >> job.cmd
+            echo " "                                                     >> job.cmd
+            echo "# JOB STEP SOLVER"                                     >> job.cmd
+            echo "#@ step_name = SOLVER "                                >> job.cmd
+            echo '#@ output = job_$(jobid).out '                         >> job.cmd
+            echo '#@ error = job_$(jobid).err  '                         >> job.cmd
+            echo "#@ job_type = parallel "                               >> job.cmd
+            echo "#@ class = general "                                   >> job.cmd
+            echo "#@ total_tasks=$nodnum "                               >> job.cmd
+            echo "#@ node = $nnodes "                                    >> job.cmd
+            echo "#@ island_count = 1"                                   >> job.cmd
+            echo "#@ network.MPI = sn_all,not_shared,us "                >> job.cmd
+            echo "#@ wall_clock_limit =00:10:00"                         >> job.cmd
+            echo "#@ initialdir = $current_dir"                          >> job.cmd
+            echo "#@ executable = $current_dir/exe_solver.sh"            >> job.cmd
+            echo "#@ notification=always"                                >> job.cmd
+            echo "#@ notify_user = MAILADRESS"                           >> job.cmd
+            echo "#@ energy_policy_tag = Axisem_Solver  "                >> job.cmd
+            echo "#@ minimize_time_to_solution = yes    "                >> job.cmd
+            echo "#@ queue "                                             >> job.cmd
+            echo " "                                                     >> job.cmd
+            echo "# JOB STEP FIELD_TRANSFORM"                            >> job.cmd
+            echo "#@ step_name = FIELD_TRANSFORM"                        >> job.cmd
+            echo "#@ dependency = (SOLVER == 0)"                         >> job.cmd
+            echo '#@ output = job_$(jobid).out '                         >> job.cmd
+            echo '#@ error = job_$(jobid).err  '                         >> job.cmd
+            echo "#@ class = micro   "                                   >> job.cmd
+            echo "#@ total_tasks=1 "                                     >> job.cmd
+            echo "#@ node = 1 "                                          >> job.cmd
+            echo "#@ wall_clock_limit =48:00:00"                         >> job.cmd
+            echo "#@ initialdir = $current_dir"                          >> job.cmd
+            echo "#@ executable = $current_dir/exe_FT.sh"                >> job.cmd
+            echo "#@ notification=always"                                >> job.cmd
+            echo "#@ notify_user = MAILADRESS"                           >> job.cmd
+            echo "#@ energy_policy_tag = Axisem_FT  "                    >> job.cmd
+            echo "#@ minimize_time_to_solution = yes    "                >> job.cmd
+            echo "#@ queue "                                             >> job.cmd
 
-        ######## SUBMIT LOCALLY #######
-        else 
-            #ulimit -s unlimited
-            #setenv OMP_NUM_THREADS 4
+            # Create Solver executable script
+            echo ". /etc/profile"                                         > exe_solver.sh
+            echo ". /etc/profile.d/modules.sh"                           >> exe_solver.sh
+            echo "module load mpi.ibm"                                   >> exe_solver.sh
+            echo "module load netcdf/mpi/4.3"                            >> exe_solver.sh
+            echo "module load fortran/intel"                             >> exe_solver.sh
+            echo "poe ./axisem > $outputname "                           >> exe_solver.sh
 
-            if ( $serial == 'true' ) then
-                ./axisem >& $outputname &
-            else if ( $serial == 'false' ) then
-                $mpiruncmd -n $nodnum ./axisem >& $outputname &
-            else
-                echo 'ERROR: value for SERIAL in make_axisem.macros should be either "true" or "false"'
-                echo "SERIAL = $serial"
-                exit
-            endif
+            # Create Field transform executable script
+            echo ". /etc/profile"                                         > exe_FT.sh
+            echo ". /etc/profile.d/modules.sh"                           >> exe_FT.sh
+            echo "module load mpi.ibm"                                   >> exe_FT.sh
+            echo "module load netcdf/mpi/4.3"                            >> exe_FT.sh
+            echo "module load fortran/intel"                             >> exe_FT.sh
+            echo "../xfield_transform > OUTPUT_FT "                      >> exe_FT.sh
+            llsubmit job.cmd
         endif
 
-        echo "Job running in directory $isim"
-        cd $mainrundir
-    end
-end 
+    ######## SUBMIT LOCALLY #######
+    else 
+        #ulimit -s unlimited
+        #setenv OMP_NUM_THREADS 4
+
+        if ( $serial == 'true' ) then
+            ./axisem >& $outputname &
+        else if ( $serial == 'false' ) then
+            $mpiruncmd -n $nodnum ./axisem >& $outputname &
+        else
+            echo 'ERROR: value for SERIAL in make_axisem.macros should be either "true" or "false"'
+            echo "SERIAL = $serial"
+            exit
+        endif
+    endif
+
+    echo "Job running in directory $isim"
+    cd $mainrundir
+end
+
 
 ######## post processing ##################################################
 
 cd $homedir
 cd $1
 
-#cp -p $homedir/UTILS/xpost_processing .
-cp -p $homedir/UTILS/post_processing.F90 .
-cp -p $homedir/UTILS/field_transform.F90 .
 cp -p $homedir/UTILS/nc_postroutines.F90 .
-cp -p $homedir/UTILS/xpost_processing .
 cp -p $homedir/UTILS/post_processing.csh .
+cp -p $homedir/UTILS/post_processing.F90 .
+cp -p $homedir/UTILS/xpost_processing .
+
+cp -p $homedir/UTILS/xfield_transform .
+cp -p $homedir/UTILS/field_transform.F90 .
+cp -p $homedir/UTILS/field_transform.py .
+
 cp -p $homedir/UTILS/plot_recfile_seis.csh .
 cp -p $homedir/UTILS/plot_recs.plot .
 cp -p $homedir/UTILS/taup_allrec.csh .

@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module pdb
   use data_mesh
   use data_numbering
@@ -739,37 +740,6 @@ end subroutine define_sflocal_numbering
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine define_global2glocal
-! Define bookkeeping array that for a given global number, returns 
-! the glocal number. Used later on to partition global index into message bins,
-! and deallocated there, in partition_global_index
-! Both this and partition_global_index might well be redundant after all....
-
-  integer :: ipt, iel, ipol, jpol, iproc, ielg, iptg, igg, igp
-  allocate(glob2gloc(nglobglob,0:nproc-1))
-  glob2gloc(:,:) = 0
-
-  do iproc = 0, nproc-1
-     do iel = 1, nel(iproc)
-        ielg = procel(iel,iproc)
-        do jpol = 0, npol
-           do ipol = 0, npol
-              iptg = (ielg-1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1
-              ipt  = (iel -1)*(npol+1)**2 + jpol*(npol+1) + ipol + 1 
-              igg = iglob(iptg)      ! global #
-              igp = igloc(ipt,iproc) ! glocal # 
-              glob2gloc(igg,iproc) = igp 
-           end do
-        end do
-     end do
-  end do
-
-  deallocate(igloc)
-
-end subroutine define_global2glocal
-!-----------------------------------------------------------------------------------------
-
-!-----------------------------------------------------------------------------------------
 subroutine define_sflobal2sflocal(iproc, solorflu)
 ! Define bookkeeping array that for a given sflobal number, returns 
 ! the sflocal number. Used later on to partition global index into message 
@@ -1049,12 +1019,6 @@ subroutine partition_sflobal_index
   real(kind=dp), dimension(:), allocatable  :: sort_buf
 
 
-  ! valence test
-  integer           :: idest, iel, ipol, jpol
-  character(len=4)  :: appiproc
-  integer, dimension(:), allocatable        :: uglob2_solid
-  integer, dimension(:,:,:), allocatable    :: val_solid
-
   if (dump_mesh_info_screen) then 
      write(6,*)
      write(6,*)'****************************************************************'
@@ -1128,7 +1092,8 @@ subroutine partition_sflobal_index
                  enddo
                  if (inbr > 8) then
                     write(6,*) 'ERORR: having more then 8 neighbours (+myself)'
-                    write(6,*) '       check mesh decomposition)'
+                    write(6,*) '       check mesh decomposition in the solid)'
+                    write(6,*) '       iproct = ', iproct
                     stop
                  endif
                  if (myneighbours_solid(iproct,inbr) == -1) myneighbours_solid(iproct,inbr) = ipdes
@@ -1451,7 +1416,8 @@ subroutine partition_sflobal_index
                     enddo
                     if (inbr > 8) then
                        write(6,*) 'ERORR: having more then 8 neighbours (+myself)'
-                       write(6,*) '       check mesh decomposition)'
+                       write(6,*) '       check mesh decomposition in the fluid)'
+                       write(6,*) '       iproct = ', iproct
                        stop
                     endif
                     if (myneighbours_fluid(iproct,inbr) == -1) myneighbours_fluid(iproct,inbr) = ipdes
@@ -2223,9 +2189,10 @@ subroutine write_db
 ! Writes out a database file to be read by the solver for each processor.
 
   use data_gllmesh
+  use data_spec
   use background_models, only : override_ext_q
   
-  integer           :: iproc, iptp, npointotp, ipsrc, ipdes, imsg, iel, inode, ielg, idom
+  integer           :: iproc, iptp, npointotp, ipsrc, imsg, iel, inode, ielg, idom
   character(len=4)  :: appiproc
   character(len=80) :: dbname
   integer           :: lfdbname
@@ -2255,7 +2222,18 @@ subroutine write_db
      write(10) nbdry_el(iproc)              ! nel_bdry
      write(10) ndisc                        ! ndisc
      write(10) lfbkgrdmodel                 ! lfbkgrdmodel
-     
+
+     ! write spectral stuff
+     write(10) xi_k
+     write(10) eta 
+     write(10) dxi       
+     write(10) wt        
+     write(10) wt_axial_k
+     write(10) G0
+     write(10) G1
+     write(10) G1T
+     write(10) G2
+     write(10) G2T
      
      ! Coordinates of control points
      if (dump_mesh_info_screen) &
@@ -2464,7 +2442,6 @@ subroutine create_static_header
             A2,'/',A2,'/',A4,', at ',A2,'h ',A2,'min')
 29 format('!:::::::::::::::::::: Input parameters :::::::::::::::::::::::::::')
 12 format('!  ',A23,A20)
-13 format('!  ',A23,L10)
 14 format('!  ',A23,1f10.4)
 16 format('!  ',A23,2(f10.4))
 15 format('!  ',A23,I10)
@@ -2491,3 +2468,4 @@ end subroutine define_io_appendix
 !-----------------------------------------------------------------------------------------
 
 end module pdb
+!=========================================================================================

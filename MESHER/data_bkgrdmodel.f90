@@ -19,9 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!===================
+!=========================================================================================
 module data_bkgrdmodel
-!===================
 
   use global_parameters, only : dp, sp
   implicit none
@@ -49,6 +48,7 @@ module data_bkgrdmodel
 
   ! The following variables are only needed by external models
   character(len=100)         :: fnam_ext_model
-!===================
+  character(len=100)         :: model_name_ext_model = ''
+
 end module data_bkgrdmodel
-!===================
+!=========================================================================================

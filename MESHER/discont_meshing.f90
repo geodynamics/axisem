@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module discont_meshing
 
   use global_parameters
@@ -104,7 +105,7 @@ subroutine create_subregions
       write(6,*) '#######################################################################'
       fmtstring = '("  ", A, I12, F12.2)'
       write(6,fmtstring)'discontinuities:    ', idom,real(discont(idom))
-      fmtstring = '("  ", A, L12, L12)'
+      fmtstring = '("  ", A, L12, I12)'
       write(6,fmtstring)'solid/fluid domain: ', solid_domain(idom),idom_fluid(idom)
       fmtstring = '("  ", A, F12.2, F12.2)'
       write(6,fmtstring)'upper/lower radius: ', real(rdisc_top(idom)),real(rdisc_bot(idom))
@@ -266,7 +267,7 @@ subroutine create_subregions
         call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
                            icount_glob, ic, ns_ref)
         ! Storing radial info into global arrays
-        if (current) iclev_glob(ic) = nz_glob - icount_glob + 1
+        if (current) iclev_glob(ic) = nz_glob - icount_glob ! + 1
         dz_glob(icount_glob) = dz 
         ds_glob(icount_glob) = ds
         radius_arr(icount_glob) = current_radius
@@ -555,3 +556,4 @@ end function max_spacing
 !-----------------------------------------------------------------------------------------
 
 end module discont_meshing
+!=========================================================================================

@@ -54,8 +54,9 @@ module data_all
   logical                             :: load_snaps
   logical                             :: negative_time
   logical                             :: detailed_output
-  character(len=12)                   :: src_file_type
+  character(len=16)                   :: simtype
   logical                             :: use_netcdf
+  character(len=4), parameter         :: seistype = 'disp'
 
   ! discrete dirac sources
   real                                :: shift_fact
@@ -65,7 +66,6 @@ module data_all
   real                                :: srccolat, srclon, src_depth
   character(len=7)                    :: conv_stf
   character(len=100)                  :: outdir
-  character(len=4)                    :: seistype
 
   real, allocatable                   :: period_final(:)
   real, allocatable                   :: trans_rot_mat(:,:)
@@ -282,7 +282,7 @@ program post_processing_seis
   ! define time series
   allocate(time(nt_seis), seis(nt_seis,3))
   do iseis=1, nt_seis
-     time(iseis) = iseis * dt_seis
+     time(iseis) = (iseis - 1) * dt_seis
   enddo
   allocate(seis_sglcomp(nt_seis,3))
 
@@ -305,8 +305,8 @@ program post_processing_seis
                             //trim(recname(i))//'_'//seistype//'_post_'&
                             //trim(src_type(isim,2))
         
-        write(6,*) 'outname: ', i, trim(outname(i,isim))
-        write(6,*) 'outname2: ', isim, trim(outname2(i,isim))
+        !write(6,*) 'outname: ', i, trim(outname(i,isim))
+        !write(6,*) 'outname2: ', isim, trim(outname2(i,isim))
      enddo
   enddo
 
@@ -341,10 +341,8 @@ program post_processing_seis
             seis_sglcomp(:,:) = nc_seis(:,:,i,isim)
         else
             ! load seismograms from all directories
-            open(unit=60,file = trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
-                                //seistype//'.dat')
-            write(6,*) 'opened ', trim(simdir(isim))//'/Data/'//trim(recname(i))//'_'&
-                        //seistype//'.dat'
+            open(unit=60,file = trim(simdir(isim))//'/Data/'//trim(recname(i))//'_disp.dat')
+            write(6,*) 'opened ', trim(simdir(isim))//'/Data/'//trim(recname(i))//'_disp.dat'
 
             if (src_type(isim,1) == 'monopole') then 
                do iseis=1, nt_seis 
@@ -394,7 +392,7 @@ program post_processing_seis
      ! convolve with a source time function
      if (conv_period > 0.)  then 
         write(6,*) 'conv period:', conv_stf
-        call convolve_with_stf(conv_period, dt_seis, nt_seis, src_type(1,1), conv_stf,&
+        call convolve_with_stf(conv_period, dt_seis, nt_seis, conv_stf,&
                                outdir, seis, seis_fil)
      else
         seis_fil = seis
@@ -553,7 +551,7 @@ subroutine read_input
   rec_comp_sys    = 'enz'
   conv_period     = 0.
   conv_stf        = 'gauss_0'
-  seistype        = 'disp'
+  !seistype        = 'disp'
   load_snaps      = .false.
   outdir          = './Data_Postprocessing'
   negative_time   = .true.
@@ -582,8 +580,10 @@ subroutine read_input
        read(keyvalue, *) conv_period
     case('CONV_STF')
        read(keyvalue, *) conv_stf
-    case('SEISTYPE')
-       seistype = keyvalue
+    ! Removing this option since velocity seismograms 
+    ! are not produced in the solver
+    !case('SEISTYPE')
+    !   seistype = keyvalue
     case('LOAD_SNAPS')
        read(keyvalue, *) load_snaps
     case('DATA_DIR')
@@ -618,7 +618,7 @@ subroutine read_input
      read(99,*) src_type(isim,1)
      read(99,*) src_type(isim,2)
      read(99,*) stf_type(isim)
-     read(99,*) src_file_type
+     read(99,*) simtype
      read(99,*) period_tmp(isim)
      read(99,*) src_depth_tmp(isim)
      read(99,*) srccolat_tmp(isim)
@@ -655,7 +655,7 @@ subroutine read_input
      write(6,*) 'Simulations: ',isim,trim(simdir(isim))
      write(6,*) '  source type:',src_type(isim,1),' ',src_type(isim,2)
      write(6,*) '  source time function:',stf_type(isim)
-     write(6,*) '  source file type:',src_file_type
+     write(6,*) '  simulation  type:', simtype
      write(6,*) '  magnitude:',magnitude(isim)
      write(6,*) '  receivers:',nrec_tmp(isim)
      write(6,*) '  source period:',period_tmp(isim)
@@ -697,8 +697,7 @@ subroutine read_input
      write(6,*) 'ERROR: unknown coordinate system ', rec_comp_sys
      stop 2
   endif
-  
-  
+
   srclon = srclon_tmp(1)
   srccolat = srccolat_tmp(1)
   src_depth = src_depth_tmp(1)
@@ -728,7 +727,7 @@ end subroutine read_input
 subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
   use data_all, only : src_type, magnitude, mij, rot_mat
-  use data_all, only : trans_rot_mat, src_file_type, srccolat, srclon, outdir
+  use data_all, only : trans_rot_mat, simtype, srccolat, srclon, outdir
   use global_par
   
   implicit none
@@ -766,8 +765,8 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
   trans_rot_mat(:,:) = transpose(rot_mat)
 
-  select case(src_file_type)
-  case('cmtsolut') 
+  select case(simtype)
+  case('moment') 
      write(6,*)'  reading CMTSOLUTION file....'
      open(unit=20000,file='CMTSOLUTION',POSITION='REWIND',status='old')
      read(20000,*) junk
@@ -787,7 +786,7 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
 
      Mij = Mij / 1.E7 ! CMTSOLUTION given in dyn-cm
 
-  case('sourceparams')
+  case('single')
      iinparam_source = 1132
      open(unit=iinparam_source, file='inparam_source', status='old', action='read', iostat=ioerr)
      if (ioerr /= 0) stop 'Check input file ''inparam_source''! Is it still there?' 
@@ -828,7 +827,7 @@ subroutine compute_radiation_prefactor(mij_prefact, npts, nsim, longit)
      end select
 
   case default
-     write(6,*)'unknown source file type!',src_file_type
+     write(6,*)'unknown simulation type!', simtype
      stop
   end select
 
@@ -1012,7 +1011,7 @@ end subroutine rotate_receiver_comp
 
 !-----------------------------------------------------------------------------------------
 !! convolve seismograms computed for dirac delta with a Gaussian
-subroutine convolve_with_stf(t_0, dt, nt, src_type, stf, outdir, seis, seis_fil)          
+subroutine convolve_with_stf(t_0, dt, nt, stf, outdir, seis, seis_fil)          
   
   use data_all,     only: stf_type
   use global_par,   only: pi, decay, shift_fact1, dp
@@ -1027,7 +1026,6 @@ subroutine convolve_with_stf(t_0, dt, nt, src_type, stf, outdir, seis, seis_fil)
   real, intent(in)               :: seis(nt,3)
   real, intent(out)              :: seis_fil(nt,3)
   real                           :: src_array(nt), temp_expo, alpha
-  character(len=7), intent(in)   :: src_type
   character(len=7), intent(in)   :: stf
   character(len=4)               :: appidur, appirec
 

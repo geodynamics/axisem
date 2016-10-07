@@ -33,44 +33,62 @@ program field_transformation
 
 #ifdef unc
     integer                         :: nvar, ivar
-    integer                         :: nsnap, ntimes, ngll, ngllread
+    integer                         :: nsnap, ngll, ngllread, npol, nelem
     integer                         :: nmode
 
     integer                         :: ncin_id, ncin_snap_grpid, ncin_mesh_grpid
     integer                         :: ncout_id, ncout_fields_grpid, ncout_gll_dimid
-    integer                         :: ncout_freq_dimid, ncout_snap_dimid, ncout_mesh_grpid
+    integer                         :: ncout_snap_dimid, ncout_mesh_grpid
     integer                         :: ncout_mesh_varids(255), ncin_mesh_varids(255)
-    integer                         :: ncout_surf_grpid, ncout_surfstrain_dimid, ncout_surf_dimid
+    integer                         :: ncout_mesh_mps_varid, ncin_mesh_mps_varid
+    integer                         :: ncout_mesh_mpz_varid, ncin_mesh_mpz_varid
     integer                         :: ncout_comp_dimid
-    integer                         :: ncout_surf_varids(6), ncin_surf_grpid, ncin_surf_varids(6)
-    integer                         :: nsurfelem, ncomp, nstraincomp
+    integer                         :: ncout_stf_varids(2)
+    integer                         :: ncin_stf_varids(2)
+
+    integer                         :: nc_mesh_npol_dimid, nc_mesh_cntrlpts_dimid, &
+                                       nc_mesh_elem_dimid
+    integer                         :: ncout_mesh_sem_varid, ncout_mesh_fem_varid, &
+                                       ncout_mesh_midpoint_varid
+    integer                         :: ncin_mesh_sem_varid, ncin_mesh_fem_varid, &
+                                       ncin_mesh_midpoint_varid
+
+    integer                         :: ncin_mesh_G0_varid, ncout_mesh_G0_varid
+    integer                         :: ncin_mesh_G1_varid, ncout_mesh_G1_varid
+    integer                         :: ncin_mesh_G2_varid, ncout_mesh_G2_varid
+    integer                         :: ncin_mesh_gll_varid, ncout_mesh_gll_varid
+    integer                         :: ncin_mesh_glj_varid, ncout_mesh_glj_varid
+
+    integer                         :: ncout_mesh_eltype_varid, ncout_mesh_axis_varid
+    integer                         :: ncin_mesh_eltype_varid, ncin_mesh_axis_varid
+
+    integer                         :: ncomp, nstraincomp
     character(len=8)                :: sourcetype
+    character(len=12)               :: dump_type
     integer                         :: dimids(2)
-    character(len=16), allocatable  :: varnamelist(:), varname_surf(:)
+    character(len=16), allocatable  :: varnamelist(:), varname_stf(:)
     integer, dimension(9)           :: ncin_field_varid
     integer, dimension(9)           :: ncout_field_varid
-    integer                         :: ncin_snaptime_varid
 
-    integer                         :: rank, istride, ostride, nomega, nextpow2
-    integer(kind=8)                 :: plan_fftf
-    integer                         :: iret
-    integer                         :: nstep, npoints, nvars_mesh
+    integer                         :: isfinalized, status, percent                                                            
+    integer                         :: nstep, nvars_mesh
     integer                         :: attnum, nf_att_stat
     character(len=80)               :: attname, varname
 
-    real, allocatable               :: data_mesh(:), data_surf_1d(:), data_surf_3d(:,:,:)
+    real, allocatable               :: data_mesh(:), data_stf_1d(:)
+    integer, allocatable            :: int_data_1d(:), int_data_2d(:,:), int_data_3d(:,:,:)
+    double precision, allocatable   :: dp_data_1d(:), dp_data_2d(:,:)
 
     real(kind=8), dimension(:,:), allocatable       :: datat, datat_t
-    complex(kind=8), dimension(:,:), allocatable    :: dataf
 
     double precision                :: time_fft, time_i, time_o, tick, tack
     double precision                :: space_i, space_o
 
     logical                         :: verbose = .true.
-    logical                         :: output_exist = .true.
-    integer                         :: npointsperstep = 500000
-                                    !< maybe replace this with cache size
+    integer                         :: npointsperstep, cache_size, narg
     integer                         :: chunk_gll 
+
+    character(len=32)               :: cache_size_char
                                     !< Contains chunk size in GLL points. Should be system 
                                     !! int(disk_block_size / nsnap)
     integer, parameter              :: disk_block_size = 8192
@@ -87,6 +105,18 @@ program field_transformation
     logical, parameter              :: deflate_lossy = .false.
     integer, parameter              :: sigdigits =  5       ! significant digits
                                                             ! below max of time trace
+    
+                                                            
+    
+    narg = command_argument_count()
+    if (narg<1) then
+        print *, 'Warning: Argument "cache size" is missing, default: 1024 (MB)'
+        cache_size = 1024
+    else
+        call get_command_argument(1, cache_size_char)
+        read(cache_size_char, *) cache_size
+        print '(A,I6,A)', 'Using ', cache_size, ' MB of memory for field_transformation' 
+    end if
 
     ! initialize timer
     time_fft = 0
@@ -100,27 +130,79 @@ program field_transformation
     call check( nf90_open(path="./Data/axisem_output.nc4", & 
                           mode=NF90_NOWRITE, ncid=ncin_id) )
 
+    status = nf90_get_att(ncin_id, NF90_GLOBAL, 'finalized', isfinalized) 
+
+    do while (isfinalized.ne.1 .or. status.ne.NF90_NOERR)
+      percent = 0
+      status = nf90_get_att(ncin_id, NF90_GLOBAL, 'percent completed', percent) 
+      print "('Solver run not yet finished (at ', I3, '%). Waiting for 10s')", percent
+      call check( nf90_close(ncin_id))
+      call sleep(10)
+
+      call check( nf90_open(path="./Data/axisem_output.nc4", & 
+                            mode=NF90_NOWRITE, ncid=ncin_id) )
+      call check( nf90_get_att(ncin_id, NF90_GLOBAL, 'finalized', isfinalized) )
+    end do
+
+
     ! get Snapshots group id
     call check( nf90_inq_grp_ncid(ncin_id, "Snapshots", ncin_snap_grpid) )
 
     ! get excitation type (monopole or multipole?)
     call check( nf90_get_att(ncin_id, NF90_GLOBAL, "excitation type", sourcetype))
+    
+    call check( nf90_get_att(ncin_id, NF90_GLOBAL, "npol", npol))
 
     if (verbose) &
-        print *, sourcetype
-    
-    if (sourcetype=='monopole')  then
-        nvar = 6
-        allocate(varnamelist(nvar))
-        varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
-                        'straintrace', 'velo_s     ', 'velo_z     '/)
+        print *, 'source type  ', sourcetype
+
+    ! get dump type 
+    call check( nf90_get_att(ncin_id, NF90_GLOBAL, "dump type (displ_only, displ_velo, fullfields)", dump_type))
+
+    if (verbose) &
+        print *, 'dump type    ', dump_type
+
+    if (trim(dump_type) == 'displ_only') then
+       call check( nf90_get_att(ncin_id, NF90_GLOBAL, "nelem_kwf_global", nelem))
+       if (sourcetype=='monopole')  then
+           nvar = 2
+           allocate(varnamelist(nvar))
+           varnamelist = ['disp_s     ', 'disp_z     ']
+       else
+           nvar = 3
+           allocate(varnamelist(nvar))
+           varnamelist = ['disp_s     ', 'disp_p     ', 'disp_z     ']
+       end if
+
+    elseif (trim(dump_type) == 'strain_only') then
+       if (sourcetype=='monopole')  then
+           nvar = 4
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'straintrace'/)
+       else
+           nvar = 6
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'strain_dsup', 'strain_dzup', 'straintrace'/)
+       end if
+
+    elseif (trim(dump_type) == 'fullfields') then
+       if (sourcetype=='monopole')  then
+           nvar = 6
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'straintrace', 'velo_s     ', 'velo_z     '/)
+       else
+           nvar = 9
+           allocate(varnamelist(nvar))
+           varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
+                           'strain_dsup', 'strain_dzup', 'straintrace', &
+                           'velo_s     ', 'velo_p     ', 'velo_z     '/)
+       end if
     else
-        nvar = 9
-        allocate(varnamelist(nvar))
-        varnamelist = (/'strain_dsus', 'strain_dsuz', 'strain_dpup', &
-                        'strain_dsup', 'strain_dzup', 'straintrace', &
-                        'velo_s     ', 'velo_p     ', 'velo_z     '/)
-    end if
+       stop
+    endif
 
     ! get variable ids of the fields
     do ivar=1, nvar
@@ -147,7 +229,7 @@ program field_transformation
     !! Create output file
     if (verbose) print *, 'Creating output file'
     nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
-    call check( nf90_create(path="./ordered_output.nc4", cmode=nmode, ncid=ncout_id))
+    call check( nf90_create(path="./Data/ordered_output.nc4", cmode=nmode, ncid=ncout_id))
 
     ! create group for timedomain fields
     call check( nf90_def_grp(ncout_id, "Snapshots", ncout_fields_grpid) )
@@ -167,7 +249,7 @@ program field_transformation
 
     print *, 'Defined snapshots dimension'
 
-    chunk_gll = disk_block_size / nsnap 
+    chunk_gll = max(disk_block_size / nsnap, 1)
     print *, 'Chunksize: [', chunk_gll, ',', nsnap, ']'
 
     ! create variables
@@ -183,6 +265,9 @@ program field_transformation
                                       varid=ncout_field_varid(ivar), &
                                       no_fill=1, fill=0) )
 
+        call check( nf90_def_var_fletcher32(ncid=ncout_fields_grpid, &
+                                            varid=ncout_field_varid(ivar), &
+                                            fletcher32=1) )
 
         if (deflate) then
             call check( nf90_def_var_deflate(ncid=ncout_fields_grpid, &
@@ -201,6 +286,125 @@ program field_transformation
     
     call check( nf90_def_grp(ncout_id, "Mesh", ncout_mesh_grpid) )
 
+    if (trim(dump_type) == 'displ_only') then
+
+       call check( nf90_def_dim( ncid   = ncout_mesh_grpid, &
+                                 name   = 'elements', &
+                                 len    = nelem, &
+                                 dimid  = nc_mesh_elem_dimid) )
+
+       call check( nf90_def_dim( ncid   = ncout_mesh_grpid, &
+                                 name   = 'control_points', &
+                                 len    = 4, &
+                                 dimid  = nc_mesh_cntrlpts_dimid) )
+
+       call check( nf90_def_dim( ncid   = ncout_mesh_grpid, &
+                                 name   = 'npol', &
+                                 len    = npol+1, &
+                                 dimid  = nc_mesh_npol_dimid) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'midpoint_mesh', &
+                                 xtype  = NF90_INT, &
+                                 dimids = nc_mesh_elem_dimid,&
+                                 varid  = ncout_mesh_midpoint_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_midpoint_varid, &
+                                           fletcher32=1) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'eltype', &
+                                 xtype  = NF90_INT, &
+                                 dimids = nc_mesh_elem_dimid,&
+                                 varid  = ncout_mesh_eltype_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_eltype_varid, &
+                                           fletcher32=1) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'axis', &
+                                 xtype  = NF90_INT, &
+                                 dimids = nc_mesh_elem_dimid,&
+                                 varid  = ncout_mesh_axis_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_axis_varid, &
+                                           fletcher32=1) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'fem_mesh', &
+                                 xtype  = NF90_INT, &
+                                 dimids = [nc_mesh_cntrlpts_dimid, &
+                                           nc_mesh_elem_dimid],&
+                                 varid  = ncout_mesh_fem_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_fem_varid, &
+                                           fletcher32=1) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'sem_mesh', &
+                                 xtype  = NF90_INT, &
+                                 dimids = [nc_mesh_npol_dimid, &
+                                           nc_mesh_npol_dimid, &
+                                           nc_mesh_elem_dimid],&
+                                 varid  = ncout_mesh_sem_varid) )
+        
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_sem_varid, &
+                                           fletcher32=1) )
+
+       call check( nf90_def_var( ncid       = ncout_mesh_grpid,  &
+                                 name       = 'mp_mesh_S',           &
+                                 xtype      = NF90_FLOAT,        &
+                                 dimids     = [nc_mesh_elem_dimid], &
+                                 varid      = ncout_mesh_mps_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_mps_varid, &
+                                           fletcher32=1) )
+
+       call check( nf90_def_var( ncid       = ncout_mesh_grpid,  &
+                                 name       = 'mp_mesh_Z',           &
+                                 xtype      = NF90_FLOAT,        &
+                                 dimids     = [nc_mesh_elem_dimid], &
+                                 varid      = ncout_mesh_mpz_varid) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                           varid = ncout_mesh_mpz_varid, &
+                                           fletcher32=1) )
+
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'G0', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = nc_mesh_npol_dimid, &
+                                 varid  = ncout_mesh_G0_varid) )
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'G1', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = [nc_mesh_npol_dimid, &
+                                           nc_mesh_npol_dimid], &
+                                 varid  = ncout_mesh_G1_varid) )
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'G2', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = [nc_mesh_npol_dimid, &
+                                           nc_mesh_npol_dimid], &
+                                 varid  = ncout_mesh_G2_varid) )
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'gll', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = nc_mesh_npol_dimid, &
+                                 varid  = ncout_mesh_gll_varid) )
+       call check( nf90_def_var( ncid   = ncout_mesh_grpid, &
+                                 name   = 'glj', &
+                                 xtype  = NF90_DOUBLE, &
+                                 dimids = nc_mesh_npol_dimid, &
+                                 varid  = ncout_mesh_glj_varid) )
+    endif
+
 
     do ivar = 1, nvars_mesh
         call check( nf90_inquire_variable(ncid  = ncin_mesh_grpid,        &
@@ -217,91 +421,46 @@ program field_transformation
                                   dimids     = [ncout_gll_dimid], &
                                   !chunksizes = [ngll],            &
                                   varid      = ncout_mesh_varids(ivar)) )
+
         !call check( nf90_def_var_deflate( ncid    = ncout_mesh_grpid,        &
         !                                  varid   = ncout_mesh_varids(ivar), &
         !                                  shuffle = 1, deflate = 1,          &
         !                                  deflate_level = deflate_level) )
+
+        call check( nf90_def_var_fletcher32(ncid  = ncout_mesh_grpid, &
+                                            varid = ncout_mesh_varids(ivar), &
+                                            fletcher32=1) )
     end do
 
-    ! Create Surface variables
-    print *, 'Creating surface variables'
-    nstraincomp = 6
-    ncomp       = 3
-    call check( nf90_inq_grp_ncid(ncin_id, "Surface", ncin_surf_grpid) )
-    call check( nf90_def_grp(ncout_id, "Surface", ncout_surf_grpid) )
-    call check( nf90_def_dim( ncid  = ncout_surf_grpid,   &
-                              name  = "straincomponents", &
-                              len   = nstraincomp,                  &
-                              dimid = ncout_surfstrain_dimid) )
-    call check( nf90_def_dim( ncid  = ncout_surf_grpid,   &
-                              name  = "components", &
-                              len   = ncomp,                  &
-                              dimid = ncout_comp_dimid) )
-    call check( nf90_get_att( ncid   = ncin_surf_grpid, &
-                              name   = 'nsurfelem',     &
-                              varid  = NF90_GLOBAL,     &
-                              values = nsurfelem) )
-    call check( nf90_def_dim( ncid   = ncout_surf_grpid, &
-                              name   = "surf_elems",     &
-                              len    = nsurfelem,        &
-                              dimid  = ncout_surf_dimid) )     
-
-    allocate(varname_surf(6))
-    varname_surf = ['elem_theta      ', 'displacement    ', 'velocity        ', &
-                    'disp_src        ', 'strain          ', 'stf_dump        ']
-    do ivar = 1, size(varname_surf)
-        call check( nf90_inq_varid(ncid  = ncin_surf_grpid,        &
-                                   varid = ncin_surf_varids(ivar), & 
-                                   name  = varname_surf(ivar) ))
-        !print *, 'Found surface variable: ', trim(varname_surf(ivar))
+    print *, 'Copy source time function'
+    allocate(varname_stf(2))
+    varname_stf  = ['stf_dump        ', &
+                    'stf_d_dump      ']
+    do ivar = 1, size(varname_stf)
+        call check( nf90_inq_varid(ncid  = ncin_snap_grpid,        &
+                                   varid = ncin_stf_varids(ivar), & 
+                                   name  = varname_stf(ivar) ))
     end do
 
-    call check( nf90_def_var(      ncid       = ncout_surf_grpid,   &
-                                   name       = varname_surf(1),    &
-                                   xtype      = NF90_FLOAT,         &
-                                   dimids     = [ncout_surf_dimid], &
-                                   chunksizes = [nsurfelem],        &
-                                   varid      = ncout_surf_varids(1)) )
-    call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                      varid   = ncout_surf_varids(1),    &
-                                      shuffle = 1, deflate = 1,          &
-                                      deflate_level = deflate_level) )
-   
-    do ivar = 2, 4
-        call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
-                                 name       = varname_surf(ivar), &
-                                 xtype      = NF90_FLOAT,         &
-                                 dimids     = [ncout_snap_dimid, ncout_comp_dimid, ncout_surf_dimid], &
-                                 chunksizes = [nsnap, ncomp, 1],  &
-                                 varid      = ncout_surf_varids(ivar)) )
-        call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                          varid   = ncout_surf_varids(ivar), &
-                                          shuffle = 1, deflate = 1,          &
-                                          deflate_level = deflate_level) )
-    end do
-    call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
-                             name       = varname_surf(5),         &
-                             xtype      = NF90_FLOAT,         &
-                             dimids     = [ncout_snap_dimid, ncout_surfstrain_dimid, ncout_surf_dimid],&
-                             chunksizes = [nsnap, nstraincomp, 1],  &
-                             varid      = ncout_surf_varids(5)) )
-    call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                      varid   = ncout_surf_varids(5),    &
-                                      shuffle = 1, deflate = 1,          &
-                                      deflate_level = deflate_level) )
+    do ivar = 1, 2
+       call check( nf90_def_var(ncid       = ncout_fields_grpid,   &
+                                name       = varname_stf(ivar),    &
+                                xtype      = NF90_FLOAT,         &
+                                dimids     = [ncout_snap_dimid], &
+                                chunksizes = [nsnap],            &
+                                varid      = ncout_stf_varids(ivar)) )
 
-    call check( nf90_def_var(ncid       = ncout_surf_grpid,   &
-                             name       = varname_surf(6),    &
-                             xtype      = NF90_FLOAT,         &
-                             dimids     = [ncout_snap_dimid], &
-                             chunksizes = [nsnap],            &
-                             varid      = ncout_surf_varids(6)) )
-    call check( nf90_def_var_deflate( ncid    = ncout_surf_grpid,        &
-                                      varid   = ncout_surf_varids(6),    &
-                                      shuffle = 1, deflate = 1,          &
-                                      deflate_level = deflate_level) )
+       call check( nf90_def_var_deflate( ncid    = ncout_fields_grpid,        &
+                                         varid   = ncout_stf_varids(ivar),    &
+                                         shuffle = 1, deflate = 1,          &
+                                         deflate_level = deflate_level) )
+
+       call check( nf90_def_var_fletcher32(ncid  = ncout_fields_grpid, &
+                                           varid = ncout_stf_varids(ivar), &
+                                           fletcher32=1) )
+    enddo
     
-    print *, 'Surface variables defined'
+    print *, 'STF variables defined'
 
     ! Copy all attributes
     nf_att_stat = NF90_NOERR
@@ -344,73 +503,243 @@ program field_transformation
     end do
     deallocate(data_mesh)
 
+    if (trim(dump_type) == 'displ_only') then
+        
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_midpoint_varid, & 
+                                   name  = 'midpoint_mesh' ))
+       
+       allocate(int_data_1d(nelem))
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_midpoint_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_midpoint_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_eltype_varid, & 
+                                   name  = 'eltype' ))
+       
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_eltype_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_eltype_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_axis_varid, & 
+                                   name  = 'axis' ))
+       
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_axis_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_axis_varid, &
+                                 start  = [1],  &
+                                 count  = [nelem], &
+                                 values = int_data_1d))
+       deallocate(int_data_1d)
+
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_fem_varid, & 
+                                   name  = 'fem_mesh' ))
+
+       allocate(int_data_2d(4, nelem))
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_fem_varid, &
+                                 start  = [1,1],  &
+                                 count  = [4,nelem], &
+                                 values = int_data_2d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_fem_varid, &
+                                 start  = [1,1],  &
+                                 count  = [4,nelem], &
+                                 values = int_data_2d))
+       deallocate(int_data_2d)
+
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_sem_varid, & 
+                                   name  = 'sem_mesh' ))
+
+       allocate(int_data_3d(npol+1, npol+1, nelem))
+       call check(nf90_get_var ( ncid   = ncin_mesh_grpid,     &
+                                 varid  = ncin_mesh_sem_varid, &
+                                 start  = [1,1,1],  &
+                                 count  = [npol+1,npol+1,nelem], &
+                                 values = int_data_3d))
+       call check(nf90_put_var ( ncid   = ncout_mesh_grpid,     &
+                                 varid  = ncout_mesh_sem_varid, &
+                                 start  = [1,1,1],  &
+                                 count  = [npol+1,npol+1,nelem], &
+                                 values = int_data_3d))
+       deallocate(int_data_3d)
+
+
+       allocate(data_mesh(nelem))
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_mps_varid, & 
+                                   name  = 'mp_mesh_S' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_mps_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_mps_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_mpz_varid, & 
+                                   name  = 'mp_mesh_Z' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_mpz_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_mpz_varid, &
+                                 start  = [1],                    & 
+                                 count  = [nelem],                 &
+                                 values = data_mesh))
+       deallocate(data_mesh)
+
+       allocate(dp_data_1d(0:npol))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_gll_varid, & 
+                                   name  = 'gll' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_gll_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_gll_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_glj_varid, & 
+                                   name  = 'glj' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_glj_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_glj_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_G0_varid, & 
+                                   name  = 'G0' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_G0_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_G0_varid, &
+                                 start  = [1],                    & 
+                                 count  = [npol+1],                 &
+                                 values = dp_data_1d))
+
+       deallocate(dp_data_1d)
+
+       allocate(dp_data_2d(0:npol,0:npol))
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_G1_varid, & 
+                                   name  = 'G1' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_G1_varid, &
+                                 start  = [1,1],                    & 
+                                 count  = [npol+1, npol+1],     &
+                                 values = dp_data_2d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_G1_varid, &
+                                 start  = [1,1],                    & 
+                                 count  = [npol+1, npol+1],     &
+                                 values = dp_data_2d))
+
+       call check( nf90_inq_varid( ncid  = ncin_mesh_grpid,        &
+                                   varid = ncin_mesh_G2_varid, & 
+                                   name  = 'G2' ))
+
+       call check( nf90_get_var( ncid   = ncin_mesh_grpid,        &
+                                 varid  = ncin_mesh_G2_varid, &
+                                 start  = [1,1],                    & 
+                                 count  = [npol+1, npol+1],     &
+                                 values = dp_data_2d) )
+      
+       call check( nf90_put_var( ncid   = ncout_mesh_grpid,       &
+                                 varid  = ncout_mesh_G2_varid, &
+                                 start  = [1,1],                    & 
+                                 count  = [npol+1, npol+1],     &
+                                 values = dp_data_2d))
+       deallocate(dp_data_2d)
+    endif
+
     ! Done with the mesh
 
-    ! Copy surface variables
-    print *, 'Copying surface variables'
-    allocate(data_surf_1d(nsurfelem))
-    call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                              varid  = ncin_surf_varids(1),    &
-                              start  = [1],                    & 
-                              count  = [nsurfelem],            &
-                              values = data_surf_1d) )
-    call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
-                              varid  = ncout_surf_varids(1),   &
-                              start  = [1],                    & 
-                              count  = [nsurfelem],            &
-                              values = data_surf_1d))
-    deallocate(data_surf_1d)
-
-    allocate(data_surf_3d(nsnap, ncomp, nsurfelem))
-    do ivar = 2, 4
-        call check( nf90_get_var( ncid   = ncin_surf_grpid,           &
-                                  varid  = ncin_surf_varids(ivar),    &
-                                  start  = [1,1,1],                   & 
-                                  count  = [nsnap, ncomp, nsurfelem], &
-                                  values = data_surf_3d) )
-        call check( nf90_put_var( ncid   = ncout_surf_grpid,          &
-                                  varid  = ncout_surf_varids(ivar),   &
-                                  start  = [1,1,1],                   & 
-                                  count  = [nsnap, ncomp, nsurfelem], &
-                                  values = data_surf_3d))
+    ! Copy STF
+    allocate(data_stf_1d(nsnap))
+    do ivar = 1, 2
+       call check( nf90_get_var( ncid   = ncin_snap_grpid,        &
+                                 varid  = ncin_stf_varids(ivar),  &
+                                 start  = [1],                    & 
+                                 count  = [nsnap],                &
+                                 values = data_stf_1d) )
+       call check( nf90_put_var( ncid   = ncout_fields_grpid,     &
+                                 varid  = ncout_stf_varids(ivar), &
+                                 start  = [1],                    & 
+                                 count  = [nsnap],                &
+                                 values = data_stf_1d))
     end do
-    deallocate(data_surf_3d)
-
-    allocate(data_surf_3d(nsnap, nstraincomp, nsurfelem))
-    call check( nf90_get_var( ncid   = ncin_surf_grpid,                 &
-                              varid  = ncin_surf_varids(5),             &
-                              start  = [1,1,1],                         & 
-                              count  = [nsnap, nstraincomp, nsurfelem], &
-                              values = data_surf_3d) )
-    call check( nf90_put_var( ncid   = ncout_surf_grpid,                &
-                              varid  = ncout_surf_varids(5),            &
-                              start  = [1,1,1],                         & 
-                              count  = [nsnap, nstraincomp, nsurfelem], &
-                              values = data_surf_3d))
-    deallocate(data_surf_3d)
-
-    allocate(data_surf_1d(nsnap))
-    call check( nf90_get_var( ncid   = ncin_surf_grpid,        &
-                              varid  = ncin_surf_varids(6),    &
-                              start  = [1],                    & 
-                              count  = [nsnap],                &
-                              values = data_surf_1d) )
-    call check( nf90_put_var( ncid   = ncout_surf_grpid,       &
-                              varid  = ncout_surf_varids(6),   &
-                              start  = [1],                    & 
-                              count  = [nsnap],                &
-                              values = data_surf_1d))
-    deallocate(data_surf_1d)
+    deallocate(data_stf_1d)
 
 
-
-    ! loop over fields
+    ! loop over fields in snapshots group
     do ivar=1, nvar
         if (verbose) &
             print *, varnamelist(ivar)
         ! loop over subsets of the gll points
         nstep = 0
         do while (nstep + 1 < ngll)
+
+            npointsperstep = cache_size * 1048576 / 4 / nsnap
 
             ngllread = min(npointsperstep, ngll - nstep)
 
@@ -430,7 +759,7 @@ program field_transformation
             time_i = time_i + tack - tick
             space_i = space_i + ngllread * nsnap * 4 / 1048576.
             if (verbose) &
-                print "('read  ', F9.2, ' MB in ', F5.2, ' s => ', F6.2, 'MB/s' )", &
+                print "('read  ', F12.2, ' MB in ', F7.2, ' s => ', F7.2, 'MB/s' )", &
                     real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
                     real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
 
@@ -452,10 +781,9 @@ program field_transformation
             time_o = time_o + tack - tick
             space_o = space_o + ngllread * nsnap * 4 / 1048576.
             if (verbose) &
-                print "('wrote ', F9.2, ' MB in ', F4.1, ' s => ', F6.2, 'MB/s' )", &
+                print "('wrote ', F12.2, ' MB in ', F7.2, ' s => ', F7.2, 'MB/s' )", &
                     real(ngllread) * nsnap * 4 / 1048576., tack-tick, &
                     real(ngllread) * nsnap * 4 / 1048576. / (tack-tick)
-                !end if !dofft
 
             deallocate(datat_t)
 
@@ -466,7 +794,7 @@ program field_transformation
     call check( nf90_close(ncin_id))
     call check( nf90_close(ncout_id))
 
-    call dump_mesh_data_xdmf(filename = 'ordered_output.nc4', varname='Snapshots/straintrace', &
+    call dump_mesh_data_xdmf(filename = 'Data/ordered_output.nc4', varname='Snapshots/straintrace', &
                              npoints=ngll, nsnap=nsnap)
 
     print '(A, F8.2, A)', 'Time spent for compression/fft: ', time_fft, ' s'
@@ -488,14 +816,10 @@ contains
 subroutine check(status)
     implicit none
     integer, intent ( in) :: status !< Error code
-    integer, allocatable  :: test(:), test2(:,:)
 #ifdef unc
     if(status /= nf90_noerr) then 
         print *, trim(nf90_strerror(status))
-        ! Works only with ifort
-        ! call tracebackqq()
-        stop 0
-
+        call abort()
     end if
 #endif
 end subroutine
@@ -532,7 +856,7 @@ subroutine dump_mesh_data_xdmf(filename, varname, npoints, nsnap)
   character(len=*), intent(in)      :: filename, varname
   integer, intent(in)               :: npoints, nsnap
 
-  integer                           :: iinput_xdmf, iinput_heavy_data
+  integer                           :: iinput_xdmf
   integer                           :: i
   character(len=512)                :: filename_np
   

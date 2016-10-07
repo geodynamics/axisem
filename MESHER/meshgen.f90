@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module meshgen
    
   use global_parameters, only: sp, dp
@@ -1373,7 +1374,6 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
   integer           :: is, iz
   real(kind=dp)     :: ds1, ds2
 
-  real(kind=dp)     :: deltatheta
   real(kind=dp)     :: pi2
   integer           :: iproc
 
@@ -1624,3 +1624,4 @@ end subroutine donot_generate_southern_hemisphere
 !-----------------------------------------------------------------------------------------
 
 end module meshgen
+!=========================================================================================

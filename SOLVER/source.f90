@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module source
 
   use global_parameters
@@ -280,7 +281,7 @@ subroutine compute_src
      case default
         if (lpr) write(6,*) '  ...moment tensor elements for ', src_type(2)
         call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
-        source_term = source_term / (two * pi)
+        source_term = source_term / (2 * pi)
 
      end select
 
@@ -308,7 +309,7 @@ subroutine compute_src
      if (lpr) write(6,*)'  computing QUADRUPOLE Source with...'
      if (lpr) write(6,*)'  ...moment tensor elements for ',src_type(2)
      call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
-     source_term = source_term / pi
+     source_term = source_term / (2 * pi)
 
   case default
      write(errmsg,*) 'we only support monopoles, dipoles, quadrupoles, and not ',src_type(1)
@@ -611,28 +612,29 @@ end subroutine errorf
 !! @TODO: ERF is an intrinsic in Fortran2008. Compiler support is unclear still,
 !!        so we will keep that in here for a while.
 function erf(x)
-	real(kind=dp), intent(in)        :: x
-	real(kind=dp)                    :: erfcc, erf
-    real(kind=dp)                    :: polyval
-	real(kind=dp)                    :: t,z
-    integer                          :: icoeff
-    integer, parameter               :: ncoeff = 10
-	real(kind=dp), dimension(ncoeff) :: coeffs =                         &
-        [-1.26551223,  1.00002368, 0.37409196,  0.09678418, -0.18628806, &
-          0.27886807, -1.13520398, 1.48851587, -0.82215223,  0.17087277]
 
-    z = abs(x)
-    t = 1.0 / (1.0 + 0.5 * z)
-    
-    polyval = coeffs(ncoeff)
-    do icoeff = ncoeff-1, 1, -1
-        polyval = t * polyval + coeffs(icoeff)
-    end do
-    
-    erfcc = t * exp(-z * z + polyval)
-    
-    if (x < 0.0) erfcc = 2.0 - erfcc
-    erf = 1 - erfcc 
+  real(kind=dp), intent(in)        :: x
+  real(kind=dp)                    :: erfcc, erf
+  real(kind=dp)                    :: polyval
+  real(kind=dp)                    :: t,z
+  integer                          :: icoeff
+  integer, parameter               :: ncoeff = 10
+  real(kind=dp), dimension(ncoeff) :: coeffs =                         &
+      [-1.26551223,  1.00002368, 0.37409196,  0.09678418, -0.18628806, &
+        0.27886807, -1.13520398, 1.48851587, -0.82215223,  0.17087277]
+  
+  z = abs(x)
+  t = 1.0 / (1.0 + 0.5 * z)
+  
+  polyval = coeffs(ncoeff)
+  do icoeff = ncoeff-1, 1, -1
+      polyval = t * polyval + coeffs(icoeff)
+  end do
+  
+  erfcc = t * exp(-z * z + polyval)
+  
+  if (x < 0.0) erfcc = 2.0 - erfcc
+  erf = 1 - erfcc 
 
 end function erf
 !-----------------------------------------------------------------------------------------
@@ -873,7 +875,6 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
   real(kind=realkind), intent(out) :: f(0:npol,0:npol,nel_solid)
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
   integer                          :: liel_src, lipol_src, ljpol_src, ipol, jpol, i
-  real(kind=dp)                    :: s, z, r, theta
   character(len=16)                :: fmt1
   integer                          :: nsrcelem
 
@@ -928,7 +929,6 @@ end subroutine define_bodyforce
 subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   
   use data_mesh
-  use data_spec, only : shp_deri_k
   
   use apply_masks
   use utlity
@@ -939,12 +939,10 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
   real(kind=realkind), intent(out) :: source_term(0:npol,0:npol,nel_solid,3)
   integer                          :: liel_src, lipol_src, ljpol_src
   
-  real(kind=realkind), allocatable :: ws(:,:,:), dsws(:,:,:)
-  real(kind=realkind), allocatable :: ws_over_s(:,:,:), dzwz(:,:,:)
+  real(kind=realkind), allocatable :: ws(:,:,:), dsws(:,:,:), dzwz(:,:,:)
   real(kind=realkind), allocatable :: ds(:), dz(:)
   
   integer                          :: ielem, ipol, jpol, i, nsrcelem, nsrcelem_glob
-  real(kind=dp)                    :: s, z, r, theta, r1, r2
   character(len=16)                :: fmt1
 
   liel_src = iel_src
@@ -963,14 +961,8 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
 
   allocate(ws(0:npol,0:npol,1:nsrcelem))
   allocate(dsws(0:npol,0:npol,1:nsrcelem))
-  allocate(ws_over_s(0:npol,0:npol,1:nsrcelem))
   allocate(dzwz(0:npol,0:npol,1:nsrcelem))
   allocate(ds(0:npol),dz(0:npol))
-
-  dzwz(:,:,:) = zero
-  dsws(:,:,:) = zero
-  ws_over_s(:,:,:) = zero
-  source_term(:,:,:,:) = zero
 
   ! global number of source elements (in case source is on processor boundary)
   nsrcelem_glob = psum_int(nsrcelem)
@@ -1060,7 +1052,7 @@ subroutine define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
                     source_term(ipol,jpol,liel_src,1) = &
                          dsws(lipol_src,ljpol_src,i) 
                     source_term(ipol,jpol,liel_src,2) = &
-                         ws_over_s(lipol_src,ljpol_src,i) 
+                         dsws(lipol_src,ljpol_src,i) 
                  case default
                     write(6,'(a,a,/,a,a,a)') &
                          procstrg, "PROBLEM: Didn't compute any source!", &
@@ -1179,3 +1171,4 @@ end subroutine define_moment_tensor
 !-----------------------------------------------------------------------------------------
 
 end module source
+!=========================================================================================

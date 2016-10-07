@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module mesh_info
   
   use data_gllmesh
@@ -267,6 +268,7 @@ subroutine define_boundaries
   real(kind=dp), allocatable :: bdry_radius(:)
 
   if (neltot_fluid>0 .and. neltot_solid>0 ) then 
+     ! TODO: This is only true, if the fluid is not layered!!!
      nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
 
      if (.not. solid_domain(ndisc)) nbcnd = nbcnd - 1
@@ -890,3 +892,4 @@ end subroutine check_boundary
 !-----------------------------------------------------------------------------------------
 
 end module mesh_info
+!=========================================================================================

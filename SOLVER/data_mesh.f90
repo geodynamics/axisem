@@ -19,9 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!===================
+!=========================================================================================
 module data_mesh
-!===================
 
   ! Arrays here pertain to some sort of mesh peculiarities and mainly serve 
   ! as information or parameters for many "if"-decisions such as
@@ -39,19 +38,19 @@ module data_mesh
   public 
 
   ! Very basic mesh parameters, have been in mesh_params.h before
-  integer , protected ::         npol !<            polynomial order
-  integer , protected ::        nelem !<                   proc. els
-  integer , protected ::       npoint !<               proc. all pts
-  integer , protected ::    nel_solid !<             proc. solid els
-  integer , protected ::    nel_fluid !<             proc. fluid els
-  integer , protected :: npoint_solid !<             proc. solid pts
-  integer , protected :: npoint_fluid !<             proc. fluid pts
-  integer , protected ::  nglob_solid !<            proc. slocal pts
-  integer , protected ::  nglob_fluid !<            proc. flocal pts
-  integer , protected ::     nel_bdry !< proc. solid-fluid bndry els
-  integer , protected ::        ndisc !<   # disconts in bkgrd model
-  integer , protected ::   nproc_mesh !<        number of processors
-  integer , protected :: lfbkgrdmodel !<   length of bkgrdmodel name
+  integer, protected ::         npol !<            polynomial order
+  integer, protected ::        nelem !<                   proc. els
+  integer, protected ::       npoint !<               proc. all pts
+  integer, protected ::    nel_solid !<             proc. solid els
+  integer, protected ::    nel_fluid !<             proc. fluid els
+  integer, protected :: npoint_solid !<             proc. solid pts
+  integer, protected :: npoint_fluid !<             proc. fluid pts
+  integer, protected ::  nglob_solid !<            proc. slocal pts
+  integer, protected ::  nglob_fluid !<            proc. flocal pts
+  integer, protected ::     nel_bdry !< proc. solid-fluid bndry els
+  integer, protected ::        ndisc !<   # disconts in bkgrd model
+  integer, protected ::   nproc_mesh !<        number of processors
+  integer, protected :: lfbkgrdmodel !<   length of bkgrdmodel name
 
   ! global number in solid varies across procs due to central cube domain decomposition
   integer                                       :: nglob
@@ -74,6 +73,7 @@ module data_mesh
   
   ! Global mesh informations
   real(kind=dp)                     :: router ! Outer radius (surface)
+  character(len=100)                :: model_name_ext_model ! name of external model
 
   ! critical mesh parameters (spacing/velocity, characteristic lead time etc)
   real(kind=dp)                     :: pts_wavelngth
@@ -126,8 +126,6 @@ module data_mesh
   logical, allocatable        :: solid_domain(:)
   integer, allocatable        :: idom_fluid(:)
   real(kind=dp)               :: rmin, minh_ic, maxh_ic, maxh_icb
-  logical                     :: make_homo
-  real(kind=dp)               :: vphomo, vshomo, rhohomo
   logical                     :: anel_true ! anelastic model?
   !--------------------------------------------------------------------------
 
@@ -146,9 +144,20 @@ module data_mesh
   integer, allocatable         :: cmbfile_el(:,:), loc2globcmb(:)
   !--------------------------------------------------------------------------
 
+  ! for xdmf plotting
   integer                      :: nelem_plot, npoint_plot
   logical, allocatable         :: plotting_mask(:,:,:)
   integer, allocatable         :: mapping_ijel_iplot(:,:,:)
+
+  ! for kernel wavefields in displ_only mode
+  integer                      :: nelem_kwf_global, nelem_kwf
+  integer                      :: npoint_kwf_global, npoint_kwf
+  integer                      :: npoint_solid_kwf, npoint_fluid_kwf
+  logical, allocatable         :: kwf_mask(:,:,:)
+  integer, allocatable         :: mapping_ijel_ikwf(:,:,:)
+  integer, allocatable         :: midpoint_mesh_kwf(:), eltype_kwf(:), axis_kwf(:)
+  integer, allocatable         :: fem_mesh_kwf(:,:)
+  integer, allocatable         :: sem_mesh_kwf(:,:,:)
 
   ! Only needed before the simulation and later deallocated
   ! Global mesh informations
@@ -199,8 +208,32 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 subroutine read_mesh_advanced(iounit)
    use data_io, only     : verbose 
+   use data_spec
    integer, intent(in)  :: iounit
    integer              :: iptcp, iel, inode
+
+   allocate(eta(0:npol))
+   allocate(dxi(0:npol))
+   allocate(wt(0:npol))
+   allocate(xi_k(0:npol))
+   allocate(wt_axial_k(0:npol))
+   allocate(G1(0:npol,0:npol))
+   allocate(G1T(0:npol,0:npol))
+   allocate(G2(0:npol,0:npol))
+   allocate(G2T(0:npol,0:npol))
+   allocate(G0(0:npol))
+
+   ! spectral stuff
+   read(iounit) xi_k        
+   read(iounit) eta 
+   read(iounit) dxi       
+   read(iounit) wt        
+   read(iounit) wt_axial_k
+   read(iounit) G0
+   read(iounit) G1
+   read(iounit) G1T
+   read(iounit) G2
+   read(iounit) G2T
 
    read(iounit) npoin
    
@@ -281,6 +314,5 @@ subroutine read_mesh_axel(iounit)
 end subroutine
 !-----------------------------------------------------------------------------------------
 
-!=======================
 end module data_mesh
-!=======================
+!=========================================================================================

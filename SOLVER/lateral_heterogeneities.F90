@@ -19,9 +19,8 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
-!========================
+!=========================================================================================
 module lateral_heterogeneities
-!========================
 
   use global_parameters
   use data_heterogeneous
@@ -1369,7 +1368,7 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
     ! start elastic property values
     real(kind=dp) :: vptmp2, vstmp2, radst
     real(kind=dp) :: rhost, must, lambdast
-    integer :: iel, ipol, jpol, icount, idom!, iel_count !, ij
+    integer :: iel, ipol, jpol, icount
     real(kind=dp)   :: rand
     integer :: foundcount
     logical :: foundit
@@ -1377,8 +1376,6 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
     real(kind=dp) :: rmin, rmax, thetamin, thetamax
 
     ! for gradient
-    real(kind=dp) :: grad_halfwidth_r, grad_halfwidth_th
-    real(kind=dp) :: grad_r_het, grad_th_het2, grad_th_het1
     real(kind=dp) :: dr_outer, dr_inner, dth_outer, dth_inner
     real(kind=dp) :: val, gradwidth
     integer(kind=dp), allocatable :: saveiel(:), saveipol(:), savejpol(:)
@@ -1473,7 +1470,7 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
        ! pure synthetical case, for parameter studies (second het-parameter false: depth dependence)
        if ( .not. rdep(hetind) ) then
           allocate(saveipol(nelem*(npol+1)**2),savejpol(nelem*(npol+1)**2), &
-	  saveiel(nelem*(npol+1)**2),saveval(nelem*(npol+1)**2))
+          saveiel(nelem*(npol+1)**2),saveval(nelem*(npol+1)**2))
           saveipol = 0
           savejpol = 0
           saveiel = 0
@@ -1481,7 +1478,7 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
           foundcount = 0
           rhost = 0.
           lambdast = 0.
- 	  must = 0.
+          must = 0.
        endif
        
        icount = 0
@@ -1513,21 +1510,21 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
              do jpol=0, npol
                 do ipol=0, npol
                    call compute_coordinates(s,z,r,th,iel,ipol,jpol)
-	 	   ! rhopost, mupost and lambdapost are set outside of the loop after all points are found
-		   ! get elastic properties right below the local heterogeneity
-	           if ( het_funct_type(hetind)=='ghill' .or. het_funct_type(hetind)=='shill' ) then
-	              gradwidth = r_het1(hetind)-200000. !tmp use of gradwidth
-	              if ( r<r_het1(hetind) .and. r>gradwidth .and. r>=radst ) then
-                         !write(6,*) r, rho(ipol,jpol,iel), lambda(ipol,jpol,iel), mu(ipol,jpol,iel)
-                	 rhost = rho(ipol,jpol,iel)
-                	 lambdast = lambda(ipol,jpol,iel)
-                	 must = mu(ipol,jpol,iel)
-                	 radst = r
-             	      endif
-            	      ! get elastic properties right above the local heterogeneity
-          	   else ! for vally and all other shapes get velocity at top of het
-             	      gradwidth = r_het2(hetind)+200000. !tmp use of gradwidth
-             	      if ( r>=r_het2(hetind) .and. r<gradwidth .and. r<=radst ) then
+                   ! rhopost, mupost and lambdapost are set outside of the loop after all points are found
+                   ! get elastic properties right below the local heterogeneity
+                   if ( het_funct_type(hetind)=='ghill' .or. het_funct_type(hetind)=='shill' ) then
+                      gradwidth = r_het1(hetind)-200000. !tmp use of gradwidth
+                      if ( r<r_het1(hetind) .and. r>gradwidth .and. r>=radst ) then
+                            !write(6,*) r, rho(ipol,jpol,iel), lambda(ipol,jpol,iel), mu(ipol,jpol,iel)
+                          rhost = rho(ipol,jpol,iel)
+                          lambdast = lambda(ipol,jpol,iel)
+                          must = mu(ipol,jpol,iel)
+                          radst = r
+                      endif
+                      ! get elastic properties right above the local heterogeneity
+                   else ! for vally and all other shapes get velocity at top of het
+                      gradwidth = r_het2(hetind)+200000. !tmp use of gradwidth
+                      if ( r>=r_het2(hetind) .and. r<gradwidth .and. r<=radst ) then
                          !write(6,*) r, rho(ipol,jpol,iel), lambda(ipol,jpol,iel), mu(ipol,jpol,iel)
                          rhost = rho(ipol,jpol,iel)
                          lambdast = lambda(ipol,jpol,iel)
@@ -1604,9 +1601,9 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
                    endif
 
                    ! ellipse without tilt, if you want tilt, enable read(tilt option)
-	           ! create file with tilt angle (mathematic convention)
+                   ! create file with tilt angle (mathematic convention)
                    if (het_funct_type(hetind) == 'spher') then
-		      ! Y=+-b*sqrt(1-(X/a)**2
+                      ! Y=+-b*sqrt(1-(X/a)**2
                       ! X=+-a*sqrt(1-(Y/b)**2
                       ! using vstmp->y-coord of ellipse, vptmp->x-coord of ellipse
                       ! vstmp2->upper y-distance, vptmp2->lower y-distance
@@ -1645,10 +1642,10 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
                          !#############################################################################
                          !instead of using rhost, vpst and vsst calculated with velocity above
                          !problems with anisotropy
-			 !save ipol jpol and iel val(ipol,jpol,iel) of heterogeneity
+                         !save ipol jpol and iel val(ipol,jpol,iel) of heterogeneity
                          foundcount = foundcount + 1
                          saveipol(foundcount) = ipol
-			 savejpol(foundcount) = jpol
+                         savejpol(foundcount) = jpol
                          saveiel(foundcount) = iel
                          saveval(foundcount) = val
                       endif !rdep
@@ -1669,14 +1666,14 @@ subroutine load_het_funct(rho, lambda, mu, rhopost, lambdapost, mupost, hetind)
        thhetmax = max(maxval(thhet(1:icount)), thhetmax)
 
        if ( .not. rdep(hetind) ) then
-       ! write(6,*) 'nordep hetind/cnt/r/rho/lambda/mu: ', hetind, foundcount, radst, rhost, lambdast, must
-       ! get minimum/ maximum of 
-             vstmp = sqrt( must / rhost )
-             vptmp = sqrt( (lambdast + 2. * must) / rhost )
-	  do icount=0, foundcount
+          ! write(6,*) 'nordep hetind/cnt/r/rho/lambda/mu: ', hetind, foundcount, radst, rhost, lambdast, must
+          ! get minimum/ maximum of 
+          vstmp = sqrt( must / rhost )
+          vptmp = sqrt( (lambdast + 2. * must) / rhost )
+          do icount=0, foundcount
              ipol=saveipol(icount)
              jpol=savejpol(icount)
-	     iel=saveiel(icount)
+             iel=saveiel(icount)
              val=saveval(icount)
              rhopost(ipol,jpol,iel) = rhost * (1. + val * delta_rho(hetind))
              vstmp2 = vstmp * (1. + val * delta_vs(hetind))
@@ -1931,6 +1928,7 @@ subroutine write_VTK_bin_scal_pts(u2, mesh1, rows, filename, varname)
    !write(6,*)'...saved ',trim(filename)//'.vtk'
 
 end subroutine write_VTK_bin_scal_pts
-!-----------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------
 
 end module lateral_heterogeneities
+!=========================================================================================

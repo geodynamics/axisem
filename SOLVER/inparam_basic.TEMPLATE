@@ -6,6 +6,8 @@
 # moment: Full moment tensor, needs four parallel simulations. Set the depth in
 #         inparam_source and modify the moment tensor in the file CMTSOLUTION 
 #         before postprocessing.
+# force:  Horizontal and vertical single force as two parallel simulations. Used
+#         to compute backward kernel wavefields as needed for Instaseis
 
 SIMULATION_TYPE   single
 
@@ -18,8 +20,6 @@ SEISMOGRAM_LENGTH  1800.
 # colatlon: Colatitude and Longitude for each station.
 # stations: SPECFEM-style stations file with latitude, longitude
 #           and station name (default)
-# database: One station at each GLL point, arbitrary station locations 
-#           can be reconstructed from this.
 
 RECFILE_TYPE      stations 
 

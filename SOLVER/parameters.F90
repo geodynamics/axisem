@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 !> Read parameters for the general solver (i.e. NOT mesh, sources, receivers);
 !! compute other parameters for the simulation;
 !! write out summaries of all relevant simulation settings.
@@ -34,10 +35,11 @@ module parameters
     
     implicit none
 
-    character(len=100)  :: hostname, username, svn_version
+    character(len=100)  :: hostname, username, git_hash
     character(len=100)  :: compiler, compilerversion 
     character(len=255)  :: fflags, cflags, ldflags
     character(len=3)    :: openmp
+    character(len=16)   :: simtype
 
     public :: open_local_output_file, readin_parameters, read_inparam_basic_verbosity
     public :: compute_numerical_parameters, write_parameters
@@ -74,7 +76,7 @@ end subroutine
 !! data paths, specification of wavefield dumping etc.
 subroutine readin_parameters
 
-  use data_mesh, only: make_homo, do_mesh_tests
+  use data_mesh, only: do_mesh_tests
 
   call read_inparam_basic
   
@@ -85,9 +87,6 @@ subroutine readin_parameters
   ! now pre-set. Most of these are to be considered in the post processing stage now.
   sum_seis = .false.
   sum_fields = .false.
-  dump_snaps_solflu = .false.
-  dump_type = 'fullfields'
-  num_simul = 1
    
   ! netcdf format
   output_format = 'binary'
@@ -96,11 +95,11 @@ subroutine readin_parameters
   call barrier
   if (lpr) then
      write(6,20)
-     write(6,21) datapath, infopath, num_simul,  seislength_t, enforced_dt,  &
-                 enforced_period, trim(src_file_type), rec_file_type, &
+     write(6,21) datapath, infopath, seislength_t, enforced_dt,  &
+                 enforced_period, trim(simtype), rec_file_type, &
                  sum_seis, sum_fields, time_scheme, seis_dt,  &
-                 dump_energy, dump_vtk, dump_snaps_solflu, dump_wavefields, &
-                 dump_type, ibeg, iend, strain_samp, src_dump_type, make_homo, &
+                 dump_energy, dump_vtk, dump_wavefields, &
+                 dump_type, ibeg, iend, jbeg, jend, strain_samp, src_dump_type, &
                  add_hetero, do_mesh_tests, output_format
 
 20 format(/&
@@ -119,60 +118,75 @@ subroutine readin_parameters
    08x,'//                                                           //',/  &
    08x,'//                                                           //',/  &
    08x,'//  Authors : Tarje Nissen-Meyer (Oxford University)         //',/  &
-   08x,'//            Alexandre Fournier (IPG Paris)                 //',/  &
    08x,'//              Martin van Driel (ETH Zurich)                //',/  &
    08x,'//                 Simon Stähler (LMU Munich)                //',/  &
    08x,'//                Kasra Hosseini (LMU Munich)                //',/  &
    08x,'//               Stefanie Hempel (University of Muenster)    //',/  &
+   08x,'//            Alexandre Fournier (IPG Paris)                 //',/  &
    08x,'//                   Tony Dahlen (Princeton University)      //',/  &
    08x,'//                                                           //',/  &
    08x,'//   Contact:     info@axisem.info                           //',/  &  
    08x,'//   Information: www.axisem.info                            //',/  &
+   08x,'//                                                           //')
+
+21 format(/&
+   08x,'//                                                           //',/  &
+   08x,'//     If you are publishing results obtained with this      //',/  &
+   08x,'//          code, please cite this paper:                    //',/  &
+   08x,'//                                                           //',/  &
+   08x,'// (1) T. Nissen-Meyer, M. van Driel, S. C. Staehler,        //',/  & 
+   08x,'//     K. Hosseini, S. Hempel, L. Auer, A. Colombi           //',/  & 
+   08x,'//     and A. Fournier:                                      //',/  & 
+   08x,'//     "AxiSEM: broadband 3-D seismic wavefields in          //',/  &
+   08x,'//              axisymmetric media"                          //',/  &
+   08x,'//     Solid Earth, 5, 425-445, 2014                         //',/  &
+   08x,'//     doi:10.5194/se-5-425-2014                             //',/  &
    08x,'//                                                           //',/  &
    08x,'//       Comprehensive description of the underlying         //',/  &
    08x,'//           numerical analysis can be found in:             //',/  &
-   08x,'//                                                           //')
-
-21 format(&
-   08x,'// (1) Tarje Nissen-Meyer, F. A. Dahlen, A Fournier (2007)   //',/  &
+   08x,'//                                                           //',/  &
+   08x,'// (2) Tarje Nissen-Meyer, F. A. Dahlen, A Fournier (2007)   //',/  &
    08x,'//     "Spherical-earth Frechet sensitivity kernels"         //',/  & 
    08x,'//     Geophysical Journal International 168(3),1051-1066.   //',/  & 
    08x,'//     doi:10.1111/j.1365-246X.2006.03123.x                  //',/  &
    08x,'//                                                           //',/  &
-   08x,'// (2) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  & 
+   08x,'// (3) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  & 
    08x,'//     "A two-dimensional spectral-element method for        //',/  &  
    08x,'//        computing spherical-earth seismograms -            //',/  & 
    08x,'//        I. Moment-tensor source"                           //',/  & 
    08x,'//     Geophysical Journal International 168(3), 1067-1092.  //',/  & 
    08x,'//     doi:10.1111/j.1365-246X.2006.03121.x                  //',/  &
    08x,'//                                                           //',/  &
-   08x,'// (3) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  &
+   08x,'// (4) Tarje Nissen-Meyer, A Fournier, F. A. Dahlen (2007)   //',/  &
    08x,'//     "A two-dimensional spectral-element method for        //',/  &  
    08x,'//        computing spherical-earth seismograms -            //',/  & 
    08x,'//        II.  Waves in solid-fluid media"                   //',/  &
    08x,'//     Geophysical Journal International 174(3), 873-888.    //',/  & 
    08x,'//     doi:10.1111/j.1365-246X.2008.03813.x                  //',/  &
    08x,'//                                                           //',/  &
-   08x,'//     If you are publishing results obtained with this      //',/  &
-   08x,'//          code, please cite the upcoming paper:            //',/  &
+   08x,'// (5) Martin van Driel and Tarje Nissen-Meyer (2014)        //',/  &
+   08x,'//     "Seismic wave propagation in fully anisotropic        //',/  &
+   08x,'//        axisymmetric media"                                //',/  &
+   08x,'//      Geophysical Journal International 199 (2): 880-893.  //',/  &
+   08x,'//      doi: 10.1093/gji/ggu269                              //',/  &
    08x,'//                                                           //',/  &
-   08x,'// (4) T. Nissen-Meyer, M. van Driel, S. Staehler,           //',/  & 
-   08x,'//     K. Hosseini, S. Hempel, A. Fournier:                  //',/  & 
-   08x,'//     "AxiSEM: Simulating high-frequency viscoelastic       //',/  &
-   08x,'//              3D global wavefields",                       //',/  & 
-   08x,'//     to be submitted to Solid Earth                        //',/  &
+   08x,'// (6) Martin van Driel and Tarje Nissen-Meyer (2014)        //',/  &
+   08x,'//     "Optimized visco-elastic wave propagation for         //',/  &
+   08x,'//        weakly dissipative media"                          //',/  &
+   08x,'//      Geophysical Journal International 199 (2): 1078-1093.//',/  &
+   08x,'//      doi: 10.1093/gji/ggu314                              //',/  &
    08x,'//                                                           //',/  &
-   08x,'//  November 2013: version 1.0                               //',/  &
+   08x,'//                                                           //',/  &
+   08x,'//  April 2016: version 1.3                                  //',/  &
    08x,'//                                                           //',/  &
    08x,'///////////////////////////////////////////////////////////////',// &
    08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
    12x,'Data I/O path:                      ',a20,/                         &
    12x,'Info I/O path:                      ',a20,/                         &
-   12x,'Number of source simulations:       ',i2,/                          &
    12x,'Simulation length [s]:              ',f9.3,/                        &
    12x,'Enforced time step [s]:             ',f7.3,/                        &
    12x,'Enforced source period [s]:         ',f7.3,/                        &
-   12x,'Source file type:                   ',a,/                           &
+   12x,'Simulation type:                    ',a,/                          &
    12x,'Receiver file type:                 ',a8,/                          &
    12x,'Sum seismograms?                    ',l2,/                          &
    12x,'Sum wavefields?                     ',l2,/                          &
@@ -180,14 +194,14 @@ subroutine readin_parameters
    12x,'Seismogram sampling rate [s]:       ',f7.3,/                        &
    12x,'Dump kin./pot. energy?              ',l2,/                          &
    12x,'Dump global snaps?                  ',l2,/                          &
-   12x,'Dump solid/fluid snaps?             ',l2,/                          &
    12x,'Dump strain?                        ',l2,/                          &
    12x,'Wavefield dumping type:             ',a12,/                         &
    12x,'First GLL to save in strains:       ',i2,/                          &
    12x,'Last GLL to save in strains:        ',i2,/                          &
+   12x,'First GLL to save in strains:       ',i2,/                          &
+   12x,'Last GLL to save in strains:        ',i2,/                          &
    12x,'Samples per period for strains:     ',f7.3,/                        &
    12x,'Source dumping type:                ',a4,/                          &
-   12x,'Homogenize background model?        ',l2,/                          &
    12x,'Add heterogeneous region?           ',l2,/                          &
    12x,'Perform extensive mesh tests?       ',l2,/                          &
    12x,'Output format (seism., wavefields): ',a6,/                          &
@@ -202,8 +216,9 @@ subroutine readin_parameters
 
   ! Need to decide here since this boolean is needed in def_precomp_terms
   need_fluid_displ = .false.
-  if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu .or. dump_energy .or. & 
-     dump_wavefields .and. dump_type=='fullfields') then
+  if (dump_vtk .or. dump_xdmf .or. dump_energy .or. dump_wavefields .and. &
+        (dump_type=='fullfields' .or. dump_type=='displ_only' &
+        .or. dump_type=='strain_only')) then
      ! Need to add this for each new type of wavefield dumping method that 
      ! requires the fluid displacement/velocities
      need_fluid_displ = .true.
@@ -224,7 +239,6 @@ subroutine read_inparam_basic
   integer             :: iinparam_basic=500, ioerr
   character(len=256)  :: line
   character(len=256)  :: keyword, keyvalue
-  character(len=16)   :: simtype
 
   ! Default values
   seislength_t = 1800.0
@@ -235,7 +249,6 @@ subroutine read_inparam_basic
 
   ! These values have to be set
   simtype = 'undefined'
-  src_file_type = 'undefined'
   meshname = 'undefined'
 
   ! only rank 0 reads the file
@@ -258,16 +271,11 @@ subroutine read_inparam_basic
        
        case('SIMULATION_TYPE') 
          read(keyvalue, *) simtype
-         select case(to_lower(trim(simtype)))
-         case('single')
-            src_file_type = 'sourceparams'
-         case('force')
-            stop 'FIXME: Forces need to be implemented!'
-         case('moment')
-            src_file_type = 'cmtsolut'
-         case default
+
+         if (to_lower(trim(simtype)) /= 'single' .and. to_lower(trim(simtype)) &
+                /= 'force' .and. to_lower(trim(simtype)) /= 'moment') then
             stop 'SIMULATION_TYPE in inparam_basic has invalid value'
-         end select
+         endif
 
        case('RECFILE_TYPE')
           rec_file_type = to_lower(keyvalue)
@@ -297,7 +305,6 @@ subroutine read_inparam_basic
   
   ! broadcast values to other processors
   call broadcast_char(simtype, 0) 
-  call broadcast_char(src_file_type, 0)
   call broadcast_char(rec_file_type, 0)
   call broadcast_dble(seislength_t, 0)
   call broadcast_char(meshname, 0)
@@ -350,13 +357,14 @@ end subroutine
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
   
-  use data_mesh,  only: naxel, meshname, vphomo, vshomo, rhohomo, make_homo, do_mesh_tests
-  use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
+  use nc_routines,  only: nc_dumpbuffersize, nc_chunk_time_traces
+  use data_mesh,    only: naxel, meshname, do_mesh_tests
+  use commun,       only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
-  integer               :: iinparam_advanced=500, ioerr
-  integer               :: npol_max = 12
-  character(len=256)    :: line
-  character(len=256)    :: keyword, keyvalue
+  integer              :: iinparam_advanced=500, ioerr
+  integer              :: npol_max = 12
+  character(len=256)   :: line
+  character(len=256)   :: keyword, keyvalue
 
   ! Default values
   seis_dt = 0.0
@@ -370,17 +378,22 @@ subroutine read_inparam_advanced
  
   diagfiles = .false.
   do_mesh_tests = .false.
+
   dump_wavefields = .false.
+  dump_type = 'fullfields'
   strain_samp = 8
   src_dump_type = 'mask'
   ibeg = 1
-  iend = 1
+  iend = 3
+  jbeg = 1
+  jend = 3
+
+  kwf_rmin = 0
+  kwf_rmax = 7d6
+  kwf_thetamin = 0 
+  kwf_thetamax = pi
   
   dump_energy = .false.
-  make_homo = .false.
-  vphomo = 10.
-  vshomo = 10.
-  rhohomo = 10.
   
   deflate_level = 5
   snap_dt = 20.
@@ -388,6 +401,8 @@ subroutine read_inparam_advanced
   dump_xdmf = dump_snaps_glob
   use_netcdf = .false.
   checkpointing = .false.
+  nc_dumpbuffersize = 128
+  nc_chunk_time_traces = .false.
 
   ! xdmf stuff
   i_n_xdmf = -1
@@ -397,9 +412,10 @@ subroutine read_inparam_advanced
   i_arr_xdmf = -1
   j_arr_xdmf = -1
   xdmf_rmin = 0
-  xdmf_rmax = 7000
+  xdmf_rmax = 7d6
   xdmf_thetamin = 0
-  xdmf_thetamax = 180
+  xdmf_thetamax = pi
+
   
   keyword = ' '
   keyvalue = ' '
@@ -449,6 +465,17 @@ subroutine read_inparam_advanced
          case('KERNEL_WAVEFIELDS')
              read(keyvalue,*) dump_wavefields
 
+         case('KERNEL_DUMPTYPE')
+             read(keyvalue,*) dump_type
+             dump_type = to_lower(dump_type)
+             if (trim(dump_type) /= 'fullfields' .and. &
+                 trim(dump_type) /= 'displ_only' .and. &
+                 trim(dump_type) /= 'strain_only' .and. &
+                 trim(dump_type) /= 'displ_velo') then
+                   write(6,*) dump_type
+                   stop 'ERROR: invalid value for KERNEL_DUMPTYPE!'
+             endif
+
          case('KERNEL_SPP')
              read(keyvalue,*) strain_samp
 
@@ -461,31 +488,43 @@ subroutine read_inparam_advanced
 
          case('KERNEL_IEND')
              read(keyvalue,*) iend
-             !iend = npol - iend
+
+         case('KERNEL_JBEG')
+             read(keyvalue,*) jbeg
+
+         case('KERNEL_JEND')
+             read(keyvalue,*) jend
+
+         case('KERNEL_RMIN')
+             read(keyvalue, *) kwf_rmin
+             kwf_rmin = kwf_rmin * 1000
+         
+         case('KERNEL_RMAX')
+             read(keyvalue, *) kwf_rmax
+             kwf_rmax = kwf_rmax * 1000
+         
+         case('KERNEL_COLAT_MIN')
+             read(keyvalue, *) kwf_thetamin
+             kwf_thetamin = kwf_thetamin * pi / 180.
+         
+         case('KERNEL_COLAT_MAX')
+             read(keyvalue, *) kwf_thetamax
+             kwf_thetamax = kwf_thetamax * pi / 180.
 
          case('SAVE_ENERGY')
              read(keyvalue,*) dump_energy
 
-         case('HOMO_MODEL')
-             read(keyvalue,*) make_homo
-
-         case('HOMO_VP')
-             read(keyvalue,*) vphomo 
-             vphomo = vphomo * 1.e3
-
-         case('HOMO_VS')
-             read(keyvalue,*) vshomo 
-             vshomo = vshomo * 1.e3
-
-         case('HOMO_RHO')
-             read(keyvalue,*) rhohomo 
-             rhohomo = rhohomo * 1.e3
-         
          case('USE_NETCDF')
              read(keyvalue, *) use_netcdf
 
          case('CHECKPOINTING')
              read(keyvalue, *) checkpointing
+
+         case('NETCDF_DUMP_BUFFER') 
+             read(keyvalue, *) nc_dumpbuffersize
+
+         case('CHUNK_TIME_TRACES') 
+             read(keyvalue, *) nc_chunk_time_traces
 
          case('DEFLATE_LEVEL')
              read(keyvalue,*) deflate_level
@@ -537,7 +576,7 @@ subroutine read_inparam_advanced
          end select parameter_to_read
      end do
   endif
-  
+
 
   call broadcast_dble(seis_dt, 0) 
   call broadcast_dble(enforced_period, 0) 
@@ -551,19 +590,22 @@ subroutine read_inparam_advanced
   call broadcast_log(diagfiles, 0) 
   call broadcast_log(do_mesh_tests, 0) 
   call broadcast_log(dump_wavefields, 0) 
+  call broadcast_char(dump_type, 0) 
   
   call broadcast_dble(strain_samp, 0) 
   call broadcast_char(src_dump_type, 0) 
+
+  call broadcast_dble(kwf_rmin, 0) 
+  call broadcast_dble(kwf_rmax, 0) 
+  call broadcast_dble(kwf_thetamin, 0) 
+  call broadcast_dble(kwf_thetamax, 0) 
   
   call broadcast_int(ibeg, 0) 
   call broadcast_int(iend, 0) 
+  call broadcast_int(jbeg, 0) 
+  call broadcast_int(jend, 0) 
 
   call broadcast_log(dump_energy, 0) 
-  call broadcast_log(make_homo, 0) 
-  
-  call broadcast_dble(vphomo, 0) 
-  call broadcast_dble(vshomo, 0) 
-  call broadcast_dble(rhohomo, 0) 
   
   call broadcast_int(deflate_level, 0) 
   call broadcast_dble(snap_dt, 0) 
@@ -574,6 +616,8 @@ subroutine read_inparam_advanced
   call broadcast_log(dump_vtk, 0) 
   call broadcast_log(use_netcdf, 0) 
   call broadcast_log(checkpointing, 0) 
+  call broadcast_int(nc_dumpbuffersize, 0) 
+  call broadcast_log(nc_chunk_time_traces, 0) 
   
   call broadcast_dble(xdmf_rmin, 0) 
   call broadcast_dble(xdmf_rmax, 0) 
@@ -600,7 +644,7 @@ subroutine get_runinfo
 
   hostname = 'UNKNOWN'
   username = 'UNKNOWN'
-  svn_version = 'UNKNOWN'
+  git_hash = 'UNKNOWN'
 
   if (lpr .and. verbose > 1) write(6, '(A)', advance='no') '    Reading runinfo... '
   open(unit=iget_runinfo, file='runinfo', status='old', action='read',  iostat=ioerr)
@@ -608,7 +652,7 @@ subroutine get_runinfo
      if (lpr .and. verbose > 1) &
         write(6,*) 'No file ''runinfo'' found, continuing without.'
   else
-     read(iget_runinfo,*) svn_version
+     read(iget_runinfo,*) git_hash
      read(iget_runinfo,*) username
      read(iget_runinfo,*) hostname 
      read(iget_runinfo,'(A)') fflags
@@ -666,12 +710,12 @@ subroutine check_basic_parameters
   character(len=1024) :: errmsg
 
   errmsg = 'SIMULATION_TYPE is not defined in input file inparam_basic'
-  call pcheck(trim(src_file_type) == 'undefined', errmsg)
+  call pcheck(trim(simtype) == 'undefined', errmsg)
 
   errmsg = 'MESHNAME is not defined in input file inparam_basic'
   call pcheck(trim(meshname) == 'undefined', errmsg)
 
-#ifndef unc
+#ifndef enable_netcdf
   errmsg = 'trying to use netcdf IO but axisem was compiled without netcdf'
   call pcheck(use_netcdf, errmsg)
 #endif
@@ -685,11 +729,6 @@ subroutine check_basic_parameters
         'real kind here:', realkind, &
         '\nchange parameter realkind in global_parameters.f90'
   call pcheck((realkind /= sp .and. realkind /= dp), errmsg)
-
-  errmsg = "!!!!!! NOT GOING ANY FURTHER !!!!!!\n" &
-        // "  It's just too much to save 10 frames of strain & velocity\n" &
-        // "  per source period! Choose something reasonable."
-  call pcheck(strain_samp > 15, errmsg)
 
   errmsg = "Need indices for GLL points to dump xdmf. Set XDMF_GLL_* in inparam_advanced"
   call pcheck(dump_xdmf .and. (i_n_xdmf == -1 .or. j_n_xdmf == -1 ), errmsg)
@@ -708,18 +747,10 @@ subroutine check_basic_parameters
      endif
   endif
 
-14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
+  errmsg = "KERNEL_WAVEFIELDS can only be written with USE_NETCDF true in inparam_advanced"
+  call pcheck(dump_wavefields .and. .not. use_netcdf, errmsg)
 
-  !@ TODO: should this be an ERROR? Do we need dump_snaps_solflu at all given
-  !        the newer options?
-  if (dump_vtk .and. dump_snaps_solflu) then 
-      if (lpr) then
-         write(6,*)''
-         write(6,*)" NOT dumping the same snapshots twice (global AND solid/fluid)"
-         write(6,*)'...hence reverting to dumping global snaps only. Sorry.'
-      end if
-      dump_snaps_solflu = .false.
-  endif
+14 format('  WARNING: Overriding',a19,' with:',f8.3,' seconds')
 
 7 format(04x,a62)
 
@@ -752,7 +783,6 @@ subroutine compute_numerical_parameters
   use attenuation, only: dump_memory_vars
   use data_mesh
 
-
   real(kind=dp)         :: s,z,r,theta,s_max,dshift
   real(kind=dp)         :: dsaxis(0:npol-1,0:npol), dzaxis(0:npol-1) 
   real(kind=dp)         :: minds(nelem),maxds(nelem),mindz(nelem),maxdz(nelem)
@@ -764,9 +794,9 @@ subroutine compute_numerical_parameters
 
   ! Overwrite time step or source period if demanded by input
   if (enforced_dt > zero) then
-     if (time_scheme=='newmark2' .and. enforced_dt>deltat .or. & 
-          time_scheme=='symplec4' .and. enforced_dt>1.5*deltat .or. &
-          time_scheme=='SS_35o10' .and. enforced_dt>3.0*deltat  ) then 
+     if (time_scheme == 'newmark2' .and. enforced_dt > deltat .or. & 
+         time_scheme == 'symplec4' .and. enforced_dt > 1.5 * deltat .or. &
+         time_scheme == 'SS_35o10' .and. enforced_dt > 3.0 * deltat  ) then 
         write(errmsg,*) &
               'PROBLEM: Time step larger than allowed by mesh!\n', &
               'Chosen value (in inparam file) [s] :', enforced_dt, '\n', &
@@ -783,6 +813,16 @@ subroutine compute_numerical_parameters
         deltat = enforced_dt
      endif
   else
+     ! mesher suggestion is based on newmark scheme, the higher order schemes are stable
+     ! for longer time steps
+     select case (time_scheme)
+     case ('newmark')
+        deltat = deltat
+     case ('symplec4')
+        deltat = deltat * 1.5
+     case ('SS_35o10')
+        deltat = deltat * 3.0
+     end select
      if (lpr .and. verbose > 1) then 
         write(6,'(/,a)')'    Using time step precalculated by the mesher:',deltat
      endif
@@ -862,7 +902,7 @@ subroutine compute_numerical_parameters
   endif
   deltat_coarse = seis_dt
 
-  nseismo = floor(real(niter) / real(seis_it))
+  nseismo = floor(real(niter) / real(seis_it)) + 1
 
   ! Frequency of checkpointing. Hardcoded to every 5% of runtime
   check_it = niter / 20
@@ -876,10 +916,10 @@ subroutine compute_numerical_parameters
 
   ! snapshot output, convert from interval given in seconds to 
   ! incremental time steps
-  if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu .or. dump_memory_vars) then
+  if (dump_vtk .or. dump_xdmf .or. dump_memory_vars) then
      snap_it = floor(snap_dt / deltat)
      open(unit=2900+mynum, file=datapath(1:lfdata)//'/snap_info.dat'//appmynum)
-     nsnap = floor(real(niter) / real(snap_it))
+     nsnap = floor(real(niter) / real(snap_it)) + 1
      
      write(2900+mynum,*) nsnap 
      do ielem=1, nsnap
@@ -1022,14 +1062,18 @@ subroutine compute_numerical_parameters
   ! strain tensor output, convert from num of dumps per period into 
   ! incremental time steps
   if (dump_wavefields) then
-     nstrain = floor(real(niter)/real(strain_it))
+     nstrain = floor(real(niter)/real(strain_it)) + 1
 
-     open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
-     write(2900,*) nstrain 
-     do ielem = 1, nstrain 
-        write(2900+mynum,*)real(ielem)*t_0/real(strain_samp),ielem*strain_it
-     enddo
-     close(2900+mynum)
+     ! This causes problems for massively parallel jobs on parallel file systems 
+     ! GPFS allows only a few hundreds of files in one directory
+     if (diagfiles) then
+        open(unit=2900+mynum,file=datapath(1:lfdata)//'/strain_info.dat'//appmynum)
+        write(2900+mynum,*) nstrain 
+        do ielem = 1, nstrain 
+           write(2900+mynum,*)real(ielem)*t_0/real(strain_samp),ielem*strain_it
+        enddo
+        close(2900+mynum)
+     end if
 
      if (lpr) then
         write(6,*)
@@ -1041,18 +1085,14 @@ subroutine compute_numerical_parameters
         write(6,13)'    ...that is, every          :',strain_it,'timestep'
      endif
 
-     ndumppts_el = (iend - ibeg + 1)**2
+     ndumppts_el = (iend - ibeg + 1) * (jend - jbeg + 1)
      if (lpr) then 
         write(6,*)'    Define limitation of GLL points in the dumped fields:'
         write(6,*)'      ibeg=', ibeg, 'iend=', iend
+        write(6,*)'      jbeg=', jbeg, 'jend=', jend
         write(6,*)'      # points saved within an element:', ndumppts_el
      endif
   endif
-
-  ! Initialize counters for I/O
-  istrain = 0
-  isnap = 0
-  iseismo = 0
 
   s_max = zero
 
@@ -1120,8 +1160,7 @@ end subroutine compute_numerical_parameters
 subroutine write_parameters
 
     use data_comm
-    use nc_routines
-    !use data_mesh, ONLY : nglob,nglob_solid
+    use nc_helpers
     use data_mesh
 
     integer          :: iel,curvel,linel,seminoel,semisoel
@@ -1136,6 +1175,16 @@ subroutine write_parameters
     real(kind=dp)    :: myrmin,mythetamin,myrmax,mythetamax
     real(kind=dp)    :: hmax,hmaxglob,hmin,hminglob
     character(len=7) :: clogic
+
+    character(len=8)  :: mydate
+    character(len=10) :: mytime
+    character(len=5)  :: myzone
+    character(len=24) :: mydatetime
+
+    call date_and_time(mydate, mytime, myzone) 
+    write(mydatetime,1212) mydate(1:4), mydate(5:6), mydate(7:8), mytime(1:2), mytime(3:4), mytime(5:6), myzone
+
+1212 format(A4,'-',A2,'-',A2,'T', A2,':',A2,':',A2, A5)
 
     if (verbose > 1) then
        write(69,*)'  writing out all relevant simulation parameters...'
@@ -1222,7 +1271,7 @@ subroutine write_parameters
         write(6,*)':::::::::::::::: SIMULATION PARAMETERS::::::::::::::::::::::::'
 
         write(6,*)'  Code information_____________________________________'
-        write(6,12)'     svn revision      :', svn_version
+        write(6,12)'     svn revision      :', git_hash
         write(6,12)'     username          :', username
         write(6,12)'     hostname          :', hostname
         write(6,12)'     compiler          :', compiler
@@ -1312,9 +1361,8 @@ subroutine write_parameters
         write(6,12)'     Output info path  :',trim(infopath)
         write(6,19)'     Sum wavefields:', sum_fields
         write(6,19)'     Dump energy       :',dump_energy
-        write(6,18)'     Glob/solflu snaps :',dump_vtk,dump_snaps_solflu
         write(6,18)'     XDMF VTK          :', dump_xdmf
-        if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu) then
+        if (dump_vtk .or. dump_xdmf) then
             write(6,11)'     snap interval [s] :',snap_dt
             write(6,10)'     # snaps           :',snap_it
         endif
@@ -1343,7 +1391,7 @@ subroutine write_parameters
         write(55,23)trim(src_type(1)),'source type'
         write(55,23)trim(src_type(2)),'source type'
         write(55,23)trim(stf_type),'source time function'
-        write(55,23)trim(src_file_type),'source file type'
+        write(55,23)trim(simtype),'simtype'
         write(55,21)period,'dominant source period'
         write(55,21)src_depth/1000.,'source depth [km]'
 
@@ -1361,7 +1409,7 @@ subroutine write_parameters
             write(55,22)0,'number of strain dumps'       
             write(55,21)0.,'strain dump sampling rate [s]' 
         endif
-        if (dump_vtk .or. dump_xdmf .or. dump_snaps_solflu) then
+        if (dump_vtk .or. dump_xdmf) then
             write(55,22) nsnap,'number of snapshot dumps'
             write(55,21)deltat*real(snap_it),'snapshot dump sampling rate [s]'      
         else
@@ -1373,9 +1421,9 @@ subroutine write_parameters
         write(55,22)ibeg,'  ibeg: beginning gll index for wavefield dumps'
         write(55,22)iend,'iend: end gll index for wavefield dumps'
         write(55,21)shift_fact,'source shift factor [s]'
-        write(55,22)int(shift_fact/deltat),'source shift factor for deltat'
-        write(55,22)int(shift_fact/seis_dt),'source shift factor for seis_dt'
-        write(55,22)int(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
+        write(55,22)nint(shift_fact/deltat),'source shift factor for deltat'
+        write(55,22)nint(shift_fact/seis_dt),'source shift factor for seis_dt'
+        write(55,22)nint(shift_fact/deltat_coarse),'source shift factor for deltat_coarse'
         write(55,23)trim(rec_file_type),'receiver file type'
         write(55,21)dtheta_rec,'receiver spacing (0 if not even)'
         write(55,24)use_netcdf,'use netcdf for wavefield output?'
@@ -1397,11 +1445,21 @@ subroutine write_parameters
 
     endif ! lpr
 
-    if ((mynum.eq.0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
+! in case of parallel IO, all ranks write attributes
+#ifdef enable_parallel_netcdf
+    if ((use_netcdf)) then
+#else
+    if ((mynum == 0).and.(use_netcdf)) then !Only proc0 has the netcdf file open at that point
+#endif
         ! write generic simulation info file
-        write(6,*) ' Writing simulation info to netcdf file attributes' 
+        if (mynum == 0) write(6,*) ' Writing simulation info to netcdf file attributes' 
+        call nc_write_att_int( 10,                     'file version')
         call nc_write_att_char( trim(bkgrdmodel),      'background model')
-        call nc_write_att_char( trim(svn_version),     'SVN revision')
+        call nc_write_att_char( trim(model_name_ext_model), 'external model name')
+        call nc_write_att_int(  merge(1, 0, do_anel),  'attenuation') ! merge: hacky conversion of logical to int
+        call nc_write_att_dble( router / 1000,         'planet radius')
+        call nc_write_att_char( trim(mydatetime),      'datetime')
+        call nc_write_att_char( trim(git_hash),        'git commit hash')
         call nc_write_att_char( trim(username),        'user name')
         call nc_write_att_char( trim(hostname),        'host name')
         call nc_write_att_char( trim(compiler),        'compiler brand')
@@ -1410,12 +1468,14 @@ subroutine write_parameters
         call nc_write_att_char( trim(cflags),          'CFLAGS')
         call nc_write_att_char( trim(ldflags),         'LDFLAGS')
         call nc_write_att_char( trim(openmp),          'OpenMP')
+        call nc_write_att_char( trim(time_scheme),     'time scheme')
         call nc_write_att_real( real(deltat),          'time step in sec')
         call nc_write_att_int(  niter,                 'number of time steps')
+        call nc_write_att_int(  npol,                  'npol')
         call nc_write_att_char( trim(src_type(1)),     'excitation type')
         call nc_write_att_char( trim(src_type(2)),     'source type')
         call nc_write_att_char( trim(stf_type),        'source time function')
-        call nc_write_att_char( trim(src_file_type),   'source file type')
+        call nc_write_att_char( trim(simtype),         'simulation type')
         call nc_write_att_real( real(period),          'dominant source period')
         call nc_write_att_real( real(src_depth/1000.), 'source depth in km')
         
@@ -1429,11 +1489,23 @@ subroutine write_parameters
         if (dump_wavefields) then
            call nc_write_att_int(nstrain,              'number of strain dumps')
            call nc_write_att_dble(deltat_coarse,       'strain dump sampling rate in sec')
+           call nc_write_att_char(trim(dump_type),     'dump type (displ_only, displ_velo, fullfields)')
+           if (dump_type == 'displ_only' .or. dump_type == 'strain_only') then
+              call nc_write_att_dble(kwf_rmin / 1000,  'kernel wavefield rmin')
+              call nc_write_att_dble(min(kwf_rmax, router) / 1000,  'kernel wavefield rmax')
+              call nc_write_att_dble(kwf_thetamin / pi * 180.,  'kernel wavefield colatmin')
+              call nc_write_att_dble(kwf_thetamax / pi * 180.,  'kernel wavefield colatmax')
+           else
+              call nc_write_att_dble(0d0,               'kernel wavefield rmin')
+              call nc_write_att_dble(router / 1000,     'kernel wavefield rmax')
+              call nc_write_att_dble(0d0,               'kernel wavefield colatmin')
+              call nc_write_att_dble(0d0,               'kernel wavefield colatmax')
+           endif
         else
            call nc_write_att_int(0,                    'number of strain dumps')       
            call nc_write_att_dble(0.d0,                'strain dump sampling rate in sec' )
         endif
-        if (dump_vtk .or. dump_snaps_solflu) then
+        if (dump_vtk) then
            call nc_write_att_int(nsnap,                'number of snapshot dumps')
            call nc_write_att_real(real(deltat)*real(snap_it), 'snapshot dump sampling rate in sec')      
         else
@@ -1443,14 +1515,19 @@ subroutine write_parameters
         call nc_write_att_char( 'cyl',                 'receiver components ')
         call nc_write_att_int(  ibeg,                  'ibeg')
         call nc_write_att_int(  iend,                  'iend')
+        call nc_write_att_int(  jbeg,                  'jbeg')
+        call nc_write_att_int(  jend,                  'jend')
         call nc_write_att_real( shift_fact,            'source shift factor in sec')
-        call nc_write_att_int(  int(shift_fact/deltat),  'source shift factor for deltat')
-        call nc_write_att_int(  int(shift_fact/seis_dt), 'source shift factor for seis_dt')
-        call nc_write_att_int(  int(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
+        call nc_write_att_int(  nint(shift_fact/deltat),  'source shift factor for deltat')
+        call nc_write_att_int(  nint(shift_fact/seis_dt), 'source shift factor for seis_dt')
+        call nc_write_att_int(  nint(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
         call nc_write_att_char( trim(rec_file_type),   'receiver file type')
         call nc_write_att_real( dtheta_rec,            'receiver spacing (0 if not even)')
         write(clogic,*) use_netcdf
         call nc_write_att_char( clogic,                'use netcdf for wavefield output?')
+
+        call nc_write_att_int( 0,                      'percent completed')
+        call nc_write_att_int( 0,                      'finalized')
     end if
 
 
@@ -1538,14 +1615,15 @@ subroutine write_parameters
     
     if (lpr) then
 
-        if (src_file_type == 'cmtsolut' .and. src_type(2) == 'mrr') then
+        if (trim(simtype) == 'moment' .and. src_type(2) == 'mrr') then
            open(unit=9, file="../param_post_processing")
-        elseif (src_file_type == 'sourceparams') then
+        elseif (trim(simtype) == 'single') then
            open(unit=9, file="param_post_processing")
         endif
 
-        if ((src_file_type == 'cmtsolut' .and. src_type(2) == 'mrr') &
-              .or. src_file_type == 'sourceparams') then
+        if ((trim(simtype) == 'moment' .and. src_type(2) == 'mrr') &
+            .or. (trim(simtype) == 'single')) then
+
            write(6,*)'  Writing post processing input file: param_post_processing'
            write(6,*)'  ... mainly based on guessing from the current simulation, make sure to edit!'
            write(9,'(a,/,a,/,a,/)') &
@@ -1565,14 +1643,11 @@ subroutine write_parameters
                     'CONV_PERIOD     0.'
            endif
            
-           write(9,'(a,/,a,/,a,/)') &
-                    '# source time function', &
-                    '# one of: gauss_0, gauss_1, qheavi', &
+           write(9,'(6(a,/))') &
+                    '# source time function (moment function) to convolve with', &
+                    '# ''gauss_0'': Gaussian with dominant period SOURCE_PERIOD', &
+                    '# ''gauss_1'': 1st derivative of gauss_0',                   &
                     'CONV_STF        gauss_0'
-           
-           write(9,'(a,/,a,/)') &
-                    '# displacement or velocity seismograms', &
-                    'SEISTYPE        disp'
            
            write(9,'(a,/,a,l1/)') &
                     '# make 3D plots of the wavefield', &
@@ -1603,18 +1678,6 @@ subroutine write_parameters
                     '3D_RTOP        ', router/1000.,&
                     '3D_RBOT         3190.'
            
-           ! deactivated because of bug #30 and to avoid confusion in the
-           ! tutorial
-           !write(9,'(a,/,a,/)') &
-           !         '# colatitude of meridional cross section', &
-           !         '3D_MERI_COLAT   60.'
-           !         
-           !write(9,'(a,/,a,/,a,/,a,/)') &
-           !         '# switches for bottom, top and meridonial surface', &
-           !         '3D_PLOT_TOP     T', &
-           !         '3D_PLOT_BOT     T', &
-           !         '3D_PLOT_MERI    F'
-
            write(9,'(a,/,a,/,a,/)') &
                     '# switches for bottom, top and meridonial surface', &
                     '3D_PLOT_TOP     T', &
@@ -1765,4 +1828,4 @@ end subroutine check_parameters
 !-----------------------------------------------------------------------------------------
 
 end module parameters
-
+!=========================================================================================

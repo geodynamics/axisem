@@ -19,6 +19,7 @@
 !    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 !
 
+!=========================================================================================
 module parallelization
 
   use data_grid
@@ -292,7 +293,6 @@ subroutine domain_decomposition_theta(attributed, nprocl)
   
   integer                   :: iproc, iiproc, iel
   integer                   :: mycount
-  real(kind=dp)             :: deltatheta
   integer, allocatable      :: central_count(:)
   real(kind=dp)             :: pi2
 
@@ -452,8 +452,8 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   integer, intent(in)       :: nprocl, nthetal, nrl
   integer, intent(in)       :: nelmax, nelmax_fluid, nelmax_solid
   
-  integer                   :: itheta, iitheta, iel
-  integer                   :: irad, iproc, iradb
+  integer                   :: itheta, iitheta, iel, nel_fluid_theta
+  integer                   :: irad, iproc
   integer                   :: mycount, nicb, ncmb
   integer                   :: iprocb(2), mycountb(2), j1, j2
   real(kind=dp)             :: deltatheta
@@ -511,44 +511,6 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   ! **************** END OF INNER CUBE****************
 
 
-  ! sort inner core elements according to radius
-  ! Using same stupid choice as in inner core decomposition 
-
-  if (solid_domain(ndisc)) then 
-     do itheta = 0, nthetal-1
-        allocate(inner_core_buf(central_count(itheta)))
-        allocate(inner_core_r(central_count(itheta)))
-        inner_core_buf(:) = thetaslel_solid(1:central_count(itheta),itheta)
-
-        do iel = 1, central_count(itheta)
-           inner_core_r(iel) = rcom(inner_core_buf(iel))
-        enddo
-  
-        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
-        
-        thetaslel_solid(1:central_count(itheta),itheta) = inner_core_buf(:)
-
-        deallocate(inner_core_buf)
-        deallocate(inner_core_r)
-     enddo
-  else
-     do itheta = 0, nthetal-1
-        allocate(inner_core_buf(central_count(itheta)))
-        allocate(inner_core_r(central_count(itheta)))
-        inner_core_buf(:) = thetaslel_fluid(1:central_count(itheta),itheta)
-
-        do iel = 1, central_count(itheta)
-           inner_core_r(iel) = rcom(inner_core_buf(iel))
-        enddo
-  
-        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
-        
-        thetaslel_fluid(1:central_count(itheta),itheta) = inner_core_buf(:)
-
-        deallocate(inner_core_buf)
-        deallocate(inner_core_r)
-     enddo
-  endif
   
   ! add the extra requirement that element iel to be in appropriate theta slice
   do itheta = 0, nthetal-1
@@ -656,6 +618,48 @@ subroutine domain_decomposition_theta_r(attributed, nprocl, nthetal, nrl, &
   if (any(.not. attributed)) then
      write(6,*) 'ERROR: not all elements assigned to a theta-slice'
      stop
+  endif
+
+
+  ! sort inner core elements according to radius
+  ! Using same stupid choice as in inner core decomposition 
+
+  if (solid_domain(ndisc)) then 
+     do itheta = 0, nthetal-1
+        allocate(inner_core_buf(central_count(itheta)))
+        allocate(inner_core_r(central_count(itheta)))
+        inner_core_buf(:) = thetaslel_solid(1:central_count(itheta),itheta)
+
+        do iel = 1, central_count(itheta)
+           inner_core_r(iel) = rcom(inner_core_buf(iel))
+        enddo
+  
+        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
+        
+        thetaslel_solid(1:central_count(itheta),itheta) = inner_core_buf(:)
+
+        deallocate(inner_core_buf)
+        deallocate(inner_core_r)
+     enddo
+  else
+     do itheta = 0, nthetal-1
+        nel_fluid_theta = sum(nel_fluid(itheta:itheta+nrl-1))
+        allocate(inner_core_buf(nel_fluid_theta))
+        allocate(inner_core_r(nel_fluid_theta))
+        inner_core_buf(:) = thetaslel_fluid(1:nel_fluid_theta,itheta)
+
+        do iel = 1, nel_fluid_theta
+           ! sort by radius, if radius is the same, theta makes the difference
+           inner_core_r(iel) = rcom(inner_core_buf(iel)) + 1e-10 * thetacom(inner_core_buf(iel))
+        enddo
+
+        call mergesort_3(inner_core_r, il=inner_core_buf, p=4)
+
+        thetaslel_fluid(1:nel_fluid_theta,itheta) = inner_core_buf(:)
+
+        deallocate(inner_core_buf)
+        deallocate(inner_core_r)
+     enddo
   endif
 
   ! reset, as we have to touch each element again!
@@ -866,12 +870,9 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed, ntheta
   integer, intent(out)      :: procel_solidl(:,0:), procel_fluidl(:,0:)
   
   integer :: iproc, is, iz, nthetal2
-  integer :: icount, i2count, iicount, missing
-  integer :: arclngth, area, CapA, proccount, quadels
   integer,allocatable :: proc_central(:,:),num_columns(:),upper_boundary_el(:)
   integer,allocatable :: num_columns_hi(:),num_columns_lo(:),num_el(:)
   integer,allocatable :: count_assi(:)
-  real(kind=dp)    :: a,b
 
   if (dump_mesh_info_screen) then 
      write(6,*)
@@ -1454,13 +1455,32 @@ end subroutine decompose_inner_cube_opt
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+logical function xor(a,b)
+  logical, intent(in)     :: a, b
+
+  if (a) then
+      if (b) then
+          xor = .false.
+      else
+          xor = .true.
+      end if
+  else
+      if (b) then
+          xor = .true.
+      else
+          xor = .false.
+      end if
+  end if
+end function xor
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 logical function test_decomp(ndivs, proc, npart, nproc2)
 
   integer, intent(in)     :: ndivs, proc(0:ndivs-1,0:ndivs-1), &
                              nproc2, npart
   integer                 :: is, iz, idx, idz, ip, nelem(0:nproc2), &
                              neighbour_buff
-  logical                 :: exit_buff
 
   !test processor bounds
   do is = 0, ndivs - 1, 1
@@ -1681,3 +1701,4 @@ end subroutine ascii_print_markregion
 !-----------------------------------------------------------------------------------------
 
 end module parallelization 
+!=========================================================================================

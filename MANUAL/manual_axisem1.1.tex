@@ -108,7 +108,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 \hfill{\Huge \fontfamily{\sfdefault}\selectfont User Manual \\
 % FILL: manual version
 % e.g. 1.0
-\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {1.0}\\}
+\raggedleft \huge \fontfamily{\sfdefault}\selectfont Version {1.1}\\}
 
 %AUTHOR(S) & WEBSITE%
 \null
@@ -118,7 +118,7 @@ COMPUTATIONAL INFRASTRUCTURE FOR GEODYNAMICS (CIG)
 % FILL: author list
 % e.g. Author One\\Author Two\\Author Three\\
 % be sure to have a newline (\\) after the final author
-Tarje Nissen-Meyer\\Martin van Driel\\Simon St\"{a}hler\\Stefanie Hempel\\Alexandre Fournier\\
+Tarje Nissen-Meyer\\Martin van Driel\\Simon St\"{a}hler\\Kasra Hosseini\\Stefanie Hempel\\Alexandre Fournier\\
 }
 {\fontfamily{\sfdefault}\selectfont www.geodynamics.org}
 
@@ -148,12 +148,13 @@ Tarje Nissen-Meyer\\Martin van Driel\\Simon St\"{a}hler\\Stefanie Hempel\\Alexan
         \begin{minipage}{0.6\textwidth}
             \begin{center}
                 \title{}
-                \LARGE{ \textbf{\sc AxiSEMv1.0 Manual}}
+                \LARGE{ \textbf{\sc AxiSEMv1.1 Manual}}
                 \vspace*{0.6cm}\\
                 {\large 
                 Tarje Nissen-Meyer\textsuperscript{1},
                 Martin van Driel\textsuperscript{2},
                 Simon St\"{a}hler\textsuperscript{3},
+                Kasra Hosseini\textsuperscript{3},
                 Stefanie Hempel\textsuperscript{4}, 
                 Alexandre Fournier\textsuperscript{5}}
                 \vspace*{0.3cm}\\
@@ -161,8 +162,8 @@ Tarje Nissen-Meyer\\Martin van Driel\\Simon St\"{a}hler\\Stefanie Hempel\\Alexan
                   \textsuperscript{2} ETH Zurich (Switzerland),  \textsuperscript{3}
                   LMU M\"{u}nchen (Germany), \textsuperscript{4} Universit\"{a}t
                   M\"{u}nster (Germany), \textsuperscript{5} IPG Paris
-                  (France)}
-                {\large Oxford, UK -- December 20, 2013}
+                  (France)}\\
+                {\large Oxford, UK -- July 7, 2014}
             \end{center}
         \end{minipage}
     \end{tabularx}
@@ -200,9 +201,9 @@ seismogram at any relevant frequency.
 %
 \noindent \textbf{Principal authors:} \\
 Tarje Nissen-Meyer, Alexandre
-Fournier, Martin van Driel, Simon St\"{a}hler, Stefanie Hempel.\vspace*{0.3cm}\\
+Fournier, Martin van Driel, Simon St\"{a}hler, Kasra Hosseini, Stefanie Hempel.\vspace*{0.3cm}\\
 \noindent \textbf{Contributions:}\\
- J.-P. Ampuero, E. Chaljub, A. Colombi, F. A. Dahlen, K. Hosseini, D. Komatitsch,
+ J.-P. Ampuero, E. Chaljub, A. Colombi, F. A. Dahlen, D. Komatitsch,
  G. Nolet, J. Tromp.\vspace*{0.3cm}\\
 \noindent \textbf{Research funding:} \\Princeton University, NSF, HP2C Petaquake, 
 QUEST ITN (Marie Curie), ETH Zurich, Oxford University.\vspace*{0.3cm}\\
@@ -210,7 +211,7 @@ QUEST ITN (Marie Curie), ETH Zurich, Oxford University.\vspace*{0.3cm}\\
 \noindent \textbf{Copyright}\\
 \copyright  \hspace*{0.1cm} 
 2013, Tarje Nissen-Meyer,
-Alexandre Fournier, Martin van Driel, Simon St\"{a}hler, Stefanie Hempel.\vspace*{0.3cm}\\
+Alexandre Fournier, Martin van Driel, Simon St\"{a}hler, Kasra Hosseini, Stefanie Hempel.\vspace*{0.3cm}\\
 
 AxiSEM is free software: you may redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the
@@ -234,7 +235,7 @@ for more details: \verb|LICENSE_GPL.txt|
 The basic idea behind AxiSEM is to take advantage of axial symmetry with respect
 to an axis going through the center of the earth and the source. In such axisymmetric 
 models, the response to a moment tensor or single force point source can be expanded in a
-series of multipoles (mono-, di- and quadrupole). The dependence of the wavefield on
+series of multipoles (mono-, di- and quadrupole). The dependence of the 3D wavefield on
 azimuth $\phi$ can be solved analytically and the remaining 2D problems (four of them for
 a full moment tensor source) are solved numerically using a spectral
 element approach.\\
@@ -280,11 +281,10 @@ element approach.\\
 
 \begin{description}
     \item[Operating system] The software should run on any UNIX-like operating system and has
-          been tested on Linux (Debian, Ubuntu, Cray et al), MacOS X. Running on windows
-          is probably not possible, but has never been tested so far.
+          been tested on Linux (Debian, Ubuntu, SuSe, RedHat, Mageia, Cray et al) and MacOS X. 
     \item[Compilers:] Fortran 90 compiler (tested on ifort, gfortran-4.6, portland, Cray)
     \item[Libraries:] MPI, NetCDF (optional), fftw (optional)
-    \item[Systems:] Unix-based OS (tested on Linux, MacOS, Cray XT4, XE6 and XK7)
+    \item[Systems:] Unix-based OS on desktop scale (tested on Linux and MacOS)\\ and HPC scale (tested on Cray XT4, XE6 and XK7, HECToR (UK National Supercomputing Service), SuperMUC (Leibniz-Rechenzentrum, Garching), Pacman (Arctic Region Supercomputing Center).
     \item[Tools:] tcshell, perl
 \end{description}\vspace*{0.3cm}
 
@@ -296,7 +296,8 @@ element approach.\\
     \item[Paraview:] Can be used to check meshes and watch wavefield movies.
     \item[Google Earth:] Can be used for a quick overview on seismograms at the locations
           of the receivers.
-    \item[gnuplot:] Used to make quick overview
+    \item[gnuplot:] Used to make quick overview plots
+    \item[matlab:] Used for plotting record section (script included)
 \end{description}
 
 
@@ -305,13 +306,13 @@ element approach.\\
 AxiSEM allows to output larger datasets, especially wavefields in the NetCDF format. The
 current version also has full support for binary dumps, but the development will move
 towards NetCDF containers.\\
-Unfortunately, the installation of the NetCDF libraries is not foolproof yet.
+Unfortunately, the installation of the NetCDF libraries may still be cumbersome; below we list some limited support for installing NetCDF..
 
 \begin{description}
     \item[HPC systems:] The libraries should be provided by the system. Use the
           recommended settings.
-    \item[Ubuntu 12.10 and newer]: The code is working with the NetCDF libraries delivered
-          with Ubuntu from version 12.10 (for gfortran). They can be installed by \\
+    \item[Ubuntu 12.10 and newer, Debian Wheezy and newer]: The code is working with the NetCDF libraries delivered
+          with the system (for gfortran). They can be installed by \\
           \verb|sudo apt-get install libnetcdff5|
     \item[Ubuntu 12.04 and older; MacOS]: The libraries delivered with Ubuntu 12.04 and
           earlier do not seem to work reliably. We therefore generally recommend to
@@ -321,11 +322,11 @@ Unfortunately, the installation of the NetCDF libraries is not foolproof yet.
           \url{http://www.unidata.ucar.edu}, compiles them and runs the included tests. By
           default, the new libraries are installed in \verb|$(HOME)/local|. In the first
           lines of the script, specify your compiler (has to be the same as the one you
-          are using for Axisem). The script should be run from a scratch directory like
+          are using for AxiSEM). The script should be run from a scratch directory like
           \verb|/tmp|:\\
           \verb|cd /tmp|\\
           \verb|$AXISEM_DIRECTORY/SOLVER/UTILS/make_netcdf.sh|\\
-          Especially the HDF5 compilation will produce tons of warnings. They can be
+          Especially the HDF5 compilation can half an hour and will produce tons of warnings. They can be
           ignored, as long as the tests pass. If one of the tests should fail, the reason
           is most likely a wrong compiler configuration. We can offer only very limited
           support for the compilation of the libraries.
@@ -367,25 +368,24 @@ system fulfils all requirements mentioned above.\\
 \noindent Start from within the {\tt AXISEM} directory:
 
 \begin{enumerate}
-    \item \verb|./copy_templates| $\Rightarrow$ creates various input files from templates
-    \item Check file \verb|make_axisem.macros|, whether the compiler settings fit your
+    \item \verb|./copytemplates.csh| $\Rightarrow$ creates various input files from templates
+    \item Check file \verb|make_axisem.macros| whether the compiler settings fit your
           system.
     \item \verb|cd MESHER| 
-    \item Check file {\tt inparam\_mesh}, for background model, period of simulation and
+    \item Check file {\tt inparam\_mesh} for background model, period of simulation and
           number of CPUs \\
-          Default is \textit{PREM}, \textit{20 s} and \textit{2 CPUs} and runs within a
+          Default is \textit{PREM}, \textit{50 s} and \textit{2 CPUs} to be running within a
           few minutes on a modern PC.
     \item \verb|./submit.csh| $\Rightarrow$ Check file {\tt OUTPUT}.
     \item Wait for ``{\tt ....DONE WITH MESHER}'' to appear in {\tt OUTPUT}.
-    \item \verb|./movemesh.csh PREM_50s| $\Rightarrow$ moves mesh files to
-          \verb|../SOLVER/MESHES/PREM_50s|.
+    \item move mesh files to \verb|../SOLVER/MESHES/| directory and give it a name
+          \verb|./movemesh.csh PREM_50s| 
     \item \verb|cd ../SOLVER|
     \item In \verb|inparam_basic| set the value for \verb|MESHNAME| to the meshname from
-          above (e.g. \verb|PREM_50s|)
+          above (here: \verb|PREM_50s|)
     \item \verb|./submit.csh PREM_mrr_50s_gauss_1800s|  $\Rightarrow$ compiles and runs
           the code
-    \item \verb|cd PREM_mrr_50s_gauss_1800s| $\Rightarrow$ Check
-          \verb|OUTPUT_PREM_mrr_50s_gauss_1800s|.
+    \item \verb|cd PREM_mrr_50s_gauss_1800s| $\Rightarrow$ go to the run directory.
     \item Wait for ``\verb|PROGRAM axisem FINISHED|'' to appear in
           \verb|OUTPUT_PREM_mrr_50s_gauss_1800s| \\
           (use \verb|tail -f OUTPUT_PREM_mrr_50s_gauss_1800s|).
@@ -395,8 +395,6 @@ system fulfils all requirements mentioned above.\\
             earthquake (info), receivers (seismograms).
     \item {\tt matlab}, run {\tt plot\_record\_section.m}, plotting all components
             of displacement seismograms.
-    % \item {\tt cd SNAPS; paraview}, load snaps for 3D wavefield movie.
-    % snaps are deactivated in defauld...
 
 \end{enumerate}
 If the Solver is re-run with different parameters but the same mesh, you may start at step 9. 
@@ -432,8 +430,8 @@ delete the old one.
     \end{verbatim}
     %
     The file should be self-explanatory. NB: Models without crust ('light') allow for a
-    larger time step and hence run a lot faster. WARNING: Only write
-    vtk files if the dominant period is rather large, i.e. above 10 or
+    larger time step and hence run a lot faster. \\
+    WARNING: Only write vtk files if the dominant period is rather large, i.e. above 10 or
     20s, as these files become exceedingly large.
 
     \item Run the mesher, and watch the progress:
@@ -443,7 +441,7 @@ delete the old one.
     $ tail -f OUTPUT
     \end{verbatim}
     %
-    The meshing should be really fast for the chosen parameters. Wait for 
+    The meshing should be really fast (i.e. on the order of seconds) for the chosen parameters. Wait for 
     \verb|....DONE WITH MESHER !| to appear.
 
     \item Take a look at the mesh with paraview
@@ -620,28 +618,30 @@ Running in a 2D computational domain, the code is (obviously) significantly fast
 than comparable 3D methods. 
 
 \begin{center}
-    \includegraphics[height=50mm]{mesher_comp_cost.pdf}
+    %\includegraphics[height=50mm]{mesher_comp_cost.pdf}
+    \includegraphics[height=50mm]{memory_usage_new.pdf}
     \hspace{5mm}
     \includegraphics[height=50mm]{solver_totalcpu.pdf}
 \end{center}
 
 On the left, you may deduct the mesher's RAM occupation as a function of frequency. Going
 towards very high resolution (around and above 1Hz), you will need a rather fat node (>
-32GB RAM) for the (serial) meshing.  On the right, we depict the computational cost
+16GB RAM) for the (shared memory) meshing.
+On the right, we depict the computational cost
 associated with the solver to compute seismograms of 30 min length. The relation between
 seismic period and CPU-hours is an approximate proxy to estimate how many cores and
-wall-clock time is optimal for your infrastructure. 
+wall-clock time is optimal for your infrastructure. Scaling of CPU hours is approximately 
+to the third power of the maximum frequency.
 
 \begin{center}
-    \includegraphics[height=50mm]{strong_scaling.pdf}
+    \includegraphics[height=50mm]{COMPUTATIONAL_COST/strong_scaling_new.pdf}
     \hspace{5mm}
-    \includegraphics[height=50mm]{weak_scaling.pdf}
+    \includegraphics[height=50mm]{COMPUTATIONAL_COST/weak_scaling_new.pdf}
 \end{center}
 
 Scalability plots from test runs on a Cray machine at CSCS, Switzerland. The left shows
 strong scaling (fixed global problem size), the right plot weak scaling (fixed problem
-size per CPU). A forthcoming publication (see below, (1)) will show scaling up to 8000
-CPUs.  
+size per CPU).
 
 
 \section{Typical use cases}
@@ -649,7 +649,7 @@ CPUs.
 \subsection{Change source type}
 
 \verb|SOLVER/inparam_source|, \verb|SOLVER/CMTSOLUTION| and \verb|SOLVER/inparam_basic|.
-Axisem has two principal modes, which are selected by the value \verb|SIMULATION_TYPE| in
+AxiSEM has two principal modes, which are selected by the value \verb|SIMULATION_TYPE| in
 \verb|SOLVER/inparam_basic|.
 
 \begin{enumerate}
@@ -678,7 +678,6 @@ Axisem has two principal modes, which are selected by the value \verb|SIMULATION
       downloaded from many sites in the web, including
       \url{http://www.globalcmt.org/CMTsearch.html}
 \end{enumerate}
-
 
 \subsection{Change station locations}
 
@@ -743,40 +742,64 @@ and \verb|EXT_MODEL| to the filename of your model. The model should be stored i
 of the following form:
 
 \begin{verbatim}
-  F T
-         740
-6371000.  2600.00  5800.00  3200.00  57827.0    600.0  5800.00  3200.00  1.00000
-6356000.  2600.00  5800.00  3200.00  57827.0    600.0  5800.00  3200.00  1.00000
-6356000.  2900.00  6800.00  3900.00  57827.0    600.0  6800.00  3900.00  1.00000
-6346600.  2900.00  6800.00  3900.00  57827.0    600.0  6800.00  3900.00  1.00000
-6346600.  3380.75  8110.62  4491.01  57827.0    600.0  8110.62  4491.01  1.00000
-6341600.  3380.20  8107.53  4489.16  57827.0    600.0  8107.53  4489.16  1.00000
-6336600.  3379.66  8104.44  4487.32  57827.0    600.0  8104.44  4487.32  1.00000
-6331600.  3379.12  8101.35  4485.48  57827.0    600.0  8101.35  4485.48  1.00000
-6326600.  3378.57  8098.25  4483.64  57827.0    600.0  8098.25  4483.64  1.00000
-...
+ANELASTIC       T
+ANISOTROPIC     T
+UNITS           m
+COLUMNS     radius    rho    vpv    vsv    qka    qmu  vph   vsh   eta
+            6371000.  2600.  5800.  3200.  57827. 600. 5800. 3200. 1.00000
+            6356000.  2600.  5800.  3200.  57827. 600. 5800. 3200. 1.00000
+#          Discontinuity   1, depth:      15.00 km
+            6356000.  2900.  6800.  3900.  57827. 600. 6800. 3900. 1.00000
+            6346600.  2900.  6800.  3900.  57827. 600. 6800. 3900. 1.00000
+#          Discontinuity   2, depth:      24.40 km
+            6346600.  3380.  8190.  4396.  57827. 600. 8190. 4611. 0.90039
+            6341600.  3380.  8186.  4397.  57827. 600. 8186. 4607. 0.90233
+            6336600.  3379.  8183.  4398.  57827. 600. 8183. 4602. 0.90428
+            6331600.  3379.  8179.  4399.  57827. 600. 8179. 4598. 0.90622
+
 \end{verbatim}
 
-The first line contains two boolean entries: First, whether the model is anisotropic,
-second whether the model is anelastic. The second line contains the number of layers in
-the file. Afterwards the model parameters for each layer are set in the order:
+In the header, four keywords are mandatory to describe the following model:
+\begin{itemize}
+ \item \verb|ANELASTIC|: Is the model anelastic (viscoelastic) or not?
+ \item \verb|ANISOTROPIC|: Is the model anisotropic or not?
+ \item \verb|UNITS|: Are the units in this file given in \textit{SI}-units? Allowed values:
+       \begin{itemize}
+        \item \verb|m| \textit{SI}-units: (m, m/s, kg/m$^3$)
+        \item \verb|km| km, km/s, g/cm$^3$. These units are often used because the values are between 1 and 10.
+       \end{itemize}
+ \item \verb|COLUMNS|: Describe the column order in the file. Necessary values: 
+	\begin{itemize}
+	\item For an elastic, isotropic model: 
+		\begin{itemize}
+		\item \verb|radius|/\verb|depth| (radius or depth of the layer. Allows to define the position of the layers in radius (beginning from the center) or depth (beginning from the surface)
+		\item \verb|rho| ($\rho$, density)
+		\item \verb|vpv| ($\alpha$, vertical P-velocity)
+		\item \verb|vsv| ($\beta$, vertical S-velocity)
+		\end{itemize}
+	\item For an anelastic model additionally: 
+		\begin{itemize}
+		\item \verb|qka| ($Q_{\kappa}$)
+		\item \verb|qmu| ($Q_{\mu}$)
+		\end{itemize}
+	\item For an anisotropic model additionally: 
+		\begin{itemize}
+		\item \verb|vph| (horizontal P-velocity)
+		\item \verb|vsh| (horizontal S-velocity)
+		\item \verb|eta| (anisotropic parameter $\eta$)
+		\end{itemize}
+	\end{itemize}
+\end{itemize}
 
-radius (in meter), $\rho$, $V_{PV}$, $V_{SV}$, $Q_{\kappa}$, $Q_{\mu}$,  $V_{PH}$,
-$V_{SH}$, $\eta$.
+This header is followed by an arbritrary number of lines with velocity layers, where \verb|#| marks comment lines. The header variables \verb|UNITS| and \verb|COLUMNS| allow to customize the structure of these lines, which should facilitate the import of external models from other programs.
 
-%TODO: not clear to me, what the file should look like in the purely elastic or the
-%      isotropic anelastic case
+First order discontinuities are enforced by double layers with the same radius (see layers 2/3 and 4/5
+in the example) and are honoured by the MESHER. 
 
-The order of the layers is arbitrary, but the radius has to be monotonous.  First order
-discontinuities are enforced by double layers with the same radius (see layers 2/3 and 4/5
-in the example) and are honoured by the MESHER. For an example, enable the option
-\verb|WRITE_1DMODEL| in \verb|MESHER/inparam_mesh| and run the MESHER. It will put a valid
-input file of the selected model into the DIAG directory. Modify this file according to
-your needs.\\ 
+For an example file, select one of the internal models in \verb|MESHER/inparam_mesh|, enable the option \verb|WRITE_1DMODEL| and run the MESHER. It will write a valid input file of the selected model into \verb|MESHER/Diags/1dmodel_axisem.bm|. Modify this file according to your needs.
 
 The overall radius of the body is given by the radius of the outermost layer and can take
-any reasonable value.
-
+any reasonable value (Read: Planets, moons and tennis balls can be simulated, single electrons probably not).
 
 \subsection{Change number of CPUs}
 
@@ -807,11 +830,18 @@ The moment tensor, depth and location of the source must be set in the file
 postprocessing script sums the results to get correct seismograms.
 
 
+\subsection{Change source time function}
+\verb|SOLVER/inparam_advanced|, change parameter \verb|SOURCE_FUNCTION||:\\
+AxiSEM generally calculates displacement seismograms. The source time function selected here is equivalent to the moment function $m(t)$. Note that to calculate seismograms similar to those of an earthquake (i.e. with a persistent displacement at the source), the setting \verb|errorf| has to be used. Note that that is different to the literature that usually defines the source time function as the moment rate function $\dot{m}(t)$. However, it is consistent with SpecFEM.\\
+To create seismograms with a flat, zero-phased source spectrum, use the setting \verb|dirac_0|. Seismograms calculated with this setting can be convolved with other source functions in AxiSEM postprocessing or manually with a program of your choice.\\
+However, note that seismograms or wavefields calculated with a \verb|dirac_0| STF will contain numerical noise. Therefore, visualization and wavefield plotting should be done using \verb|errorf| or one of the Gaussian STFs.
+
+
 \subsection{Change seismogram length or sampling rate}
 \verb|SOLVER/inparam_basic|, change parameter \verb|SEISMOGRAM_LENGTH|:\\
 Default value is 1800~s, although the exact length is rounded to the next multiple of the
 simulation time step. There is no maximum limit, AxiSEM has been run for 400000s (5 days)
-to compare amplitude spectra with a normal modes summation.\\
+to compare amplitude spectra with a normal modes summation (Nissen-Meyer et al, 2014).\\
 \verb|SOLVER/inparam_advanced|, change parameter \verb|SAMPLING_RATE|:\\
 By default, the sampling rate is set to the time step length of the simulation. We
 strongly recommend to leave it as such to avoid aliasing. The resampling can better be
@@ -821,7 +851,7 @@ done with \textit{ObsPy} or another tool that supports filtering.
 \subsection{Include lateral heterogeneities (2.5D simulation)}
 \verb|SOLVER/inparam_basic|, change parameter \verb|LAT_HETEROGENEITY| to true:\\
 The actual heterogeneity model is set in \verb|SOLVER/inparam_hetero|. 
-
+This functionality is currently under development and not documented. See the example files \verb|SOLVER/inparam_hetero.TEMPLATE| for an idea of what to do.
 
 
 
@@ -832,26 +862,26 @@ The actual heterogeneity model is set in \verb|SOLVER/inparam_hetero|.
 When using this code, please cite one or more of these publications. \vspace*{0.2cm}\\
 
 
-(1) Tarje Nissen-Meyer, Martin van Driel, Simon St\"ahler, Kasra Hosseini,
-Stefanie Hempel, Ludwig Auer, Alexandre Fournier, 2013. \textit{AxiSEM: Broadband 3D
-seismic wavefields in axisymmetric media}, submitted to Solid Earth,
-doi:10.5194/sed-6-265-2014.\\
+(1) Tarje Nissen-Meyer, M. van Driel, S. C. Stähler, K. Hosseini, S. Hempel, L. Auer, 
+A. Colombi, and A. Fournier (2014), \textit{AxiSEM: broadband 3-D seismic wavefields
+in axisymmetric media},  Solid Earth, 5, 425-445. \\
+doi:10.5194/se-5-425-2014\\
 
 (2) Tarje Nissen-Meyer, F. A. Dahlen, A. Fournier (2007),
 \textit{Spherical-earth Fr\'{e}chet sensitivity kernels},        
-Geophysical Journal International 168(3),1051-1066. 
+Geophysical Journal International 168(3),1051-1066. \\
 doi:10.1111/j.1365-246X.2006.03123.x                \\
                                                         
 (3) Tarje Nissen-Meyer, A. Fournier, F. A. Dahlen (2007), 
 \textit{A two-dimensional spectral-element method for
 spherical-earth seismograms-I. Moment-tensor source}, 
-Geophysical Journal International 168(3), 1067-1092. 
+Geophysical Journal International 168(3), 1067-1092. \\
 doi:10.1111/j.1365-246X.2006.03121.x                 \\
                                                        
 (4) Tarje Nissen-Meyer, A. Fournier, F. A. Dahlen (2008),  
 \textit{A two-dimensional spectral-element method for   
 spherical-earth seismograms - II. Waves in solid-fluid media},
-Geophysical Journal International, 174(3), 873-888.
+Geophysical Journal International, 174(3), 873-888.\\
 doi:10.1111/j.1365-246X.2008.03813.x\\
 
 (5) Tarje Nissen-Meyer (2007),
