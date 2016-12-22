@@ -106,35 +106,40 @@ subroutine time_step_memvars_cg4(memvar, disp)
   real(kind=realkind)   :: src_tr_buf(1:4)
   real(kind=realkind)   :: src_dev_buf(1:4,6)
   
-  real(kind=realkind)   :: Q_mu_last, Q_kappa_last
+  !real(kind=realkind)   :: Q_mu_last, Q_kappa_last
 
-  Q_mu_last = -1
-  Q_kappa_last = -1
-
+  !Q_mu_last = -1
+  !Q_kappa_last = -1
+  !$omp do private(j, &
+  !$omp            yp_j_mu, yp_j_kappa, a_j_mu, a_j_kappa, &
+  !$omp            grad_t_cg4, trace_grad_t,               &
+  !$omp            src_tr_t, src_tr_tm1, src_dev_t, src_dev_tm1, &
+  !$omp            src_tr_buf, src_dev_buf) 
+  !!$omp    firstprivate(Q_mu_last, Q_kappa_last)
   do iel=1, nel_solid
      call compute_strain_att_el_cg4(disp(:,:,iel,:), grad_t_cg4, iel)
 
      ! compute local coefficients y_j for kappa and mu (only if different from
      ! previous element)
-     if (Q_mu(iel) /= Q_mu_last) then
-        Q_mu_last = Q_mu(iel)
+     !if (Q_mu(iel) /= Q_mu_last) then
+        !Q_mu_last = Q_mu(iel)
         if (do_corr_lowq) then
            call fast_correct(y_j_attenuation / Q_mu(iel), yp_j_mu)
         else
            yp_j_mu = y_j_attenuation / Q_mu(iel)
         endif
         a_j_mu = yp_j_mu / sum(yp_j_mu)
-     endif
+     !endif
 
-     if (Q_kappa(iel) /= Q_kappa_last) then
-        Q_kappa_last = Q_kappa(iel)
+     !if (Q_kappa(iel) /= Q_kappa_last) then
+        !Q_kappa_last = Q_kappa(iel)
         if (do_corr_lowq) then
            call fast_correct(y_j_attenuation / Q_kappa(iel), yp_j_kappa)
         else
            yp_j_kappa = y_j_attenuation / Q_kappa(iel)
         endif
         a_j_kappa = yp_j_kappa / sum(yp_j_kappa)
-     endif
+     !endif
 
      trace_grad_t(:) = sum(grad_t_cg4(:,1:3), dim=2)
 
@@ -201,6 +206,7 @@ subroutine time_step_memvars_cg4(memvar, disp)
      src_dev_tm1_glob_cg4(:,:,iel) = src_dev_t(:,:)
 
   enddo
+  !$omp end do
   
 end subroutine
 !-----------------------------------------------------------------------------------------
