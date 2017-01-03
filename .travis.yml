@@ -36,7 +36,7 @@ before_install:
   - command -v conda >/dev/null || { wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
      bash miniconda.sh -b -f -p $MINICONDA; }
   - conda update --yes conda
-  - conda remove --yes -n condaenv --all
+    #- conda remove --yes -n condaenv --all
   - conda create --yes -n condaenv python=2.7
   - conda install --yes -n condaenv pip
   - source activate condaenv
@@ -53,11 +53,11 @@ before_install:
   - export TRAVIS_ROOT=$HOME/travis
   - mkdir -p $TRAVIS_ROOT
   # Get and install OpenMPI
-  - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION
+  - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION > LOG_OpenMPI.log
   # Get and install FFTW3
-  - ./TRAVIS/install_fftw.sh $TRAVIS_ROOT $GFORTRAN_VERSION
+  - ./TRAVIS/install_fftw.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_FFTW.log
   # Get and install NetCDF4
-  - ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION
+  - ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_NetCDF4.log
 
 install:
   #- gfortran-$GFORTRAN_VERSION -v
@@ -75,3 +75,4 @@ cache:
 
   directories:
     - $HOME/travis
+    - $HOME/miniconda

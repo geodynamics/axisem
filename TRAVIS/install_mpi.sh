@@ -71,11 +71,11 @@ case "$os" in
                     cd openmpi-1.10.1
                     mkdir build && cd build
                     ../configure --prefix=$TRAVIS_ROOT CC=$PRK_CC CXX=$PRK_CXX FC=$PRK_FC \
-                      --disable-java --disable-cxx --without-verbs --without-fca --without-mxm \
-                      --without-ucx --without-portals4 --without-psm --without-psm2 \
-                      --without-alps --without-munge --without-sge --without-loadleveler \
-                      --without-tm --without-lsf --without-slurm --without-pvfs2 --without-plfs \
-                      --without-cuda --disable-oshmem --disable-mpi-io  --disable-io-romio
+                      --disable-java --without-verbs --without-fca --without-mxm \
+                      --without-portals4 --without-psm --without-psm2  --without-alps \
+                      --without-sge --without-loadleveler --without-tm --without-lsf \
+                      --without-slurm --without-pvfs2 --without-cuda --disable-oshmem \
+                      --disable-mpi-io  --disable-io-romio --enable-silent-rules 
                     make -sj4
                     make install
                 else
