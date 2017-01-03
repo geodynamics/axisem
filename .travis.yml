@@ -36,14 +36,14 @@ before_install:
   - command -v conda >/dev/null || { wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
      bash miniconda.sh -b -f -p $MINICONDA; }
   - conda update --yes conda
-    #- conda remove --yes -n condaenv --all
+  - conda remove --yes -n condaenv --all
   - conda create --yes -n condaenv python=2.7
   - conda install --yes -n condaenv pip
   - source activate condaenv
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
-  - conda install --yes -c obspy python=2.7
+  - conda install --yes -c obspy obspy python=2.7
   - travis_retry pip install $PIP_DEPS
    #Install Gfortran in selected version
   - sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
@@ -62,11 +62,13 @@ before_install:
 install:
   #- gfortran-$GFORTRAN_VERSION -v
   #- gfortran-$GFORTRAN_VERSION hello_world.f90 -o hello_world.x
-  - cd TESTING
-    python2.7 test_nightly_axisem.py -t 1
-
+  
 script:
-  - ./hello_world.x
+  - |
+    cd TESTING;
+    python test_nightly_axisem.py -t 1
+    python test_nightly_axisem.py -t 2
+    python test_nightly_axisem.py -t 3
 
 after_success:
 
