@@ -1,0 +1,58 @@
+language: generic
+
+# Use the trusty environment, since the netcdf packages in 12.04 are broken
+dist: trusty
+sudo: required
+
+env:
+  global:
+    MPI_IMPL=openmpi
+
+  matrix:
+    - GFORTRAN_VERSION=4.8
+    - GFORTRAN_VERSION=4.9
+    - GFORTRAN_VERSION=5 
+    - GFORTRAN_VERSION=6
+
+# addons:
+#   apt:
+#     sources:
+#       - ubuntu-toolchain-r-test
+#     packages:
+#       - gfortran-4.8
+#       - gfortran-4.9
+#       - gfortran-5
+#       - gfortran-6
+#       - g++-4.8
+#       - g++-4.9
+#       - g++-5
+#       - g++-6
+
+before_install:
+  - sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
+  - sudo -E apt-get -yq update &>> ~/apt-get-update.log
+  - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install 
+    gfortran-$GFORTRAN_VERSION g++-$GFORTRAN_VERSION
+  - export TRAVIS_ROOT=$HOME/travis
+  - mkdir -p $TRAVIS_ROOT
+  # Get and install OpenMPI
+  - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION
+  # Get and install FFTW3
+  - ./TRAVIS/install_fftw.sh $TRAVIS_ROOT $GFORTRAN_VERSION
+  # Get and install NetCDF4
+  - ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION
+
+install:
+  - gfortran-$GFORTRAN_VERSION -v
+  - gfortran-$GFORTRAN_VERSION hello_world.f90 -o hello_world.x
+
+script:
+  - ./hello_world.x
+
+after_success:
+
+cache:
+  apt: true
+
+  directories:
+    - $HOME/travis
