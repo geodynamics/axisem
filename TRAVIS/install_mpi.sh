@@ -59,6 +59,8 @@ case "$os" in
                     make install
                 else
                     echo "MPICH installed..."
+                    ls -l "$TRAVIS_ROOT/bin"
+                    export PATH=$PATH:$TRAVIS_ROOT/bin
                     find $TRAVIS_ROOT -name mpiexec
                     find $TRAVIS_ROOT -name mpif90
                     find $TRAVIS_ROOT -name mpicc
@@ -80,6 +82,7 @@ case "$os" in
                     make install
                 else
                     echo "OpenMPI installed..."
+                    export PATH=$PATH:$TRAVIS_ROOT/bin
                     find $TRAVIS_ROOT -name mpiexec
                     find $TRAVIS_ROOT -name mpif90
                     find $TRAVIS_ROOT -name mpicc
