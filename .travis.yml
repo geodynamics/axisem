@@ -1,0 +1,73 @@
+language: generic
+
+# Use the trusty environment, since the netcdf packages in 12.04 are broken
+dist: trusty
+sudo: required
+
+env:
+  global:
+    MPI_IMPL=openmpi
+
+  matrix:
+    - GFORTRAN_VERSION=4.8
+    - GFORTRAN_VERSION=4.9
+    - GFORTRAN_VERSION=5 
+    - GFORTRAN_VERSION=6
+    - GFORTRAN_VERSION=4.8
+      EXTRAFLAGS=-fopenmp
+    - GFORTRAN_VERSION=4.9
+      EXTRAFLAGS=-fopenmp
+    - GFORTRAN_VERSION=5 
+      EXTRAFLAGS=-fopenmp
+    - GFORTRAN_VERSION=6
+      EXTRAFLAGS=-fopenmp
+
+before_install:
+  - export MINICONDA=$HOME/miniconda
+  - export PATH="$MINICONDA/bin:$PATH"
+  - hash -r
+  # Install conda only if necessary
+  - command -v conda >/dev/null || { wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+     bash miniconda.sh -b -f -p $MINICONDA; }
+  - conda update --yes conda
+  - conda remove --yes -n condaenv --all || echo "Conda not yet installed"
+  - conda create --yes -n condaenv python=2.7
+  - conda install --yes -n condaenv pip
+  - source activate condaenv
+  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
+  - conda install --yes -c obspy obspy python=2.7
+  - travis_retry pip install $PIP_DEPS
+   #Install Gfortran in selected version
+  - sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
+  - sudo -E apt-get -yq update &>> ~/apt-get-update.log
+  - sudo -E apt-get -yq --force-yes install tcsh gnuplot
+  - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install 
+    gfortran-$GFORTRAN_VERSION g++-$GFORTRAN_VERSION
+  - export TRAVIS_ROOT=$HOME/travis
+  - mkdir -p $TRAVIS_ROOT
+  # Get and install OpenMPI
+  - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION > LOG_OpenMPI.log
+  # Get and install FFTW3
+  - ./TRAVIS/install_fftw.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_FFTW.log
+  # Get and install NetCDF4
+  - ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_NetCDF4.log
+  - export PATH="$TRAVIS_ROOT/bin:$PATH"
+
+install: true
+  
+script:
+  - cd TESTING;
+  - python test_nightly_axisem.py -t 1
+  - python test_nightly_axisem.py -t 2
+  - python test_nightly_axisem.py -t 3
+
+after_success:
+
+cache:
+  apt: true
+
+  directories:
+    - $HOME/travis
+    - $HOME/miniconda

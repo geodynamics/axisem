@@ -16,10 +16,13 @@
 
 # Added this line for python 2.5 compatibility
 from __future__ import with_statement
+import matplotlib as mpl
+mpl.rcParams['backend'] = 'agg'
 import os
 import sys
 import time
 import subprocess
+import warnings
 import ConfigParser
 import shutil
 import glob
@@ -41,7 +44,8 @@ try:
     import numpy as np
     import matplotlib.pyplot as plt
     from obspy.core import read, Trace, Stream, UTCDateTime
-    from obspy.signal import util, cosTaper, detrend
+    from obspy.signal import util
+    from obspy.signal.invsim import cosine_taper
 except Exception, error:
     obspy_error = 'obspy (http://obspy.org/) should be installed'
     obspy_error += 'for using MSEED, Filter, STF and TEST functionalities.'
@@ -62,17 +66,17 @@ except Exception, error:
 ########################################################################
 
 def PyAxi(**kwargs):
-    
+
     """
     PyAxi is the function dedicated to the main part of the code.
-    
+
     To run this code:
     1. change the "inpython.cfg" file based on the inputs that you want
     2. type: python PyAxi.py
     3. if you have run the code once before with the same name, then PyAxi
        will ask whether it should remove the old directory or not!
     """
-    
+
     # global variables
     global input
     try:
@@ -82,12 +86,12 @@ def PyAxi(**kwargs):
             p = []
             print repr('Compiler').rjust(20).replace("'", '') + "    |    " +   repr('Installed').rjust(11).replace("'", '')
             print '  ' + 42*'-'
-            
+
             for compilers in ['gfortran', 'ifort', 'mpif90.openmpi', 'mpif90',
                                 'gnuplot', 'taup', 'paraview', 'matlab', 'googleearth']:
                 if manual_which(compilers) == None: p.append([compilers, 'N'])
                 else: p.append([compilers, 'Y'])
-            
+
             p_print = copy.deepcopy(p)
 
             if p_print[3][1] == 'N' and p_print[2][1] != 'N': del p_print[3]
@@ -98,7 +102,7 @@ def PyAxi(**kwargs):
 
             for comp in range(0, len(p_print)):
                 print repr(p_print[comp][0]).rjust(20).replace("'", '') + "    |    " +  repr(p_print[comp][1]).rjust(7).replace("'", '')
-            
+
             print '\nSummary:\n'
             if p[0][1] != 'N' or p[1][1] != 'N':
                 if p[2][1] != 'N' or p[3][1] != 'N':
@@ -106,32 +110,32 @@ def PyAxi(**kwargs):
                 else:
                     print 'Basic functionality requirement...ERROR'
             else: print 'Basic functionality requirement...ERROR'
-            if p[4][1] != 'N' and p[5][1] != 'N': 
+            if p[4][1] != 'N' and p[5][1] != 'N':
                 print 'Processing requirement........CHECK'
             else: print 'Processing requirement........ERROR'
-            if p[6][1] != 'N' and p[7][1] != 'N' and p[8][1] != 'N': 
+            if p[6][1] != 'N' and p[7][1] != 'N' and p[8][1] != 'N':
                 print 'Visualization tools...CHECK'
             else: print 'Visualization tools...ERROR'
             print '\n'
-            sys.exit(2) 
+            sys.exit(2)
     except Exception, error:
         print '',
-        sys.exit(2) 
-    
+        sys.exit(2)
+
     # ------------------Read INPUT file (Parameters)--------------------
     read_input_file()
-    
+
     if input['test'] != 'N':
         subprocess.check_call(['cp',
             os.path.join(input['test_folder'], 'STATIONS'),
             os.path.join(input['axi_address'], 'SOLVER', 'STATIONS')])
         read_input_file()
-    
+
     # Defining error message
     output = 0
     output_print = 20*'*' + '\n' + str(output) + '\n' + 20*'*'
-    
-    
+
+
     if os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])) == True:
         print '--------------------------------------------------------'
         user_raw_input = raw_input('Directory with the same name as ' + input['solver_name'] +
@@ -141,7 +145,7 @@ def PyAxi(**kwargs):
                 'S: Stop the program\n' +
                 'R: Remove the directory and continue the program\n' +
                 'C: Continue the program without removing the directory\n\n').upper()
-        
+
         print '--------------------------------------------------------'
         if user_raw_input == 'C':
             print "Continue the program!"
@@ -154,7 +158,7 @@ def PyAxi(**kwargs):
         elif user_raw_input == 'S':
             print 'EXIT AXISEM!'
             sys.exit()
-        
+
     ##############################################################
     ######################COPY TEMPLATES #########################
     ##############################################################
@@ -167,7 +171,7 @@ def PyAxi(**kwargs):
     #output = subprocess.check_call(['cp', os.path.join('.', 'SOLVER', 'Makefile.TEMPLATE'), \
     #                                    os.path.join('.', 'SOLVER', 'Makefile')], stdout = stdout_param)
     #if output != 0: print output_print
-    
+
     ##############################################################
     ################CREATE make_axisem.macros ####################
     ##############################################################
@@ -175,21 +179,27 @@ def PyAxi(**kwargs):
     os.chdir(input['axi_address'])
     make_axisem_fio = open(os.path.join('./make_axisem.macros'), 'w')
     make_axisem_ls = []
-    make_axisem_ls.append('MPIRUN = %s \n' %(input['make_axisem_mpirun']))
+    path_mpirun = os.path.expandvars(input['make_axisem_mpirun'])
+    make_axisem_ls.append('MPIRUN = %s \n' % path_mpirun)
     make_axisem_ls.append('USE_NETCDF = %s \n' %(input['make_axisem_use_netcdf']))
-    make_axisem_ls.append('NETCDF_PATH = %s \n' %(input['make_axisem_netcdf_path']))
+    path_netcdf = os.path.expandvars(input['make_axisem_netcdf_path'])
+    make_axisem_ls.append('NETCDF_PATH = %s \n' % path_netcdf)
     make_axisem_ls.append('SERIAL = %s \n' %(input['make_axisem_serial']))
     make_axisem_ls.append('INCLUDE_MPI = %s \n' %(input['make_axisem_include_mpi']))
-    make_axisem_ls.append('CC = %s \n' %(input['make_axisem_CC']))
-    make_axisem_ls.append('FC = %s \n' %(input['make_axisem_FC']))
+    path_cc = os.path.expandvars(input['make_axisem_CC'])
+    make_axisem_ls.append('CC = %s \n' % path_cc)
+    path_fc = os.path.expandvars(input['make_axisem_FC'])
+    make_axisem_ls.append('FC = %s \n' % path_fc)
     make_axisem_ls.append('FFLAGS = %s \n' %(input['make_axisem_FFLAGS']))
     make_axisem_ls.append('CFLAGS = %s \n' %(input['make_axisem_CFLAGS']))
     make_axisem_ls.append('LDFLAGS = %s \n' %(input['make_axisem_LDFLAGS']))
     for make_axi_item in make_axisem_ls:
+        if input['verbose'] == 'Y':
+            print(make_axi_item)
         make_axisem_fio.writelines(make_axi_item)
     make_axisem_fio.close()
     print 'DONE'
-        
+
     ##############################################################
     ############################# MESHER #########################
     ##############################################################
@@ -199,10 +209,12 @@ def PyAxi(**kwargs):
         print "\n======"
         print "MESHER"
         print "======"
-        os.chdir(os.path.join(input['axi_address'], 'MESHER'))
-        
+        mesher_dir = os.path.join(input['axi_address'], 'MESHER')
+        os.chdir(mesher_dir)
+        print os.getcwd()
+
         # Delete previous mesh_params.h, meshdb.dat*, Diags/*
-        if input['verbose'] != 'N': 
+        if input['verbose'] != 'N':
             print "\n====================================================="
             print 'Removing old mesh_params.h*, meshdb.dat* and ./Diags/*'
             print "=====================================================\n"
@@ -249,7 +261,7 @@ def PyAxi(**kwargs):
             inparam_mesh_input.append('SAVE_MESH     %s\n' %(input['mesher_save_mesh']))
             inparam_mesh_input.append('VERBOSE     %s\n' %(input['mesher_verbose']))
             inparam_mesh_input.append('NCPU      4')
-            
+
             inparam_mesh_open = open('./inparam_mesh', 'w')
             for i in range(0, len(inparam_mesh_input)):
                 inparam_mesh_open.write(inparam_mesh_input[i])
@@ -260,7 +272,7 @@ def PyAxi(**kwargs):
                     print inp_item,
             else:
                 print 'DONE'
-           
+
             if input['verbose'] != 'N':
                 print "\n==============="
                 print "RUN submit.csh"
@@ -270,10 +282,12 @@ def PyAxi(**kwargs):
                 sys.stdout.write('submit.csh...')
                 sys.stdout.flush()
                 stdout_param = subprocess.PIPE
-            
-            output = subprocess.check_call(['./submit.csh'], stdout = stdout_param)
+
+            output = subprocess.check_call(os.path.join(mesher_dir,
+                                                        'submit.csh'),
+                                           stdout=stdout_param)
             if output != 0: print output_print
-            
+
             # check the xmesh whether it is finished or not!
             process_name= "xmesh"
             check_process="running"
@@ -295,11 +309,12 @@ def PyAxi(**kwargs):
                         print "\n============================="
                         print '\n       MESHER crashed'
                         print "\n============================="
+                        raise RuntimeError('Mesher crashed')
                         return
                     check_process='DONE'
             print 'DONE'
             print '--------------------------'
-            
+
         # move the mesh to the SOLVER folder
         if input['mesher_move'] != 'N':
             if input['verbose'] != 'N':
@@ -326,7 +341,7 @@ def PyAxi(**kwargs):
                     subprocess.check_call(['rm', '-rf',
                         os.path.join('..', 'SOLVER', 'MESHES', input['mesh_name'])])
                     print 'DONE'
-            
+
             sys.stdout.write('Move the mesh files...')
             sys.stdout.flush()
             output = subprocess.check_call(['./movemesh.csh', input['mesh_name']], stdout = stdout_param)
@@ -339,13 +354,14 @@ def PyAxi(**kwargs):
     ############################# SOLVER #########################
     ##############################################################
     t1_solver = time.time()
-    
+
     if input['solver'] != 'N':
         print "\n======"
         print "SOLVER"
         print "======"
-        os.chdir(os.path.join(input['axi_address'], 'SOLVER'))
-                
+        solver_dir = os.path.join(input['axi_address'], 'SOLVER')
+        os.chdir(solver_dir)
+
         # Change the input files + make clean; make
         if input['solver_make'] != 'N':
             if input['verbose'] != 'N':
@@ -355,10 +371,10 @@ def PyAxi(**kwargs):
             else:
                 sys.stdout.write('Change inparam_basic...')
                 sys.stdout.flush()
-            
+
             if os.path.isfile('inparam_basic'):
                 subprocess.check_call(['rm', 'inparam_basic'])
-            
+
             inparam_basic_input = []
             inparam_basic_input.append('SIMULATION_TYPE     %s\n' %(input['solver_sim_type']))
             inparam_basic_input.append('SEISMOGRAM_LENGTH     %s\n' %(input['solver_seis_length']))
@@ -368,7 +384,7 @@ def PyAxi(**kwargs):
             inparam_basic_input.append('ATTENUATION     %s\n' %(input['solver_attenuation']))
             inparam_basic_input.append('SAVE_SNAPSHOTS     %s\n' %(input['solver_save_snapshots']))
             inparam_basic_input.append('VERBOSITY     %s\n' %(input['solver_verbosity']))
-            
+
             inparam_solver_open = open('./inparam_basic', 'w')
             for i in range(0, len(inparam_basic_input)):
                 inparam_solver_open.write(inparam_basic_input[i])
@@ -385,7 +401,7 @@ def PyAxi(**kwargs):
             else:
                 sys.stdout.write('Change inparam_advanced...')
                 sys.stdout.flush()
-            
+
             if os.path.isfile('inparam_advanced'):
                 subprocess.check_call(['rm', 'inparam_advanced'])
             inparam_advanced_input = []
@@ -426,7 +442,7 @@ def PyAxi(**kwargs):
             inparam_advanced_input.append('HOMO_VS                 %s\n' %(input['solver_homo_vs']))
             inparam_advanced_input.append('HOMO_RHO                %s\n' %(input['solver_homo_rho']))
             inparam_advanced_input.append('FORCE_ANISO             %s\n' %(input['solver_force_aniso']))
-          
+
             inparam_solver_open = open('./inparam_advanced', 'w')
             for i in range(0, len(inparam_advanced_input)):
                 inparam_solver_open.write(inparam_advanced_input[i])
@@ -435,7 +451,7 @@ def PyAxi(**kwargs):
                 for advanced_line in inparam_advanced_input: print advanced_line,
             else:
                 print 'DONE'
-  
+
             print 'source_type: ' + input['source_type'];
             if input['sourcefile_type'] == 'sourceparams':
                 if input['verbose'] != 'N':
@@ -463,7 +479,7 @@ def PyAxi(**kwargs):
                 source_open.close()
                 if input['verbose'] != 'N':
                     for i in range(0, len(source_text)):
-                        print source_text[i]; 
+                        print source_text[i];
                 else:
                     print 'DONE'
 
@@ -479,10 +495,10 @@ def PyAxi(**kwargs):
                 if os.path.isfile('CMTSOLUTION'):
                     subprocess.check_call(['rm', 'CMTSOLUTION'])
                 subprocess.check_call(['cp', 'CMTSOLUTION.TEMPLATE', 'CMTSOLUTION'])
-                
+
                 source_open = open('./CMTSOLUTION', 'r')
                 source_read = source_open.readlines()
-                
+
                 source_read[0] = "PyAxi generated" + '\n'
                 source_read[4] = 'latitude:      ' + input['cmt_lat'] + '\n'
                 source_read[5] = 'longitude:     ' + input['cmt_lon'] + '\n'
@@ -509,7 +525,7 @@ def PyAxi(**kwargs):
                                 source_read[12]
                 else:
                     print 'DONE'
-                
+
             if input['receiver_type'] == 'colatlon':
                 if input['verbose'] != 'N':
                     print "\n=========================================="
@@ -528,7 +544,7 @@ def PyAxi(**kwargs):
                             "Number of lines    : " + str(len(receiver_read)-1)
                     if int(receiver_read[0]) != (len(receiver_read) - 1):
                         "Number of stations is not entered correctly!"
-                        
+
             elif input['receiver_type'] == 'stations':
                 if input['verbose'] != 'N':
                     print "\n====================================="
@@ -537,7 +553,7 @@ def PyAxi(**kwargs):
                 else:
                     sys.stdout.write('Change the Receiver params (STATIONS)...')
                     sys.stdout.flush()
-                
+
                 if input['IO_STATION']:
                     subprocess.check_call(['cp',
                         os.path.join(input['IO_STATION']),
@@ -547,7 +563,7 @@ def PyAxi(**kwargs):
                 receiver_open = open('./STATIONS', 'r')
                 receiver_read = receiver_open.readlines()
                 print "Number of receivers: " + str(len(receiver_read))
-                      
+
             if input['verbose'] != 'N':
                 print "\n=============="
                 print "RUN submit.csh"
@@ -557,11 +573,11 @@ def PyAxi(**kwargs):
                 sys.stdout.write('submit.csh...')
                 sys.stdout.flush()
                 stdout_param = subprocess.PIPE
-                        
+
             output = subprocess.check_call(['./submit.csh', input['solver_name']], stdout = stdout_param)
             if output != 0: print output_print
             print 'DONE'
-           
+
             # copy the input file to the folder (for reference!)
             if input['verbose'] != 'N':
                 print "=================="
@@ -576,7 +592,7 @@ def PyAxi(**kwargs):
                         %(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
                 time.sleep(10)
                 if not os.path.exists(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])):
-                    sys.exit('...ERROR...%s is not created.' 
+                    sys.exit('...ERROR...%s is not created.'
                             %(os.path.join(input['axi_address'], 'SOLVER', input['solver_name'])))
             subprocess.check_call(['cp', input['inpython_address'],
                         os.path.join(input['axi_address'], 'SOLVER', input['solver_name'], "inpython.cfg")])
@@ -586,16 +602,16 @@ def PyAxi(**kwargs):
             print "\n================"
             print "Check the OUTPUT"
             print "================"
-            
+
             os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
-            
+
             test = -1; test_1 = -1; test_2 = -1; test_3 = -1; test_4 = -1
             solverended = 0
             solvercrashed = 0
             same_output = 0
             time.sleep(10)
             #print_output = "Just after 2 seconds!"
-            
+
             if input['sourcefile_type'] == 'sourceparams':
                 print_output = ""
                 if not os.path.exists('OUTPUT_' + input['solver_name']):
@@ -629,14 +645,15 @@ def PyAxi(**kwargs):
                             temp = killprocess('axisem')
                             return
 
-                    print print_output
+                    if input['verbose'] == 'Y':
+                        print print_output
                     time.sleep(2)
-                
+
                 if  test==-1:
                     solvercrashed = 1
-                    
+
             elif input['sourcefile_type'] == 'cmtsolut':
-               
+
                 print_output_1 = ""
                 print_output_2 = ""
                 print_output_3 = ""
@@ -646,31 +663,31 @@ def PyAxi(**kwargs):
                                 %(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY'))
                     time.sleep(10)
                     if not os.path.exists(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY')):
-                        sys.exit('...ERROR...%s is not created.' 
+                        sys.exit('...ERROR...%s is not created.'
                                     %(os.path.join('MXX_P_MYY', 'OUTPUT_MXX_P_MYY')))
-                
+
                 if not os.path.exists(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY')):
                     print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
                                 %(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'))
                     time.sleep(10)
                     if not os.path.exists(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY')):
-                        sys.exit('...ERROR...%s is not created.' 
+                        sys.exit('...ERROR...%s is not created.'
                                     %(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY')))
-  
+
                 if not os.path.exists(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ')):
                     print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
                                 %(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'))
                     time.sleep(10)
                     if not os.path.exists(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ')):
-                        sys.exit('...ERROR...%s is not created.' 
+                        sys.exit('...ERROR...%s is not created.'
                                     %(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ')))
- 
+
                 if not os.path.exists(os.path.join('MZZ', 'OUTPUT_MZZ')):
                     print 'WARNING: %s is not created! wait for 10 seconds and re-check.' \
                                 %(os.path.join('MZZ', 'OUTPUT_MZZ'))
                     time.sleep(10)
                     if not os.path.exists(os.path.join('MZZ', 'OUTPUT_MZZ')):
-                        sys.exit('...ERROR...%s is not created.' 
+                        sys.exit('...ERROR...%s is not created.'
                                     %(os.path.join('MZZ', 'OUTPUT_MZZ')))
 
                 while ((test_1 == -1 or test_2 == -1 or test_3 == -1 or test_4 == -1) and solverended == 0):
@@ -697,7 +714,7 @@ def PyAxi(**kwargs):
                         test_1 = 0
                     print 'MXX_P_MYY:     ' + print_output_1
                     output_file.close
-                    
+
                     output_file =  open(os.path.join('MXY_MXX_M_MYY', 'OUTPUT_MXY_MXX_M_MYY'), 'r')
                     output_file_read = output_file.readlines()
                     last_output_2 = print_output_2
@@ -718,11 +735,11 @@ def PyAxi(**kwargs):
                             temp = killprocess('axisem')
                             return
                         test_2 = -1
-                    else: 
+                    else:
                         test_2 = 0
                     print 'MXY_MXX_M_MYY: ' + print_output_2
                     output_file.close
-                    
+
                     output_file =  open(os.path.join('MXZ_MYZ', 'OUTPUT_MXZ_MYZ'), 'r')
                     output_file_read = output_file.readlines()
                     last_output_3 = print_output_3
@@ -743,11 +760,11 @@ def PyAxi(**kwargs):
                             print "\n============================="
                             temp = killprocess('axisem')
                             return
-                    else: 
+                    else:
                         test_3 = 0
                     print 'MXZ_MYZ:       ' + print_output_3
                     output_file.close
-                    
+
                     output_file =  open(os.path.join('MZZ', 'OUTPUT_MZZ'), 'r')
                     output_file_read = output_file.readlines()
                     last_output_4 = print_output_4
@@ -772,12 +789,12 @@ def PyAxi(**kwargs):
                         test_4 = 0
                     print 'MZZ:           ' + print_output_4
                     output_file.close
-                    
+
                     if howmanyofthisprocess('axisem') == 0:
                         solverended = 1
                     time.sleep(2)
                     print '--------------------------------'
-                        
+
                 if (test_1 == -1 or test_2 == -1 or test_3 == -1 or test_4 == -1):
                     solvercrashed = 1
     t2_solver = time.time()
@@ -786,13 +803,14 @@ def PyAxi(**kwargs):
         print "\n============================="
         print '\n       SOLVER crashed'
         print "\n============================="
+        raise RuntimeError('Solver crashed')
         return
 
     ##############################################################
     ######################## Post-Processing #####################
     ##############################################################
     t1_post = time.time()
-    
+
     if input['post_processing'] != 'N':
         if input['verbose'] != 'N':
             print "\n==============="
@@ -803,12 +821,12 @@ def PyAxi(**kwargs):
             sys.stdout.write('\nPost Processing...')
             sys.stdout.flush()
             stdout_param = subprocess.PIPE
-        
+
         if os.path.isdir(os.path.join(input['axi_address'], 'SOLVER',
                             input['solver_name'], 'Data_Postprocessing')):
             subprocess.check_call(['rm', '-rf', os.path.join(input['axi_address'], 'SOLVER',
                             input['solver_name'], 'Data_Postprocessing')])
-        
+
         if input['sourcefile_type'] == 'sourceparams':
             os.chdir(os.path.join(input['axi_address'], 'SOLVER', input['solver_name']))
             post_process_open = open('./param_post_processing', 'r')
@@ -850,16 +868,16 @@ def PyAxi(**kwargs):
             post_process_open.close()
             output = subprocess.check_call(['./post_processing.csh'], stdout = stdout_param)
             if output != 0: print output_print
-        
-        print 'DONE'         
-    
+
+        print 'DONE'
+
     t2_post = time.time()
 
     ##############################################################
     ############################# MSEED ##########################
     ##############################################################
     t1_misc = time.time()
-    
+
     if input['mseed'] != 'N':
         if input['verbose'] != 'N':
             print "\n============================="
@@ -894,26 +912,26 @@ def PyAxi(**kwargs):
     ############################# TEST ###########################
     ##############################################################
     t1_test = time.time()
-    
-    if input['test'] != 'N' or input['plot_test'] != 'N':        
-        
+
+    if input['test'] != 'N' or input['plot_test'] != 'N':
+
         os.chdir(os.path.join(input['axi_address'], 'TESTING'))
         chans = eval(input['test_chans'])
         fmin = eval(input['test_fmin'])
         fmax = eval(input['test_fmax'])
         halfduration = eval(input['test_half'])
         folder = os.path.join(input['test_folder'], 'ref_data')
-        
+
         if os.path.isdir(os.path.join(input['test_folder'], 'new_data')):
             shutil.rmtree(os.path.join(input['test_folder'], 'new_data'))
         os.makedirs(os.path.join(input['test_folder'], 'new_data'))
         folder_new = os.path.join(input['test_folder'], 'new_data')
-        
+
         subprocess.check_call(['cp',
                 os.path.join(input['axi_address'], 'SOLVER', input['solver_name'],
                                 'Data_Postprocessing', 'SEISMOGRAMS', 'seismograms.mseed'),
                                 os.path.join(folder_new, 'axisem.mseed')])
-        
+
         sgs = []
         st = read(os.path.join(folder, 'axisem.mseed'))
         sgs.append(st)
@@ -923,9 +941,9 @@ def PyAxi(**kwargs):
         sgs.append(st)
         st = read(os.path.join(folder_new, 'axisem.mseed'))
         sgs.append(st)
-        
+
         sigma =  halfduration / np.sqrt(2.) / 3.5
-        
+
         for st in sgs:
             convSTF(st, sigma=sigma)
         for sg in sgs:
@@ -940,28 +958,25 @@ def PyAxi(**kwargs):
         linestyles = ['-', '-', '-']
 
         t = []
-        
+
         i = 0
         t0 = sgs[i][0].stats.starttime
         dt = sgs[i][0].stats.delta
         npts = sgs[i][0].stats.npts
         t.append(np.linspace(0., dt * (npts -1), npts) + (t0 -  UTCDateTime(0)))
-        print t0, dt, npts
-        
+
         i = 1
         t0 = sgs[i][0].stats.starttime
         dt = sgs[i][0].stats.delta
         npts = sgs[i][0].stats.npts
         t.append(np.linspace(0., dt * (npts -1), npts) + (t0 -  UTCDateTime(0)))
-        print t0, dt, npts
-        
+
         i = 2
         t0 = sgs[i][0].stats.starttime
         dt = sgs[i][0].stats.delta
         npts = sgs[i][0].stats.npts
         t.append(np.linspace(0., dt * (npts -1), npts) + (t0 -  UTCDateTime(0)))
-        print t0, dt, npts
-        
+
         misfitplot = plt.figure()
         for chan in chans:
             recsec = plt.figure()
@@ -973,12 +988,10 @@ def PyAxi(**kwargs):
                 tr = sgs[0].select(station=str_stat, channel='*'+chan)[0]
                 dat1 = tr.data
                 maxi = max(maxi, np.abs(dat1).max())
-            print maxi
 
             l2misfit = []
             for n in stats:
                 stat = '*%02d' % (n,)
-                print stat
                 for i, sg in enumerate(sgs):
                     dat = sg.select(station=stat, channel='*'+chan)[0].data
                     #if i == 0:
@@ -994,7 +1007,7 @@ def PyAxi(**kwargs):
                 dat2 = sgs[2].select(station=stat, channel='*'+chan)[0].data
                 l2misfit.append(((dat1 - dat2)**2).sum()**.5 / maxi /
                        sgs[0][0].stats.npts)
-            
+
             # write l2 misfits to file
             fl2 = open(os.path.join(folder_new, 'l2misfit_%s.dat' % chan), 'w')
             for l2 in l2misfit:
@@ -1005,7 +1018,7 @@ def PyAxi(**kwargs):
             ax.set_xlim(0, 1800)
             ax.set_ylim(0, nstat + 1)
             ax.legend()
-            
+
             recsec.set_size_inches((16,12))
             recsec.suptitle(chan)
             recsec.subplots_adjust(hspace=0.3, wspace=0.2, left=0.08, right=0.95,
@@ -1024,7 +1037,7 @@ def PyAxi(**kwargs):
             ax.axhline(y=1e-5, color='k', ls='--')
             if np.max(l2misfit) > 1e-5:
                 fwarn = open(os.path.join(folder_new, 'warning.dat'), 'a')
-                fwarn.write("maximum l2 norm misfit larger then 1e-5 in chan %s trace %d\n" 
+                fwarn.write("maximum l2 norm misfit larger then 1e-5 in chan %s trace %d\n"
                              % (chan, np.argmax(l2misfit)))
                 fwarn.close()
 
@@ -1034,9 +1047,9 @@ def PyAxi(**kwargs):
             misfitplot.savefig(os.path.join(folder_new, 'l2_misfit.' + input['plot_format_test']))
         if input['plot_test'] != 'N':
             plt.show()
-    
+
     t2_test = time.time()
-    
+
     print "\n============================================================"
     print "AXISEM statistics:"
     print "Time for MESHER: " + str(t2_mesher - t1_mesher)
@@ -1048,15 +1061,15 @@ def PyAxi(**kwargs):
     else:
         print "Time for TEST  : NA"
     print "============================================================"
-       
-    
+
+
 ###################### read_input_file #################################
 
-def read_input_file():  
+def read_input_file():
     """
     Read inputs from inpython.cfg file.
     """
-    
+
     global input, obspy_error
     config = ConfigParser.RawConfigParser()
     input = {}
@@ -1072,7 +1085,7 @@ def read_input_file():
         print '\n****************************************'
         print 'Read the input file (inpython.cfg) from:'
         print os.path.join(os.getcwd(), 'inpython.cfg')
-   
+
     try:
         input['IO_STATION'] = os.path.join(sys.argv[2])
         print '\n****************************************'
@@ -1084,35 +1097,35 @@ def read_input_file():
     except Exception, error:
         print 'STATIONS file is not entered as an input!'
         input['IO_STATION'] = False
-    
+
     if not os.path.isabs(input['inpython_address']):
         input['inpython_address'] = os.path.join(os.getcwd(),
                                       input['inpython_address'])
-    
+
     input['axi_address'] = config.get('GENERAL', 'AXISEM_DIR')
     if not os.path.isabs(input['axi_address']):
         input['axi_address'] = os.path.join(os.getcwd(), input['axi_address'])
     print '\nWorking Directory:'
-    print input['axi_address'] 
+    print input['axi_address']
     print '****************************************\n'
-    
+
     input['solver_name'] = config.get('GENERAL', 'SOLVER_NAME')
     input['verbose'] = config.get('GENERAL', 'VERBOSE')
-    
+
     input['new_mesh'] = config.get('GENERAL', 'NEW_MESH')
     input['post_processing'] = config.get('GENERAL', 'POST_PROCESSING')
-    
+
     input['mesher'] = config.get('GENERAL', 'MESHER')
     input['solver'] = config.get('GENERAL', 'SOLVER')
-    
+
     input['mesher_makefile'] = config.get('GENERAL', 'MESHER_MAKEFILE')
     input['mesher_make'] = config.get('GENERAL', 'MESHER_MAKE')
     input['mesher_move'] = config.get('GENERAL', 'MESHER_MOVE')
-    
+
     input['solver_cp'] = config.get('GENERAL', 'SOLVER_COPY')
     input['solver_makefile'] = config.get('GENERAL', 'SOLVER_MAKEFILE')
     input['solver_make'] = config.get('GENERAL', 'SOLVER_MAKE')
-    
+
     if input['mesher_make'] != 'N':
         input['mesher_move'] = 'Y'
         input['solver_cp'] = 'Y'
@@ -1147,8 +1160,8 @@ def read_input_file():
     input['solver_attenuation'] = config.get('SOLVER_BASIC', 'ATTENUATION')
     input['solver_save_snapshots'] = config.get('SOLVER_BASIC', 'SAVE_SNAPSHOTS')
     input['solver_verbosity'] = config.get('SOLVER_BASIC', 'VERBOSITY')
-   
-   
+
+
     input['solver_sampling_rate'] = config.get('SOLVER_ADVANCED', 'SAMPLING_PERIOD')
     input['solver_time_step'] = config.get('SOLVER_ADVANCED', 'TIME_STEP')
     input['solver_source_period'] = config.get('SOLVER_ADVANCED', 'SOURCE_PERIOD')
@@ -1184,16 +1197,16 @@ def read_input_file():
     input['solver_homo_vs'] = config.get('SOLVER_ADVANCED', 'HOMO_VS')
     input['solver_homo_rho'] = config.get('SOLVER_ADVANCED', 'HOMO_RHO')
     input['solver_force_aniso'] = config.get('SOLVER_ADVANCED', 'FORCE_ANISO')
-    
+
     input['receiver_type'] = input['solver_recfile_type']
     input['source_type'] = config.get('SOURCE_INFO', 'SOURCE_TYPE')
-    
+
     input['source_depth'] = config.get('SOURCE_INFO', 'SOURCE_DEPTH')
     input['source_lat'] = config.get('SOURCE_INFO', 'SOURCE_LATITUDE')
     input['source_lon'] = config.get('SOURCE_INFO', 'SOURCE_LONGITUDE')
     input['source_stf'] = config.get('SOURCE_INFO', 'SOURCE_STF')
     input['source_amp'] = config.get('SOURCE_INFO', 'SOURCE_AMPLITUDE')
-    
+
     input['cmt_lat']   = config.get('SOURCE_INFO', 'CMT_LAT')
     input['cmt_lon']   = config.get('SOURCE_INFO', 'CMT_LON')
     input['cmt_depth'] = config.get('SOURCE_INFO', 'CMT_DEPTH')
@@ -1203,7 +1216,7 @@ def read_input_file():
     input['cmt_Mrt']   = config.get('SOURCE_INFO', 'CMT_MRT')
     input['cmt_Mrp']   = config.get('SOURCE_INFO', 'CMT_MRP')
     input['cmt_Mtp']   = config.get('SOURCE_INFO', 'CMT_MTP')
-   
+
     input['post_rec_comp_sys'] = config.get('POST_PROCESSING', 'REC_COMP_SYS')
     input['post_conv_period'] = config.get('POST_PROCESSING', 'CONV_PERIOD')
     input['post_conv_stf'] = config.get('POST_PROCESSING', 'CONV_STF')
@@ -1220,7 +1233,7 @@ def read_input_file():
     input['post_3D_snap_beg'] = config.get('POST_PROCESSING', '3D_SNAP_BEG')
     input['post_3D_snap_end'] = config.get('POST_PROCESSING', '3D_SNAP_END')
     input['post_3D_snap_stride'] = config.get('POST_PROCESSING', '3D_SNAP_STRIDE')
-       
+
     input['mseed'] = config.get('MISC', 'MSEED')
     input['mseed_all'] = config.get('MISC', 'MSEED_ALL')
     input['convSTF'] = config.get('MISC', 'CONV_STF')
@@ -1228,7 +1241,7 @@ def read_input_file():
     input['filter'] = config.get('MISC', 'FILTER')
     input['fmin'] = eval(config.get('MISC', 'FMIN'))
     input['fmax'] = eval(config.get('MISC', 'FMAX'))
-   
+
     input['make_axisem_mpirun'] = config.get('MAKE_AXISEM', 'MPIRUN')
     input['make_axisem_use_netcdf'] = config.get('MAKE_AXISEM', 'USE_NETCDF')
     input['make_axisem_netcdf_path'] = config.get('MAKE_AXISEM', 'NETCDF_PATH')
@@ -1239,7 +1252,7 @@ def read_input_file():
     input['make_axisem_FFLAGS'] = config.get('MAKE_AXISEM', 'FFLAGS')
     input['make_axisem_CFLAGS'] = config.get('MAKE_AXISEM', 'CFLAGS')
     input['make_axisem_LDFLAGS'] = config.get('MAKE_AXISEM', 'LDFLAGS')
-    
+
     input['test'] = config.get('TEST', 'TEST')
     input['test_folder'] = config.get('TEST', 'TEST_FOLDER')
     input['plot_test'] = config.get('TEST', 'PLOT')
@@ -1250,7 +1263,7 @@ def read_input_file():
     input['test_fmax'] = config.get('TEST', 'FMAX')
     input['test_half'] = config.get('TEST', 'HALF_DURATION')
     input['test_nstat'] = config.get('TEST', 'NSTAT')
-    
+
     if input['new_mesh'] == 'Y':
         input['mesher'] = 'Y'
         input['solver'] = 'Y'
@@ -1260,18 +1273,18 @@ def read_input_file():
         input['solver_cp'] = 'Y'
         input['solver_makefile'] = 'Y'
         input['solver_make'] = 'Y'
-    
+
     if input['new_mesh'] == 'N':
         input['mesher'] = 'N'
         input['solver'] = 'Y'
         input['solver_cp'] = 'N'
         input['solver_makefile'] = 'N'
         input['solver_make'] = 'Y'
-    
+
     if input['test'] == 'N':
-        input['plot_test'] = 'N'  
+        input['plot_test'] = 'N'
         input['save_plots_test'] = 'N'
-        
+
     if input['plot_test'] != 'N':
         input['mesher'] = 'N'
         input['solver'] = 'N'
@@ -1281,16 +1294,16 @@ def read_input_file():
         input['post_processing'] = 'N'
         input['test'] = 'N'
         input['mseed'] = 'N'
-        
+
         print '##################################'
         print "PyAxi tries to copy the data from:"
         print "(solver_name flag in inpython.cfg)"
         print input['solver_name']
         print '##################################'
-    
+
     if input['receiver_type'] == 'database':
         input['post_processing'] = 'N'
-    
+
     if obspy_error != 'N':
         input['test'] = 'N'
         input['mseed'] = 'N'
@@ -1301,7 +1314,7 @@ def edit_param_post_processing(post_process_read):
     edit param_post_processing file
     """
     global input
-    
+
     if input['post_rec_comp_sys'] != 'DNC':
         post_process_read[0] = \
             'REC_COMP_SYS    %s\n' %(input['post_rec_comp_sys'])
@@ -1350,7 +1363,7 @@ def edit_param_post_processing(post_process_read):
     if input['post_3D_snap_stride'] != 'DNC':
         post_process_read[15] = \
             '3D_SNAP_STRIDE   %s\n' %(input['post_3D_snap_stride'])
-    
+
     return post_process_read
 
 ########################## axisem2mseed ################################
@@ -1359,17 +1372,17 @@ def axisem2mseed(path):
     change .dat files into MSEED format
     """
     global input
-    
+
     if not os.path.isdir(os.path.join(path, 'MSEED')):
         os.mkdir(os.path.join(path, 'MSEED'))
     else:
         print 'Following directory already exists:'
         print os.path.join(path, 'MSEED')
         sys.exit()
-        
+
     t = UTCDateTime(0)
     traces = []
-    
+
     for file in glob.iglob(os.path.join(path, '*.dat')):
         stationID = file.split('/')[-1].split('_')[0]
         networkID = file.split('/')[-1].split('_')[1]
@@ -1380,11 +1393,11 @@ def axisem2mseed(path):
         try:
             dat = np.loadtxt(file)
             npts = len(dat[:,0])
-            stats = {'network': networkID, 
-                     'station': stationID, 
+            stats = {'network': networkID,
+                     'station': stationID,
                      'location': '',
-                     'channel': chan, 
-                     'npts': npts, 
+                     'channel': chan,
+                     'npts': npts,
                      'sampling_rate': (npts - 1.)/(dat[-1,0] - dat[0,0]),
                      'starttime': t + dat[0,0],
                      'mseed' : {'dataquality': 'D'}}
@@ -1415,27 +1428,28 @@ def axisem2mseed_all(path):
 
     t = UTCDateTime(0)
     traces = []
-    
+
     for file in glob.iglob(os.path.join(path, '*.dat')):
         stationID = file.split('/')[-1].split('_')[0]
         chan = file.split('/')[-1].split('_')[-1].split('.')[0]
         dat = np.loadtxt(file)
         npts = len(dat[:,0])
-        stats = {'network': 'SG', 
-                 'station': stationID, 
+        stats = {'network': 'SG',
+                 'station': stationID,
                  'location': '',
-                 'channel': chan, 
-                 'npts': npts, 
+                 'channel': chan,
+                 'npts': npts,
                  'sampling_rate': (npts - 1.)/(dat[-1,0] - dat[0,0]),
                  'starttime': t + dat[0,0],
                  'mseed' : {'dataquality': 'D'}}
         traces.append(Trace(data=dat[:,1], header=stats))
-     
+
     st = Stream(traces)
     st.sort()
     fname =  os.path.join(path, 'seismograms.mseed')
-    print fname
-    st.write(fname, format='MSEED')
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        st.write(fname, format='MSEED')
 
 ########################## convSTF ################################
 def convSTF(st, sigma=30.):
@@ -1451,8 +1465,8 @@ def convSTF(st, sigma=30.):
     nstf = len(stf)
 
     for tr in st:
-        tr.data *= cosTaper(len(tr.data), p=0.05)
-        nfft = util.nextpow2(max(nstf, tr.stats.npts)) * 2
+        tr.data *= cosine_taper(len(tr.data), p=0.05)
+        nfft = util.next_pow_2(max(nstf, tr.stats.npts)) * 2
         stff = np.fft.rfft(stf, n=nfft) * dt
         trf = np.fft.rfft(tr, n=nfft) * dt
         tr.data = np.fft.irfft(stff * trf)[sigma*10*df:sigma*10*df+len(tr.data)] * df
@@ -1497,7 +1511,7 @@ def manual_which(program):
 ########################################################################
 
 if __name__ == "__main__":
-    
+
     t1_pro = time.time()
     status = PyAxi()
     t_pro = time.time() - t1_pro
@@ -1505,176 +1519,4 @@ if __name__ == "__main__":
     print "total time: " + str(t_pro)
     print "===========================\n"
     #sys.exit(status)
-
-
-###############################################################
-######################### TRASH ###############################
-###############################################################
-
-
-#       # Create Mesher Makefile (required just once!)
-#       if input['mesher_makefile'] != 'N':
-#           if input['verbose'] != 'N':
-#               print "========================="
-#               print "Create Mesher Makefile"
-#               print "=========================\n"
-#               stdout_param = None
-#           else:
-#               sys.stdout.write('Create Mesher Makefile...')
-#               sys.stdout.flush()
-#               stdout_param = subprocess.PIPE
-#
-#           if input['make_flag_mesher'] != 'N':
-#               output = subprocess.check_call(['./makemake.pl', input['make_flag_mesher']], stdout = stdout_param)
-#               if output != 0: print output_print
-#           else:
-#               output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
-#               if output != 0: print output_print
-#           print 'DONE'
-#           
-#           # Change the mpi_compiler based on the local machine
-#           if input['mpi_compiler'] != 'N':
-#               if input['verbose'] != 'N':
-#                   print "==============="
-#                   print "Change F90 flag"
-#                   print "==============="
-#               else:
-#                   sys.stdout.write('Change F90 flag...')
-#                   sys.stdout.flush()
-#               makefile_open = open('./Makefile', 'r')
-#               makefile_read = makefile_open.readlines()
-#               search = 'F90 = '
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'F90 = ' + input['mpi_compiler'] + '\n'
-#                       num = i
-#               makefile_open.close()
-#               makefile_open = open('./Makefile', 'w')
-#
-#               for i in range(0, len(makefile_read)):
-#                   makefile_open.write(makefile_read[i])
-#
-#               makefile_open.close()
-#               if input['verbose'] != 'N':
-#                  print makefile_read[num]
-#               else:
-#                   print 'DONE'
-
-
-
-#       # Create SOLVER Makefile
-#       if input['solver_makefile'] != 'N':
-#           if input['verbose'] != 'N':
-#               print "======================"
-#               print "Create Solver Makefile"
-#               print "======================\n"
-#               stdout_param = None
-#           else:
-#               stdout_param = subprocess.PIPE
-#
-#           if input['netCDF'] == 'N' and input['make_flag_solver'] == 'N':
-#               print '--------------------------------'
-#               print 'No specific flag fot makemake.pl'
-#               print 'No netCDF option'
-#               print '--------------------------------\n'
-#               output = subprocess.check_call(['./makemake.pl'], stdout = stdout_param)
-#               if output != 0: print output_print
-#           elif input['netCDF'] == 'N' and input['make_flag_solver'] != 'N':
-#               print '--------------------------------'
-#               print 'Specific flag(s) fot makemake.pl: ' + input['make_flag_solver']
-#               print 'No netCDF option'
-#               print '--------------------------------\n'
-#               output = subprocess.check_call(['./makemake.pl', input['make_flag_solver']], stdout = stdout_param)
-#               if output != 0: print output_print
-#           elif input['netCDF'] != 'N' and input['make_flag_solver'] == 'N':
-#               print '--------------------------------'
-#               print 'No specific flag fot makemake.pl'
-#               print 'With netCDF option'
-#               print '--------------------------------\n'
-#               output = subprocess.check_call(['./makemake.pl', '-netcdf'], stdout = stdout_param)
-#               if output != 0: print output_print
-#           elif input['netCDF'] != 'N' and input['make_flag_solver'] != 'N':
-#               print '--------------------------------'
-#               print 'Specific flag(s) fot makemake.pl: ' + input['make_flag_solver']
-#               print 'With netCDF option'
-#               print '--------------------------------\n'
-#               output = subprocess.check_call(['./makemake.pl', input['make_flag_solver'], '-netcdf'], stdout = stdout_param)
-#               if output != 0: print output_print
-#           print '\n-----------------------------'
-#           print 'Create Solver Makefile...DONE'
-#           print '-----------------------------'
-#      
-
-
-#           
-#           if input['mpi_compiler'] != 'N':
-#               if input['verbose'] != 'N':
-#                   print "\n==============="
-#                   print "Change F90 flag"
-#                   print "==============="
-#               else:
-#                   sys.stdout.write('Change F90 flag...')
-#                   sys.stdout.flush()
-#
-#               makefile_open = open('./Makefile', 'r')
-#               makefile_read = makefile_open.readlines()
-#               search = 'F90 = '
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'F90 = ' + input['mpi_compiler'] + '\n'
-#                       num = i
-#               makefile_open.close()
-#               
-#               makefile_open = open('./Makefile', 'w')
-#               for i in range(0, len(makefile_read)):
-#                   makefile_open.write(makefile_read[i])
-#               makefile_open.close()
-#               if input['verbose'] != 'N':
-#                   print makefile_read[num]
-#               else:
-#                   print 'DONE'
-#           
-#            if input['verbose'] != 'N':
-#                print "\n==================="
-#                print "Change netCDF flags"
-#                print "==================="
-#            else:
-#                sys.stdout.write('Change netCDF flags...')
-#                sys.stdout.flush()
-#            
-#               search = '#F90FLAGS = -Dunc'
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'F90FLAGS = -Dunc' + '\n'
-#                       num_0 = i
-#               search = 'LIBS = '
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'LIBS = ' + input['netCDF_LIBS'] + '\n'
-#                       num_1 = i
-#               search = 'INCLUDE ='
-#               for i in range(0, len(makefile_read)):
-#                   if makefile_read[i].find(search) != -1:
-#                       makefile_read[i] = 'INCLUDE = ' + input['netCDF_INCLUDE'] + '\n'
-#                       num_2 = i
-#               makefile_open.close()
-#               makefile_open = open('./Makefile', 'w')
-#
-#               for i in range(0, len(makefile_read)):
-#                   makefile_open.write(makefile_read[i])
-#
-#               makefile_open.close()
-#               if input['verbose'] != 'N':
-#                   print makefile_read[num_0]
-#                   print makefile_read[num_1]
-#                   print makefile_read[num_2]
-#               else:
-#                   print 'DONE'
-
-
-    #input['solver_netCDF'] = config.get('SOLVER_ADVANCED', 'USE_NETCDF')
-    #if input['solver_netCDF'] != 'false': input['netCDF'] = 'Y'
-    #else: input['netCDF'] = 'N'
-    #input['netCDF_LIBS'] = config.get('SOLVER_ADVANCED', 'NETCDF_LIBS')
-    #input['netCDF_INCLUDE'] = config.get('SOLVER_ADVANCED', 'NETCDF_INCLUDE')
 
