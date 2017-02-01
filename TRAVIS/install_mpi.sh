@@ -73,6 +73,7 @@ case "$os" in
                     cd openmpi-1.10.1
                     mkdir build && cd build
                     ../configure --prefix=$TRAVIS_ROOT CC=$PRK_CC CXX=$PRK_CXX FC=$PRK_FC \
+                      CFLAGS=-w FFLAGS=-w -q --without-valgrind --disable-mpi-cxx \
                       --disable-java --without-verbs --without-fca --without-mxm \
                       --without-portals4 --without-psm --without-psm2  --without-alps \
                       --without-sge --without-loadleveler --without-tm --without-lsf \
