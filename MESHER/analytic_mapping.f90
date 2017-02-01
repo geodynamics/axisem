@@ -22,10 +22,10 @@
 !=========================================================================================
 module analytic_mapping
   
-  use analytic_spheroid_mapping
-  use analytic_semi_mapping
-  use subpar_mapping
-  use data_mesh
+  use analytic_spheroid_mapping, only: map_spheroid
+  use analytic_semi_mapping,     only: map_semiso, map_semino
+  use subpar_mapping,            only: mapping_subpar
+  use data_mesh,                 only: eltypeg, dp
 
   implicit none
 

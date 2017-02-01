@@ -23,7 +23,6 @@
 module gllmeshgen
 
   use data_mesh
-  use analytic_mapping 
   use data_spec
   use data_gllmesh 
   use splib
@@ -40,6 +39,7 @@ module gllmeshgen
 subroutine create_gllmesh
 
   use data_diag
+  use analytic_mapping, only: mapping_anal
 
   real(kind=dp)    :: crd_nodes(8,2)
 
@@ -110,6 +110,17 @@ subroutine create_gllmesh
      crd_nodes(6,:) = .5d0 * ( crd_nodes(5,:) + crd_nodes(7,:) )  ! (Serendipity elements).
      crd_nodes(8,:) = .5d0 * ( crd_nodes(7,:) + crd_nodes(1,:) )  !  
 
+     !if (iel==439635) then
+     !  print *, crd_nodes(1,:) * 6671d3, norm2(crd_nodes(1,:)) * 6671d3
+     !  print *, crd_nodes(2,:) * 6671d3, norm2(crd_nodes(2,:)) * 6671d3
+     !  print *, crd_nodes(3,:) * 6671d3, norm2(crd_nodes(3,:)) * 6671d3
+     !  print *, crd_nodes(4,:) * 6671d3, norm2(crd_nodes(4,:)) * 6671d3
+     !  print *, crd_nodes(5,:) * 6671d3, norm2(crd_nodes(5,:)) * 6671d3
+     !  print *, crd_nodes(6,:) * 6671d3, norm2(crd_nodes(6,:)) * 6671d3
+     !  print *, crd_nodes(7,:) * 6671d3, norm2(crd_nodes(7,:)) * 6671d3
+     !  print *, crd_nodes(8,:) * 6671d3, norm2(crd_nodes(8,:)) * 6671d3
+     !end if
+
      stest = minval(sg(lnodesg(1:4,iel)))
      if ( stest < smallval_dble ) then 
         do jpol = 0, npol
@@ -162,6 +173,7 @@ end subroutine extract_fluid_solid_submeshes
 
 !-----------------------------------------------------------------------------------------
 subroutine test_mapping
+  use analytic_mapping, only: mapping_anal
   real(kind=dp)     :: crd_nodes(8,2)
   integer           :: npoin
   integer           :: iel,jpol,ipol
