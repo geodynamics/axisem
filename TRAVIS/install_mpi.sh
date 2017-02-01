@@ -78,7 +78,9 @@ case "$os" in
                       --without-portals4 --without-psm --without-psm2  --without-alps \
                       --without-sge --without-loadleveler --without-tm --without-lsf \
                       --without-slurm --without-pvfs2 --without-cuda --disable-oshmem \
-                      --disable-mpi-io  --disable-io-romio --enable-silent-rules 
+                      --disable-mpi-io  --disable-io-romio --enable-silent-rules \
+                      --disable-dependency-tracking --disable-pretty-print-stacktrace \
+                      --disable-coverage --disable-mpi-profile
                     make -sj4
                     make install
                 else

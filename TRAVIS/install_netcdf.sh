@@ -30,7 +30,7 @@ if [ ! -f "$TRAVIS_ROOT/bin/h5stat" ]; then
     tar -xf hdf5-1.8.17.tar.bz2
     cd hdf5-1.8.17/
 
-    ./configure --prefix=$TRAVIS_ROOT --with-zlib=$TRAVIS_ROOT
+    ./configure CFLAGS=-w --prefix=$TRAVIS_ROOT --with-zlib=$TRAVIS_ROOT -q
 
     # -j parallelizes make;  -s reduces output
     make -sj4
@@ -50,7 +50,8 @@ if [ ! -f "$TRAVIS_ROOT/bin/nc-config" ]; then
     wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
     tar -xvf netcdf-4.3.3.1.tar.gz
     cd netcdf-4.3.3.1
-    ./configure --enable-netcdf-4 --enable-dap --enable-shared --prefix=$TRAVIS_ROOT
+    ./configure CFLAGS=-w --enable-netcdf-4 --disable-dap --enable-shared --disable-testsets \
+        --prefix=$TRAVIS_ROOT -q
     make -sj4
     #make check # all tests should succeed.
     make install
@@ -68,7 +69,7 @@ if [ ! -f "$TRAVIS_ROOT/bin/nf-config" ]; then
     wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-4.4.2.tar.gz
     tar -xvf netcdf-fortran-4.4.2.tar.gz
     cd netcdf-fortran-4.4.2
-    ./configure --prefix=$TRAVIS_ROOT --enable-netcdf-4
+    ./configure --prefix=$TRAVIS_ROOT -q
     make -sj4
     #make check
     make install
