@@ -9,15 +9,12 @@ env:
     MPI_IMPL=openmpi
 
   matrix:
+    - GFORTRAN_VERSION=4.7
     - GFORTRAN_VERSION=4.8
     - GFORTRAN_VERSION=4.9
     - GFORTRAN_VERSION=5 
     - GFORTRAN_VERSION=6
     - GFORTRAN_VERSION=4.8
-      EXTRAFLAGS=-fopenmp
-    - GFORTRAN_VERSION=4.9
-      EXTRAFLAGS=-fopenmp
-    - GFORTRAN_VERSION=5 
       EXTRAFLAGS=-fopenmp
     - GFORTRAN_VERSION=6
       EXTRAFLAGS=-fopenmp
@@ -37,22 +34,21 @@ before_install:
   # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
   - sudo rm -rf /dev/shm
   - sudo ln -s /run/shm /dev/shm
-  - conda install --yes -c obspy obspy python=2.7
+  - conda install --yes -c obspy obspy # python=2.7
   - travis_retry pip install $PIP_DEPS
    #Install Gfortran in selected version
   - sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
   - sudo -E apt-get -yq update &>> ~/apt-get-update.log
-  - sudo -E apt-get -yq --force-yes install tcsh gnuplot
   - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install 
-    gfortran-$GFORTRAN_VERSION g++-$GFORTRAN_VERSION
+    gfortran-$GFORTRAN_VERSION g++-$GFORTRAN_VERSION tcsh gnuplot
   - export TRAVIS_ROOT=$HOME/travis
-  - mkdir -p $TRAVIS_ROOT
+    #- mkdir -p $TRAVIS_ROOT
+  - wget https://www.geophysik.uni-muenchen.de/~staehler/mpi_builds/mpi_netcdf_gcc$GFORTRAN_VERSION.tar.gz 
+  - tar -xf mpi_netcdf_gcc$GFORTRAN_VERSION.tar.gz -C $HOME
   # Get and install OpenMPI
-  - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION > LOG_OpenMPI.log
-  # Get and install FFTW3
-  - ./TRAVIS/install_fftw.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_FFTW.log
+  # - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION > LOG_OpenMPI.log
   # Get and install NetCDF4
-  - ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_NetCDF4.log
+  #- ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_NetCDF4.log
   - export PATH="$TRAVIS_ROOT/bin:$PATH"
 
 install: true
@@ -69,5 +65,5 @@ cache:
   apt: true
 
   directories:
-    - $HOME/travis
+    #- $HOME/travis
     - $HOME/miniconda

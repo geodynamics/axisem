@@ -18,10 +18,19 @@
 //    You should have received a copy of the GNU General Public License
 //    along with AxiSEM.  If not, see <http://www.gnu.org/licenses/>.
 //
+#include <stdint.h>
 
+
+#if defined(__i386__) || defined(__x86_64__)
 #ifndef _CRAYC
 #include <xmmintrin.h>
 #endif
+#endif
+
+#if defined(__PPC__) || defined(__PPC64__)
+#include <altivec.h>    // -maltivec still required ?
+#endif
+
 
 // A Fortran callable function to activate flush to zero for denormal float handling
 // http://software.intel.com/en-us/articles/how-to-avoid-performance-penalties-for-gradual-underflow-behavior
@@ -31,9 +40,24 @@
   #define set_ftz set_ftz_
 #endif
 
+
 void set_ftz(){
+
+#if defined(__i386__) || defined(__x86_64__)
 #ifndef _CRAYC
   _MM_SET_FLUSH_ZERO_MODE (_MM_FLUSH_ZERO_ON);
+#endif
+
+#elif defined(__PPC__) || defined(__PPC64__)
+
+//    Altivec non-IEEE mode for subnormal (denormalized) values.
+//  m*vscr requires vector types even for writing to registers (disturbing)
+//  so the high order bits are index'd.
+  
+  vector unsigned short vscr = vec_mfvscr();
+  vscr[1] |= 1;   // (1<<16) in reg
+  vec_mtvscr(vscr);
+
 #endif
 }
 
