@@ -1,5 +1,5 @@
-#AxiSEM 1.3
- 
+#AxiSEM 1.3 [![Build Status](https://travis-ci.org/geodynamics/axisem.svg?branch=master)](https://travis-ci.org/geodynamics/axisem)
+
 ##Axially symmetric Spectral Element Method
 
 Copyright 2016, Tarje Nissen-Meyer, Martin van Driel, Simon Stähler, Kasra Hosseini, Stefanie Hempel, Alexandre Fournier
