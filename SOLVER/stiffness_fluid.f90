@@ -40,7 +40,7 @@ contains
 
 !-----------------------------------------------------------------------------------------
 !> Wrapper routine to avoid if statements in the timeloop
-pure subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
+subroutine glob_fluid_stiffness(glob_stiffness_fl, chi)
   use data_mesh, only: npol, nel_fluid
   
   real(kind=realkind), intent(in)  :: chi(0:,0:,:)
@@ -56,7 +56,7 @@ end subroutine glob_fluid_stiffness
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
+subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
 
   use data_mesh, only: npol, nel_fluid
   
@@ -80,6 +80,8 @@ pure subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
   
   integer :: ielem
 
+  !$omp do private(chi_l, loc_stiffness, m_w_fl_l, m1chil, m2chil, m4chil, &
+  !$omp            m0_w_fl_l, X1, X2, S1, S2, V1)
   do ielem = 1, nel_fluid
 
      chi_l(0:npol,0:npol) = chi(0:npol,0:npol,ielem)
@@ -131,12 +133,13 @@ pure subroutine glob_fluid_stiffness_generic(glob_stiffness_fl, chi)
      glob_stiffness_fl(0:npol,0:npol,ielem) = loc_stiffness
 
   enddo
+  !$omp end do
 
 end subroutine glob_fluid_stiffness_generic
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
+subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
 
   use data_mesh, only: nel_fluid
   
@@ -161,7 +164,8 @@ pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
   real(kind=realkind), dimension(0:npol) :: V1
   
   integer :: ielem
-
+  !$omp do private(chi_l, loc_stiffness, m_w_fl_l, m1chil, m2chil, m4chil, &
+  !$omp            m0_w_fl_l, X1, X2, S1, S2, V1)
   do ielem = 1, nel_fluid
 
      chi_l(0:npol,0:npol) = chi(0:npol,0:npol,ielem)
@@ -213,6 +217,7 @@ pure subroutine glob_fluid_stiffness_4(glob_stiffness_fl, chi)
      glob_stiffness_fl(0:npol,0:npol,ielem) = loc_stiffness
 
   enddo
+  !$omp end do
 
 end subroutine glob_fluid_stiffness_4
 !-----------------------------------------------------------------------------------------

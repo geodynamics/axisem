@@ -44,7 +44,7 @@ subroutine create_subregions
   real(kind=dp), dimension(:), allocatable   :: vp_arr, vs_arr
   real(kind=dp)     :: ds, minh, maxh, aveh, dz, current_radius
   integer           :: idom, ic, icount_glob, iz_glob
-  integer           :: ns_ref,  ns_ref_icb1, ns_ref_icb, ns_ref_surf
+  integer           :: ns_ref,  ns_ref_icb1, ns_ref_icb, ns_ref_surf, previous
   logical           :: memorydz, current
   integer, dimension(1)             :: iloc1, iloc2
   real(kind=realkind), dimension(1) :: rad1, rad2
@@ -262,12 +262,18 @@ subroutine create_subregions
 
   do idom=1, ndisc
      current_radius = rdisc_top(idom)
+     previous = 0
      memorydz = .false. 
      do while (current_radius > rdisc_bot(idom)) 
         call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
                            icount_glob, ic, ns_ref)
         ! Storing radial info into global arrays
-        if (current) iclev_glob(ic) = nz_glob - icount_glob ! + 1
+        if (current) then
+            iclev_glob(ic) = nz_glob - icount_glob + 1 - previous
+            previous = previous + 1
+        else
+            previous = max(0, previous - 1)
+        end if
         dz_glob(icount_glob) = dz 
         ds_glob(icount_glob) = ds
         radius_arr(icount_glob) = current_radius

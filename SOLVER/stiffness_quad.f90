@@ -41,7 +41,7 @@ contains
 
 !-----------------------------------------------------------------------------------------
 !> Wrapper routine to avoid if statements in the timeloop
-pure subroutine glob_stiffness_quad(glob_stiffness,u)
+subroutine glob_stiffness_quad(glob_stiffness,u)
   use data_mesh, only: npol, nel_solid
   
   real(kind=realkind), intent(in)  :: u(0:,0:,:,:)
@@ -57,7 +57,7 @@ end subroutine glob_stiffness_quad
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine glob_stiffness_quad_generic(glob_stiffness,u)
+subroutine glob_stiffness_quad_generic(glob_stiffness,u)
 
   use data_mesh, only: npol, nel_solid
   
@@ -94,6 +94,21 @@ pure subroutine glob_stiffness_quad_generic(glob_stiffness,u)
   
   integer :: ielem
 
+  !$omp do private(loc_stiffness_s, loc_stiffness_z, loc_stiffness_phi, &
+  !$omp            us,uz,uphi, &
+  !$omp            m_1l, m_2l, m_3l, m_4l, &
+  !$omp            m_5l, m_6l, m_7l, m_8l, &
+  !$omp            m_w1l, m_w2l, m_w3l, m_w4l, m_w5l, &
+  !$omp            m11sl, m21sl, m41sl, m12sl, m22sl, &
+  !$omp            m32sl, m42sl, m11zl, m21zl, m41zl, &
+  !$omp            m1phil, m2phil, m4phil, &
+  !$omp            m0_w1l, m0_w2l, m0_w3l, &
+  !$omp            m0_w4l, m0_w5l, m0_w6l, &
+  !$omp            X1, X2, X3, X4, X5, X6, &
+  !$omp            S1s, S2s, S1phi, S2phi, S1z, S2z, &
+  !$omp            c1, c2, c3, c4, c5, c6, &
+  !$omp            V1, V2, V3)
+  
   do ielem = 1, nel_solid
 
      us(0:npol,0:npol)   = u(0:npol,0:npol,ielem,1)
@@ -230,12 +245,13 @@ pure subroutine glob_stiffness_quad_generic(glob_stiffness,u)
      glob_stiffness(0:npol,0:npol,ielem,3) = loc_stiffness_z
 
   enddo
+  !$omp end do
 
 end subroutine glob_stiffness_quad_generic
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine glob_stiffness_quad_4(glob_stiffness,u)
+subroutine glob_stiffness_quad_4(glob_stiffness,u)
 
   use data_mesh, only: nel_solid
  
@@ -270,9 +286,22 @@ pure subroutine glob_stiffness_quad_4(glob_stiffness,u)
   real(kind=realkind), dimension(0:npol,0:npol) :: c1, c2, c3, c4, c5, c6
   
   real(kind=realkind), dimension(0:npol) :: V1, V2, V3
-  
   integer :: ielem
 
+  !$omp do private(loc_stiffness_s, loc_stiffness_z, loc_stiffness_phi, &
+  !$omp            us,uz,uphi, &
+  !$omp            m_1l, m_2l, m_3l, m_4l, &
+  !$omp            m_5l, m_6l, m_7l, m_8l, &
+  !$omp            m_w1l, m_w2l, m_w3l, m_w4l, m_w5l, &
+  !$omp            m11sl, m21sl, m41sl, m12sl, m22sl, &
+  !$omp            m32sl, m42sl, m11zl, m21zl, m41zl, &
+  !$omp            m1phil, m2phil, m4phil, &
+  !$omp            m0_w1l, m0_w2l, m0_w3l, &
+  !$omp            m0_w4l, m0_w5l, m0_w6l, &
+  !$omp            X1, X2, X3, X4, X5, X6, &
+  !$omp            S1s, S2s, S1phi, S2phi, S1z, S2z, &
+  !$omp            c1, c2, c3, c4, c5, c6, &
+  !$omp            V1, V2, V3)
   do ielem = 1, nel_solid
 
      us(0:npol,0:npol)   = u(0:npol,0:npol,ielem,1)
@@ -409,12 +438,13 @@ pure subroutine glob_stiffness_quad_4(glob_stiffness,u)
      glob_stiffness(0:npol,0:npol,ielem,3) = loc_stiffness_z
 
   enddo
+  !$omp end do
 
 end subroutine glob_stiffness_quad_4
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine glob_anel_stiffness_quad(glob_stiffness, R, R_cg, cg)
+subroutine glob_anel_stiffness_quad(glob_stiffness, R, R_cg, cg)
   use data_mesh,    only: npol
   
   real(kind=realkind), intent(inout) :: glob_stiffness(0:,0:,:,:)
@@ -436,7 +466,7 @@ end subroutine glob_anel_stiffness_quad
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine glob_anel_stiffness_quad_generic(glob_stiffness, R)
+subroutine glob_anel_stiffness_quad_generic(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
   use data_mesh,    only: npol, nel_solid
@@ -468,6 +498,16 @@ pure subroutine glob_anel_stiffness_quad_generic(glob_stiffness, R)
   
   integer :: ielem, j
 
+  !$omp do private(loc_stiffness_s, loc_stiffness_p, loc_stiffness_z, &
+  !$omp            r1, r2, r3, r4, r5, r6, &
+  !$omp            yl, v_s_etal, v_s_xil, v_z_etal, v_z_xil, &
+  !$omp            S1s, S2s, S1p, S2p, S1z, S2z, &
+  !$omp            X1, X2, X3, X4, X5, X6, &
+  !$omp            y0l, &
+  !$omp            v0_s_etal, v0_s_xil, &
+  !$omp            v0_z_etal, v0_z_xil, &
+  !$omp            V1, &
+  !$omp            j)
   do ielem = 1, nel_solid
 
      yl(:,:) = Y(:,:,ielem)
@@ -548,12 +588,13 @@ pure subroutine glob_anel_stiffness_quad_generic(glob_stiffness, R)
      glob_stiffness(0:npol,0:npol,ielem,3) = &
             glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
   enddo
+  !$omp end do
 
 end subroutine glob_anel_stiffness_quad_generic
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
+subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
   use data_mesh,    only: nel_solid
@@ -585,6 +626,16 @@ pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
   
   integer :: ielem, j
 
+  !$omp do private(loc_stiffness_s, loc_stiffness_p, loc_stiffness_z, &
+  !$omp            r1, r2, r3, r4, r5, r6, &
+  !$omp            yl, v_s_etal, v_s_xil, v_z_etal, v_z_xil, &
+  !$omp            S1s, S2s, S1p, S2p, S1z, S2z, &
+  !$omp            X1, X2, X3, X4, X5, X6, &
+  !$omp            y0l, &
+  !$omp            v0_s_etal, v0_s_xil, &
+  !$omp            v0_z_etal, v0_z_xil, &
+  !$omp            V1, &
+  !$omp            j)
   do ielem = 1, nel_solid
 
      yl(:,:) = Y(:,:,ielem)
@@ -665,12 +716,13 @@ pure subroutine glob_anel_stiffness_quad_4(glob_stiffness, R)
      glob_stiffness(0:4,0:4,ielem,3) = &
             glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
   enddo
+  !$omp end do
 
 end subroutine glob_anel_stiffness_quad_4
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
+subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
 
   use attenuation,  only: n_sls_attenuation
   use data_mesh,    only: npol, nel_solid
@@ -697,6 +749,12 @@ pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
   
   integer :: ielem, j
 
+  !$omp do private(loc_stiffness_s, loc_stiffness_p, loc_stiffness_z, &
+  !$omp            r1, r2, r3, r4, r5, r6, &
+  !$omp            yl, v_s_etal, v_s_xil, v_z_etal, v_z_xil, &
+  !$omp            S1s, S2s, S1p, S2p, S1z, S2z, &
+  !$omp            X1, X2, X3, X4, X5, X6, &
+  !$omp            j)
   do ielem = 1, nel_solid
 
      yl(:) = Y_cg4(:,ielem)
@@ -771,6 +829,7 @@ pure subroutine glob_anel_stiffness_quad_cg4(glob_stiffness, R)
      glob_stiffness(0:4,0:4,ielem,3) = &
             glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
   enddo
+  !$omp end do
 
 end subroutine glob_anel_stiffness_quad_cg4
 !-----------------------------------------------------------------------------------------
