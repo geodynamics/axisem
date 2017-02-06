@@ -9,7 +9,6 @@ env:
     MPI_IMPL=openmpi
 
   matrix:
-    - GFORTRAN_VERSION=4.6
     - GFORTRAN_VERSION=4.7
     - GFORTRAN_VERSION=4.8
     - GFORTRAN_VERSION=4.9
