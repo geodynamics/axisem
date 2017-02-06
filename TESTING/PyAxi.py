@@ -40,6 +40,9 @@ print '   -----------------------------------------\n'
 global obspy_error
 obspy_error = 'N'
 
+global l2misfit_limit
+l2misfit_limit = 1e-5
+
 try:
     import numpy as np
     import matplotlib.pyplot as plt
@@ -980,6 +983,8 @@ def PyAxi(**kwargs):
         t.append(np.linspace(0., dt * (npts -1), npts) + (t0 -  UTCDateTime(0)))
 
         misfitplot = plt.figure()
+
+        misfit_exceeded = False
         for chan in chans:
             recsec = plt.figure()
             ax = recsec.gca()
@@ -1036,12 +1041,15 @@ def PyAxi(**kwargs):
             ax.set_ylabel('l2 - misfit to reference data')
             ax.set_ylim(1e-12, 1.)
 
-            ax.axhline(y=1e-5, color='k', ls='--')
-            if np.max(l2misfit) > 1e-5:
+            ax.axhline(y=l2misfit_limit, color='k', ls='--')
+            if np.max(l2misfit) > l2misfit_limit:
                 fwarn = open(os.path.join(folder_new, 'warning.dat'), 'a')
-                fwarn.write("maximum l2 norm misfit larger then 1e-5 in chan %s trace %d\n"
-                             % (chan, np.argmax(l2misfit)))
+                fwarn.write("maximum l2 norm misfit larger then %5.1e in chan %s trace %d\n"
+                             % (l2misfit_limit, chan, np.argmax(l2misfit)))
+                print("maximum l2 norm misfit larger then %5.1e in chan %s trace %d"
+                      % (l2misfit_limit, chan, np.argmax(l2misfit)))
                 fwarn.close()
+                misfit_exceeded = True
 
         ax = misfitplot.gca()
         ax.legend()
@@ -1064,6 +1072,8 @@ def PyAxi(**kwargs):
         print "Time for TEST  : NA"
     print "============================================================"
 
+    if misfit_exceeded:
+        sys.exit('L2 misfit exceeds limit')
 
 ###################### read_input_file #################################
 
