@@ -45,11 +45,13 @@ before_install:
   - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install 
     gfortran-$GFORTRAN_VERSION g++-$GFORTRAN_VERSION tcsh gnuplot
   - export TRAVIS_ROOT=$HOME/travis
-  - mkdir -p $TRAVIS_ROOT
+    #- mkdir -p $TRAVIS_ROOT
+  - wget https://www.geophysik.uni-muenchen.de/~staehler/mpi_builds/mpi_netcdf_gcc$GFORTRAN_VERSION.tar.gz 
+  - tar -xf mpi_netcdf_gcc$GFORTRAN_VERSION.tar.gz -C $HOME
   # Get and install OpenMPI
-  - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION > LOG_OpenMPI.log
+  # - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION > LOG_OpenMPI.log
   # Get and install NetCDF4
-  - ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_NetCDF4.log
+  #- ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_NetCDF4.log
   - export PATH="$TRAVIS_ROOT/bin:$PATH"
 
 install: true
@@ -66,5 +68,5 @@ cache:
   apt: true
 
   directories:
-    - $HOME/travis
+    #- $HOME/travis
     - $HOME/miniconda
