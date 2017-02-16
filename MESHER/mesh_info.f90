@@ -264,29 +264,38 @@ subroutine define_boundaries
 
   integer           :: j,ipol,ibelem
   real(kind=dp)     :: dmax, rbound
-  integer           :: nbelemmax
+  integer           :: nbelemmax, idisc
   real(kind=dp), allocatable :: bdry_radius(:)
 
   if (neltot_fluid>0 .and. neltot_solid>0 ) then 
-     ! TODO: This is only true, if the fluid is not layered!!!
-     nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
+     nbcnd = 0
+     do idisc = 1, ndisc - 1
+       if (solid_domain(idisc).neqv.solid_domain(idisc+1)) then
+         nbcnd = nbcnd + 1
+       end if
+     end do
+     ! ! TODO: This is only true, if the fluid is not layered!!!
+     ! nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
 
-     if (.not. solid_domain(ndisc)) nbcnd = nbcnd - 1
+     ! if (.not. solid_domain(ndisc)) nbcnd = nbcnd - 1
 
-     write(6,*) '..... the number of fluid boundaries is not general enough....'
-     write(6,*) '.....should insert a test on whether the fluid is indeed completely embedded!'
+     ! write(6,*) '..... the number of fluid boundaries is not general enough....'
+     ! write(6,*) '.....should insert a test on whether the fluid is indeed completely embedded!'
   else if (neltot_solid==0) then
      nbcnd = 0
   else if (neltot_fluid == 0 ) then 
      nbcnd = 0 
   endif
 
+  print '(A,I2,A)', ' Mesh has ', nbcnd, ' solid-fluid interfaces'
+
   ! Allocate memory for the number of boundary elements
   allocate(nbelem(nbcnd),bdry_radius(nbcnd)) 
   ! set number of boundary elements to zero
   nbelem(:) = 0 ! careful: is a global variable!!!
 
-  write(6,*)'size idom_fluid:',size(idom_fluid),nbcnd
+  ! What's that even supposed to mean? Should be sum, not size
+  ! write(6,*) 'size idom_fluid:',size(idom_fluid),nbcnd
 
   if (have_fluid) then
      dmax = min_distance_nondim
@@ -311,8 +320,10 @@ subroutine define_boundaries
         call belem_count_new(dmax, j, rbound)
         bdry_radius(j) = rbound
      end do
+
      nbelemmax = maxval(nbelem(:))
      allocate (belem(nbelemmax,nbcnd))
+
      do j = 1, nbcnd
         if (mod(j,2)/=0) then ! upper boundary of fluid region
            rbound = discont(idom_fluid(j))/router
