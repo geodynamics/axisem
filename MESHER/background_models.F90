@@ -1952,10 +1952,11 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
   real(kind=dp), intent(in)      :: r0
   integer, intent(in)            :: idom
   character(len=3), intent(in)   :: param 
+  character(len=80)              :: errmsg
   logical                        :: success
 
      !print *, 'R0: ', r0, ', idom:', idom
-     select case(param)
+  select case(param)
      case('rho')
         call interpolate(interp_rho(idom), r0, arbitr_sub_solar, success)
 
@@ -2002,7 +2003,23 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
 
      end select
 
-     if (.not.success) stop 'Interpolation of parameter not successful'
+
+     if (.not.success) then
+       print *, 'Interpolation of parameter not successful'
+       print *, '  layer:  ', idom
+       print *, '  radius: ', r0
+#      if defined(__GFORTRAN__)
+#      if (__GNUC_MINOR__>=8)
+       call backtrace
+#      endif
+#      endif
+#      if defined(__INTEL_COMPILER)
+       call flush(6)
+       call tracebackqq(string=msg, status=ierror)
+#      endif
+       stop
+     end if
+
 
 
 end function arbitr_sub_solar

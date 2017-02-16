@@ -53,23 +53,22 @@ pure real(kind=dp) function map_semino(xil, etal, nodes_crd, idir)
   call compute_parameters_semino(nodes_crd, a_top, b_top, thetabartop, dthetatop)
 
   call compute_sz_xi_sline_no(s_bot, z_bot, xil, nodes_crd)
-  call compute_sz_xi(s_top, z_top, xil, a_top, b_top, thetabartop, dthetatop)
+
+  call compute_sz_xi(s_top, z_top, xil, a_top, b_top, &
+                     thetabartop, dthetatop)
 
   sbar = half*(s_bot+s_top)
   ds = s_top-s_bot
 
-  if (abs(ds)>1.d-10) then
-     intersect = (z_bot*s_top - z_top*s_bot)/ds   
-     slope = (z_top-z_bot)/ds
-  end if   
-  
   if (idir == 1) then
      map_semino = sbar + ds*etal*half
   elseif (idir == 2) then
      if (abs(ds)>1.d-10) then
-     map_semino = slope * (sbar + half*ds*etal)+ intersect 
+       intersect = (z_bot*s_top - z_top*s_bot)/ds   
+       slope = (z_top-z_bot)/ds
+       map_semino = slope * (sbar + half*ds*etal)+ intersect 
      else
-     map_semino = half * (z_bot+z_top) + etal*(z_top-z_bot)*half
+       map_semino = half * (z_bot+z_top) + etal*(z_top-z_bot)*half
      end if
   end if
 
