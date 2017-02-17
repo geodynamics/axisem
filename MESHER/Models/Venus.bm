@@ -1,16 +1,21 @@
-# Input file for AXISEM created from prem_iso model on 16/02/2017, at 17h 12min
+# Model for Venus:
+# Planet is PREM up to the surface, above that is the atmosphere proposed 
+# by Petculescu et al (2007). Attenuation was assumed to be 1e-7/m at 1 Hz, 
+# i.e. 2500
+# For AxiSEM compatibility reasons, the outer core is solid.
+# Petculescu, A., and R. M. Lueptow (2007), Atmospheric acoustics of Titan, 
+# Mars, Venus, and Earth, Icarus, 186(2), 413–419, 
+# doi:10.1016/j.icarus.2006.09.014.
 NAME         venus
 ANELASTIC       T
 ANISOTROPIC     F
 UNITS        m
 COLUMNS       radius      rho      vpv      vsv      qka      qmu
-#            6671000.   600.00  1800.00   800.00    57827.0       00.0
-#            6571000.   600.00  1800.00   800.00    57827.0       00.0
-            6571000.   600.00   800.00    00.00    57827.0       00.0
-            6371000.   600.00   800.00    00.00    57827.0       00.0
-            6371000.  2600.00  3800.00  1200.00    57827.0      600.0
-            6366000.  2600.00  3800.00  1200.00    57827.0      600.0
-            6366000.  2600.00  5800.00  3200.00    57827.0      600.0
+            6471000.   000.0002 200.00    00.00     2500.0       00.0
+            6421000.   001.00   250.00    00.00     2500.0       00.0
+            6371000.   067.00   400.00    00.00     2500.0       00.0
+#          Surface of the planet
+            6371000.  2600.00  5800.00  3200.00    57827.0      600.0
             6356000.  2600.00  5800.00  3200.00    57827.0      600.0
 #          Discontinuity   1, depth:      15.00 km
             6356000.  2900.00  6800.00  3900.00    57827.0      600.0
@@ -107,8 +112,8 @@ COLUMNS       radius      rho      vpv      vsv      qka      qmu
             3510000.  5551.42 13709.27  7264.95    57827.0      312.0
             3480000.  5566.46 13716.62  7264.65    57827.0      312.0
 #          Discontinuity  10, depth:    2891.00 km
-            3480000.  9903.44  8064.79  4000.00    57827.0        0.0
-            1221500. 12166.33 10355.72  5000.00    57827.0        0.0
+            3480000.  9903.44  8064.79  4000.00    57827.0      100.0
+            1221500. 12166.33 10355.72  5000.00    57827.0      100.0
 #          Discontinuity  11, depth:    5149.50 km
             1221500. 12763.61 11028.26  3504.31     1327.7       84.6
             1171500. 12789.67 11047.02  3517.42     1327.7       84.6
