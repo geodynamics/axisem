@@ -1420,12 +1420,12 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
   allocate(theta_min_proc(0:nthetaslices-1), theta_max_proc(0:nthetaslices-1))
   theta_min_proc(:) = 0.d0
   theta_max_proc(:) = 0.d0
-  theta_max_proc(nthetaslices-1) = 2 * pi
+  theta_max_proc(nthetaslices-1) = pi
 
   do iproc = 0, nthetaslices-2
-     theta_min_proc(iproc+1) = pi * (ds1 * 2**nc_init &
+     theta_min_proc(iproc+1) = 0.5d0 * pi * (ds1 * 2**nc_init &
                        + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
-     theta_max_proc(iproc)   = pi * (ds1 * 2**nc_init &
+     theta_max_proc(iproc)   = 0.5d0 * pi * (ds1 * 2**nc_init &
                        + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
   end do
 
