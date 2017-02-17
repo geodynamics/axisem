@@ -54,6 +54,8 @@ set bgmodel = `grep "^BACKGROUND_MODEL" inparam_mesh | awk '{print $2}'`
 echo $bgmodel
 if ( $bgmodel == 'external') then
   set extmodel = `grep "^EXT_MODEL" inparam_mesh | awk '{print $2}'`
+  # Clean file name of "
+  set extmodel = `echo "$extmodel" | sed 's/\"//g'`
   echo "Copying external model file $extmodel"
   if ( -f $extmodel) then
     cp -p $extmodel $meshpath/external_model.bm

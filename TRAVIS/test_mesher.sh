@@ -1,8 +1,10 @@
 #!/bin/bash
 set -e
+./copytemplates.sh
 cd MESHER
+mkdir Diags
 make -sj 4
-FILES=$(find Models/ -type f -name '*.bm')
+FILES=$(find Models/ -type f -name '*.bm*')
 for file in $FILES; do 
   # Escape slashes in file name
   file=$(echo "$file" | sed 's/\//\\\//g'); 
