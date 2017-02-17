@@ -274,15 +274,15 @@ subroutine create_subregions
 
   do idom=1, ndisc
      current_radius = rdisc_top(idom)
-     print *, '-------------------------------------'
-     print *, idom, rdisc_top(idom), rdisc_bot(idom)
+     ! print *, '-------------------------------------'
+     ! print *, idom, rdisc_top(idom), rdisc_bot(idom)
 
      previous = 0
      memorydz = .false. 
 
      do while (current_radius > rdisc_bot(idom)) 
        if (current_radius==rdisc_top(idom).and.(idom>1)) then
-         solflu_bdry = .true. !solid_domain(idom) .neqv. solid_domain(idom-1)
+         solflu_bdry = .true. ! solid_domain(idom) .neqv. solid_domain(idom-1)
          if (solflu_bdry) &
            print *, 'Solid-Fluid boundary found at ', current_radius
        else 
@@ -290,7 +290,6 @@ subroutine create_subregions
        end if
        ! If there has been a CL in the previous layer or we are at a solid-fluid
        ! boundary, do not put a CL here
-       !cl_forbidden = solflu_bdry .or. current
        cl_forbidden = solflu_bdry .or. (icount_glob - cl_last <= 1)
 
        call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
@@ -299,18 +298,13 @@ subroutine create_subregions
        if (current) cl_last = icount_glob
        ! Storing radial info into global arrays
        if (current) then
-         iclev_glob(ic) = nz_glob - icount_glob + 1 !- previous
+         iclev_glob(ic) = nz_glob - icount_glob + 1 
        end if
-       !    previous = previous + 1
-       !else
-       !    previous = max(0, previous - 1)
-       !end if
        if (current) &
          print *, 'Coarsening Layer at ', current_radius
        dz_glob(icount_glob) = dz 
        ds_glob(icount_glob) = ds
        radius_arr(icount_glob) = current_radius
-       print *, idom, current_radius
        vp_arr(icount_glob) = velocity(current_radius, 'v_p', idom, bkgrdmodel, &
                                       lfbkgrdmodel)
        vs_arr(icount_glob) = velocity(current_radius, 'v_s', idom, bkgrdmodel, &
@@ -478,10 +472,10 @@ end subroutine compute_dz_nz
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-integer function estimate_ns(el_per_lambda,r,v,period)
+pure integer function estimate_ns(el_per_lambda,r,v,period)
 
-  real(kind=dp) ,intent(in) :: el_per_lambda,r
-  real(kind=dp)             :: v, period
+  real(kind=dp), intent(in) :: el_per_lambda,r
+  real(kind=dp), intent(in) :: v, period
   real(kind=dp)             :: minh, maxh, aveh
   
   ! scaling for irregular GLL spacing
@@ -542,7 +536,7 @@ end subroutine spacing_info
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine gll_spacing(npol, minh, maxh, aveh)
+pure subroutine gll_spacing(npol, minh, maxh, aveh)
 
   use splib
   

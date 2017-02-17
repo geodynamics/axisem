@@ -187,7 +187,6 @@ subroutine bkgrdmodel_testing
            rold = r
 
            r = dint(r*1.d10) * 1.d-10
-           !print *, r*router, rold*router, s1*router, z1*router, iel, eltypeg(iel), region(iel)
            
            if ( solid_domain(region(iel))) then 
               velo = velocity(r*router, 'v_s', region(iel), bkgrdmodel, lfbkgrdmodel)

@@ -81,4 +81,4 @@ COARSENING_LAYERS   3
 #SAVE_DEBUG_FILES     true
 
 # Write excessive info output (WARNING: for the inclined)
-VERBOSE              true
+VERBOSE              false

@@ -1,10 +1,11 @@
 #!/bin/bash
-set -e
 ./copytemplates.sh
+set -e
 cd MESHER
-mkdir Diags
+mkdir -p Diags
 make -sj 4
-FILES=$(find Models/ -type f -name '*.bm*')
+FILES=$(find Models/ -type f -name '*.bm')
+status='normal'
 for file in $FILES; do 
   # Escape slashes in file name
   file=$(echo "$file" | sed 's/\//\\\//g'); 
@@ -15,7 +16,19 @@ for file in $FILES; do
   echo ""
   # Modify inparam_mesh to use this file
   sed -e "s/EXT_TEMPLATE/'$file'/" ../TRAVIS/inparam_mesh_external_template > inparam_mesh
-  ./xmesh > OUTPUT 
-  tail -n 15 OUTPUT
+  set +e
+  ./xmesh &> OUTPUT 
+  if [ $? == 0 ]; then
+    tail -n 1 OUTPUT 
+  else
+    tail -n 20 OUTPUT 
+    status='error'
+  fi
+  set -e
   echo "****************************************************************"
 done
+if [ $status == 'error' ]; then
+  exit 1
+else
+  exit 0
+fi

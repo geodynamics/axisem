@@ -1955,7 +1955,6 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
   character(len=80)              :: errmsg
   logical                        :: success
 
-     !print *, 'R0: ', r0, ', idom:', idom
   select case(param)
      case('rho')
         call interpolate(interp_rho(idom), r0, arbitr_sub_solar, success)
@@ -2332,7 +2331,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
                print *, 'Radius of layer:', ilayer-1, ' is:' , radius_layer(ilayer-1)
                print *, 'Radius of layer:', ilayer, ' is:' , radius_layer(ilayer)
             end if
-            stop
+            stop 1
          end if
      end do
 

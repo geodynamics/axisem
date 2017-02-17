@@ -110,17 +110,6 @@ subroutine create_gllmesh
      crd_nodes(6,:) = .5d0 * ( crd_nodes(5,:) + crd_nodes(7,:) )  ! (Serendipity elements).
      crd_nodes(8,:) = .5d0 * ( crd_nodes(7,:) + crd_nodes(1,:) )  !  
 
-     !if (iel==439635) then
-     !  print *, crd_nodes(1,:) * 6671d3, norm2(crd_nodes(1,:)) * 6671d3
-     !  print *, crd_nodes(2,:) * 6671d3, norm2(crd_nodes(2,:)) * 6671d3
-     !  print *, crd_nodes(3,:) * 6671d3, norm2(crd_nodes(3,:)) * 6671d3
-     !  print *, crd_nodes(4,:) * 6671d3, norm2(crd_nodes(4,:)) * 6671d3
-     !  print *, crd_nodes(5,:) * 6671d3, norm2(crd_nodes(5,:)) * 6671d3
-     !  print *, crd_nodes(6,:) * 6671d3, norm2(crd_nodes(6,:)) * 6671d3
-     !  print *, crd_nodes(7,:) * 6671d3, norm2(crd_nodes(7,:)) * 6671d3
-     !  print *, crd_nodes(8,:) * 6671d3, norm2(crd_nodes(8,:)) * 6671d3
-     !end if
-
      stest = minval(sg(lnodesg(1:4,iel)))
      if ( stest < smallval_dble ) then 
         do jpol = 0, npol
