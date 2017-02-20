@@ -54,6 +54,7 @@ before_install:
 install: true
   
 script:
+  - ./TRAVIS/test_mesher.sh
   - cd TESTING;
   - python test_nightly_axisem.py -t 1
   - python test_nightly_axisem.py -t 2

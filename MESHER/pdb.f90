@@ -1755,13 +1755,13 @@ subroutine define_local_bdry_elem
         belemp(nbdry_el(el2proc(belem(iel,j))),el2proc(belem(iel,j))) = &
              inv_procel(belem(iel,j))
 
-        if (solid(belem(iel,j))) then
+        myielglob = belem(iel,j)
+        herielglob = belem(my_neighbour(iel,j),j)
 
-           myielglob = belem(iel,j)
-           herielglob = belem(my_neighbour(iel,j),j)
+        myproc =  el2proc(myielglob)
+        herproc = el2proc(herielglob)
 
-           myproc =  el2proc(myielglob)
-           herproc = el2proc(herielglob)
+        solid_belem: if (solid(belem(iel,j))) then
 
            if (herproc /= myproc) then 
               write(6,*)
@@ -1814,7 +1814,8 @@ subroutine define_local_bdry_elem
 
         else
            fluid_count(myproc)=fluid_count(myproc)+1
-        endif
+
+        endif solid_belem
      enddo
   enddo
 

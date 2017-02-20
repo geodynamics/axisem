@@ -23,7 +23,6 @@
 module gllmeshgen
 
   use data_mesh
-  use analytic_mapping 
   use data_spec
   use data_gllmesh 
   use splib
@@ -40,6 +39,7 @@ module gllmeshgen
 subroutine create_gllmesh
 
   use data_diag
+  use analytic_mapping, only: mapping_anal
 
   real(kind=dp)    :: crd_nodes(8,2)
 
@@ -162,6 +162,7 @@ end subroutine extract_fluid_solid_submeshes
 
 !-----------------------------------------------------------------------------------------
 subroutine test_mapping
+  use analytic_mapping, only: mapping_anal
   real(kind=dp)     :: crd_nodes(8,2)
   integer           :: npoin
   integer           :: iel,jpol,ipol

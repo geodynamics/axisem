@@ -95,6 +95,9 @@ module nc_routines
     character(len=12), allocatable  :: nc_varnamelist(:)
     integer             :: nvar = -1
 
+    logical            :: have_receiver = .false. ! Should any receivers be stored 
+                                                  ! in the netcdf file at all?
+
     !! Buffer variables to hand over to the dumping thread
     real(kind=sp), allocatable, dimension(:,:,:)  :: copy_oneddumpvar         
 
@@ -891,6 +894,8 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         write(6,*)
     end if
 
+    if (nrec>0) have_receiver = .true.
+
     nc_fnam = datapath(1:lfdata)//"/axisem_output.nc4"
 
     call barrier
@@ -1078,21 +1083,40 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         call check( nf90_def_dim(ncid_out, "seis_timesteps", nseismo, nc_times_dimid) )
         call check( nf90_def_dim(ncid_out, "sim_timesteps", niter, nc_iter_dimid) )
-        call check( nf90_def_dim(ncid_recout, "receivers", nrec, nc_rec_dimid) )
         call check( nf90_def_dim(ncid_out, "components", 3, nc_comp_dimid) )
-        call check( nf90_def_dim(ncid_recout, "recnamlength", 40, nc_recnam_dimid) ) 
 
-        if (verbose > 1) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
-        call flush(6)
+        ! Receiver-specific variables are only necessary, if we have any
+        if (have_receiver) then
+          call check( nf90_def_dim(ncid_recout, "recnamlength", 40, nc_recnam_dimid) ) 
+          call check( nf90_def_dim(ncid_recout, "receivers", nrec, nc_rec_dimid) )
 
-        call check( nf90_def_var(ncid=ncid_recout, name="displacement", xtype=NF90_FLOAT,&
-                                 dimids=[nc_times_dimid, nc_comp_dimid, nc_rec_dimid], &
-                                 contiguous = .false., chunksizes=[nseismo,3,1], &
-                                 varid=nc_disp_varid) )
+          if (verbose > 1) write(6,*) 'Define variables in ''Seismograms'' group of NetCDF output file'
+          call flush(6)
 
-        call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )
-        call check( nf90_put_att(ncid_recout, nc_disp_varid, '_FillValue', 0.0) )
+          call check( nf90_def_var(ncid=ncid_recout, name="displacement", xtype=NF90_FLOAT,&
+                                   dimids=[nc_times_dimid, nc_comp_dimid, nc_rec_dimid], &
+                                   contiguous = .false., chunksizes=[nseismo,3,1], &
+                                   varid=nc_disp_varid) )
 
+          call check( nf90_put_att(ncid_recout, nc_disp_varid, 'units', 'meters') )
+          call check( nf90_put_att(ncid_recout, nc_disp_varid, '_FillValue', 0.0) )
+          
+          call check( nf90_def_var(ncid=ncid_recout, name="time", xtype=NF90_DOUBLE,&
+                                   dimids=[nc_times_dimid], varid=nc_time_varid) )
+
+          call check( nf90_def_var(ncid=ncid_recout, name="phi", xtype=NF90_FLOAT,&
+                                   dimids=[nc_rec_dimid], varid=nc_ph_varid) )
+          call check( nf90_def_var(ncid_recout, "theta_requested", NF90_FLOAT, &
+                                   [nc_rec_dimid], nc_thr_varid) )
+          call check( nf90_def_var(ncid_recout, "theta", NF90_FLOAT, &
+                                   [nc_rec_dimid], nc_th_varid) )
+          call check( nf90_def_var(ncid_recout, "processor_of_receiver", NF90_INT, &
+                                   [nc_rec_dimid], nc_proc_varid) )
+          call check( nf90_def_var(ncid_recout, "receiver_name", NF90_CHAR, &
+                                   [nc_rec_dimid, nc_recnam_dimid], nc_recnam_varid) )
+        end if
+
+        ! Define STF variables
         call check( nf90_def_var(ncid=ncid_recout, name="stf_seis", xtype=NF90_FLOAT,&
                                  dimids=[nc_times_dimid], varid=nc_stf_seis_varid) )
 
@@ -1104,20 +1128,6 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
         call check( nf90_def_var(ncid=ncid_recout, name="stf_d_iter", xtype=NF90_FLOAT,&
                                  dimids=[nc_iter_dimid], varid=nc_stf_d_iter_varid) )
-        
-        call check( nf90_def_var(ncid=ncid_recout, name="time", xtype=NF90_DOUBLE,&
-                                 dimids=[nc_times_dimid], varid=nc_time_varid) )
-
-        call check( nf90_def_var(ncid=ncid_recout, name="phi", xtype=NF90_FLOAT,&
-                                 dimids=[nc_rec_dimid], varid=nc_ph_varid) )
-        call check( nf90_def_var(ncid_recout, "theta_requested", NF90_FLOAT, &
-                                 [nc_rec_dimid], nc_thr_varid) )
-        call check( nf90_def_var(ncid_recout, "theta", NF90_FLOAT, &
-                                 [nc_rec_dimid], nc_th_varid) )
-        call check( nf90_def_var(ncid_recout, "processor_of_receiver", NF90_INT, &
-                                 [nc_rec_dimid], nc_proc_varid) )
-        call check( nf90_def_var(ncid_recout, "receiver_name", NF90_CHAR, &
-                                 [nc_rec_dimid, nc_recnam_dimid], nc_recnam_varid) )
         
         if (dump_wavefields) then
             ! Wavefields group of output file N.B: Snapshots for kernel calculation
@@ -1349,26 +1359,28 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 !#ifdef enable_parallel_netcdf
 !    if (mynum == 0) then    
 !#endif
-        if (verbose > 1) then
-            write(6,*) 'Writing station info into NetCDF file...'
-            call flush(6)
-        end if
-        call check( nf90_put_var( ncid_recout, nc_th_varid,   values = rec_th) )
-        call check( nf90_put_var( ncid_recout, nc_ph_varid,   values = rec_ph) )
-        call check( nf90_put_var( ncid_recout, nc_thr_varid,  values = rec_th_req) )
-        call check( nf90_put_var( ncid_recout, nc_proc_varid, values = rec_proc) ) 
+        if (have_receiver) then
+          if (verbose > 1) then
+              write(6,*) 'Writing station info into NetCDF file...'
+              call flush(6)
+          end if
+          call check( nf90_put_var( ncid_recout, nc_th_varid,   values = rec_th) )
+          call check( nf90_put_var( ncid_recout, nc_ph_varid,   values = rec_ph) )
+          call check( nf90_put_var( ncid_recout, nc_thr_varid,  values = rec_th_req) )
+          call check( nf90_put_var( ncid_recout, nc_proc_varid, values = rec_proc) ) 
 
-        do irec=1,nrec
-            call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = [irec, 1], &
-                                      count = [1, 40], values = (rec_names(irec))) )
-        end do
+          do irec=1,nrec
+              call check( nf90_put_var( ncid_recout, nc_recnam_varid, start = [irec, 1], &
+                                        count = [1, 40], values = (rec_names(irec))) )
+          end do
 
-        ! Write out seismogram dump times
-        time_seis = dble([ (i, i = 0, nseismo-1) ]) * deltat
-        call check( nf90_put_var( ncid_recout, nc_time_varid, values = time_seis ) ) 
-        if (verbose > 1) then
-            write(6,*) '...done'
-            call flush(6)
+          ! Write out seismogram dump times
+          time_seis = dble([ (i, i = 0, nseismo-1) ]) * deltat
+          call check( nf90_put_var( ncid_recout, nc_time_varid, values = time_seis ) ) 
+          if (verbose > 1) then
+              write(6,*) '...done'
+              call flush(6)
+          end if
         end if
 
         ! Write out STFs
@@ -1425,8 +1437,10 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
 ! Allocation of Dump buffer variables. Done on all procs
 90  format(' Allocated ', A20, ', uses ',F10.3,'MB')
-    allocate(recdumpvar(nseismo,3,num_rec))
-    recdumpvar = 0.0
+    if (have_receiver) then
+      allocate(recdumpvar(nseismo,3,num_rec))
+      recdumpvar = 0.0
+    end if
 
     if (dump_wavefields) then
         stepstodump = 0
@@ -1537,7 +1551,7 @@ subroutine nc_finish_prepare
             call getgrpid(ncid_out, "Surface", ncid_surfout) 
             call getgrpid(ncid_out, "Mesh", ncid_meshout) 
             !print '(A,I5,A)', '   ', iproc, ': inquired dimension IDs'
-            call getvarid( ncid_recout, "displacement", nc_disp_varid ) 
+            if (have_receiver) call getvarid( ncid_recout, "displacement", nc_disp_varid ) 
             
             if (dump_wavefields) then
                 
