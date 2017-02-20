@@ -1,0 +1,106 @@
+# This file contains the parameters needed to run the 
+# program yspec
+
+# prefix for output files
+  yspec.out
+
+# Earth model
+  prem_ani_yspec.txt
+
+# attenuation switch: 1 = on, 0 = off
+0
+
+# gravitation: 0 = none, 1 = cowling, 2 = self
+0
+
+# output: 0 = displacement, 1 = velocity, 2 = acceleration
+1
+
+# potential and tilt corrections: 0 = no, 1 = yes 
+0
+ 
+# lmin 
+  0
+
+# lmax
+  1000
+
+# fmin (mHz) (this should always be greater than 0)
+  0.2
+
+# fmax (mHz)
+  50 
+  
+#  length of  time series (min)
+  30
+
+# time step (sec) 
+  .1
+
+# f11 filter (mHz) 
+  0.
+
+# f12 filter (mHz) 
+  0.
+
+# f21 filter (mHz) 
+  0.
+
+# f22 filter (mHz) 
+  0.
+
+# source depth (km)
+  100.
+
+# source latitude (deg)
+  90 
+
+# source longitude (deg)
+  0
+
+# M_{r,r} (Nm)
+  0.0e+20
+
+# M_{r,theta} (Nm)
+  1.0e+20
+
+# M_{r,phi} (Nm)
+  0.0e+20
+
+# M_{theta,theta} (Nm)
+  0.0e+20
+
+# M_{theta,phi} (Nm)
+  0.0e+20
+
+# M_{phi,phi} (Nm)
+  0.0e+20
+
+# receiver depth
+  0
+
+# number of receivers
+  20
+
+# receiver latitudes and longitudes
+
+ -42.558 -136.811
+  83.451  -10.213
+ -89.143  -89.438
+  34.363   81.884
+  22.002  135.878
+ -50.948   92.817
+  29.687 -150.641
+ -71.655   -7.194
+  74.202  151.851
+ -45.108   86.274
+ -45.787   -7.051
+  68.099 -119.084
+   2.068   62.106
+ -48.064   38.273
+   5.951   87.634
+  46.269  120.855
+  54.100  -41.078
+   1.413 -153.634
+   3.750 -160.803
+  73.107 -179.434

@@ -338,24 +338,39 @@ subroutine sf_time_loop_newmark
   iclockdump = tick()
   call dump_stuff(0, iseismo, istrain, isnap, disp, velo, chi, dchi, ddchi0, t)
   iclockdump = tick(id=iddump, since=iclockdump)
-
+ 
+  !$omp parallel default(shared) num_threads(2)
   do iter = 1, niter
-
+     !$omp single
      t = t + deltat
      call runtime_info(iter,disp,chi)
-     
+    
+     !$omp end single
+     !$omp sections
+     !$omp section
      chi = chi +  deltat * dchi + half_dt_sq * ddchi0
      
+     !$omp section
      disp(:,:,:,1) = disp(:,:,:,1) + deltat * velo(:,:,:,1) + half_dt_sq * acc0(:,:,:,1)
+     
+     !$omp section
      if (src_type(1) .ne. 'monopole') &
         disp(:,:,:,2) = disp(:,:,:,2) + deltat * velo(:,:,:,2) + half_dt_sq * acc0(:,:,:,2)
+
+     !$omp section
      disp(:,:,:,3) = disp(:,:,:,3) + deltat * velo(:,:,:,3) + half_dt_sq * acc0(:,:,:,3)
+     !$omp end sections
+     !$omp single
         
      if (src_type(1) .ne. 'monopole') &
         call apply_axis_mask_scal(chi, nel_fluid, ax_el_fluid, naxel_fluid) 
-     
+
      iclockstiff = tick()
+     
+     !$omp end single
      call glob_fluid_stiffness(ddchi1, chi) 
+     !$omp single
+
      iclockstiff = tick(id=idstiff, since=iclockstiff)
 
      call bdry_copy2fluid(ddchi1, disp)
@@ -368,10 +383,12 @@ subroutine sf_time_loop_newmark
      iclockcomm = tick(id=idcomm, since=iclockcomm)
         
      iclockstiff = tick()
+     !$omp end single
      select case (src_type(1))
      case ('monopole')
         call apply_axis_mask_onecomp(disp, nel_solid, ax_el_solid, naxel_solid)
         call glob_stiffness_mono(acc1, disp)
+        !$omp single
 
         if (anel_true) then
            iclockanelst = tick()
@@ -379,6 +396,7 @@ subroutine sf_time_loop_newmark
                                          att_coarse_grained)
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
+        !$omp end single
 
      case ('dipole')
         call apply_axis_mask_twocomp(disp, nel_solid, ax_el_solid, naxel_solid)
@@ -402,6 +420,7 @@ subroutine sf_time_loop_newmark
            iclockanelst = tick(id=idanelst, since=iclockanelst)
         endif
      end select
+     !$omp single
      iclockstiff = tick(id=idstiff, since=iclockstiff)
      
      iclockcomm = tick()
@@ -440,34 +459,41 @@ subroutine sf_time_loop_newmark
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      call add_source(acc1, stf(iter))
-        
+     
+     !$omp end single
+     !$omp sections
+     !$omp section
      acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
-     
-     if (src_type(1) .ne. 'monopole') &
-        acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
-     
+     velo(:,:,:,1) = velo(:,:,:,1) + half_dt * (acc0(:,:,:,1) + acc1(:,:,:,1))
+     acc0(:,:,:,1) = acc1(:,:,:,1)
+
+     !$omp section
      if (src_type(1) == 'dipole') then 
         ! for the factor 2 compare eq 32 in TNM (2006)
         acc1(:,:,:,3) = - two * inv_mass_rho * acc1(:,:,:,3)
      else
         acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
      endif
-        
-     velo(:,:,:,1) = velo(:,:,:,1) + half_dt * (acc0(:,:,:,1) + acc1(:,:,:,1))
-     if (src_type(1) .ne. 'monopole') &
-        velo(:,:,:,2) = velo(:,:,:,2) + half_dt * (acc0(:,:,:,2) + acc1(:,:,:,2))
      velo(:,:,:,3) = velo(:,:,:,3) + half_dt * (acc0(:,:,:,3) + acc1(:,:,:,3))
-     
-     acc0(:,:,:,1) = acc1(:,:,:,1)
-     if (src_type(1) .ne. 'monopole') &
-        acc0(:,:,:,2) = acc1(:,:,:,2)
      acc0(:,:,:,3) = acc1(:,:,:,3)
+
+     !$omp section
+     if (src_type(1) .ne. 'monopole') then
+        acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
+        velo(:,:,:,2) = velo(:,:,:,2) + half_dt * (acc0(:,:,:,2) + acc1(:,:,:,2))
+        acc0(:,:,:,2) = acc1(:,:,:,2)
+     end if
+     !$omp end sections
+     
+     !$omp single
      
      iclockdump = tick()
      call dump_stuff(iter, iseismo, istrain, isnap, disp, velo, chi, dchi, ddchi0, t)
      iclockdump = tick(id=iddump, since=iclockdump)
+     !$omp end single
   end do ! time loop
-  
+  !$omp end parallel
+
 end subroutine sf_time_loop_newmark
 !-----------------------------------------------------------------------------------------
 

@@ -1656,13 +1656,13 @@ subroutine write_1Dmodel(discontinuities)
    write(2000,'("UNITS        m")')
    if (model_is_anelastic(bkgrdmodel)) then
       if (model_is_ani(bkgrdmodel)) then !ANI=true, ANE=true
-         write(2000,'(A11, 9(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', 'qka', &
-                                   &'qmu', 'vph', 'vsh', 'eta'
+         write(2000,'(A11, 7(A9), 2(A15))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', &
+                                            'vph', 'vsh', 'eta', 'qka', 'qmu'
          idom = 1
          do ilayer = 1, nlayer
-            write(2000, '("           ", f9.0, 3f9.2, 2f11.1, 2f9.2, f9.5)') &
+            write(2000, '("           ", f9.0, 3f9.2, 2f9.2, f9.5, 2e15.8)') &
                         radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
-                        qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
+                        vph(ilayer), vsh(ilayer), eta(ilayer), qka(ilayer), qmu(ilayer)
             if (ilayer==disc_layer(idom)) then
                 write(2000, '("#          Discontinuity ", I3, ", depth: ", F10.2, " km")') idom, &
                              (radius(1)-radius(ilayer))*0.001
@@ -1671,11 +1671,10 @@ subroutine write_1Dmodel(discontinuities)
          end do
 
       else !ANI=false, ANE=true
-         write(2000,'(A11, 6(A9))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', 'qka', &
-                                               'qmu'
+         write(2000,'(A11, 4(A9), 2(A15))') 'COLUMNS    ', 'radius', 'rho', 'vpv', 'vsv', 'qka', 'qmu'
          idom = 1
          do ilayer = 1, nlayer
-            write(2000, '("           ", f9.0, 3f9.2, 2f11.1)') &
+            write(2000, '("           ", f9.0, 3f9.2, 2E15.8)') &
                         radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
                         qka(ilayer), qmu(ilayer)
             if (ilayer==disc_layer(idom)) then
@@ -1739,7 +1738,7 @@ subroutine write_1Dmodel(discontinuities)
    write(2000,*) nlayer, nic, noc + nic
    do ilayer = nlayer, 1, -1
       if (model_is_anelastic(bkgrdmodel)) then
-          write(2000, '(f8.0, 3f9.2, 2f9.1, 2f9.2, f9.5)') &
+          write(2000, '(f8.0, 3f9.2, 2e15.8, 2f9.2, f9.5)') &
                       radius(ilayer), rho(ilayer), vpv(ilayer), vsv(ilayer), &
                       qka(ilayer), qmu(ilayer), vph(ilayer), vsh(ilayer), eta(ilayer)
       else
