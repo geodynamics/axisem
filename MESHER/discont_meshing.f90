@@ -215,7 +215,7 @@ subroutine create_subregions
      memorydz = .false.
      do while (current_radius > rdisc_bot(idom) ) 
        if (current_radius==rdisc_top(idom).and.(idom>1)) then
-         solflu_bdry = .true. !solid_domain(idom) .neqv. solid_domain(idom-1)
+         solflu_bdry = solid_domain(idom) .neqv. solid_domain(idom-1)
          if (solflu_bdry) &
            print *, 'Solid-Fluid boundary found at ', current_radius
        else 
@@ -282,7 +282,7 @@ subroutine create_subregions
 
      do while (current_radius > rdisc_bot(idom)) 
        if (current_radius==rdisc_top(idom).and.(idom>1)) then
-         solflu_bdry = .true. ! solid_domain(idom) .neqv. solid_domain(idom-1)
+         solflu_bdry = solid_domain(idom) .neqv. solid_domain(idom-1)
          if (solflu_bdry) &
            print *, 'Solid-Fluid boundary found at ', current_radius
        else 
