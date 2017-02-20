@@ -1481,7 +1481,9 @@ def convSTF(st, sigma=30.):
         nfft = util.next_pow_2(max(nstf, tr.stats.npts)) * 2
         stff = np.fft.rfft(stf, n=nfft) * dt
         trf = np.fft.rfft(tr, n=nfft) * dt
-        tr.data = np.fft.irfft(stff * trf)[sigma*10*df:sigma*10*df+len(tr.data)] * df
+        slice_start = int(sigma*10*df)
+        tr.data = np.fft.irfft(stff * trf)[slice_start:
+                                           slice_start+len(tr.data)] * df
 
     return 1
 
