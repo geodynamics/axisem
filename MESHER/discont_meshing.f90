@@ -43,9 +43,9 @@ subroutine create_subregions
   real(kind=dp), dimension(:), allocatable   :: ds_glob, radius_arr
   real(kind=dp), dimension(:), allocatable   :: vp_arr, vs_arr
   real(kind=dp)     :: ds, minh, maxh, aveh, dz, current_radius
-  integer           :: idom, ic, icount_glob, iz_glob
+  integer           :: idom, ic, icount_glob, iz_glob, cl_last
   integer           :: ns_ref,  ns_ref_icb1, ns_ref_icb, ns_ref_surf, previous
-  logical           :: memorydz, current
+  logical           :: memorydz, current, solflu_bdry, cl_forbidden
   integer, dimension(1)             :: iloc1, iloc2
   real(kind=realkind), dimension(1) :: rad1, rad2
   character(len=32) :: fmtstring
@@ -208,12 +208,23 @@ subroutine create_subregions
 
   ! trial loop to calculate global amount of radial layers icount_glob and 
   ! coarsening levels ic
+  icount_glob = 0
+  cl_last = 0
   do idom =1, ndisc
      current_radius = rdisc_top(idom)
      memorydz = .false.
      do while (current_radius > rdisc_bot(idom) ) 
-        call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
-                           icount_glob, ic, ns_ref)
+       if (current_radius==rdisc_top(idom).and.(idom>1)) then
+         solflu_bdry = solid_domain(idom) .neqv. solid_domain(idom-1)
+         if (solflu_bdry) &
+           print *, 'Solid-Fluid boundary found at ', current_radius
+       else 
+         solflu_bdry = .false.
+       end if
+       cl_forbidden = solflu_bdry .or. (icount_glob - cl_last <= 1)
+       call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
+                          icount_glob, ic, ns_ref, cl_forbidden)
+       if (current) cl_last = icount_glob
      end do
   enddo
 
@@ -258,31 +269,48 @@ subroutine create_subregions
  
   ndisc = ndisc
   icount_glob = 0 
+  cl_last = 0
   ic = 0 
 
   do idom=1, ndisc
      current_radius = rdisc_top(idom)
+     ! print *, '-------------------------------------'
+     ! print *, idom, rdisc_top(idom), rdisc_bot(idom)
+
      previous = 0
      memorydz = .false. 
+
      do while (current_radius > rdisc_bot(idom)) 
-        call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
-                           icount_glob, ic, ns_ref)
-        ! Storing radial info into global arrays
-        if (current) then
-            iclev_glob(ic) = nz_glob - icount_glob + 1 - previous
-            previous = previous + 1
-        else
-            previous = max(0, previous - 1)
-        end if
-        dz_glob(icount_glob) = dz 
-        ds_glob(icount_glob) = ds
-        radius_arr(icount_glob) = current_radius
-        vp_arr(icount_glob) = velocity(current_radius, 'v_p', idom, bkgrdmodel, &
-                                       lfbkgrdmodel)
-        vs_arr(icount_glob) = velocity(current_radius, 'v_s', idom, bkgrdmodel, &
-                                       lfbkgrdmodel)
-        if (vs_arr(icount_glob) < 0.1d0 * vs_arr(1)) & 
-                vs_arr(icount_glob) = vp_arr(icount_glob)
+       if (current_radius==rdisc_top(idom).and.(idom>1)) then
+         solflu_bdry = solid_domain(idom) .neqv. solid_domain(idom-1)
+         if (solflu_bdry) &
+           print *, 'Solid-Fluid boundary found at ', current_radius
+       else 
+         solflu_bdry = .false.
+       end if
+       ! If there has been a CL in the previous layer or we are at a solid-fluid
+       ! boundary, do not put a CL here
+       cl_forbidden = solflu_bdry .or. (icount_glob - cl_last <= 1)
+
+       call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
+                          icount_glob, ic, ns_ref, cl_forbidden)
+
+       if (current) cl_last = icount_glob
+       ! Storing radial info into global arrays
+       if (current) then
+         iclev_glob(ic) = nz_glob - icount_glob + 1 
+       end if
+       if (current) &
+         print *, 'Coarsening Layer at ', current_radius
+       dz_glob(icount_glob) = dz 
+       ds_glob(icount_glob) = ds
+       radius_arr(icount_glob) = current_radius
+       vp_arr(icount_glob) = velocity(current_radius, 'v_p', idom, bkgrdmodel, &
+                                      lfbkgrdmodel)
+       vs_arr(icount_glob) = velocity(current_radius, 'v_s', idom, bkgrdmodel, &
+                                      lfbkgrdmodel)
+       if (vs_arr(icount_glob) < 0.1d0 * vs_arr(1)) & 
+               vs_arr(icount_glob) = vp_arr(icount_glob)
      end do
   enddo
 
@@ -305,8 +333,9 @@ subroutine create_subregions
 
     ! %%%%%%%%%%% for MATLAB %%%%%%%%%%%%%
      open(unit=666,file=diagpath(1:lfdiag)//'/ds_dz_matlab.txt')
-     do iz_glob = 1, nz_glob
-        write(666,11) radius_arr(iz_glob),dz_glob(iz_glob),ds_glob(iz_glob), &
+     do iz_glob = 1, nz_glob-1
+        write(666,11) radius_arr(iz_glob),sum(dz_glob(iz_glob+1:))+radius_arr(nz_glob), &
+             dz_glob(iz_glob),ds_glob(iz_glob), &
              vs_arr(iz_glob)*period,vp_arr(iz_glob)/min(ds_glob(iz_glob), & 
              dz_glob(iz_glob))*dt*real(npol)/minh*aveh
      end do
@@ -317,6 +346,7 @@ subroutine create_subregions
      close(667)
      close(668)
   end if
+
 
   if (dump_mesh_info_files) then
      open(unit=30,file=diagpath(1:lfdiag)//'/coarsening_radii.dat')
@@ -382,7 +412,7 @@ end subroutine create_subregions
 
 !-----------------------------------------------------------------------------------------
 subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz,  &
-                         icount_glob, ic, ns_ref)
+                         icount_glob, ic, ns_ref, cl_forbidden)
 
   use data_grid, only: fluidfac
 
@@ -392,6 +422,7 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
   logical, intent(inout)        :: current, memorydz
   integer, intent(inout)        :: icount_glob, ic
   integer, intent(inout)        :: ns_ref
+  logical, intent(in)           :: cl_forbidden
   
   real(kind=dp)                 :: dz_trial
   real(kind=dp)                 :: velo
@@ -412,7 +443,7 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
   ns_trial = estimate_ns(pts_wavelngth,current_radius,velo,period)
   icount_glob = icount_glob+1
 
-  if (ns_trial < ns_ref/2.and. (ic<nc_init) ) then
+  if (ns_trial < ns_ref/2.and. (ic<nc_init).and.(.not.cl_forbidden) ) then
      ! Is coarsening possible within this subregion 
      ! (<- are there at least two elemental 
      ! layers between the actual layer and the bottom of the subregion?)
@@ -441,10 +472,10 @@ end subroutine compute_dz_nz
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-integer function estimate_ns(el_per_lambda,r,v,period)
+pure integer function estimate_ns(el_per_lambda,r,v,period)
 
-  real(kind=dp) ,intent(in) :: el_per_lambda,r
-  real(kind=dp)             :: v, period
+  real(kind=dp), intent(in) :: el_per_lambda,r
+  real(kind=dp), intent(in) :: v, period
   real(kind=dp)             :: minh, maxh, aveh
   
   ! scaling for irregular GLL spacing
@@ -505,7 +536,7 @@ end subroutine spacing_info
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine gll_spacing(npol, minh, maxh, aveh)
+pure subroutine gll_spacing(npol, minh, maxh, aveh)
 
   use splib
   

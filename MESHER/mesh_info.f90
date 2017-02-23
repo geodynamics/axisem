@@ -264,78 +264,49 @@ subroutine define_boundaries
 
   integer           :: j,ipol,ibelem
   real(kind=dp)     :: dmax, rbound
-  integer           :: nbelemmax
+  integer           :: nbelemmax, idisc
   real(kind=dp), allocatable :: bdry_radius(:)
 
-  if (neltot_fluid>0 .and. neltot_solid>0 ) then 
-     ! TODO: This is only true, if the fluid is not layered!!!
-     nbcnd = 2*nfluidregions  ! 1=CMB; 2=ICB
+  nbcnd = 0
+  do idisc = 1, ndisc - 1
+    if (solid_domain(idisc).neqv.solid_domain(idisc+1)) then
+      nbcnd = nbcnd + 1
+    end if
+  end do
 
-     if (.not. solid_domain(ndisc)) nbcnd = nbcnd - 1
-
-     write(6,*) '..... the number of fluid boundaries is not general enough....'
-     write(6,*) '.....should insert a test on whether the fluid is indeed completely embedded!'
-  else if (neltot_solid==0) then
-     nbcnd = 0
-  else if (neltot_fluid == 0 ) then 
-     nbcnd = 0 
-  endif
+  print '(A,I2,A)', ' Mesh has ', nbcnd, ' solid-fluid interfaces'
 
   ! Allocate memory for the number of boundary elements
-  allocate(nbelem(nbcnd),bdry_radius(nbcnd)) 
+  allocate(nbelem(nbcnd), bdry_radius(nbcnd)) 
   ! set number of boundary elements to zero
   nbelem(:) = 0 ! careful: is a global variable!!!
 
-  write(6,*)'size idom_fluid:',size(idom_fluid),nbcnd
-
   if (have_fluid) then
      dmax = min_distance_nondim
-     do j = 1, nbcnd
+     
+     j = 0 ! Counting index of solflu boundaries 
+     do idisc = 2, ndisc
+       ! Check for a solid-fluid interface
+       if (solid_domain(idisc).neqv.solid_domain(idisc-1)) then
+         j = j + 1
+         ! Set boundary radius
+         rbound = discont(idisc)/router
+         bdry_radius(j) = rbound
 
-        if (mod(j,2)/=0) then ! upper boundary of fluid region
-           rbound = discont(idom_fluid(j))/router
-           if (dump_mesh_info_screen) then 
-              write(6,*)'ABOVE SOLID-FLUID BOUNDARY:',j,idom_fluid(j), &
-                                                     rbound*router/1000.
-              call flush(6) 
-           end if
-        else  ! lower boundary of fluid region
-           rbound = discont(idom_fluid(j-1)+1)/router
-           if (dump_mesh_info_screen) then 
-              write(6,*)'BELOW SOLID-FLUID BOUNDARY:',j,idom_fluid(j-1)+1,&
-                                                      rbound*router/1000.
-              call flush(6) 
-           end if
-        endif
+         ! Count number of elements at this boundary
+         nbelem(j) = belem_count_new(dmax, rbound)
+         print *, 'layer:', idisc, ', ibnd:', j, ', r:', discont(idisc)
 
-        call belem_count_new(dmax, j, rbound)
-        bdry_radius(j) = rbound
+       end if
      end do
+
+     ! Allocate belem with maximum number of elements at any solflu boundary
      nbelemmax = maxval(nbelem(:))
      allocate (belem(nbelemmax,nbcnd))
+
      do j = 1, nbcnd
-        if (mod(j,2)/=0) then ! upper boundary of fluid region
-           rbound = discont(idom_fluid(j))/router
-        else  ! lower boundary of fluid region
-           rbound = discont(idom_fluid(j-1)+1)/router
-        endif
-        call belem_list_new(dmax,j,rbound)
+        call belem_list_new(dmax, bdry_radius(j), belem(:, j))
      end do
-
-     if (dump_mesh_info_files) then 
-        open(unit=6968,file=diagpath(1:lfdiag)//'/fort.6968')
-        do j=1,nbcnd
-           do ibelem=1,nbelem(j)
-              write(6968,*)j,ibelem,sqrt(sgll(npol/2,0,belem(ibelem,j))**2 + &
-                     zgll(npol/2,0,belem(ibelem,j))**2)*router/1000.,&
-                     sqrt(sgll(npol/2,npol,belem(ibelem,j))**2 + &
-                     zgll(npol/2,npol,belem(ibelem,j))**2)*router/1000.
-           enddo
-        enddo
-        close(6968)
-     end if
-
-     write(6,*)'allocating boundary arrays....',nbelemmax; call flush(6)
 
      allocate(my_neighbour(nbelemmax,nbcnd))
      allocate(bdry_above_el(nbelemmax/2,nbcnd),bdry_below_el(nbelemmax/2,nbcnd))
@@ -821,16 +792,15 @@ end subroutine define_my_boundary_neighbour
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine belem_count_new(dmax, j, rbound)
-! This routine determines the number of boundary elements
-! for the j-th component of the velocity field, in the spheroidal
-! container case.
-!
-  integer, intent(in)           :: j
-  real(kind=dp)   , intent(in)  :: dmax, rbound
-  integer                       :: ibd, ielem, ipol, jpol, itest
-  real(kind=dp)                 :: s, z
+pure function belem_count_new(dmax, rbound) result(nbelem_j)
+! This routine determines the number of boundary elements at (normalized) radius rbound
+ 
+  real(kind=dp), intent(in)  :: dmax, rbound
+  integer                    :: nbelem_j
+  integer                    :: ibd, ielem, ipol, jpol, itest
+  real(kind=dp)              :: s, z
 
+  nbelem_j = 0
   do ielem = 1, neltot
      ibd = 0
      do jpol = 0, npol, npol
@@ -841,21 +811,18 @@ subroutine belem_count_new(dmax, j, rbound)
            ibd = max(itest,ibd)
         end do
      end do
-     if (ibd == 1) nbelem(j) = nbelem(j) + 1
+     if (ibd == 1) nbelem_j = nbelem_j + 1
   end do
-  if (dump_mesh_info_screen) write(6,*)nbelem(j),'boundary elements for interface',j
 
-end subroutine belem_count_new
+end function belem_count_new
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine belem_list_new(dmax, j, rbound)
-! This routine records the indices for boundary elements
-! for the j-th component of the velocity field, in the spheroidal
-! container case.
+pure subroutine belem_list_new(dmax, rbound, belem_j)
+! This routine records the indices for boundary elements at normalized radius rbound
 
-  integer, intent(in)           :: j
   real(kind=dp)   , intent(in)  :: dmax, rbound
+  integer, intent(out)          :: belem_j(:)
   integer                       :: ibd, ielem, ipol, jpol, itest, icount
   real(kind=dp)                 :: s, z
   
@@ -872,14 +839,14 @@ subroutine belem_list_new(dmax, j, rbound)
      end do
      if (ibd == 1) then
         icount = icount + 1
-        belem(icount,j) = ielem
+        belem_j(icount) = ielem
      end if
   end do
 end subroutine belem_list_new
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
-subroutine check_boundary(itest, s, z, dmax, rbound)
+pure subroutine check_boundary(itest, s, z, dmax, rbound)
 
   integer, intent(out) :: itest
   real(kind=dp)   , intent(in) :: s,z,dmax,rbound
