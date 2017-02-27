@@ -1,0 +1,22 @@
+# This model is mainly for testing whether the mesher can handle models
+# with multiple solid and fluid layers
+# This one has a solid layer on top
+NAME         layercake
+ANELASTIC       F
+ANISOTROPIC     F
+UNITS        m
+COLUMNS    radius      rho      vpv      vsv   
+            5000000.  2000.0   4000.0   2000.0
+            4000000.  2000.0   4000.0   2000.0
+#            
+            4000000.  2000.0   3000.0   0000.0
+            3000000.  2000.0   3000.0   0000.0
+# 
+            3000000.  2000.0   4000.0   2000.0
+            2000000.  2000.0   4000.0   2000.0
+#
+            2000000.  2000.0   3000.0   0000.0
+            1000000.  2000.0   3000.0   0000.0
+#
+            1000000.  2000.0   4000.0   2000.0
+            0000000.  2000.0   4000.0   2000.0

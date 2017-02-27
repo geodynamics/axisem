@@ -510,7 +510,7 @@ subroutine define_my_boundary_neighbour
   integer :: ipt_slob_ab,ipt_slob_be
   integer :: ipt_flob_ab,ipt_flob_be
 
-  integer :: jbelemmin
+  integer :: jbelemmin, idisc
   real(kind=dp)    :: distmin, dist
 
   logical :: foundone
@@ -518,50 +518,48 @@ subroutine define_my_boundary_neighbour
   tolerance = min_distance_nondim
   if (dump_mesh_info_screen) &
        write(6,*) 'Tolerance to find boundary-hugging partner:', tolerance
+  
+  j = 0 ! Counting index of solflu boundaries 
+  over_all_discs: do idisc = 2, ndisc
 
-  do j=1, nbcnd
+     if (solid_domain(idisc).neqv.solid_domain(idisc-1)) then
+       j = j + 1
+       ! Set boundary radius
+       rbound = discont(idisc)/router
 
-     if (mod(j,2)/=0) then ! upper boundary of fluid region
-        rbound = discont(idom_fluid(j))/router
-     else  ! lower boundary of fluid region
-        rbound = discont(idom_fluid(j-1)+1)/router
-     endif
+       do ibelem = 1, nbelem(j)
+          foundone = .false.
+          myel = belem(ibelem,j)
+          mytheta = thetacom(myel)
 
-     ! should add conditional statement about the chosen one
-     ! as the min_(jneqi) r_{ij}
+          do jbelem = 1, nbelem(j)
+             herel = belem(jbelem,j)
+             hertheta = thetacom(herel)
+             dist = dabs(hertheta-mytheta)*rbound
+             if (dist < tolerance .and. myel /= herel ) then 
+                 my_neighbour(ibelem,j) = jbelem
+                 foundone = .true.
+                 exit
+             endif
+          end do
 
-     do ibelem = 1, nbelem(j)
-        foundone = .false.
-        myel = belem(ibelem,j)
-        mytheta = thetacom(myel)
-
-        do jbelem = 1, nbelem(j)
-           herel = belem(jbelem,j)
-           hertheta = thetacom(herel)
-           dist = dabs(hertheta-mytheta)*rbound
-           if (dist < tolerance .and. myel /= herel ) then 
-               my_neighbour(ibelem,j) = jbelem
-               foundone = .true.
-               exit
-           endif
-        end do
-
-        if ( .not. foundone) then 
-           distmin = rbound
-           do  jbelem = 1, nbelem(j)
-              herel = belem(jbelem,j)
-              hertheta = thetacom(herel)
-              dist = dabs(hertheta-mytheta)*rbound
-              if (dist < distmin .and. myel /= herel ) then
-                 jbelemmin = jbelem
-                 distmin = dist
-              end if 
-           end do  
-           my_neighbour(ibelem,j) = jbelemmin
-        endif
-        call flush(6)
-     end do
-  end do
+          if ( .not. foundone) then 
+             distmin = rbound
+             do  jbelem = 1, nbelem(j)
+                herel = belem(jbelem,j)
+                hertheta = thetacom(herel)
+                dist = dabs(hertheta-mytheta)*rbound
+                if (dist < distmin .and. myel /= herel ) then
+                   jbelemmin = jbelem
+                   distmin = dist
+                end if 
+             end do  
+             my_neighbour(ibelem,j) = jbelemmin
+          endif
+          call flush(6)
+       end do
+     end if
+  end do over_all_discs
 
   if (dump_mesh_info_files) then 
      open(unit=131313,file=diagpath(1:lfdiag)//'/bdry_elems.dat')
@@ -569,17 +567,18 @@ subroutine define_my_boundary_neighbour
      open(unit=6464,file=diagpath(1:lfdiag)//'/bdry_coords_elems_me.dat')
      open(unit=6465,file=diagpath(1:lfdiag)//'/bdry_coords_elems_her.dat')
   end if
-  ! Easy check ... will that last?
-  do j = 1, nbcnd
-        abovecount= 0; belowcount=0
-      if (mod(j,2)/=0) then ! upper boundary of fluid region
-         rbound = discont(idom_fluid(j))/router
-      else  ! lower boundary of fluid region
-         rbound = discont(idom_fluid(j-1)+1)/router
-      endif
+
+  j = 0 ! Counting index of solflu boundaries 
+  over_all_discs_again: do idisc = 2, ndisc
+
+    is_sf_bdry: if (solid_domain(idisc).neqv.solid_domain(idisc-1)) then
+      j = j + 1
+      abovecount= 0
+      belowcount=0
+      ! Set boundary radius
+      rbound = discont(idisc)/router
    
-      do ibelem = 1, nbelem(j)
-   
+      all_belems: do ibelem = 1, nbelem(j)
          ! easy check
          if (dump_mesh_info_files) & 
          write(6565,*)'Bdry partners:',j,ibelem,my_neighbour(ibelem,j), &
@@ -776,8 +775,9 @@ subroutine define_my_boundary_neighbour
            stop
          endif   
    
-      end do ! ibelem (boundary elements)
-  end do ! j (# boundaries)
+      end do all_belems ! ibelem (boundary elements)
+    end if is_sf_bdry
+  end do over_all_discs_again ! j (# boundaries)
   
   close(131313)
   close(6565)
