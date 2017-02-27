@@ -100,6 +100,7 @@ subroutine create_subregions
          write(6,*) 'Cannot have one region with fluid and solid parts...'
          write(6,*) 'upper radius/vs:', rdisc_top(idom), vs(idom,1)
          write(6,*) 'lower radius/vs:', rdisc_bot(idom), vs(idom,2)
+         stop
       endif
       
       write(6,*) '#######################################################################'
