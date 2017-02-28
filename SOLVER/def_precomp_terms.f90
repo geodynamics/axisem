@@ -2666,23 +2666,37 @@ subroutine def_solid_fluid_boundary_terms
         endif ! ax/nonax
 
         ! Define the term such that B >(<) 0 of solid above(below) fluid
-        do idom=1,ndisc-1
-           if ( .not. solid_domain(idom) ) then
-              ! run a check to make sure radius is either discontinuity
-              if ( abs(r1-discont(idom))>min_distance_dim .and. &
-                   abs(r1-discont(idom+1))>min_distance_dim ) then 
-                 write(6,*)
-                 write(6,*)procstrg, &
-                           'Problem: S/F boundary radius is not one of the'
-                 write(6,*)procstrg, &
-                           '         two discontinuities bounding the fluid!!'
-                 write(6,*)procstrg,'   r,elem(loc,glob):',r1,iel,ielglob
-                 write(6,*)procstrg,'Upper/lower discont:',&
-                                                  discont(idom),discont(idom+1)
-                 stop
-              endif
+        ! do idom=1,ndisc-1
+        !    if ( .not. solid_domain(idom) ) then
+        !       ! run a check to make sure radius is either discontinuity
+        !       if ( abs(r1-discont(idom))>min_distance_dim .and. &
+        !            abs(r1-discont(idom+1))>min_distance_dim ) then 
+        !          write(6,*)
+        !          write(6,*)procstrg, &
+        !                    'Problem: S/F boundary radius is not one of the'
+        !          write(6,*)procstrg, &
+        !                    '         two discontinuities bounding the fluid!!'
+        !          write(6,*)procstrg,'   r,elem(loc,glob):',r1,iel,ielglob
+        !          write(6,*)procstrg,'Upper/lower discont:',&
+        !                                           discont(idom),discont(idom+1)
+        !          stop
+        !       endif
+        !       ! if current radius=bottom radius of fluid layer, set negative
+        !       if (abs(r1-discont(idom+1)) < min_distance_dim) then 
+        !          bdry_matr(:,iel,:) = -bdry_matr(:,iel,:)
+        !          count_lower_disc = count_lower_disc+1
+        !       else ! element is in upper radius of fluid layer, keep positive
+        !          count_upper_disc=count_upper_disc+1
+        !       endif
+        !    endif
+        ! enddo ! idom
+
+        ! Define the term such that B >(<) 0 of solid above(below) fluid
+        ! Change sign of B, if boundary, where fluid is above solid
+        do idom=2,ndisc-1
+           if ( solid_domain(idom) .and. (.not. solid_domain(idom-1))) then
               ! if current radius=bottom radius of fluid layer, set negative
-              if (abs(r1-discont(idom+1)) < min_distance_dim) then 
+              if (abs(r1-discont(idom)) < min_distance_dim) then 
                  bdry_matr(:,iel,:) = -bdry_matr(:,iel,:)
                  count_lower_disc = count_lower_disc+1
               else ! element is in upper radius of fluid layer, keep positive
@@ -2701,20 +2715,20 @@ subroutine def_solid_fluid_boundary_terms
 
   bdry_sum = psum(real(bdry_sum,kind=realkind))
 
-  ! yet another check....see if # elements above fluid is multiple of # below 
-  ! or the same (this is the case for no coarsening layer in the fluid)
-  if ((count_upper_disc /= count_lower_disc) &
-        .and. mod(count_upper_disc,2*count_lower_disc) /= 0) then
-     write(6,*)procstrg,&
-               'Problem: Number of elements found to be at discont above fluid'
-     write(6,*)procstrg,&
-               '   is not an even multiple of or the same as elements found to be below fluid'
-     write(6,*)procstrg,&
-               '   check doubling layers'
-     write(6,*)procstrg,'# elems above fluid:',count_upper_disc
-     write(6,*)procstrg,'# elems below fluid:',count_lower_disc
-     stop
-  endif
+  !! yet another check....see if # elements above fluid is multiple of # below 
+  !! or the same (this is the case for no coarsening layer in the fluid)
+  !if ((count_upper_disc /= count_lower_disc) &
+  !      .and. mod(count_upper_disc,2*count_lower_disc) /= 0) then
+  !   write(6,*)procstrg,&
+  !             'Problem: Number of elements found to be at discont above fluid'
+  !   write(6,*)procstrg,&
+  !             '   is not an even multiple of or the same as elements found to be below fluid'
+  !   write(6,*)procstrg,&
+  !             '   check doubling layers'
+  !   write(6,*)procstrg,'# elems above fluid:',count_upper_disc
+  !   write(6,*)procstrg,'# elems below fluid:',count_lower_disc
+  !   stop
+  !endif
 
 12 format(a25,3(1pe14.6))
 

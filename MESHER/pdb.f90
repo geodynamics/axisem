@@ -1724,6 +1724,7 @@ subroutine define_local_bdry_elem
   integer, allocatable, dimension(:,:) :: tmpsolid, tmpfluid, jpolsol, jpolflu
   real(kind=dp)                        :: rbound
   integer                              :: myproc, herproc, myielglob, herielglob
+  integer                              :: idisc
   
   allocate(nbdry_el(0:nproc-1))
   allocate(have_bdry_elemp(0:nproc-1))
@@ -1740,84 +1741,85 @@ subroutine define_local_bdry_elem
   fluid_count(:) = 0
   nbdry_el(:) = 0
 
-  do j=1, nbcnd
+  j = 0 ! Counting index of solflu boundaries 
+  over_all_discs: do idisc = 2, ndisc
 
-     if (mod(j,2) /= 0) then ! upper boundary of fluid region
-        rbound = discont(idom_fluid(j)) / router
-     else  ! lower boundary of fluid region
-        rbound = discont(idom_fluid(j-1)+1) / router
-     endif
+     is_sf_bdry: if (solid_domain(idisc).neqv.solid_domain(idisc-1)) then
+       j = j + 1
+       ! Set boundary radius
+       rbound = discont(idisc)/router
 
-     do iel=1, nbelem(j)
-        nbdry_el(el2proc(belem(iel,j))) = nbdry_el(el2proc(belem(iel,j))) + 1
+       all_belem: do iel=1, nbelem(j)
+          nbdry_el(el2proc(belem(iel,j))) = nbdry_el(el2proc(belem(iel,j))) + 1
 
-        ! belemp: given element counter on boundary for a proc, return glocal element number
-        belemp(nbdry_el(el2proc(belem(iel,j))),el2proc(belem(iel,j))) = &
-             inv_procel(belem(iel,j))
+          ! belemp: given element counter on boundary for a proc, return glocal element number
+          belemp(nbdry_el(el2proc(belem(iel,j))),el2proc(belem(iel,j))) = &
+               inv_procel(belem(iel,j))
 
-        myielglob = belem(iel,j)
-        herielglob = belem(my_neighbour(iel,j),j)
+          myielglob = belem(iel,j)
+          herielglob = belem(my_neighbour(iel,j),j)
 
-        myproc =  el2proc(myielglob)
-        herproc = el2proc(herielglob)
+          myproc =  el2proc(myielglob)
+          herproc = el2proc(herielglob)
 
-        solid_belem: if (solid(belem(iel,j))) then
+          solid_belem: if (solid(belem(iel,j))) then
 
-           if (herproc /= myproc) then 
-              write(6,*)
-              write(6,*) 'PROBLEM: changing processors across solid/fluid boundary!'
-              write(6,*) 'This case is not implemented at this point as it requires'
-              write(6,*) 'message passing when adding the boundary term on both sides'
-              write(6,*) 'and therefore seems highly ineffective. Sorry...'
-              write(6,*) 'solid domain proc:', myproc
-              write(6,*) 'fluid domain proc:', herproc
-              write(6,*) 'boundary,global element num:',j,iel,myielglob
-              write(6,*) 'One possible reaon: NRADIAL_SLICES > 8 in inparam_mesh might lead to this problem'
-              stop
-           endif
+             if (herproc /= myproc) then 
+                write(6,*)
+                write(6,*) 'PROBLEM: changing processors across solid/fluid boundary!'
+                write(6,*) 'This case is not implemented at this point as it requires'
+                write(6,*) 'message passing when adding the boundary term on both sides'
+                write(6,*) 'and therefore seems highly ineffective. Sorry...'
+                write(6,*) 'solid domain proc:', myproc
+                write(6,*) 'fluid domain proc:', herproc
+                write(6,*) 'boundary,global element num:',j,iel,myielglob
+                write(6,*) 'One possible reaon: NRADIAL_SLICES > 8 in inparam_mesh might lead to this problem'
+                stop
+             endif
 
-           solid_count(myproc) = solid_count(myproc) + 1
-                
-           ! Determine jpol at the boundary: 0,npol depending on above/below, North/South
-           if (rcom(myielglob) > rbound) then !solid above solid-fluid boundary
-              if (zcom(myielglob) >= 0.d0) then ! North
-                 jpolsol(solid_count(myproc),myproc) = 0
-                 jpolflu(solid_count(myproc),myproc) = npol
-              else ! South
-                 jpolsol(solid_count(myproc),myproc) = npol
-                 jpolflu(solid_count(myproc),myproc) = 0
-              endif
-           else ! solid below solid-fluid boundary
-              if (zcom(myielglob) >= 0.d0) then ! North
-                 jpolsol(solid_count(myproc),myproc) = npol
-                 jpolflu(solid_count(myproc),myproc) = 0
-              else ! South
-                 jpolsol(solid_count(myproc),myproc) = 0
-                 jpolflu(solid_count(myproc),myproc) = npol
-              endif                  
-              ! crude way to accomodate the case of having the buffer layer below the ICB.
-              ! ...i.e., the jpol indices are switched for 45 < theta < 135 deg
-              if (eltypeg(myielglob)/='curved') then 
-                 if ( scom(myielglob) > abs(zcom(myielglob)) ) then 
-                    jpolsol(solid_count(myproc),myproc)=&
-                         abs(jpolsol(solid_count(myproc),myproc)-npol)
-                 endif
-              endif
+             solid_count(myproc) = solid_count(myproc) + 1
+                  
+             ! Determine jpol at the boundary: 0,npol depending on above/below, North/South
+             if (rcom(myielglob) > rbound) then !solid above solid-fluid boundary
+                if (zcom(myielglob) >= 0.d0) then ! North
+                   jpolsol(solid_count(myproc),myproc) = 0
+                   jpolflu(solid_count(myproc),myproc) = npol
+                else ! South
+                   jpolsol(solid_count(myproc),myproc) = npol
+                   jpolflu(solid_count(myproc),myproc) = 0
+                endif
+             else ! solid below solid-fluid boundary
+                if (zcom(myielglob) >= 0.d0) then ! North
+                   jpolsol(solid_count(myproc),myproc) = npol
+                   jpolflu(solid_count(myproc),myproc) = 0
+                else ! South
+                   jpolsol(solid_count(myproc),myproc) = 0
+                   jpolflu(solid_count(myproc),myproc) = npol
+                endif                  
+                ! crude way to accomodate the case of having the buffer layer below the ICB.
+                ! ...i.e., the jpol indices are switched for 45 < theta < 135 deg
+                if (eltypeg(myielglob)/='curved') then 
+                   if ( scom(myielglob) > abs(zcom(myielglob)) ) then 
+                      jpolsol(solid_count(myproc),myproc)=&
+                           abs(jpolsol(solid_count(myproc),myproc)-npol)
+                   endif
+                endif
 
-           endif
+             endif
 
-           tmpsolid(solid_count(myproc),myproc) = &
-              inv_procel_solidp( inv_procel(myielglob), myproc)
+             tmpsolid(solid_count(myproc),myproc) = &
+                inv_procel_solidp( inv_procel(myielglob), myproc)
 
-           tmpfluid(solid_count(myproc),herproc) = &
-              inv_procel_fluidp( inv_procel(herielglob), herproc)
+             tmpfluid(solid_count(myproc),herproc) = &
+                inv_procel_fluidp( inv_procel(herielglob), herproc)
 
-        else
-           fluid_count(myproc)=fluid_count(myproc)+1
+          else
+             fluid_count(myproc)=fluid_count(myproc)+1
 
-        endif solid_belem
-     enddo
-  enddo
+          endif solid_belem
+       enddo all_belem
+    end if is_sf_bdry
+  enddo over_all_discs
 
   if (dump_mesh_info_screen) write(6,*) 'ended solid-fluid boundary loop'
 
