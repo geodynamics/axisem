@@ -41,13 +41,14 @@ contains
 subroutine bkgrdmodel_testing
 
   use background_models
+  use data_mesh,                 only: eltypeg, dp
   
   real(kind=dp), dimension(:,:,:), allocatable   :: h, hmin2
   real(kind=dp), dimension(:,:),   allocatable   :: crit, crit_max
   real(kind=dp), dimension(:),     allocatable   :: hmin, hmax
   integer                                        :: iel, ipol, jpol, ntoobig, ntoosmall
   real(kind=dp)                                  :: s1, z1, s2, z2, h1, h2, r
-  real(kind=dp)                                  :: velo, velo_max, theta
+  real(kind=dp)                                  :: velo, velo_max, theta, rold
   
   ! vtk
   real(kind=sp), dimension(:,:), allocatable     :: mesh2
@@ -183,6 +184,7 @@ subroutine bkgrdmodel_testing
            z1 = zgll(ipol,jpol,iel) 
   
            r = dsqrt(s1**2 + z1**2)
+           rold = r
 
            r = dint(r*1.d10) * 1.d-10
            

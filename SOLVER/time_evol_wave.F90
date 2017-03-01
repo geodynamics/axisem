@@ -1080,24 +1080,26 @@ subroutine dump_stuff(iter, iseismo, istrain, isnap,     &
   !^-^-^-^-^-^- Time series^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^
   !^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^^-^-^-^-^-^-^-^-^-^-^-^
   
-  if (mod(iter,seis_it)==0) then
+  if (num_rec_tot > 0) then ! Only do this, if we have any receivers at all
+    if (mod(iter,seis_it)==0) then
 
-     iseismo = iseismo + 1
-     if (use_netcdf) then
-        call nc_compute_recfile_seis_bare(disp, iseismo)
-     else 
-        call compute_recfile_seis_bare(disp)
-     endif
-  
-     ! Generic synthetics at hypo-/epicenter, equator, antipode (including time)
-     call compute_hyp_epi_equ_anti(real(time, kind=dp), disp)
+       iseismo = iseismo + 1
+       if (use_netcdf) then
+          call nc_compute_recfile_seis_bare(disp, iseismo)
+       else 
+          call compute_recfile_seis_bare(disp)
+       endif
+    
+       ! Generic synthetics at hypo-/epicenter, equator, antipode (including time)
+       call compute_hyp_epi_equ_anti(real(time, kind=dp), disp)
 
-  endif
+    endif
 
-  if ((mod(iter, check_it) == 0) .and. (iter > 0)) then
-     if (checkpointing .and. use_netcdf) then
-        call nc_rec_checkpoint()
-     end if
+    if ((mod(iter, check_it) == 0) .and. (iter > 0)) then
+       if (checkpointing .and. use_netcdf) then
+          call nc_rec_checkpoint()
+       end if
+    end if
   end if
 
   ! Compute kinetic and potential energy globally

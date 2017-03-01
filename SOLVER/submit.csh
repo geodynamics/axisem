@@ -124,16 +124,15 @@ if ( $rec_file_type == 'colatlon' ) then
     set recfile = 'receivers.dat'
 else if ( $rec_file_type == 'stations' ) then
     set recfile = 'STATIONS'
-else if ( $rec_file_type == 'database' ) then
-    set recfile = 'database'
-    echo "this is a dummy database receiver file" >! $homedir/$recfile
 endif
 
-if ( ! -f $homedir/$recfile ) then 
-    echo "ERROR: Receiver file $recfile does not exist"
-    exit
+if ( $rec_file_type != 'none' ) then
+  if ( ! -f $homedir/$recfile ) then 
+      echo "ERROR: Receiver file $recfile does not exist"
+      exit
+  endif
+  echo "Source file:" $srcfile, "Receiver file:" $recfile
 endif
-echo "Source file:" $srcfile, "Receiver file:" $recfile
 
 if ( $multisrc == 'true' ) then
     # multiple simulations
@@ -246,7 +245,9 @@ foreach isim  (${srcapp})
     cp $homedir/axisem .
     cp $homedir/mesh_params.h .
     cp $homedir/runinfo .
-    cp $homedir/$recfile . 
+    if ( $rec_file_type != 'none' ) then
+      cp $homedir/$recfile . 
+    endif
     cp $homedir/inparam_basic .
     cp $homedir/inparam_advanced .
     cp $homedir/inparam_hetero .

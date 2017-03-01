@@ -77,7 +77,7 @@ function interpolation_object( x, y, extrapolation )
         print *, 'ERROR: interpolation_object: Not enough data'
         print *, 'X: ', x
         print *, 'Y: ', y
-        return
+        stop
     endif
 
     ! Data sorted?
@@ -87,7 +87,7 @@ function interpolation_object( x, y, extrapolation )
         if ( x(i) > x(i-1) ) then
             print *, 'ERROR: interpolation_object: data not sorted'
             success = .false.
-            exit
+            stop
         endif
     enddo
 

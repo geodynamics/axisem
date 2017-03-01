@@ -29,6 +29,8 @@ endif
 set bgmodel = `grep "^BACKGROUND_MODEL" inparam_mesh | awk '{print $2}'`
 if ( $bgmodel == 'external') then
   set fnam_extmodel = `grep "^EXT_MODEL" inparam_mesh | awk '{print $2}'`
+  # Clean file name of "
+  set fnam_extmodel = `echo "$fnam_extmodel" | sed 's/\"//g'`
   echo "Using external mesh file " $fnam_extmodel
   if ( ! -f $fnam_extmodel ) then
     echo "External mesh " $fnam_extmodel " does not exist!"
