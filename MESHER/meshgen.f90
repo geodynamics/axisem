@@ -376,7 +376,10 @@ subroutine def_reference_spherical_grid_discont
 
   if (dump_mesh_info_screen) then
      write(6,*)  'ns,nz,ri,ro:', ns,nz,ri,ro
-     write(6,*)  'dz', dz(:)
+     write(6,*)  'iz,     dz'
+     do iz = 1, nz
+       write(6,*)  iz, dz(iz), sum(dz(1:iz)) * (router-rmin) /2d0 + rmin 
+     end do
      write(6,*)  'SUM(dz):', SUM(dz)
   end if
 
@@ -438,6 +441,9 @@ end subroutine def_global_coordinates
 !-----------------------------------------------------------------------------------------
 subroutine def_mapped_coordinates(ns1, nz1, crds, crdc, crd_cont)
   use analytic_spheroid_mapping
+  use data_bkgrdmodel, only: rmin
+  use data_diag,       only: dump_mesh_info_files, diagpath, lfdiag
+  use data_grid,       only: router
 
   integer, intent(in) :: ns1, nz1
 
@@ -457,6 +463,14 @@ subroutine def_mapped_coordinates(ns1, nz1, crds, crdc, crd_cont)
      end do
   end do
 
+  if (dump_mesh_info_files) then
+     open(unit=666,file=diagpath(1:lfdiag)//'/crds_z.txt')
+     do iz = 1, nz1
+       write(666,*) iz, sum(crds(:,iz,2))/dble(ns1)+1, sum(crds(:,iz,2))/dble(ns1)+1 * router
+     end do
+     close(666)
+  end if
+
 end subroutine def_mapped_coordinates
 !-----------------------------------------------------------------------------------------
 
@@ -468,7 +482,7 @@ subroutine def_control_nodes(crd, ri1, ro1)
 
   crd(1,1) = 0.d0
   crd(1,2) = ri1    
-  crd(2,1) = ri1*.5*dsqrt(2.d0)
+  crd(2,1) = ri1*.5d0*dsqrt(2.d0)
   crd(2,2) = ri1*.5d0*dsqrt(2.d0)
   crd(3,1) = ri1
   crd(3,2) = 0.d0
@@ -476,7 +490,7 @@ subroutine def_control_nodes(crd, ri1, ro1)
   crd(4,2) = 0.d0
   crd(5,1) = ro1
   crd(5,2) = 0.d0
-  crd(6,1) = ro1*.5*dsqrt(2.d0)
+  crd(6,1) = ro1*.5d0*dsqrt(2.d0)
   crd(6,2) = ro1*.5d0*dsqrt(2.d0)
   crd(7,1) = 0.d0
   crd(7,2) = ro1   
@@ -576,15 +590,15 @@ subroutine define_spherical_shell
   if (dump_mesh_info_files) then
      open(unit=3,file=diagpath(1:lfdiag)//'/testcrd.dat',STATUS="UNKNOWN",POSITION="REWIND")
      do iel = 1, nel
+        write(3,*) iel
         do inode = 1, 4
            ipt = lnodeso(inode,iel)
            ipto = (iel-1)*4 + inode
-           write(3,*) so(ipto),zo(ipto)
+           write(3,*) so(ipto) * router, zo(ipto) * router
         end do
-          ipt = lnodeso(1,iel)
-          ipto = (iel-1)*4 + 1
-          write(3,*) so(ipto),zo(ipto)
-          write(3,*)
+        ipto = (iel-1)*4 + 1
+        write(3,*) so(ipto) * router, zo(ipto) * router
+        write(3,*)
      end do
   end if
 
@@ -1363,18 +1377,19 @@ end subroutine def_ref_cart_coordinates
 !-----------------------------------------------------------------------------------------
 subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
 
-  use data_grid,       only: axisfac
-  use data_bkgrdmodel, only: nc_init, nthetaslices
-  use data_pdb,        only: theta_max_proc, theta_min_proc
+  use data_grid,         only: axisfac, router
+  use data_bkgrdmodel,   only: nc_init, nthetaslices, rmin
+  use data_pdb,          only: theta_max_proc, theta_min_proc
+  use global_parameters, only: pi
+  use data_diag,         only: lfdiag, diagpath, dump_mesh_info_files
 
   integer, intent(in) :: nst, nzt
   real(kind=dp), dimension(1:nst+1,1:nzt+1,2), intent(out) :: crd
-  real(kind=dp), dimension(1:nzt) :: dz
+  real(kind=dp), dimension(1:nzt), intent(in) :: dz
 
   integer           :: is, iz
   real(kind=dp)     :: ds1, ds2
 
-  real(kind=dp)     :: pi2
   integer           :: iproc
 
  
@@ -1402,18 +1417,26 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
 
   write(6,*) ds1, ds2, nst
   
-  pi2 = 2.d0 * dasin(1.d0)
   allocate(theta_min_proc(0:nthetaslices-1), theta_max_proc(0:nthetaslices-1))
   theta_min_proc(:) = 0.d0
   theta_max_proc(:) = 0.d0
-  theta_max_proc(nthetaslices-1) = pi2
+  theta_max_proc(nthetaslices-1) = pi
 
   do iproc = 0, nthetaslices-2
-     theta_min_proc(iproc+1) = 0.5d0 * pi2 * (ds1 * 2**nc_init &
+     theta_min_proc(iproc+1) = 0.5d0 * pi * (ds1 * 2**nc_init &
                        + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
-     theta_max_proc(iproc)   = 0.5d0 * pi2 * (ds1 * 2**nc_init &
+     theta_max_proc(iproc)   = 0.5d0 * pi * (ds1 * 2**nc_init &
                        + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
   end do
+
+  if (dump_mesh_info_files) then
+     open(unit=666,file=diagpath(1:lfdiag)//'/crd_z.txt')
+     do iz = 1, nzt
+       write(666,*) iz, crd(1,iz,2), (crd(1,iz,2) + 1) * (router-rmin) / 2 + rmin
+     end do
+     close(666)
+  end if
+      
 
 end subroutine def_ref_cart_coordinates_discont
 !-----------------------------------------------------------------------------------------
