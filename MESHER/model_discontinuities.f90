@@ -1748,6 +1748,31 @@ subroutine write_1Dmodel(discontinuities)
    end do
    close(2000)
 
+   ! Write input file for TauP (tvel format)
+   fnam = trim(diagpath)//'/1dmodel_taup.tvel'
+   open(2000, file=fnam, action='write')
+   write(2000,"('# Input file for TauP created by AxiSEM model on ', &
+               & A2, '/', A2, '/', A4, ', at ', A2, 'h ', A2, 'min')")  &
+      mydate(7:8), mydate(5:6), mydate(1:4), mytime(1:2), mytime(3:4)
+   
+   if (trim(bkgrdmodel) == 'external') then
+      write(2000,'("NAME         ", A)') trim(model_name_ext_model)
+   else
+      write(2000,'("NAME         ", A)') trim(bkgrdmodel)
+   endif
+   do ilayer = 1, nlayer
+     write(2000, '(F8.2, 3(" ", F7.3))')    & 
+       (radius(1) - radius(ilayer)) * 1e-3, &
+       vpv(ilayer) * 1e-3,                  &
+       vsv(ilayer) * 1e-3,                  &
+       rho(ilayer) * 1e-3
+   end do
+   close(2000)
+
+ 
+
+
+
 end subroutine write_1Dmodel
 !-----------------------------------------------------------------------------------------
 
