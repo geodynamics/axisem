@@ -2047,7 +2047,6 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   integer                          :: column_vph = 0, column_vsh = 0
   integer                          :: column_eta = 0, nmissing = 0
   real(kind=sp), allocatable       :: layertemp(:)
-  character(len=6), allocatable    :: columnvalue(:)
   logical                          :: bkgrdmodelfile_exists = .false., startatsurface = .false.
   logical                          :: model_in_depth    = .false., model_in_km     = .false.
   logical                          :: exist_param_units = .false., exist_param_col = .false.
@@ -2055,7 +2054,7 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   logical                          :: exist_param_name  = .false.
   logical                          :: override_radius   = .false.
   character(len=128)               :: fmtstring, keyword, keyvalue
-  character(len=512)               :: line
+  character(len=512)               :: line, res
   character(len=2)                 :: units
 
   ! Has the file already been read in?
@@ -2157,6 +2156,8 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
      line_err = 0
      iline = 0
      nerr = 0
+
+     ncolumn = 20
      do while (ierr==0)
          read(77, fmt='(a512)', iostat=ierr) line
          if (ierr < 0) exit
@@ -2171,16 +2172,19 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
          case('UNITS')
          case('OVERRIDE_RADIUS_CHECK')
          case('COLUMNS')
-             allocate(layertemp(ncolumn))
-             allocate(columnvalue(ncolumn))
-             read(line,*,iostat=line_err) keyword, columnvalue
              call check_line_err(line_err, iline, line, trim(fnam_ext_model), nerr)
-             !print *, 'ncolumn: ', ncolumn, columnvalue
-             do icolumn = 1, ncolumn
-                 select case(to_lower(columnvalue(icolumn)))
+
+        
+             res = strtok(line, ' ')
+
+             icolumn = 0
+             do while (res .ne. char(0))
+
+                 select case(to_lower(res))
                  case('depth', 'radius')
                      column_rad = icolumn
-                     if (columnvalue(icolumn).eq.'depth') then
+                     !if (columnvalue(icolumn).eq.'depth') then
+                     if (to_lower(res).eq.'depth') then
                          model_in_depth = .true.
                      end if
                  case('vp', 'vpv')
@@ -2200,8 +2204,12 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
                  case('eta')
                      column_eta = icolumn
                  end select
-             end do
 
+                 icolumn = icolumn + 1
+                 res = strtok(char(0), ' ')
+             end do
+             ncolumn = icolumn - 1
+             allocate(layertemp(ncolumn))
              if (lpr) print *, 'Checking value order in external model'
              nmissing = 0
              nmissing = nmissing + check_exist(column_rad, 'rad')
@@ -2358,6 +2366,87 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
   end if
 
 end subroutine read_ext_model
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+FUNCTION strtok (source_string, delimiters)
+
+!     @(#) Tokenize a string in a similar manner to C routine strtok(3c). 
+!     Created by user urbanjost on fortranwiki.org: 
+!            http://fortranwiki.org/fortran/show/strtok
+!
+!     Usage:  First call STRTOK() with the string to tokenize as SOURCE_STRING,
+!             and the delimiter list used to tokenize SOURCE_STRING in DELIMITERS.
+!
+!             then, if the returned value is not equal to CHAR(0), keep calling until it is
+!             with SOURCE_STRING set to CHAR(0).
+!
+!             STRTOK will return a token on each call until the entire line is processed,
+!             which it signals by returning CHAR(0). 
+!
+!     Input:  source_string =   Source string to tokenize. 
+!             delimiters    =   delimiter string.  Used to determine the beginning/end of each token in a string.
+!
+!     Output: strtok()
+!
+!     LIMITATIONS:
+!     can not be called with a different string until current string is totally processed, even from different procedures
+!     input string length limited to set size
+!     function returns fixed 255 character length
+!     length of returned string not given
+
+!     PARAMETERS:
+      CHARACTER(len=*),intent(in)  :: source_string
+      CHARACTER(len=*),intent(in)  :: delimiters
+
+!     SAVED VALUES:
+      CHARACTER(len=255),save :: saved_string
+      INTEGER,save :: isaved_start  ! points to beginning of unprocessed data
+      INTEGER,save :: isource_len   ! length of original input string
+
+!     RETURN VALUE:
+      CHARACTER(len=255) :: strtok
+
+!     LOCAL VALUES:
+      INTEGER :: ibegin        ! beginning of token to return
+      INTEGER :: ifinish       ! end of token to return
+
+      ! initialize stored copy of input string and pointer into input string on first call
+      IF (source_string(1:1) .NE. CHAR(0)) THEN
+          isaved_start = 1                 ! beginning of unprocessed data
+          saved_string = source_string     ! save input string from first call in series
+          isource_len = LEN(saved_string)  ! length of input string from first call
+      ENDIF
+
+      ibegin = isaved_start
+
+      DO
+         IF ( (ibegin .LE. isource_len) .AND. (INDEX(delimiters,saved_string(ibegin:ibegin)) .NE. 0)) THEN
+             ibegin = ibegin + 1
+         ELSE
+             EXIT
+         ENDIF
+      ENDDO
+
+      IF (ibegin .GT. isource_len) THEN
+          strtok = CHAR(0)
+          RETURN
+      ENDIF
+
+      ifinish = ibegin
+
+      DO
+         IF ((ifinish .LE. isource_len) .AND.  (INDEX(delimiters,saved_string(ifinish:ifinish)) .EQ. 0)) THEN
+             ifinish = ifinish + 1
+         ELSE
+             EXIT
+         ENDIF
+      ENDDO
+
+      strtok = saved_string(ibegin:ifinish-1)
+      isaved_start = ifinish
+
+END FUNCTION strtok
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
