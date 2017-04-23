@@ -1948,6 +1948,9 @@ end function iasp91_sub
 !! r vp vs rho
 !! ...
 real(kind=dp) function arbitr_sub_solar(r0, param, idom)
+#      if defined(__INTEL_COMPILER)
+   use ifcore, only: tracebackqq
+#      endif
 
   real(kind=dp), intent(in)      :: r0
   integer, intent(in)            :: idom
@@ -2014,7 +2017,7 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
 #      endif
 #      if defined(__INTEL_COMPILER)
        call flush(6)
-       call tracebackqq(string=msg, status=ierror)
+       call tracebackqq()
 #      endif
        stop
      end if
