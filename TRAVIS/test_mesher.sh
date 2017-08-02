@@ -1,5 +1,5 @@
 #!/bin/bash
-./copytemplates.sh
+./copytemplates.sh $buildstyle
 set -e
 cd MESHER
 mkdir -p Diags

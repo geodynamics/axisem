@@ -9,15 +9,24 @@ env:
     MPI_IMPL=openmpi
 
   matrix:
+    - GFORTRAN_VERSION=6
+      BUILD='debug'
     - GFORTRAN_VERSION=4.8
       EXTRAFLAGS=-fopenmp
+      BUILD='release'
     - GFORTRAN_VERSION=6
       EXTRAFLAGS=-fopenmp
+      BUILD='release'
     - GFORTRAN_VERSION=4.7
+      BUILD='release'
     - GFORTRAN_VERSION=4.8
+      BUILD='release'
     - GFORTRAN_VERSION=4.9
+      BUILD='release'
     - GFORTRAN_VERSION=5 
+      BUILD='release'
     - GFORTRAN_VERSION=6
+      BUILD='release'
 
 before_install:
   - export MINICONDA=$HOME/miniconda
