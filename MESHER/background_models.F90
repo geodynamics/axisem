@@ -2186,7 +2186,6 @@ subroutine read_ext_model(fnam_ext_model, nlayer_out, rho_layer_out, &
                  select case(to_lower(res))
                  case('depth', 'radius')
                      column_rad = icolumn
-                     !if (columnvalue(icolumn).eq.'depth') then
                      if (to_lower(res).eq.'depth') then
                          model_in_depth = .true.
                      end if
@@ -2395,20 +2394,22 @@ FUNCTION strtok (source_string, delimiters)
 !     LIMITATIONS:
 !     can not be called with a different string until current string is totally processed, even from different procedures
 !     input string length limited to set size
-!     function returns fixed 255 character length
+!     function returns fixed 512 character length
 !     length of returned string not given
 
 !     PARAMETERS:
       CHARACTER(len=*),intent(in)  :: source_string
       CHARACTER(len=*),intent(in)  :: delimiters
 
+      INTEGER, PARAMETER           :: maxlen = 512
+
 !     SAVED VALUES:
-      CHARACTER(len=255),save :: saved_string
+      CHARACTER(len=maxlen), save :: saved_string
       INTEGER,save :: isaved_start  ! points to beginning of unprocessed data
       INTEGER,save :: isource_len   ! length of original input string
 
 !     RETURN VALUE:
-      CHARACTER(len=255) :: strtok
+      CHARACTER(len=maxlen) :: strtok
 
 !     LOCAL VALUES:
       INTEGER :: ibegin        ! beginning of token to return
@@ -2418,14 +2419,18 @@ FUNCTION strtok (source_string, delimiters)
       IF (source_string(1:1) .NE. CHAR(0)) THEN
           isaved_start = 1                 ! beginning of unprocessed data
           saved_string = source_string     ! save input string from first call in series
-          isource_len = LEN(saved_string)  ! length of input string from first call
+          isource_len = LEN(source_string)  ! length of input string from first call
       ENDIF
 
       ibegin = isaved_start
 
       DO
-         IF ( (ibegin .LE. isource_len) .AND. (INDEX(delimiters,saved_string(ibegin:ibegin)) .NE. 0)) THEN
-             ibegin = ibegin + 1
+         IF ( (ibegin .LE. isource_len) ) THEN
+             IF (INDEX(delimiters,saved_string(ibegin:ibegin)) .NE. 0) THEN
+                 ibegin = ibegin + 1
+             ELSE
+                 EXIT
+             ENDIF
          ELSE
              EXIT
          ENDIF
