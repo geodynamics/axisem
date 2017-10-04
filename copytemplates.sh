@@ -1,6 +1,12 @@
 #!/bin/bash
+if [ $# -eq 1 ] && [ $1 == 'release' ]; then
+  echo "Copying files for fast code"
+  cp make_axisem.macros_release.TEMPLATE make_axisem.macros
+else
+  echo "Copying files for debugging"
+  cp make_axisem.macros.TEMPLATE make_axisem.macros
+fi
 
-cp make_axisem.macros.TEMPLATE make_axisem.macros
 cp SOLVER/Makefile.TEMPLATE SOLVER/Makefile
 cp SOLVER/UTILS/Makefile.TEMPLATE SOLVER/UTILS/Makefile
 cp MESHER/Makefile.TEMPLATE MESHER/Makefile
