@@ -1769,11 +1769,47 @@ subroutine write_1Dmodel(discontinuities)
    end do
    close(2000)
 
+
+   ! Write input file for reflectivity code by Mueller
+   fnam = trim(diagpath)//'/1dmodel_refl.tvel'
+   open(2000, file=fnam, action='write')
+   write(2000,"('# Input file for Reflectivity created by AxiSEM model on ', &
+               & A2, '/', A2, '/', A4, ', at ', A2, 'h ', A2, 'min')")  &
+      mydate(7:8), mydate(5:6), mydate(1:4), mytime(1:2), mytime(3:4)
+   
+   if (trim(bkgrdmodel) == 'external') then
+      write(2000,'("NAME         ", A)') trim(model_name_ext_model)
+   else
+      write(2000,'("NAME         ", A)') trim(bkgrdmodel)
+   endif
+   do ilayer = 1, nlayer
+     write(2000, '(F8.2, 5(" ", F10.3))')    & 
+       (radius(1) - radius(ilayer)) * 1e-3, &
+       vpv(ilayer) * 1e-3,                  &
+       qp(vpv(ilayer), vsv(ilayer), qmu(ilayer), qka(ilayer)), &
+       vsv(ilayer) * 1e-3,                  &
+       qmu(ilayer),                         &
+       rho(ilayer) * 1e-3
+   end do
+   close(2000)
+
  
 
 
 
 end subroutine write_1Dmodel
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+real(kind=dp) function qp(vp, vs, qmu, qka)
+   real(kind=dp), intent(in)  :: vp, vs, qmu, qka
+   real(kind=dp)              :: L
+
+   L = 4./3. * (vs/vp)**2
+
+   qp = 1. / (L/qmu + (1-L)/qka) 
+
+end function
 !-----------------------------------------------------------------------------------------
 
 end module model_discontinuities
