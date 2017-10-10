@@ -84,19 +84,20 @@ subroutine generate_skeleton
 
   ! CENTRAL REGION GENERATION (inner shell + central square + buffer layer)
   write(6,*)'define central region...';call flush(6)
-  call define_central_region
+  !call define_central_region
 
   ! GATHER INFORMATION FROM DIFFERENT REGIONS IN GLOBAL ARRAYS
   write(6,*)'gather skeleton...';call flush(6)
   call gather_skeleton
 
   ! must add a flag there
-  if (southern) then
-   write(6,*)'generate southern hemisphere...';call flush(6)
-   call generate_southern_hemisphere
-  else
-   call donot_generate_southern_hemisphere 
-  end if
+  !if (southern) then
+  ! write(6,*)'generate southern hemisphere...';call flush(6)
+  ! call generate_southern_hemisphere
+  !else
+  ! call donot_generate_southern_hemisphere 
+  !end if
+  call donot_generate_southern_hemisphere 
 
   write(6,*)
   write(6,"(10x,' THE TOTAL NUMBER OF ELEMENTS IS ',i10 )") neltot
@@ -120,7 +121,7 @@ subroutine generate_serendipity(npoin, nel, sg, zg)
   real(kind=dp)   , intent(in)                  :: sg(4,nel),zg(4,nel)
   real(kind=dp)   , dimension(:,:), allocatable :: sg2,zg2
   integer, dimension(:,:), allocatable          :: lnods
-  integer                                       :: iel, inode, ipt,npoin2
+  integer                                       :: iel, inode, ipt, npoin2
   
   ! Numbering arrays
   integer, dimension(:), allocatable :: ipt_iglob,el_iglob,inode_iglob
@@ -1404,6 +1405,7 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
         else
            crd(is,iz,1) = -1.d0 + 2**nc_init * ds1 + dble(is-1 - 2**nc_init) * ds2
         endif
+        crd(is,iz,1) = crd(is,iz,1) / 2. - 0.5
      end do
      crd(is,1,2) = -1.d0 
      do iz = 2, nzt+1
@@ -1428,6 +1430,13 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
      theta_max_proc(iproc)   = 0.5d0 * pi * (ds1 * 2**nc_init &
                        + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
   end do
+
+  !print *, theta_min_proc
+  !print *, theta_max_proc
+  !stop
+
+  theta_min_proc(:) = theta_min_proc(:) / 4.
+  theta_max_proc(:) = theta_max_proc(:) / 4.
 
   if (dump_mesh_info_files) then
      open(unit=666,file=diagpath(1:lfdiag)//'/crd_z.txt')

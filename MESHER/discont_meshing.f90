@@ -204,6 +204,8 @@ subroutine create_subregions
      write(6,*) '# central region elements (incl. buffer, e.g. along axis):', &
             int(ns_ref / (2.* 2**nc_init) + 1.)
   endif
+     
+  rmin = rdisc_top(ndisc)
 
   rdisc_bot(ndisc) = rmin 
 
@@ -406,7 +408,7 @@ subroutine create_subregions
   ! for mesh_params.h
   minhvp = min(minval(ds_glob / vp_arr), minval(dz_glob / vp_arr)) * minh / aveh
   maxhvs = max(maxval(ds_glob / vs_arr), maxval(dz_glob / vs_arr)) * maxh / aveh
-  maxhnsicb = pi * 0.5d0 * discont(ndisc) / dble(ns_ref_icb)
+  maxhnsicb = pi / 2. * 0.5d0 * discont(ndisc) / dble(ns_ref_icb)
 
 end subroutine create_subregions
 !-----------------------------------------------------------------------------------------
@@ -449,7 +451,7 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
      ! (<- are there at least two elemental 
      ! layers between the actual layer and the bottom of the subregion?)
 
-     dz_trial = .5d0* pi * current_radius / dble(ns_ref)
+     dz_trial = .5d0* pi / 2. * current_radius / dble(ns_ref)
      nz_trial = max(ceiling((current_radius-rdisc_bot(idom))/dz_trial),1)
      if (nz_trial >= 3) then
         ns_trial = ns_ref
@@ -459,14 +461,14 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
         current = .true. 
      end if 
   end if
-  dz_trial = .5d0* pi * current_radius / dble(ns_trial)
+  dz_trial = .5d0* pi / 2. * current_radius / dble(ns_trial)
   if (memorydz .and. .not. current) then
-     dz_trial = .5d0* pi * current_radius / dble(2*ns_trial)
+     dz_trial = .5d0* pi / 2. * current_radius / dble(2*ns_trial)
      memorydz = .false.
   end if
   nz_trial = max(ceiling((current_radius-rdisc_bot(idom))/dz_trial),1)
   dz = (current_radius-rdisc_bot(idom))/dble(nz_trial)
-  ds = .5d0* pi * current_radius / dble(ns_ref)
+  ds = .5d0* pi / 2. * current_radius / dble(ns_ref)
   current_radius = current_radius -dz
 
 end subroutine compute_dz_nz
@@ -481,7 +483,7 @@ pure integer function estimate_ns(el_per_lambda,r,v,period)
   
   ! scaling for irregular GLL spacing
   call gll_spacing(npol, minh, maxh, aveh)
-  estimate_ns=ceiling(el_per_lambda * .5d0 * pi * r / (v * period) * maxh / aveh)
+  estimate_ns=ceiling(el_per_lambda * .5d0 * pi / 2. * r / (v * period) * maxh / aveh)
 
 end function estimate_ns
 !-----------------------------------------------------------------------------------------
