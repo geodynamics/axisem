@@ -412,7 +412,66 @@ foreach isim (${srcapp})
             echo "module load fortran/intel"                             >> exe_FT.sh
             echo "../xfield_transform > OUTPUT_FT "                      >> exe_FT.sh
             llsubmit job.cmd
+
+        ############### Piz Daint ###################
+        else if ( $queue == 'daint' ) then
+            # Put job in native SLURM queue as found on Piz Daint at CSCS
+            set ntaskspernode = 36
+            set ompthreads = 1
+            echo "ntaskspernode = $ntaskspernode"
+            echo "ompthreads = $ompthreads"
+
+            # Create Solver batch script
+            echo '#\!/bin/bash -l'                                     >  sbatch_solver.sh
+            echo "#SBATCH --ntasks=$nodnum"                            >> sbatch_solver.sh
+            echo "#SBATCH --ntasks-per-node=$ntaskspernode"            >> sbatch_solver.sh
+            echo "#SBATCH --ntasks-per-core=1"                         >> sbatch_solver.sh
+            echo "#SBATCH --cpus-per-task=$ompthreads"                 >> sbatch_solver.sh
+            echo "#SBATCH --time=02:00:00"                             >> sbatch_solver.sh
+            echo "#SBATCH --account=ACCOUNTNAME"                       >> sbatch_solver.sh
+            echo "#SBATCH --mail-user=MAILADRESS"                      >> sbatch_solver.sh
+            echo "#SBATCH --constraint=mc"                             >> sbatch_solver.sh
+            echo "#SBATCH --partition=normal"                          >> sbatch_solver.sh
+           
+            echo 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK'         >> sbatch_solver.sh
+            echo "module load slurm"                                   >> sbatch_solver.sh
+            echo 'echo "The current job ID is $SLURM_JOB_ID"'          >> sbatch_solver.sh
+            echo 'echo "Running on $SLURM_JOB_NUM_NODES nodes"'        >> sbatch_solver.sh
+            echo 'echo "Using $SLURM_NTASKS_PER_NODE tasks per node"'  >> sbatch_solver.sh
+            echo 'echo "A total of $SLURM_NTASKS tasks is used"'       >> sbatch_solver.sh
+            echo 'echo "using $SLURM_CPUS_PER_TASK omp threads"'       >> sbatch_solver.sh
+
+            echo 'srun --ntasks-per-node $SLURM_NTASKS_PER_NODE -n $SLURM_NTASKS ./axisem >& '$outputname >> sbatch_solver.sh
+
+            # Create field transform batch script
+            echo '#\!/bin/bash -l'                                     >  sbatch_FT.sh
+            echo "#SBATCH --ntasks=1"                                  >> sbatch_FT.sh
+            echo "#SBATCH --ntasks-per-node=1"                         >> sbatch_FT.sh
+            echo "#SBATCH --ntasks-per-core=1"                         >> sbatch_FT.sh
+            echo "#SBATCH --cpus-per-task=1"                           >> sbatch_FT.sh
+            echo "#SBATCH --time=04:00:00"                             >> sbatch_FT.sh
+            echo "#SBATCH --account=ACCOUNTNAME"                       >> sbatch_FT.sh
+            echo "#SBATCH --mail-user=MAILADRESS"                      >> sbatch_FT.sh
+            echo "#SBATCH --constraint=mc"                             >> sbatch_FT.sh
+            echo "#SBATCH --partition=normal"                          >> sbatch_FT.sh
+
+            echo "module load slurm"                                   >> sbatch_FT.sh
+            echo 'echo "The current job ID is $SLURM_JOB_ID"'          >> sbatch_FT.sh
+            echo 'echo "Running on $SLURM_JOB_NUM_NODES nodes"'        >> sbatch_FT.sh
+            echo 'echo "Using $SLURM_NTASKS_PER_NODE tasks per node"'  >> sbatch_FT.sh
+            echo 'echo "A total of $SLURM_NTASKS tasks is used"'       >> sbatch_FT.sh
+
+            echo 'srun --ntasks-per-node $SLURM_NTASKS_PER_NODE -n $SLURM_NTASKS ../xfield_transform > OUTPUT_FT' >> sbatch_FT.sh
+
+            # Submit solver job and retrieve job ID
+            set jobmessage = `sbatch sbatch_solver.sh`
+            set job1_id = $jobmessage[4]
+            # Submit field transform job to run after solver job is finished
+            sbatch --dependency=afterok:${job1_id} sbatch_FT.sh
+
         endif
+
+
 
     ######## SUBMIT LOCALLY #######
     else 
