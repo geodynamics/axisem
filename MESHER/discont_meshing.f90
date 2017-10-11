@@ -278,7 +278,6 @@ subroutine create_subregions
      ! print *, '-------------------------------------'
      ! print *, idom, rdisc_top(idom), rdisc_bot(idom)
 
-     previous = 0
      memorydz = .false. 
 
      do while (current_radius > rdisc_bot(idom)) 
@@ -291,7 +290,7 @@ subroutine create_subregions
        end if
        ! If there has been a CL in the previous layer or we are at a solid-fluid
        ! boundary, do not put a CL here
-       cl_forbidden = solflu_bdry .or. (icount_glob - cl_last <= 1)
+       cl_forbidden = solflu_bdry .or. (icount_glob - cl_last < 1)
 
        call compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memorydz, &
                           icount_glob, ic, ns_ref, cl_forbidden)
@@ -299,8 +298,9 @@ subroutine create_subregions
        if (current) cl_last = icount_glob
        ! Storing radial info into global arrays
        if (current) then
-         iclev_glob(ic) = nz_glob - icount_glob + 1 
+         iclev_glob(ic) = nz_glob - icount_glob + 1
        end if
+
        if (current) &
          print *, 'Coarsening Layer at ', current_radius
        dz_glob(icount_glob) = dz 
@@ -425,7 +425,7 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
   integer, intent(inout)        :: ns_ref
   logical, intent(in)           :: cl_forbidden
   
-  real(kind=dp)                 :: dz_trial
+  real(kind=dp)                 :: dz_trial, dz_buff, scaling
   real(kind=dp)                 :: velo
   integer                       :: nz_trial,ns_trial
   
@@ -449,25 +449,38 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
      ! (<- are there at least two elemental 
      ! layers between the actual layer and the bottom of the subregion?)
 
-     dz_trial = .5d0* pi * current_radius / dble(ns_ref)
-     nz_trial = max(ceiling((current_radius-rdisc_bot(idom))/dz_trial),1)
-     if (nz_trial >= 3) then
-        ns_trial = ns_ref
+     dz_trial = .5d0* pi * current_radius / dble(ns_trial)
+     nz_trial = (current_radius-rdisc_bot(idom)) / dz_trial
+
+     if (nz_trial > 0.8) then
         ns_ref = ns_ref / 2
         ic = ic + 1
         memorydz = .true.
         current = .true. 
      end if 
   end if
-  dz_trial = .5d0* pi * current_radius / dble(ns_trial)
-  if (memorydz .and. .not. current) then
-     dz_trial = .5d0* pi * current_radius / dble(2*ns_trial)
+
+  if (memorydz .and. current) then
+     dz_trial = .5d0* pi * current_radius * (1d0 / dble(ns_trial) - 1d0 / dble(2*ns_ref))
+  elseif (memorydz .and. .not. current) then
+     dz_trial = .5d0* pi * current_radius / dble(2*ns_ref)
      memorydz = .false.
+  else 
+     dz_trial = .5d0* pi * current_radius / dble(ns_trial)
   end if
-  nz_trial = max(ceiling((current_radius-rdisc_bot(idom))/dz_trial),1)
-  dz = (current_radius-rdisc_bot(idom))/dble(nz_trial)
+  
+  if (memorydz) then
+     dz_buff = .5d0* pi * current_radius / dble(ns_trial)
+     nz_trial = ceiling((current_radius-rdisc_bot(idom))/dz_buff)
+     scaling = (current_radius-rdisc_bot(idom))/dble(nz_trial) / dz_buff
+     dz = dz_trial * scaling
+  else
+      nz_trial = max(ceiling((current_radius-rdisc_bot(idom))/dz_trial),1)
+      dz = (current_radius-rdisc_bot(idom))/dble(nz_trial)
+  end if
+
   ds = .5d0* pi * current_radius / dble(ns_ref)
-  current_radius = current_radius -dz
+  current_radius = current_radius - dz
 
 end subroutine compute_dz_nz
 !-----------------------------------------------------------------------------------------
