@@ -22,7 +22,7 @@
 !=========================================================================================
 module data_bkgrdmodel
 
-  use global_parameters, only : dp, sp
+  use global_parameters, only : dp, sp, pi
   implicit none
 
   integer                    :: ndisc, nfluidregions
@@ -34,7 +34,7 @@ module data_bkgrdmodel
   character(len=100)         :: bkgrdmodel
   logical                    :: have_fluid, have_solid
   real(kind=dp)              :: pts_wavelngth
-  real(kind=dp)              :: period, courant
+  real(kind=dp)              :: period, courant, local_max_colat, local_lat_fac
   real(kind=dp)              :: dt
   integer                    :: nc_init, nthetaslices, nradialslices
   

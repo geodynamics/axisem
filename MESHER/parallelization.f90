@@ -965,27 +965,27 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed, ntheta
                                                 central_is_iz_to_globiel(is,iz)
      endif
   
-     !! South: inverted copy
-     !if (nthetal > 1) then 
-     !   if (solid_domain(ndisc)) then 
-     !      procel_solidl(central_count(proc_central(is,iz)), &
-     !           nthetal-1-proc_central(is,iz)) = &
-     !           central_is_iz_to_globiel(is,iz) + neltot / 2
-     !   else
-     !      procel_fluidl(central_count(proc_central(is,iz)), &
-     !           nthetal-1-proc_central(is,iz)) = &
-     !           central_is_iz_to_globiel(is,iz) + neltot / 2
-     !   endif
-     !endif
+     ! South: inverted copy
+     if (local_max_colat == 180. .and. nthetal > 1) then 
+        if (solid_domain(ndisc)) then 
+           procel_solidl(central_count(proc_central(is,iz)), &
+                nthetal-1-proc_central(is,iz)) = &
+                central_is_iz_to_globiel(is,iz) + neltot / 2
+        else
+           procel_fluidl(central_count(proc_central(is,iz)), &
+                nthetal-1-proc_central(is,iz)) = &
+                central_is_iz_to_globiel(is,iz) + neltot / 2
+        endif
+     endif
     enddo
   enddo
   
-  !! South: 
-  !if (nthetal > 1) then
-  !   do iproc=0, nthetal / 2 - 1
-  !      central_count(nthetal-iproc-1) = central_count(iproc)
-  !   enddo
-  !endif
+  ! South: 
+  if (local_max_colat == 180. .and. nthetal > 1) then 
+     do iproc=0, nthetal / 2 - 1
+        central_count(nthetal-iproc-1) = central_count(iproc)
+     enddo
+  endif
        
   ! special case one processor... still needs to count the south!
   if (nthetal==1) then 
@@ -1388,27 +1388,27 @@ subroutine decompose_inner_cube_opt(central_count, attributed, nthetal, &
                       proc(is-1,iz-1)) = central_is_iz_to_globiel(is,iz)
           endif
 
-          !! South: inverted copy
-          !if (nthetal > 1) then 
-          !    if (solid_domain(ndisc)) then 
-          !        procel_solidl(central_count(proc(is-1,iz-1)), &
-          !            nthetal - 1 - proc(is-1,iz-1)) = &
-          !            central_is_iz_to_globiel(is,iz) + neltot / 2
-          !    else
-          !        procel_fluidl(central_count(proc(is-1,iz-1)), &
-          !            nthetal - 1 - proc(is-1,iz-1)) = &
-          !            central_is_iz_to_globiel(is,iz) + neltot / 2
-          !    endif
-          !endif
+          ! South: inverted copy
+          if (local_max_colat == 180. .and. nthetal > 1) then 
+              if (solid_domain(ndisc)) then 
+                  procel_solidl(central_count(proc(is-1,iz-1)), &
+                      nthetal - 1 - proc(is-1,iz-1)) = &
+                      central_is_iz_to_globiel(is,iz) + neltot / 2
+              else
+                  procel_fluidl(central_count(proc(is-1,iz-1)), &
+                      nthetal - 1 - proc(is-1,iz-1)) = &
+                      central_is_iz_to_globiel(is,iz) + neltot / 2
+              endif
+          endif
       enddo
   enddo
 
-  !! South: 
-  !if (nthetal > 1) then
-  !    do ip = 0, nthetal / 2 - 1
-  !        central_count(nthetal - ip - 1) = central_count(ip)
-  !    enddo
-  !endif
+  ! South: 
+  if (local_max_colat == 180. .and. nthetal > 1) then 
+      do ip = 0, nthetal / 2 - 1
+          central_count(nthetal - ip - 1) = central_count(ip)
+      enddo
+  endif
    
   ! check if all central-cube elements are assigned
   do is = 1, neltot

@@ -55,8 +55,6 @@ program gllmesh
   write(6,*)'MAIN: creating subregions/discontinuity model..........'; call flush(6)
   call create_subregions ! discont_meshing
 
-  southern = .true. 
-
   write(6,*)'MAIN: generating skeleton..............................'; call flush(6)
   iclock02 = tick()
   call generate_skeleton ! meshgen

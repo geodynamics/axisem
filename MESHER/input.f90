@@ -61,6 +61,7 @@ subroutine read_params
   npol            = 4
   pts_wavelngth   = 1.5
   courant         = 0.6
+  local_max_colat = 180.
   router          = 6.371e6
   axisfac         = 0.7
   fluidfac        = 0.9
@@ -124,6 +125,9 @@ subroutine read_params
       case('COURANT_NR')
           read(keyvalue, *) courant
 
+      case('LOCAL_MAX_COLAT')
+          read(keyvalue, *) local_max_colat
+
       case('RADIUS') 
           read(keyvalue, *) router
 
@@ -150,6 +154,12 @@ subroutine read_params
   if (nthetaslices==-1) then
       write(6,20) 'NTHETA_SLICES'
       stop
+  end if
+
+  if (local_max_colat == 180.) then
+      local_lat_fac = pi / 2
+  else
+      local_lat_fac = pi / (180. / local_max_colat) 
   end if
 
   if (only_suggest_ntheta) nthetaslices = 4
