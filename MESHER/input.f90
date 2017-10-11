@@ -161,6 +161,11 @@ subroutine read_params
   else
       local_lat_fac = pi / (180. / local_max_colat) 
   end if
+  
+  if (local_max_colat > 180. .or. local_max_colat <= 0.) then
+      write(6,*) 'LOCAL_MAX_COLAT should be in (0., 180.]' 
+      stop
+  end if
 
   if (only_suggest_ntheta) nthetaslices = 4
 
