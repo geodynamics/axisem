@@ -185,8 +185,8 @@ subroutine create_subregions
      maxh_icb = period * vp(ndisc,1) / (pts_wavelngth * max_spacing(npol))
   endif
 
-  !rmin = maxh_icb * (dble(ns_ref / dble(2. * dble(2**nc_init))) + 1.d0)
-  rmin = maxh_icb * (ns_ref / (2.d0 * 2**nc_init) + 1)
+  ! factor 0.8 to compensate for the deformation of the elements in the inner core
+  rmin = 0.8 * maxh_icb * (ns_ref / (2.d0 * 2**nc_init) + 1)
 
   if (dump_mesh_info_screen) &
         write(6,*) 'actual ds at innermost discontinuity [km] :', &
@@ -430,9 +430,9 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
   integer, intent(inout)        :: ns_ref
   logical, intent(in)           :: cl_forbidden
   
-  real(kind=dp)                 :: dz_trial, dz_buff, scaling
+  real(kind=dp)                 :: ds_ref, dz_trial, dz_buff, scaling, dz1, dz2
   real(kind=dp)                 :: velo
-  integer                       :: nz_trial,ns_trial
+  real(kind=dp)                 :: nz_trial, ns_trial
   
   current = .false.
   
@@ -449,15 +449,21 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
   ns_trial = estimate_ns(pts_wavelngth,current_radius,velo,period)
   icount_glob = icount_glob+1
 
-  if (ns_trial < ns_ref/2.and. (ic<nc_init).and.(.not.cl_forbidden) ) then
+  if (ns_trial < ns_ref / 2. .and. (ic < nc_init) .and. (.not.cl_forbidden) ) then
      ! Is coarsening possible within this subregion 
      ! (<- are there at least two elemental 
      ! layers between the actual layer and the bottom of the subregion?)
 
      dz_trial = local_lat_fac * current_radius / dble(ns_trial)
-     nz_trial = (current_radius-rdisc_bot(idom)) / dz_trial
+     ds_ref = local_lat_fac * current_radius / dble(ns_ref)
 
-     if (nz_trial > 0.8) then
+     nz_trial = (current_radius - rdisc_bot(idom)) / dz_trial
+
+     ! first condition: avoid shallow layers
+     ! second condition: if the elements are elongated vertically such that the time 
+     ! step is not getting worse by adding the refinement, still put it here
+     print *, idom, nz_trial, 0.5 / nz_trial, dz_trial / ds_ref
+     if (nz_trial > 0.8 .or. 0.5 / nz_trial < dz_trial / ds_ref) then
         ns_ref = ns_ref / 2
         ic = ic + 1
         memorydz = .true.
@@ -465,23 +471,43 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
      end if 
   end if
 
-  if (memorydz .and. current) then
-     dz_trial = local_lat_fac * current_radius * (1d0 / dble(ns_trial) - 1d0 / dble(2*ns_ref))
-  elseif (memorydz .and. .not. current) then
-     dz_trial = local_lat_fac * current_radius / dble(2*ns_ref)
+  ! find height of the element (dz)
+  if (current) then
+     ! first element of refinment layer
+     
+     dz_buff = local_lat_fac * current_radius / dble(ns_trial)
+     nz_trial = ceiling((current_radius - rdisc_bot(idom)) / dz_buff)
+
+     if (nz_trial > 1.) then
+        ! if we can choose the element size freely, use maximum edgelength allowed and 
+        ! 45 degree angle in the refinment
+        dz = local_lat_fac * current_radius * (1d0 / dble(ns_trial) - 1d0 / dble(2*ns_ref))
+        !scaling = (current_radius - rdisc_bot(idom)) / dble(nz_trial) / dz_buff
+        !dz = dz_trial * scaling
+     else
+        ! if we are close to the next discontinuity
+        ! 1: half way to the next discontinuity
+        dz1 = (current_radius - rdisc_bot(idom)) / 2.
+        ! 2: 45 degree minimum angle in the refinement layer
+        dz2 = (current_radius - rdisc_bot(idom)) - local_lat_fac * current_radius / (3. * ns_ref)
+        ! for very thin layers use 1, defaults to 2
+        dz = max(dz1, dz2)
+     endif
+
+  else if (memorydz .and. .not. current) then
+     ! second element of refinment layer
+     dz_trial = local_lat_fac * current_radius / dble(2 * ns_ref)
      memorydz = .false.
-  else 
+
+  else
+     ! normal elements
      dz_trial = local_lat_fac * current_radius / dble(ns_trial)
   end if
-  
-  if (memorydz) then
-     dz_buff = local_lat_fac * current_radius / dble(ns_trial)
-     nz_trial = ceiling((current_radius-rdisc_bot(idom))/dz_buff)
-     scaling = (current_radius-rdisc_bot(idom))/dble(nz_trial) / dz_buff
-     dz = dz_trial * scaling
-  else
-      nz_trial = max(ceiling((current_radius-rdisc_bot(idom))/dz_trial),1)
-      dz = (current_radius-rdisc_bot(idom))/dble(nz_trial)
+
+  if (.not. memorydz) then
+     ! the latter two cases
+     nz_trial = max(ceiling((current_radius - rdisc_bot(idom)) / dz_trial), 1)
+     dz = (current_radius - rdisc_bot(idom)) / dble(nz_trial)
   end if
 
   ds = local_lat_fac * current_radius / dble(ns_ref)
@@ -499,7 +525,7 @@ pure integer function estimate_ns(el_per_lambda,r,v,period)
   
   ! scaling for irregular GLL spacing
   call gll_spacing(npol, minh, maxh, aveh)
-  estimate_ns=ceiling(el_per_lambda * local_lat_fac * r / (v * period) * maxh / aveh)
+  estimate_ns = ceiling(el_per_lambda * local_lat_fac * r / (v * period) * maxh / aveh)
 
 end function estimate_ns
 !-----------------------------------------------------------------------------------------

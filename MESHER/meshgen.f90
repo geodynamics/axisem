@@ -1419,23 +1419,27 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
   ds1 = 1.d0 / dble(nst) * axisfac 
   ds2 = (1.d0 - 2**nc_init * ds1) / dble(nst - 2**nc_init)
 
-  write(6,*) ds1, ds2, nst
-  
   allocate(theta_min_proc(0:nthetaslices-1), theta_max_proc(0:nthetaslices-1))
   theta_min_proc(:) = 0.d0
   theta_max_proc(:) = 0.d0
   theta_max_proc(nthetaslices-1) = pi
 
-  do iproc = 0, nthetaslices-2
-     theta_min_proc(iproc+1) = 0.5d0 * pi * (ds1 * 2**nc_init &
-                       + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
-     theta_max_proc(iproc)   = 0.5d0 * pi * (ds1 * 2**nc_init &
-                       + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
-  end do
-
-  if (local_max_colat < 180.) then
-      theta_min_proc(:) = theta_min_proc(:) / (180. / local_max_colat)
-      theta_max_proc(:) = theta_max_proc(:) / (180. / local_max_colat)
+  if (local_max_colat == 180.) then
+     do iproc = 0, nthetaslices-2
+        theta_min_proc(iproc+1) = 0.5 * pi * (ds1 * 2**nc_init &
+                          + ds2 * (nst * 2. / nthetaslices * (iproc + 1) - 2**nc_init))
+        theta_max_proc(iproc)   = 0.5 * pi * (ds1 * 2**nc_init &
+                          + ds2 * (nst * 2. / nthetaslices * (iproc + 1) - 2**nc_init))
+     end do
+  else
+     do iproc = 0, nthetaslices-2
+        theta_min_proc(iproc+1) = pi * (ds1 * 2**nc_init &
+                          + ds2 * (nst / nthetaslices * (iproc + 1) - 2**nc_init))
+        theta_max_proc(iproc)   = pi * (ds1 * 2**nc_init &
+                          + ds2 * (nst / nthetaslices * (iproc + 1) - 2**nc_init))
+     end do
+     theta_min_proc(:) = theta_min_proc(:) / (180. / local_max_colat)
+     theta_max_proc(:) = theta_max_proc(:) / (180. / local_max_colat)
   end if
 
   if (dump_mesh_info_files) then
