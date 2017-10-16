@@ -482,8 +482,8 @@ subroutine compute_dz_nz(idom, rdisc_bot, current_radius, dz, ds, current, memor
         ! if we can choose the element size freely, use maximum edgelength allowed and 
         ! 45 degree angle in the refinment
         dz = local_lat_fac * current_radius * (1d0 / dble(ns_trial) - 1d0 / dble(2*ns_ref))
-        !scaling = (current_radius - rdisc_bot(idom)) / dble(nz_trial) / dz_buff
-        !dz = dz_trial * scaling
+        scaling = (current_radius - rdisc_bot(idom)) / dble(nz_trial) / dz_buff
+        dz = dz * scaling
      else
         ! if we are close to the next discontinuity
         ! 1: half way to the next discontinuity
