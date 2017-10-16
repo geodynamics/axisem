@@ -59,6 +59,9 @@ def define_arguments():
     helptext = 'Mesh period \n'
     parser.add_argument('mesh_period', type=float, help=helptext)
 
+    helptext = 'Number of radial slices \n'
+    parser.add_argument('--nrad', type=int, help=helptext)
+
     helptext = 'Wall time for the solver in hours\n'
     parser.add_argument('-w', '--walltime', type=float, default=1.0, 
                         help=helptext)
@@ -67,6 +70,12 @@ def define_arguments():
     parser.add_argument('-m', '--mail_adress', type=str, 
                         default='info@nosuchserver.com', 
                         help=helptext)
+
+    # This does not work, since you cannot SSH out from compute nodes
+    # helptext = 'Transfer adress, where DB should be moved to\n'
+    # parser.add_argument('-t', '--transfer_adress', type=str, 
+    #                     default='info@nosuchserver.com', 
+    #                     help=helptext)
 
     helptext = 'Daint project account\n'
     parser.add_argument('-a', '--account', type=str, 
@@ -101,9 +110,13 @@ os.chmod(mesh_exe_path, st.st_mode | stat.S_IEXEC)
 
 os.chdir(meshdir)
 
-ntheta = get_ntheta(args.mesh_file, args.mesh_period)
+fnam_mesh_file = os.path.split(args.mesh_file)[-1]
+
+shutil.copyfile(src=args.mesh_file,
+                dst=os.path.join(meshdir, fnam_mesh_file))
+ntheta = get_ntheta(fnam_mesh_file, args.mesh_period)
 print('  Optimal number of theta slices: %d' % ntheta)
-nrad = 2
+nrad = args.nrad
 create_inparam_mesh(args.mesh_file, 
                     args.mesh_period, 
                     ntheta=ntheta, 
@@ -219,13 +232,18 @@ for part_run in ['PX', 'PZ']:
 repack_path = os.path.join(base_dir, 'SOLVER', 'UTILS', 'repack_db.py')
 repack_call = repack_path + ' --method transpose ' + '. ' + jobname+'_packed ' + '> OUTPUT_FT'
 
+# This does not really work, since you cannot SSH out from compute nodes
+#if args.transfer_adress:
+#  repack_call += '\n scp -r %s_packed %s' % (jobname, args.transfer_adress)
+
 batch_FT_fmt =                                                      \
         '#!/bin/bash -l \n' +                                       \
         '#SBATCH --ntasks=1 \n' +                                   \
         '#SBATCH --ntasks-per-node=1 \n' +                          \
         '#SBATCH --ntasks-per-core=1 \n' +                          \
         '#SBATCH --cpus-per-task=1 \n' +                            \
-        '#SBATCH --time=12:00:00 \n' +                              \
+        '#SBATCH --time=24:00:00 \n' +                              \
+        '#SBATCH --mem=120GB \n' +                                  \
         '#SBATCH --account=%s \n' % args.account +                  \
         '#SBATCH --mail-type=ALL \n' +                              \
         '#SBATCH --mail-user=%s \n' %args.mail_adress +             \
@@ -240,6 +258,9 @@ batch_FT_fmt =                                                      \
         'echo "A total of $SLURM_NTASKS tasks is used" \n' +        \
         'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' +        \
         repack_call
+
+
+# Submit the jobs
 
 path_sbatch_FT = os.path.join(rundir, 'sbatch_FT.sh')
 with open(path_sbatch_FT, 'w') as fid:
@@ -263,4 +284,4 @@ for part_run in ['PX', 'PZ']:
 res_submit_FT = sp.check_output(\
         'sbatch --dependency=afterok:%d:%d ' % (jobid_solver[0], jobid_solver[1]) +
          path_sbatch_FT,
-        shell=True)
+         shell=True)

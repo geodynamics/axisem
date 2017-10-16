@@ -149,7 +149,8 @@ def recursive_copy(src, dst, contiguous, compression_level, transpose, quiet):
 
             # Copy around 8 Megabytes at a time. This seems to be the
             # sweet spot at least on my laptop.
-            factor = int((8 * 1024 * 1024 / 4) / npts)
+            # Increased to 20GB - SCS
+            factor = int((20 * 1024 * 1024 * 1024 / 4) / npts)
             s = int(math.ceil(num_elems / float(factor)))
 
             if quiet:
