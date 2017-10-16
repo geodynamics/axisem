@@ -47,12 +47,15 @@ WRITE_VTK           true
 # other software (TauP, YSpec, Mineos)
 WRITE_1DMODEL       true
 
-
 # Nr of coarsening layers
 # 3 is a reasonable choice for models with crust, otherwise 2
 # Check the vtk output. No coarsening layer should be at the surface or
 # at the solid-fluid boundary
 COARSENING_LAYERS   3
+
+# make a local mesh with maximum colat measured from the source (default: 180.)
+# removes the inner core from the model 
+# LOCAL_MAX_COLAT     10.
 
 ############### FOR THE INCLINED ##############################################
 # Polynomial order of basis for GLL points inside elements (default: 4)

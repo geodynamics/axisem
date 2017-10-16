@@ -46,6 +46,6 @@ module data_grid
   integer            :: ngllcube
   
   real(kind=dp), dimension(:), allocatable :: rmax_el, rmin_el
-  logical :: southern
+
 end module data_grid
 !=========================================================================================

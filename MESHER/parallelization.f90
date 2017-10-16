@@ -966,7 +966,7 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed, ntheta
      endif
   
      ! South: inverted copy
-     if (nthetal > 1) then 
+     if (local_max_colat == 180. .and. nthetal > 1) then 
         if (solid_domain(ndisc)) then 
            procel_solidl(central_count(proc_central(is,iz)), &
                 nthetal-1-proc_central(is,iz)) = &
@@ -981,7 +981,7 @@ subroutine decompose_inner_cube_quadratic_fcts(central_count, attributed, ntheta
   enddo
   
   ! South: 
-  if (nthetal > 1) then
+  if (local_max_colat == 180. .and. nthetal > 1) then 
      do iproc=0, nthetal / 2 - 1
         central_count(nthetal-iproc-1) = central_count(iproc)
      enddo
@@ -1389,7 +1389,7 @@ subroutine decompose_inner_cube_opt(central_count, attributed, nthetal, &
           endif
 
           ! South: inverted copy
-          if (nthetal > 1) then 
+          if (local_max_colat == 180. .and. nthetal > 1) then 
               if (solid_domain(ndisc)) then 
                   procel_solidl(central_count(proc(is-1,iz-1)), &
                       nthetal - 1 - proc(is-1,iz-1)) = &
@@ -1404,7 +1404,7 @@ subroutine decompose_inner_cube_opt(central_count, attributed, nthetal, &
   enddo
 
   ! South: 
-  if (nthetal > 1) then
+  if (local_max_colat == 180. .and. nthetal > 1) then 
       do ip = 0, nthetal / 2 - 1
           central_count(nthetal - ip - 1) = central_count(ip)
       enddo

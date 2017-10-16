@@ -59,6 +59,7 @@ contains
 !-----------------------------------------------------------------------------------------
 subroutine generate_skeleton
 
+  use data_bkgrdmodel
   use data_grid
   use data_diag
   use data_mesh
@@ -84,14 +85,14 @@ subroutine generate_skeleton
 
   ! CENTRAL REGION GENERATION (inner shell + central square + buffer layer)
   write(6,*)'define central region...';call flush(6)
-  call define_central_region
+  if (local_max_colat == 180.) &
+     call define_central_region
 
   ! GATHER INFORMATION FROM DIFFERENT REGIONS IN GLOBAL ARRAYS
   write(6,*)'gather skeleton...';call flush(6)
   call gather_skeleton
 
-  ! must add a flag there
-  if (southern) then
+  if (local_max_colat == 180.) then
    write(6,*)'generate southern hemisphere...';call flush(6)
    call generate_southern_hemisphere
   else
@@ -120,7 +121,7 @@ subroutine generate_serendipity(npoin, nel, sg, zg)
   real(kind=dp)   , intent(in)                  :: sg(4,nel),zg(4,nel)
   real(kind=dp)   , dimension(:,:), allocatable :: sg2,zg2
   integer, dimension(:,:), allocatable          :: lnods
-  integer                                       :: iel, inode, ipt,npoin2
+  integer                                       :: iel, inode, ipt, npoin2
   
   ! Numbering arrays
   integer, dimension(:), allocatable :: ipt_iglob,el_iglob,inode_iglob
@@ -1377,6 +1378,7 @@ end subroutine def_ref_cart_coordinates
 !-----------------------------------------------------------------------------------------
 subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
 
+  use data_bkgrdmodel,   only: local_max_colat
   use data_grid,         only: axisfac, router
   use data_bkgrdmodel,   only: nc_init, nthetaslices, rmin
   use data_pdb,          only: theta_max_proc, theta_min_proc
@@ -1404,6 +1406,8 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
         else
            crd(is,iz,1) = -1.d0 + 2**nc_init * ds1 + dble(is-1 - 2**nc_init) * ds2
         endif
+        if (local_max_colat < 180.) &
+           crd(is,iz,1) = (crd(is,iz,1) + 1.) / (90. / local_max_colat) - 1.
      end do
      crd(is,1,2) = -1.d0 
      do iz = 2, nzt+1
@@ -1415,19 +1419,28 @@ subroutine def_ref_cart_coordinates_discont(nst, nzt, crd, dz)
   ds1 = 1.d0 / dble(nst) * axisfac 
   ds2 = (1.d0 - 2**nc_init * ds1) / dble(nst - 2**nc_init)
 
-  write(6,*) ds1, ds2, nst
-  
   allocate(theta_min_proc(0:nthetaslices-1), theta_max_proc(0:nthetaslices-1))
   theta_min_proc(:) = 0.d0
   theta_max_proc(:) = 0.d0
   theta_max_proc(nthetaslices-1) = pi
 
-  do iproc = 0, nthetaslices-2
-     theta_min_proc(iproc+1) = 0.5d0 * pi * (ds1 * 2**nc_init &
-                       + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
-     theta_max_proc(iproc)   = 0.5d0 * pi * (ds1 * 2**nc_init &
-                       + ds2 * (nst * 2 / nthetaslices * (iproc + 1) - 2**nc_init))
-  end do
+  if (local_max_colat == 180.) then
+     do iproc = 0, nthetaslices-2
+        theta_min_proc(iproc+1) = 0.5 * pi * (ds1 * 2**nc_init &
+                          + ds2 * (nst * 2. / nthetaslices * (iproc + 1) - 2**nc_init))
+        theta_max_proc(iproc)   = 0.5 * pi * (ds1 * 2**nc_init &
+                          + ds2 * (nst * 2. / nthetaslices * (iproc + 1) - 2**nc_init))
+     end do
+  else
+     do iproc = 0, nthetaslices-2
+        theta_min_proc(iproc+1) = pi * (ds1 * 2**nc_init &
+                          + ds2 * (nst / nthetaslices * (iproc + 1) - 2**nc_init))
+        theta_max_proc(iproc)   = pi * (ds1 * 2**nc_init &
+                          + ds2 * (nst / nthetaslices * (iproc + 1) - 2**nc_init))
+     end do
+     theta_min_proc(:) = theta_min_proc(:) / (180. / local_max_colat)
+     theta_max_proc(:) = theta_max_proc(:) / (180. / local_max_colat)
+  end if
 
   if (dump_mesh_info_files) then
      open(unit=666,file=diagpath(1:lfdiag)//'/crd_z.txt')
