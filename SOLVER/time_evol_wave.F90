@@ -93,6 +93,9 @@ subroutine prepare_waves
   ! compute source location within mesh and moment tensor/single force field
   call compute_src
 
+  ! Create mask for fluid free surface
+  call create_fluid_free_surface_mask()
+
   ! Prepare output
   if ( dump_energy .and. lpr) then ! only one proc dumps
      write(6,*)'  opening files for kinetic/potential energy...'
@@ -285,7 +288,6 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
-  real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: fluid_free_surface_mask
   integer           :: iel, ipol, jpol
 
   integer           :: iseismo = 0 !< current seismogram sample
@@ -293,16 +295,6 @@ subroutine sf_time_loop_newmark
   integer           :: isnap   = 0 !< current wavefield sample for movies
   integer           :: iter
 
-  fluid_free_surface_mask = 1
-
-  do iel=1,nel_fluid
-     do ipol=0,npol
-        do jpol=0,npol
-            if (rcoord(ipol, jpol, ielfluid(iel)) > 6370999) &
-                fluid_free_surface_mask(ipol, jpol, iel) = 0.
-        enddo
-     enddo
-  enddo
 
   if (lpr) then
      write(6,*)
@@ -393,6 +385,8 @@ subroutine sf_time_loop_newmark
      
      if (src_type(1) .ne. 'monopole') &
         call apply_axis_mask_scal(ddchi1, nel_fluid, ax_el_fluid, naxel_fluid)
+
+     ! Set dchi1 to zero at fluid free surface
      ddchi1 = ddchi1 * fluid_free_surface_mask
 
      iclockcomm = tick()
@@ -1584,6 +1578,23 @@ pure subroutine bdry_copy2solid(usol,uflu)
 end subroutine bdry_copy2solid
 !-----------------------------------------------------------------------------------------
 
+!-----------------------------------------------------------------------------------------
+subroutine create_fluid_free_surface_mask()
+  use utlity, only     : rcoord
+  integer             :: iel, ipol, jpol
+
+  allocate(fluid_free_surface_mask(0:npol, 0:npol, nel_fluid))
+  fluid_free_surface_mask = 1
+
+  do iel=1,nel_fluid
+     do ipol=0,npol
+        do jpol=0,npol
+            if (rcoord(ipol, jpol, ielfluid(iel)) > router - 1) &
+                fluid_free_surface_mask(ipol, jpol, iel) = 0.
+        enddo
+     enddo
+  enddo
+end subroutine
 !-----------------------------------------------------------------------------------------
 
 end module time_evol_wave

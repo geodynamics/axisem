@@ -177,6 +177,9 @@ module data_mesh
   integer, dimension(:), allocatable            :: ielsolid ! (nel_solid)
   integer, dimension(:), allocatable            :: ielfluid ! (nel_fluid)
 
+  ! Mask for the free surface boundary in fluids
+  real(kind=realkind), dimension(:,:,:), allocatable :: fluid_free_surface_mask
+
 contains
 
 !-----------------------------------------------------------------------------------------
