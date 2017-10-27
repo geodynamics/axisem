@@ -214,12 +214,12 @@ subroutine deallocate_preloop_arrays
 
   if (lpr) write(6,*)'  deallocating large mesh arrays...'
   ! TESTING: comment next 4 lines to use with plane wave initial condition
-  deallocate(lnods)
-  deallocate(crd_nodes)
-  deallocate(eltype, coarsing, north, axis)
+  !deallocate(lnods)
+  !deallocate(crd_nodes)
+  !deallocate(eltype, coarsing, north, axis)
   
   if (allocated(ielsolid)) deallocate(ielsolid)
-  if (allocated(ielfluid)) deallocate(ielfluid)
+  !if (allocated(ielfluid)) deallocate(ielfluid)
   if (allocated(spher_radii)) deallocate(spher_radii)
 
   ! Deallocate redundant arrays if memory-efficient dumping strategy is applied

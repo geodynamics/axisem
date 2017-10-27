@@ -462,6 +462,7 @@ subroutine sf_time_loop_newmark
         iclockanelts = tick(id=idanelts, since=iclockanelts)
      endif
 
+     if (fluid_src) call add_source_fl(ddchi1, stf(iter))
      dchi = dchi + half_dt * (ddchi0 + ddchi1)
      ddchi0 = ddchi1
      
@@ -469,7 +470,7 @@ subroutine sf_time_loop_newmark
      call pdistsum_solid(acc1, phase=2) 
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
-     call add_source(acc1, stf(iter))
+     if (.not. fluid_src) call add_source_el(acc1, stf(iter))
      
      !$omp end single
      !$omp sections
@@ -688,7 +689,7 @@ subroutine symplectic_time_loop
         call pdistsum_solid(acc, phase=2)
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
-        call add_source(acc, real(stf_symp(i), kind=realkind))
+        call add_source_el(acc, real(stf_symp(i), kind=realkind))
 
         velo(:,:,:,1) = velo(:,:,:,1) - acc(:,:,:,1) * coefv(i) * inv_mass_rho
 
@@ -1046,7 +1047,27 @@ end subroutine runtime_info
 !-----------------------------------------------------------------------------------------
 !> Add source term inside source elements only if source time function non-zero
 !! and I have the source.
-pure subroutine add_source(acc1, stf1)
+pure subroutine add_source_fl(chi, stf1)
+  
+  real(kind=realkind), intent(in)    :: stf1
+  real(kind=realkind), intent(inout) :: chi(0:,0:,:)
+  integer                            :: iel,i
+
+  i = 0
+  if ( stf1 /= zero) then 
+     do iel=1, nelsrc
+        i = i + 1
+        chi(:,:,ielsrc(iel)) = chi(:,:,ielsrc(iel)) - source_term_fl(:,:,i) * stf1
+     enddo
+  endif
+
+end subroutine add_source_fl
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+!> Add source term inside source elements only if source time function non-zero
+!! and I have the source.
+pure subroutine add_source_el(acc1, stf1)
   
   real(kind=realkind), intent(in)    :: stf1
   real(kind=realkind), intent(inout) :: acc1(0:,0:,:,:)
@@ -1061,7 +1082,7 @@ pure subroutine add_source(acc1, stf1)
      enddo
   endif
 
-end subroutine add_source
+end subroutine add_source_el
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------

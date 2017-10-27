@@ -34,7 +34,7 @@ module data_source
   real(kind=dp)                    :: src_depth, zsrc, srccolat, srclon
   integer                          :: iel_src, ipol_src, jpol_src
   integer                          :: isim
-  logical                          :: have_src
+  logical                          :: have_src, fluid_src
   real(kind=realkind), allocatable :: stf(:)
   logical                          :: rot_src
   real(kind=realkind)              :: Mij(6)
@@ -48,6 +48,7 @@ module data_source
 
   ! elemental source term, maximally across 8 elements and 3 components
   real(kind=realkind), allocatable :: source_term_el(:,:,:,:)
+  real(kind=realkind), allocatable :: source_term_fl(:,:,:)
   integer                          :: nelsrc, ielsrc(8)
 
   ! How to deal with the source for kernel wavefield dumps

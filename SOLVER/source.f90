@@ -247,8 +247,6 @@ subroutine compute_src
   real(kind=dp)                    :: s,z,r,theta
   character(len=256)               :: errmsg
 
-  allocate(source_term(0:npol,0:npol,1:nel_solid,1:3))
-  source_term = 0. 
 
   zsrc = router - src_depth
 
@@ -264,59 +262,78 @@ subroutine compute_src
 
   ! @TODO: should add a test whether it is the first theta slice
 
-  poletype: select case(src_type(1))
+  if (fluid_src) then
+     write(errmsg,*) 'only explosions in the fluid'
+     call pcheck(.not. src_type(2) == 'explosion', errmsg) 
+         
+     allocate(source_term(0:npol,0:npol,1:nel_fluid,1:3))
+     source_term = 0. 
 
-  ! MONOPOLE
-  case ('monopole') poletype
-     if (lpr) write(6,*) '  computing MONOPOLE Source with...'
+     if (lpr) write(6,*) '  ...explosion in the fluid'
+     allocate(point_source(0:npol,0:npol,1:nel_fluid))
 
-     select case (src_type(2))
-     case('vertforce') 
-        if (lpr) write(6,*) '  ...vertical single force'
-        allocate(point_source(0:npol,0:npol,1:nel_solid))
-        call define_bodyforce(point_source,iel_src2,ipol_src2,jpol_src2)
-        source_term(:,:,:,3) = point_source / (two * pi)
-        deallocate(point_source)
+     call define_bodyforce(point_source,iel_src2,ipol_src2,jpol_src2)
+     source_term(:,:,:,1) = point_source / (two * pi)
+     deallocate(point_source)
+  else
+     allocate(source_term(0:npol,0:npol,1:nel_solid,1:3))
+     source_term = 0. 
 
-     case default
-        if (lpr) write(6,*) '  ...moment tensor elements for ', src_type(2)
+     poletype: select case(src_type(1))
+
+     ! MONOPOLE
+     case ('monopole') poletype
+        if (lpr) write(6,*) '  computing MONOPOLE Source with...'
+
+        select case (src_type(2))
+        case('vertforce') 
+           if (lpr) write(6,*) '  ...vertical single force'
+           allocate(point_source(0:npol,0:npol,1:nel_solid))
+           call define_bodyforce(point_source,iel_src2,ipol_src2,jpol_src2)
+           source_term(:,:,:,3) = point_source / (two * pi)
+           deallocate(point_source)
+
+        case default
+           if (lpr) write(6,*) '  ...moment tensor elements for ', src_type(2)
+           call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
+           source_term = source_term / (2 * pi)
+
+        end select
+
+     ! DIPOLE
+     case ('dipole') poletype
+        if (lpr) write(6,*) '  computing DIPOLE Source with...'
+
+        select case(src_type(2))
+        case ('thetaforce', 'phiforce')
+           if (lpr) write(6,*) '  ...horizontal single ', src_type(2)
+           allocate(point_source(0:npol,0:npol,1:nel_solid))
+           call define_bodyforce(point_source, iel_src2, ipol_src2, jpol_src2)
+           source_term(:,:,:,1) = point_source / pi
+           deallocate(point_source)
+
+        case default
+           if (lpr) write(6,*) '  ...moment tensor elements for ', src_type(2)
+           call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
+           source_term = source_term / pi
+
+        end select
+
+     ! QUADRUPOLE
+     case ('quadpole') poletype
+        if (lpr) write(6,*)'  computing QUADRUPOLE Source with...'
+        if (lpr) write(6,*)'  ...moment tensor elements for ',src_type(2)
         call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
         source_term = source_term / (2 * pi)
 
-     end select
-
-  ! DIPOLE
-  case ('dipole') poletype
-     if (lpr) write(6,*) '  computing DIPOLE Source with...'
-
-     select case(src_type(2))
-     case ('thetaforce', 'phiforce')
-        if (lpr) write(6,*) '  ...horizontal single ', src_type(2)
-        allocate(point_source(0:npol,0:npol,1:nel_solid))
-        call define_bodyforce(point_source, iel_src2, ipol_src2, jpol_src2)
-        source_term(:,:,:,1) = point_source / pi
-        deallocate(point_source)
-
      case default
-        if (lpr) write(6,*) '  ...moment tensor elements for ', src_type(2)
-        call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
-        source_term = source_term / pi
+        write(errmsg,*) 'we only support monopoles, dipoles, quadrupoles, and not ',src_type(1)
+        ! Will stop the program
+        call pcheck(.true., errmsg) 
 
-     end select
+     end select poletype
 
-  ! QUADRUPOLE
-  case ('quadpole') poletype
-     if (lpr) write(6,*)'  computing QUADRUPOLE Source with...'
-     if (lpr) write(6,*)'  ...moment tensor elements for ',src_type(2)
-     call define_moment_tensor(iel_src2, ipol_src2, jpol_src2, source_term)
-     source_term = source_term / (2 * pi)
-
-  case default
-     write(errmsg,*) 'we only support monopoles, dipoles, quadrupoles, and not ',src_type(1)
-     ! Will stop the program
-     call pcheck(.true., errmsg) 
-
-  end select poletype
+  endif
 
   ! if I don't have the source
   if (.not. have_src) then 
@@ -325,7 +342,7 @@ subroutine compute_src
   endif
  
   ! write all elements containing non-zero source term components to file
-  if (diagfiles.and.have_src) then
+  if (diagfiles .and. have_src .and. .not. fluid_src) then
      open(619, file=infopath(1:lfinfo)//'/src_term.dat'//appmynum) 
      open(621, file=infopath(1:lfinfo)//'/src_term_norm1.dat'//appmynum) 
      open(622, file=infopath(1:lfinfo)//'/src_term_norm2.dat'//appmynum) 
@@ -358,16 +375,29 @@ subroutine compute_src
   endif !have_src
 
   ! construct source term array that only lives on nonzero elements (max. 8)
-  allocate(source_term_el(0:npol,0:npol,8,3))
-  source_term_el = zero
-  k = 0 
-  do ielem = 1, nel_solid
-     if ( maxval(abs(source_term(:,:,ielem,:))) > zero) then
-        k = k + 1
-        ielsrc(k) = ielem
-        source_term_el(:,:,k,:) = source_term(:,:,ielem,:)
-     endif
-  enddo
+  if (fluid_src) then
+      allocate(source_term_fl(0:npol,0:npol,8))
+      source_term_fl = zero
+      k = 0 
+      do ielem = 1, nel_fluid
+         if ( maxval(abs(source_term(:,:,ielem,1))) > zero) then
+            k = k + 1
+            ielsrc(k) = ielem
+            source_term_fl(:,:,k) = source_term(:,:,ielem,1)
+         endif
+      enddo
+  else
+      allocate(source_term_el(0:npol,0:npol,8,3))
+      source_term_el = zero
+      k = 0 
+      do ielem = 1, nel_solid
+         if ( maxval(abs(source_term(:,:,ielem,:))) > zero) then
+            k = k + 1
+            ielsrc(k) = ielem
+            source_term_el(:,:,k,:) = source_term(:,:,ielem,:)
+         endif
+      enddo
+  endif
   nelsrc = k
      
   if (verbose > 1) write(69,*) 'nelsrc =', nelsrc
@@ -418,10 +448,10 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   call pcheck(zsrc > router, errmsg)
 
   ! Only allow sources in the solid region, fixated to northern axis.
-  do ielem = 1, nel_solid
+  do ielem = 1, nelem
      do ipol = 0, npol
         do jpol = 0, npol
-           call compute_coordinates(s, z, r, theta, ielsolid(ielem), ipol, jpol)
+           call compute_coordinates(s, z, r, theta, ielem, ipol, jpol)
            if (abs(s)>smallval_dble .or. z<smallval_dble) cycle
            if (dabs(z-zsrc) < dzsrc) then 
               zsrcout = z
@@ -443,6 +473,14 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   enddo
 15 format('  found a second point with same distance:', i6, i3, i3, 1pe13.3)
 
+  ! @TODO: check if both elements are in either the solid or the fluid
+  if (iel_src > nel_fluid) then
+      iel_src = iel_src - nel_fluid
+      iel_src2 = iel_src2 - nel_fluid
+      fluid_src = .false.
+  else
+      fluid_src = .true.
+  endif
 
   ! Make sure only closest processor has source
   mydzsrc = dzsrc
@@ -870,9 +908,9 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
 
   use data_mesh
   use utlity
-  use commun, only: pdistsum_solid_1D
+  use commun, only: pdistsum_solid_1D, pdistsum_fluid
   
-  real(kind=realkind), intent(out) :: f(0:npol,0:npol,nel_solid)
+  real(kind=realkind), intent(out) :: f(0:,0:,:)
   integer, intent(in)              :: iel_src2, ipol_src2, jpol_src2
   integer                          :: liel_src, lipol_src, ljpol_src, ipol, jpol, i
   character(len=16)                :: fmt1
@@ -888,9 +926,13 @@ subroutine define_bodyforce(f, iel_src2, ipol_src2, jpol_src2)
   endif
 
   ! assembly
-  call pdistsum_solid_1D(f)
+  if (fluid_src) then
+     call pdistsum_fluid(f)
+  else
+     call pdistsum_solid_1D(f)
+  endif
 
-  if (have_src .and. verbose > 1) then
+  if (have_src .and. verbose > 1 .and. .not. fluid_src) then
 
      ! write out the source element
      fmt1 = "(K(1pe12.3))"
