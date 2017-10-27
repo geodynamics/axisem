@@ -270,6 +270,8 @@ subroutine sf_time_loop_newmark
   use attenuation,          only: n_sls_attenuation
   use attenuation,          only: att_coarse_grained
   use data_mesh
+
+  use utlity,               only: rcoord
   
   ! Solid fields
   real(kind=realkind), dimension(0:npol,0:npol,nel_solid,3) :: disp, velo
@@ -283,10 +285,24 @@ subroutine sf_time_loop_newmark
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: chi, dchi
   real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: ddchi0, ddchi1
 
+  real(kind=realkind), dimension(0:npol,0:npol,nel_fluid)   :: fluid_free_surface_mask
+  integer           :: iel, ipol, jpol
+
   integer           :: iseismo = 0 !< current seismogram sample
   integer           :: istrain = 0 !< current kernel wavefield sample
   integer           :: isnap   = 0 !< current wavefield sample for movies
   integer           :: iter
+
+  fluid_free_surface_mask = 1
+
+  do iel=1,nel_fluid
+     do ipol=0,npol
+        do jpol=0,npol
+            if (rcoord(ipol, jpol, ielfluid(iel)) > 6370999) &
+                fluid_free_surface_mask(ipol, jpol, iel) = 0.
+        enddo
+     enddo
+  enddo
 
   if (lpr) then
      write(6,*)
@@ -377,6 +393,7 @@ subroutine sf_time_loop_newmark
      
      if (src_type(1) .ne. 'monopole') &
         call apply_axis_mask_scal(ddchi1, nel_fluid, ax_el_fluid, naxel_fluid)
+     ddchi1 = ddchi1 * fluid_free_surface_mask
 
      iclockcomm = tick()
      call pdistsum_fluid(ddchi1, phase=1)
