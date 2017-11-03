@@ -180,6 +180,10 @@ module data_mesh
   ! Mask for the free surface boundary in fluids
   real(kind=realkind), dimension(:,:,:), allocatable :: fluid_free_surface_mask
 
+  ! damping factor for absorbing boundaries
+  real(kind=realkind), dimension(:,:,:), allocatable   :: fluid_absorbing_gamma
+  real(kind=realkind), dimension(:,:,:), allocatable   :: solid_absorbing_gamma
+
 contains
 
 !-----------------------------------------------------------------------------------------

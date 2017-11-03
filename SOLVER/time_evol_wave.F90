@@ -96,6 +96,9 @@ subroutine prepare_waves
   ! Create mask for fluid free surface
   call create_fluid_free_surface_mask()
 
+  ! create damping factor for absorbing boundaries
+  call create_absorbing_gamma()
+
   ! Prepare output
   if ( dump_energy .and. lpr) then ! only one proc dumps
      write(6,*)'  opening files for kinetic/potential energy...'
@@ -378,6 +381,8 @@ subroutine sf_time_loop_newmark
      !$omp end single
      call glob_fluid_stiffness(ddchi1, chi) 
      !$omp single
+     
+     if (fluid_src) call add_source_fl(ddchi1, stf(iter))
 
      iclockstiff = tick(id=idstiff, since=iclockstiff)
 
@@ -439,6 +444,10 @@ subroutine sf_time_loop_newmark
      iclockcomm = tick(id=idcomm, since=iclockcomm)
 
      ddchi1 = - inv_mass_fluid * ddchi1
+
+     ! absorbing boundaries fluid
+     ddchi1 = ddchi1 - 2 * fluid_absorbing_gamma * dchi - fluid_absorbing_gamma ** 2 * chi
+
      call bdry_copy2solid(acc1, ddchi1)
 
      select case (src_type(1))
@@ -462,7 +471,6 @@ subroutine sf_time_loop_newmark
         iclockanelts = tick(id=idanelts, since=iclockanelts)
      endif
 
-     if (fluid_src) call add_source_fl(ddchi1, stf(iter))
      dchi = dchi + half_dt * (ddchi0 + ddchi1)
      ddchi0 = ddchi1
      
@@ -476,6 +484,8 @@ subroutine sf_time_loop_newmark
      !$omp sections
      !$omp section
      acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
+     acc1(:,:,:,1) = acc1(:,:,:,1) - 2 * solid_absorbing_gamma * velo(:,:,:,1) - &
+         solid_absorbing_gamma ** 2 * disp(:,:,:,1)
      velo(:,:,:,1) = velo(:,:,:,1) + half_dt * (acc0(:,:,:,1) + acc1(:,:,:,1))
      acc0(:,:,:,1) = acc1(:,:,:,1)
 
@@ -486,12 +496,16 @@ subroutine sf_time_loop_newmark
      else
         acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
      endif
+     acc1(:,:,:,3) = acc1(:,:,:,3) - 2 * solid_absorbing_gamma * velo(:,:,:,3) - &
+         solid_absorbing_gamma ** 2 * disp(:,:,:,3)
      velo(:,:,:,3) = velo(:,:,:,3) + half_dt * (acc0(:,:,:,3) + acc1(:,:,:,3))
      acc0(:,:,:,3) = acc1(:,:,:,3)
 
      !$omp section
      if (src_type(1) .ne. 'monopole') then
         acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
+        acc1(:,:,:,2) = acc1(:,:,:,2) - 2 * solid_absorbing_gamma * velo(:,:,:,2) - &
+             solid_absorbing_gamma ** 2 * disp(:,:,:,2)
         velo(:,:,:,2) = velo(:,:,:,2) + half_dt * (acc0(:,:,:,2) + acc1(:,:,:,2))
         acc0(:,:,:,2) = acc1(:,:,:,2)
      end if
@@ -1615,6 +1629,81 @@ subroutine create_fluid_free_surface_mask()
         enddo
      enddo
   enddo
+end subroutine
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine create_absorbing_gamma()
+  use utlity, only     : rcoord, thetacoord, scoord, zcoord
+  use commun, only     : pmax, pmin
+  integer             :: iel, ipol, jpol, num_elem
+
+  real(kind=dp)       :: hmax, U0, distance_factor, rmin, thetamax, dist, r, t
+
+  allocate(fluid_absorbing_gamma(0:npol, 0:npol, nel_fluid))
+  allocate(solid_absorbing_gamma(0:npol, 0:npol, nel_solid))
+  fluid_absorbing_gamma = 0
+  solid_absorbing_gamma = 0
+
+  hmax = 0.
+  do iel=1,nelem
+     hmax = max(hmax, &
+        (scoord(0,0,iel) - scoord(0,npol,iel)) ** 2 + &
+           (zcoord(0,0,iel) - zcoord(0,npol,iel)) ** 2, &
+        (scoord(0,npol,iel) - scoord(npol,npol,iel)) ** 2 + &
+           (zcoord(0,npol,iel) - zcoord(npol,npol,iel)) ** 2, &
+        (scoord(npol,npol,iel) - scoord(npol,0,iel)) ** 2 + &
+           (zcoord(npol,npol,iel) - zcoord(npol,0,iel)) ** 2, &
+        (scoord(npol,0,iel) - scoord(0,0,iel)) ** 2 + &
+           (zcoord(npol,0,iel) - zcoord(0,0,iel)) ** 2)
+  enddo
+
+  hmax = hmax ** 0.5
+  rmin = dsqrt(minval(crd_nodes(:, 1) ** 2 + crd_nodes(:, 2) ** 2))
+  thetamax = maxval(atan2(crd_nodes(:, 1), crd_nodes(:, 2)))
+
+  print *, rmin, thetamax, hmax
+  hmax = pmax(hmax)
+  rmin = pmin(rmin)
+  thetamax = pmax(thetamax)
+  print *, rmin, thetamax, hmax
+
+  num_elem = 15
+  distance_factor = num_elem * hmax
+  ! using vpmin for now as I don't have the global mininum velocity available and 
+  ! vsmin = 0.
+  U0 = vpmin / (2 * hmax)
+
+  print *, distance_factor
+
+  do iel=1,nel_fluid
+     do ipol=0,npol
+        do jpol=0,npol
+           r = rcoord(ipol, jpol, ielfluid(iel))
+           t = thetacoord(ipol, jpol, ielfluid(iel))
+           dist = min(r - rmin, (thetamax - t) * r)
+           if (dist < distance_factor) then
+              fluid_absorbing_gamma(ipol, jpol, iel) = &
+                 U0 * (1. - sin(pi * dist / (2 * distance_factor)) ** 2)
+           endif
+        enddo
+     enddo
+  enddo
+
+  do iel=1,nel_solid
+     do ipol=0,npol
+        do jpol=0,npol
+           r = rcoord(ipol, jpol, ielsolid(iel))
+           t = thetacoord(ipol, jpol, ielsolid(iel))
+           dist = min(r - rmin, (thetamax - t) * r)
+           if (dist < distance_factor) then
+              solid_absorbing_gamma(ipol, jpol, iel) = &
+                 U0 * (1. - sin(pi * dist / (2 * distance_factor)) ** 2)
+           endif
+        enddo
+     enddo
+  enddo
+
 end subroutine
 !-----------------------------------------------------------------------------------------
 
