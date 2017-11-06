@@ -646,7 +646,7 @@ def PyAxi(**kwargs):
                             print '\n        I love it!'
                             print "\n============================="
                             temp = killprocess('axisem')
-                            return
+                            raise RuntimeError('Solver crashed')
 
                     print print_output
                     if input['verbose'] == 'Y':
@@ -713,7 +713,7 @@ def PyAxi(**kwargs):
                             print '\n        I love it!'
                             print "\n============================="
                             temp = killprocess('axisem')
-                            return
+                            raise RuntimeError('Solver crashed')
                         test_1 = -1
                     else:
                         test_1 = 0
@@ -738,7 +738,7 @@ def PyAxi(**kwargs):
                             print '\n        I love it!'
                             print "\n============================="
                             temp = killprocess('axisem')
-                            return
+                            raise RuntimeError('Solver crashed')
                         test_2 = -1
                     else:
                         test_2 = 0
@@ -764,7 +764,7 @@ def PyAxi(**kwargs):
                             print '\n        I love it!'
                             print "\n============================="
                             temp = killprocess('axisem')
-                            return
+                            raise RuntimeError('Solver crashed')
                     else:
                         test_3 = 0
                     print 'MXZ_MYZ:       ' + print_output_3
@@ -788,7 +788,7 @@ def PyAxi(**kwargs):
                             print '\n        I love it!'
                             print "\n============================="
                             temp = killprocess('axisem')
-                            return
+                            raise RuntimeError('Solver crashed')
                         test_4 = -1
                     else:
                         test_4 = 0
