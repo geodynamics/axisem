@@ -52,7 +52,7 @@ subroutine check(status)
     integer, intent ( in) :: status !< Error code
 #ifdef enable_netcdf
     if (status /= nf90_noerr) then 
-        print *, trim(nf90_strerror(status))
+        print *, 'CPU: ', mynum, trim(nf90_strerror(status))
         call abort()
     end if
 #endif

@@ -371,11 +371,11 @@ subroutine nc_dump_strain(isnap_loc)
         do iproc=0, nproc-1
             if (iproc == mynum) then
                 call c_wait_for_io()
-                call barrier
             end if
+            call barrier()
         end do
         do iproc=0,nproc-1
-            if (iproc == mynum .and. (npoints > 0 .or. maxind > 0)) then
+            dump_mystrain: if (iproc == mynum .and. (npoints > 0 .or. maxind > 0)) then
 #endif
                 isnap_global = nstrain 
                 ndumps = stepstodump
@@ -387,8 +387,8 @@ subroutine nc_dump_strain(isnap_loc)
                 call nc_dump_strain_to_disk()
                 if (verbose > 1) write(6,*) mynum, 'finished dumping strain'
 #ifndef enable_parallel_netcdf
-            end if
-            call barrier
+            end if dump_mystrain
+            call barrier()
         end do
 #endif
     end if
