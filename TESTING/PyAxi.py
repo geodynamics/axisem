@@ -313,7 +313,7 @@ def PyAxi(**kwargs):
                         print '\n       MESHER crashed'
                         print "\n============================="
                         raise RuntimeError('Mesher crashed')
-                        return
+                        sys.exit('Solver crashed')
                     check_process='DONE'
             print 'DONE'
             print '--------------------------'
@@ -809,7 +809,7 @@ def PyAxi(**kwargs):
         print '\n       SOLVER crashed'
         print "\n============================="
         raise RuntimeError('Solver crashed')
-        return
+        sys.exit('Solver crashed')
 
     ##############################################################
     ######################## Post-Processing #####################
