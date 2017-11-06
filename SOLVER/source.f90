@@ -476,15 +476,6 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   enddo
 15 format('  found a second point with same distance:', i6, i3, i3, 1pe13.3)
 
-  ! @TODO: check if both elements are in either the solid or the fluid
-  if (iel_src > nel_fluid) then
-      iel_src = iel_src - nel_fluid
-      iel_src2 = iel_src2 - nel_fluid
-      fluid_src = .false.
-  else
-      fluid_src = .true.
-  endif
-
   ! Make sure only closest processor has source
   mydzsrc = dzsrc
   have_src = .true.
@@ -517,6 +508,18 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   endif !nproc>1
 
   if (have_src) then
+
+     ! @TODO: check if both elements are in either the solid or the fluid
+     print *, 'CPU: ', mynum, iel_src, iel_src2, nel_fluid
+     if (iel_src > nel_fluid) then
+         iel_src = iel_src - nel_fluid
+         iel_src2 = iel_src2 - nel_fluid
+         fluid_src = .false.
+     else
+         fluid_src = .true.
+     endif
+
+
      if (ipol_src /= 0) then
         write(6,'(a,/,a,i7,i2,i2)') & 
               'ERROR: Source should be on axis, i.e. ipol_src=0, but:', &
