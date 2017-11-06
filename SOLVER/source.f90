@@ -263,8 +263,11 @@ subroutine compute_src
   ! @TODO: should add a test whether it is the first theta slice
 
   if (fluid_src) then
-     write(errmsg,*) 'only explosions in the fluid'
-     call pcheck(.not. src_type(2) == 'explosion', errmsg) 
+     ! Only explosion sources are implemented in the fluid so far      
+     if (src_type(2).ne.'explosion') then
+        write(6,*) 'only explosions in the fluid'
+        stop
+     end if
          
      allocate(source_term(0:npol,0:npol,1:nel_fluid,1:3))
      source_term = 0. 
