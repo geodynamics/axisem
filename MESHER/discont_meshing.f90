@@ -76,6 +76,19 @@ subroutine create_subregions
 
    call define_discont
 
+   if (max_depth > 0.) then
+      rmin = discont(1) - max_depth * 1e3
+      do idom = 1, ndisc
+        print *, idom, discont(idom)
+        if (discont(idom) < rmin) exit
+      end do 
+      ndisc = idom - 1
+      discont(ndisc) = rmin
+      write(6,*) 
+      write(6,*) 'Setting minimum radius to ', rmin, ' meter'
+      write(6,*) 
+   end if
+
    allocate(rdisc_top(ndisc), rdisc_bot(ndisc), solid_domain(ndisc)) 
    allocate(idom_fluid(ndisc))
    idom_fluid=0
@@ -186,7 +199,8 @@ subroutine create_subregions
   endif
 
   ! factor 0.8 to compensate for the deformation of the elements in the inner core
-  rmin = 0.8 * maxh_icb * (ns_ref / (2.d0 * 2**nc_init) + 1)
+  if (max_depth<0) &
+     rmin = 0.8 * maxh_icb * (ns_ref / (2.d0 * 2**nc_init) + 1)
 
   if (dump_mesh_info_screen) &
         write(6,*) 'actual ds at innermost discontinuity [km] :', &
@@ -206,9 +220,6 @@ subroutine create_subregions
             int(ns_ref / (2.* 2**nc_init) + 1.)
   endif
      
-  if (local_max_colat < 180.) &
-     rmin = rdisc_top(ndisc)
-
   rdisc_bot(ndisc) = rmin 
 
   ! trial loop to calculate global amount of radial layers icount_glob and 

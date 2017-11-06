@@ -62,9 +62,10 @@ subroutine read_params
   pts_wavelngth   = 1.5
   courant         = 0.6
   local_max_colat = 180.
-  router          = 6.371e6
+  max_depth       = -1.  
   axisfac         = 0.7
   fluidfac        = 0.9
+  router          = 6.371e6
   dump_mesh_info_files = .false.
   dump_mesh_info_screen = .false.
   only_suggest_ntheta = .false.
@@ -128,8 +129,8 @@ subroutine read_params
       case('LOCAL_MAX_COLAT')
           read(keyvalue, *) local_max_colat
 
-      case('RADIUS') 
-          read(keyvalue, *) router
+      case('MAX_DEPTH')
+          read(keyvalue, *) max_depth
 
       case('AXIS_SHRINKING_FACTOR') 
           read(keyvalue, *) axisfac 
@@ -185,7 +186,6 @@ subroutine read_params
   write(6,*) 'Courant number                   : ',courant
   write(6,*) 'coarsening levels                : ',nc_init
   write(6,*) 'processors used in solver        : ',nthetaslices
-  write(6,*) 'outer radius [m]                 : ',router
   write(6,*) 'save mesh info files?            : ',dump_mesh_info_files
   write(6,*) 'print mesh info to screen?       : ',dump_mesh_info_screen
   write(6,*) 'path to dump output files        : ',trim(diagpath)

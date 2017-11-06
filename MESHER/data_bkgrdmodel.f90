@@ -35,6 +35,7 @@ module data_bkgrdmodel
   logical                    :: have_fluid, have_solid
   real(kind=dp)              :: pts_wavelngth
   real(kind=dp)              :: period, courant, local_max_colat, local_lat_fac
+  real(kind=dp)              :: max_depth
   real(kind=dp)              :: dt
   integer                    :: nc_init, nthetaslices, nradialslices
   

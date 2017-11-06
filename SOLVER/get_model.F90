@@ -131,18 +131,19 @@ subroutine read_model(rho, lambda, mu, xi_ani, phi_ani, eta_ani, &
           if (diagfiles) write(65,10) iel, r1, ndisc, discont(ndisc)
       endif
       if (.not. foundit) then 
+          if (diagfiles) write(65,10) iel, r1, 99999, 99999.
           write(6,*)'Processor', mynum, ' reports problem:'
           write(6,*)'havent found domain for element', iel
           write(6,*)'...of radius', r1
           write(6,*)'Disconts are located at:'
-          write(6,11) discont(1:ndisc)
+          write(6,11) nint(discont(1:ndisc))
           stop
       endif
   enddo
   if (diagfiles) close(65)
 
 10 format(i9,1pe15.7,i3,2(1pe11.3))
-11 format(e11.3)
+11 format(I12)
   if (do_mesh_tests) then
       if (lpr .and. verbose > 1) write(6,*)'    checking discontinuity discretization...' 
       call check_mesh_discontinuities(ieldom,domcount)

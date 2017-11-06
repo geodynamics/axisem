@@ -54,8 +54,11 @@ WRITE_1DMODEL       true
 COARSENING_LAYERS   3
 
 # make a local mesh with maximum colat measured from the source (default: 180.)
-# removes the inner core from the model 
 # LOCAL_MAX_COLAT     10.
+
+# Create mesh to a maximum depth (in km) only. 
+# A negative value creates a mesh to the center of the planet
+# MAX_DEPTH       -1
 
 ############### FOR THE INCLINED ##############################################
 # Polynomial order of basis for GLL points inside elements (default: 4)
@@ -76,9 +79,6 @@ COARSENING_LAYERS   3
 
 # Courant number (default: 0.6)
 # COURANT_NR          0.6
-
-# Surface radius (default: 6.371e+6
-# RADIUS             6.371e+6   
 
 # Save mesh debug files (WARNING: large) (default: false)
 # SAVE_DEBUG_FILES     false
