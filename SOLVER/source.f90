@@ -436,11 +436,11 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
 
   use data_mesh
   use utlity
-  use commun, only: pmin, psum_int
+  use commun, only: pmin, psum_int, broadcast_log
   
   integer, intent(out) :: iel_src2, ipol_src2, jpol_src2
   real(kind=dp)        :: s, z, r, theta, mydzsrc, zsrcout, dzsrc
-  integer              :: ielem, ipol, jpol, count_src_procs
+  integer              :: ielem, ipol, jpol, count_src_procs, iproc_src
   character(len=256)   :: errmsg
   
   ! find depth that is closest to desired value zsrc
@@ -571,6 +571,16 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
 
      zsrc = zsrcout
   endif
+
+  if (have_src) then
+     iproc_src = mynum
+  else
+     iproc_src = 0
+  end if
+  iproc_src = psum_int(iproc_src)
+  call broadcast_log(fluid_src, iproc_src)
+  print *, mynum, fluid_src
+
 
 end subroutine find_srcloc
 !-----------------------------------------------------------------------------------------
