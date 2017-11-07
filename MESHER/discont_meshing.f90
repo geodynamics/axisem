@@ -82,10 +82,11 @@ subroutine create_subregions
         print *, idom, discont(idom)
         if (discont(idom) < rmin) exit
       end do 
-      ndisc = idom - 1
       discont(ndisc) = rmin
+      ndisc = idom - 1
       write(6,*) 
       write(6,*) 'Setting minimum radius to ', rmin, ' meter'
+      write(6,*) 'Using only the first ', ndisc, 'layers'
       write(6,*) 
    end if
 
