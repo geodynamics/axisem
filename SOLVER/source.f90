@@ -510,7 +510,6 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   if (have_src) then
 
      ! @TODO: check if both elements are in either the solid or the fluid
-     print *, 'CPU: ', mynum, iel_src, iel_src2, nel_fluid
      if (iel_src > nel_fluid) then
          iel_src = iel_src - nel_fluid
          iel_src2 = iel_src2 - nel_fluid
@@ -579,7 +578,6 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   end if
   iproc_src = psum_int(iproc_src)
   call broadcast_log(fluid_src, iproc_src)
-  print *, mynum, fluid_src
 
 
 end subroutine find_srcloc
