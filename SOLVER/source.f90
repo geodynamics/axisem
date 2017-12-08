@@ -176,7 +176,7 @@ subroutine compute_stf
   write(errmsg, *) & !'(a,/,a,2(f7.4))') &
                 'Problem with discrete source shift: not a multiplicative of deltat...', &
                 'source shift, deltat: ', dt_src_shift, deltat !, dt_src_shift/deltat
-  call pcheck(abs(nint(dt_src_shift / deltat) - dt_src_shift / deltat) > 0.01 * deltat, errmsg)
+  call pcheck(abs(nint(dt_src_shift / deltat) - dt_src_shift / deltat) > deltat, errmsg)
 
   ! time shift in the Fourier domain (used in post processing/kerner... eventually)
   ! timeshift_fourier(0:nomega) = exp(cmplx(0.,1.) *omega(0:nomega)*dt_src_shift)
@@ -579,7 +579,6 @@ subroutine find_srcloc(iel_src2, ipol_src2, jpol_src2)
   end if
   iproc_src = psum_int(iproc_src)
   call broadcast_log(fluid_src, iproc_src)
-  print *, mynum, fluid_src
 
 
 end subroutine find_srcloc
