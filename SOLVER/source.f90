@@ -176,7 +176,7 @@ subroutine compute_stf
   write(errmsg, *) & !'(a,/,a,2(f7.4))') &
                 'Problem with discrete source shift: not a multiplicative of deltat...', &
                 'source shift, deltat: ', dt_src_shift, deltat !, dt_src_shift/deltat
-  call pcheck(abs(nint(dt_src_shift / deltat) - dt_src_shift / deltat) > 0.01 * deltat, errmsg)
+  call pcheck(abs(nint(dt_src_shift / deltat) - dt_src_shift / deltat) > deltat, errmsg)
 
   ! time shift in the Fourier domain (used in post processing/kerner... eventually)
   ! timeshift_fourier(0:nomega) = exp(cmplx(0.,1.) *omega(0:nomega)*dt_src_shift)
