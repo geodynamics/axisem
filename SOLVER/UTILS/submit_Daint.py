@@ -8,23 +8,34 @@ import argparse
 import numpy as np
 
 
-def create_inparam_mesh(mesh_file, mesh_period, ntheta=0, nrad=1):
+def create_inparam_mesh(mesh_file, mesh_period, ntheta=0, nrad=1, ncl=1,
+                        max_depth=None, max_colat=None):
     with open('inparam_mesh', 'w') as fid:
         fid.write('BACKGROUND_MODEL external \n')
         fid.write('EXT_MODEL "%s" \n' % os.path.abspath(mesh_file))
         fid.write('DOMINANT_PERIOD %f \n' % mesh_period)
+        fid.write('NRADIAL_SLICES %d \n' % nrad)
+
+        if max_depth:
+            fid.write('MAX_DEPTH %f \n' % max_depth)
+
+        if ncl:
+            fid.write('COARSENING_LAYERS %d \n' % ncl)
+
+        if max_colat:
+            fid.write('LOCAL_MAX_COLAT %f \n' % max_colat)
         
         if ntheta==0:
             fid.write('NTHETA_SLICES %d \n' % 1)
-            fid.write('NRADIAL_SLICES %d \n' % nrad)
             fid.write('ONLY_SUGGEST_NTHETA TRUE \n')
         else:
             fid.write('NTHETA_SLICES %d \n' % ntheta)
-            fid.write('NRADIAL_SLICES %d \n' % nrad)
 
 
-def get_ntheta(mesh_file, mesh_period):
-    create_inparam_mesh(mesh_file, mesh_period, ntheta=0, nrad=1)
+def get_ntheta(mesh_file, mesh_period, 
+               max_depth=None, max_colat=None):
+    create_inparam_mesh(mesh_file, mesh_period, ntheta=0, nrad=1,
+                        max_depth=max_depth, max_colat=max_colat)
     output = sp.check_output('./xmesh')
     output_lines = output.split(sep=b'\n')
     for iline in range(0, len(output_lines)):
@@ -62,6 +73,19 @@ def define_arguments():
     helptext = 'Number of radial slices \n'
     parser.add_argument('--nrad', type=int, help=helptext)
 
+    helptext = 'Number of theta slices \n'
+    parser.add_argument('--ntheta', type=int, help=helptext)
+
+    helptext = 'Number of coarsening layers\n'
+    parser.add_argument('--ncl', type=int, default=1, help=helptext)
+
+    helptext = 'Maximum colatitude\n'
+    parser.add_argument('--max_colat', type=float, 
+                        help=helptext)
+    helptext = 'Maximum depth in kilometer\n'
+    parser.add_argument('--max_depth', type=float, 
+                        help=helptext)
+    
     helptext = 'Wall time for the solver in hours\n'
     parser.add_argument('-w', '--walltime', type=float, default=1.0, 
                         help=helptext)
@@ -114,13 +138,21 @@ fnam_mesh_file = os.path.split(args.mesh_file)[-1]
 
 shutil.copyfile(src=args.mesh_file,
                 dst=os.path.join(meshdir, fnam_mesh_file))
-ntheta = get_ntheta(fnam_mesh_file, args.mesh_period)
-print('  Optimal number of theta slices: %d' % ntheta)
+if args.ntheta:
+    print('Using %d theta slices' % args.ntheta)
+    ntheta = args.ntheta
+else:
+    ntheta = get_ntheta(fnam_mesh_file, args.mesh_period,
+                        max_depth=args.max_depth,
+                        max_colat=args.max_colat)
+    print('  Optimal number of theta slices: %d' % ntheta)
 nrad = args.nrad
 create_inparam_mesh(args.mesh_file, 
                     args.mesh_period, 
                     ntheta=ntheta, 
-                    nrad=nrad)
+                    nrad=nrad,
+                    max_depth=args.max_depth,
+                    max_colat=args.max_colat)
          
 ncpu = ntheta * nrad
 print('  Number of cores used:           %d' % ncpu)
@@ -133,7 +165,7 @@ batch_mesher_fmt =                                                  \
         '#SBATCH --cpus-per-task=1 \n' +                            \
         '#SBATCH --time=00:30:00 \n' +                              \
         '#SBATCH --account=%s \n' % args.account +                  \
-        '#SBATCH --mail-type=ALL \n' +                              \
+        '#SBATCH --mail-type=BEGIN,FAIL \n' +                       \
         '#SBATCH --mail-user=%s \n' % args.mail_adress +            \
         '#SBATCH --constraint=mc \n' +                              \
         '#SBATCH --partition=prepost \n' +                          \
@@ -147,7 +179,7 @@ batch_mesher_fmt =                                                  \
         'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' +        \
         './xmesh > OUTPUT_MESHER'
 
-path_sbatch_mesher = os.path.join(rundir, 'sbatch_mesher.sh')
+path_sbatch_mesher = os.path.join(rundir, 'job_%s_mesh.sh' % (jobname))
 with open(path_sbatch_mesher, 'w') as fid:
     fid.write(batch_mesher_fmt)
 
@@ -208,7 +240,7 @@ for part_run in ['PX', 'PZ']:
             '#SBATCH --cpus-per-task=1 \n' +                              \
             '#SBATCH --time=%s \n' % hour2hms(args.walltime) +            \
             '#SBATCH --account=%s \n' % args.account +                    \
-            '#SBATCH --mail-type=ALL \n' +                                \
+            '#SBATCH --mail-type=FAIL \n' +                               \
             '#SBATCH --mail-user=%s \n' %args.mail_adress +               \
             '#SBATCH --constraint=mc \n' +                                \
             '#SBATCH --partition=normal \n' +                             \
@@ -222,7 +254,7 @@ for part_run in ['PX', 'PZ']:
             'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' +          \
             'srun --ntasks-per-node $SLURM_NTASKS_PER_NODE -n $SLURM_NTASKS ./axisem >& OUTPUT_%s' % part_run
     
-    path_sbatch_solver[part_run] = os.path.join(rundir, 'sbatch_%s.sh' % part_run)
+    path_sbatch_solver[part_run] = os.path.join(rundir, 'job_%s_%s.sh' % (jobname, part_run))
     with open(path_sbatch_solver[part_run] , 'w') as fid:
         fid.write(batch_solver_fmt)
 
@@ -245,7 +277,7 @@ batch_FT_fmt =                                                      \
         '#SBATCH --time=24:00:00 \n' +                              \
         '#SBATCH --mem=120GB \n' +                                  \
         '#SBATCH --account=%s \n' % args.account +                  \
-        '#SBATCH --mail-type=ALL \n' +                              \
+        '#SBATCH --mail-type=END,FAIL \n' +                         \
         '#SBATCH --mail-user=%s \n' %args.mail_adress +             \
         '#SBATCH --constraint=mc \n' +                              \
         '#SBATCH --partition=normal \n' +                           \
@@ -262,7 +294,7 @@ batch_FT_fmt =                                                      \
 
 # Submit the jobs
 
-path_sbatch_FT = os.path.join(rundir, 'sbatch_FT.sh')
+path_sbatch_FT = os.path.join(rundir, 'job_%s_FT.sh' % (jobname))
 with open(path_sbatch_FT, 'w') as fid:
         fid.write(batch_FT_fmt)    
 
@@ -285,3 +317,5 @@ res_submit_FT = sp.check_output(\
         'sbatch --dependency=afterok:%d:%d ' % (jobid_solver[0], jobid_solver[1]) +
          path_sbatch_FT,
          shell=True)
+jobid_FT = int(res_submit_FT.split()[3])
+print('FT JOBID:     ', jobid_FT)
