@@ -34,6 +34,7 @@ module nc_helpers
     private 
 
     public :: check
+    public :: putvar_double1d
     public :: putvar_real1d
     public :: putvar_real2d
     public :: putvar_real3d
@@ -109,6 +110,94 @@ subroutine getgrpid(ncid, name, grpid)
     grpid = 0
 #endif
 end subroutine getgrpid
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine putvar_double1d(ncid, varid, values, start, count)
+!< Help interpret the inane NetCDF error messages
+   integer, intent(in)          :: ncid, varid, start, count
+   real(dp), intent(in)         :: values(:)
+
+#ifdef enable_netcdf
+   integer                      :: xtype, ndims, status, dimsize
+   integer                      :: dimid(10)
+   character(len=nf90_max_name) :: varname, dimname
+
+
+   status = nf90_inquire_variable(ncid  = ncid,     &
+                                  varid = varid,    &
+                                  name  = varname )
+
+   if (status.ne.NF90_NOERR) then
+       write(*,99) mynum, varid, ncid
+       print *, trim(nf90_strerror(status))
+       stop
+   end if
+
+   if (size(values).ne.count) then
+       write(*,100) mynum, trim(varname), varid, ncid, size(values), count
+       stop
+   end if
+
+   status = nf90_put_var(ncid   = ncid,           &
+                         varid  = varid,          &
+                         values = values,         &
+                         start  = [start],        &
+                         count  = [count] )
+
+                      
+   if (status.ne.NF90_NOERR) then
+       status = nf90_inquire_variable(ncid  =  ncid,    &
+                                      varid = varid,    &
+                                      name  = varname,  &
+                                      ndims = ndims)
+       if (ndims.ne.1) then
+           write(*,101) mynum, trim(varname), varid, ncid, ndims
+           print *, trim(nf90_strerror(status))
+           stop
+       end if
+       status = nf90_inquire_variable(ncid   = ncid,     &
+                                      varid  = varid,    &
+                                      name   = varname,  &
+                                      xtype  = xtype,    &
+                                      ndims  = ndims,    &
+                                      dimids = dimid  )
+
+       status = nf90_inquire_dimension(ncid  = ncid,     &
+                                       dimid = dimid(1), &
+                                       name  = dimname,  &
+                                       len   = dimsize )
+       if (start + count - 1 > dimsize) then
+           write(*,102) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
+           print *, trim(nf90_strerror(status))
+           stop
+       end if
+
+       write(*,103) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
+       print *, trim(nf90_strerror(status))
+       stop
+   
+   elseif (verbose > 2) then
+       write(*,200) mynum, real(count) * 4. / 1048576., ncid, varid
+       call flush(6)
+   end if
+    
+99  format('ERROR: CPU ', I4, ' could not find 1D variable: ',I7,' in NCID', I7)
+100 format('ERROR: CPU ', I4, ' could not write 1D variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       was given ', I10, ' values, but ''count'' is ', I10)
+101 format('ERROR: CPU ', I4, ' could not write 1D variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       Variable has ', I2,' dimensions instead of one')
+102 format('ERROR: CPU ', I4, ' could not write 1D variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       start (', I10, ') + count(', I10, ') is larger than size (', I10,')',    / &
+           '       of dimension ', A)
+103 format('ERROR: CPU ', I4, ' could not write 1D variable: ''', A, '''(',I7,') in NCID', I7, / &
+           '       start:   ', I10, / &
+           '       count:   ', I10, / &
+           '       dimsize: ', I10, / &
+           '       dimname: ', A)
+200 format('    Proc ', I4, ': Wrote', F10.3, ' MB into 1D variable in NCID', I7, ', with ID:', I7)
+#endif
+end subroutine putvar_double1d
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------

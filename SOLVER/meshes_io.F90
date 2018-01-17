@@ -785,8 +785,8 @@ subroutine dump_kwf_grid()
   use data_mesh
 
   integer               :: iel, ipol, jpol, ct
-  real(sp), allocatable :: points(:,:)
-  real(sp), allocatable :: points_mp(:,:)
+  real(dp), allocatable :: points(:,:)
+  real(dp), allocatable :: points_mp(:,:)
   
   if (lpr) write(6,*) '   ...collecting coordinates...'
 
@@ -1154,8 +1154,8 @@ subroutine dump_wavefields_mesh_1d
 
      if (lpr) write(6,*)'  dumping solid submesh for kernel wavefields...'
      if (use_netcdf) then
-         call nc_dump_mesh_sol(real(ssol(ibeg:iend,jbeg:jend,:)), &
-                               real(zsol(ibeg:iend,jbeg:jend,:)))
+         call nc_dump_mesh_sol(ssol(ibeg:iend,jbeg:jend,:), &
+                               zsol(ibeg:iend,jbeg:jend,:))
 
      else
          open(unit=2500+mynum,file=datapath(1:lfdata)//'/strain_mesh_sol_'&
@@ -1179,8 +1179,8 @@ subroutine dump_wavefields_mesh_1d
          enddo
          if (lpr) write(6,*)'  dumping fluid submesh for kernel wavefields...'
          if (use_netcdf) then
-             call nc_dump_mesh_flu(real(sflu(ibeg:iend,jbeg:jend,:)),&
-                                   real(zflu(ibeg:iend,jbeg:jend,:)))
+             call nc_dump_mesh_flu(sflu(ibeg:iend,jbeg:jend,:),&
+                                   zflu(ibeg:iend,jbeg:jend,:))
          else
              open(unit=2600+mynum,file=datapath(1:lfdata)//'/strain_mesh_flu_'&
                   //appmynum//'.dat', &

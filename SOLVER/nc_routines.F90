@@ -41,8 +41,8 @@ module nc_routines
 
     !> Buffer variable for everything dumped in nc_dump_field_1d
     real(sp), allocatable   :: oneddumpvar(:,:,:)
-    real(sp), allocatable   :: scoord1d(:), zcoord1d(:)
-    real(sp), allocatable   :: scoord1d_mp(:), zcoord1d_mp(:)
+    real(dp), allocatable   :: scoord1d(:), zcoord1d(:)
+    real(dp), allocatable   :: scoord1d_mp(:), zcoord1d_mp(:)
     real(sp), allocatable   :: rho1d(:), mu1d(:), lambda1d(:)
     real(sp), allocatable   :: vp1d(:), vs1d(:)
     real(sp), allocatable   :: xi1d(:), phi1d(:), eta1d(:)
@@ -625,8 +625,8 @@ subroutine nc_dump_mesh_sol(scoord_sol, zcoord_sol)
 
     use data_io,   only : ndumppts_el
     use data_mesh, only : nelem 
-    real(sp), intent(in) :: scoord_sol(:,:,:)
-    real(sp), intent(in) :: zcoord_sol(size(scoord_sol,1), size(scoord_sol,2), &
+    real(dp), intent(in) :: scoord_sol(:,:,:)
+    real(dp), intent(in) :: zcoord_sol(size(scoord_sol,1), size(scoord_sol,2), &
                                        size(scoord_sol,3))
 #ifdef enable_netcdf
 
@@ -648,8 +648,8 @@ end subroutine nc_dump_mesh_sol
 subroutine nc_dump_mesh_flu(scoord_flu, zcoord_flu)
 ! can only be called after calling nc_dump_mesh_sol
 
-    real(sp), intent(in) :: scoord_flu(:,:,:)
-    real(sp), intent(in) :: zcoord_flu(size(scoord_flu,1), size(scoord_flu,2), &
+    real(dp), intent(in) :: scoord_flu(:,:,:)
+    real(dp), intent(in) :: zcoord_flu(size(scoord_flu,1), size(scoord_flu,2), &
                                        size(scoord_flu,3))
 #ifdef enable_netcdf
 
@@ -665,7 +665,7 @@ end subroutine nc_dump_mesh_flu
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_kwf(coords, nsol, nflu)
 
-    real(sp), intent(in) :: coords(:,:)
+    real(dp), intent(in) :: coords(:,:)
     integer, intent(in)  :: nsol, nflu
 #ifdef enable_netcdf
 
@@ -692,7 +692,7 @@ end subroutine nc_dump_mesh_kwf
 !-----------------------------------------------------------------------------------------
 subroutine nc_dump_mesh_mp_kwf(coords, nel)
 
-    real(sp), intent(in) :: coords(:,:)
+    real(dp), intent(in) :: coords(:,:)
     integer, intent(in)  :: nel
 #ifdef enable_netcdf
 
@@ -1181,12 +1181,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
             call check( nf90_def_var( ncid   = ncid_meshout,  &
                                       name   = 'mesh_S', &
-                                      xtype  = NF90_FLOAT, &
+                                      xtype  = NF90_DOUBLE, &
                                       dimids = nc_pt_dimid,&
                                       varid  = nc_mesh_s_varid) )
             call check( nf90_def_var( ncid   = ncid_meshout, &
                                       name   = 'mesh_Z', &
-                                      xtype  = NF90_FLOAT, &
+                                      xtype  = NF90_DOUBLE, &
                                       dimids = nc_pt_dimid,&
                                       varid  = nc_mesh_z_varid) )
             call check( nf90_def_var( ncid   = ncid_meshout,  &
@@ -1280,12 +1280,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
                call check( nf90_def_var( ncid   = ncid_meshout,  &
                                          name   = 'mp_mesh_S', &
-                                         xtype  = NF90_FLOAT, &
+                                         xtype  = NF90_DOUBLE, &
                                          dimids = nc_mesh_elem_dimid,&
                                          varid  = nc_mesh_s_mp_varid) )
                call check( nf90_def_var( ncid   = ncid_meshout, &
                                          name   = 'mp_mesh_Z', &
-                                         xtype  = NF90_FLOAT, &
+                                         xtype  = NF90_DOUBLE, &
                                          dimids = nc_mesh_elem_dimid,&
                                          varid  = nc_mesh_z_mp_varid) )
 
@@ -1650,18 +1650,18 @@ subroutine nc_finish_prepare
                 ! start writing to file
    
                 ! S-Coordinate
-                call putvar_real1d( ncid   = ncid_meshout,     &
-                                    varid  = nc_mesh_s_varid,  &
-                                    values = scoord1d,         &
-                                    start  = npoints_myfirst,  &
-                                    count  = npoints )
+                call putvar_double1d( ncid   = ncid_meshout,     &
+                                      varid  = nc_mesh_s_varid,  &
+                                      values = scoord1d,         &
+                                      start  = npoints_myfirst,  &
+                                      count  = npoints )
                 
                 ! Z-Coordinate
-                call putvar_real1d( ncid   = ncid_meshout,     &
-                                    varid  = nc_mesh_z_varid,  &
-                                    values = zcoord1d,         &
-                                    start  = npoints_myfirst,  &
-                                    count  = npoints )
+                call putvar_double1d( ncid   = ncid_meshout,     &
+                                      varid  = nc_mesh_z_varid,  &
+                                      values = zcoord1d,         &
+                                      start  = npoints_myfirst,  &
+                                      count  = npoints )
 
                 ! Vp
                 call putvar_real1d( ncid   = ncid_meshout,     &
@@ -1769,18 +1769,18 @@ subroutine nc_finish_prepare
                                              values = sem_mesh_kwf + npoints_myfirst - 1))
 
                    ! S-Coordinate
-                   call putvar_real1d( ncid   = ncid_meshout,     &
-                                       varid  = nc_mesh_s_mp_varid,  &
-                                       values = scoord1d_mp,         &
-                                       start  = nelem_myfirst,  &
-                                       count  = nelem_kwf )
+                   call putvar_double1d( ncid   = ncid_meshout,     &
+                                         varid  = nc_mesh_s_mp_varid,  &
+                                         values = scoord1d_mp,         &
+                                         start  = nelem_myfirst,  &
+                                         count  = nelem_kwf )
                    
                    ! Z-Coordinate
-                   call putvar_real1d( ncid   = ncid_meshout,     &
-                                       varid  = nc_mesh_z_mp_varid,  &
-                                       values = zcoord1d_mp,         &
-                                       start  = nelem_myfirst,  &
-                                       count  = nelem_kwf )
+                   call putvar_double1d( ncid   = ncid_meshout,     &
+                                         varid  = nc_mesh_z_mp_varid,  &
+                                         values = zcoord1d_mp,         &
+                                         start  = nelem_myfirst,  &
+                                         count  = nelem_kwf )
 
                    ! SEM stuff
                    if (mynum == 0) then ! these are not processorwise, so only rank zero
