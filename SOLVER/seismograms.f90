@@ -382,7 +382,7 @@ subroutine prepare_from_recfile_seis
      if (mynum==0) close(30)
   
   case ('none')
-     write(6,*) 'Working in receiver-free (Instaseis/MC Kernel) mode'
+     if (mynum==0) write(6,*) 'Working in receiver-free (Instaseis/MC Kernel) mode'
      num_rec_glob = 0
      
   case default   

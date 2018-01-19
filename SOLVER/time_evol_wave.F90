@@ -1662,11 +1662,9 @@ subroutine create_absorbing_gamma()
   rmin = dsqrt(minval(crd_nodes(:, 1) ** 2 + crd_nodes(:, 2) ** 2))
   thetamax = maxval(atan2(crd_nodes(:, 1), crd_nodes(:, 2)))
 
-  print *, rmin, thetamax, hmax
   hmax = pmax(hmax)
   rmin = pmin(rmin)
   thetamax = pmax(thetamax)
-  print *, rmin, thetamax, hmax
 
   num_elem = 15
   distance_factor = num_elem * hmax
@@ -1674,7 +1672,11 @@ subroutine create_absorbing_gamma()
   ! vsmin = 0.
   U0 = vpmin / (2 * hmax)
 
-  print *, distance_factor
+  if (mynum==0) then
+     print *, 'Absorbing Boundary Parameters:'
+     print *, 'distance_factor: ', distance_factor
+     print *, 'U0:              ', U0
+  endif
 
   do iel=1,nel_fluid
      do ipol=0,npol
