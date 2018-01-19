@@ -446,7 +446,8 @@ subroutine sf_time_loop_newmark
      ddchi1 = - inv_mass_fluid * ddchi1
 
      ! absorbing boundaries fluid
-     ddchi1 = ddchi1 - 2 * fluid_absorbing_gamma * dchi - fluid_absorbing_gamma ** 2 * chi
+     if (have_absorbing_bc) &
+         ddchi1 = ddchi1 - 2 * fluid_absorbing_gamma * dchi - fluid_absorbing_gamma ** 2 * chi
 
      call bdry_copy2solid(acc1, ddchi1)
 
@@ -484,8 +485,9 @@ subroutine sf_time_loop_newmark
      !$omp sections
      !$omp section
      acc1(:,:,:,1) = - inv_mass_rho * acc1(:,:,:,1)
-     acc1(:,:,:,1) = acc1(:,:,:,1) - 2 * solid_absorbing_gamma * velo(:,:,:,1) - &
-         solid_absorbing_gamma ** 2 * disp(:,:,:,1)
+     if (have_absorbing_bc) &
+         acc1(:,:,:,1) = acc1(:,:,:,1) - 2 * solid_absorbing_gamma * velo(:,:,:,1) - &
+             solid_absorbing_gamma ** 2 * disp(:,:,:,1)
      velo(:,:,:,1) = velo(:,:,:,1) + half_dt * (acc0(:,:,:,1) + acc1(:,:,:,1))
      acc0(:,:,:,1) = acc1(:,:,:,1)
 
@@ -496,16 +498,18 @@ subroutine sf_time_loop_newmark
      else
         acc1(:,:,:,3) = - inv_mass_rho * acc1(:,:,:,3)
      endif
-     acc1(:,:,:,3) = acc1(:,:,:,3) - 2 * solid_absorbing_gamma * velo(:,:,:,3) - &
-         solid_absorbing_gamma ** 2 * disp(:,:,:,3)
+     if (have_absorbing_bc) &
+         acc1(:,:,:,3) = acc1(:,:,:,3) - 2 * solid_absorbing_gamma * velo(:,:,:,3) - &
+             solid_absorbing_gamma ** 2 * disp(:,:,:,3)
      velo(:,:,:,3) = velo(:,:,:,3) + half_dt * (acc0(:,:,:,3) + acc1(:,:,:,3))
      acc0(:,:,:,3) = acc1(:,:,:,3)
 
      !$omp section
      if (src_type(1) .ne. 'monopole') then
         acc1(:,:,:,2) = - inv_mass_rho * acc1(:,:,:,2)
-        acc1(:,:,:,2) = acc1(:,:,:,2) - 2 * solid_absorbing_gamma * velo(:,:,:,2) - &
-             solid_absorbing_gamma ** 2 * disp(:,:,:,2)
+        if (have_absorbing_bc) &
+           acc1(:,:,:,2) = acc1(:,:,:,2) - 2 * solid_absorbing_gamma * velo(:,:,:,2) - &
+                solid_absorbing_gamma ** 2 * disp(:,:,:,2)
         velo(:,:,:,2) = velo(:,:,:,2) + half_dt * (acc0(:,:,:,2) + acc1(:,:,:,2))
         acc0(:,:,:,2) = acc1(:,:,:,2)
      end if
@@ -681,6 +685,10 @@ subroutine symplectic_time_loop
 
         ddchi = - ddchi * inv_mass_fluid
 
+        ! absorbing boundaries fluid
+        if (have_absorbing_bc) &
+            ddchi = ddchi - 2 * fluid_absorbing_gamma * dchi - fluid_absorbing_gamma ** 2 * chi
+
         call bdry_copy2solid(acc, ddchi)
         select case (src_type(1))
            case ('monopole')
@@ -704,16 +712,31 @@ subroutine symplectic_time_loop
         iclockcomm = tick(id=idcomm, since=iclockcomm)
 
         call add_source_el(acc, real(stf_symp(i), kind=realkind))
+        
+        acc(:,:,:,1) = - inv_mass_rho * acc(:,:,:,1)
+        if (have_absorbing_bc) &
+            acc(:,:,:,1) = acc(:,:,:,1) - 2 * solid_absorbing_gamma * velo(:,:,:,1) - &
+                solid_absorbing_gamma ** 2 * disp(:,:,:,1)
 
-        velo(:,:,:,1) = velo(:,:,:,1) - acc(:,:,:,1) * coefv(i) * inv_mass_rho
+        velo(:,:,:,1) = velo(:,:,:,1) + acc(:,:,:,1) * coefv(i)
 
-        if (src_type(1) /= 'monopole') &
-           velo(:,:,:,2) = velo(:,:,:,2) - acc(:,:,:,2) * coefv(i) * inv_mass_rho
+        if (src_type(1) /= 'monopole') then
+            acc(:,:,:,2) = - inv_mass_rho * acc(:,:,:,2)
+            if (have_absorbing_bc) &
+                acc(:,:,:,2) = acc(:,:,:,2) - 2 * solid_absorbing_gamma * velo(:,:,:,2) - &
+                    solid_absorbing_gamma ** 2 * disp(:,:,:,2)
+           velo(:,:,:,2) = velo(:,:,:,2) + acc(:,:,:,2) * coefv(i)
+        endif
+
+        acc(:,:,:,3) = - inv_mass_rho * acc(:,:,:,3)
+        if (have_absorbing_bc) &
+            acc(:,:,:,3) = acc(:,:,:,3) - 2 * solid_absorbing_gamma * velo(:,:,:,3) - &
+                solid_absorbing_gamma ** 2 * disp(:,:,:,3)
 
         if (src_type(1)=='dipole') then !factor 2 b/c inv_rho has 1/2 embedded
-           velo(:,:,:,3) = velo(:,:,:,3) - two * acc(:,:,:,3) * coefv(i) * inv_mass_rho
+           velo(:,:,:,3) = velo(:,:,:,3) + two * acc(:,:,:,3) * coefv(i)
         else
-           velo(:,:,:,3) = velo(:,:,:,3) - acc(:,:,:,3) * coefv(i) * inv_mass_rho
+           velo(:,:,:,3) = velo(:,:,:,3) + acc(:,:,:,3) * coefv(i)
         endif
 
      enddo ! ... nstages substages
@@ -1640,10 +1663,15 @@ subroutine create_absorbing_gamma()
 
   real(kind=dp)       :: hmax, U0, distance_factor, rmin, thetamax, dist, r, t
 
-  allocate(fluid_absorbing_gamma(0:npol, 0:npol, nel_fluid))
-  allocate(solid_absorbing_gamma(0:npol, 0:npol, nel_solid))
-  fluid_absorbing_gamma = 0
-  solid_absorbing_gamma = 0
+  thetamax = maxval(atan2(crd_nodes(:, 1), crd_nodes(:, 2)))
+  thetamax = pmax(thetamax)
+
+  if (thetamax < pi - 1e-7) then
+      have_absorbing_bc = .true.
+  else
+      have_absorbing_bc = .false.
+      return
+  endif
 
   hmax = 0.
   do iel=1,nelem
@@ -1660,17 +1688,20 @@ subroutine create_absorbing_gamma()
 
   hmax = hmax ** 0.5
   rmin = dsqrt(minval(crd_nodes(:, 1) ** 2 + crd_nodes(:, 2) ** 2))
-  thetamax = maxval(atan2(crd_nodes(:, 1), crd_nodes(:, 2)))
 
   hmax = pmax(hmax)
   rmin = pmin(rmin)
-  thetamax = pmax(thetamax)
+
+  allocate(fluid_absorbing_gamma(0:npol, 0:npol, nel_fluid))
+  allocate(solid_absorbing_gamma(0:npol, 0:npol, nel_solid))
+  fluid_absorbing_gamma = 0
+  solid_absorbing_gamma = 0
 
   num_elem = 15
   distance_factor = num_elem * hmax
   ! using vpmin for now as I don't have the global mininum velocity available and 
   ! vsmin = 0.
-  U0 = vpmin / (2 * hmax)
+  U0 = vpmax / (2 * hmax)
 
   if (mynum==0) then
      print *, 'Absorbing Boundary Parameters:'

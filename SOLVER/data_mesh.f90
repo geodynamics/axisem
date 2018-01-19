@@ -181,6 +181,7 @@ module data_mesh
   real(kind=realkind), dimension(:,:,:), allocatable :: fluid_free_surface_mask
 
   ! damping factor for absorbing boundaries
+  logical                                              :: have_absorbing_bc
   real(kind=realkind), dimension(:,:,:), allocatable   :: fluid_absorbing_gamma
   real(kind=realkind), dimension(:,:,:), allocatable   :: solid_absorbing_gamma
 
