@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
+"""
+Submit an AxiSEM job to create an Instaseis database
+locally or into a HPC queue.
+Currently only supports CSCS.
+Runs the Mesher, the Solver and the DB Repacker
+Author: Simon Stähler, ETH Zürich
+"""
+
 
 import os
 import subprocess as sp
