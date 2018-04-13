@@ -98,22 +98,6 @@ subroutine glob_stiffness_di_4(glob_stiffness,u)
   real(kind=realkind), dimension(0:npol) :: u10, u20
   
   integer :: ielem
-  !$omp do private(loc_stiffness_1, loc_stiffness_2, loc_stiffness_3, &
-  !$omp            u1,u2,u3,                                          &
-  !$omp            m_w1l, m_w2l, m_w3l,                               &
-  !$omp            m_6l, m_2l, m_1l, m_5l, m_4l, m_8l, m_3l, m_7l,    &
-  !$omp            m11sl, m21sl, m41sl,                               &
-  !$omp            m12sl, m22sl, m42sl,                               &
-  !$omp            m13sl, m23sl, m33sl, m43sl,                        &
-  !$omp            m11zl, m21zl, m41zl,                               &
-  !$omp            m0_w1l, m0_w2l, m0_w3l, m0_w4l,                    &
-  !$omp            m0_w6l, m0_w7l, m0_w8l, m0_w9l, m0_w10l,           &
-  !$omp            loc_stiffness_s2, loc_stiffness_s3,                &
-  !$omp            X1, X2, X3, X4, X5, X6, X7, X8,                    &
-  !$omp            S1p, S1m, S2p, S2m, S1z, S2z,                      &
-  !$omp            c1, c2, c3,                                        &
-  !$omp            V1, V2, V3, V4, V5,                                &
-  !$omp            u10, u20)
 
   do ielem = 1, nel_solid
 
@@ -268,7 +252,6 @@ subroutine glob_stiffness_di_4(glob_stiffness,u)
      glob_stiffness(0:npol,0:npol,ielem,3) = loc_stiffness_3
 
   enddo
-  !$omp end do
 
 end subroutine glob_stiffness_di_4
 !-----------------------------------------------------------------------------------------
@@ -315,22 +298,6 @@ subroutine glob_stiffness_di_generic(glob_stiffness,u)
   
   integer :: ielem
 
-  !$omp do private(loc_stiffness_1, loc_stiffness_2, loc_stiffness_3, &
-  !$omp            u1,u2,u3,                                          &
-  !$omp            m_w1l, m_w2l, m_w3l,                               &
-  !$omp            m_6l, m_2l, m_1l, m_5l, m_4l, m_8l, m_3l, m_7l,    &
-  !$omp            m11sl, m21sl, m41sl,                               &
-  !$omp            m12sl, m22sl, m42sl,                               &
-  !$omp            m13sl, m23sl, m33sl, m43sl,                        &
-  !$omp            m11zl, m21zl, m41zl,                               &
-  !$omp            m0_w1l, m0_w2l, m0_w3l, m0_w4l,                    &
-  !$omp            m0_w6l, m0_w7l, m0_w8l, m0_w9l, m0_w10l,           &
-  !$omp            loc_stiffness_s2, loc_stiffness_s3,                &
-  !$omp            X1, X2, X3, X4, X5, X6, X7, X8,                    &
-  !$omp            S1p, S1m, S2p, S2m, S1z, S2z,                      &
-  !$omp            c1, c2, c3,                                        &
-  !$omp            V1, V2, V3, V4, V5,                                &
-  !$omp            u10, u20)
   do ielem = 1, nel_solid
 
      u1(:,:) = u(:,:,ielem,1)
@@ -484,7 +451,6 @@ subroutine glob_stiffness_di_generic(glob_stiffness,u)
      glob_stiffness(0:npol,0:npol,ielem,3) = loc_stiffness_3
 
   enddo
-  !$omp end do
 
 end subroutine glob_stiffness_di_generic
 !-----------------------------------------------------------------------------------------
@@ -544,16 +510,6 @@ subroutine glob_anel_stiffness_di_generic(glob_stiffness, R)
   
   integer :: ielem, j
 
-  !$omp do private(loc_stiffness_m, loc_stiffness_p, loc_stiffness_z, &
-  !$omp            r1, r2, r3, r4, r5, r6, &
-  !$omp            yl, v_s_etal, v_s_xil, v_z_etal, v_z_xil, &
-  !$omp            S1m, S2m, S1p, S2p, S1z, S2z, &
-  !$omp            X1, X2, X3, X4, X5, X6, &
-  !$omp            y0l, &
-  !$omp            v0_s_etal, v0_s_xil, &
-  !$omp            v0_z_etal, v0_z_xil, &
-  !$omp            V1, &
-  !$omp            j)
   do ielem = 1, nel_solid
 
      yl(:,:) = Y(:,:,ielem)
@@ -640,7 +596,6 @@ subroutine glob_anel_stiffness_di_generic(glob_stiffness, R)
      glob_stiffness(0:npol,0:npol,ielem,3) = &
             glob_stiffness(0:npol,0:npol,ielem,3) - loc_stiffness_z
   enddo
-  !$omp end do
 
 end subroutine glob_anel_stiffness_di_generic
 !-----------------------------------------------------------------------------------------
@@ -678,16 +633,6 @@ subroutine glob_anel_stiffness_di_4(glob_stiffness, R)
   
   integer :: ielem, j
 
-  !$omp do private(loc_stiffness_m, loc_stiffness_p, loc_stiffness_z, &
-  !$omp            r1, r2, r3, r4, r5, r6, &
-  !$omp            yl, v_s_etal, v_s_xil, v_z_etal, v_z_xil, &
-  !$omp            S1m, S2m, S1p, S2p, S1z, S2z, &
-  !$omp            X1, X2, X3, X4, X5, X6, &
-  !$omp            y0l, &
-  !$omp            v0_s_etal, v0_s_xil, &
-  !$omp            v0_z_etal, v0_z_xil, &
-  !$omp            V1, &
-  !$omp            j)
   do ielem = 1, nel_solid
 
      yl(:,:) = Y(:,:,ielem)
@@ -774,7 +719,6 @@ subroutine glob_anel_stiffness_di_4(glob_stiffness, R)
      glob_stiffness(0:4,0:4,ielem,3) = &
             glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
   enddo
-  !$omp end do
 
 end subroutine glob_anel_stiffness_di_4
 !-----------------------------------------------------------------------------------------
@@ -807,12 +751,6 @@ subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
   
   integer :: ielem, j
 
-  !$omp do private(loc_stiffness_p, loc_stiffness_m, loc_stiffness_z, &
-  !$omp            r1, r2, r3, r4, r5, r6, &
-  !$omp            yl, v_s_etal, v_s_xil, v_z_etal, v_z_xil, &
-  !$omp            S1m, S2m, S1p, S2p, S1z, S2z, &
-  !$omp            X1, X2, X3, X4, X5, X6, &
-  !$omp            j)
   do ielem = 1, nel_solid
 
      yl(:) = Y_cg4(:,ielem)
@@ -883,7 +821,6 @@ subroutine glob_anel_stiffness_di_cg4(glob_stiffness, R)
      glob_stiffness(0:4,0:4,ielem,3) = &
             glob_stiffness(0:4,0:4,ielem,3) - loc_stiffness_z
   enddo
-  !$omp end do
 
 end subroutine glob_anel_stiffness_di_cg4
 !-----------------------------------------------------------------------------------------
