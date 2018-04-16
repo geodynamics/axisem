@@ -106,6 +106,8 @@ subroutine time_step_memvars_cg4(memvar, disp)
   real(kind=realkind)   :: src_tr_buf(1:4)
   real(kind=realkind)   :: src_dev_buf(1:4,6)
   
+  real(kind=realkind)   :: Q_mu_last, Q_kappa_last
+
   do iel=1, nel_solid
      call compute_strain_att_el_cg4(disp(:,:,iel,:), grad_t_cg4, iel)
 
