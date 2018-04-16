@@ -68,6 +68,7 @@ script:
   - python test_nightly_axisem.py -t 1
   - python test_nightly_axisem.py -t 2
   - python test_nightly_axisem.py -t 3
+  - ./SOLVER/UTILS/submit_Daint.py test_prem_ani prem_ani 100.0 --jobtype local --ntheta 2
 
 after_success:
 
