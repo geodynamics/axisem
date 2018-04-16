@@ -43,7 +43,7 @@ INCLUDE_MPI = false
 # GFORTRAN (debug)
 CC      = gcc
 FC      = mpif90
-FFLAGS  = -g -fbacktrace -Warray-temporaries -fcheck-array-temporaries -fbounds-check -frange-check -pedantic
+FFLAGS  = -g -fbacktrace -fbounds-check -frange-check -pedantic
 CFLAGS  = -g -fbacktrace -Wall 
 LDFLAGS = -g -fbacktrace -Wall
 
