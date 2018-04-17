@@ -16,15 +16,16 @@ import stat
 import argparse
 import glob
 
+int_models = ['prem_iso', 'prem_iso_solid', 'prem_iso_onecrust',
+              'prem_iso_light', 'prem_iso_solid_light',
+              'prem_ani', 'prem_ani_onecrust', 'prem_ani_light',
+              'ak135', 'ak135f', 'iasp91']
+
 
 def create_inparam_mesh(mesh_file, mesh_period, nrad, ncl, ntheta=0,
                         max_depth=None, max_colat=None):
     with open('inparam_mesh', 'w') as fid:
-        if mesh_file in \
-             ['prem_iso', 'prem_iso_solid', 'prem_iso_onecrust',
-              'prem_iso_light', 'prem_iso_solid_light',
-              'prem_ani', 'prem_ani_onecrust', 'prem_ani_light',
-              'ak135', 'ak135f', 'iasp91']:
+        if mesh_file in int_models:
 
             fid.write('BACKGROUND_MODEL %s\n' % mesh_file)
             fid.write('EXT_MODEL none \n')
@@ -96,35 +97,47 @@ def define_arguments():
     helptext = "Job directory name. \n"
     parser.add_argument('job_name', help=helptext)
 
-    helptext = 'Mesh file \n'
+    helptext = 'Mesh file. Choose path to external mesh file or one\n' \
+        + 'of the following AxiSEM internal models:\n' \
+        + "'prem_iso', 'prem_iso_solid', 'prem_iso_onecrust',\n" \
+        + "'prem_iso_light', 'prem_iso_solid_light',\n" \
+        + "'prem_ani', 'prem_ani_onecrust', 'prem_ani_light',\n" \
+        + "'ak135', 'ak135f', 'iasp91'\n"
     parser.add_argument('mesh_file', help=helptext)
 
     helptext = 'Mesh period \n'
     parser.add_argument('mesh_period', type=float, help=helptext)
 
-    helptext = 'Number of radial slices \n'
+    helptext = 'Number of radial slices (default: 1)\n'
     parser.add_argument('--nrad', type=int, help=helptext,
                         default=1)
 
-    helptext = 'Number of theta slices \n'
+    helptext = 'Number of theta slices (default: 2)\n' \
+        + 'Set to 0 to use the maximum number possible for this\n' \
+        + 'model and frequency'
     parser.add_argument('--ntheta', type=int, help=helptext,
                         default=2)
 
-    helptext = 'Number of coarsening layers\n'
-    parser.add_argument('--ncl', type=int, help=helptext,
-                        default=1)
+    helptext = 'Job type (local, CSCS Daint)\n'
+    parser.add_argument('-j', '--jobtype', type=str,
+                        default='local',
+                        help=helptext)
 
-    helptext = 'Maximum colatitude\n'
+    helptext = 'Maximum colatitude of mesh (default: 180 degree)\n'
     parser.add_argument('--max_colat', type=float,
                         help=helptext)
 
-    helptext = 'Maximum depth in kilometer\n'
+    helptext = 'Maximum depth in kilometer (default: radius)\n'
     parser.add_argument('--max_depth', type=float,
                         help=helptext)
 
     helptext = 'Source depth in kilometer\n'
     parser.add_argument('--src_depth', type=float, default=0.0,
                         help=helptext)
+
+    helptext = 'Number of coarsening layers (default: 1)\n'
+    parser.add_argument('--ncl', type=int, help=helptext,
+                        default=1)
 
     helptext = 'Wall time for the solver in hours\n'
     parser.add_argument('-w', '--walltime', type=float, default=1.0,
@@ -138,11 +151,6 @@ def define_arguments():
     helptext = 'Daint project account\n'
     parser.add_argument('-a', '--account', type=str,
                         default='ACCOUNT',
-                        help=helptext)
-
-    helptext = 'Job type (local, CSCS Daint)\n'
-    parser.add_argument('-j', '--jobtype', type=str,
-                        default='local',
                         help=helptext)
 
     return parser
@@ -176,11 +184,7 @@ if __name__ == "__main__":
 
     os.chdir(meshdir)
 
-    if args.mesh_file in [
-            'prem_iso', 'prem_iso_solid', 'prem_iso_onecrust',
-            'prem_iso_light', 'prem_iso_solid_light',
-            'prem_ani', 'prem_ani_onecrust', 'prem_ani_light',
-            'ak135', 'ak135f', 'iasp91']:
+    if args.mesh_file in int_models:
         print('  Using internal model %s' % args.mesh_file)
         int_model = True
     else:
@@ -368,6 +372,7 @@ if __name__ == "__main__":
             repack_call
 
     # Submit the jobs
+    # Only necessary, if the job is not run locally
 
     if args.jobtype == 'Daint':  # Daint (CSCS), Slurm-based
         path_sbatch_FT = os.path.join(rundir, 'job_%s_FT.sh' % (jobname))
