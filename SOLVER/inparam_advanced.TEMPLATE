@@ -132,7 +132,7 @@ MESH_TEST           false
 ######################## SENSITIVITY KERNELS ###################################
 # Save necessary wavefields for Kernel calculation or Instaseis databases
 # N.b. Kernel calculation needs MCKernel (sold separately)
-KERNEL_WAVEFIELDS   false 
+KERNEL_WAVEFIELDS   true
 
 # different modes of dumping wavefields for kernel:
 #  - fullfields: strain and velocity at a subset of local GLL points (see below)
@@ -163,7 +163,7 @@ KERNEL_COLAT_MAX   180.
 
 # minimal and maximal radius in km for kernel wavefields
 # (only for dumptype displ_only)
-KERNEL_RMIN        0.
+KERNEL_RMIN        6171.
 KERNEL_RMAX        7000.
 
 ######################## ATTENUATION ###########################################
