@@ -339,7 +339,7 @@ if __name__ == "__main__":
     # Run field_transform (the Instaseis version)
     repack_path = os.path.join(base_dir, 'SOLVER', 'UTILS', 'repack_db.py')
     repack_call = repack_path + ' --method transpose ' + '. ' \
-        + jobname+'_packed ' + '> OUTPUT_FT'
+        + jobname+'_database' + '> OUTPUT_FT'
 
     print('[REPACK]')
     if args.jobtype == 'local':  # local run, consecutive

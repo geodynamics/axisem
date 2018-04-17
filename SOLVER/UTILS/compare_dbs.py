@@ -37,5 +37,6 @@ if __name__ == "__main__":
     plt.plot(st2[0].times(), st2[0].data, label=args.db_2_name)
 
     plt.xlabel('time / seconds')
+    plt.legend()
 
     plt.show()
