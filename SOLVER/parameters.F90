@@ -94,8 +94,7 @@ subroutine readin_parameters
   
   call barrier
   if (lpr) then
-     write(6,20)
-     write(6,21) datapath, infopath, seislength_t, enforced_dt,  &
+     write(6,20) datapath, infopath, seislength_t, enforced_dt,  &
                  enforced_period, trim(simtype), rec_file_type, &
                  sum_seis, sum_fields, time_scheme, seis_dt,  &
                  dump_energy, dump_vtk, dump_wavefields, &
@@ -119,17 +118,17 @@ subroutine readin_parameters
    08x,'//                                                           //',/  &
    08x,'//  Authors : Tarje Nissen-Meyer (Oxford University)         //',/  &
    08x,'//              Martin van Driel (ETH Zurich)                //',/  &
-   08x,'//                 Simon Stähler (LMU Munich)                //',/  &
-   08x,'//                Kasra Hosseini (LMU Munich)                //',/  &
+   08x,'//                 Simon Stähler (ETH Zurich)                //',/  &
+   08x,'//                 Lion Krischer (ETH Zurich)                //',/  &
+   08x,'//                Kasra Hosseini (Oxford University)         //',/  &
    08x,'//               Stefanie Hempel (University of Muenster)    //',/  &
    08x,'//            Alexandre Fournier (IPG Paris)                 //',/  &
    08x,'//                   Tony Dahlen (Princeton University)      //',/  &
    08x,'//                                                           //',/  &
    08x,'//   Contact:     info@axisem.info                           //',/  &  
-   08x,'//   Information: www.axisem.info                            //',/  &
-   08x,'//                                                           //')
-
-21 format(/&
+   08x,'//   Information: http://www.axisem.info                     //',/  &
+   08x,'//   Development: http://github.com/geodynamics/axisem       //',/  &
+   08x,'//                                                           //',/  &
    08x,'//                                                           //',/  &
    08x,'//     If you are publishing results obtained with this      //',/  &
    08x,'//          code, please cite this paper:                    //',/  &
@@ -177,7 +176,7 @@ subroutine readin_parameters
    08x,'//      doi: 10.1093/gji/ggu314                              //',/  &
    08x,'//                                                           //',/  &
    08x,'//                                                           //',/  &
-   08x,'//  April 2016: version 1.3                                  //',/  &
+   08x,'//  April 2018: version 1.4                                  //',/  &
    08x,'//                                                           //',/  &
    08x,'///////////////////////////////////////////////////////////////',// &
    08x,'=============  I N P U T    P A R A M E T E R S ===============',/  &
@@ -207,9 +206,6 @@ subroutine readin_parameters
    12x,'Output format (seism., wavefields): ',a6,/                          &
    08x,'===============================================================')
 
-     if (verbose > 1) write(6,'(a/a)') &
-           'Processor-specific output is written to: output_proc<PROC ID>.dat', &
-           'All potential error messages will appear here...'
   endif !lpr
 
   call check_basic_parameters
@@ -223,9 +219,6 @@ subroutine readin_parameters
      ! requires the fluid displacement/velocities
      need_fluid_displ = .true.
   endif
-
-
-  if (lpr .and. verbose > 1) write(6,*)'     small value is:',smallval
 
 end subroutine readin_parameters
 !-----------------------------------------------------------------------------------------
@@ -354,6 +347,29 @@ end subroutine
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
+!> Check whether one parameter is smaller than the other
+subroutine check_a_smaller_b(a, b, a_name, b_name)
+    real(kind=dp),    intent(in) :: a, b
+    character(len=*), intent(in) :: a_name, b_name
+
+97  format('****************************************************')
+98  format('ERROR: ', A, ' should be smaller than ', A)
+99  format(A, ': ', E15.8)
+    if (a >= b) then
+        print *,    
+        write(6,97)    
+        print *,    
+        write(6,98) a_name, b_name
+        write(6,99) a_name, a
+        write(6,99) b_name, b
+        write(6,97)    
+        call flush(6)
+        stop
+    end if
+end subroutine check_a_smaller_b
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
 !> Read file inparam_advanced
 subroutine read_inparam_advanced
   
@@ -435,9 +451,13 @@ subroutine read_inparam_advanced
 
          case('SAMPLING_PERIOD')
              read(keyvalue, *) seis_dt 
+             if (seis_dt < 0.0) & 
+                stop 'SAMPLING_PERIOD cannot be smaller than zero'
              
          case('SOURCE_PERIOD')
              read(keyvalue, *) enforced_period
+             if (enforced_dt < 0.0) & 
+                stop 'SOURCE_PERIOD cannot be smaller than zero'
 
          case('SOURCE_FUNCTION')
              read(keyvalue, *) stf_type
@@ -445,16 +465,12 @@ subroutine read_inparam_advanced
 
          case('TIME_STEP')
              read(keyvalue, *) enforced_dt
+             if (enforced_dt < 0.0) & 
+                stop 'TIME_STEP cannot be smaller than zero'
 
          case('TIME_SCHEME')
              read(keyvalue,*) time_scheme
              time_scheme = to_lower(time_scheme)
-
-         case('DATA_DIR')
-             !datapath = keyvalue
-
-         case('INFO_DIR')
-             infopath = keyvalue
 
          case('DIAGNOSTIC_FILE_OUTPUT')
              read(keyvalue,*) diagfiles
@@ -528,9 +544,15 @@ subroutine read_inparam_advanced
 
          case('DEFLATE_LEVEL')
              read(keyvalue,*) deflate_level
+             if (deflate_level < 0) & 
+                stop 'DEFLATE_LEVEL cannot be smaller than zero'
+             if (deflate_level > 9) & 
+                stop 'DEFLATE_LEVEL cannot be larger than nine'
 
          case('SNAPSHOT_DT')
              read(keyvalue, *) snap_dt
+             if (snap_dt < 0.0) & 
+                stop 'SNAPSHOT_DT cannot be smaller than zero'
 
          case('SNAPSHOTS_FORMAT')
              if (dump_snaps_glob) then 
@@ -577,6 +599,10 @@ subroutine read_inparam_advanced
      end do
   endif
 
+  call check_a_smaller_b(xdmf_rmin, xdmf_rmax, 'XDMF_RMIN', 'XDMF_RMAX')
+  call check_a_smaller_b(xdmf_thetamin, xdmf_thetamax, 'XDMF_COLAT_MIN', 'XDMF_COLAT_MAX')
+  call check_a_smaller_b(kwf_rmin, kwf_rmax, 'KERNEL_RMIN', 'KERNEL_RMAX')
+  call check_a_smaller_b(kwf_rmin, kwf_rmax, 'KERNEL_COLAT_MIN', 'KERNEL_COLAT_MAX')
 
   call broadcast_dble(seis_dt, 0) 
   call broadcast_dble(enforced_period, 0) 
@@ -1271,7 +1297,7 @@ subroutine write_parameters
         write(6,*)':::::::::::::::: SIMULATION PARAMETERS::::::::::::::::::::::::'
 
         write(6,*)'  Code information_____________________________________'
-        write(6,12)'     svn revision      :', git_hash
+        write(6,12)'     git hash          :', git_hash
         write(6,12)'     username          :', username
         write(6,12)'     hostname          :', hostname
         write(6,12)'     compiler          :', compiler
@@ -1453,39 +1479,37 @@ subroutine write_parameters
 #endif
         ! write generic simulation info file
         if (mynum == 0) write(6,*) ' Writing simulation info to netcdf file attributes' 
-        call nc_write_att_int( 10,                     'file version')
-        call nc_write_att_char( trim(bkgrdmodel),      'background model')
-        call nc_write_att_char( trim(model_name_ext_model), 'external model name')
-        call nc_write_att_int(  merge(1, 0, do_anel),  'attenuation') ! merge: hacky conversion of logical to int
-        call nc_write_att_dble( router / 1000,         'planet radius')
-        call nc_write_att_char( trim(mydatetime),      'datetime')
-        call nc_write_att_char( trim(git_hash),        'git commit hash')
-        call nc_write_att_char( trim(username),        'user name')
-        call nc_write_att_char( trim(hostname),        'host name')
-        call nc_write_att_char( trim(compiler),        'compiler brand')
-        call nc_write_att_char( trim(compilerversion), 'compiler version')
-        call nc_write_att_char( trim(fflags),          'FFLAGS')
-        call nc_write_att_char( trim(cflags),          'CFLAGS')
-        call nc_write_att_char( trim(ldflags),         'LDFLAGS')
-        call nc_write_att_char( trim(openmp),          'OpenMP')
-        call nc_write_att_char( trim(time_scheme),     'time scheme')
-        call nc_write_att_real( real(deltat),          'time step in sec')
-        call nc_write_att_int(  niter,                 'number of time steps')
-        call nc_write_att_int(  npol,                  'npol')
-        call nc_write_att_char( trim(src_type(1)),     'excitation type')
-        call nc_write_att_char( trim(src_type(2)),     'source type')
-        call nc_write_att_char( trim(stf_type),        'source time function')
-        call nc_write_att_char( trim(simtype),         'simulation type')
-        call nc_write_att_real( real(period),          'dominant source period')
-        call nc_write_att_real( real(src_depth/1000.), 'source depth in km')
-        
-        call nc_write_att_real( real(srccolat),        'Source colatitude')
-        call nc_write_att_real( real(srclon),          'Source longitude' )
-
-        call nc_write_att_real( real(magnitude),       'scalar source magnitude')
-        call nc_write_att_int(  num_rec_tot,           'number of receivers')
-        call nc_write_att_int(  nseismo,               'length of seismogram  in time samples')
-        call nc_write_att_real( real(deltat)*real(seis_it), 'seismogram sampling in sec')
+        call nc_write_att_int(10,                     'file version')
+        call nc_write_att_char(trim(bkgrdmodel),      'background model')
+        call nc_write_att_char(trim(model_name_ext_model), 'external model name')
+        call nc_write_att_int(merge(1, 0, do_anel),   'attenuation') ! merge: hacky conversion of logical to int
+        call nc_write_att_dble(router / 1000,         'planet radius')
+        call nc_write_att_char(trim(mydatetime),      'datetime')
+        call nc_write_att_char(trim(git_hash),        'git commit hash')
+        call nc_write_att_char(trim(username),        'user name')
+        call nc_write_att_char(trim(hostname),        'host name')
+        call nc_write_att_char(trim(compiler),        'compiler brand')
+        call nc_write_att_char(trim(compilerversion), 'compiler version')
+        call nc_write_att_char(trim(fflags),          'FFLAGS')
+        call nc_write_att_char(trim(cflags),          'CFLAGS')
+        call nc_write_att_char(trim(ldflags),         'LDFLAGS')
+        call nc_write_att_char(trim(openmp),          'OpenMP')
+        call nc_write_att_char(trim(time_scheme),     'time scheme')
+        call nc_write_att_real(real(deltat),          'time step in sec')
+        call nc_write_att_int(niter,                  'number of time steps')
+        call nc_write_att_int(npol,                   'npol')
+        call nc_write_att_char(trim(src_type(1)),     'excitation type')
+        call nc_write_att_char(trim(src_type(2)),     'source type')
+        call nc_write_att_char(trim(stf_type),        'source time function')
+        call nc_write_att_char(trim(simtype),         'simulation type')
+        call nc_write_att_real(real(period),          'dominant source period')
+        call nc_write_att_real(real(src_depth/1000.), 'source depth in km')
+        call nc_write_att_real(real(srccolat),        'Source colatitude')
+        call nc_write_att_real(real(srclon),          'Source longitude' )
+        call nc_write_att_real(real(magnitude),       'scalar source magnitude')
+        call nc_write_att_int(num_rec_tot,            'number of receivers')
+        call nc_write_att_int(nseismo,                'length of seismogram  in time samples')
+        call nc_write_att_real(real(deltat)*real(seis_it), 'seismogram sampling in sec')
         if (dump_wavefields) then
            call nc_write_att_int(nstrain,              'number of strain dumps')
            call nc_write_att_dble(deltat_coarse,       'strain dump sampling rate in sec')
@@ -1512,22 +1536,22 @@ subroutine write_parameters
            call nc_write_att_int(0,                    'number of snapshot dumps')
            call nc_write_att_real(0.,                  'snapshot dump sampling rate in sec')
         endif
-        call nc_write_att_char( 'cyl',                 'receiver components ')
-        call nc_write_att_int(  ibeg,                  'ibeg')
-        call nc_write_att_int(  iend,                  'iend')
-        call nc_write_att_int(  jbeg,                  'jbeg')
-        call nc_write_att_int(  jend,                  'jend')
-        call nc_write_att_real( shift_fact,            'source shift factor in sec')
-        call nc_write_att_int(  nint(shift_fact/deltat),  'source shift factor for deltat')
-        call nc_write_att_int(  nint(shift_fact/seis_dt), 'source shift factor for seis_dt')
-        call nc_write_att_int(  nint(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
-        call nc_write_att_char( trim(rec_file_type),   'receiver file type')
-        call nc_write_att_real( dtheta_rec,            'receiver spacing (0 if not even)')
+        call nc_write_att_char('cyl',                 'receiver components ')
+        call nc_write_att_int(ibeg,                  'ibeg')
+        call nc_write_att_int(iend,                  'iend')
+        call nc_write_att_int(jbeg,                  'jbeg')
+        call nc_write_att_int(jend,                  'jend')
+        call nc_write_att_real(shift_fact,            'source shift factor in sec')
+        call nc_write_att_int(nint(shift_fact/deltat),  'source shift factor for deltat')
+        call nc_write_att_int(nint(shift_fact/seis_dt), 'source shift factor for seis_dt')
+        call nc_write_att_int(nint(shift_fact/deltat_coarse), 'source shift factor for deltat_coarse')
+        call nc_write_att_char(trim(rec_file_type),   'receiver file type')
+        call nc_write_att_real(dtheta_rec,            'receiver spacing (0 if not even)')
         write(clogic,*) use_netcdf
-        call nc_write_att_char( clogic,                'use netcdf for wavefield output?')
+        call nc_write_att_char(clogic,                'use netcdf for wavefield output?')
 
-        call nc_write_att_int( 0,                      'percent completed')
-        call nc_write_att_int( 0,                      'finalized')
+        call nc_write_att_int(0,                      'percent completed')
+        call nc_write_att_int(0,                      'finalized')
     end if
 
 
