@@ -84,6 +84,7 @@ subroutine read_params
       if (len(trim(line)).lt.1.or.line(1:1).eq.'#') cycle
      
       read(line,*) keyword, keyvalue 
+
       parameter_to_read : select case(trim(keyword))
       
       case('BACKGROUND_MODEL') 
@@ -143,6 +144,10 @@ subroutine read_params
 
       case('VERBOSE')
           read(keyvalue, *) dump_mesh_info_screen
+
+      case default
+          write(6,*) "Unknkown parameter "//trim(keyword)//" in inparam_mesh"
+          stop
 
       end select parameter_to_read
   end do

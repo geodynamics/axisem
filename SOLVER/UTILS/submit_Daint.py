@@ -32,10 +32,10 @@ def create_inparam_mesh(mesh_file, mesh_period, ntheta=0, nrad=1, ncl=1,
             fid.write('NTHETA_SLICES %d \n' % ntheta)
 
 
-def get_ntheta(mesh_file, mesh_period, 
+def get_ntheta(mesh_file, mesh_period, ncl, 
                max_depth=None, max_colat=None):
     create_inparam_mesh(mesh_file, mesh_period, ntheta=0, nrad=1,
-                        max_depth=max_depth, max_colat=max_colat)
+                        max_depth=max_depth, max_colat=max_colat, ncl=ncl)
     output = sp.check_output('./xmesh')
     output_lines = output.split(sep=b'\n')
     for iline in range(0, len(output_lines)):
@@ -85,6 +85,11 @@ def define_arguments():
     helptext = 'Maximum depth in kilometer\n'
     parser.add_argument('--max_depth', type=float, 
                         help=helptext)
+
+    helptext = 'Source depth in kilometer\n'
+    parser.add_argument('--src_depth', type=float, default=0.0,
+                        help=helptext)
+    
     
     helptext = 'Wall time for the solver in hours\n'
     parser.add_argument('-w', '--walltime', type=float, default=1.0, 
@@ -143,6 +148,7 @@ if args.ntheta:
     ntheta = args.ntheta
 else:
     ntheta = get_ntheta(fnam_mesh_file, args.mesh_period,
+                        ncl=args.ncl,
                         max_depth=args.max_depth,
                         max_colat=args.max_colat)
     print('  Optimal number of theta slices: %d' % ntheta)
@@ -151,6 +157,7 @@ create_inparam_mesh(args.mesh_file,
                     args.mesh_period, 
                     ntheta=ntheta, 
                     nrad=nrad,
+                    ncl=args.ncl,
                     max_depth=args.max_depth,
                     max_colat=args.max_colat)
          
@@ -186,13 +193,13 @@ with open(path_sbatch_mesher, 'w') as fid:
 
 inparam_source = {'PX': 
                     'SOURCE_TYPE thetaforce  \n' + 
-                    'SOURCE_DEPTH 0.0  \n' +
+                    'SOURCE_DEPTH %f  \n' +
                     'SOURCE_LAT 90.0  \n' +
                     'SOURCE_LON 0.0  \n' +
                     'SOURCE_AMPLITUDE  1.E20', 
                   'PZ': 
                     'SOURCE_TYPE vertforce  \n' +
-                    'SOURCE_DEPTH 0.0  \n' +
+                    'SOURCE_DEPTH %f  \n' +
                     'SOURCE_LAT 90.0  \n' +
                     'SOURCE_LON 0.0  \n' +
                     'SOURCE_AMPLITUDE  1.E20'}
@@ -223,7 +230,7 @@ for part_run in ['PX', 'PZ']:
                     dst=os.path.join(solverdir, 'external_model.bm'))
         
     with open(os.path.join(solverdir, 'inparam_source'), 'w') as fid:
-        fid.write(inparam_source[part_run])
+        fid.write(inparam_source[part_run] % args.src_depth)
 
     # Create output directories
     os.mkdir(os.path.join(solverdir, 'Data'))
