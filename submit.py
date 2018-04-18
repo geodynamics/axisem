@@ -231,8 +231,8 @@ if __name__ == "__main__":
             '#SBATCH --account=%s \n' % args.account +                  \
             '#SBATCH --mail-type=BEGIN,FAIL \n' +                       \
             '#SBATCH --mail-user=%s \n' % args.mail_adress +            \
-            '#SBATCH --constraint=mc \n' +                              \
             '#SBATCH --partition=prepost \n' +                          \
+            '#SBATCH --constraint=mc \n' +                              \
             '#SBATCH --workdir=%s \n' % meshdir +                       \
             'export OMP_NUM_THREADS=8 \n' +                             \
             'module load slurm \n' +                                    \
@@ -311,15 +311,15 @@ if __name__ == "__main__":
             batch_solver_fmt = \
                 '#!/bin/bash -l \n' +                                         \
                 '#SBATCH --ntasks=%d \n' % ncpu +                             \
-                '#SBATCH --ntasks-per-node=36 \n' +                           \
+                '#SBATCH --ntasks-per-node=12 \n' +                           \
                 '#SBATCH --ntasks-per-core=1 \n' +                            \
                 '#SBATCH --cpus-per-task=1 \n' +                              \
                 '#SBATCH --time=%s \n' % hour2hms(args.walltime) +            \
                 '#SBATCH --account=%s \n' % args.account +                    \
                 '#SBATCH --mail-type=FAIL \n' +                               \
                 '#SBATCH --mail-user=%s \n' % args.mail_adress +              \
-                '#SBATCH --constraint=mc \n' +                                \
                 '#SBATCH --partition=normal \n' +                             \
+		'#SBATCH --constraint=gpu \n' +                               \
                 '#SBATCH --workdir=%s \n' % os.path.abspath(solverdir) +      \
                 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK \n' +            \
                 'module load slurm \n' +                                      \
@@ -355,12 +355,11 @@ if __name__ == "__main__":
             '#SBATCH --ntasks-per-core=1 \n' +                          \
             '#SBATCH --cpus-per-task=1 \n' +                            \
             '#SBATCH --time=24:00:00 \n' +                              \
-            '#SBATCH --mem=120GB \n' +                                  \
             '#SBATCH --account=%s \n' % args.account +                  \
             '#SBATCH --mail-type=END,FAIL \n' +                         \
             '#SBATCH --mail-user=%s \n' % args.mail_adress +            \
-            '#SBATCH --constraint=mc \n' +                              \
             '#SBATCH --partition=normal \n' +                           \
+            '#SBATCH --constraint=gpu \n' +                             \
             '#SBATCH --workdir=%s \n' % rundir +                        \
             'export OMP_NUM_THREADS=1 \n' +                             \
             'module load slurm \n' +                                    \
