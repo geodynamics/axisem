@@ -1065,7 +1065,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
     end if ! dump_wavefields
 
-    if (mynum == 0) then
+    mynum0: if (mynum == 0) then
         if (verbose > 1) write (6,*) ' Preparing netcdf file for ', nproc, ' processors'
         nmode = ior(NF90_CLOBBER, NF90_NETCDF4)
         call check( nf90_create(path=nc_fnam, cmode=nmode, ncid=ncid_out) )
@@ -1129,7 +1129,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
         call check( nf90_def_var(ncid=ncid_recout, name="stf_d_iter", xtype=NF90_FLOAT,&
                                  dimids=[nc_iter_dimid], varid=nc_stf_d_iter_varid) )
         
-        if (dump_wavefields) then
+        wavefields_group: if (dump_wavefields) then
             ! Wavefields group of output file N.B: Snapshots for kernel calculation
             if (verbose > 1) write(6,*) 'Define variables in ''Snapshots'' group of NetCDF output file', &
                                         '  awaiting', nstrain, ' snapshots'
@@ -1347,19 +1347,14 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
 
             call check( nf90_def_var( ncid_snapout, "stf_d_dump", NF90_FLOAT, &
                                       [nc_snap_dimid], nc_stf_d_dump_varid) )
-        end if
+        end if wavefields_group
         
         if (verbose > 1) write(6,'(I6,a/)') mynum, 'NetCDF variables defined'
             
 
         call check( nf90_enddef(ncid_out))
 
-
-! in case of parallel IO, only the first rank writes
-!#ifdef enable_parallel_netcdf
-!    if (mynum == 0) then    
-!#endif
-        if (have_receiver) then
+        receiver: if (have_receiver) then
           if (verbose > 1) then
               write(6,*) 'Writing station info into NetCDF file...'
               call flush(6)
@@ -1381,7 +1376,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
               write(6,*) '...done'
               call flush(6)
           end if
-        end if
+        end if receiver
 
         ! Write out STFs
         if (verbose > 1) then
@@ -1432,7 +1427,7 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
             end if
         end if
     
-    end if ! (mynum == 0)
+    endif mynum0
     
 
 ! Allocation of Dump buffer variables. Done on all procs
@@ -1467,8 +1462,12 @@ subroutine nc_define_outputfile(nrec, rec_names, rec_th, rec_th_req, rec_ph, rec
     if (mynum==0) call check( nf90_close(ncid = ncid_out))
     call barrier()
 
-    if (verbose > 0 .and. mynum == 0) then
-        write (6,*) ' Opening netcdf file for parallel IO'
+    if (verbose > 0) then
+        if (verbose > 2) then
+            write (6,*) mynum, ' Opening netcdf file for parallel IO'
+        elseif (mynum == 0) then
+            write (6,*) ' Opening netcdf file for parallel IO'
+        endif
         call flush(6)
     end if
     nmode = ior(NF90_WRITE, NF90_NETCDF4)

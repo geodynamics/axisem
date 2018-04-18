@@ -36,7 +36,7 @@ def create_inparam_mesh(mesh_file, mesh_period, nrad, ncl, ntheta=0,
 
         if max_colat:
             fid.write('LOCAL_MAX_COLAT %f \n' % max_colat)
-
+        
         if ntheta == 0:
             fid.write('NTHETA_SLICES %d \n' % 1)
             fid.write('ONLY_SUGGEST_NTHETA TRUE \n')
@@ -118,6 +118,24 @@ def define_arguments():
     parser.add_argument('--src_depth', type=float, default=0.0,
                         help=helptext)
 
+    helptext = 'Number of theta slices \n'
+    parser.add_argument('--ntheta', type=int, help=helptext)
+
+    helptext = 'Number of coarsening layers\n'
+    parser.add_argument('--ncl', type=int, default=1, help=helptext)
+
+    helptext = 'Maximum colatitude\n'
+    parser.add_argument('--max_colat', type=float, 
+                        help=helptext)
+    helptext = 'Maximum depth in kilometer\n'
+    parser.add_argument('--max_depth', type=float, 
+                        help=helptext)
+
+    helptext = 'Source depth in kilometer\n'
+    parser.add_argument('--src_depth', type=float, default=0.0,
+                        help=helptext)
+    
+    
     helptext = 'Wall time for the solver in hours\n'
     parser.add_argument('-w', '--walltime', type=float, default=1.0,
                         help=helptext)
@@ -138,7 +156,6 @@ def define_arguments():
                         help=helptext)
 
     return parser
-
 
 if __name__ == "__main__":
     parser = define_arguments()

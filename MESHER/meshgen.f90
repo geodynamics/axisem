@@ -85,8 +85,12 @@ subroutine generate_skeleton
 
   ! CENTRAL REGION GENERATION (inner shell + central square + buffer layer)
   write(6,*)'define central region...';call flush(6)
-  if (local_max_colat == 180.) &
+  if (local_max_colat == 180.) then
      call define_central_region
+  elseif (only_suggest_ntheta) then
+     call get_ntheta_local(ns_glob)
+  endif
+     
 
   ! GATHER INFORMATION FROM DIFFERENT REGIONS IN GLOBAL ARRAYS
   write(6,*)'gather skeleton...';call flush(6)
@@ -106,6 +110,35 @@ subroutine generate_skeleton
   call generate_serendipity(npointot, neltot, sg, zg)
 
 end subroutine generate_skeleton
+!-----------------------------------------------------------------------------------------
+
+!-----------------------------------------------------------------------------------------
+subroutine get_ntheta_local(nelem_s)
+  integer, intent(in) :: nelem_s
+  integer             :: ntheta_opt_buff, ntheta_opt, nn
+
+  ntheta_opt_buff = -1
+  write(6,*)
+  write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+  write(6,*) '   suggested number of theta slices for optimal mesh decomposition:'
+  do nn=1, 10
+      ntheta_opt = nelem_s / (2 * nn)
+      if (mod(ntheta_opt, 4) > 0) ntheta_opt = ntheta_opt + 4 - mod(ntheta_opt, 4)
+      if (ntheta_opt > 4) then
+         if (ntheta_opt .ne. ntheta_opt_buff .and. (ntheta_opt<1E4)) write(6,*) ntheta_opt
+      else
+         exit
+      end if
+      ntheta_opt_buff = ntheta_opt
+  enddo
+  write(6,*) '   1, 2 and 4 are always decomposed optimally'
+  write(6,*) '~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~'
+  write(6,*)
+  write(6,*) 'ONLY_SUGGEST_NTHETA was set, hence stopping now. Set to false to actually generate a mesh!'
+  call exit()
+  
+
+end subroutine get_ntheta_local
 !-----------------------------------------------------------------------------------------
 
 !-----------------------------------------------------------------------------------------
