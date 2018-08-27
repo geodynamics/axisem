@@ -352,13 +352,11 @@ subroutine check_a_smaller_b(a, b, a_name, b_name)
     real(kind=dp),    intent(in) :: a, b
     character(len=*), intent(in) :: a_name, b_name
 
-97  format('****************************************************')
+97  format(/'****************************************************'/)
 98  format('ERROR: ', A, ' should be smaller than ', A)
 99  format(A, ': ', E15.8)
     if (a >= b) then
-        print *,    
         write(6,97)    
-        print *,    
         write(6,98) a_name, b_name
         write(6,99) a_name, a
         write(6,99) b_name, b
