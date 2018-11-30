@@ -1272,7 +1272,7 @@ end function prem_solid_sub
 
 !-----------------------------------------------------------------------------------------
 !> isotropic prem model in terms of domains separated by discontinuities
-!! but with lower crust extended to the surface
+!! but with upper crust extended to the mantle
 real(kind=dp) function prem_onecrust_sub(r0, param, idom)
 
   real(kind=dp)   , intent(in) :: r0
