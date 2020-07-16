@@ -1966,16 +1966,28 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
         call interpolate(interp_vpv(idom), r0, arbitr_sub_solar, success)
 
      case('vph')
-        call interpolate(interp_vph(idom), r0, arbitr_sub_solar, success)
+        if (ext_model_is_anelastic) then
+           call interpolate(interp_vph(idom), r0, arbitr_sub_solar, success)
+        else
+           call interpolate(interp_vpv(idom), r0, arbitr_sub_solar, success)
+        end if
 
      case('v_s', 'vsv')
         call interpolate(interp_vsv(idom), r0, arbitr_sub_solar, success)
 
      case('vsh')
-        call interpolate(interp_vsh(idom), r0, arbitr_sub_solar, success)
+        if (ext_model_is_anelastic) then
+           call interpolate(interp_vsh(idom), r0, arbitr_sub_solar, success)
+        else
+           call interpolate(interp_vsv(idom), r0, arbitr_sub_solar, success)
+        end if
 
      case('eta')
-        call interpolate(interp_eta(idom), r0, arbitr_sub_solar, success)
+        if (ext_model_is_anelastic) then
+           call interpolate(interp_eta(idom), r0, arbitr_sub_solar, success)
+        else
+           arbitr_sub_solar = 1.     
+        end if
         success = .true.
 
      case('Qmu', 'Qka')
