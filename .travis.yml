@@ -1,7 +1,6 @@
 language: generic
 
 # Use the trusty environment, since the netcdf packages in 12.04 are broken
-dist: trusty
 sudo: required
 
 env:
