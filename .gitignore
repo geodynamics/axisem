@@ -48,3 +48,11 @@ SOLVER/inparam_source
 
 SOLVER/STATIONS
 
+.idea/
+MESHER/gitversion.h
+Makefile
+SOLVER/gitversion.h
+SOLVER/inparam_hetero
+inparam_advanced
+inparam_basic
+

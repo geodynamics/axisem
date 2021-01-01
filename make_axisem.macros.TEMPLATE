@@ -25,7 +25,7 @@ SERIAL = false
 # Include the file mpif.h, instead of using the FORTRAN MPI module 
 # Sometimes necessary when the local OpenMPI-version was not compiled with the
 # same version of the compiler as the one specified as $FC
-INCLUDE_MPI = false
+INCLUDE_MPI = true
 
 ####################################
 # Choose compiler names and flags: #

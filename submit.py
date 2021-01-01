@@ -53,11 +53,11 @@ def create_inparam_mesh(mesh_file, mesh_period, nrad, ncl, ntheta=0,
             fid.write('NTHETA_SLICES %d \n' % ntheta)
 
 
-def progress():
+def progress(directory):
     pct = 0
     print('[---------------------------------------------------]')
     while True:
-        ts = glob.glob('timestamp*.txt')
+        ts = glob.glob(os.path.join(directory, 'timestamp*.txt'))
         for i in range(pct, len(ts)):
             print('=', end='')
         pct = len(ts)
@@ -304,8 +304,16 @@ if __name__ == "__main__":
         if args.jobtype == 'local':  # local run, consecutive
             os.chdir(os.path.abspath(solverdir))
             print('  Starting %s AxiSEM simulation' % desc[part_run])
-            output = sp.check_output('mpirun -n %d ./axisem > OUTPUT' % ncpu,
-                                     shell=True)
+            try:
+                output = sp.check_output('mpirun -n %d ./axisem > OUTPUT'
+                                         % ncpu,
+                                         stderr=sp.STDOUT,
+                                         shell=True)
+            except sp.CalledProcessError as e:
+                print(e)
+                print('\nLast lines of OUTPUT\n')
+                _ = sp.run('tail OUTPUT -n 20', shell=True)
+                raise
 
         elif args.jobtype == 'Daint':
             batch_solver_fmt = \
@@ -319,7 +327,7 @@ if __name__ == "__main__":
                 '#SBATCH --mail-type=FAIL \n' +                               \
                 '#SBATCH --mail-user=%s \n' % args.mail_adress +              \
                 '#SBATCH --partition=normal \n' +                             \
-		'#SBATCH --constraint=gpu \n' +                               \
+                '#SBATCH --constraint=gpu \n' +                               \
                 '#SBATCH --workdir=%s \n' % os.path.abspath(solverdir) +      \
                 'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK \n' +            \
                 'module load slurm \n' +                                      \
@@ -345,7 +353,12 @@ if __name__ == "__main__":
     if args.jobtype == 'local':  # local run, consecutive
         os.chdir(os.path.abspath(rundir))
         print('  Starting database repack for Instaseis')
-        output = sp.check_output(repack_call, shell=True)
+        try:
+            output = sp.check_output(repack_call, shell=True)
+        except sp.CalledProcessError as e:
+            print(e)
+            _ = sp.run('tail OUTPUT_FT -n 20', shell=True)
+            raise
 
     elif args.jobtype == 'Daint':
         batch_FT_fmt =                                                  \
