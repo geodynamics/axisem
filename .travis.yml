@@ -9,10 +9,10 @@ jobs:
     name: 'Mesher (Debug)'
     script: ./TESTING/test_mesher.sh;
 
-  - dist: bionic
-    env: BUILD='debug'
-    name: 'Solver, internal model (Debug)'
-    script: ./TESTING/test_internal.sh;
+    # - dist: bionic
+    #   env: BUILD='debug'
+    #   name: 'Solver, internal model (Debug)'
+    #   script: ./TESTING/test_internal.sh;
 
   - dist: bionic
     env: BUILD='debug'
@@ -74,7 +74,7 @@ after_success:
 after_failure:
  - tail -n 25 $TRAVIS_BUILD_DIR/runs/*/P?/OUTPUT 
  - cd $TRAVIS_BUILD_DIR/runs/TEST01/PX
- - mpirun -n 2 ./axisem
+ - mpirun -n 4 ./axisem
 
 
 cache:
