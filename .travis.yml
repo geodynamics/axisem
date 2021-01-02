@@ -6,24 +6,33 @@ jobs:
   include:
   - dist: bionic
     env: BUILD='debug'
-         TEST='mesher'
+    name: 'Mesher (Debug)'
+    script: ./TESTING/test_mesher.sh;
+
   - dist: bionic
     env: BUILD='debug'
-         TEST='internal_models'
+    name: 'Solver, internal model (Debug)'
+    script: ./TESTING/test_internal.sh;
+
   - dist: bionic
     env: BUILD='debug'
-         TEST='external_models'
+    name: 'Solver, external model (Debug)'
+    script: ./TESTING/test_external.sh;
+
   - dist: bionic
     env: BUILD='release'
-         TEST='mesher'
+    name: 'Mesher (Release)'
+    script: ./TESTING/test_mesher.sh;
+
   - dist: bionic
     env: BUILD='release'
-         TEST='internal_models'
+    name: 'Solver, internal model (Release)'
+    script: ./TESTING/test_internal.sh;
+
   - dist: bionic
     env: BUILD='release'
-         TEST='external_models'
-  - dist: xenial 
-    env: BUILD='debug'
+    name: 'Solver, external model (Release)'
+    script: ./TESTING/test_external.sh;
 
 addons:
   apt:
@@ -38,6 +47,7 @@ before_install:
   - export MINICONDA=$HOME/miniconda
   - export PATH="$MINICONDA/bin:$PATH"
   - export TRAVIS_PYTHON_VERSION=3.8
+  - export TEST_DIR=$TRAVIS_BUILD_DIR/TESTING
   - hash -r
   # Install conda only if necessary
   - source "$MINICONDA/etc/profile.d/conda.sh" || { wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
@@ -56,36 +66,16 @@ before_install:
 
 install: 
   - ./copytemplates.sh $BUILD
-  - make
+  - make -j 4
   
-script:
-  - if [[ $TEST == 'mesher' ]]; then ./TRAVIS/test_mesher.sh; fi
-
-  - if [[ $TEST == 'internal_models' ]]; then ./submit.py test_prem_ani prem_ani 150.0 --jobtype local --ntheta 2; fi
-
-  - export TEST_DIR=$TRAVIS_BUILD_DIR/TESTING
-
-  - if [[ $TEST == 'external_models' ]]; then 
-    cp $TEST_DIR/TEST01_elastic_isotropic/inparam_basic .;
-    ./submit.py TEST01 $TEST_DIR/TEST01_elastic_isotropic/model.bm 150.0 --jobtype local --ntheta 2 ;
-    fi
-
-  - if [[ $TEST == 'external_models' ]]; then 
-    cp $TEST_DIR/TEST02_elastic_anisotropic/inparam_basic .;
-    ./submit.py TEST02 $TEST_DIR/TEST02_elastic_anisotropic/model.bm 150.0 --jobtype local --ntheta 2 ;
-    fi
-
-  - if [[ $TEST == 'external_models' ]]; then 
-    cp $TEST_DIR/TEST03_anelastic_isotropic/inparam_basic .;
-    ./submit.py TEST03 $TEST_DIR/TEST03_anelastic_isotropic/model.bm 150.0 --jobtype local --ntheta 2 ;
-    fi
-
-  - if [[ $TEST == 'external_models' ]]; then 
-    cp $TEST_DIR/TEST04_anelastic_anisotropic/inparam_basic .;
-    ./submit.py TEST04 $TEST_DIR/TEST04_anelastic_anisotropic/model.bm 150.0 --jobtype local --ntheta 2 ;
-    fi
 
 after_success:
+
+after_failure:
+ - tail -n 25 $TRAVIS_BUILD_DIR/runs/*/P?/OUTPUT 
+ - cd $TRAVIS_BUILD_DIR/runs/TEST01/PX
+ - mpirun -n 2 ./axisem
+
 
 cache:
   apt: true

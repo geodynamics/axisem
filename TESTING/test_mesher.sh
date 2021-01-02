@@ -15,7 +15,7 @@ for file in $FILES; do
   echo "****************************************************************"
   echo ""
   # Modify inparam_mesh to use this file
-  sed -e "s/EXT_TEMPLATE/'$file'/" ../TRAVIS/inparam_mesh_external_template > inparam_mesh
+  sed -e "s/EXT_TEMPLATE/'$file'/" ../TESTING/inparam_mesh_external_template > inparam_mesh
   set +e
   ./xmesh &> OUTPUT 
   if [ $? == 0 ]; then

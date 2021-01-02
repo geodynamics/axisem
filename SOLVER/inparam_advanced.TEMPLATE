@@ -67,8 +67,8 @@ CHECKPOINTING       true
 # meshes (<10s) running on few cores, setting a value above 256 can require >>10GB of
 # memory per CPU. When using CHUNK_TIME_TRACES and many cores, a value larger
 # then the number of strain samples might be appropriate.
-# Default value: 128
-NETCDF_DUMP_BUFFER  128
+# Default value: 64
+NETCDF_DUMP_BUFFER  64
 
 # Chunking of the kernel wavefields: Default is snapshots to write to contiguous
 # regions on the drive. When running on many cores and using collective IO, it

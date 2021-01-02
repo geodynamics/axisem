@@ -305,14 +305,15 @@ if __name__ == "__main__":
             os.chdir(os.path.abspath(solverdir))
             print('  Starting %s AxiSEM simulation' % desc[part_run])
             try:
-                output = sp.check_output('mpirun -n %d ./axisem > OUTPUT'
-                                         % ncpu,
+                command = 'mpirun -n %d ./axisem -quiet > OUTPUT' % ncpu
+                output = sp.check_output(command,
                                          stderr=sp.STDOUT,
                                          shell=True)
             except sp.CalledProcessError as e:
                 print(e)
+                print(output)
                 print('\nLast lines of OUTPUT\n')
-                _ = sp.run('tail OUTPUT -n 20', shell=True)
+                _ = sp.run('tail OUTPUT -n 40', shell=True)
                 raise
 
         elif args.jobtype == 'Daint':
