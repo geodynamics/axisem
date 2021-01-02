@@ -154,6 +154,8 @@ logical function model_is_anelastic(bkgrdmodel2)
     model_is_anelastic = .true.
   case('prem_iso')
     model_is_anelastic = .true.
+  case('prem_iso_onecrust')
+    model_is_anelastic = .true.
   case('prem_ani')
     model_is_anelastic = .true.
   case('prem_ani_onecrust')
@@ -1270,13 +1272,14 @@ end function prem_solid_sub
 
 !-----------------------------------------------------------------------------------------
 !> isotropic prem model in terms of domains separated by discontinuities
-!! but with lower crust extended to the surface
+!! but with upper crust extended to the mantle
 real(kind=dp) function prem_onecrust_sub(r0, param, idom)
 
   real(kind=dp)   , intent(in) :: r0
   integer, intent(in)          :: idom
   real(kind=dp)                :: r, x_prem
   real(kind=dp)                :: ro_prem, vp_prem, vs_prem
+  real(kind=dp)                :: Qmu, Qkappa  
   character(len=3), intent(in) :: param !rho, vs,vp
 
   r = r0 / 1000.
@@ -1287,42 +1290,68 @@ real(kind=dp) function prem_onecrust_sub(r0, param, idom)
      ro_prem = 2.6                    
      vp_prem = 5.8
      vs_prem = 3.2
-  elseif(idom==2)then      ! upper mantle
+     Qmu = 600.0
+     Qkappa = 57827.0
+  elseif(idom==2)then    ! upper mantle
+     ro_prem = 2.691  + 0.6924 * x_prem         
+     vp_prem = 4.1875 + 3.9382 * x_prem
+     vs_prem = 2.1519 + 2.3481 * x_prem
+     Qmu = 600.0
+     Qkappa = 57827.0
+  elseif(idom==3)then    
      ro_prem = 2.691  + 0.6924 * x_prem             
      vp_prem = 4.1875 + 3.9382 * x_prem
      vs_prem = 2.1519 + 2.3481 * x_prem
-  elseif(idom==3)then
+     Qmu = 80.0
+     Qkappa = 57827.0  
+  elseif(idom==4)then
      ro_prem =  7.1089 -  3.8045 * x_prem
      vp_prem = 20.3926 - 12.2569 * x_prem
      vs_prem =  8.9496 -  4.4597 * x_prem
-  elseif(idom==4)then
+     Qmu = 143.0
+     Qkappa = 57827.0
+  elseif(idom==5)then
      ro_prem = 11.2494 -  8.0298 * x_prem
      vp_prem = 39.7027 - 32.6166 * x_prem
      vs_prem = 22.3512 - 18.5856 * x_prem
-  elseif(idom==5)then
+     Qmu = 143.0
+     Qkappa = 57827.0
+  elseif(idom==6)then
      ro_prem =  5.3197 - 1.4836 * x_prem
      vp_prem = 19.0957 - 9.8672 * x_prem
      vs_prem =  9.9839 - 4.9324 * x_prem
-  elseif(idom==6)then   !lower mantle
+     Qmu = 143.0
+     Qkappa = 57827.0
+  elseif(idom==7)then   !lower mantle
      ro_prem =  7.9565 -  6.4761 * x_prem + 5.5283 * x_prem**2 - 3.0807 * x_prem**3
      vp_prem = 29.2766 - 23.6027 * x_prem + 5.5242 * x_prem**2 - 2.5514 * x_prem**3
      vs_prem = 22.3459 - 17.2473 * x_prem - 2.0834 * x_prem**2 + 0.9783 * x_prem**3
-  elseif(idom==7)then
+     Qmu = 312.0
+     Qkappa = 57827.0
+  elseif(idom==8)then
      ro_prem =  7.9565 - 6.4761  * x_prem +  5.5283 * x_prem**2 -  3.0807 * x_prem**3
      vp_prem = 24.9520 - 40.4673 * x_prem + 51.4832 * x_prem**2 - 26.6419 * x_prem**3
      vs_prem = 11.1671 - 13.7818 * x_prem + 17.4575 * x_prem**2 -  9.2777 * x_prem**3
-  elseif(idom==8)then
+     Qmu = 312.0
+     Qkappa = 57827.0
+  elseif(idom==9)then
      ro_prem =  7.9565 - 6.4761 * x_prem + 5.5283 * x_prem**2 - 3.0807 * x_prem**3
      vp_prem = 15.3891 - 5.3181 * x_prem + 5.5242 * x_prem**2 - 2.5514 * x_prem**3
      vs_prem =  6.9254 + 1.4672 * x_prem - 2.0834 * x_prem**2 + 0.9783 * x_prem**3
-  elseif(idom==9)then  ! outer core
+     Qmu = 312.0
+     Qkappa = 57827.0
+  elseif(idom==10)then  ! outer core
      ro_prem = 12.5815 - 1.2638 * x_prem - 3.6426 * x_prem**2 -  5.5281 * x_prem**3
      vp_prem = 11.0487 - 4.0362 * x_prem + 4.8023 * x_prem**2 - 13.5732 * x_prem**3
      vs_prem = 0.00
-  elseif(idom==10)then                        ! inner core
+     Qmu = 0.0
+     Qkappa = 57827.0
+  elseif(idom==11)then                        ! inner core
      ro_prem = 13.0885 - 8.8381 * x_prem**2
      vp_prem = 11.2622 - 6.3640 * x_prem**2
      vs_prem =  3.6678 - 4.4475 * x_prem**2
+     Qmu = 84.6
+     Qkappa = 1327.7
   endif
 
   if (param=='rho') then
@@ -1341,6 +1370,10 @@ real(kind=dp) function prem_onecrust_sub(r0, param, idom)
      prem_onecrust_sub = vs_prem*1000.
   elseif (param=='eta') then
      prem_onecrust_sub = 1.
+  elseif (param=='Qmu') then
+     prem_onecrust_sub = Qmu
+  elseif (param=='Qka') then
+     prem_onecrust_sub = Qkappa
   else
      if (lpr) write(6,*)'ERROR IN PREM_SUB FUNCTION:', param, 'NOT AN OPTION'
      stop
