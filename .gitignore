@@ -48,6 +48,7 @@ SOLVER/inparam_source
 
 SOLVER/STATIONS
 
+*.gcno
 .idea/
 MESHER/gitversion.h
 Makefile
