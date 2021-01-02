@@ -123,6 +123,7 @@ subroutine putvar_double1d(ncid, varid, values, start, count)
    integer                      :: dimid(10)
    character(len=nf90_max_name) :: varname, dimname
 
+   if (count==0) return
 
    status = nf90_inquire_variable(ncid  = ncid,     &
                                   varid = varid,    &
@@ -167,7 +168,8 @@ subroutine putvar_double1d(ncid, varid, values, start, count)
                                        dimid = dimid(1), &
                                        name  = dimname,  &
                                        len   = dimsize )
-       if (start + count - 1 > dimsize) then
+       if (0 < count .and. &
+           (start + count - 1 > dimsize)) then
            write(*,102) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
            print *, trim(nf90_strerror(status))
            stop
@@ -212,6 +214,8 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
    character(len=nf90_max_name) :: varname, dimname
 
 
+   if (count==0) return
+
    status = nf90_inquire_variable(ncid  = ncid,     &
                                   varid = varid,    &
                                   name  = varname )
@@ -255,7 +259,7 @@ subroutine putvar_real1d(ncid, varid, values, start, count)
                                        dimid = dimid(1), &
                                        name  = dimname,  &
                                        len   = dimsize )
-       if (start + count - 1 > dimsize) then
+       if ((count > 0) .and. (start + count - 1 > dimsize)) then
            write(*,102) mynum, trim(varname), varid, ncid, start, count, dimsize, trim(dimname)
            print *, trim(nf90_strerror(status))
            stop
@@ -300,6 +304,8 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
    integer                      :: dimid(10)
    character(len=nf90_max_name) :: varname, dimname
 
+
+   if (product(count)==0) return
 
    status = nf90_inquire_variable(ncid  = ncid,     &
                                   varid = varid,    &
@@ -353,7 +359,7 @@ subroutine putvar_real2d(ncid, varid, values, start, count)
                                            dimid = dimid(idim), &
                                            name  = dimname,     &
                                            len   = dimsize )
-           if (start(idim) + count(idim) - 1 > dimsize) then
+           if ((count(idim) > 0) .and. (start(idim) + count(idim) - 1 > dimsize)) then
                write(*,102) mynum, trim(varname), varid, ncid, start(idim), count(idim), &
                             dimsize, trim(dimname), idim 
                print *, trim(nf90_strerror(status))
@@ -405,6 +411,7 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
    integer                      :: dimid(10)
    character(len=nf90_max_name) :: varname, dimname
 
+   if (product(count)==0) return
 
    status = nf90_inquire_variable(ncid  = ncid,     &
                                   varid = varid,    &
@@ -458,7 +465,7 @@ subroutine putvar_real3d(ncid, varid, values, start, count)
                                            dimid = dimid(idim), &
                                            name  = dimname,     &
                                            len   = dimsize )
-           if (start(idim) + count(idim) - 1 > dimsize) then
+           if ((count(idim) > 0) .and. (start(idim) + count(idim) - 1 > dimsize)) then
                write(*,102) mynum, trim(varname), varid, ncid, start(idim), count(idim), &
                             dimsize, trim(dimname), idim 
                print *, trim(nf90_strerror(status))
