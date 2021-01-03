@@ -1,77 +1,87 @@
-language: generic
+language: cpp
 
-# Use the trusty environment, since the netcdf packages in 12.04 are broken
-dist: trusty
-sudo: required
+os: linux
 
-env:
-  global:
-    MPI_IMPL=openmpi
+compiler:
+  - cpp
 
-  matrix:
-    - GFORTRAN_VERSION=6
-      BUILD='debug'
-    - GFORTRAN_VERSION=4.8
-      EXTRAFLAGS=-fopenmp
-      BUILD='release'
-    - GFORTRAN_VERSION=6
-      EXTRAFLAGS=-fopenmp
-      BUILD='release'
-    - GFORTRAN_VERSION=4.7
-      BUILD='release'
-    - GFORTRAN_VERSION=4.8
-      BUILD='release'
-    - GFORTRAN_VERSION=4.9
-      BUILD='release'
-    - GFORTRAN_VERSION=5 
-      BUILD='release'
-    - GFORTRAN_VERSION=6
-      BUILD='release'
+jobs: 
+  include:
+  - dist: bionic
+    env: BUILD='debug'
+    name: 'Mesher (Debug)'
+    script: ./TESTING/test_mesher.sh;
+
+    # - dist: bionic
+    #   env: BUILD='debug'
+    #   name: 'Solver, internal model (Debug)'
+    #   script: ./TESTING/test_internal.sh;
+
+  - dist: bionic
+    env: BUILD='coverage'
+    name: 'Solver, coverage'
+    script: travis_wait 30 ./TESTING/test_debug.sh;
+
+  - dist: bionic
+    env: BUILD='release'
+    name: 'Mesher (Release)'
+    script: ./TESTING/test_mesher.sh;
+
+  - dist: bionic
+    env: BUILD='release'
+    name: 'Solver, internal model (Release)'
+    script: ./TESTING/test_internal.sh;
+
+  - dist: bionic
+    env: BUILD='release'
+    name: 'Solver, external model (Release)'
+    script: ./TESTING/test_external.sh;
+
+addons:
+  apt:
+    packages:
+      - gfortran 
+      - gcc 
+      - libopenmpi-dev 
+      - libnetcdff-dev 
+      - openmpi-bin
 
 before_install:
   - export MINICONDA=$HOME/miniconda
   - export PATH="$MINICONDA/bin:$PATH"
+  - export TRAVIS_PYTHON_VERSION=3.8
+  - export TEST_DIR=$TRAVIS_BUILD_DIR/TESTING
   - hash -r
   # Install conda only if necessary
-  - command -v conda >/dev/null || { wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+  - source "$MINICONDA/etc/profile.d/conda.sh" || { wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
      bash miniconda.sh -b -f -p $MINICONDA; }
-  - conda update --yes conda
-  - conda remove --yes -n condaenv --all || echo "Conda not yet installed"
-  - conda create --yes -n condaenv python=2.7
-  - conda install --yes -n condaenv pip
-  - source activate condaenv
-  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
-  - conda install --yes -c obspy obspy # python=2.7
-  - travis_retry pip install $PIP_DEPS
-   #Install Gfortran in selected version
-  - sudo -E apt-add-repository -y "ppa:ubuntu-toolchain-r/test"
-  - sudo -E apt-get -yq update &>> ~/apt-get-update.log
-  - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install 
-    gfortran-$GFORTRAN_VERSION g++-$GFORTRAN_VERSION tcsh gnuplot
-  - export TRAVIS_ROOT=$HOME/travis
-    #- mkdir -p $TRAVIS_ROOT
-  - wget https://www.geophysik.uni-muenchen.de/~staehler/mpi_builds/mpi_netcdf_gcc$GFORTRAN_VERSION.tar.gz 
-  - tar -xf mpi_netcdf_gcc$GFORTRAN_VERSION.tar.gz -C $HOME
-  # Get and install OpenMPI
-  # - ./TRAVIS/install_mpi.sh $TRAVIS_ROOT $MPI_IMPL $GFORTRAN_VERSION > LOG_OpenMPI.log
-  # Get and install NetCDF4
-  #- ./TRAVIS/install_netcdf.sh $TRAVIS_ROOT $GFORTRAN_VERSION > LOG_NetCDF4.log
-  - export PATH="$TRAVIS_ROOT/bin:$PATH"
+  - source "$MINICONDA/etc/profile.d/conda.sh"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - conda config --add channels conda-forge
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION click netcdf4 scipy 
+  - conda activate test-environment
+  - pip install --user cpp-coveralls
 
-install: true
+
+install: 
+  - ./copytemplates.sh $BUILD
+  - make -j 4
   
-script:
-  - ./TRAVIS/test_mesher.sh
-  - cd TESTING;
-  - python test_nightly_axisem.py -t 1
-  - python test_nightly_axisem.py -t 2
-  - python test_nightly_axisem.py -t 3
-  - cd ..
-  - ./submit.py test_prem_ani prem_ani 100.0 --jobtype local --ntheta 2
 
 after_success:
+  - if [[ $BUILD == 'coverage' ]]; then 
+    coveralls --exclude SOLVER/UTILS --exclude MESHER/UTILS --exclude TESTING --exclude MANUAL --gcov-options '\-lp'; 
+    fi
+
+after_failure:
+ - tail -n 25 $TRAVIS_BUILD_DIR/runs/*/P?/OUTPUT 
+ - cd $TRAVIS_BUILD_DIR/runs/TEST01/PX
+ - mpirun -n 4 ./axisem
+
 
 cache:
   apt: true

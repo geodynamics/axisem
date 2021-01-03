@@ -1999,7 +1999,7 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
         call interpolate(interp_vpv(idom), r0, arbitr_sub_solar, success)
 
      case('vph')
-        if (ext_model_is_anelastic) then
+        if (ext_model_is_ani) then
            call interpolate(interp_vph(idom), r0, arbitr_sub_solar, success)
         else
            call interpolate(interp_vpv(idom), r0, arbitr_sub_solar, success)
@@ -2009,14 +2009,14 @@ real(kind=dp) function arbitr_sub_solar(r0, param, idom)
         call interpolate(interp_vsv(idom), r0, arbitr_sub_solar, success)
 
      case('vsh')
-        if (ext_model_is_anelastic) then
+        if (ext_model_is_ani) then
            call interpolate(interp_vsh(idom), r0, arbitr_sub_solar, success)
         else
            call interpolate(interp_vsv(idom), r0, arbitr_sub_solar, success)
         end if
 
      case('eta')
-        if (ext_model_is_anelastic) then
+        if (ext_model_is_ani) then
            call interpolate(interp_eta(idom), r0, arbitr_sub_solar, success)
         else
            arbitr_sub_solar = 1.     
