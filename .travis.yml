@@ -20,7 +20,7 @@ jobs:
   - dist: bionic
     env: BUILD='debug'
     name: 'Solver, mixed (Debug)'
-    script: ./TESTING/test_debug.sh;
+    script: travis_wait -n 30 ./TESTING/test_debug.sh;
 
   - dist: bionic
     env: BUILD='release'
