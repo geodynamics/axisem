@@ -18,9 +18,9 @@ jobs:
     #   script: ./TESTING/test_internal.sh;
 
   - dist: bionic
-    env: BUILD='debug'
-    name: 'Solver, mixed (Debug)'
-    script: travis_wait -n 30 ./TESTING/test_debug.sh;
+    env: BUILD='coverage'
+    name: 'Solver, coverage'
+    script: travis_wait 30 ./TESTING/test_debug.sh;
 
   - dist: bionic
     env: BUILD='release'
@@ -62,7 +62,6 @@ before_install:
   # Useful for debugging any issues with conda
   - conda info -a
   - conda config --add channels conda-forge
-  # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION click netcdf4 scipy 
   - conda activate test-environment
   - pip install --user cpp-coveralls
@@ -74,7 +73,9 @@ install:
   
 
 after_success:
-  - coveralls --exclude TESTING --exclude MANUAL --gcov-options '\-lp'
+  - if [[ $BUILD == 'coverage' ]]; then 
+    coveralls --exclude SOLVER/UTILS --exclude MESHER/UTILS --exclude TESTING --exclude MANUAL --gcov-options '\-lp'; 
+    fi
 
 after_failure:
  - tail -n 25 $TRAVIS_BUILD_DIR/runs/*/P?/OUTPUT 

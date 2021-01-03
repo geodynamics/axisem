@@ -43,9 +43,9 @@ INCLUDE_MPI = true
 # GFORTRAN (debug)
 CC      = gcc
 FC      = mpif90
-FFLAGS  = -g -fbacktrace -fbounds-check -frange-check -pedantic 
-CFLAGS  = -g -fbacktrace -Wall 
-LDFLAGS = -g -fbacktrace -Wall
+FFLAGS  = -g -fbacktrace -fbounds-check -frange-check -pedantic --coverage
+CFLAGS  = -g -fbacktrace -Wall --coverage
+LDFLAGS = -g -fbacktrace -Wall --coverage
 
 # PORTLAND (fast)
 #CC      = pgcc 
