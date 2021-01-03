@@ -49,6 +49,8 @@ SOLVER/inparam_source
 SOLVER/STATIONS
 
 *.gcno
+*.gcda
+__pycache__
 .idea/
 MESHER/gitversion.h
 Makefile

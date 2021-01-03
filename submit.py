@@ -119,7 +119,7 @@ def define_arguments():
                         default=2)
 
     helptext = 'Job type (local, CSCS Daint)\n'
-    parser.add_argument('-j', '--jobtype', type=str,
+    parser.add_argument('-j', '--job_type', type=str,
                         default='local',
                         help=helptext)
 
@@ -140,11 +140,11 @@ def define_arguments():
                         default=1)
 
     helptext = 'Wall time for the solver in hours\n'
-    parser.add_argument('-w', '--walltime', type=float, default=1.0,
+    parser.add_argument('-w', '--wall_time', type=float, default=1.0,
                         help=helptext)
 
     helptext = 'Mail adress for notifications\n'
-    parser.add_argument('-m', '--mail_adress', type=str,
+    parser.add_argument('-m', '--mail_address', type=str,
                         default='info@nosuchserver.com',
                         help=helptext)
 
@@ -156,18 +156,32 @@ def define_arguments():
     return parser
 
 
-if __name__ == "__main__":
+def main():
     parser = define_arguments()
     args = parser.parse_args()
 
-    jobname = args.job_name
+    run_axisem(**vars(args))
+
+
+def run_axisem(job_name: str,
+               mesh_file: str,
+               mesh_period: float,
+               job_type='local',
+               src_depth=0.,
+               wall_time=24.,
+               mesher_only=False,
+               nrad=1,
+               ncl=3,
+               max_colat=None,
+               max_depth=None,
+               account=None,
+               mail_address: str = None,
+               ntheta: int = None):
     base_dir = os.getcwd()
     os.chdir(base_dir)
-
     # Create rundir
-    rundir = os.path.abspath(os.path.join('runs', jobname))
+    rundir = os.path.abspath(os.path.join('runs', job_name))
     os.mkdir(rundir)
-
     # Create directory for the mesh
     print('[MESHER]')
     os.chdir(base_dir)
@@ -175,241 +189,241 @@ if __name__ == "__main__":
     meshdir = os.path.abspath(os.path.join(rundir, 'Mesh'))
     os.mkdir(meshdir)
     os.mkdir(os.path.join(meshdir, 'Diags'))
-
     mesh_exe_path = os.path.join(meshdir, 'xmesh')
     shutil.copyfile(src=os.path.join('MESHER', 'xmesh'),
                     dst=mesh_exe_path)
     st = os.stat(mesh_exe_path)
     os.chmod(mesh_exe_path, st.st_mode | stat.S_IEXEC)
-
     os.chdir(meshdir)
-
-    if args.mesh_file in int_models:
-        print('  Using internal model %s' % args.mesh_file)
+    if mesh_file in int_models:
+        print('  Using internal model %s' % mesh_file)
         int_model = True
     else:
         int_model = False
-        fnam_mesh_file = os.path.split(args.mesh_file)[-1]
-        shutil.copyfile(src=args.mesh_file,
+        fnam_mesh_file = os.path.split(mesh_file)[-1]
+        shutil.copyfile(src=mesh_file,
                         dst=os.path.join(meshdir, fnam_mesh_file))
         print('  Using external model %s' % fnam_mesh_file)
-
-    if args.ntheta:
-        ntheta = args.ntheta
+    if ntheta:
+        ntheta = ntheta
     else:
-        ntheta = get_ntheta(fnam_mesh_file, args.mesh_period,
-                            ncl=args.ncl,
-                            max_depth=args.max_depth,
-                            max_colat=args.max_colat)
+        ntheta = get_ntheta(fnam_mesh_file, mesh_period,
+                            ncl=ncl,
+                            max_depth=max_depth,
+                            max_colat=max_colat)
         print('  Optimal number of theta slices used: %d' % ntheta)
-
-    nrad = args.nrad
-    create_inparam_mesh(args.mesh_file,
-                        args.mesh_period,
+    create_inparam_mesh(mesh_file,
+                        mesh_period,
                         ntheta=ntheta,
                         nrad=nrad,
-                        ncl=args.ncl,
-                        max_depth=args.max_depth,
-                        max_colat=args.max_colat)
-
+                        ncl=ncl,
+                        max_depth=max_depth,
+                        max_colat=max_colat)
     ncpu = ntheta * nrad
     print('  Number of cores used: %4d' % ncpu)
-
-    if args.jobtype == 'local':  # local run, consecutive
+    if job_type == 'local':  # local run, consecutive
         os.chdir(os.path.abspath(meshdir))
         print('  Starting Mesher')
         output = sp.check_output('./xmesh > OUTPUT_MESH', shell=True)
 
-    elif args.jobtype == 'Daint':
-        batch_mesher_fmt =                                              \
-            '#!/bin/bash -l \n' +                                       \
-            '#SBATCH --ntasks=1 \n' +                                   \
-            '#SBATCH --ntasks-per-node=1 \n' +                          \
-            '#SBATCH --ntasks-per-core=1 \n' +                          \
-            '#SBATCH --cpus-per-task=1 \n' +                            \
-            '#SBATCH --time=00:30:00 \n' +                              \
-            '#SBATCH --account=%s \n' % args.account +                  \
-            '#SBATCH --mail-type=BEGIN,FAIL \n' +                       \
-            '#SBATCH --mail-user=%s \n' % args.mail_adress +            \
-            '#SBATCH --partition=prepost \n' +                          \
-            '#SBATCH --constraint=mc \n' +                              \
-            '#SBATCH --workdir=%s \n' % meshdir +                       \
-            'export OMP_NUM_THREADS=8 \n' +                             \
-            'module load slurm \n' +                                    \
-            'echo "The current job ID is $SLURM_JOB_ID" \n' +           \
-            'echo "Running on $SLURM_JOB_NUM_NODES nodes" \n' +         \
-            'echo "Using $SLURM_NTASKS_PER_NODE tasks per node" \n' +   \
-            'echo "A total of $SLURM_NTASKS tasks is used" \n' +        \
-            'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' +        \
+    elif job_type == 'Daint':
+        batch_mesher_fmt = \
+            '#!/bin/bash -l \n' + \
+            '#SBATCH --ntasks=1 \n' + \
+            '#SBATCH --ntasks-per-node=1 \n' + \
+            '#SBATCH --ntasks-per-core=1 \n' + \
+            '#SBATCH --cpus-per-task=1 \n' + \
+            '#SBATCH --time=00:30:00 \n' + \
+            '#SBATCH --account=%s \n' % account + \
+            '#SBATCH --mail-type=BEGIN,FAIL \n' + \
+            '#SBATCH --mail-user=%s \n' % mail_address + \
+            '#SBATCH --partition=prepost \n' + \
+            '#SBATCH --constraint=mc \n' + \
+            '#SBATCH --workdir=%s \n' % meshdir + \
+            'export OMP_NUM_THREADS=8 \n' + \
+            'module load slurm \n' + \
+            'echo "The current job ID is $SLURM_JOB_ID" \n' + \
+            'echo "Running on $SLURM_JOB_NUM_NODES nodes" \n' + \
+            'echo "Using $SLURM_NTASKS_PER_NODE tasks per node" \n' + \
+            'echo "A total of $SLURM_NTASKS tasks is used" \n' + \
+            'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' + \
             './xmesh > OUTPUT_MESHER'
 
-        path_sbatch_mesher = os.path.join(rundir, 'job_%s_mesh.sh' % (jobname))
+        path_sbatch_mesher = os.path.join(rundir,
+                                          'job_%s_mesh.sh' % job_name)
         with open(path_sbatch_mesher, 'w') as fid:
             fid.write(batch_mesher_fmt)
 
-    # SOLVER
-    print('[SOLVER]')
-    inparam_source = {'PX':
-                      'SOURCE_TYPE thetaforce  \n' +
-                      'SOURCE_DEPTH %f  \n' +
-                      'SOURCE_LAT 90.0  \n' +
-                      'SOURCE_LON 0.0  \n' +
-                      'SOURCE_AMPLITUDE  1.E20',
-                      'PZ':
-                      'SOURCE_TYPE vertforce  \n' +
-                      'SOURCE_DEPTH %f  \n' +
-                      'SOURCE_LAT 90.0  \n' +
-                      'SOURCE_LON 0.0  \n' +
-                      'SOURCE_AMPLITUDE  1.E20'}
+    if not mesher_only:
+        # SOLVER
+        print('[SOLVER]')
+        inparam_source = {'PX':
+                          'SOURCE_TYPE thetaforce  \n' +
+                          'SOURCE_DEPTH %f  \n' +
+                          'SOURCE_LAT 90.0  \n' +
+                          'SOURCE_LON 0.0  \n' +
+                          'SOURCE_AMPLITUDE  1.E20',
+                          'PZ':
+                          'SOURCE_TYPE vertforce  \n' +
+                          'SOURCE_DEPTH %f  \n' +
+                          'SOURCE_LAT 90.0  \n' +
+                          'SOURCE_LON 0.0  \n' +
+                          'SOURCE_AMPLITUDE  1.E20'}
 
-    path_sbatch_solver = dict()
+        path_sbatch_solver = dict()
 
-    desc = {'PX': 'horizontal', 'PZ': 'vertical'}
+        desc = {'PX': 'horizontal', 'PZ': 'vertical'}
 
-    for part_run in ['PX', 'PZ']:
-        print('  Creating solver dir for %s force source' % desc[part_run])
-        os.chdir(base_dir)
+        for part_run in ['PX', 'PZ']:
+            print('  Creating solver dir for %s force source' % desc[part_run])
+            os.chdir(base_dir)
 
-        # Create directory for the solver (PZ)
-        solverdir = os.path.abspath(os.path.join(rundir, part_run))
-        os.mkdir(solverdir)
+            # Create directory for the solver (PZ)
+            solverdir = os.path.abspath(os.path.join(rundir, part_run))
+            os.mkdir(solverdir)
 
-        # Copy Solver executable and make it executable
-        solver_exe_path = os.path.join(solverdir, 'axisem')
-        shutil.copyfile(src=os.path.join('SOLVER', 'axisem'),
-                        dst=solver_exe_path)
-        st = os.stat(solver_exe_path)
-        os.chmod(solver_exe_path, st.st_mode | stat.S_IEXEC)
+            # Copy Solver executable and make it executable
+            solver_exe_path = os.path.join(solverdir, 'axisem')
+            shutil.copyfile(src=os.path.join('SOLVER', 'axisem'),
+                            dst=solver_exe_path)
+            st = os.stat(solver_exe_path)
+            os.chmod(solver_exe_path, st.st_mode | stat.S_IEXEC)
 
-        # Copy inparam files
-        for file in ['inparam_basic', 'inparam_advanced']:
-            shutil.copyfile(src=file,
-                            dst=os.path.join(solverdir, file))
+            # Copy inparam files
+            for file in ['inparam_basic', 'inparam_advanced']:
+                shutil.copyfile(src=file,
+                                dst=os.path.join(solverdir, file))
 
-        if not int_model:
-            shutil.copyfile(src=args.mesh_file,
-                            dst=os.path.join(solverdir,
-                                             'external_model.bm'))
+            if not int_model:
+                shutil.copyfile(src=mesh_file,
+                                dst=os.path.join(solverdir,
+                                                 'external_model.bm'))
 
-        with open(os.path.join(solverdir, 'inparam_source'), 'w') as fid:
-            fid.write(inparam_source[part_run] % args.src_depth)
+            with open(os.path.join(solverdir, 'inparam_source'), 'w') as fid:
+                fid.write(inparam_source[part_run] % src_depth)
 
-        # Create output directories
-        os.mkdir(os.path.join(solverdir, 'Data'))
-        os.mkdir(os.path.join(solverdir, 'Info'))
+            # Create output directories
+            os.mkdir(os.path.join(solverdir, 'Data'))
+            os.mkdir(os.path.join(solverdir, 'Info'))
 
-        # Create symlink to mesh directory
-        os.symlink(os.path.abspath(meshdir), os.path.join(solverdir, 'Mesh'))
+            # Create symlink to mesh directory
+            os.symlink(os.path.abspath(meshdir),
+                       os.path.join(solverdir, 'Mesh'))
 
-        if args.jobtype == 'local':  # local run, consecutive
-            os.chdir(os.path.abspath(solverdir))
-            print('  Starting %s AxiSEM simulation' % desc[part_run])
+            if job_type == 'local':  # local run, consecutive
+                os.chdir(os.path.abspath(solverdir))
+                print('  Starting %s AxiSEM simulation' % desc[part_run])
+                try:
+                    command = 'mpirun -n %d ./axisem -quiet > OUTPUT' % ncpu
+                    output = sp.check_output(command,
+                                             stderr=sp.STDOUT,
+                                             shell=True)
+                except sp.CalledProcessError as e:
+                    print(e)
+                    print(output)
+                    print('\nLast lines of OUTPUT\n')
+                    _ = sp.run('tail OUTPUT -n 40', shell=True)
+                    raise
+
+            elif job_type == 'Daint':
+                batch_solver_fmt = \
+                    '#!/bin/bash -l \n' + \
+                    '#SBATCH --ntasks=%d \n' % ncpu + \
+                    '#SBATCH --ntasks-per-node=12 \n' + \
+                    '#SBATCH --ntasks-per-core=1 \n' + \
+                    '#SBATCH --cpus-per-task=1 \n' + \
+                    '#SBATCH --time=%s \n' % hour2hms(wall_time) + \
+                    '#SBATCH --account=%s \n' % account + \
+                    '#SBATCH --mail-type=FAIL \n' + \
+                    '#SBATCH --mail-user=%s \n' % mail_address + \
+                    '#SBATCH --partition=normal \n' + \
+                    '#SBATCH --constraint=gpu \n' + \
+                    '#SBATCH --workdir=%s \n' % os.path.abspath(solverdir) + \
+                    'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK \n' + \
+                    'module load slurm \n' + \
+                    'echo "The current job ID is $SLURM_JOB_ID" \n' + \
+                    'echo "Running on $SLURM_JOB_NUM_NODES nodes" \n' + \
+                    'echo "Using $SLURM_NTASKS_PER_NODE tasks per node" \n' + \
+                    'echo "A total of $SLURM_NTASKS tasks is used" \n' + \
+                    'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' + \
+                    'srun --ntasks-per-node $SLURM_NTASKS_PER_NODE ' + \
+                    '-n $SLURM_NTASKS ./axisem >& OUTPUT_%s' % part_run
+
+                path_sbatch_solver[part_run] = \
+                    os.path.join(rundir, 'job_%s_%s.sh' % (job_name, part_run))
+                with open(path_sbatch_solver[part_run], 'w') as fid:
+                    fid.write(batch_solver_fmt)
+
+        # Run field_transform (the Instaseis version)
+        repack_path = os.path.join(base_dir, 'SOLVER', 'UTILS', 'repack_db.py')
+        repack_call = repack_path + ' --method transpose ' + '. ' \
+            + job_name + '_database' + '> OUTPUT_FT'
+
+        print('[REPACK]')
+        if job_type == 'local':  # local run, consecutive
+            os.chdir(os.path.abspath(rundir))
+            print('  Starting database repack for Instaseis')
             try:
-                command = 'mpirun -n %d ./axisem -quiet > OUTPUT' % ncpu
-                output = sp.check_output(command,
-                                         stderr=sp.STDOUT,
-                                         shell=True)
+                output = sp.check_output(repack_call, shell=True)
             except sp.CalledProcessError as e:
                 print(e)
                 print(output)
-                print('\nLast lines of OUTPUT\n')
-                _ = sp.run('tail OUTPUT -n 40', shell=True)
+                _ = sp.run('tail OUTPUT_FT -n 20', shell=True)
                 raise
 
-        elif args.jobtype == 'Daint':
-            batch_solver_fmt = \
-                '#!/bin/bash -l \n' +                                         \
-                '#SBATCH --ntasks=%d \n' % ncpu +                             \
-                '#SBATCH --ntasks-per-node=12 \n' +                           \
-                '#SBATCH --ntasks-per-core=1 \n' +                            \
-                '#SBATCH --cpus-per-task=1 \n' +                              \
-                '#SBATCH --time=%s \n' % hour2hms(args.walltime) +            \
-                '#SBATCH --account=%s \n' % args.account +                    \
-                '#SBATCH --mail-type=FAIL \n' +                               \
-                '#SBATCH --mail-user=%s \n' % args.mail_adress +              \
-                '#SBATCH --partition=normal \n' +                             \
-                '#SBATCH --constraint=gpu \n' +                               \
-                '#SBATCH --workdir=%s \n' % os.path.abspath(solverdir) +      \
-                'export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK \n' +            \
-                'module load slurm \n' +                                      \
-                'echo "The current job ID is $SLURM_JOB_ID" \n' +             \
-                'echo "Running on $SLURM_JOB_NUM_NODES nodes" \n' +           \
-                'echo "Using $SLURM_NTASKS_PER_NODE tasks per node" \n' +     \
-                'echo "A total of $SLURM_NTASKS tasks is used" \n' +          \
-                'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' +          \
-                'srun --ntasks-per-node $SLURM_NTASKS_PER_NODE ' +            \
-                '-n $SLURM_NTASKS ./axisem >& OUTPUT_%s' % part_run
+        elif job_type == 'Daint':
+            batch_FT_fmt = \
+                '#!/bin/bash -l \n' + \
+                '#SBATCH --ntasks=1 \n' + \
+                '#SBATCH --ntasks-per-node=1 \n' + \
+                '#SBATCH --ntasks-per-core=1 \n' + \
+                '#SBATCH --cpus-per-task=1 \n' + \
+                '#SBATCH --time=24:00:00 \n' + \
+                '#SBATCH --account=%s \n' % account + \
+                '#SBATCH --mail-type=END,FAIL \n' + \
+                '#SBATCH --mail-user=%s \n' % mail_address + \
+                '#SBATCH --partition=normal \n' + \
+                '#SBATCH --constraint=gpu \n' + \
+                '#SBATCH --workdir=%s \n' % rundir + \
+                'export OMP_NUM_THREADS=1 \n' + \
+                'module load slurm \n' + \
+                'echo "The current job ID is $SLURM_JOB_ID" \n' + \
+                'echo "Running on $SLURM_JOB_NUM_NODES nodes" \n' + \
+                'echo "Using $SLURM_NTASKS_PER_NODE tasks per node" \n' + \
+                'echo "A total of $SLURM_NTASKS tasks is used" \n' + \
+                'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' + \
+                repack_call
 
-            path_sbatch_solver[part_run] = \
-                os.path.join(rundir, 'job_%s_%s.sh' % (jobname, part_run))
-            with open(path_sbatch_solver[part_run], 'w') as fid:
-                fid.write(batch_solver_fmt)
+        # Submit the jobs
+        # Only necessary, if the job is not run locally
 
-    # Run field_transform (the Instaseis version)
-    repack_path = os.path.join(base_dir, 'SOLVER', 'UTILS', 'repack_db.py')
-    repack_call = repack_path + ' --method transpose ' + '. ' \
-        + jobname+'_database' + '> OUTPUT_FT'
+        if job_type == 'Daint':  # Daint (CSCS), Slurm-based
+            path_sbatch_FT = os.path.join(rundir, 'job_%s_FT.sh' % job_name)
+            with open(path_sbatch_FT, 'w') as fid:
+                fid.write(batch_FT_fmt)
 
-    print('[REPACK]')
-    if args.jobtype == 'local':  # local run, consecutive
-        os.chdir(os.path.abspath(rundir))
-        print('  Starting database repack for Instaseis')
-        try:
-            output = sp.check_output(repack_call, shell=True)
-        except sp.CalledProcessError as e:
-            print(e)
-            _ = sp.run('tail OUTPUT_FT -n 20', shell=True)
-            raise
+            res_submit_mesh = sp.check_output('sbatch ' + path_sbatch_mesher,
+                                              shell=True)
+            jobid_mesher = int(res_submit_mesh.split()[3])
+            print('Mesher JOBID: ', jobid_mesher)
 
-    elif args.jobtype == 'Daint':
-        batch_FT_fmt =                                                  \
-            '#!/bin/bash -l \n' +                                       \
-            '#SBATCH --ntasks=1 \n' +                                   \
-            '#SBATCH --ntasks-per-node=1 \n' +                          \
-            '#SBATCH --ntasks-per-core=1 \n' +                          \
-            '#SBATCH --cpus-per-task=1 \n' +                            \
-            '#SBATCH --time=24:00:00 \n' +                              \
-            '#SBATCH --account=%s \n' % args.account +                  \
-            '#SBATCH --mail-type=END,FAIL \n' +                         \
-            '#SBATCH --mail-user=%s \n' % args.mail_adress +            \
-            '#SBATCH --partition=normal \n' +                           \
-            '#SBATCH --constraint=gpu \n' +                             \
-            '#SBATCH --workdir=%s \n' % rundir +                        \
-            'export OMP_NUM_THREADS=1 \n' +                             \
-            'module load slurm \n' +                                    \
-            'echo "The current job ID is $SLURM_JOB_ID" \n' +           \
-            'echo "Running on $SLURM_JOB_NUM_NODES nodes" \n' +         \
-            'echo "Using $SLURM_NTASKS_PER_NODE tasks per node" \n' +   \
-            'echo "A total of $SLURM_NTASKS tasks is used" \n' +        \
-            'echo "using $SLURM_CPUS_PER_TASK omp threads" \n' +        \
-            repack_call
+            jobid_solver = []
+            for part_run in ['PX', 'PZ']:
+                res_submit_solver = sp.check_output(
+                        'sbatch --dependency=afterok:%d ' % jobid_mesher +
+                        path_sbatch_solver[part_run],
+                        shell=True)
+                jobid_solver.append(int(res_submit_solver.split()[3]))
+                print('Solver %s JOBID: ' % part_run, jobid_solver[-1])
 
-    # Submit the jobs
-    # Only necessary, if the job is not run locally
+            res_submit_FT = sp.check_output(
+                    'sbatch --dependency=afterok:%d:%d %s' %
+                    (jobid_solver[0], jobid_solver[1], path_sbatch_FT),
+                    shell=True)
+            jobid_FT = int(res_submit_FT.split()[3])
+            print('FT JOBID:     ', jobid_FT)
+    os.chdir(base_dir)
 
-    if args.jobtype == 'Daint':  # Daint (CSCS), Slurm-based
-        path_sbatch_FT = os.path.join(rundir, 'job_%s_FT.sh' % (jobname))
-        with open(path_sbatch_FT, 'w') as fid:
-            fid.write(batch_FT_fmt)
 
-        res_submit_mesh = sp.check_output('sbatch ' + path_sbatch_mesher,
-                                          shell=True)
-        jobid_mesher = int(res_submit_mesh.split()[3])
-        print('Mesher JOBID: ', jobid_mesher)
-
-        res_submit_solver = dict()
-        jobid_solver = []
-        for part_run in ['PX', 'PZ']:
-            res_submit_solver = sp.check_output(
-                     'sbatch --dependency=afterok:%d ' % jobid_mesher +
-                     path_sbatch_solver[part_run],
-                     shell=True)
-            jobid_solver.append(int(res_submit_solver.split()[3]))
-            print('Solver %s JOBID: ' % part_run, jobid_solver[-1])
-
-        res_submit_FT = sp.check_output(
-                'sbatch --dependency=afterok:%d:%d %s' %
-                (jobid_solver[0], jobid_solver[1], path_sbatch_FT),
-                shell=True)
-        jobid_FT = int(res_submit_FT.split()[3])
-        print('FT JOBID:     ', jobid_FT)
+if __name__ == "__main__":
+    main()
