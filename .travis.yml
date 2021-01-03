@@ -19,8 +19,8 @@ jobs:
 
   - dist: bionic
     env: BUILD='debug'
-    name: 'Solver, external model (Debug)'
-    script: ./TESTING/test_external.sh;
+    name: 'Solver, mixed (Debug)'
+    script: ./TESTING/test_debug.sh;
 
   - dist: bionic
     env: BUILD='release'
