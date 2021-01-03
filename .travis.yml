@@ -20,7 +20,7 @@ jobs:
   - dist: bionic
     env: BUILD='debug'
     name: 'Solver, external model (Debug)'
-    script: ./TESTING/test_external.sh;
+    script: travis_wait ./TESTING/test_external.sh;
 
   - dist: bionic
     env: BUILD='release'
