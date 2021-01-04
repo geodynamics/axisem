@@ -34,6 +34,12 @@ jobs:
 
   - dist: bionic
     env: BUILD='release'
+    name: 'Solver, Aakash''s models (Release)'
+    script: ./TESTING/test_aakash.sh;
+
+
+  - dist: bionic
+    env: BUILD='release'
     name: 'Solver, external model (Release)'
     script: ./TESTING/test_external.sh;
 
