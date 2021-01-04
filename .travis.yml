@@ -80,7 +80,7 @@ install:
 
 after_success:
   - if [[ $BUILD == 'coverage' ]]; then 
-    coveralls --exclude SOLVER/UTILS --exclude MESHER/UTILS --exclude TESTING --exclude MANUAL --gcov-options '\-lp'; 
+    coveralls -e SOLVER/UTILS -e MESHER/UTILS -e TESTING -e MANUAL -e SOLVER/background_models.F90 -e SOLVER/kdtree2.f90 -e SOLVER/lateral_heterogeneities.f90 --gcov-options '\-lp';
     fi
 
 after_failure:
