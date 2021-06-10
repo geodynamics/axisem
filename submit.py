@@ -226,6 +226,16 @@ def run_axisem(job_name: str,
         print('  Starting Mesher')
         output = sp.check_output('./xmesh > OUTPUT_MESH', shell=True)
 
+    elif job_type == 'Euler':
+        os.chdir(os.path.abspath(meshdir))
+        print('  Starting Mesher')
+        output = sp.check_output('bsub' + 
+                                 ' -J m_%s' % job_name + 
+                                 ' -B' +         # Send mail at beginning
+                                 ' -R "rusage[mem=8192]"' + 
+                                 ' "./xmesh > OUTPUT_MESH"', 
+                                 shell=True)
+    
     elif job_type == 'Daint':
         batch_mesher_fmt = \
             '#!/bin/bash -l \n' + \
@@ -258,17 +268,17 @@ def run_axisem(job_name: str,
         # SOLVER
         print('[SOLVER]')
         inparam_source = {'PX':
-                          'SOURCE_TYPE thetaforce  \n' +
-                          'SOURCE_DEPTH %f  \n' +
-                          'SOURCE_LAT 90.0  \n' +
-                          'SOURCE_LON 0.0  \n' +
-                          'SOURCE_AMPLITUDE  1.E20',
+                            'SOURCE_TYPE thetaforce  \n' +
+                            'SOURCE_DEPTH %f  \n' +
+                            'SOURCE_LAT 90.0  \n' +
+                            'SOURCE_LON 0.0  \n' +
+                            'SOURCE_AMPLITUDE  1.E20',
                           'PZ':
-                          'SOURCE_TYPE vertforce  \n' +
-                          'SOURCE_DEPTH %f  \n' +
-                          'SOURCE_LAT 90.0  \n' +
-                          'SOURCE_LON 0.0  \n' +
-                          'SOURCE_AMPLITUDE  1.E20'}
+                            'SOURCE_TYPE vertforce  \n' +
+                            'SOURCE_DEPTH %f  \n' +
+                            'SOURCE_LAT 90.0  \n' +
+                            'SOURCE_LON 0.0  \n' +
+                            'SOURCE_AMPLITUDE  1.E20'}
 
         path_sbatch_solver = dict()
 
@@ -325,6 +335,18 @@ def run_axisem(job_name: str,
                     _ = sp.run('tail OUTPUT -n 40', shell=True)
                     raise
 
+            elif job_type == 'Euler':
+                os.chdir(os.path.abspath(solverdir))
+
+                output = sp.check_output('bsub' + 
+                                         ' -J s_%s_%s' % (job_name, part_run) + 
+                                         ' -n %d' % ncpu +     
+                                         ' -R "rusage[mem=1024]"' + 
+                                         ' -B' +         # Send mail at beginning
+                                         ' -w "done(m_%s)"' % (job_name) +
+                                         ' "mpirun -n %d ./axisem > OUTPUT_%s"' % (ncpu, part_run), 
+                                         shell=True)
+
             elif job_type == 'Daint':
                 batch_solver_fmt = \
                     '#!/bin/bash -l \n' + \
@@ -370,6 +392,17 @@ def run_axisem(job_name: str,
                 print(output)
                 _ = sp.run('tail OUTPUT_FT -n 20', shell=True)
                 raise
+
+        elif job_type == 'Euler':
+            os.chdir(os.path.abspath(rundir))
+            _ = sp.run('bsub' + 
+                       ' -J r_%s' % job_name +
+                       ' -n 1' +
+                       ' -R "rusage[mem=16384]"' + 
+                       ' -w "done(s_%s_PX)" ' % job_name + 
+                       repack_call,
+                       shell=True)
+
 
         elif job_type == 'Daint':
             batch_FT_fmt = \
