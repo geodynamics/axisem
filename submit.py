@@ -343,6 +343,7 @@ def run_axisem(job_name: str,
                                          ' -n %d' % ncpu +     
                                          ' -R "rusage[mem=1024]"' + 
                                          ' -B' +         # Send mail at beginning
+                                         ' -W %03d' % (int(wall_time * 60)) + 
                                          ' -w "done(m_%s)"' % (job_name) +
                                          ' "mpirun -n %d ./axisem > OUTPUT_%s"' % (ncpu, part_run), 
                                          shell=True)
@@ -378,8 +379,8 @@ def run_axisem(job_name: str,
 
         # Run field_transform (the Instaseis version)
         repack_path = os.path.join(base_dir, 'SOLVER', 'UTILS', 'repack_db.py')
-        repack_call = repack_path + ' --method transpose ' + '. ' \
-            + job_name + '_database' + '> OUTPUT_FT'
+        repack_call = repack_path + ' --method repack ' + '. ' \
+            + job_name + '_database ' + '> OUTPUT_FT'
 
         print('[REPACK]')
         if job_type == 'local':  # local run, consecutive
@@ -397,12 +398,12 @@ def run_axisem(job_name: str,
             os.chdir(os.path.abspath(rundir))
             _ = sp.run('bsub' + 
                        ' -J r_%s' % job_name +
-                       ' -n 1' +
-                       ' -R "rusage[mem=16384]"' + 
+                       ' -n 4' +
+                       ' -R "rusage[mem=48000]"' + 
                        ' -w "done(s_%s_PX)" ' % job_name + 
+                       ' -W 24:00' + 
                        repack_call,
                        shell=True)
-
 
         elif job_type == 'Daint':
             batch_FT_fmt = \
