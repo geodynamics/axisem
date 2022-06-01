@@ -40,8 +40,15 @@ ifeq ($(strip $(USE_NETCDF)),true)
        LIBS = -L $(strip $(NETCDF_PATH))/lib -lnetcdff -Wl,-rpath,$(strip $(NETCDF_PATH))/lib
        INCLUDE = -I $(strip $(NETCDF_PATH))/include
    else
-       LIBS = -lnetcdff
-       INCLUDE = -I /usr/include
+       UNAME_S := $(shell uname -s)
+       ifeq ($(UNAME_S),Linux)
+           INCLUDE = -I /usr/include
+           LIBS = -L /usr/lib -lnetcdff
+       endif
+       ifeq ($(UNAME_S),Darwin)
+           INCLUDE = -I /usr/local/include
+           LIBS = -L /usr/local/lib -lnetcdff -Wl,-rpath,/usr/local/lib
+       endif
    endif
 else
    LIBS = 

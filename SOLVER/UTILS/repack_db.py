@@ -67,10 +67,10 @@ def recursive_copy(src, dst, contiguous, compression_level, transpose, quiet):
         if isinstance(_s, str_type):
             # The setncattr_string() was added in version 1.2.3. Before that
             # it was the default behavior.
-            if __netcdf_version >= (1, 2, 3):
-                dst.setncattr_string(attr, _s)
-            else:
-                dst.setncattr(attr, str(_s))
+            # if __netcdf_version >= (1, 2, 3):
+            #     dst.setncattr_string(attr, _s)
+            # else:
+            dst.setncattr(attr, str(_s))
         else:
             setattr(dst, attr, _s)
 
@@ -149,8 +149,8 @@ def recursive_copy(src, dst, contiguous, compression_level, transpose, quiet):
 
             # Copy around 8 Megabytes at a time. This seems to be the
             # sweet spot at least on my laptop.
-            # Increased to 20GB - SCS
-            factor = int((20 * 1024 * 1024 * 1024 / 4) / npts)
+            # Increased to 5GB - SCS
+            factor = int((55555 * 1024 * 1024 * 1024 / 4) / npts)
             s = int(math.ceil(num_elems / float(factor)))
 
             if quiet:

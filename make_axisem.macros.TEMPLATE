@@ -16,6 +16,7 @@ USE_NETCDF = true
 USE_PAR_NETCDF = false
 # Path to NetCDF libraries. If you used a system function to install it, leave
 # it empty. The Makefile will use /usr/include and /usr/lib in this case.
+# On a MacOS system, add /usr/local 
 NETCDF_PATH =       
 
 # compile without MPI (possible values: 'false', 'true')
@@ -25,7 +26,7 @@ SERIAL = false
 # Include the file mpif.h, instead of using the FORTRAN MPI module 
 # Sometimes necessary when the local OpenMPI-version was not compiled with the
 # same version of the compiler as the one specified as $FC
-INCLUDE_MPI = true
+INCLUDE_MPI = false
 
 ####################################
 # Choose compiler names and flags: #
@@ -37,14 +38,14 @@ INCLUDE_MPI = true
 # CC      = gcc
 # FC      = mpif90
 # FFLAGS  = -O3 -march=native -fopenmp        
-# CFLAGS  = -O3 -march=native                
+# CFLAGS  = -O3 -march=native -Wno-implicit-function-declaration
 # LDFLAGS = -O3 -march=native -fopenmp      
 
 # GFORTRAN (debug)
 CC      = gcc
 FC      = mpif90
 FFLAGS  = -g -fbacktrace -fbounds-check -frange-check -pedantic 
-CFLAGS  = -g -fbacktrace -Wall 
+CFLAGS  = -g -fbacktrace -Wall -Wno-implicit-function-declaration
 LDFLAGS = -g -fbacktrace -Wall
 
 # PORTLAND (fast)
