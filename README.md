@@ -79,4 +79,26 @@ of RAM, see manual.
 
 Detailed instructions can be found in the file `manual_axisem_1.4.pdf`
 
+## Installation
+Generally, AxiSEM needs
+- a C and a Fortran90 compiler (typically gcc and gfortran)
+- MPI (typically OpenMPI)
+- NetCDF (not absolutely necessary, but needed to create an Instaseis database)
 
+### MacOS X
+The easiest way to install the necessary requirements is *homebrew* (https://brew.sh/). If you have not installed homebrew itself yet, do so as described on the homepage. The preferred way (as of May 2022) is 
+```
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+and follow the steps therein.
+
+Afterwards, install gfortran, openmpi and NetCDF with 
+```
+brew install gfortran gcc openmpi netcdf hdf5-mpi
+```
+
+### Linux
+The necessary packages can easily be installed using APT
+```
+sudo apt install gfortran gcc libopenmpi-dev openmpi-bin libnetcdff-dev 
+```
