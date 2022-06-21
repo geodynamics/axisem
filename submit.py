@@ -123,6 +123,11 @@ def define_arguments():
                         default='local',
                         help=helptext)
 
+    helptext = 'Run type (Forward, Backward)\n'
+    parser.add_argument('-r', '--run_type', type=str,
+                        default='bwd',
+                        help=helptext)
+
     helptext = 'Maximum colatitude of mesh (default: 180 degree)\n'
     parser.add_argument('--max_colat', type=float,
                         help=helptext)
@@ -167,6 +172,7 @@ def run_axisem(job_name: str,
                mesh_file: str,
                mesh_period: float,
                job_type='local',
+               run_type='bwd',
                src_depth=0.,
                wall_time=24.,
                mesher_only=False,
@@ -267,24 +273,58 @@ def run_axisem(job_name: str,
     if not mesher_only:
         # SOLVER
         print('[SOLVER]')
-        inparam_source = {'PX':
-                            'SOURCE_TYPE thetaforce  \n' +
-                            'SOURCE_DEPTH %f  \n' +
-                            'SOURCE_LAT 90.0  \n' +
-                            'SOURCE_LON 0.0  \n' +
-                            'SOURCE_AMPLITUDE  1.E20',
-                          'PZ':
-                            'SOURCE_TYPE vertforce  \n' +
-                            'SOURCE_DEPTH %f  \n' +
-                            'SOURCE_LAT 90.0  \n' +
-                            'SOURCE_LON 0.0  \n' +
-                            'SOURCE_AMPLITUDE  1.E20'}
+        if run_type == 'fwd':
+            runs = ['MXZ_MYZ', 'MZZ', 'MXX_P_MYY', 
+                    'MXY_MXX_M_MYY']
+            inparam_source = {
+                    'MZZ':
+                                'SOURCE_TYPE mrr \n' +
+                                'SOURCE_DEPTH %f  \n' +
+                                'SOURCE_LAT 90.0  \n' +
+                                'SOURCE_LON 0.0  \n' +
+                                'SOURCE_AMPLITUDE  1.E20',
+                    'MXX_P_MYY':
+                                'SOURCE_TYPE mtt_p_mpp \n' +
+                                'SOURCE_DEPTH %f  \n' +
+                                'SOURCE_LAT 90.0  \n' +
+                                'SOURCE_LON 0.0  \n' +
+                                'SOURCE_AMPLITUDE  1.E20',
+                    'MXZ_MYZ':
+                                'SOURCE_TYPE mtr \n' +
+                                'SOURCE_DEPTH %f  \n' +
+                                'SOURCE_LAT 90.0  \n' +
+                                'SOURCE_LON 0.0  \n' +
+                                'SOURCE_AMPLITUDE  1.E20',
+                    'MXY_MXX_M_MYY':
+                                'SOURCE_TYPE mtp \n' +
+                                'SOURCE_DEPTH %f  \n' +
+                                'SOURCE_LAT 90.0  \n' +
+                                'SOURCE_LON 0.0  \n' +
+                                'SOURCE_AMPLITUDE  1.E20'}
+            desc = {'MZZ': 'Mzz', 
+                    'MXZ_MYZ': 'Mxz/Myz',
+                    'MXX_P_MYY': 'Mxx + Myy',
+                    'MXY_MXX_M_MYY': 'Mxy / Mxx - Myy'}
+        else:
+            runs = ['PX', 'PZ']
+            inparam_source = {'PX':
+                                'SOURCE_TYPE thetaforce  \n' +
+                                'SOURCE_DEPTH %f  \n' +
+                                'SOURCE_LAT 90.0  \n' +
+                                'SOURCE_LON 0.0  \n' +
+                                'SOURCE_AMPLITUDE  1.E20',
+                              'PZ':
+                                'SOURCE_TYPE vertforce  \n' +
+                                'SOURCE_DEPTH %f  \n' +
+                                'SOURCE_LAT 90.0  \n' +
+                                'SOURCE_LON 0.0  \n' +
+                                'SOURCE_AMPLITUDE  1.E20'}
+            desc = {'PX': 'horizontal', 'PZ': 'vertical'}
 
         path_sbatch_solver = dict()
 
-        desc = {'PX': 'horizontal', 'PZ': 'vertical'}
 
-        for part_run in ['PX', 'PZ']:
+        for part_run in runs:
             print('  Creating solver dir for %s force source' % desc[part_run])
             os.chdir(base_dir)
 
@@ -396,13 +436,14 @@ def run_axisem(job_name: str,
 
         elif job_type == 'Euler':
             os.chdir(os.path.abspath(rundir))
-            _ = sp.run('bsub' + 
-                       ' -J r_%s' % job_name +
-                       ' -n 4' +
-                       ' -R "rusage[mem=48000]"' + 
-                       ' -w "done(s_%s_PX)" ' % job_name + 
-                       ' -W 24:00' + 
-                       repack_call,
+            repack_call = 'bsub' + \
+                          ' -w "done(s_%s_%s)" ' % (job_name, runs[0]) + \
+                          ' -J r_%s' % job_name + \
+                          ' -n 4' + \
+                          ' -R "rusage[mem=4000]" -B -N' + \
+                          ' -W 24:00 ' + \
+                          repack_call
+            _ = sp.run(repack_call,
                        shell=True)
 
         elif job_type == 'Daint':
