@@ -159,7 +159,7 @@ subroutine dump_mesh_data_xdmf(nc_filename_in, xdmf_filename_in, varname, npoint
 
   do i=1, nsnap
      ! create new snapshot in the temporal collection
-     write(iinput_xdmf, 7341) dble(i), npoints, "'", "'"
+     write(iinput_xdmf, 7341) dble(i), npoints
 
      ! write attribute
      write(iinput_xdmf, 7342) varname, npoints, i-1, npoints, nsnap, npoints, &
@@ -193,7 +193,9 @@ subroutine dump_mesh_data_xdmf(nc_filename_in, xdmf_filename_in, varname, npoint
     '        <Topology TopologyType="Polyvertex" NumberOfElements="',i10,'">',/&
     '        </Topology>',/&
     '        <Geometry GeometryType="XY">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '            </DataItem>',/&
     '        </Geometry>')
 
 7342 format(&    

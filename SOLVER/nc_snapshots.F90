@@ -226,7 +226,7 @@ end subroutine nc_dump_snapshot
 subroutine nc_close_snapfile
 
 #ifdef enable_netcdf
-        call check(nf90_close(ncid_out_snap))
+    call check(nf90_close(ncid_out_snap))
 #endif
 
 end subroutine

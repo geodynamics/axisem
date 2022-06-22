@@ -209,7 +209,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
 
    if (use_netcdf) then
        if (src_type(1)=='monopole') then
-           write(110, 736) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+           write(110, 736) appisnap, t, nelem_plot, &
                        npoint_plot, isnap-1, npoint_plot, &
                        nsnap, npoint_plot, &
                        'netcdf_snap_'//appmynum//'.nc', &
@@ -224,7 +224,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
                        nsnap, npoint_plot, &
                        'netcdf_snap_'//appmynum//'.nc'
        else
-           write(110, 737) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+           write(110, 737) appisnap, t, nelem_plot, &
                        npoint_plot, isnap-1, npoint_plot, &
                        nsnap, npoint_plot, &
                        'netcdf_snap_'//appmynum//'.nc', &
@@ -245,7 +245,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
 
    else
        if (src_type(1)=='monopole') then
-           write(110, 734) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+           write(110, 734) appisnap, t, nelem_plot, &
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
                        'xdmf_snap_s_'//appmynum//'.dat', &
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
@@ -256,7 +256,7 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
                        'xdmf_snap_curlip_'//appmynum//'.dat'
        else
-           write(110, 735) appisnap, t, nelem_plot, "'", "'", "'", "'", &
+           write(110, 735) appisnap, t, nelem_plot, &
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
                        'xdmf_snap_s_'//appmynum//'.dat', &
                        npoint_plot, isnap-1, npoint_plot, nsnap, npoint_plot, &
@@ -275,10 +275,14 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
     '    <Grid Name="', A,'" GridType="Uniform">',/&
     '        <Time Value="',F8.2,'" />',/&
     '        <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'grid', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="grid"]',/&
+    '            </DataItem>',/&
     '        </Topology>',/&
     '        <Geometry GeometryType="XY">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '            </DataItem>',/&
     '        </Geometry>',/&
     '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
     '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
@@ -344,10 +348,14 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
     '    <Grid Name="', A,'" GridType="Uniform">',/&
     '        <Time Value="',F8.2,'" />',/&
     '        <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'grid', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="grid"]',/&
+    '            </DataItem>',/&
     '        </Topology>',/&
     '        <Geometry GeometryType="XY">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '            </DataItem>',/&
     '        </Geometry>',/&
     '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
     '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
@@ -428,10 +436,14 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
     '    <Grid Name="', A,'" GridType="Uniform">',/&
     '        <Time Value="',F8.2,'" />',/&
     '        <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'grid', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="grid"]',/&
+    '            </DataItem>',/&
     '        </Topology>',/&
     '        <Geometry GeometryType="XY">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '            </DataItem>',/&
     '        </Geometry>',/&
     '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
     '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&
@@ -497,10 +509,14 @@ subroutine glob_snapshot_xdmf(f_sol, chi, t, isnap)
     '    <Grid Name="', A,'" GridType="Uniform">',/&
     '        <Time Value="',F8.2,'" />',/&
     '        <Topology TopologyType="Quadrilateral" NumberOfElements="',i10,'">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'grid', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="grid"]',/&
+    '            </DataItem>',/&
     '        </Topology>',/&
     '        <Geometry GeometryType="XY">',/&
-    '            <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '            <DataItem Reference="XML">',/&
+    '                /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '            </DataItem>',/&
     '        </Geometry>',/&
     '        <Attribute Name="u_s" AttributeType="Scalar" Center="Node">',/&
     '            <DataItem ItemType="HyperSlab" Dimensions="',i10,'" Type="HyperSlab">',/&

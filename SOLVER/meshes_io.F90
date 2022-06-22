@@ -866,7 +866,7 @@ subroutine dump_kwf_midpoint_xdmf(filename, npoints, nelem)
   open(newunit=iinput_xdmf, file=trim(filename)//'_mp.xdmf')
   write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
 
-  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), "'", "'"
+  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np)
 
   close(iinput_xdmf)
 
@@ -892,7 +892,9 @@ subroutine dump_kwf_midpoint_xdmf(filename, npoints, nelem)
     '        </DataItem>',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
-    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '        <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '        </DataItem>',/&
     '    </Geometry>',/&
     '</Grid>',/,/&
     '</Domain>',/&
@@ -903,7 +905,7 @@ subroutine dump_kwf_midpoint_xdmf(filename, npoints, nelem)
   open(newunit=iinput_xdmf, file=trim(filename)//'_mp_vect.xdmf')
   write(iinput_xdmf, 743) nelem, nelem, trim(filename_np), nelem, trim(filename_np)
 
-  write(iinput_xdmf, 744) nelem, "'", "'"
+  write(iinput_xdmf, 744) nelem
 
   close(iinput_xdmf)
 
@@ -926,7 +928,9 @@ subroutine dump_kwf_midpoint_xdmf(filename, npoints, nelem)
     '    <Topology TopologyType="Polyvertex" NumberOfElements="',i10,'">',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
-    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '        <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '        </DataItem>',/&
     '    </Geometry>',/&
     '</Grid>',/,/&
     '</Domain>',/&
@@ -951,7 +955,7 @@ subroutine dump_kwf_fem_xdmf(filename, npoints, nelem)
   open(newunit=iinput_xdmf, file=trim(filename)//'_fem.xdmf')
   write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
 
-  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), "'", "'", &
+  write(iinput_xdmf, 734) nelem, nelem, trim(filename_np), &
                           nelem, trim(filename_np), nelem, trim(filename_np)
 
 
@@ -979,7 +983,9 @@ subroutine dump_kwf_fem_xdmf(filename, npoints, nelem)
     '        </DataItem>',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
-    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '        <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '        </DataItem>',/&
     '    </Geometry>',/&
     '    <Attribute Name="eltype" AttributeType="Scalar" Center="Cell">',/&
     '        <DataItem ItemType="Uniform" Name="points" DataType="Int" Dimensions="', i10, '" Format="HDF">',/&
@@ -1015,7 +1021,7 @@ subroutine dump_kwf_sem_xdmf(filename, npoints, nelem)
   write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
 
   write(iinput_xdmf, 734) nelem, (npol+1)**2, nelem, npol+1, npol+1, &
-                          trim(filename_np), "'", "'"
+                          trim(filename_np)
 
   close(iinput_xdmf)
 
@@ -1041,7 +1047,9 @@ subroutine dump_kwf_sem_xdmf(filename, npoints, nelem)
     '        </DataItem>',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
-    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '        <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '        </DataItem>',/&
     '    </Geometry>',/&
     '</Grid>',/,/&
     '</Domain>',/&
@@ -1066,7 +1074,7 @@ subroutine dump_kwf_gll_xdmf(filename, npoints)
   open(newunit=iinput_xdmf, file=trim(filename)//'_gll.xdmf')
   write(iinput_xdmf, 733) npoints, npoints, trim(filename_np), npoints, trim(filename_np)
 
-  write(iinput_xdmf, 734) npoints, "'", "'"
+  write(iinput_xdmf, 734) npoints
 
   close(iinput_xdmf)
 
@@ -1089,7 +1097,9 @@ subroutine dump_kwf_gll_xdmf(filename, npoints)
     '    <Topology TopologyType="Polyvertex" NumberOfElements="',i10'">',/&
     '    </Topology>',/&
     '    <Geometry GeometryType="XY">',/&
-    '        <DataItem Reference="/Xdmf/Domain/DataItem[@Name=', A,'points', A,']" />',/&
+    '        <DataItem Reference="XML">',/&
+    '            /Xdmf/Domain/DataItem[@Name="points"]',/&
+    '        </DataItem>',/&
     '    </Geometry>',/&
     '</Grid>',/,/&
     '</Domain>',/&
