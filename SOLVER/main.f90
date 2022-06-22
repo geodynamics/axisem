@@ -100,7 +100,9 @@ program axisem
   if (dump_xdmf) then
      if (lpr .and. verbose >= 1) write(6,*)'MAIN: Finishing xdmf xml file...'
      call finish_xdmf_xml ! meshes_io
-     call nc_close_snapfile ! nc_snapshots
+     if (use_netcdf) then
+         call nc_close_snapfile ! nc_snapshots
+     end if
   endif
 
   call end_clock ! clocks_wrapper_solver
