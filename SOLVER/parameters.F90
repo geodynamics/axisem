@@ -226,7 +226,6 @@ end subroutine readin_parameters
 !-----------------------------------------------------------------------------------------
 !> Read file inparam_basic
 subroutine read_inparam_basic
-  use data_mesh,   only: meshname
   use commun,      only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
   integer             :: iinparam_basic=500, ioerr
@@ -242,7 +241,6 @@ subroutine read_inparam_basic
 
   ! These values have to be set
   simtype = 'undefined'
-  meshname = 'undefined'
 
   ! only rank 0 reads the file
   if (mynum == 0) then
@@ -276,9 +274,6 @@ subroutine read_inparam_basic
        case('SEISMOGRAM_LENGTH')
           read(keyvalue, *) seislength_t
 
-       case('MESHNAME')
-          meshname = keyvalue
-
        case('LAT_HETEROGENEITY')
           read(keyvalue, *) add_hetero
 
@@ -300,7 +295,6 @@ subroutine read_inparam_basic
   call broadcast_char(simtype, 0) 
   call broadcast_char(rec_file_type, 0)
   call broadcast_dble(seislength_t, 0)
-  call broadcast_char(meshname, 0)
   call broadcast_log(add_hetero, 0)
   call broadcast_log(do_anel, 0)
   call broadcast_log(dump_snaps_glob, 0)
@@ -372,7 +366,7 @@ end subroutine check_a_smaller_b
 subroutine read_inparam_advanced
   
   use nc_routines,  only: nc_dumpbuffersize, nc_chunk_time_traces
-  use data_mesh,    only: naxel, meshname, do_mesh_tests
+  use data_mesh,    only: naxel, do_mesh_tests
   use commun,       only: broadcast_int, broadcast_log, broadcast_char, broadcast_dble
 
   integer              :: iinparam_advanced=500, ioerr
@@ -735,9 +729,6 @@ subroutine check_basic_parameters
 
   errmsg = 'SIMULATION_TYPE is not defined in input file inparam_basic'
   call pcheck(trim(simtype) == 'undefined', errmsg)
-
-  errmsg = 'MESHNAME is not defined in input file inparam_basic'
-  call pcheck(trim(meshname) == 'undefined', errmsg)
 
 #ifndef enable_netcdf
   errmsg = 'trying to use netcdf IO but axisem was compiled without netcdf'

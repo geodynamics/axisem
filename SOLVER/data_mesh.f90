@@ -120,7 +120,6 @@ module data_mesh
 
   ! Background model--------------------------------------------------------
   character(len=100)          :: bkgrdmodel
-  character(len=100)          :: meshname
   logical                     :: have_fluid
   real(kind=dp), allocatable  :: discont(:)
   logical, allocatable        :: solid_domain(:)
